@@ -18,6 +18,7 @@
 #include "nsJSPrincipals.h"
 #include "nsJSUtils.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "xpcprivate.h"
 
 namespace mozilla::dom {

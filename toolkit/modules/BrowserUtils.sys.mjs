@@ -38,8 +38,13 @@ ChromeUtils.defineLazyGetter(lazy, "CatManListenerManager", () => {
       }
       let rv = Array.from(
         Services.catMan.enumerateCategory(categoryName),
-        ({ data: module, value }) => {
+        ({ data: entry, value }) => {
           try {
+            // Entry names are unique keys per category, so a `#…` suffix lets
+            // multiple consumers in the same module register without colliding.
+            // TODO bug 2038950: remove this once all common JS is ported to
+            // ES modules.
+            let module = entry.replace(/#.*$/, "");
             let [objName, method] = value.split(".");
             let fn = (jsGlobal, ...args) => {
               let obj;
@@ -81,7 +86,7 @@ ChromeUtils.defineLazyGetter(lazy, "CatManListenerManager", () => {
             return fn;
           } catch (ex) {
             console.error(
-              `Error processing category manifest for ${module}: ${value}`,
+              `Error processing category manifest for ${entry}: ${value}`,
               ex
             );
             return null;
@@ -655,6 +660,41 @@ export var BrowserUtils = {
     return "current";
   },
 
+  /**
+   * This function returns whether a link opened with the given `where` will load
+   * in the background.
+   *
+   * @param {string}  where
+   *   Where the link will open, as returned by whereToOpenLink().
+   * @param {object} params
+   *   The params that will be passed to openLinkIn() as param.
+   * @param {boolean} [params.inBackground=null]
+   *   If non-null it takes precedence.
+   * @param {boolean} [params.forceForeground=null]
+   *   When true, defaults to the foreground rather than the pref.
+   * @returns {boolean}
+   *   Whether the link will load in the background.
+   */
+  willLoadInBackground(
+    where,
+    { inBackground = null, forceForeground = null } = {}
+  ) {
+    switch (where) {
+      case "tab":
+      case "tabshifted": {
+        let loadInBackground = inBackground;
+        if (loadInBackground == null) {
+          loadInBackground = forceForeground
+            ? false
+            : Services.prefs.getBoolPref("browser.tabs.loadInBackground");
+        }
+        return where == "tabshifted" ? !loadInBackground : loadInBackground;
+      }
+    }
+
+    return false;
+  },
+
   // Utility function to check command events for potential middle-click events
   // from checkForMiddleClick and unwrap them.
   getRootEvent(aEvent) {
@@ -730,11 +770,15 @@ export var BrowserUtils = {
           await failureHandler?.(ex);
         } catch (nestedEx) {
           console.error(`Error in handling failure: ${nestedEx}`);
-          // Crash in automation:
+          // Crash in automation.
+          // See bug 2034905 for filename / fileName shenanigans.
           if (BrowserUtils._inAutomation) {
             Cc["@mozilla.org/xpcom/debug;1"]
               .getService(Ci.nsIDebug2)
-              .abort(nestedEx.filename, nestedEx.lineNumber);
+              .abort(
+                nestedEx.filename || nestedEx.fileName,
+                nestedEx.lineNumber
+              );
           }
         }
       }
@@ -766,20 +810,6 @@ export var BrowserUtils = {
     }
 
     return Promise.allSettled(allTasks);
-  },
-
-  /**
-   * Returns whether the build is a China repack.
-   *
-   * @returns {boolean} True if the distribution ID is 'MozillaOnline',
-   *                   otherwise false.
-   */
-  isChinaRepack() {
-    return (
-      Services.prefs
-        .getDefaultBranch("")
-        .getCharPref("distribution.id", "default") === "MozillaOnline"
-    );
   },
 
   /**

@@ -44,14 +44,83 @@ export class SidebarPage extends MozLitElement {
     return this.topWindow.SidebarController;
   }
 
-  getRowsInOrder() {
-    const rows = [];
-    for (const list of this.lists) {
-      for (const item of list.tabItems) {
-        rows.push({ list, item });
+  /**
+   * Routes keydown events to the tree view controller.
+   */
+  get keydownHandler() {
+    if (!this._keydownHandler) {
+      this._keydownHandler = e => {
+        this.treeView?.handleKeydown(e);
+        if (e.defaultPrevented) {
+          e.stopPropagation();
+        }
+      };
+    }
+    return this._keydownHandler;
+  }
+
+  /**
+   * Visually ordered nodes for keyboard navigation. Walks the page's shadow
+   * DOM, emitting moz-card summaries and tab-list rows.
+   *
+   * @returns {TreeViewNode[]}
+   */
+  getNodesInOrder() {
+    const nodes = [];
+    this.#collectNodes(this.renderRoot, nodes);
+    return nodes;
+  }
+
+  #collectNodes({ children }, nodes) {
+    for (const el of children) {
+      const isCard = el.localName === "moz-card" && el.type === "accordion";
+      const isTabList = !!el.tabItems;
+
+      if (isCard) {
+        nodes.push({
+          card: el,
+          type: "card-summary",
+          get domNode() {
+            return el.summaryEl;
+          },
+        });
+        if (el.expanded) {
+          this.#collectNodes(el, nodes);
+        }
+      } else if (isTabList) {
+        for (const item of el.tabItems) {
+          nodes.push({
+            list: el,
+            item,
+            type: "row",
+            get domNode() {
+              return el.shadowRoot.querySelector(
+                `[data-guid="${CSS.escape(item.guid)}"]`
+              );
+            },
+          });
+        }
+      } else {
+        this.#collectNodes(el, nodes);
       }
     }
-    return rows;
+  }
+
+  /**
+   * Toggle the expanded state of a node, if it's expandable. Returns true if
+   * the call had an effect (the node is expandable AND its state changed),
+   * false otherwise.
+   *
+   * @param {TreeViewNode} node
+   * @param {boolean} expanded
+   * @returns {boolean}
+   */
+  setExpanded(node, expanded) {
+    if (node.type === "card-summary" && node.card?.expanded !== expanded) {
+      node.card.expanded = expanded;
+      return true;
+    }
+    return false;
   }
 
   addContextMenuListeners() {

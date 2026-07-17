@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 /*
- * Test JSObject::swap.
+ * Test ProxyObject::swap.
  *
  * This test creates proxy objects from a description of their configuration.
  * Each proxy is given a unique private value, expando object, and reserved-slot
@@ -86,7 +86,8 @@ BEGIN_TEST(testObjectSwap) {
 
         {
           AutoEnterOOMUnsafeRegion oomUnsafe;
-          JSObject::swap(cx, obj1, obj2, oomUnsafe);
+          ProxyObject::swap(cx, obj1.as<ProxyObject>(), obj2.as<ProxyObject>(),
+                            oomUnsafe);
         }
 
         CHECK(CheckObject(obj1, id2));
@@ -104,7 +105,7 @@ BEGIN_TEST(testObjectSwap) {
       }
     }
 
-    // JSObject::swap can suppress GC so ensure we clean up occasionally.
+    // ProxyObject::swap can suppress GC so ensure we clean up occasionally.
     JS_GC(cx);
   }
 

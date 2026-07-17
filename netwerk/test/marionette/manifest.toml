@@ -6,4 +6,6 @@ tags = "os_integration"
 
 ["test_beacon_on_pagehide_shutdown.py"]
 
+["test_cache_encryption_flip_purge.py"]
+
 ["test_purge_http_cache_at_shutdown.py"]

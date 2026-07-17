@@ -103,14 +103,16 @@ auto GraphRunner::OneIteration(GraphTime aStateTime,
 #ifdef MOZ_WIDGET_ANDROID
 namespace {
 void PromoteRenderingThreadAndroid() {
-  MOZ_LOG(gMediaTrackGraphLog, LogLevel::Debug,
-          ("GraphRunner default thread priority: %d",
-           java::sdk::Process::GetThreadPriority(java::sdk::Process::MyTid())));
+  MOZ_LOG_FMT(
+      gMediaTrackGraphLog, LogLevel::Debug,
+      "GraphRunner default thread priority: {}",
+      java::sdk::Process::GetThreadPriority(java::sdk::Process::MyTid()));
   java::sdk::Process::SetThreadPriority(
       java::sdk::Process::THREAD_PRIORITY_URGENT_AUDIO);
-  MOZ_LOG(gMediaTrackGraphLog, LogLevel::Debug,
-          ("GraphRunner promoted thread priority: %d",
-           java::sdk::Process::GetThreadPriority(java::sdk::Process::MyTid())));
+  MOZ_LOG_FMT(
+      gMediaTrackGraphLog, LogLevel::Debug,
+      "GraphRunner promoted thread priority: {}",
+      java::sdk::Process::GetThreadPriority(java::sdk::Process::MyTid()));
 }
 };  // namespace
 #endif  // MOZ_WIDGET_ANDROID

@@ -16,8 +16,6 @@ interface HTMLAnchorElement : HTMLElement {
   [HTMLConstructor] constructor();
 
            [CEReactions, SetterThrows]
-           attribute DOMString target;
-           [CEReactions, SetterThrows]
            attribute DOMString download;
            [CEReactions, SetterThrows]
            attribute USVString ping;
@@ -27,10 +25,6 @@ interface HTMLAnchorElement : HTMLElement {
            attribute DOMString referrerPolicy;
            [PutForwards=value]
   readonly attribute DOMTokenList relList;
-           [CEReactions, SetterThrows]
-           attribute DOMString hreflang;
-           [CEReactions, SetterThrows]
-           attribute DOMString type;
 
            [CEReactions, Throws]
            attribute DOMString text;

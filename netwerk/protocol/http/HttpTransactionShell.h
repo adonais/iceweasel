@@ -8,6 +8,7 @@
 #include <functional>
 
 #include "TimingStruct.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/UniquePtr.h"
 #include "nsIClassOfService.h"
 #include "nsIEarlyHintObserver.h"
@@ -33,6 +34,7 @@ class nsHttpConnectionInfo;
 class nsHttpHeaderArray;
 class nsHttpRequestHead;
 class nsHttpTransaction;
+class ProxyConnectResponseHead;
 class TransactionObserverResult;
 union NetAddr;
 
@@ -163,6 +165,7 @@ class HttpTransactionShell : public nsISupports {
 
   virtual bool ProxyConnectFailed() = 0;
   virtual int32_t GetProxyConnectResponseCode() = 0;
+  virtual RefPtr<ProxyConnectResponseHead> GetProxyConnectResponseHead() = 0;
 
   virtual bool DataSentToChildProcess() = 0;
 
@@ -238,6 +241,8 @@ class HttpTransactionShell : public nsISupports {
   virtual void SetH2WSConnRefTaken() override;                                 \
   virtual bool ProxyConnectFailed() override;                                  \
   virtual int32_t GetProxyConnectResponseCode() override;                      \
+  virtual RefPtr<ProxyConnectResponseHead> GetProxyConnectResponseHead()       \
+      override;                                                                \
   virtual bool DataSentToChildProcess() override;                              \
   virtual nsHttpTransaction* AsHttpTransaction() override;                     \
   virtual HttpTransactionParent* AsHttpTransactionParent() override;           \

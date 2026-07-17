@@ -7,7 +7,6 @@ const { document: gDoc, XPCOMUtils } = browser.documentGlobal;
 
 ChromeUtils.defineESModuleGetters(this, {
   AboutWelcomeParent: "resource:///actors/AboutWelcomeParent.sys.mjs",
-  E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
 });
 
 const CONFIG = window.arguments[0];
@@ -83,22 +82,8 @@ function renderMultistage(ready) {
   window.AWWaitForNimbus = receive("WAIT_FOR_NIMBUS");
   window.AWEvaluateScreenTargeting = receive("EVALUATE_SCREEN_TARGETING");
   window.AWEvaluateAttributeTargeting = receive("EVALUATE_ATTRIBUTE_TARGETING");
-  window.AWPredictRemoteType = ({ browserEl, url }) => {
-    const originAttributes = E10SUtils.predictOriginAttributes({
-      browser: browserEl,
-    });
-    const loadContext = window.docShell.QueryInterface(Ci.nsILoadContext);
-    const useRemoteTabs = loadContext.useRemoteTabs;
-    const useRemoteSubframes = loadContext.useRemoteSubframes;
-
-    return E10SUtils.getRemoteTypeForURI(
-      url,
-      useRemoteTabs,
-      useRemoteSubframes,
-      E10SUtils.DEFAULT_REMOTE_TYPE,
-      null,
-      originAttributes
-    );
+  window.AWPredictRemoteType = ({ url }) => {
+    return ChromeUtils.predictRemoteTypeForURI(url, { window });
   };
 
   // Update styling to be compatible with about:welcome.

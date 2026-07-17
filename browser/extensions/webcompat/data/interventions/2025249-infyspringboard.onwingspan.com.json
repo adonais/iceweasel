@@ -3,7 +3,7 @@
   "bugs": {
     "2025249": {
       "issue": "firefox-blocked-completely",
-      "matches": ["*://infyspringboard.onwingspan.com/*"]
+      "matches": ["*://*.onwingspan.com/*"]
     }
   },
   "css": {

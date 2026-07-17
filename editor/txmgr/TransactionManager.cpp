@@ -419,7 +419,7 @@ nsresult TransactionManager::BeginTransaction(nsITransaction* aTransaction,
                                               nsISupports* aData) {
   // XXX: POSSIBLE OPTIMIZATION
   //      We could use a factory that pre-allocates/recycles transaction items.
-  RefPtr<TransactionItem> transactionItem = new TransactionItem(aTransaction);
+  RefPtr transactionItem = MakeRefPtr<TransactionItem>(aTransaction);
 
   if (aData) {
     nsCOMArray<nsISupports>& data = transactionItem->GetData();

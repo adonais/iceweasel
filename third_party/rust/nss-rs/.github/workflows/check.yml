@@ -36,7 +36,7 @@ jobs:
           persist-credentials: false
 
       - id: toolchains
-        uses: mozilla/actions/toolchains@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+        uses: mozilla/actions/toolchains@2e46408d5c495e59a21e5e125e82008fad0d9408 # v1.1.7
 
   check:
     name: Run checks
@@ -79,14 +79,14 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: mozilla/actions/rust@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+      - uses: mozilla/actions/rust@2e46408d5c495e59a21e5e125e82008fad0d9408 # v1.1.7
         with:
           version: ${{ matrix.rust-toolchain }}
           components: ${{ matrix.rust-toolchain == 'stable' && 'llvm-tools' || '' }} ${{ matrix.rust-toolchain == 'nightly' && startsWith(matrix.os, 'ubuntu') && !endsWith(matrix.os, 'arm') && 'rust-src ' || '' }}
-          tools: ${{ matrix.rust-toolchain == 'stable' && 'cargo-llvm-cov' || '' }} ${{ matrix.rust-toolchain == 'nightly' && startsWith(matrix.os, 'ubuntu') && !endsWith(matrix.os, 'arm') && 'cargo-careful ' || '' }}
+          tools: ${{ matrix.rust-toolchain == 'stable' && 'cargo-llvm-cov' || '' }} ${{ matrix.rust-toolchain == 'nightly' && startsWith(matrix.os, 'ubuntu') && !endsWith(matrix.os, 'arm') && 'cargo-careful ' || '' }} cargo-hack
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: mozilla/actions/nss@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+      - uses: mozilla/actions/nss@2e46408d5c495e59a21e5e125e82008fad0d9408 # v1.1.7
         with:
           version-file: min_version.txt
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -95,6 +95,13 @@ jobs:
         run: |
           # shellcheck disable=SC2086
           cargo check $BUILD_TYPE --locked --all-targets
+
+      - name: Check feature powerset
+        run: |
+          # shellcheck disable=SC2086
+          # --locked is omitted: --no-dev-deps modifies the manifest, which can
+          # require lockfile re-resolution in a workspace.
+          cargo hack check $BUILD_TYPE --feature-powerset --no-dev-deps --exclude-features gecko --mutually-exclusive-features blapi,disable-encryption
 
       - name: Run tests and determine coverage
         env:
@@ -119,6 +126,19 @@ jobs:
             cargo $CAREFUL test $BUILD_TYPE --locked $TRIPLE
           fi
 
+      - name: Test feature powerset
+        run: |
+          # shellcheck disable=SC2086
+          cargo hack test $BUILD_TYPE --locked --feature-powerset --exclude-features gecko --mutually-exclusive-features blapi,disable-encryption
+
+      - name: Test blapi in FIPS mode
+        if: runner.os == 'Linux'
+        env:
+          TEST_FIXTURE_DB: ${{ github.workspace }}/test-fixture/db-fips
+        run: |
+          # shellcheck disable=SC2086
+          cargo test $BUILD_TYPE --locked --features blapi --test aead_fips
+
       - name: CodeCov Windows workaround
         if: ${{ startsWith(matrix.os, 'windows') && matrix.type == 'debug' && matrix.rust-toolchain == 'stable' }}
         run: |
@@ -126,7 +146,7 @@ jobs:
           mkdir -p C:/msys64/home/runneradmin/
           touch C:/msys64/home/runneradmin/.gitconfig
 
-      - uses: codecov/codecov-action@57e3a136b779b570ffcdbf80b3bdc90e7fab3de2 # v6.0.0
+      - uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
         with:
           files: codecov.json
           fail_ci_if_error: false
@@ -152,7 +172,7 @@ jobs:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           persist-credentials: false
-      - uses: mozilla/actions/rust@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+      - uses: mozilla/actions/rust@2e46408d5c495e59a21e5e125e82008fad0d9408 # v1.1.7
         with:
           version: stable
           tools: cargo-hack
@@ -179,6 +199,58 @@ jobs:
           minimum-nss-version: ${{ steps.nss-version.outputs.minimum }}
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
+  check-distro:
+    name: Check with system NSS on ${{ matrix.name }}
+    runs-on: ubuntu-24.04
+    # Tests the pkg-config codepath against distro-packaged NSS. Some distros
+    # omit -L for default library search paths (e.g., /usr/lib64 on Fedora/RHEL),
+    # which the Ubuntu CI runners don't exercise.
+    # Allow failures in merge queue in case distro NSS lags our minimum version.
+    continue-on-error: ${{ github.event_name == 'merge_group' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Fedora
+            container: fedora@sha256:498c452f32a739b61f0ef215bce9924ebc4866cbe44710f58157d77723b7a6d2
+            install: dnf install -y git nss-devel clang-devel pkgconf-pkg-config gcc curl
+          - name: openSUSE Tumbleweed
+            container: opensuse/tumbleweed@sha256:003da6756e3daced6f62ece3d6dc436d21572fb05e558172fc552b6aa1b044ab
+            install: zypper install -y --no-recommends git mozilla-nss-devel clang-devel pkg-config gcc curl
+          - name: Arch Linux
+            container: archlinux@sha256:1047e6e7878d58e4ee47e1cd6459a32fab41246b0efc4109e11b7ef16f50b14d
+            install: pacman -Syu --noconfirm git nss clang pkgconf gcc curl
+    defaults:
+      run:
+        shell: sh
+    container:
+      image: ${{ matrix.container }}
+    steps:
+      - name: Install system dependencies (${{ matrix.name }})
+        env:
+          INSTALL: ${{ matrix.install }}
+        run: $INSTALL
+
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Install Rust
+        run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- --default-toolchain stable --profile minimal -y
+
+      - name: Check
+        run: |
+          . "$HOME/.cargo/env"
+          cargo check --locked --all-targets
+
+      - name: Check feature powerset
+        run: |
+          . "$HOME/.cargo/env"
+          cargo install cargo-hack --locked
+          # --locked is omitted: --no-dev-deps modifies the manifest, which can
+          # require lockfile re-resolution.
+          cargo hack check --feature-powerset --no-dev-deps --exclude-features gecko --mutually-exclusive-features blapi,disable-encryption
+
   check-vm:
     name: Run checks for VM-only platforms
     runs-on: ubuntu-24.04
@@ -190,9 +262,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        # TODO: Re-enable openbsd once OpenBSD > 7.8 ships; nss-3.101 (the version in 7.8) is too old.
-        # TODO: Re-enable NetBSD once NetBSD > 10.1 ships with NSS >= 3.121.
-        os: [freebsd] # NSS package on 'solaris' is too old.
+        os: [freebsd, netbsd, openbsd] # NSS package on 'solaris' is too old.
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
@@ -201,4 +271,3 @@ jobs:
         with:
           platform: ${{ matrix.os }}
           codecov-token: ${{ secrets.CODECOV_TOKEN }} # zizmor: ignore[secrets-outside-env]
-

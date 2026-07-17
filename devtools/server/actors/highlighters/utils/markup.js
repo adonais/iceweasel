@@ -158,7 +158,9 @@ class CanvasFrameAnonymousContentHelper {
   destroy() {
     this.#remove();
 
-    this.#highlighterEnv.off("window-ready", this.#onWindowReady);
+    if (this.#highlighterEnv) {
+      this.#highlighterEnv.off("window-ready", this.#onWindowReady);
+    }
     this.#highlighterEnv = this.#nodeBuilder = this.#content = null;
     this.anonymousContentDocument = null;
     this.anonymousContentWindow = null;

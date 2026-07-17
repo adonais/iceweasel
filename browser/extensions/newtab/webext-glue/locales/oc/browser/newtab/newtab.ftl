@@ -28,6 +28,59 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-windows =
+    .label = Fenèstra novèla
+home-homepage-new-tabs =
+    .label = Onglets novèls
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } linha
+           *[other] { $num } linhas
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Extension ({ $extension })
+home-restore-defaults-srd =
+    .label = Restablir los paramètres per defaut
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (per defaut)
+home-mode-choice-custom-srd =
+    .label = Adreças personalizadas…
+home-mode-choice-blank-srd =
+    .label = Pagina voida
+home-prefs-shortcuts-header-srd =
+    .label = Acorchis
+home-prefs-shortcuts-select =
+    .aria-label = Acorchis
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Acorchis pairinejats
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Articles pairinejats
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Paginas visitadas
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Marcapaginas
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Telecargament mai recent
+home-prefs-recent-activity-header-srd =
+    .label = Activitat recenta
+home-prefs-recent-activity-select =
+    .aria-label = Activitat recenta
+home-prefs-weather-header-srd =
+    .label = Metèo
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -127,6 +180,8 @@ newtab-menu-delete-pocket = Suprimir de { -pocket-brand-name }
 newtab-menu-archive-pocket = Archivar dins { -pocket-brand-name }
 newtab-menu-show-privacy-info = Nòstres esponsòrs e vòstra vida privada
 newtab-menu-about-fakespot = A prepaus de { -fakespot-brand-name }
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Ne saber mai
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
@@ -452,9 +507,6 @@ newtab-shortcuts-highlight-subtitle = Apondre un acorchi per gardar vòstres sit
 newtab-widget-lists-label-new =
     .label = Nòu
 newtab-widget-lists-menu-create = Crear una lista novèla
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Lista novèla
 
 ## Strings introduced by the Nova redesign of the Timer widget
 

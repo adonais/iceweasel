@@ -2247,10 +2247,12 @@ class MacroAssembler : public MacroAssemblerSpecific {
                                  Register rhsHi, Register output, bool isAdd)
       DEFINED_ON(x64, arm64, riscv64, loong64, mips64);
 
-  // Produces the top 64 bits of the 128-bit value `RAX *widen rhs`.  The result
-  // will be in RAX.  RDX is trashed.  `rhs` may not be RAX or RDX.  Callers
-  // must preserve live values in RAX and RDX themselves.
-  inline void wasmMulI64WideHI64(Register rhs, bool isSigned) DEFINED_ON(x64);
+  // Produces the top 64 bits of the 128-bit value `lhs *widen rhs`.  Only used
+  // on 64-bit targets.  On x64, `lhs` must be RAX, `rhs` must be RDX, and all
+  // 5 registers must be distinct.
+  inline void wasmMulI64WideHI64(Register lhs, Register rhs, Register temp0,
+                                 Register temp1, Register output, bool isSigned)
+      DEFINED_ON(x64);
 
   // The same, but for all other 64-bit targets.  There are no restrictions on
   // what the registers may be.
@@ -3801,16 +3803,16 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // Scalar::Int64.
   void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase,
                 Register ptr, Register ptrScratch, AnyRegister output)
-      DEFINED_ON(arm, loong64, riscv64, mips64);
+      DEFINED_ON(arm, loong64, mips64);
   void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase,
                    Register ptr, Register ptrScratch, Register64 output)
-      DEFINED_ON(arm, mips64, loong64, riscv64);
+      DEFINED_ON(arm, mips64, loong64);
   void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
                  Register memoryBase, Register ptr, Register ptrScratch)
-      DEFINED_ON(arm, loong64, riscv64, mips64);
+      DEFINED_ON(arm, loong64, mips64);
   void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
                     Register memoryBase, Register ptr, Register ptrScratch)
-      DEFINED_ON(arm, mips64, loong64, riscv64);
+      DEFINED_ON(arm, mips64, loong64);
 
   // These accept general memoryBase + ptr + offset (in `access`); the offset is
   // always smaller than the guard region.  They will insert an additional add
@@ -3818,13 +3820,14 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // register for the offset if the offset is large, and instructions to set it
   // up.
   void wasmLoad(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                Register ptr, AnyRegister output) DEFINED_ON(arm64);
+                Register ptr, AnyRegister output) DEFINED_ON(arm64, riscv64);
   void wasmLoadI64(const wasm::MemoryAccessDesc& access, Register memoryBase,
-                   Register ptr, Register64 output) DEFINED_ON(arm64);
+                   Register ptr, Register64 output) DEFINED_ON(arm64, riscv64);
   void wasmStore(const wasm::MemoryAccessDesc& access, AnyRegister value,
-                 Register memoryBase, Register ptr) DEFINED_ON(arm64);
+                 Register memoryBase, Register ptr) DEFINED_ON(arm64, riscv64);
   void wasmStoreI64(const wasm::MemoryAccessDesc& access, Register64 value,
-                    Register memoryBase, Register ptr) DEFINED_ON(arm64);
+                    Register memoryBase, Register ptr)
+      DEFINED_ON(arm64, riscv64);
 
   // `ptr` will always be updated.
   void wasmUnalignedLoad(const wasm::MemoryAccessDesc& access,
@@ -3989,20 +3992,26 @@ class MacroAssembler : public MacroAssemblerSpecific {
   // This function takes care of loading the pointer to the current instance
   // as the implicit first argument. It preserves instance and pinned registers.
   // (instance & pinned regs are non-volatile registers in the system ABI).
-  CodeOffset wasmCallBuiltinInstanceMethod(const wasm::CallSiteDesc& desc,
-                                           const ABIArg& instanceArg,
-                                           wasm::SymbolicAddress builtin,
-                                           wasm::FailureMode failureMode,
-                                           wasm::Trap failureTrap);
+  // Offsets for stackmaps for the call and (if required) for the following
+  // failure trap, are returned.
+  void wasmCallBuiltinInstanceMethod(const wasm::CallSiteDesc& desc,
+                                     const ABIArg& instanceArg,
+                                     wasm::SymbolicAddress builtin,
+                                     wasm::FailureMode failureMode,
+                                     wasm::Trap failureTrap,
+                                     CodeOffset* callStackMapKey,
+                                     CodeOffset* trapStackMapKey);
 
   // Performs the appropriate check based on the instance call's FailureMode,
   // and traps if the check fails. The resultRegister should likely be
   // ReturnReg, but this depends on whatever you do with registers immediately
-  // after the call.
-  void wasmTrapOnFailedInstanceCall(Register resultRegister,
-                                    wasm::FailureMode failureMode,
-                                    wasm::Trap failureTrap,
-                                    const wasm::TrapSiteDesc& trapSiteDesc);
+  // after the call. In the case where a trap is generated, the returned
+  // CodeOffset points at the first byte of the instruction following the trap,
+  // and that is where a stackmap, if needed, should be keyed.  If a trap is not
+  // generated, a CodeOffset satisfying !CodeOffset::bound() is returned.
+  CodeOffset wasmTrapOnFailedInstanceCall(
+      Register resultRegister, wasm::FailureMode failureMode,
+      wasm::Trap failureTrap, const wasm::TrapSiteDesc& trapSiteDesc);
 
   // Performs a bounds check for ranged wasm operations like memory.fill or
   // array.fill. This handles the bizarre edge case in the wasm spec where a

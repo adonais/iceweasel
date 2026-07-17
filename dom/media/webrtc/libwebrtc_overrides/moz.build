@@ -16,7 +16,6 @@ EXPORTS.libwebrtc_overrides.api.transport += [
     "api/transport/network_control.h",
 ]
 EXPORTS.libwebrtc_overrides.call += [
-    "call/call_basic_stats.h",
     "call/video_receive_stream.h",
     "call/video_send_stream.h",
 ]
@@ -41,10 +40,6 @@ EXPORTS.libwebrtc_overrides.rtc_base += [
 ]
 EXPORTS.libwebrtc_overrides.X11.extensions += [
     "X11/extensions/Xrandr.h",
-]
-
-UNIFIED_SOURCES += [
-    "call/call_basic_stats.cc",
 ]
 
 if CONFIG["OS_TARGET"] == "OpenBSD":

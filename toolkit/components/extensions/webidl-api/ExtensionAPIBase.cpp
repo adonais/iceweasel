@@ -137,14 +137,22 @@ void ExtensionAPIBase::CallWebExtMethod(JSContext* aCx,
   }
 }
 
-void ExtensionAPIBase::CallWebExtMethodReturnsString(
+void ExtensionAPIBase::CallWebExtMethodReturnsStringInternal(
     JSContext* aCx, const nsAString& aApiMethod,
-    const dom::Sequence<JS::Value>& aArgs, nsAString& aRetVal,
-    ErrorResult& aRv) {
+    const dom::Sequence<JS::Value>& aArgs, const bool aRetOptional,
+    nsAString& aRetVal, ErrorResult& aRv) {
   JS::Rooted<JS::Value> retval(aCx);
   auto request = CallSyncFunction(aApiMethod);
   request->Run(GetGlobalObject(), aCx, aArgs, &retval, aRv);
   if (aRv.Failed()) {
+    return;
+  }
+
+  if (aRetOptional && retval.isNullOrUndefined()) {
+    // FunctionEntry in Schemas.sys.mjs accepts null and undefined as return
+    // values for optional types. WebIDL does not distinguish them for types
+    // marked optional (?), both map to null.
+    aRetVal.SetIsVoid(true);
     return;
   }
 
@@ -158,6 +166,40 @@ void ExtensionAPIBase::CallWebExtMethodReturnsString(
     ThrowUnexpectedError(aCx, aRv);
     return;
   }
+}
+
+void ExtensionAPIBase::CallWebExtMethodReturnsString(
+    JSContext* aCx, const nsAString& aApiMethod,
+    const dom::Sequence<JS::Value>& aArgs, nsAString& aRetVal,
+    ErrorResult& aRv) {
+  CallWebExtMethodReturnsStringInternal(aCx, aApiMethod, aArgs, false, aRetVal,
+                                        aRv);
+}
+
+void ExtensionAPIBase::CallWebExtMethodReturnsOptionalString(
+    JSContext* aCx, const nsAString& aApiMethod,
+    const dom::Sequence<JS::Value>& aArgs, nsAString& aRetVal,
+    ErrorResult& aRv) {
+  CallWebExtMethodReturnsStringInternal(aCx, aApiMethod, aArgs, true, aRetVal,
+                                        aRv);
+}
+
+bool ExtensionAPIBase::CallWebExtMethodReturnsBoolean(
+    JSContext* aCx, const nsAString& aApiMethod,
+    const dom::Sequence<JS::Value>& aArgs, ErrorResult& aRv) {
+  JS::Rooted<JS::Value> retval(aCx);
+  auto request = CallSyncFunction(aApiMethod);
+  request->Run(GetGlobalObject(), aCx, aArgs, &retval, aRv);
+  if (aRv.Failed()) {
+    return false;
+  }
+
+  if (NS_WARN_IF(!retval.isBoolean())) {
+    ThrowUnexpectedError(aCx, aRv);
+    return false;
+  }
+
+  return JS::ToBoolean(retval);
 }
 
 already_AddRefed<ExtensionPort> ExtensionAPIBase::CallWebExtMethodReturnsPort(

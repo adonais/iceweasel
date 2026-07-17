@@ -39,6 +39,7 @@ const lazy = XPCOMUtils.declareLazy({
   SearchSuggestionController:
     "moz-src:///toolkit/components/search/SearchSuggestionController.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarProviderInterventions:
     "moz-src:///browser/components/urlbar/UrlbarProviderInterventions.sys.mjs",
   UrlbarProviderOpenTabs:
@@ -47,8 +48,6 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/urlbar/UrlbarProviderSearchTips.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
   setTimeout: "resource://gre/modules/Timer.sys.mjs",
@@ -274,7 +273,7 @@ export var UrlbarUtils = {
      * @typedef {object} LocalSearchMode
      * @property {Values<typeof this.RESULT_SOURCE>} source
      *   The source which the search mode will search.
-     * @property {Values<typeof lazy.UrlbarTokenizer.RESTRICT>} restrict
+     * @property {Values<typeof lazy.UrlbarShared.RESTRICT_TOKENS>} restrict
      *   The restrict token that is associated with the search (*, %, $ etc).
      * @property {string} icon
      *   The URL of the icon associated with the search mode in preferences.
@@ -290,7 +289,7 @@ export var UrlbarUtils = {
     return /** @type {LocalSearchMode[]} */ ([
       {
         source: this.RESULT_SOURCE.BOOKMARKS,
-        restrict: lazy.UrlbarTokenizer.RESTRICT.BOOKMARK,
+        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.BOOKMARK,
         icon: "chrome://browser/skin/bookmark.svg",
         pref: "shortcuts.bookmarks",
         telemetryLabel: "bookmarks",
@@ -298,7 +297,7 @@ export var UrlbarUtils = {
       },
       {
         source: this.RESULT_SOURCE.TABS,
-        restrict: lazy.UrlbarTokenizer.RESTRICT.OPENPAGE,
+        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.OPENPAGE,
         icon: "chrome://browser/skin/tabs.svg",
         pref: "shortcuts.tabs",
         telemetryLabel: "tabs",
@@ -306,7 +305,7 @@ export var UrlbarUtils = {
       },
       {
         source: this.RESULT_SOURCE.HISTORY,
-        restrict: lazy.UrlbarTokenizer.RESTRICT.HISTORY,
+        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.HISTORY,
         icon: "chrome://browser/skin/history.svg",
         pref: "shortcuts.history",
         telemetryLabel: "history",
@@ -314,7 +313,7 @@ export var UrlbarUtils = {
       },
       {
         source: this.RESULT_SOURCE.ACTIONS,
-        restrict: lazy.UrlbarTokenizer.RESTRICT.ACTION,
+        restrict: lazy.UrlbarShared.RESTRICT_TOKENS.ACTION,
         icon: "chrome://browser/skin/quickactions.svg",
         pref: "shortcuts.actions",
         telemetryLabel: "actions",
@@ -1851,6 +1850,9 @@ export var UrlbarUtils = {
         if (result.providerName == "UrlbarProviderTabToSearch") {
           return "tabtosearch";
         }
+        if (result.providerName == "UrlbarProviderAiChat") {
+          return "ai_search_fallback";
+        }
         if (result.payload.suggestion) {
           let type = result.payload.trending ? "trending" : "searchsuggestion";
           if (result.isRichSuggestion) {
@@ -1909,16 +1911,24 @@ export var UrlbarUtils = {
         }
         return "dynamic";
       case this.RESULT_TYPE.RESTRICT:
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.BOOKMARK) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.BOOKMARK
+        ) {
           return "restrict_keyword_bookmarks";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.OPENPAGE) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.OPENPAGE
+        ) {
           return "restrict_keyword_tabs";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.HISTORY) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.HISTORY
+        ) {
           return "restrict_keyword_history";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.ACTION) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.ACTION
+        ) {
           return "restrict_keyword_actions";
         }
         break;
@@ -2150,6 +2160,9 @@ export var UrlbarUtils = {
             ? "recent_search"
             : "search_history";
         }
+        if (result.providerName === "UrlbarProviderAiChat") {
+          return "ai_search_fallback";
+        }
         if (result.payload.suggestion) {
           let type = result.payload.trending
             ? "trending_search"
@@ -2213,16 +2226,24 @@ export var UrlbarUtils = {
         }
         return checkForSubType("history", result);
       case this.RESULT_TYPE.RESTRICT:
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.BOOKMARK) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.BOOKMARK
+        ) {
           return "restrict_keyword_bookmarks";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.OPENPAGE) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.OPENPAGE
+        ) {
           return "restrict_keyword_tabs";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.HISTORY) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.HISTORY
+        ) {
           return "restrict_keyword_history";
         }
-        if (result.payload.keyword === lazy.UrlbarTokenizer.RESTRICT.ACTION) {
+        if (
+          result.payload.keyword === lazy.UrlbarShared.RESTRICT_TOKENS.ACTION
+        ) {
           return "restrict_keyword_actions";
         }
         break;
@@ -3411,9 +3432,9 @@ export class UrlbarQueryContext {
     // an origin but we've determined a search is allowed, then allow it.
     if (this.tokens.length == 1) {
       switch (this.tokens[0].type) {
-        case lazy.UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN:
+        case lazy.UrlbarShared.TOKEN_TYPE.POSSIBLE_ORIGIN:
           return false;
-        case lazy.UrlbarTokenizer.TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED:
+        case lazy.UrlbarShared.TOKEN_TYPE.POSSIBLE_ORIGIN_BUT_SEARCH_ALLOWED:
           return true;
       }
     }
@@ -3726,6 +3747,85 @@ export class UrlbarProvider {
   onSelection(_result, _element) {}
 
   /**
+   * @typedef {object} ViewTemplate
+   *   A plain object that describes the DOM subtree for a dynamic result type.
+   *   When a dynamic result is shown in the urlbar view, its type's view template
+   *   is used to construct the part of the view that represents the result.
+   *
+   * @property {ViewTemplateElement[]} children
+   *   The elements that make up the subtree for the dynamic result type.
+   */
+
+  /**
+   * @typedef {object} ViewTemplateElement
+   *   Describes the DOM subtree for the given dynamic result type.
+   *   It should be a tree-like nested structure with each object in the nesting
+   *   representing a DOM element to be created.  This tree-like structure is
+   *   achieved using the `children` property described below.  Each object in
+   *   the structure may include the following properties:
+   *
+   * @property {string} tag
+   *   The tag name of the object.  It is required for all objects in the
+   *   structure except the root object and declares the kind of element that
+   *   will be created for the object: span, div, img, etc.
+   *
+   * @property {string} [name]
+   *   The name of the object. This value is required if you need to update
+   *   the object's DOM element at query time. It's also helpful but not
+   *   required if you need to style the element. When defined, it serves two
+   *   important functions:
+   *   (1) The element created for the object will automatically have a class
+   *       named `urlbarView-dynamic-${dynamicType}-${name}`, where
+   *       `dynamicType` is the name of the dynamic result type.  The element
+   *       will also automatically have an attribute "name" whose value is
+   *       this name.  The class and attribute allow the element to be styled
+   *       in CSS.
+   *   (2) The name is used when updating the view.  See
+   *       UrlbarProvider.getViewUpdate().
+   *   Names must be unique within a view template, but they don't need to be
+   *   globally unique.  i.e., two different view templates can use the same
+   *   names, and other DOM elements can use the same names in their IDs and
+   *   classes.  The name also suffixes the dynamic element's ID: an element
+   *   with name `data` will get the ID `urlbarView-row-{unique number}-data`.
+   *   If there is no name provided for the root element, the root element
+   *   will not get an ID.
+   *
+   * @property {object} [attributes]
+   *   An optional mapping from attribute names to values.  For each
+   *   name-value pair, an attribute is added to the element created for the
+   *   object. The `id` attribute is reserved and cannot be set by the
+   *   provider. Element IDs are passed back to the provider in getViewUpdate
+   *   if they are needed.
+   *
+   * @property {ViewTemplateElement[]} [children]
+   *   An optional list of children.  Each item in the array must be an object
+   *   as described here.  For each item, a child element as described by the
+   *   item is created and added to the element created for the parent object.
+   *
+   * @property {string[]} [classList]
+   *   An optional list of classes.  Each class will be added to the element
+   *   created for the object by calling element.classList.add().
+   *
+   * @property {boolean} [overflowable]
+   *   If true, the element's overflow status will be tracked in order to
+   *   fade it out when needed.
+   */
+
+  /**
+   * This is called only for dynamic result types, when the urlbar view creates
+   * the view of one of the results of the provider.
+   *
+   * @param {UrlbarResult} _result
+   *   The result whose view will be created.
+   * @returns {?ViewTemplate}
+   *   The view template describing the DOM to build for the result,
+   *   or null if the provider doesn't define one.
+   */
+  getViewTemplate(_result) {
+    return null;
+  }
+
+  /**
    * This is called only for dynamic result types, when the urlbar view updates
    * the view of one of the results of the provider.  It should return an object
    * describing the view update that looks like this:
@@ -3756,7 +3856,7 @@ export class UrlbarProvider {
    * The object should contain a property for each element to update in the
    * dynamic result type view.  The names of these properties are the names
    * declared in the view template of the dynamic result type; see
-   * UrlbarView.addDynamicViewTemplate().  The values are similar to the nested
+   * UrlbarProvider.getViewTemplate().  The values are similar to the nested
    * objects specified in the view template but not quite the same; see below.
    * For each property, the element in the view subtree with the specified name
    * is updated according to the object in the property's value.  If an

@@ -75,6 +75,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
     return true;
   });
   assert.sameValue(result, 1, "find() returns previous found value");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

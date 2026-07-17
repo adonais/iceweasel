@@ -15,6 +15,7 @@
 #include "nsGkAtoms.h"
 #include "nsIContentInlines.h"
 #include "nsIWidget.h"
+#include "nsPIDOMWindowInlines.h"
 #ifdef XP_MACOSX
 #  include "mozilla/EventDispatcher.h"
 #  include "mozilla/dom/Event.h"
@@ -24,8 +25,7 @@
 namespace mozilla::dom {
 
 HTMLObjectElement::HTMLObjectElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    FromParser aFromParser)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLFormControlElement(std::move(aNodeInfo),
                                       FormControlType::Object),
       mIsDoneAddingChildren(!aFromParser) {

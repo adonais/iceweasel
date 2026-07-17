@@ -64,6 +64,9 @@ class APZCTreeManagerParent final : public PAPZCTreeManagerParent {
 
   mozilla::ipc::IPCResult RecvSetLongTapEnabled(const bool& aTapGestureEnabled);
 
+  mozilla::ipc::IPCResult RecvNotifyApzAwareListenerAdded(
+      const ScrollableLayerGuid& aGuid);
+
   void ActorDestroy(ActorDestroyReason aWhy) override;
 
  private:

@@ -4,7 +4,6 @@ support-files = [
   "audio.ogg",
   "dummy_page.html",
   "file_mediaPlayback.html",
-  "test_process_flags_chrome.html",
   "helper_origin_attrs_testing.js",
   "file_about_srcdoc.html",
   "file_reader_mode_article.html",
@@ -96,11 +95,6 @@ support-files = [
 tags = "vertical-tabs"
 
 ["browser_e10s_about_process.js"]
-
-["browser_e10s_chrome_process.js"]
-skip-if = [
-  "debug", # Bug 1444565, Bug 1457887
-]
 
 ["browser_e10s_javascript.js"]
 
@@ -268,8 +262,8 @@ tags = "vertical-tabs"
 ["browser_multiselect_tabs_move_to_another_window_drag.js"]
 tags = "vertical-tabs"
 skip-if = [
-  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1940606
+  "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
 ]
 
 ["browser_multiselect_tabs_move_to_new_window_contextmenu.js"]
@@ -369,8 +363,8 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1934364
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1934364
   "os == 'win' && os_version == '11.26100' && arch == 'x86'", # Bug 1934364
-  "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1934364
   "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # Bug 1934364
+  "os == 'win' && os_version == '11.26200' && arch == 'x86'", # Bug 1934364
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # Bug 1934364
 ]
 
@@ -627,8 +621,8 @@ tags = "vertical-tabs"
 ["browser_tab_manager_groups.js"]
 tags = "vertical-tabs"
 skip-if = [
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1994900
   "opt && standalone", # Bug 2028649
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1994900
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && asan", # Bug 2028660
 ]
 
@@ -655,14 +649,12 @@ tags = "vertical-tabs"
 ["browser_tab_preview.js"]
 tags = "vertical-tabs"
 skip-if = [
-  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 2010318
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11'", # Bug 1980036
+  "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 2010318
   "os == 'mac' && os_version == '10.15' && arch == 'x86_64'", # Bug 1980036
-  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", # # Bug 1980036;
-  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", # # Bug 1980036;
+  "os == 'win' && os_version == '11.26100' && arch == 'x86_64'", #  Bug 1980036;
+  "os == 'win' && os_version == '11.26200' && arch == 'x86_64'", #  Bug 1980036;
 ]
-
-["browser_tabs_space_consistent.js"]
 
 ["browser_tab_splitview.js"]
 
@@ -685,6 +677,8 @@ skip-if = [
 support-files = ["file_withicon.html"]
 
 ["browser_tab_splitview_keyboard_focus.js"]
+
+["browser_tab_splitview_resize.js"]
 
 ["browser_tab_splitview_splitter_keyboard.js"]
 
@@ -719,6 +713,8 @@ tags = "vertical-tabs"
 ["browser_tabs_openURI_after_current.js"]
 
 ["browser_tabs_owner.js"]
+
+["browser_tabs_space_consistent.js"]
 
 ["browser_tabswitch_contextmenu.js"]
 tags = "vertical-tabs"

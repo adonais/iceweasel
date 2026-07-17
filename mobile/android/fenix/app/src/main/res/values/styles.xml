@@ -44,16 +44,11 @@
         <item name="mozacSelectCreditCardHeaderTextStyle" tools:ignore="UnusedResources">@style/SelectPromptHeaderTextStyle</item>
         <item name="mozacSelectAddressHeaderTextStyle" tools:ignore="UnusedResources">@style/SelectPromptHeaderTextStyle</item>
 
-        <item name="mozacProtectionsDashboardBackground" tools:ignore="UnusedResources">@color/protections_dashboard_background</item>
-        <item name="mozacProtectionsDashboardTextPrimary" tools:ignore="UnusedResources">@color/protections_dashboard_text_primary</item>
-        <item name="mozacProtectionsDashboardTextAccent" tools:ignore="UnusedResources">@color/protections_dashboard_text_accent</item>
         <item name="mozacProtectionsDashboardChipBackground" tools:ignore="UnusedResources">@color/protections_dashboard_chip_background</item>
         <item name="mozacProtectionsDashboardChipText" tools:ignore="UnusedResources">@color/protections_dashboard_chip_text</item>
-        <item name="mozacProtectionsDashboardWaveGradient1" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient1</item>
-        <item name="mozacProtectionsDashboardWaveGradient2" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient2</item>
-        <item name="mozacProtectionsDashboardWaveGradient3" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient3</item>
-        <item name="mozacProtectionsDashboardWaveGradient4" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient4</item>
         <item name="mozacProtectionsDashboardProgressBar" tools:ignore="UnusedResources">@color/protections_dashboard_progress_bar</item>
+        <item name="mozacProtectionsDashboardGradientStart" tools:ignore="UnusedResources">@color/protections_dashboard_gradient_start</item>
+        <item name="mozacProtectionsDashboardGradientEnd" tools:ignore="UnusedResources">@color/protections_dashboard_gradient_end</item>
 
         <!-- Material3 -->
         <item name="colorPrimary">@color/fx_mobile_primary</item>
@@ -81,6 +76,16 @@
         <item name="colorOnError">@color/fx_mobile_on_error</item>
         <item name="colorErrorContainer">@color/fx_mobile_error_container</item>
         <item name="colorOnErrorContainer">@color/fx_mobile_on_error_container</item>
+        <item name="colorInformation">@color/fx_mobile_information</item>
+        <item name="colorOnInformation">@color/fx_mobile_on_information</item>
+        <item name="colorInformationContainer">@color/fx_mobile_information_container</item>
+        <item name="colorOnInformationContainer">@color/fx_mobile_on_information_container</item>
+        <item name="colorSuccess">@color/fx_mobile_success</item>
+        <item name="colorOnSuccess">@color/fx_mobile_on_success</item>
+        <item name="colorWarning">@color/fx_mobile_warning</item>
+        <item name="colorOnWarning">@color/fx_mobile_on_warning</item>
+        <item name="colorWarningContainer">@color/fx_mobile_warning_container</item>
+        <item name="colorOnWarningContainer">@color/fx_mobile_on_warning_container</item>
         <item name="colorOutline">@color/fx_mobile_outline</item>
         <item name="colorOutlineVariant">@color/fx_mobile_outline_variant</item>
         <item name="colorSurfaceBright">@color/fx_mobile_surface_bright</item>
@@ -90,18 +95,10 @@
         <item name="colorSurfaceContainerHighest">@color/fx_mobile_surface_container_highest</item>
         <item name="colorSurfaceContainerLow">@color/fx_mobile_surface_container_low</item>
         <item name="colorSurfaceContainerLowest">@color/fx_mobile_surface_container_lowest</item>
-        <item name="colorPrimaryFixed">@color/photonViolet05</item>
-        <item name="colorPrimaryFixedDim">@color/fx_mobile_primary_fixed_dim</item>
-        <item name="colorOnPrimaryFixed">@color/photonDarkGrey90</item>
-        <item name="colorOnPrimaryFixedVariant">@color/fx_mobile_on_primary_fixed_variant</item>
-        <item name="colorSecondaryFixed">@color/fx_mobile_secondary_fixed</item>
-        <item name="colorSecondaryFixedDim">@color/fx_mobile_secondary_fixed_dim</item>
-        <item name="colorOnSecondaryFixed">@color/fx_mobile_on_secondary_fixed</item>
-        <item name="colorOnSecondaryFixedVariant">@color/fx_mobile_on_secondary_fixed_variant</item>
-        <item name="colorTertiaryFixed">@color/fx_mobile_tertiary_fixed</item>
-        <item name="colorTertiaryFixedDim">@color/fx_mobile_tertiary_fixed_dim</item>
-        <item name="colorOnTertiaryFixed">@color/fx_mobile_on_tertiary_fixed</item>
-        <item name="colorOnTertiaryFixedVariant">@color/fx_mobile_on_tertiary_fixed_variant</item>
+        <item name="colorAutofillText">@color/fx_mobile_autofill_text</item>
+        <item name="colorSelectedText">@color/fx_mobile_selected_text</item>
+        <item name="colorIconPrivate">@color/fx_mobile_icon_private</item>
+        <item name="scrim">@color/fx_mobile_scrim</item>
 
         <!-- Design system color attributes -->
 
@@ -110,7 +107,6 @@
         <item name="layer2">@color/fx_mobile_layer_color_2</item>
         <!-- Search -->
         <item name="layer3">@color/fx_mobile_layer_color_3</item>
-        <item name="scrim">@color/fx_mobile_layer_color_scrim</item>
 
         <!-- Action -->
         <!-- Primary button in a disabled state -->
@@ -126,8 +122,8 @@
         <!-- Icon inverted (on color) -->
         <item name="iconOnColor">@color/fx_mobile_icon_color_oncolor</item>
 
-        <!-- Active thumb color & Active track color (30% transparency) -->
-        <item name="colorControlActivated">@color/accent_high_contrast_normal_theme</item>
+        <!-- Tint for activated controls (selected radio button, checked checkbox, switch thumb, seek bar, progress bar) -->
+        <item name="colorControlActivated">@color/fx_mobile_primary</item>
         <!-- Inactive thumb color -->
         <item name="colorSwitchThumbNormal">@color/toggle_off_knob_normal_theme</item>
         <!-- Inactive track color(30% transparency) -->
@@ -167,8 +163,8 @@
         <item name="bottomBarBackgroundTop">@drawable/home_bottom_bar_background_top</item>
         <item name="mozac_ic_private_mode_circle_fill_background_color">@android:color/transparent</item>
         <item name="mozac_ic_private_mode_circle_fill_icon_color">@color/fx_mobile_on_surface</item>
-        <item name="mozac_ic_shield_slash_bg_fill_critical">@color/fx_mobile_icon_color_primary</item>
-        <item name="mozac_ic_shield_slash_fill_critical">@color/fx_mobile_icon_color_critical</item>
+        <item name="mozac_ic_shield_slash_bg_fill_critical">?attr/colorOnSurface</item>
+        <item name="mozac_ic_shield_slash_fill_critical">?attr/colorError</item>
 
         <item name="tabCounterTintColor">?attr/colorOnSurface</item>
     </style>
@@ -304,7 +300,6 @@
         <item name="searchViewStyle">@style/SearchViewStyle</item>
         <item name="android:textColorLink">@color/fx_mobile_private_tertiary</item>
         <item name="preferenceTheme">@style/PreferenceTheme</item>
-        <item name="checkboxStyle">@style/App.Widget.CompoundButton.CheckBox</item>
         <item name="autoCompleteTextViewStyle">@style/AutoCompleteTextViewStyle</item>
         <item name="android:windowContentTransitions">true</item>
         <item name="android:windowAnimationStyle">@style/WindowAnimationTransition</item>
@@ -313,7 +308,7 @@
         <item name="android:windowBackground">@color/fx_mobile_private_surface</item>
         <item name="android:colorEdgeEffect">@color/accent_private_theme</item>
         <item name="android:colorAccent">@color/fx_mobile_private_on_surface</item>
-        <item name="colorControlActivated">@color/accent_high_contrast_private_theme</item>
+        <item name="colorControlActivated">@color/fx_mobile_private_primary</item>
         <item name="android:textColorPrimary">@color/state_list_text_color</item>
         <item name="android:textColorSecondary">@color/secondary_state_list_text_color</item>
         <item name="materialAlertDialogTheme">@style/BaseDialogStyle.Private</item>
@@ -329,16 +324,11 @@
         <item name="mozacSelectCreditCardHeaderTextStyle" tools:ignore="UnusedResources">@style/SelectPromptHeaderTextStyle</item>
         <item name="mozacSelectAddressHeaderTextStyle" tools:ignore="UnusedResources">@style/SelectPromptHeaderTextStyle</item>
 
-        <item name="mozacProtectionsDashboardBackground" tools:ignore="UnusedResources">@color/protections_dashboard_background_private</item>
-        <item name="mozacProtectionsDashboardTextPrimary" tools:ignore="UnusedResources">@color/protections_dashboard_text_primary_private</item>
-        <item name="mozacProtectionsDashboardTextAccent" tools:ignore="UnusedResources">@color/protections_dashboard_text_accent_private</item>
         <item name="mozacProtectionsDashboardChipBackground" tools:ignore="UnusedResources">@color/protections_dashboard_chip_background_private</item>
         <item name="mozacProtectionsDashboardChipText" tools:ignore="UnusedResources">@color/protections_dashboard_chip_text_private</item>
-        <item name="mozacProtectionsDashboardWaveGradient1" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient1_private</item>
-        <item name="mozacProtectionsDashboardWaveGradient2" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient2_private</item>
-        <item name="mozacProtectionsDashboardWaveGradient3" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient3_private</item>
-        <item name="mozacProtectionsDashboardWaveGradient4" tools:ignore="UnusedResources">@color/protections_dashboard_wave_gradient4_private</item>
         <item name="mozacProtectionsDashboardProgressBar" tools:ignore="UnusedResources">@color/protections_dashboard_progress_bar_private</item>
+        <item name="mozacProtectionsDashboardGradientStart" tools:ignore="UnusedResources">@color/protections_dashboard_gradient_start_private</item>
+        <item name="mozacProtectionsDashboardGradientEnd" tools:ignore="UnusedResources">@color/protections_dashboard_gradient_end_private</item>
 
         <!-- Material3 -->
         <item name="colorPrimary">@color/fx_mobile_private_primary</item>
@@ -366,6 +356,16 @@
         <item name="colorOnError">@color/fx_mobile_private_on_error</item>
         <item name="colorErrorContainer">@color/fx_mobile_private_error_container</item>
         <item name="colorOnErrorContainer">@color/fx_mobile_private_on_error_container</item>
+        <item name="colorInformation">@color/fx_mobile_private_information</item>
+        <item name="colorOnInformation">@color/fx_mobile_private_on_information</item>
+        <item name="colorInformationContainer">@color/fx_mobile_private_information_container</item>
+        <item name="colorOnInformationContainer">@color/fx_mobile_private_on_information_container</item>
+        <item name="colorSuccess">@color/fx_mobile_private_success</item>
+        <item name="colorOnSuccess">@color/fx_mobile_private_on_success</item>
+        <item name="colorWarning">@color/fx_mobile_private_warning</item>
+        <item name="colorOnWarning">@color/fx_mobile_private_on_warning</item>
+        <item name="colorWarningContainer">@color/fx_mobile_private_warning_container</item>
+        <item name="colorOnWarningContainer">@color/fx_mobile_private_on_warning_container</item>
         <item name="colorOutline">@color/fx_mobile_private_outline</item>
         <item name="colorOutlineVariant">@color/fx_mobile_private_outline_variant</item>
         <item name="colorSurfaceBright">@color/fx_mobile_private_surface_bright</item>
@@ -375,18 +375,10 @@
         <item name="colorSurfaceContainerHighest">@color/fx_mobile_private_surface_container_highest</item>
         <item name="colorSurfaceContainerLow">@color/fx_mobile_private_surface_container_low</item>
         <item name="colorSurfaceContainerLowest">@color/fx_mobile_private_surface_container_lowest</item>
-        <item name="colorPrimaryFixed">@color/photonViolet05</item>
-        <item name="colorPrimaryFixedDim">@color/fx_mobile_private_primary_fixed_dim</item>
-        <item name="colorOnPrimaryFixed">@color/photonDarkGrey90</item>
-        <item name="colorOnPrimaryFixedVariant">@color/fx_mobile_private_on_primary_fixed_variant</item>
-        <item name="colorSecondaryFixed">@color/fx_mobile_private_secondary_fixed</item>
-        <item name="colorSecondaryFixedDim">@color/fx_mobile_private_secondary_fixed_dim</item>
-        <item name="colorOnSecondaryFixed">@color/fx_mobile_private_on_secondary_fixed</item>
-        <item name="colorOnSecondaryFixedVariant">@color/fx_mobile_private_on_secondary_fixed_variant</item>
-        <item name="colorTertiaryFixed">@color/fx_mobile_private_tertiary_fixed</item>
-        <item name="colorTertiaryFixedDim">@color/fx_mobile_private_tertiary_fixed_dim</item>
-        <item name="colorOnTertiaryFixed">@color/fx_mobile_private_on_tertiary_fixed</item>
-        <item name="colorOnTertiaryFixedVariant">@color/fx_mobile_private_on_tertiary_fixed_variant</item>
+        <item name="colorAutofillText">@color/fx_mobile_private_autofill_text</item>
+        <item name="colorSelectedText">@color/fx_mobile_private_selected_text</item>
+        <item name="colorIconPrivate">@color/fx_mobile_private_icon_private</item>
+        <item name="scrim">@color/fx_mobile_private_scrim</item>
 
         <!-- Design system color attributes -->
 
@@ -395,7 +387,6 @@
         <item name="layer2">@color/fx_mobile_private_layer_color_2</item>
         <!-- Search -->
         <item name="layer3">@color/fx_mobile_private_layer_color_3</item>
-        <item name="scrim">@color/fx_mobile_private_layer_color_scrim</item>
 
         <!-- Action -->
         <!-- Primary button in a disabled state -->
@@ -450,14 +441,10 @@
         <item name="bottomBarBackgroundTop">@drawable/private_home_bottom_bar_background_gradient_top</item>
         <item name="mozac_ic_private_mode_circle_fill_background_color">@color/photonWhite</item>
         <item name="mozac_ic_private_mode_circle_fill_icon_color">@color/fx_mobile_private_layer_color_2</item>
-        <item name="mozac_ic_shield_slash_bg_fill_critical">@color/fx_mobile_private_icon_color_primary</item>
-        <item name="mozac_ic_shield_slash_fill_critical">@color/fx_mobile_private_icon_color_critical</item>
+        <item name="mozac_ic_shield_slash_bg_fill_critical">?attr/colorOnSurface</item>
+        <item name="mozac_ic_shield_slash_fill_critical">?attr/colorError</item>
 
         <item name="tabCounterTintColor">?attr/colorOnSurface</item>
-    </style>
-
-    <style name="App.Widget.CompoundButton.CheckBox" parent="Widget.Material3.CompoundButton.CheckBox">
-        <item name="buttonTint">@color/checkbox_tint</item>
     </style>
 
     <style name="Mozac.Browser.Menu" parent="" tools:ignore="UnusedResources">
@@ -481,31 +468,41 @@
     </style>
 
     <!-- UI button styling -->
-    <style name="NeutralButton" parent="Widget.MaterialComponents.Button.TextButton">
-        <item name="iconTint">@color/fx_mobile_icon_color_action_secondary</item>
+    <style name="NeutralButton" parent="Widget.Material3.Button.OutlinedButton">
         <item name="iconPadding">8dp</item>
         <item name="iconGravity">textStart</item>
         <item name="android:textAlignment">center</item>
         <item name="android:layout_width">match_parent</item>
-        <item name="android:radius">4dp</item>
         <item name="android:layout_height">48dp</item>
         <item name="android:textStyle">bold</item>
-        <item name="android:textAllCaps">false</item>
-        <item name="backgroundTint">@color/fx_mobile_action_color_secondary</item>
-        <item name="android:textColor">@color/fx_mobile_text_color_action_secondary</item>
-        <item name="rippleColor">?attr/colorOnSurfaceVariant</item>
-        <item name="android:letterSpacing">0</item>
         <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
         <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
-    <style name="DestructiveButton" parent="NeutralButton">
+    <style name="DestructiveButton" parent="Widget.Material3.Button.OutlinedButton">
         <item name="iconTint">?attr/colorError</item>
+        <item name="strokeColor">?attr/colorError</item>
+        <item name="iconPadding">8dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="android:textAlignment">center</item>
         <item name="android:textColor">?attr/colorError</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
     </style>
 
-    <style name="PositiveButton" parent="NeutralButton">
-        <item name="backgroundTint">?attr/colorPrimary</item>
+    <style name="PositiveButton" parent="Widget.Material3.Button">
+        <item name="iconPadding">8dp</item>
+        <item name="iconGravity">textStart</item>
+        <item name="android:textAlignment">center</item>
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">48dp</item>
+        <item name="android:textStyle">bold</item>
+        <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_medium</item>
+        <item name="android:fontWeight">@integer/font_weight_medium</item>
+        <item name="backgroundTint">?attr/colorTertiary</item>
         <item name="iconTint">?attr/colorOnPrimary</item>
         <item name="android:textColor">?attr/colorOnPrimary</item>
     </style>
@@ -529,8 +526,7 @@
     </style>
 
     <style name="PreferenceTheme" parent="PreferenceThemeOverlay.v14.Material">
-        <item name="android:textFontWeight" tools:ignore="NewApi">@integer/font_weight_light</item>
-        <item name="android:fontWeight">@integer/font_weight_light</item>
+        <item name="android:fontFamily">sans-serif</item>
         <item name="switchPreferenceCompatStyle">@style/SwitchCompatPreferenceMaterialStyle</item>
     </style>
 
@@ -713,7 +709,7 @@
     </style>
 
     <style name="PreferenceSectionHeader" parent="AcornHeadline8">
-        <item name="android:textColor">?colorOnSurfaceVariant</item>
+        <item name="android:textColor">?colorOnSurface</item>
     </style>
 
     <style name="EngineTextField" parent="TextAppearance.AppCompat">

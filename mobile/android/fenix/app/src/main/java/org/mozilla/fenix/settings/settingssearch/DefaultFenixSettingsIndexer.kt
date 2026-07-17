@@ -25,11 +25,15 @@ import java.util.concurrent.atomic.AtomicReference
  * be indexed for building the in-memory data for what settings can be searched through.
  * @param additionalProviders List of additional providers of [SettingsSearchItem]s to be included
  * in the in-memory data for what settings can be searched through.
+ * @param excludedPreferenceKeys Returns the set of preference keys to exclude from the search index,
+ * evaluated at index time. Used to keep runtime/Nimbus-gated preferences out of search when their
+ * feature is disabled.
  */
 class DefaultFenixSettingsIndexer(
     private val context: Context,
     private val preferenceFileInformationList: List<PreferenceFileInformation> = defaultPreferenceFileInformationList,
     private val additionalProviders: List<SettingsSearchProvider> = emptyList(),
+    private val excludedPreferenceKeys: () -> Set<String> = { emptySet() },
 ) : SettingsIndexer {
     private val settings = AtomicReference<List<SettingsSearchItem>>(emptyList())
 
@@ -50,7 +54,14 @@ class DefaultFenixSettingsIndexer(
             newSettings.addAll(provider.getSearchItems(context))
         }
 
-        settings.set(newSettings)
+        val excluded = excludedPreferenceKeys()
+        settings.set(
+            if (excluded.isEmpty()) {
+                newSettings
+            } else {
+                newSettings.filterNot { it.preferenceKey in excluded }
+            },
+        )
     }
 
     /**

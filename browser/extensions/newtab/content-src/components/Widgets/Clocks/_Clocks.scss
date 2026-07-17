@@ -412,13 +412,52 @@
     border-radius: var(--border-radius-small);
   }
 
+  // Large-only: time and actions share one grid cell so toggling
+  // between them doesn't reflow the row. Medium rows are column-
+  // direction; the same grid there would collapse meta to ~the time's
+  // max-content and clip the city.
+  &.large-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+
+    .clocks-meta {
+      grid-column: 1;
+    }
+
+    .clocks-time,
+    .clocks-row-actions {
+      grid-column: 2;
+      grid-row: 1;
+      justify-self: end;
+    }
+
+    .clocks-row-actions {
+      display: flex;
+      margin-inline-start: 0;
+      visibility: hidden;
+      pointer-events: none;
+    }
+
+    &:hover .clocks-row-actions,
+    &:focus-within .clocks-row-actions {
+      visibility: visible;
+      pointer-events: auto;
+    }
+
+    &:hover .clocks-time,
+    &:focus-within .clocks-time {
+      visibility: hidden;
+    }
+  }
+
   .clocks-row.has-inline-actions:hover .clocks-row-actions,
   .clocks-row.has-inline-actions:focus-within .clocks-row-actions {
     display: flex;
   }
 
-  .clocks-row.has-inline-actions.hides-time-on-inline-actions:hover .clocks-time,
-  .clocks-row.has-inline-actions.hides-time-on-inline-actions:focus-within .clocks-time {
+  // Medium collapses the time so the action buttons take its place.
+  &.medium-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions:hover .clocks-time,
+  &.medium-widget .clocks-row.has-inline-actions.hides-time-on-inline-actions:focus-within .clocks-time {
     display: none;
   }
 
@@ -440,15 +479,17 @@
   }
 
   .clocks-label-chip {
-    display: inline-flex;
-    align-items: center;
+    display: inline-block;
     padding-block: var(--space-xsmall);
     padding-inline: var(--space-small);
     border-radius: var(--border-radius-large);
     font-size: var(--font-size-root);
     color: var(--text-color);
     white-space: nowrap;
-    flex-shrink: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-inline-size: 0;
+    max-inline-size: 100%;
 
     // Palette-0 tokens are light-mode-only; light-dark() with the -80
     // shade is the design-system idiom. No semantic tokens exist for
@@ -514,6 +555,24 @@
   &.large-widget[data-clock-count='4'] .clocks-label-chip {
     // stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list
     padding-block: 0.375rem;
+    justify-self: start;
+  }
+
+  // Shared city column keeps rows aligned. Wide enough to fit most major
+  // city names (e.g. "Los Angeles"); longer names ellipsize. Chip column
+  // (1fr) has a min size so an 11-char capitalized nickname fits without
+  // truncation.
+  &.large-widget[data-clock-count='3'] .clocks-meta,
+  &.large-widget[data-clock-count='4'] .clocks-meta {
+    display: grid;
+    grid-template-columns: 9ch minmax(9ch, 1fr);
+  }
+
+  // No clock has a nickname: drop the chip column so the city can use the
+  // full row width instead of being capped at 9ch.
+  &.large-widget.has-no-labels[data-clock-count='3'] .clocks-meta,
+  &.large-widget.has-no-labels[data-clock-count='4'] .clocks-meta {
+    grid-template-columns: 1fr;
   }
 
   .clocks-city {
@@ -655,14 +714,14 @@
   &.small-widget:not(.is-panel-open):focus-within .clocks-list {
     justify-content: flex-start;
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
-    padding-block-start: 1.75rem;
+    padding-block-start: 1.5rem;
   }
 
   &.small-widget[data-clock-count='2']:not(.is-panel-open):hover .clocks-list,
   &.small-widget[data-clock-count='2']:not(.is-panel-open):focus-within .clocks-list {
     /* Two full rows with timezone text need a slightly smaller header lane. */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
-    padding-block-start: 1.25rem;
+    padding-block-start: 1rem;
   }
 
   &.small-widget[data-clock-count='2']:not(.is-panel-open):hover .clocks-row,
@@ -674,17 +733,16 @@
   &.small-widget[data-clock-count='4']:not(.is-panel-open):focus-within .clocks-list {
     /* Only the menu remains at 4 clocks, so reserve less header room. */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
-    padding-block-start: 1.25rem;
+    padding-block-start: 0.85rem;
   }
 
   &.medium-widget:not(.is-panel-open):hover .clocks-list,
   &.medium-widget:not(.is-panel-open):focus-within .clocks-list {
-    padding-block-start: var(--space-xxlarge);
+    padding-block-start: var(--space-medium);
   }
 
   &.medium-widget[data-clock-count='3']:not(.is-panel-open):hover .clocks-list,
   &.medium-widget[data-clock-count='3']:not(.is-panel-open):focus-within .clocks-list {
-    /* Dense 3-clock layouts need a smaller header lane to keep the time inside the card. */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens, declaration-property-value-disallowed-list */
     padding-block-start: 1.25rem;
   }
@@ -822,7 +880,7 @@
       justify-content: space-between;
       gap: var(--space-medium);
       padding-inline-start: var(--space-medium);
-      padding-inline-end: var(--space-xlarge);
+      padding-inline-end: var(--space-small);
       position: relative;
     }
 

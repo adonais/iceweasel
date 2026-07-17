@@ -47,7 +47,7 @@ UrlClassifierExceptionList::AddEntry(
   NS_ENSURE_TRUE(topLevelUrlPattern.IsEmpty() == topLevelSite.IsEmpty(),
                  NS_ERROR_INVALID_ARG);
 
-  if (MOZ_LOG_TEST(UrlClassifierCommon::sLog, LogLevel::Debug)) {
+  if (MOZ_LOG_TEST(gChannelClassifierLog, LogLevel::Debug)) {
     nsAutoCString entryString;
     (void)aEntry->Describe(entryString);
     UC_LOG_DEBUG(("UrlClassifierExceptionList::%s - Adding entry: %s",
@@ -162,7 +162,7 @@ bool UrlClassifierExceptionList::ExceptionListMatchesLoad(
     }
     if (match) {
       // Match found, return immediately.
-      if (MOZ_LOG_TEST(UrlClassifierCommon::sLog, LogLevel::Debug)) {
+      if (MOZ_LOG_TEST(gChannelClassifierLog, LogLevel::Debug)) {
         nsAutoCString entryString;
         (void)entry->Describe(entryString);
         UC_LOG_DEBUG(

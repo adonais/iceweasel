@@ -39,9 +39,10 @@ use cfg_if::cfg_if;
 cfg_if! {
     if #[cfg(not(target_os = "android"))] {
         use std::sync::mpsc::{channel, Receiver, TryRecvError};
-        use hyper::body::HttpBody;
+        use http_body_util::{BodyExt, Full};
         use hyper::header::{HeaderName, HeaderValue};
-        use hyper::{Body, Client, Method, Request};
+        use hyper::Method;
+        use hyper_util::client::legacy::Client;
     }
 }
 
@@ -168,27 +169,22 @@ impl Http3TestServer {
     }
 
     fn maybe_create_wt_stream(&mut self, now: Instant) {
-        if self.sessions_to_create_stream.is_empty() {
-            return;
-        }
-        let tuple = self.sessions_to_create_stream.pop().unwrap();
-        let session = tuple.0;
-        let wt_server_stream = session.create_stream(tuple.1).unwrap();
-        if tuple.1 == StreamType::UniDi {
-            if let Some(data) = tuple.2 {
-                self.new_response(wt_server_stream, data, now);
+        while let Some(tuple) = self.sessions_to_create_stream.pop() {
+            let session = tuple.0;
+            let wt_server_stream = session.create_stream(tuple.1).unwrap();
+            if tuple.1 == StreamType::UniDi {
+                if let Some(data) = tuple.2 {
+                    self.new_response(wt_server_stream, data, now);
+                } else {
+                    self.wt_unidi_conn_to_stream
+                        .insert(wt_server_stream.conn.clone(), wt_server_stream);
+                }
             } else {
-                // relaying Http3ServerEvent::Data to uni streams
-                // slows down netwerk/test/unit/test_webtransport_simple.js
-                // to the point of failure. Only do so when necessary.
-                self.wt_unidi_conn_to_stream
-                    .insert(wt_server_stream.conn.clone(), wt_server_stream);
-            }
-        } else {
-            if let Some(data) = tuple.2 {
-                self.new_response(wt_server_stream, data, now);
-            } else {
-                self.webtransport_bidi_stream.insert(wt_server_stream);
+                if let Some(data) = tuple.2 {
+                    self.new_response(wt_server_stream, data, now);
+                } else {
+                    self.webtransport_bidi_stream.insert(wt_server_stream);
+                }
             }
         }
     }
@@ -652,6 +648,33 @@ impl HttpServer for Http3TestServer {
                                     StreamType::UniDi,
                                     Some(Vec::from("qwerty")),
                                 ));
+                            } else if path.starts_with(b"/create_unidi_streams/") {
+                                let count: usize = std::str::from_utf8(&path[22..])
+                                    .unwrap()
+                                    .parse()
+                                    .unwrap();
+                                session.response(&SessionAcceptAction::Accept, now).unwrap();
+                                for i in 0..count {
+                                    self.sessions_to_create_stream.push((
+                                        session.clone(),
+                                        StreamType::UniDi,
+                                        Some(format!("stream{i}").into_bytes()),
+                                    ));
+                                }
+                            } else if path.starts_with(b"/create_bidi_streams/") {
+                                let count: usize = std::str::from_utf8(&path[21..])
+                                    .unwrap()
+                                    .parse()
+                                    .unwrap();
+                                self.webtransport_bidi_stream.clear();
+                                session.response(&SessionAcceptAction::Accept, now).unwrap();
+                                for i in 0..count {
+                                    self.sessions_to_create_stream.push((
+                                        session.clone(),
+                                        StreamType::BiDi,
+                                        Some(format!("stream{i}").into_bytes()),
+                                    ));
+                                }
                             } else if path == b"/create_bidi_stream" {
                                 session.response(&SessionAcceptAction::Accept, now).unwrap();
                                 self.sessions_to_create_stream.push((
@@ -858,12 +881,12 @@ impl Http3ReverseProxyServer {
 
     #[cfg(not(target_os = "android"))]
     async fn fetch_url(
-        request: Request<Body>,
+        request: http::Request<Full<hyper::body::Bytes>>,
         out_header: &mut Vec<Header>,
         out_body: &mut Vec<u8>,
     ) -> Result<(), Box<dyn std::error::Error + Send + Sync>> {
-        let client = Client::new();
-        let mut resp = client.request(request).await?;
+        let client = Client::builder(hyper_util::rt::TokioExecutor::new()).build_http();
+        let resp = client.request(request).await?;
         out_header.push(Header::new(":status", resp.status().as_str()));
         for (key, value) in resp.headers() {
             out_header.push(Header::new(
@@ -875,12 +898,15 @@ impl Http3ReverseProxyServer {
             ));
         }
 
-        while let Some(chunk) = resp.body_mut().data().await {
-            match chunk {
-                Ok(data) => {
-                    out_body.append(&mut data.to_vec());
+        let mut body = resp.into_body();
+        while let Some(frame) = body.frame().await {
+            match frame {
+                Ok(frame) => {
+                    if let Ok(data) = frame.into_data() {
+                        out_body.extend_from_slice(&data);
+                    }
                 }
-                _ => {}
+                Err(_) => break,
             }
         }
 
@@ -894,7 +920,7 @@ impl Http3ReverseProxyServer {
         request_headers: &Vec<Header>,
         request_body: Vec<u8>,
     ) {
-        let mut request: Request<Body> = Request::default();
+        let mut request: http::Request<Full<hyper::body::Bytes>> = http::Request::new(Full::new(hyper::body::Bytes::new()));
         let mut path = String::new();
         for hdr in request_headers.iter() {
             match hdr.name() {
@@ -920,7 +946,7 @@ impl Http3ReverseProxyServer {
                 }
             }
         }
-        *request.body_mut() = Body::from(request_body);
+        *request.body_mut() = Full::new(hyper::body::Bytes::from(request_body));
         *request.uri_mut() =
             match format!("http://127.0.0.1:{}{}", self.server_port.to_string(), path).parse() {
                 Ok(uri) => uri,
@@ -1765,7 +1791,11 @@ async fn main() -> Result<(), io::Error> {
 #[no_mangle]
 extern "C" fn __tsan_default_suppressions() -> *const std::os::raw::c_char {
     // https://github.com/rust-lang/rust/issues/128769
-    "race:tokio::runtime::io::registration_set::RegistrationSet::allocate\0".as_ptr() as *const _
+    concat!(
+        "race:<tokio::runtime::io::registration_set::RegistrationSet>::allocate\n",
+        "race:tokio::runtime::io::registration_set::RegistrationSet::allocate\0",
+    )
+    .as_ptr() as *const _
 }
 
 // Work around until we can use raw-dylibs.

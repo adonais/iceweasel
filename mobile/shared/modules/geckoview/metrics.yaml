@@ -52,7 +52,6 @@ geckoview:
   page_reload_time:
     type: timing_distribution
     time_unit: millisecond
-    telemetry_mirror: GV_PAGE_RELOAD_MS
     description: >
       Time taken to reload a page.
       This includes all static contents, no dynamic content.
@@ -86,7 +85,6 @@ geckoview:
     bucket_count: 50
     histogram_type: exponential
     unit: number of site_origin
-    telemetry_mirror: FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_ALL_TABS
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1589700
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877576
@@ -112,7 +110,6 @@ geckoview:
     bucket_count: 50
     histogram_type: exponential
     unit: number of site origins per document
-    telemetry_mirror: FX_NUMBER_OF_UNIQUE_SITE_ORIGINS_PER_DOCUMENT
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1603185
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1877576

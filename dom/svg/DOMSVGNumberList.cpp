@@ -148,7 +148,8 @@ already_AddRefed<DOMSVGNumber> DOMSVGNumberList::Initialize(DOMSVGNumber& aItem,
   // from this list, and so the InsertItemBefore() call would not insert a
   // clone of newItem, it would actually insert newItem. To prevent that from
   // happening we have to do the clone here, if necessary.
-  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
+  RefPtr<DOMSVGNumber> domItem =
+      aItem.HasOwner() ? aItem.Clone() : do_AddRef(&aItem);
 
   Clear(aRv);
   MOZ_ASSERT(!aRv.Failed());
@@ -190,7 +191,8 @@ already_AddRefed<DOMSVGNumber> DOMSVGNumberList::InsertItemBefore(
   }
 
   // must do this before changing anything!
-  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
+  RefPtr<DOMSVGNumber> domItem =
+      aItem.HasOwner() ? aItem.Clone() : do_AddRef(&aItem);
 
   // Ensure we have enough memory so we can avoid complex error handling below:
   if (!mItems.SetCapacity(mItems.Length() + 1, fallible) ||
@@ -238,7 +240,8 @@ already_AddRefed<DOMSVGNumber> DOMSVGNumberList::ReplaceItem(
   }
 
   // must do this before changing anything!
-  RefPtr<DOMSVGNumber> domItem = aItem.HasOwner() ? aItem.Clone() : &aItem;
+  RefPtr<DOMSVGNumber> domItem =
+      aItem.HasOwner() ? aItem.Clone() : do_AddRef(&aItem);
 
   AutoChangeNumberListNotifier notifier(this);
   if (mItems[index]) {

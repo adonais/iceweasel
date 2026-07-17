@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -162,7 +161,7 @@ private fun SuggestionTeams(
             .border(
                 width = 1.dp,
                 color = MaterialTheme.colorScheme.outlineVariant,
-                shape = RoundedCornerShape(8.dp),
+                shape = MaterialTheme.shapes.small,
             )
             .padding(
                 vertical = AcornTheme.layout.space.static150,
@@ -239,9 +238,9 @@ private fun LiveStatus(modifier: Modifier = Modifier) {
         modifier = modifier
             .background(
                 color = MaterialTheme.colorScheme.success,
-                shape = RoundedCornerShape(8.dp),
+                shape = MaterialTheme.shapes.small,
             )
-            .clip(RoundedCornerShape(8.dp))
+            .clip(MaterialTheme.shapes.small)
             .padding(horizontal = 8.dp),
     ) {
         Text(

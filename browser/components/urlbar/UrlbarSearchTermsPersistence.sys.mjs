@@ -8,6 +8,8 @@ import { UrlbarUtils } from "moz-src:///browser/components/urlbar/UrlbarUtils.sy
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
+  ConfigSearchEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
 });
@@ -178,7 +180,7 @@ class _UrlbarSearchTermsPersistence {
     if (provider) {
       let result = lazy.SearchService.parseSubmissionURL(uri.spec);
       if (
-        !result.engine?.isConfigEngine ||
+        !(result.engine instanceof lazy.ConfigSearchEngine) ||
         !this.isDefaultPage(uri, provider)
       ) {
         return "";
@@ -186,7 +188,7 @@ class _UrlbarSearchTermsPersistence {
       searchTerm = result.terms;
     } else {
       let result = lazy.SearchService.parseSubmissionURL(uri.spec);
-      if (!result.engine?.isConfigEngine) {
+      if (!(result.engine instanceof lazy.ConfigSearchEngine)) {
         return "";
       }
       searchTerm = result.engine.searchTermFromResult(uri);
@@ -423,7 +425,7 @@ class _UrlbarSearchTermsPersistence {
       return null;
     }
     let result = lazy.SearchService.parseSubmissionURL(url);
-    if (!result.engine?.isConfigEngine) {
+    if (!(result.engine instanceof lazy.ConfigSearchEngine)) {
       return null;
     }
     return {

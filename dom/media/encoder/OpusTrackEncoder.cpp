@@ -405,7 +405,7 @@ nsresult OpusTrackEncoder::Encode(AudioSegment* aSegment) {
     frameData->SetLength(result >= 0 ? result : 0);
 
     if (result < 0) {
-      LOG("[Opus] Fail to encode data! Result: %s.", opus_strerror(result));
+      LOG("[Opus] Fail to encode data! Result: {}.", opus_strerror(result));
     }
     if (isFinalPacket) {
       if (mResampler) {
@@ -424,7 +424,7 @@ nsresult OpusTrackEncoder::Encode(AudioSegment* aSegment) {
         std::move(frameData)));
 
     mNumOutputFrames += NumOutputFramesPerPacket();
-    LOG("[Opus] mOutputTimeStamp %.3f.",
+    LOG("[Opus] mOutputTimeStamp {:.3f}.",
         media::TimeUnit(mNumOutputFrames, mOutputSampleRate).ToSeconds());
 
     if (isFinalPacket) {

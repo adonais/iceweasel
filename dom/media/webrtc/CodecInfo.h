@@ -10,14 +10,18 @@
 #include "MediaCodecsSupport.h"
 
 namespace mozilla {
+class EncoderConfig;
 class MediaExtendedMIMEType;
+struct SupportDecoderParams;
 
-// Query the webrtc encoder factory whether aMime is supported in SW and/or HW.
-[[nodiscard]] media::EncodeSupportSet SupportsVideoMimeEncodeForWebrtc(
-    const MediaExtendedMIMEType& aMime);
-// Query the webrtc decoder factory whether aMime is supported in SW and/or HW.
-[[nodiscard]] media::DecodeSupportSet SupportsVideoMimeDecodeForWebrtc(
-    const MediaExtendedMIMEType& aMime);
+// Query the webrtc decoder factory whether the SupportDecoderParams are
+// supported in SW and/or HW.
+[[nodiscard]] media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
+    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams);
+// Query the webrtc encoder factory whether the EncoderConfig is supported in SW
+// and/or HW.
+[[nodiscard]] media::EncodeSupportSet SupportsVideoEncodeForWebrtc(
+    const EncoderConfig& aConfig);
 
 // Interface for querying WebRTC codec support and hardware acceleration.
 //

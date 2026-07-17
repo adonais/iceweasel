@@ -33,7 +33,7 @@ class NimbusMessagingNotificationTest {
     @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true),
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
     @Before

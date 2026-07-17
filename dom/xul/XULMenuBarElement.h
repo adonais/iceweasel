@@ -18,7 +18,7 @@ class XULButtonElement;
 class MenuBarListener;
 
 nsXULElement* NS_NewXULMenuBarElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 class XULMenuBarElement final : public XULMenuParentElement {
  public:
@@ -27,7 +27,7 @@ class XULMenuBarElement final : public XULMenuParentElement {
                                            XULMenuParentElement)
   NS_IMPL_FROMNODE_WITH_TAG(XULMenuBarElement, kNameSpaceID_XUL, menubar)
 
-  explicit XULMenuBarElement(already_AddRefed<class NodeInfo>&&);
+  explicit XULMenuBarElement(already_AddRefed<class NodeInfo>);
 
   MOZ_CAN_RUN_SCRIPT void SetActive(bool);
   bool IsActive() const { return mIsActive; }

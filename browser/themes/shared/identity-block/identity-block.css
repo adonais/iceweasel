@@ -4,12 +4,38 @@
 
 @namespace html url("http://www.w3.org/1999/xhtml");
 
-#identity-box {
-  margin-inline-end: var(--identity-box-margin-inline);
+#tracking-protection-icon-container,
+#identity-box,
+#trust-icon-container,
+#urlbar-label-box {
+  height: var(--urlbar-basic-component-size);
+}
 
+#identity-box {
   &[pageproxystate="invalid"] {
     pointer-events: none;
     -moz-user-focus: ignore;
+
+    #identity-icon-label {
+      display: none;
+    }
+
+    /* If the proxy state is invalid, but the urlbar is persisting search terms,
+       we still want the user to be able to interact with the permission box.
+       It will be visible. The identity-box wrapper itself stays out of the
+       tab order so keyboard users go straight to the next focusable element. */
+    #urlbar[persistsearchterms] & {
+      > #identity-permission-box {
+        pointer-events: auto;
+        -moz-user-focus: normal;
+      }
+
+      /* And don't show the identity icon box in this case,
+         just permissions indication */
+      > #identity-icon-box {
+        display: none;
+      }
+    }
   }
 }
 
@@ -22,17 +48,15 @@
   fill-opacity: var(--urlbar-icon-fill-opacity);
 }
 
-#identity-box[pageproxystate="invalid"] {
+#urlbar:not([persistsearchterms]) #identity-box[pageproxystate="invalid"] {
   > #identity-permission-box,
-  > #notification-popup-box,
-  #identity-icon-label {
+  > #notification-popup-box {
     display: none;
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.urlbar.searchModeSwitcher.featureGate") or -moz-pref("browser.urlbar.scotchBonnet.enableOverride") {
-  #identity-box[pageproxystate="invalid"] {
+  #urlbar:not([persistsearchterms]) #identity-box[pageproxystate="invalid"] {
     display: none;
   }
 }
@@ -70,19 +94,6 @@
 #identity-icon-label {
   padding-inline-start: 4px;
   margin: 0;
-}
-
-#identity-box[pageproxystate="valid"]:is(.notSecureText, .chromeUI, .extensionPage),
-#urlbar-label-box {
-  margin-inline-end: 8px;
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.urlbar.searchModeSwitcher.featureGate") or -moz-pref("browser.urlbar.scotchBonnet.enableOverride") {
-    margin-inline-end: var(--urlbar-searchmodeswitcher-margin-inline-end);
-  }
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.urlbar.trustPanel.featureGate") {
-    margin-inline-end: 0;
-  }
 }
 
 #identity-box[pageproxystate="valid"]:is(.notSecureText, .chromeUI, .extensionPage) > .identity-box-button,
@@ -229,7 +240,6 @@
 }
 
 /* SHARING ICON */
-
 #webrtc-sharing-icon[sharing="camera"] {
   list-style-image: url("chrome://browser/skin/notification-icons/camera.svg");
 }
@@ -244,12 +254,14 @@
 
 #geo-sharing-icon[sharing] {
   list-style-image: url("chrome://browser/skin/notification-icons/geo.svg");
+  -moz-context-properties: fill;
+  fill: var(--icon-color-critical);
 }
 
 #serial-sharing-icon[sharing] {
   list-style-image: url("chrome://browser/skin/notification-icons/serial.svg");
   -moz-context-properties: fill;
-  fill: rgb(224, 41, 29);
+  fill: var(--icon-color-critical);
 }
 
 .sharing-icon:not([sharing]) {
@@ -258,7 +270,7 @@
 
 #webrtc-sharing-icon[sharing]:not([paused]) {
   -moz-context-properties: fill;
-  fill: rgb(224, 41, 29);
+  fill: var(--icon-color-critical);
 }
 
 /* TRACKING PROTECTION ICON */
@@ -301,31 +313,24 @@
   display: none;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.urlbar.trustPanel.featureGate") {
-  #tracking-protection-icon-container,
-  /* Keep displaying the moz-extension or chrome UI chicklet */
-  #identity-box[pageproxystate="valid"]:not(.chromeUI, .extensionPage) #identity-icon-box {
+  #tracking-protection-icon-container {
     display: none;
   }
 
-  .searchmode-switcher,
   #identity-box {
-    margin-inline-end: 0;
-  }
-
-  #urlbar-label-box,
-  .urlbar-input-box {
-    margin-inline-start: var(--identity-box-margin-inline);
+    /* Keep displaying the moz-extension or chrome UI chicklet */
+    &[pageproxystate="valid"]:not(.chromeUI, .extensionPage) {
+      #identity-icon-box {
+        display: none;
+      }
+    }
   }
 
   #trust-icon-container {
     padding-inline: var(--urlbar-icon-padding);
     border-radius: var(--urlbar-inner-border-radius);
     -moz-context-properties: fill, fill-opacity;
-    /* Height shouldn't need defined here but is failing wpt tests without.
-       Investigating in https://bugzilla.mozilla.org/show_bug.cgi?id=2004907 */
-    height: calc(16px + (2 * var(--urlbar-icon-padding)));
 
     /* The urlbar will show insecure or secure icon by default depending
        on the state of the connection, the further clauses may override that. */

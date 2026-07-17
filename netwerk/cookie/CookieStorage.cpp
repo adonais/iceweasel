@@ -264,6 +264,27 @@ uint32_t CookieStorage::CountCookiesFromHost(const nsACString& aBaseDomain,
   return entry ? entry->GetCookies().Length() : 0;
 }
 
+bool CookieStorage::HasCookiesForSite(const nsACString& aBaseDomain,
+                                      const OriginAttributesPattern& aPattern) {
+  for (auto iter = mHostTable.Iter(); !iter.Done(); iter.Next()) {
+    CookieEntry* entry = iter.Get();
+
+    if (!aBaseDomain.Equals(entry->mBaseDomain)) {
+      continue;
+    }
+
+    if (!aPattern.Matches(entry->mOriginAttributes)) {
+      continue;
+    }
+
+    if (!entry->GetCookies().IsEmpty()) {
+      return true;
+    }
+  }
+
+  return false;
+}
+
 uint32_t CookieStorage::CountCookieBytesNotMatchingCookie(
     const Cookie& cookie, const nsACString& baseDomain) {
   nsTArray<RefPtr<Cookie>> cookies;

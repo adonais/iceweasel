@@ -38,6 +38,27 @@ object SettingsCustomizeSelectors {
         groups = listOf("appIconDefault"),
     )
 
+    val TOOLBAR_LAYOUT_SIMPLE = Selector(
+        strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+        value = getStringResource(R.string.preference_simple_toolbar),
+        description = "Simple toolbar layout option",
+        groups = listOf("toolbarLayout", "requiresScroll", "swipeDown"),
+    )
+
+    val TOOLBAR_LAYOUT_EXPANDED = Selector(
+        strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+        value = getStringResource(R.string.preference_expanded_toolbar),
+        description = "Expanded toolbar layout option",
+        groups = listOf("toolbarLayout", "requiresScroll"),
+    )
+
+    val TOOLBAR_POSITION_BOTTOM = Selector(
+        strategy = SelectorStrategy.ESPRESSO_BY_TEXT,
+        value = getStringResource(R.string.preference_bottom_toolbar),
+        description = "Bottom toolbar position option",
+        groups = listOf("requiresScroll"),
+    )
+
     val all = listOf(
         SETTINGS_CUSTOMIZE_TITLE,
         SHOW_TOOLBAR_TOGGLE,

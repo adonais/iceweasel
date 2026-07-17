@@ -155,7 +155,7 @@ class nsHTMLFramesetFrame final : public nsContainerFrame {
 
   void ReflowPlaceChild(nsIFrame* aChild, nsPresContext* aPresContext,
                         const ReflowInput& aReflowInput, nsPoint& aOffset,
-                        nsSize& aSize, nsIntPoint* aCellIndex = 0);
+                        nsSize& aSize, nsIntPoint* aCellIndex = nullptr);
 
   bool CanResize(bool aVertical, bool aLeft);
 

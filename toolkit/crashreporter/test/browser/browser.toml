@@ -20,6 +20,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200'", # Bug 1936467
 ]
 
+["browser_required_annotations.js"]
+
 ["browser_sandbox_crash.js"]
 run-if = [
   "os == 'linux' && !release_or_beta", # Linux-specific crash type, release/beta builds do not crash on sandbox violations

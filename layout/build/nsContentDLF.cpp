@@ -35,16 +35,13 @@ already_AddRefed<nsIDocumentViewer> NS_NewDocumentViewer();
 
 static const char* const gHTMLTypes[] = {TEXT_HTML, VIEWSOURCE_CONTENT_TYPE,
                                          APPLICATION_XHTML_XML,
-                                         APPLICATION_WAPXHTML_XML, 0};
+                                         APPLICATION_WAPXHTML_XML, nullptr};
 
-static const char* const gXMLTypes[] = {TEXT_XML,
-                                        APPLICATION_XML,
-                                        APPLICATION_MATHML_XML,
-                                        APPLICATION_RDF_XML,
-                                        TEXT_RDF,
-                                        0};
+static const char* const gXMLTypes[] = {
+    TEXT_XML, APPLICATION_XML, APPLICATION_MATHML_XML, APPLICATION_RDF_XML,
+    TEXT_RDF, nullptr};
 
-static const char* const gSVGTypes[] = {IMAGE_SVG_XML, 0};
+static const char* const gSVGTypes[] = {IMAGE_SVG_XML, nullptr};
 
 static bool IsTypeInList(const nsACString& aType, const char* const aList[]) {
   int32_t typeIndex;
@@ -275,19 +272,19 @@ already_AddRefed<Document> nsContentDLF::CreateBlankDocument(
   RefPtr<mozilla::dom::NodeInfo> htmlNodeInfo;
 
   // generate an html html element
-  htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::html, 0, kNameSpaceID_XHTML,
+  htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::html, nullptr, kNameSpaceID_XHTML,
                                   nsINode::ELEMENT_NODE);
   nsCOMPtr<nsIContent> htmlElement =
       NS_NewHTMLHtmlElement(htmlNodeInfo.forget());
 
   // generate an html head element
-  htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::head, 0, kNameSpaceID_XHTML,
+  htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::head, nullptr, kNameSpaceID_XHTML,
                                   nsINode::ELEMENT_NODE);
   nsCOMPtr<nsIContent> headElement =
       NS_NewHTMLHeadElement(htmlNodeInfo.forget());
 
   // generate an html body elemment
-  htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::body, 0, kNameSpaceID_XHTML,
+  htmlNodeInfo = nim->GetNodeInfo(nsGkAtoms::body, nullptr, kNameSpaceID_XHTML,
                                   nsINode::ELEMENT_NODE);
   nsCOMPtr<nsIContent> bodyElement =
       NS_NewHTMLBodyElement(htmlNodeInfo.forget());

@@ -32,6 +32,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(RangeError, function() {
     sample.set([1n], -Infinity);
   }, "-Infinity");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

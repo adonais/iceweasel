@@ -31,7 +31,7 @@ static const uint32_t kMaxConsoleOutputDelayMs = 100;
 
 namespace {
 
-void RunConsoleReportingRunnable(already_AddRefed<nsIRunnable>&& aRunnable) {
+void RunConsoleReportingRunnable(already_AddRefed<nsIRunnable> aRunnable) {
   if (StaticPrefs::privacy_restrict3rdpartystorage_console_lazy()) {
     nsresult rv = NS_DispatchToCurrentThreadQueue(std::move(aRunnable),
                                                   kMaxConsoleOutputDelayMs,

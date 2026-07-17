@@ -11,7 +11,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/net/CookieJarSettings.h"
-#include "mozilla/net/UrlClassifierCommon.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/StaticPrefs_network.h"
 #include "mozilla/glean/AntitrackingMetrics.h"
 #include "nsContentUtils.h"
@@ -59,7 +59,7 @@ bool ShouldCheckRedirectHeuristicETP(nsIChannel* aOldChannel, nsIURI* aOldURI,
 
   // We will skip this check if we have granted storage access before so that we
   // can grant the storage access to the rest of the chain.
-  if (!net::UrlClassifierCommon::IsTrackingClassificationFlag(
+  if (!net::ChannelClassifierUtils::IsTrackingClassificationFlag(
           oldClassificationFlags, NS_UsePrivateBrowsing(aOldChannel)) &&
       !allowedByPreviousRedirect) {
     // This is not a tracking -> non-tracking redirect.
@@ -100,7 +100,7 @@ bool ShouldRedirectHeuristicApplyETP(nsIChannel* aNewChannel, nsIURI* aNewURI) {
   uint32_t newClassificationFlags =
       newClassifiedChannel->GetFirstPartyClassificationFlags();
 
-  if (net::UrlClassifierCommon::IsTrackingClassificationFlag(
+  if (net::ChannelClassifierUtils::IsTrackingClassificationFlag(
           newClassificationFlags, NS_UsePrivateBrowsing(aNewChannel))) {
     // This is not a tracking -> non-tracking redirect.
     LOG_SPEC(("Ignoring the redirect to %s because it's not tracking to "
@@ -128,8 +128,7 @@ bool ShouldRedirectHeuristicApply(nsIChannel* aNewChannel, nsIURI* aNewURI) {
 
   uint32_t cookieBehavior = cookieJarSettings->GetCookieBehavior();
   if (cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
-      cookieBehavior ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
+      cookieBehavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN) {
     return ShouldRedirectHeuristicApplyETP(aNewChannel, aNewURI);
   }
 
@@ -154,8 +153,7 @@ bool ShouldCheckRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
 
   uint32_t cookieBehavior = cookieJarSettings->GetCookieBehavior();
   if (cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
-      cookieBehavior ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
+      cookieBehavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN) {
     return ShouldCheckRedirectHeuristicETP(aOldChannel, aOldURI, aOldPrincipal);
   }
 
@@ -228,10 +226,8 @@ void PrepareForAntiTrackingRedirectHeuristic(nsIChannel* aOldChannel,
     return;
   }
 
-  MOZ_ASSERT(
-      behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
-      behavior ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN);
+  MOZ_ASSERT(behavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
+             behavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN);
 
   ExtContentPolicyType contentType =
       oldLoadInfo->GetExternalContentPolicyType();

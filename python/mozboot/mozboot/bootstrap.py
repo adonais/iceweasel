@@ -332,6 +332,8 @@ class Bootstrapper:
         self.instance.auto_bootstrap(application, self.exclude)
         self.instance.install_toolchain_artifact("fix-stacks")
         self.instance.install_toolchain_artifact("minidump-stackwalk")
+        self.instance.install_toolchain_artifact("samply")
+        self.instance.install_toolchain_artifact("profiler-node-tools")
         if not self.instance.artifact_mode:
             self.instance.install_toolchain_artifact("clang-tools/clang-tidy")
             self.instance.ensure_sccache_packages()

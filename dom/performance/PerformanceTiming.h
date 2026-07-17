@@ -40,16 +40,16 @@ class PerformanceTimingData final : public CacheablePerformanceTimingData {
  public:
   PerformanceTimingData() = default;  // For deserialization
   // This can return null.
-  static PerformanceTimingData* Create(nsITimedChannel* aChannel,
-                                       nsIHttpChannel* aHttpChannel,
-                                       DOMHighResTimeStamp aZeroTime,
-                                       nsAString& aInitiatorType,
-                                       nsAString& aEntryName);
+  static UniquePtr<PerformanceTimingData> Create(nsITimedChannel* aChannel,
+                                                 nsIHttpChannel* aHttpChannel,
+                                                 DOMHighResTimeStamp aZeroTime,
+                                                 nsAString& aInitiatorType,
+                                                 nsAString& aEntryName);
 
   PerformanceTimingData(nsITimedChannel* aChannel, nsIHttpChannel* aHttpChannel,
                         DOMHighResTimeStamp aZeroTime);
 
-  static PerformanceTimingData* Create(
+  static UniquePtr<PerformanceTimingData> Create(
       const CacheablePerformanceTimingData& aCachedData,
       DOMHighResTimeStamp aZeroTime, TimeStamp aStartTime, TimeStamp aEndTime,
       RenderBlockingStatusType aRenderBlockingStatus);

@@ -12,8 +12,12 @@ import kotlinx.serialization.Serializable
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import mozilla.components.concept.fetch.Response
+import mozilla.components.concept.llm.Llm
+import mozilla.components.lib.llm.mlpa.service.BudgetExceeded
 import mozilla.components.lib.llm.mlpa.service.ChatService
-import mozilla.components.lib.llm.mlpa.service.ChatServiceError
+import mozilla.components.lib.llm.mlpa.service.RateLimitResponseParseError
+import mozilla.components.lib.llm.mlpa.service.RateLimited
+import mozilla.components.lib.llm.mlpa.service.ServerError
 import kotlin.collections.joinToString
 
 private const val DATA_PREFIX = "data: "
@@ -56,15 +60,15 @@ private fun Flow<Event>.content() = map {
     it.choices.joinToString { choice -> choice.content }
 }
 
-internal fun Json.rateLimitDetailedError(serialized: String, retryAfter: Long?) = try {
+internal fun Json.rateLimitDetailedError(serialized: String, retryAfter: Long?): Llm.Exception = try {
     val rateLimitStatus = 429
     when (this.decodeFromString<ChatService.ResponseErrorCode>(serialized).error) {
-        1 -> ChatServiceError.BudgetExceeded(retryAfter)
-        2 -> ChatServiceError.RateLimited(retryAfter)
-        else -> ChatServiceError.ServerError(rateLimitStatus)
+        1 -> BudgetExceeded(retryAfter)
+        2 -> RateLimited(retryAfter)
+        else -> ServerError(rateLimitStatus)
     }
 } catch (e: SerializationException) {
-    ChatServiceError.RateLimitResponseParseError(e)
+    RateLimitResponseParseError(e)
 }
 
 @Serializable

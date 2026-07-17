@@ -175,6 +175,22 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            /**
+             * Logo.jsx and its variant components are tested via Jest
+             * (see test/jest/content-src/components/Logo.test.jsx).
+             */
+            "content-src/components/Logo/Logo.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/Logo/variants/*.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             "content-src/components/DiscoveryStreamComponents/FeatureHighlight/FollowSectionButtonHighlight.jsx":
               {
                 statements: 88,
@@ -353,6 +369,13 @@ module.exports = function (config) {
               functions: 0,
               branches: 0,
             },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/MoveSubmenu.test.jsx)
+            "content-src/components/Widgets/MoveSubmenu.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
             // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/Clocks.test.jsx)
             "content-src/components/Widgets/Clocks/Clocks.jsx": {
               statements: 0,
@@ -449,6 +472,53 @@ module.exports = function (config) {
               branches: 25,
             },
             "content-src/components/Widgets/SportsWidget/SportsWidget.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/SportsMatchRow.test.jsx)
+            "content-src/components/Widgets/SportsWidget/SportsMatchRow.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/WatchLiveModal.test.jsx)
+            "content-src/components/Widgets/SportsWidget/WatchLiveModal.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            // Coverage for this hook lives in Jest (test/jest/content-src/components/Widgets/useLocalizedTeamNames.test.jsx)
+            "content-src/components/Widgets/SportsWidget/useLocalizedTeamNames.jsx":
+              {
+                statements: 0,
+                lines: 0,
+                functions: 0,
+                branches: 0,
+              },
+            // Coverage for this component lives in Jest (test/jest/content-src/components/Widgets/SportsWidget.test.jsx)
+            "content-src/components/Widgets/SportsWidget/LivePagination.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/Widgets/Widgets.jsx": {
+              statements: 51.1,
+              lines: 52,
+              functions: 31.2,
+              branches: 31.2,
+            },
+            "content-src/components/Widgets/useWidgetDnD.jsx": {
+              statements: 0,
+              lines: 0,
+              functions: 0,
+              branches: 0,
+            },
+            "content-src/components/Widgets/useMouseDnD.jsx": {
               statements: 0,
               lines: 0,
               functions: 0,

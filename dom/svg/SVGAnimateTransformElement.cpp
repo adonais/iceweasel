@@ -19,7 +19,7 @@ JSObject* SVGAnimateTransformElement::WrapNode(
 // Implementation
 
 SVGAnimateTransformElement::SVGAnimateTransformElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGAnimationElement(std::move(aNodeInfo)) {}
 
 bool SVGAnimateTransformElement::ParseAttribute(

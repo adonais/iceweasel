@@ -101,7 +101,6 @@ testWithTypedArrayConstructors(function(FA, makeCtorArg) {
       );
     }
   }
-}, floatArrayConstructors);
-
+}, floatArrayConstructors, null, ["immutable"]);
 
 reportCompare(0, 0);

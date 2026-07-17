@@ -122,7 +122,7 @@ class HTMLInputElement final : public TextControlElement,
 
   enum class FromClone { No, Yes };
 
-  HTMLInputElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo,
+  HTMLInputElement(already_AddRefed<dom::NodeInfo> aNodeInfo,
                    FromParser aFromParser,
                    FromClone aFromClone = FromClone::No);
 

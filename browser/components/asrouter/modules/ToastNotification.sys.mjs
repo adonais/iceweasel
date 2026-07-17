@@ -90,6 +90,11 @@ export const ToastNotification = {
       tag = `${experimentMetadata.slug}:${experimentMetadata.branch}`;
     }
 
+    if (this.AlertsService.isFullscreen?.()) {
+      lazy.logConsole.warn("Suppressing toast notification");
+      return false;
+    }
+
     // There are two events named `IMPRESSION` the first one refers to telemetry
     // while the other refers to ASRouter impressions used for the frequency cap
     this.sendUserEventTelemetry("IMPRESSION", message, dispatch);

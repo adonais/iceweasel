@@ -88,7 +88,7 @@ nsScriptableInputStream::ReadBytes(uint32_t aCount, nsACString& aResult) {
 
 nsresult nsScriptableInputStream::ReadHelper(char* aBuffer, uint32_t aCount) {
   uint32_t totalBytesRead = 0;
-  while (1) {
+  while (true) {
     uint32_t bytesRead;
     nsresult rv = mInputStream->Read(aBuffer + totalBytesRead,
                                      aCount - totalBytesRead, &bytesRead);
@@ -110,6 +110,6 @@ nsresult nsScriptableInputStream::ReadHelper(char* aBuffer, uint32_t aCount) {
 }
 
 nsresult nsScriptableInputStream::Create(REFNSIID aIID, void** aResult) {
-  RefPtr<nsScriptableInputStream> sis = new nsScriptableInputStream();
+  RefPtr sis = mozilla::MakeRefPtr<nsScriptableInputStream>();
   return sis->QueryInterface(aIID, aResult);
 }

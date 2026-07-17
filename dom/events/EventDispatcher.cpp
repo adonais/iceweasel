@@ -4,6 +4,8 @@
 
 #include "mozilla/EventDispatcher.h"
 
+#include <fmt/format.h>
+
 #include <new>
 
 #include "AnimationEvent.h"
@@ -62,6 +64,7 @@
 #include "nsINode.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIWindowRoot.h"
 #include "nsPresContext.h"
 #include "nsRefreshDriver.h"
 
@@ -328,7 +331,7 @@ class EventTargetChainItem {
    * Copies mItemFlags and mItemData to aVisitor.
    * Calls PreHandleEvent for those items which called SetWantsPreHandleEvent.
    */
-  void PreHandleEvent(EventChainVisitor& aVisitor);
+  MOZ_CAN_RUN_SCRIPT void PreHandleEvent(EventChainVisitor& aVisitor);
 
   /**
    * If the current item in the event target chain has an event listener
@@ -821,6 +824,64 @@ static bool IsUncancelableIfOnlyPassiveListeners(const WidgetEvent* aEvent) {
   return !(XRE_IsParentProcess() && BrowserParent::GetFrom(target));
 }
 
+static void AssertWindowRootInTheFocusBlurChain(
+    const nsTArray<EventTargetChainItem>& aChain, const WidgetEvent* aEvent,
+    const EventTarget* aTarget) {
+#ifdef DEBUG
+  if (!aEvent->IsTrusted()) [[unlikely]] {
+    return;
+  }
+  if (aEvent->mMessage != eFocus && aEvent->mMessage != eBlur) [[likely]] {
+    return;
+  }
+  const nsINode* const targetNode = nsINode::FromEventTargetOrNull(aTarget);
+  if (!targetNode || !targetNode->IsInComposedDoc() ||
+      // FYI: This may hit in test_bug446483.html
+      (targetNode->IsDocument() && !targetNode->AsDocument()->GetWindow()))
+      [[unlikely]] {
+    return;
+  }
+  // If nsWindowRoot is not in the chain, we cannot maintain the selection
+  // before dispatching eFocus/eBlur.
+  for (const auto& item : Reversed(aChain)) {
+    if (item.WantsPreHandleEvent()) {
+      if (nsCOMPtr<nsPIWindowRoot> windowRoot =
+              do_QueryInterface(item.CurrentTarget())) {
+        return;
+      }
+    }
+  }
+  nsAutoCString chain;
+  for (const auto& item : aChain) {
+    chain.AppendLiteral("\n- ");
+    if (!item.CurrentTarget()) {
+      chain.AppendLiteral("nullptr");
+      continue;
+    }
+    if (nsINode* node = nsINode::FromEventTarget(item.CurrentTarget())) {
+      chain.Append(nsDependentCString(ToString(*node).c_str()));
+      continue;
+    }
+    if (nsCOMPtr<mozIDOMWindowProxy> win =
+            do_QueryInterface(item.CurrentTarget())) {
+      chain.AppendLiteral("window");
+      continue;
+    }
+    if (nsCOMPtr<nsPIWindowRoot> winRoot =
+            do_QueryInterface(item.CurrentTarget())) {
+      chain.AppendLiteral("window root");
+      continue;
+    }
+    chain.AppendLiteral("unknown EventTarget");
+  }
+  NS_ASSERTION(false,
+               fmt::format("{} should be handled by PreHandleEvent() of a "
+                           "nsWindowRoot\nThe chain:{}\n",
+                           ToChar(aEvent->mMessage), chain.get())
+                   .c_str());
+#endif
+}
+
 struct DOMEventMarker : public BaseMarkerType<DOMEventMarker> {
   static constexpr const char* Name = "DOMEvent";
 
@@ -873,7 +934,15 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
                                    nsTArray<EventTarget*>* aTargets) {
   AUTO_PROFILER_LABEL_HOT("EventDispatcher::Dispatch", OTHER);
 
-  NS_ASSERTION(aEvent, "Trying to dispatch without WidgetEvent!");
+  MOZ_ASSERT(aEvent, "Trying to dispatch without WidgetEvent!");
+  NS_WARNING_ASSERTION(
+      !aEvent->IsTrusted() || aEvent->IsAllowedToDispatchDOMEvent(),
+      fmt::format("aEvent={{ IsTrusted()={}, mMessage={}, mClass={} }}",
+                  TrueOrFalse(aEvent->IsTrusted()), ToChar(aEvent->mMessage),
+                  ToChar(aEvent->mClass))
+          .c_str());
+  MOZ_ASSERT_IF(aEvent->IsTrusted(), aEvent->IsAllowedToDispatchDOMEvent());
+
   NS_ENSURE_TRUE(!aEvent->mFlags.mIsBeingDispatched,
                  NS_ERROR_DOM_INVALID_STATE_ERR);
   NS_ASSERTION(!aTargets || !aEvent->mMessage, "Wrong parameters!");
@@ -1096,6 +1165,7 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
   if (!preVisitor.mCanHandle) {
     // The original target and chrome target (mAutomaticChromeDispatch=true)
     // can not handle the event but we still have to call their PreHandleEvent.
+    AssertWindowRootInTheFocusBlurChain(chain, aEvent, target);
     for (uint32_t i = 0; i < chain.Length(); ++i) {
       chain[i].PreHandleEvent(preVisitor);
     }
@@ -1218,6 +1288,7 @@ nsresult EventDispatcher::Dispatch(EventTarget* aTarget,
         }
       } else {
         // Event target chain is created. PreHandle the chain.
+        AssertWindowRootInTheFocusBlurChain(chain, aEvent, target);
         for (uint32_t i = 0; i < chain.Length(); ++i) {
           chain[i].PreHandleEvent(preVisitor);
         }

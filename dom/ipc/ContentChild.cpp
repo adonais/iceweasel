@@ -18,6 +18,7 @@
 #include "mozilla/Attributes.h"
 #include "mozilla/BackgroundHangMonitor.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/ClearOnShutdown.h"
 #include "mozilla/ClipboardContentAnalysisChild.h"
 #include "mozilla/ClipboardReadRequestChild.h"
 #include "mozilla/Components.h"
@@ -38,6 +39,7 @@
 #include "mozilla/SharedStyleSheetCache.h"
 #include "mozilla/SimpleEnumerator.h"
 #include "mozilla/SpinEventLoopUntil.h"
+#include "mozilla/StaticMutex.h"
 #include "mozilla/StaticPrefs_browser.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/StaticPrefs_fission.h"
@@ -639,9 +641,9 @@ ContentChild::ContentChild()
 
 #ifdef _MSC_VER
 #  pragma warning(push)
-#  pragma warning(                                                  \
-      disable : 4722) /* Silence "destructor never returns" warning \
-                       */
+#  pragma warning(disable                                               \
+                  : 4722) /* Silence "destructor never returns" warning \
+                           */
 #endif
 
 ContentChild::~ContentChild() {
@@ -966,7 +968,6 @@ nsresult ContentChild::ProvideWindowCommon(
   *aReturn = nullptr;
 
   nsAutoCString features(aFeatures);
-  nsAutoString name(aName);
 
   nsresult rv;
 
@@ -980,92 +981,6 @@ nsresult ContentChild::ProvideWindowCommon(
     return NS_ERROR_ABORT;
   }
 
-  bool useRemoteSubframes =
-      aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW;
-
-  uint32_t parentSandboxFlags = parent->SandboxFlags();
-  Document* doc = parent->GetDocument();
-  if (doc) {
-    parentSandboxFlags = doc->GetSandboxFlags();
-  }
-
-  const bool isForPrinting = aOpenWindowInfo->GetIsForPrinting();
-  // Certain conditions complicate the process of creating the new
-  // BrowsingContext, and prevent us from using the
-  // "CreateWindowInDifferentProcess" codepath.
-  //  * With Fission enabled, process selection will happen during the load, so
-  //    switching processes eagerly will not provide a benefit.
-  //  * Windows created for printing must be created within the current process
-  //    so that a static clone of the source document can be created.
-  //  * Sandboxed popups require the full window creation codepath.
-  //  * Loads with form or POST data require the full window creation codepath.
-  const bool cannotLoadInDifferentProcess =
-      useRemoteSubframes || isForPrinting ||
-      (parentSandboxFlags &
-       SANDBOX_PROPAGATES_TO_AUXILIARY_BROWSING_CONTEXTS) ||
-      (aLoadState &&
-       (aLoadState->IsFormSubmission() || aLoadState->PostDataStream()));
-  if (!cannotLoadInDifferentProcess) {
-    // If we're in a content process and we have noopener set, there's no reason
-    // to load in our process, so let's load it elsewhere!
-    bool loadInDifferentProcess =
-        aForceNoOpener && StaticPrefs::dom_noopener_newprocess_enabled();
-    if (loadInDifferentProcess) {
-      nsCOMPtr<nsIPrincipal> triggeringPrincipal;
-      nsCOMPtr<nsIPolicyContainer> policyContainer;
-      nsCOMPtr<nsIReferrerInfo> referrerInfo;
-      rv = GetCreateWindowParams(aOpenWindowInfo, aLoadState, aForceNoReferrer,
-                                 getter_AddRefs(referrerInfo),
-                                 getter_AddRefs(triggeringPrincipal),
-                                 getter_AddRefs(policyContainer));
-      if (NS_WARN_IF(NS_FAILED(rv))) {
-        return rv;
-      }
-
-      if (name.LowerCaseEqualsLiteral("_blank")) {
-        name.Truncate();
-      }
-
-      MOZ_DIAGNOSTIC_ASSERT(!nsContentUtils::IsSpecialName(name));
-
-      const bool hasValidUserGestureActivation = [aLoadState, doc] {
-        if (aLoadState) {
-          return aLoadState->HasValidUserGestureActivation();
-        }
-        if (doc) {
-          return doc->HasValidTransientUserGestureActivation();
-        }
-        return false;
-      }();
-
-      const bool textDirectiveUserActivation = [aLoadState, doc] {
-        if (doc && doc->ConsumeTextDirectiveUserActivation()) {
-          return true;
-        }
-        if (aLoadState) {
-          return aLoadState->GetTextDirectiveUserActivation();
-        }
-        return false;
-      }() || hasValidUserGestureActivation;
-
-      (void)SendCreateWindowInDifferentProcess(
-          aTabOpener, parent, aChromeFlags, aCalledFromJS,
-          aOpenWindowInfo->GetIsTopLevelCreatedByWebContent(), aURI, features,
-          aModifiers, name, triggeringPrincipal, policyContainer, referrerInfo,
-          aOpenWindowInfo->GetOriginAttributes(), hasValidUserGestureActivation,
-          textDirectiveUserActivation);
-
-      // We return NS_ERROR_ABORT, so that the caller knows that we've abandoned
-      // the window open as far as it is concerned.
-      return NS_ERROR_ABORT;
-    }
-  }
-
-  TabId tabId(nsContentUtils::GenerateTabId());
-
-  // We need to assign a TabGroup to the PBrowser actor before we send it to the
-  // parent. Otherwise, the parent could send messages to us before we have a
-  // proper TabGroup for that actor.
   RefPtr<BrowsingContext> openerBC;
   if (!aForceNoOpener) {
     openerBC = parent;
@@ -1076,10 +991,11 @@ nsresult ContentChild::ProvideWindowCommon(
       BrowsingContext::CreateDetachedOptions{
           .isPopupRequested = aIsPopupRequested,
           .topLevelCreatedByWebContent = true,
-          .isForPrinting = isForPrinting,
+          .isForPrinting = aOpenWindowInfo->GetIsForPrinting(),
       });
   MOZ_ALWAYS_SUCCEEDS(browsingContext->SetRemoteTabs(true));
-  MOZ_ALWAYS_SUCCEEDS(browsingContext->SetRemoteSubframes(useRemoteSubframes));
+  MOZ_ALWAYS_SUCCEEDS(browsingContext->SetRemoteSubframes(
+      aChromeFlags & nsIWebBrowserChrome::CHROME_FISSION_WINDOW));
   MOZ_ALWAYS_SUCCEEDS(browsingContext->SetOriginAttributes(
       aOpenWindowInfo->GetOriginAttributes()));
 
@@ -1116,6 +1032,8 @@ nsresult ContentChild::ProvideWindowCommon(
   if (NS_WARN_IF(!windowChild)) {
     return NS_ERROR_ABORT;
   }
+
+  TabId tabId(nsContentUtils::GenerateTabId());
 
   auto newChild = MakeNotNull<RefPtr<BrowserChild>>(
       this, tabId, *aTabOpener, browsingContext, aChromeFlags,
@@ -2735,6 +2653,22 @@ mozilla::ipc::IPCResult ContentChild::RecvAppInfo(
   return IPC_OK();
 }
 
+static StaticMutex sCurrentRemoteTypeMutex;
+static StaticAutoPtr<nsCString> sCurrentRemoteType
+    MOZ_GUARDED_BY(sCurrentRemoteTypeMutex);
+
+nsCString CurrentRemoteType() {
+  if (XRE_IsContentProcess()) {
+    StaticMutexAutoLock lock(sCurrentRemoteTypeMutex);
+    if (sCurrentRemoteType) {
+      return *sCurrentRemoteType;
+    }
+    return PREALLOC_REMOTE_TYPE;
+  }
+
+  return NOT_REMOTE_TYPE;
+}
+
 mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
     const nsCString& aRemoteType, const nsCString& aProfile) {
   if (aRemoteType == mRemoteType) {
@@ -2769,6 +2703,18 @@ mozilla::ipc::IPCResult ContentChild::RecvRemoteType(
 
   // Must do before SetProcessName
   mRemoteType.Assign(aRemoteType);
+
+  {
+    StaticMutexAutoLock lock(sCurrentRemoteTypeMutex);
+    if (!sCurrentRemoteType) {
+      sCurrentRemoteType = new nsCString();
+      RunOnShutdown([] {
+        StaticMutexAutoLock lock(sCurrentRemoteTypeMutex);
+        sCurrentRemoteType = nullptr;
+      });
+    }
+    sCurrentRemoteType->Assign(mRemoteType);
+  }
 
   // Update the process name so about:memory's process names are more obvious.
   if (aRemoteType == FILE_REMOTE_TYPE) {
@@ -3617,6 +3563,14 @@ mozilla::ipc::IPCResult ContentChild::RecvCrossProcessRedirect(
     nsHashPropertyBag::CopyFrom(bag, aArgs.properties());
   }
 
+  // Track the provided parent-process channel handle on our channel.
+  if (aArgs.channelHandle()) {
+    rv = newChannel->SetParentProcessChannelHandle(aArgs.channelHandle());
+    if (NS_WARN_IF(NS_FAILED(rv))) {
+      return IPC_OK();
+    }
+  }
+
   RefPtr<nsDocShellLoadState> loadState;
   rv = nsDocShellLoadState::CreateFromPendingChannel(
       newChannel, aArgs.loadIdentifier(), aArgs.registrarId(),
@@ -4334,10 +4288,7 @@ mozilla::ipc::IPCResult ContentChild::RecvReportFrameTimingData(
 
 mozilla::ipc::IPCResult ContentChild::RecvLoadURI(
     const MaybeDiscarded<BrowsingContext>& aContext,
-    nsDocShellLoadState* aLoadState, bool aSetNavigating,
-    LoadURIResolver&& aResolve) {
-  auto resolveOnExit = MakeScopeExit([&] { aResolve(true); });
-
+    nsDocShellLoadState* aLoadState, bool aSetNavigating) {
   if (aContext.IsNullOrDiscarded()) {
     return IPC_OK();
   }
@@ -4431,11 +4382,30 @@ mozilla::ipc::IPCResult ContentChild::RecvDisplayLoadError(
 
 mozilla::ipc::IPCResult ContentChild::RecvHistoryCommitIndexAndLength(
     const MaybeDiscarded<BrowsingContext>& aContext, const uint32_t& aIndex,
-    const uint32_t& aLength, const nsID& aChangeID) {
+    const uint32_t& aLength, const nsID& aChangeID,
+    nsTArray<NavigationEntriesTruncation>&& aTruncations) {
   if (!aContext.IsNullOrDiscarded()) {
     ChildSHistory* shistory = aContext.get()->GetChildSessionHistory();
     if (shistory) {
       shistory->SetIndexAndLength(aIndex, aLength, aChangeID);
+    }
+  }
+
+  for (const auto& truncation : aTruncations) {
+    if (truncation.context().IsNullOrDiscarded()) {
+      continue;
+    }
+    RefPtr<nsDocShell> docShell =
+        nsDocShell::Cast(truncation.context().get()->GetDocShell());
+    if (!docShell) {
+      continue;
+    }
+    RefPtr<nsPIDOMWindowInner> window = docShell->GetActiveWindow();
+    if (!window) {
+      continue;
+    }
+    if (RefPtr<Navigation> navigation = window->Navigation()) {
+      navigation->TruncateForwardEntries(truncation.newLength());
     }
   }
   return IPC_OK();
@@ -4478,19 +4448,21 @@ mozilla::ipc::IPCResult ContentChild::RecvDispatchLocationChangeEvent(
 
 mozilla::ipc::IPCResult ContentChild::RecvDispatchBeforeUnloadToSubtree(
     const MaybeDiscarded<BrowsingContext>& aStartingAt,
-    const mozilla::Maybe<SessionHistoryInfo>& aInfo,
+    const mozilla::Maybe<mozilla::NotNull<RefPtr<nsDocShellLoadState>>>&
+        aLoadState,
     DispatchBeforeUnloadToSubtreeResolver&& aResolver) {
   if (aStartingAt.IsNullOrDiscarded()) {
     aResolver(nsIDocumentViewer::eContinue);
   } else {
-    DispatchBeforeUnloadToSubtree(aStartingAt.get(), aInfo, aResolver);
+    DispatchBeforeUnloadToSubtree(aStartingAt.get(), aLoadState, aResolver);
   }
   return IPC_OK();
 }
 
 /* static */ void ContentChild::DispatchBeforeUnloadToSubtree(
     BrowsingContext* aStartingAt,
-    const mozilla::Maybe<SessionHistoryInfo>& aInfo,
+    const mozilla::Maybe<mozilla::NotNull<RefPtr<nsDocShellLoadState>>>&
+        aLoadState,
     const DispatchBeforeUnloadToSubtreeResolver& aResolver) {
   bool resolved = false;
 
@@ -4507,7 +4479,7 @@ mozilla::ipc::IPCResult ContentChild::RecvDispatchBeforeUnloadToSubtree(
               }
 
               if (finalStatus == nsIDocumentViewer::eContinue && aBC->IsTop() &&
-                  aInfo) {
+                  aLoadState) {
                 // https://html.spec.whatwg.org/#preventing-navigation:fire-a-traverse-navigate-event.
                 // If this is the top-level navigable and we've passed `aInfo`,
                 // we should perform #fire-a-traverse-navigate-event.
@@ -4516,8 +4488,9 @@ mozilla::ipc::IPCResult ContentChild::RecvDispatchBeforeUnloadToSubtree(
                 // navigation object returns false.
                 // This should send the correct user involvment. See bug
                 // 1903552.
+                RefPtr<nsDocShellLoadState> loadState = *aLoadState;
                 finalStatus = docShell->MaybeFireTraversableTraverseHistory(
-                    *aInfo, Nothing());
+                    loadState, Nothing());
               }
 
               if (!resolved && finalStatus != nsIDocumentViewer::eContinue) {
@@ -4537,13 +4510,14 @@ mozilla::ipc::IPCResult ContentChild::RecvDispatchBeforeUnloadToSubtree(
 
 mozilla::ipc::IPCResult ContentChild::RecvDispatchNavigateToTraversable(
     const MaybeDiscarded<BrowsingContext>& aTraversable,
-    const mozilla::Maybe<SessionHistoryInfo>& aInfo,
+    const mozilla::NotNull<RefPtr<nsDocShellLoadState>>& aLoadState,
     DispatchNavigateToTraversableResolver&& aResolver) {
   if (aTraversable.IsNullOrDiscarded() || !aTraversable->GetDocShell()) {
     aResolver(nsIDocumentViewer::eContinue);
   } else {
     RefPtr docShell = nsDocShell::Cast(aTraversable->GetDocShell());
-    aResolver(docShell->MaybeFireTraversableTraverseHistory(*aInfo, Nothing()));
+    aResolver(docShell->MaybeFireTraversableTraverseHistory(
+        MOZ_KnownLive(aLoadState.get()), Nothing()));
   }
   return IPC_OK();
 }

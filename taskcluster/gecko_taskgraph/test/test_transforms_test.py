@@ -163,14 +163,14 @@ def test_split_variants(monkeypatch, run_full_config_transform, make_test_task):
         pytest.param(
             {
                 "attributes": {"unittest_variant": "webrender-sw+1proc"},
-                "test-platform": "linux1804-64-clang-trunk-qr/opt",
+                "test-platform": "linux2404-64-clang-trunk/opt",
             },
             {
                 "platform": {
                     "arch": "64",
                     "os": {
                         "name": "linux",
-                        "version": "1804",
+                        "version": "2404",
                     },
                 },
                 "build": {

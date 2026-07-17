@@ -8,7 +8,7 @@ import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.AppAndSystemHelper.runWithCondition
 import org.mozilla.fenix.helpers.DataGenerationHelper.getSponsoredFxSuggestPlaceHolder
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -111,7 +111,7 @@ class FirefoxSuggestTest {
     @SmokeTest
     @Test
     fun verifyFirefoxSuggestSponsoredSearchResultsTest() {
-        runWithCondition(TestHelper.appContext.settings().enableFxSuggest) {
+        runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
             homeScreen(composeTestRule) {
             }.openSearch {
                 typeSearch(searchTerm = sponsoredKeyWord)
@@ -132,7 +132,7 @@ class FirefoxSuggestTest {
     @Ignore("Failing, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1898435")
     @Test
     fun verifyFirefoxSuggestSponsoredSearchResultsWithPartialKeywordTest() {
-        runWithCondition(TestHelper.appContext.settings().enableFxSuggest) {
+        runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
             homeScreen(composeTestRule) {
             }.openSearch {
                 typeSearch(searchTerm = sponsoredKeyWord.dropLast(1))
@@ -153,7 +153,7 @@ class FirefoxSuggestTest {
     @Ignore("Failing, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1898435")
     @Test
     fun openFirefoxSuggestSponsoredSearchResultsTest() {
-        runWithCondition(TestHelper.appContext.settings().enableFxSuggest) {
+        runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
             homeScreen(composeTestRule) {
             }.openSearch {
                 typeSearch(searchTerm = sponsoredKeyWord)
@@ -177,7 +177,7 @@ class FirefoxSuggestTest {
     @Ignore("Failing, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1898435")
     @Test
     fun verifyFirefoxSuggestSponsoredSearchResultsWithEditedKeywordTest() {
-        runWithCondition(TestHelper.appContext.settings().enableFxSuggest) {
+        runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
             homeScreen(composeTestRule) {
             }.openSearch {
                 typeSearch(searchTerm = sponsoredKeyWord)
@@ -202,7 +202,7 @@ class FirefoxSuggestTest {
     @SmokeTest
     @Test
     fun verifyFirefoxSuggestNonSponsoredSearchResultsTest() {
-        runWithCondition(TestHelper.appContext.settings().enableFxSuggest) {
+        runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
             homeScreen(composeTestRule) {
             }.openSearch {
                 typeSearch(searchTerm = nonSponsoredKeyWord)
@@ -227,7 +227,7 @@ class FirefoxSuggestTest {
     @Ignore("Failing, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1882035")
     @Test
     fun verifyFirefoxSuggestNonSponsoredSearchResultsWithPartialKeywordTest() {
-        runWithCondition(TestHelper.appContext.settings().enableFxSuggest) {
+        runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
             homeScreen(composeTestRule) {
             }.openSearch {
                 typeSearch(searchTerm = nonSponsoredKeyWord.dropLast(1))
@@ -247,7 +247,7 @@ class FirefoxSuggestTest {
     @Ignore("Failing, see: https://bugzilla.mozilla.org/show_bug.cgi?id=1882035")
     @Test
     fun openFirefoxSuggestNonSponsoredSearchResultsTest() {
-        runWithCondition(TestHelper.appContext.settings().enableFxSuggest) {
+        runWithCondition(TestHelper.appContext.components.settings.enableFxSuggest) {
             homeScreen(composeTestRule) {
             }.openSearch {
                 typeSearch(searchTerm = nonSponsoredKeyWord)

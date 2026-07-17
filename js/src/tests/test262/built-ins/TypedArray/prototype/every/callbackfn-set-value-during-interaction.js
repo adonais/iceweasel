@@ -55,6 +55,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.sameValue(sample[0], 7, "changed values after iteration [0] == 7");
   assert.sameValue(sample[1], 1, "changed values after iteration [1] == 1");
   assert.sameValue(sample[2], 2, "changed values after iteration [2] == 2");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

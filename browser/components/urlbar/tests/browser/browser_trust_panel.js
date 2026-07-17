@@ -1101,3 +1101,47 @@ add_task(async function clear_cookie_test() {
   await UrlbarTestUtils.closeTrustPanel(window);
   await BrowserTestUtils.removeTab(tab);
 });
+
+add_task(async function test_legacy_graphic_when_nova_disabled() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.nova.enabled", false]],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab({
+    gBrowser,
+    opening: "https://example.com",
+    waitForLoad: true,
+  });
+
+  await UrlbarTestUtils.openTrustPanel(window);
+
+  const legacyImage = window.document.getElementById(
+    "trustpanel-graphic-image-legacy"
+  );
+  const novaImage = window.document.getElementById("trustpanel-graphic-image");
+
+  Assert.ok(
+    BrowserTestUtils.isVisible(legacyImage),
+    "Legacy graphic is shown when browser.nova.enabled is off"
+  );
+  Assert.greater(
+    legacyImage.getBoundingClientRect().width,
+    0,
+    "Legacy graphic is actually rendered (has non-zero width)"
+  );
+  Assert.ok(
+    !BrowserTestUtils.isVisible(novaImage),
+    "Nova graphic is hidden when browser.nova.enabled is off"
+  );
+  Assert.ok(
+    window
+      .getComputedStyle(legacyImage)
+      .getPropertyValue("background-image")
+      .includes("trustpanel-graphic-enabled.svg"),
+    "Legacy graphic uses the pre-Nova enabled asset"
+  );
+
+  await UrlbarTestUtils.closeTrustPanel(window);
+  await BrowserTestUtils.removeTab(tab);
+  await SpecialPowers.popPrefEnv();
+});

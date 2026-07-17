@@ -46,6 +46,9 @@ export function makeGuid() {
  */
 export function parseConversationRow(row) {
   const seenUrlsArray = parseJSONOrNull(row.getResultByName("seen_urls"));
+  const serpUrlsForAnonymousFetchArray = parseJSONOrNull(
+    row.getResultByName("serp_urls_for_anonymous_fetch")
+  );
   return new ChatConversation({
     id: row.getResultByName("conv_id"),
     title: row.getResultByName("title"),
@@ -59,6 +62,9 @@ export function parseConversationRow(row) {
       row.getResultByName("security_properties")
     ),
     seenUrls: Array.isArray(seenUrlsArray) ? seenUrlsArray : [],
+    serpUrlsForAnonymousFetch: Array.isArray(serpUrlsForAnonymousFetchArray)
+      ? serpUrlsForAnonymousFetchArray
+      : [],
     memoriesToggled: row.getResultByName("memories_toggled"),
   });
 }
@@ -108,13 +114,9 @@ export function parseMessageRows(rows) {
  */
 export function parseChatHistoryViewRows(rows) {
   return rows.map(row => {
-    const urlsString = row.getResultByName("urls");
-    const urls = urlsString
-      ? urlsString
-          .split(",")
-          .filter(url => url && url.trim())
-          .map(url => new URL(url.trim()))
-      : [];
+    const urls = (parseJSONOrNull(row.getResultByName("urls")) ?? [])
+      .filter(url => url && url.trim())
+      .map(url => new URL(url.trim()));
 
     return new ChatHistoryResult({
       convId: row.getResultByName("conv_id"),

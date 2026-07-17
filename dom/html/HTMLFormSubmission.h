@@ -111,6 +111,8 @@ class HTMLFormSubmission {
 
   FormData* GetFormData() const { return mFormData; }
 
+  virtual Element* GetSubmitterElement() const;
+
  protected:
   /**
    * Can only be constructed by subclasses.

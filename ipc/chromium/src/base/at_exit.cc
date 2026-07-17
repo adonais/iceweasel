@@ -11,9 +11,10 @@ namespace base {
 // recent, and we should never have more than one outside of testing, when we
 // use the shadow version of the constructor.  We don't protect this for
 // thread-safe access, since it will only be modified in testing.
-static AtExitManager* g_top_manager = NULL;
+static AtExitManager* g_top_manager = nullptr;
 
-AtExitManager::AtExitManager() : lock_("AtExitManager"), next_manager_(NULL) {
+AtExitManager::AtExitManager()
+    : lock_("AtExitManager"), next_manager_(nullptr) {
   DCHECK(!g_top_manager);
   g_top_manager = this;
 }

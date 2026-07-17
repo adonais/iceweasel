@@ -9,6 +9,40 @@
 
 # yamllint disable rule:line-length
 
+ai:
+    selector: fuzzy
+    description: >-
+        Run AI Platform tests and tests for all createEngine consumers:
+        mochitest-browser-chrome and xpcshell on Linux, geckoview-junit
+        and engine-gecko unit on Android.
+        Use with --artifact to speed up your trypush.
+    paths: &ai-paths
+        - toolkit/components/ml/tests/
+        - toolkit/components/pageextractor/
+        - browser/components/aiwindow/
+        - mobile/android/geckoview/src/androidTest/java/org/mozilla/geckoview/test/
+        - mobile/android/android-components/components/browser/engine-gecko/
+        - toolkit/components/places/
+        - browser/components/urlbar/
+        - browser/components/tabbrowser/test/xpcshell/smarttabgrouping/
+        - browser/components/genai/
+        - toolkit/components/extensions/
+        - toolkit/components/pdfjs/
+    test_paths: *ai-paths
+    query:
+        - "'mochitest-browser-chrome 'linux !spi !asan !tsan !msix !a11y !swr !standalone !trainhop"
+        - "'xpcshell 'linux !nofis !asan !tsan !condprof !ioi"
+        - "'em-14 'geckoview-junit !shippable !iso"
+        - "'test-components 'engine-gecko"
+
+ai-perf:
+    selector: fuzzy
+    description: >-
+        Run ml-* perftests on Linux.
+    query:
+        - "^perftest-linux 'ml-"
+    full: true
+
 android-components:
     selector: fuzzy
     description: >-

@@ -6,13 +6,7 @@
   @include newtab-card-style;
 
   .nova-enabled & {
-    box-shadow: var(--box-shadow-level-2);
-
-    &:hover,
-    &:focus-within {
-      outline: 1px solid var(--border-color-deemphasized);
-      box-shadow: var(--card-box-shadow-hover);
-    }
+    @include widget-base-style;
   }
 
   border-radius: var(--border-radius-large);

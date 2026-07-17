@@ -12,7 +12,6 @@
 #include <vector>
 
 #include "nsIWeakReferenceUtils.h"
-#include "mozilla/Monitor.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/widget/WindowOcclusionState.h"
 #include "Units.h"
@@ -244,10 +243,6 @@ class WinWindowOcclusionTracker final {
     // Used to serialize tasks related to mRootWindowHwndsOcclusionState.
     RefPtr<SerializedTaskDispatcher> mSerializedTaskDispatcher;
 
-    // This is an alias to the singleton WinWindowOcclusionTracker mMonitor,
-    // and is used in ShutDown().
-    Monitor& mMonitor;
-
     friend class OcclusionUpdateRunnable;
   };
 
@@ -288,7 +283,6 @@ class WinWindowOcclusionTracker final {
 
   // "WinWindowOcclusionCalc" thread.
   UniquePtr<base::Thread> mThread;
-  Monitor mMonitor;
 
   // Has ShutDown been called on us? We might have survived if our thread join
   // timed out.

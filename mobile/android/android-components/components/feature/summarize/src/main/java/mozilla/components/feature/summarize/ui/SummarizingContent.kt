@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.requiredHeight
 import androidx.compose.foundation.layout.requiredSize
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -50,8 +50,6 @@ import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.feature.summarize.R
 import mozilla.components.feature.summarize.ui.gradient.summaryLoadingGradient
 import mozilla.components.ui.icons.R as iconsR
-
-private const val DRAG_HANDLE_CORNER_RATIO = 50
 
 /**
  * Content shown while a page summary is being generated.
@@ -143,7 +141,10 @@ private fun SummarizingContentPreview() {
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(336.dp),
-                shape = RoundedCornerShape(topStart = 28.dp, topEnd = 28.dp),
+                shape = MaterialTheme.shapes.extraLarge.copy(
+                    bottomStart = CornerSize(0.dp),
+                    bottomEnd = CornerSize(0.dp),
+                ),
             ) {
                 Box(modifier = Modifier.fillMaxSize().summaryLoadingGradient()) {
                     Column(modifier = Modifier.fillMaxWidth()) {
@@ -156,7 +157,7 @@ private fun SummarizingContentPreview() {
                                     .requiredSize(width = 32.dp, height = 4.dp)
                                     .background(
                                         color = MaterialTheme.colorScheme.outline,
-                                        shape = RoundedCornerShape(DRAG_HANDLE_CORNER_RATIO),
+                                        shape = MaterialTheme.shapes.extraLarge,
                                     ),
                             )
                         }

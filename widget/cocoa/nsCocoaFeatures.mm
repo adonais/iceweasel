@@ -207,7 +207,7 @@ int32_t nsCocoaFeatures::GetVersion(int32_t aMajor, int32_t aMinor,
 /* static */ bool nsCocoaFeatures::ProcessIsRosettaTranslated() {
   int ret = 0;
   size_t size = sizeof(ret);
-  if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1) {
+  if (sysctlbyname("sysctl.proc_translated", &ret, &size, nullptr, 0) == -1) {
     if (errno != ENOENT) {
       fprintf(stderr, "Failed to check for translation environment\n");
     }

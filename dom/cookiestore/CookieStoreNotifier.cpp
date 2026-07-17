@@ -14,6 +14,7 @@
 #include "nsICookie.h"
 #include "nsICookieNotification.h"
 #include "nsISerialEventTarget.h"
+#include "nsPIDOMWindowInlines.h"
 
 namespace mozilla::dom {
 

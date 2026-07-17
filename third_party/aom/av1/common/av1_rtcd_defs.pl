@@ -107,13 +107,13 @@ if(aom_config("CONFIG_AV1_HIGHBITDEPTH") eq "yes") {
   if ((aom_config("CONFIG_REALTIME_ONLY") ne "yes") ||
       (aom_config("CONFIG_AV1_DECODER") eq "yes")) {
     add_proto qw/void av1_highbd_wiener_convolve_add_src/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h, const WienerConvolveParams *conv_params, int bd";
-    specialize qw/av1_highbd_wiener_convolve_add_src ssse3 avx2 neon/;
+    specialize qw/av1_highbd_wiener_convolve_add_src ssse3 avx2 neon rvv/;
   }
 }
 
 if ((aom_config("CONFIG_REALTIME_ONLY") ne "yes") || (aom_config("CONFIG_AV1_DECODER") eq "yes")) {
   add_proto qw/void av1_wiener_convolve_add_src/,       "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const int16_t *filter_x, int x_step_q4, const int16_t *filter_y, int y_step_q4, int w, int h, const WienerConvolveParams *conv_params";
-  specialize qw/av1_wiener_convolve_add_src sse2 avx2 neon/;
+  specialize qw/av1_wiener_convolve_add_src sse2 avx2 neon rvv/;
 }
 
 # directional intra predictor functions
@@ -423,7 +423,7 @@ if (aom_config("CONFIG_AV1_ENCODER") eq "yes") {
   # End av1_high encoder functions
 
   # txb
-  add_proto qw/void av1_get_nz_map_contexts/, "const uint8_t *const levels, const int16_t *const scan, const uint16_t eob, const TX_SIZE tx_size, const TX_CLASS tx_class, int8_t *const coeff_contexts";
+  add_proto qw/void av1_get_nz_map_contexts/, "const uint8_t *const levels, const int16_t *const scan, const int eob, const TX_SIZE tx_size, const TX_CLASS tx_class, int8_t *const coeff_contexts";
   specialize qw/av1_get_nz_map_contexts sse2 neon/;
   add_proto qw/void av1_txb_init_levels/, "const tran_low_t *const coeff, const int width, const int height, uint8_t *const levels";
   specialize qw/av1_txb_init_levels sse4_1 avx2 neon/;
@@ -459,6 +459,9 @@ if (aom_config("CONFIG_AV1_ENCODER") eq "yes") {
 
   add_proto qw/void av1_get_horver_correlation_full/, "const int16_t *diff, int stride, int w, int h, float *hcorr, float *vcorr";
   specialize qw/av1_get_horver_correlation_full sse4_1 avx2 neon/;
+
+  add_proto qw/void av1_interp_cubic_rate_dist/, "const double *p1, const double *p2, double x, double * const rate_f, double * const distbysse_f";
+  specialize qw/av1_interp_cubic_rate_dist sse2/;
 
   add_proto qw/void av1_nn_predict/, "const float *input_nodes, const NN_CONFIG *const nn_config, int reduce_prec, float *const output";
 

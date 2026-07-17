@@ -87,6 +87,11 @@ function readRequestBody(request) {
   });
 }
 
+// eslint-disable-next-line jsdoc/require-param
+/**
+ * @deprecated - Please use MockEngineManager in AIWindowTestUtils.sys.mjs unless
+ * a test is explicitly needing to test the network layer of the OpenAI chat protocol.
+ */
 function startMockOpenAI({
   streamChunks = ["Hello from mock."],
   toolCall = null,

@@ -24,11 +24,10 @@ const { LoginTestUtils } = ChromeUtils.importESModule(
 
 function testLoggedIn(isLoggedIn) {
   Assert.equal(
-    internalKeyToken.isLoggedIn(),
+    internalKeyToken.isLoggedIn,
     isLoggedIn,
     `Should ${isLoggedIn ? "" : "not "}be logged in`
   );
-  internalKeyToken.isLoggedIn();
 }
 
 function clearData({ deleteBy = "all", hasUserInput = false } = {}) {

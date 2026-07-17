@@ -768,7 +768,7 @@ typedef struct {
 typedef struct {
   // Indicates the framerate of the input video.
   double init_framerate;
-  // Indicates the bit-depth of the input video.
+  // Indicates the actual bit-depth of the input source.
   unsigned int input_bit_depth;
   // Indicates the maximum number of frames to be encoded.
   unsigned int limit;
@@ -3005,6 +3005,11 @@ typedef struct AV1_COMP {
   int skip_tpl_setup_stats;
 
   /*!
+   * Flag to indicate if RD multiplier modulation is enabled.
+   */
+  int cb_delta_rdmult_enabled;
+
+  /*!
    * Scaling factors used in the RD multiplier modulation.
    * TODO(sdeng): consider merge the following arrays.
    * tpl_rdmult_scaling_factors is a temporary buffer used to store the
@@ -4194,7 +4199,10 @@ static inline int allow_postencode_drop_rtc(const AV1_COMP *cpi) {
 // Function return size of frame stats buffer
 static inline int get_stats_buf_size(int num_lap_buffer, int num_lag_buffer) {
   /* if lookahead is enabled return num_lap_buffers else num_lag_buffers */
-  return (num_lap_buffer > 0 ? num_lap_buffer + 1 : num_lag_buffer);
+  if (num_lap_buffer > 0) {
+    return AOMMAX(num_lap_buffer + 1, MAX_GF_LENGTH_LAP + 1);
+  }
+  return num_lag_buffer;
 }
 
 // TODO(zoeliu): To set up cpi->oxcf.gf_cfg.enable_auto_brf

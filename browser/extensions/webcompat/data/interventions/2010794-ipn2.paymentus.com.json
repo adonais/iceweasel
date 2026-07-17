@@ -1,7 +1,7 @@
 {
   "label": "ipn2.paymentus.com",
   "bugs": {
-    "2005520": {
+    "2010794": {
       "issue": "page-fails-to-load",
       "blocks": [
         {

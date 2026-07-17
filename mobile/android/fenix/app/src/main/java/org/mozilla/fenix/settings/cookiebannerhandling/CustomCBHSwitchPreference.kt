@@ -7,7 +7,7 @@ package org.mozilla.fenix.settings.cookiebannerhandling
 import android.content.Context
 import android.util.AttributeSet
 import androidx.preference.SwitchPreferenceCompat
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 
 /**
  * Custom [SwitchPreferenceCompat] that automatically creates the switch for the
@@ -19,7 +19,7 @@ class CustomCBHSwitchPreference @JvmOverloads constructor(
 ) : SwitchPreferenceCompat(context, attrs) {
     init {
         with(context) {
-            setDefaultValue(settings().shouldUseCookieBannerPrivateModeDefaultValue)
+            setDefaultValue(components.settings.shouldUseCookieBannerPrivateModeDefaultValue)
         }
     }
 }

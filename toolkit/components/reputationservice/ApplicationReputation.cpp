@@ -504,6 +504,7 @@ const char* const ApplicationReputationService::kBinaryFileExtensions[] = {
     ".workflow",  // Mac Automator
     //".wrc", // FreeArc archive
     //".ws",  exec  // Windows script
+    ".wsb",  // Windows Sandbox configuration
     //".wsc", exec  // Windows script
     //".wsf", exec  // Windows script
     //".wsh", exec  // Windows script

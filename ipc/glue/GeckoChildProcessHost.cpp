@@ -177,9 +177,7 @@ class BaseProcessLauncher {
     SprintfLiteral(mChildIDString, "%d", aHost->mChildID);
 
     // Compute the serial event target we'll use for launching.
-    nsCOMPtr<nsIEventTarget> threadOrPool = GetIPCLauncher();
-    mLaunchThread =
-        TaskQueue::Create(threadOrPool.forget(), "BaseProcessLauncher");
+    mLaunchThread = GetIPCLauncher();
 
     if (ShouldHaveDirectoryService()) {
       // "Current process directory" means the app dir, not the current
@@ -741,7 +739,7 @@ bool GeckoChildProcessHost::AsyncLaunch(
 #endif
 
   RefPtr<BaseProcessLauncher> launcher =
-      new ProcessLauncher(this, std::move(aExtraOpts));
+      MakeRefPtr<ProcessLauncher>(this, std::move(aExtraOpts));
   TimeStamp startTimeStamp = TimeStamp::Now();
 #ifdef ALLOW_GECKO_CHILD_PROCESS_ARCH
   launcher->SetLaunchArchitecture(mLaunchArch);
@@ -1086,8 +1084,13 @@ RefPtr<ProcessLaunchPromise> BaseProcessLauncher::PerformAsyncLaunch() {
   if (aError.isErr()) {
     return ProcessLaunchPromise::CreateAndReject(aError.unwrapErr(), __func__);
   }
+
+  // NOTE: We run this task on the IO event target as it should be cheap &
+  // non-blocking, and the next step in our caller will be ->Then-ed onto this
+  // event target, meaning this avoids unnecessary thread hops back to the
+  // launch target on platforms like macOS.
   return DoLaunch()->Then(
-      mLaunchThread, __func__,
+      XRE_GetAsyncIOEventTarget(), __func__,
       [self =
            RefPtr{this}](ProcessLaunchPromise::ResolveOrRejectValue&& aResult) {
         // Explicitly destroy any outstanding references to HANDLEs which may be

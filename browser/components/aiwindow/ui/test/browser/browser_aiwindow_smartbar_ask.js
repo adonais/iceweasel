@@ -74,9 +74,7 @@ add_task(async function test_click_ask_row_picks_result() {
 
   try {
     const fetchWithHistoryStub = sb.stub(Chat, "fetchWithHistory");
-    sb.stub(openAIEngine, "build").resolves({
-      loadPrompt: () => Promise.resolve("Mock system prompt"),
-    });
+    sb.stub(openAIEngine, "build").resolves({});
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
@@ -154,9 +152,7 @@ add_task(async function test_enter_non_heuristic_ask_row_picks_result() {
     const fetchWithHistoryStub = sb
       .stub(Chat, "fetchWithHistory")
       .callsFake(() => resolve());
-    sb.stub(openAIEngine, "build").resolves({
-      loadPrompt: () => Promise.resolve("Mock system prompt"),
-    });
+    sb.stub(openAIEngine, "build").resolves({});
 
     const win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;

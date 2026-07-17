@@ -67,6 +67,11 @@ nsresult HTMLEditor::InsertLineBreakAsSubAction() {
     }
   }
 
+  if (GetEditContext()) {
+    // Don't insert line break if there is an EditContext
+    return NS_OK;
+  }
+
   // XXX This may be called by execCommand() with "insertLineBreak".
   //     In such case, naming the transaction "TypingTxnName" is odd.
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName,

@@ -50,7 +50,6 @@ import org.mozilla.fenix.components.share.ShareSource
 import org.mozilla.fenix.components.usecases.FenixBrowserUseCases
 import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.home.bookmarks.Bookmark
 import org.mozilla.fenix.home.recenttabs.RecentTab
@@ -128,7 +127,7 @@ class DefaultSessionControlControllerTest {
             every { id } returns R.id.homeFragment
         }
         every { activity.components.settings } returns settings
-        every { activity.settings() } returns settings
+        every { activity.components.settings } returns settings
         every { activity.filesDir } returns filesDir
     }
 

@@ -74,6 +74,17 @@ parent:
   async SetBrowserGestureResponse(uint64_t aInputBlockId,
                                   BrowserGestureResponse aResponse);
 
+  // Fast notification from content that an APZ-aware (non-passive
+  // touchstart/touchmove/touchend/wheel/...) event listener has been
+  // registered. |aGuid| identifies the nearest scroll container ancestor
+  // of the listener target (or the document's root scroll container for
+  // document/window listeners). APZ uses this signal to set
+  // eApzAwareListeners on subsequent hit-test results whose target APZC
+  // matches |aGuid| or descends from it in the APZC tree (within the
+  // same layers id), without waiting for a full paint and WebRender
+  // transaction round-trip.
+  async NotifyApzAwareListenerAdded(ScrollableLayerGuid aGuid);
+
   async __delete__();
 
 child:

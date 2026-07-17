@@ -21,3 +21,5 @@ skip-if = ["!crashreporter"]
 
 ["browser_wmfme_max_crashes.js"]
 skip-if = ["!crashreporter"]
+
+["browser_wmfme_cdm_info.js"]

@@ -5,10 +5,11 @@
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { useSelector, batch } from "react-redux";
-import { useIntersectionObserver } from "../../../lib/utils";
+import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
 import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 import { WidgetCelebration } from "../WidgetCelebration";
 import { useWidgetCelebration } from "../useWidgetCelebration";
+import { MoveSubmenu } from "../MoveSubmenu";
 
 const FOCUS_TIMER_CELEBRATION_GRADIENT_STOPS = [
   { offset: "0%", color: "var(--timer-celebration-leading)" },
@@ -141,6 +142,7 @@ export const FocusTimer = ({
   handleUserInteraction,
   isMaximized,
   widgetsMayBeMaximized,
+  widgetEnabledMap,
 }) => {
   const [timeLeft, setTimeLeft] = useState(0);
   // calculated value for the progress circle; 1 = 100%
@@ -961,25 +963,7 @@ export const FocusTimer = ({
     toggleType(timerType === "focus" ? "break" : "focus");
   };
 
-  const sizeSubmenuRef = useRef(null);
-  useEffect(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    // The size submenu panel-list is moved into the panel-item's shadow DOM by
-    // the panel-list custom element, so React's synthetic onClick doesn't reach
-    // inner items. We use composedPath() to find the clicked item across the
-    // shadow boundary via its data-size attribute.
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
 
   // Keep the running-state body layout through the celebration so the ring
   // doesn't shift to a third position during the animation.
@@ -1050,7 +1034,15 @@ export const FocusTimer = ({
               }
               onClick={() => {
                 batch(() => {
-                  handlePrefUpdate("widgets.focusTimer.enabled", false);
+                  dispatch(
+                    ac.OnlyToMain({
+                      type: at.SET_PREF,
+                      data: {
+                        name: "widgets.focusTimer.enabled",
+                        value: false,
+                      },
+                    })
+                  );
 
                   const telemetryData = {
                     widget_name: "focus_timer",
@@ -1092,6 +1084,10 @@ export const FocusTimer = ({
                 </panel-item>
               )
             }
+            <MoveSubmenu
+              widgetId="focusTimer"
+              widgetEnabledMap={widgetEnabledMap}
+            />
             {
               // @nova-cleanup(remove-conditional): Remove the `novaEnabled &&` check; always render the divider.
               novaEnabled && <hr />

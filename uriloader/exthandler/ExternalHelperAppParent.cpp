@@ -31,7 +31,7 @@ NS_IMPL_ISUPPORTS_INHERITED(ExternalHelperAppParent, nsHashPropertyBag,
                             nsIStreamListener, nsIExternalHelperAppParent)
 
 ExternalHelperAppParent::ExternalHelperAppParent(
-    nsIURI* uri, const int64_t& aContentLength, const bool& aWasFileChannel,
+    nsIURI* uri, const int64_t& aContentLength,
     const nsACString& aContentDispositionHeader,
     const uint32_t& aContentDispositionHint,
     const nsAString& aContentDispositionFilename)
@@ -42,7 +42,9 @@ ExternalHelperAppParent::ExternalHelperAppParent(
       mStatus(NS_OK),
       mCanceled(false),
       mContentLength(aContentLength),
-      mWasFileChannel(aWasFileChannel) {
+      // Never trust a child-supplied flag for the native helper-launch
+      // decision: derive it from the actual URI the parent will operate on.
+      mWasFileChannel(uri && uri->SchemeIs("file")) {
   mContentDispositionHeader = aContentDispositionHeader;
   if (!mContentDispositionHeader.IsEmpty()) {
     NS_GetFilenameFromDisposition(mContentDispositionFilename,
@@ -317,6 +319,19 @@ ExternalHelperAppParent::GetLoadInfo(nsILoadInfo** aLoadInfo) {
 
 NS_IMETHODIMP
 ExternalHelperAppParent::SetLoadInfo(nsILoadInfo* aLoadInfo) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+ExternalHelperAppParent::GetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle** aValue) {
+  *aValue = nullptr;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+ExternalHelperAppParent::SetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle* aValue) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

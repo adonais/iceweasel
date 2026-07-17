@@ -4,7 +4,6 @@
 
 #include "builtin/ParseRecordObject.h"
 
-#include "jsapi.h"  // JS_ValueToId, JS_IdToValue
 #include "builtin/Object.h"
 #include "js/PropertyAndElement.h"  // JS_SetPropertyById
 #include "vm/PlainObject.h"
@@ -42,25 +41,8 @@ ParseRecordObject* ParseRecordObject::create(JSContext* cx,
   return obj;
 }
 
-JS::PropertyKey ParseRecordObject::getKey(JSContext* cx) const {
-  Rooted<Value> slot(cx, getReservedSlot(KeySlot));
-  Rooted<JS::PropertyKey> key(cx);
-  MOZ_ALWAYS_TRUE(JS_ValueToId(cx, slot, &key));
-  return key;
-};
-
-bool ParseRecordObject::setKey(JSContext* cx, const JS::PropertyKey& key) {
-  Rooted<Value> val(cx);
-  if (!JS_IdToValue(cx, key, &val)) {
-    return false;
-  }
-  setReservedSlot(KeySlot, val);
-  return true;
-}
-
 bool ParseRecordObject::addEntries(JSContext* cx, Handle<JS::PropertyKey> key,
                                    Handle<ParseRecordObject*> parseRecord) {
-  parseRecord->setKey(cx, key.get());
   Rooted<Value> pro(cx, ObjectValue(*parseRecord));
   Rooted<JSObject*> obj(cx, this);
   return JS_SetPropertyById(cx, obj, key, pro);

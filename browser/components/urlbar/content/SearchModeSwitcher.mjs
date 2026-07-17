@@ -11,7 +11,11 @@
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
+  AppProvidedConfigEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  ConfigSearchEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   OpenSearchManager:
     "moz-src:///browser/components/search/OpenSearchManager.sys.mjs",
   PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
@@ -26,6 +30,17 @@ ChromeUtils.defineESModuleGetters(lazy, {
 ChromeUtils.defineLazyGetter(lazy, "SearchModeSwitcherL10n", () => {
   return new Localization(["browser/browser.ftl"]);
 });
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "settingsRedesignEnabled",
+  "browser.settings-redesign.enabled",
+  true
+);
 
 // Default icon used for engines that do not have icons loaded.
 const DEFAULT_ENGINE_ICON =
@@ -159,7 +174,11 @@ export class SearchModeSwitcher {
       let engine = lazy.UrlbarSearchUtils.getEngineByName(
         this.#input.searchMode?.engineName
       );
-      if (engine && engine.isConfigEngine && !engine.hasBeenUsed) {
+      if (
+        engine &&
+        engine instanceof lazy.ConfigSearchEngine &&
+        !engine.hasBeenUsed
+      ) {
         engine.markAsUsed();
       }
     }
@@ -429,12 +448,20 @@ export class SearchModeSwitcher {
     let searchEngines = (await lazy.SearchService.getVisibleEngines()).filter(
       engine => !engine.hideOneOffButton
     );
-    this.#engines = searchEngines.concat(
-      lazy.UrlbarUtils.LOCAL_SEARCH_MODES.filter(
-        engine =>
-          this.#input.sapName == "urlbar" && lazy.UrlbarPrefs.get(engine.pref)
-      )
-    );
+
+    if (this.#input.sapName != "urlbar") {
+      this.#engines = searchEngines;
+    } else {
+      // After the settings redesign we no longer use the prefs to hide local
+      // search modes. Hence when the settings redesign is enabled we show
+      // all local search modes regardless of the prefs.
+      this.#engines = searchEngines.concat(
+        lazy.UrlbarUtils.LOCAL_SEARCH_MODES.filter(
+          engine =>
+            lazy.settingsRedesignEnabled || lazy.UrlbarPrefs.get(engine.pref)
+        )
+      );
+    }
   }
 
   async updateSearchIcon() {
@@ -612,6 +639,13 @@ export class SearchModeSwitcher {
       this.#panelList.focusWalker.currentNode = this.#panelList;
       this.#panelList.focusWalker.nextNode();
     }
+
+    // Hide footer separator if there are no menuitems between both separators.
+    footerSeparator.toggleAttribute(
+      "hidden",
+      footerSeparator.previousElementSibling == installedEngineSeparator
+    );
+
     this.#panelList.dispatchEvent(new Event("rebuild"));
   }
 
@@ -658,7 +692,7 @@ export class SearchModeSwitcher {
     menuitem.setAttribute("title", engine.name);
     menuitem.setAttribute("closemenu", "none");
 
-    if (engine.isNew() && engine.isAppProvided) {
+    if (engine.isNew() && engine instanceof lazy.AppProvidedConfigEngine) {
       menuitem.setAttribute("badge-type", "new");
     }
 
@@ -742,7 +776,9 @@ export class SearchModeSwitcher {
     if (this.#input.sapName == "urlbar") {
       // TODO do we really need to distinguish here?
       Glean.urlbarUnifiedsearchbutton.picked[
-        searchEngine.isConfigEngine ? "builtin_search" : "addon_search"
+        searchEngine instanceof lazy.ConfigSearchEngine
+          ? "builtin_search"
+          : "addon_search"
       ].add(1);
     }
   }

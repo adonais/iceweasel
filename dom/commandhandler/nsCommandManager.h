@@ -27,7 +27,7 @@ class nsCommandManager final : public nsICommandManager,
    */
   explicit nsCommandManager(mozIDOMWindowProxy* aWindow);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsCommandManager, nsICommandManager)
 
   NS_DECL_NSICOMMANDMANAGER

@@ -126,12 +126,11 @@
 .action-result-undo {
   align-self: flex-start;
   --button-border-radius: var(--border-radius-circle);
-  --button-border: var(--border-width) solid transparent;
   --button-font-weight: var(--font-weight);
 
   @media not (forced-colors) {
-    --button-background-color: var(--smartwindow-prompt-button-background-color);
-    --button-text-color: var(--smartwindow-text-color-accent-deemphasized);
+    --button-background-color-ghost: var(--smartwindow-prompt-button-background-color);
+    --button-text-color-ghost: var(--smartwindow-text-color-accent-deemphasized);
   }
 }
 

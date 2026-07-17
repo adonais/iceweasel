@@ -69,7 +69,7 @@ add_task(async function test_smartblock_embed_replaced() {
   );
 
   // Click to toggle to unblock embed and wait for script to finish
-  await EventUtils.synthesizeMouseAtCenter(blockedEmbedToggle.buttonEl, {});
+  EventUtils.synthesizeMouseAtCenter(blockedEmbedToggle.buttonEl, {});
 
   await embedScriptFinished;
 
@@ -86,7 +86,7 @@ add_task(async function test_smartblock_embed_replaced() {
 
   await openProtectionsPanel(window);
 
-  await EventUtils.synthesizeMouseAtCenter(
+  EventUtils.synthesizeMouseAtCenter(
     document.getElementById("trustpanel-blocker-see-all"),
     {}
   );

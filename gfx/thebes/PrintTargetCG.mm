@@ -180,7 +180,7 @@ nsresult PrintTargetCG::BeginPrinting(const nsAString& aTitle,
 
   if (!adjustedTitle.IsEmpty()) {
     CFStringRef cfString = ::CFStringCreateWithCharacters(
-        NULL, reinterpret_cast<const UniChar*>(adjustedTitle.BeginReading()),
+        nullptr, reinterpret_cast<const UniChar*>(adjustedTitle.BeginReading()),
         adjustedTitle.Length());
     if (cfString) {
       ::PMPrintSettingsSetJobName(mPrintSettings, cfString);

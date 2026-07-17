@@ -10,7 +10,8 @@ export LD_LIBRARY_PATH=$PWD/dist/Debug/lib/
 export RUST_LOG=warn
 export RUSTFLAGS="-C instrument-coverage"
 
-cp -a "${VCS_PATH}/nss" "${VCS_PATH}/nspr" .
+cp -a "${VCS_PATH}/nss" .
+[ -d nspr ] || git clone https://github.com/mozilla/nspr nspr
 
 if [[ -f nss/nspr.patch && "$ALLOW_NSPR_PATCH" == "1" ]]; then
     cd nspr

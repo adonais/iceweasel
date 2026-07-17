@@ -176,8 +176,8 @@ def build(
     There are a few special targets that can be used to perform a partial
     build faster than what `mach build` would perform:
 
-    * binaries - compiles and links all C/C++ sources and produces shared
-      libraries and executables (binaries).
+    * binaries - compiles and links all C/C++/Obj-C/Rust sources and produces
+      shared libraries and executables (binaries).
 
     * faster - builds JavaScript, XUL, CSS, etc files.
 

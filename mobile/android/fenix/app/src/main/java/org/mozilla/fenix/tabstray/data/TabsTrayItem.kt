@@ -179,3 +179,10 @@ internal fun createTabGroup(
     isFocused = isFocused,
     initialScrollIndex = initialScrollIndex,
 )
+
+internal fun List<TabsTrayItem>.toTabList(): List<TabsTrayItem.Tab> = flatMap {
+    when (it) {
+        is TabsTrayItem.Tab -> listOf(it)
+        is TabsTrayItem.TabGroup -> it.tabs
+    }
+}

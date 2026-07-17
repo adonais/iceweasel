@@ -815,6 +815,9 @@ class SimpleVideoStreamEncoderFactory {
         const CodecSpecificInfo* codec_specific_info) override {
       return Result(EncodedImageCallback::Result::OK);
     }
+    void OnFrameDropped(uint32_t rtp_timestamp,
+                        int spatial_id,
+                        bool is_end_of_temporal_unit) override {}
   };
 
   FieldTrials field_trials_ = CreateTestFieldTrials();
@@ -1340,8 +1343,9 @@ class VideoStreamEncoderTest : public ::testing::Test {
         num_encodes_++;
         if (drop_frames_) {
           if (encoded_image_callback_) {
-            encoded_image_callback_->OnDroppedFrame(
-                EncodedImageCallback::DropReason::kDroppedByEncoder);
+            encoded_image_callback_->OnFrameDropped(
+                input_image.rtp_timestamp(), /*spatial_id=*/0,
+                /*is_end_of_temporal_unit=*/true);
           }
           return WEBRTC_VIDEO_CODEC_OK;
         }
@@ -10484,6 +10488,8 @@ TEST(VideoStreamEncoderSimpleTest, CreateDestroy) {
    public:
     SuperLazyTaskQueue() = default;
     ~SuperLazyTaskQueue() override = default;
+
+    absl::string_view queue_name() const override { return "Lazy"; }
 
    private:
     void Delete() override { delete this; }

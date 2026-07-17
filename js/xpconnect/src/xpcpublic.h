@@ -535,6 +535,7 @@ class ZoneStatsExtras {
  public:
   ZoneStatsExtras() = default;
 
+  nsCString zoneName;
   nsCString pathPrefix;
 
  private:

@@ -734,6 +734,7 @@ package org.mozilla.geckoview {
 
   @AnyThread public class ContentBlockingController {
     ctor public ContentBlockingController();
+    method @HandlerThread @NonNull public GeckoResult<Void> clearTrackingDb();
     method @NonNull @UiThread public GeckoResult<List<ContentBlockingController.LogEntry>> getLog(@NonNull GeckoSession);
     method @HandlerThread @NonNull public GeckoResult<Long> getTrackingDbEarliestRecordedDate();
     method @HandlerThread @NonNull public GeckoResult<List<ContentBlockingController.TrackingDbEvent>> getTrackingDbEventsByDateRange(long, long);
@@ -767,7 +768,8 @@ package org.mozilla.geckoview {
     field public static final int LOADED_LEVEL_1_TRACKING_CONTENT = 8192;
     field public static final int LOADED_LEVEL_2_TRACKING_CONTENT = 1048576;
     field public static final int LOADED_SOCIALTRACKING_CONTENT = 131072;
-    field public static final int PURGED_BOUNCETRACKER = 7;
+    field public static final int PURGED_BOUNCETRACKER = 8;
+    field public static final int REPLACED_FINGERPRINTING_CONTENT = 134217728;
     field public static final int REPLACED_TRACKING_CONTENT = 16;
   }
 
@@ -1624,6 +1626,7 @@ package org.mozilla.geckoview {
   public static class GeckoSession.PermissionDelegate.ContentPermission {
     ctor protected ContentPermission();
     method @AnyThread @Nullable public static GeckoSession.PermissionDelegate.ContentPermission fromJson(@NonNull JSONObject);
+    method @AnyThread public void notifyShown();
     method @AnyThread @NonNull public JSONObject toJson();
     field public static final int VALUE_ALLOW = 1;
     field public static final int VALUE_DENY = 2;
@@ -2050,6 +2053,9 @@ package org.mozilla.geckoview {
     field public float scrollY;
     field public int source;
     field public float zoom;
+  }
+
+  @Retention(value=RetentionPolicy.SOURCE) public static interface GeckoSession.ScrollPositionUpdate.SourceType {
   }
 
   public static interface GeckoSession.SelectionActionDelegate {

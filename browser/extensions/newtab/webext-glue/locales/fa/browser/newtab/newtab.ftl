@@ -21,6 +21,55 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = زبانه‌های جدید
+
+## Firefox Home content
+
+home-prefs-firefox-logo-header =
+    .label = آرم { -brand-short-name }
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } ردیف
+           *[other] { $num } ردیف
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = افزونه ({ $extension })
+home-restore-defaults-srd =
+    .label = بازنشانی پیش‌فرض‌ها
+    .accesskey = R
+home-mode-choice-custom-srd =
+    .label = آدرس‌های سفارشی…
+home-mode-choice-blank-srd =
+    .label = صفحهٔ خالی
+home-prefs-shortcuts-header-srd =
+    .label = میان‌برها
+home-prefs-shortcuts-select =
+    .aria-label = میان‌برها
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = میانبرهایی از حامیان مالی
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = محتوایی از حامیان مالی
+home-prefs-highlights-option-visited-pages-srd =
+    .label = صفحات بازدید شده
+home-prefs-highlights-options-bookmarks-srd =
+    .label = نشانک‌ها
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = جدیدترین بارگیری
+home-prefs-recent-activity-header-srd =
+    .label = فعالیت‌های اخیر
+home-prefs-recent-activity-select =
+    .aria-label = فعالیت‌های اخیر
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -119,6 +168,8 @@ newtab-menu-save-to-pocket = ذخیره‌سازی در { -pocket-brand-name }
 newtab-menu-delete-pocket = حذف از { -pocket-brand-name }
 newtab-menu-archive-pocket = آرشیو در { -pocket-brand-name }
 newtab-menu-show-privacy-info = حامیان ما و حریم خصوصی شما
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = بیشتر بدانید
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 

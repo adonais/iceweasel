@@ -94,9 +94,9 @@ class PopoverData {
   void SetToggleEventTask(PopoverToggleEventTask* aTask) { mTask = aTask; }
   void ClearToggleEventTask() { mTask = nullptr; }
 
-  bool IsShowingOrHiding() const { return mIsShowingOrHiding; }
-  void SetIsShowingOrHiding(bool aIsShowingOrHiding) {
-    mIsShowingOrHiding = aIsShowingOrHiding;
+  bool IsPopoverHiding() const { return mIsPopoverHiding; }
+  void SetIsPopoverHiding(bool aIsPopoverHiding) {
+    mIsPopoverHiding = aIsPopoverHiding;
   }
 
  private:
@@ -114,7 +114,7 @@ class PopoverData {
   // this a weak reference, as if the element goes away it's necessarily not
   // connected to our document.
   nsWeakPtr mInvokerElement;
-  bool mIsShowingOrHiding = false;
+  bool mIsPopoverHiding = false;
   RefPtr<PopoverToggleEventTask> mTask;
 
   // This won't need to be cycle collected as CloseWatcher only has strong

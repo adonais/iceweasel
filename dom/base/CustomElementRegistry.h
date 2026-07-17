@@ -199,7 +199,8 @@ class CustomElementReactionsStack {
   // We need to lookup ElementReactionQueueMap again to get relevant reaction
   // queue. The choice of 3 for the auto size here is based on running Custom
   // Elements wpt tests.
-  typedef AutoTArray<RefPtr<Element>, 3> ElementQueue;
+  static constexpr size_t kElementQueueInlineSize = 3;
+  typedef AutoTArray<RefPtr<Element>, kElementQueueInlineSize> ElementQueue;
 
   /**
    * Enqueue a custom element upgrade reaction
@@ -286,6 +287,11 @@ class CustomElementReactionsStack {
 
   // The choice of 8 for the auto size here is based on gut feeling.
   AutoTArray<UniquePtr<ElementQueue>, 8> mReactionsStack;
+  // A cached ElementQueue, moved out when pushed onto mReactionsStack and
+  // moved back on pop, to avoid a heap allocation per push/pop cycle. Only
+  // cached when the queue still uses its inline storage, so we don't hold
+  // on to a grown buffer.
+  UniquePtr<ElementQueue> mCachedElementQueue;
   ElementQueue mBackupQueue;
   // https://html.spec.whatwg.org/#enqueue-an-element-on-the-appropriate-element-queue
   bool mIsBackupQueueProcessing;
@@ -318,7 +324,7 @@ class CustomElementReactionsStack {
       mReactionStack->mIsBackupQueueProcessing = true;
     }
 
-    MOZ_CAN_RUN_SCRIPT virtual void Run(AutoSlowOperation& aAso) override {
+    MOZ_CAN_RUN_SCRIPT void Run(AutoSlowOperation& aAso) override {
       mReactionStack->InvokeBackupQueue();
       mReactionStack->mIsBackupQueueProcessing = false;
     }
@@ -330,7 +336,7 @@ class CustomElementReactionsStack {
 
 class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(CustomElementRegistry)
 
  public:
@@ -528,8 +534,8 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
 
   DocGroup* GetDocGroup() const;
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   void Define(JSContext* aCx, const nsAString& aName,
               CustomElementConstructor& aFunctionConstructor,
@@ -557,6 +563,12 @@ class CustomElementRegistry final : public nsISupports, public nsWrapperCache {
                                   ErrorResult& aRv);
 
   void Upgrade(nsINode& aRoot);
+
+  /**
+   * Initialize a Node's CustomElementRegistry to this registry.
+   * https://html.spec.whatwg.org/multipage/custom-elements.html#dom-customelementregistry-initialize
+   */
+  void Initialize(nsINode& aRoot, ErrorResult& aRv);
 };
 
 class MOZ_RAII AutoCEReaction final {

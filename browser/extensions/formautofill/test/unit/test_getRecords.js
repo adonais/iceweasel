@@ -258,7 +258,7 @@ add_task(async function test_getRecords_creditCards() {
         Ci.nsIPKCS11Token
       );
       token.reset();
-      token.initPassword("password");
+      token.changePassword("", "password");
     }
     const fap = new FormAutofillParent();
     sinon.stub(fap, "browsingContext").get(() => {

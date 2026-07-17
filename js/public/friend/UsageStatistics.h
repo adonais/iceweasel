@@ -85,20 +85,24 @@ using JSAccumulateTelemetryDataCallback = void (*)(JSMetric,
 extern JS_PUBLIC_API void JS_SetAccumulateTelemetryCallback(
     JSContext* cx, JSAccumulateTelemetryDataCallback callback);
 
-#define FOR_EACH_JS_USE_COUNTER(_)                         \
-  _(ASMJS, AsmJS)                                          \
-  _(USE_ASM, UseAsm)                                       \
-  _(WASM, Wasm)                                            \
-  _(WASM_LEGACY_EXCEPTIONS, WasmLegacyExceptions)          \
-  _(ISHTMLDDA_FUSE, IsHTMLDDAFuse)                         \
-  _(OPTIMIZE_GET_ITERATOR_FUSE, OptimizeGetIteratorFuse)   \
-  _(LEGACY_LANG_SUBTAG, LegacyLangSubtag)                  \
-  _(IC_STUB_TOO_LARGE, ICStubTooLarge)                     \
-  _(IC_STUB_OOM, ICStubOOM)                                \
-  _(DATEPARSE, DateParse)                                  \
-  _(DATEPARSE_IMPL_DEF, DateParseImplDef)                  \
-  _(OPTIMIZE_ARRAY_SPECIES_FUSE, OptimizeArraySpeciesFuse) \
-  _(OPTIMIZE_PROMISE_LOOKUP_FUSE, OptimizePromiseLookupFuse)
+#define FOR_EACH_JS_USE_COUNTER(_)                                   \
+  _(ASMJS, AsmJS)                                                    \
+  _(USE_ASM, UseAsm)                                                 \
+  _(WASM, Wasm)                                                      \
+  _(WASM_LEGACY_EXCEPTIONS, WasmLegacyExceptions)                    \
+  _(ISHTMLDDA_FUSE, IsHTMLDDAFuse)                                   \
+  _(OPTIMIZE_GET_ITERATOR_FUSE, OptimizeGetIteratorFuse)             \
+  _(LEGACY_LANG_SUBTAG, LegacyLangSubtag)                            \
+  _(IC_STUB_TOO_LARGE, ICStubTooLarge)                               \
+  _(IC_STUB_OOM, ICStubOOM)                                          \
+  _(DATEPARSE, DateParse)                                            \
+  _(DATEPARSE_IMPL_DEF, DateParseImplDef)                            \
+  _(OPTIMIZE_ARRAY_SPECIES_FUSE, OptimizeArraySpeciesFuse)           \
+  _(OPTIMIZE_PROMISE_LOOKUP_FUSE, OptimizePromiseLookupFuse)         \
+  _(GENERATOR_FUNCTION_CREATED, GeneratorFunctionCreated)            \
+  _(ASYNC_GENERATOR_FUNCTION_CREATED, AsyncGeneratorFunctionCreated) \
+  _(GENERATOR_FUNCTION_ION_ELIGIBLE, GeneratorFunctionIonEligible)   \
+  _(ASYNC_GENERATOR_FUNCTION_ION_ELIGIBLE, AsyncGeneratorFunctionIonEligible)
 
 /*
  * Use counter names passed to the accumulate use counter callback.

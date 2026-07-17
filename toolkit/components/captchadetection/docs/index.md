@@ -189,7 +189,7 @@ Later, in a switch case, we label known preference configurations, so instead of
   * 2 \= reject all cookies
   * 3 \= reject third-party cookies unless the eTLD already has at least one cookie
   * 4 \= reject trackers
-  * 5 \= reject trackers, partition third-party cookies
+  * 5 \= partition third-party cookies
 
 ### SQL Queries Used in the Dashboard
 

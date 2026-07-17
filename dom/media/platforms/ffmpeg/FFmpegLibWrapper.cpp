@@ -139,7 +139,7 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
       version = AV_FUNC_62;
       break;
     default:
-      FFMPEGV_LOG("Unknown avcodec version: %d", macro);
+      FFMPEGV_LOG("Unknown avcodec version: {}", macro);
       Unlink();
       return isFFMpeg ? ((macro > 57) ? LinkResult::UnknownFutureFFMpegVersion
                                       : LinkResult::UnknownOlderFFMpegVersion)
@@ -148,7 +148,7 @@ FFmpegLibWrapper::LinkResult FFmpegLibWrapper::Link() {
                       : LinkResult::UnknownFutureLibAVVersion;
   }
 
-  FFMPEGP_LOG("version: 0x%x, macro: %d, micro: %d, isFFMpeg: %s", version,
+  FFMPEGP_LOG("version: 0x{:x}, macro: {}, micro: {}, isFFMpeg: {}", version,
               macro, micro, isFFMpeg ? "yes" : "no");
 
 #define AV_FUNC_OPTION_SILENT(func, ver)                                \
@@ -468,7 +468,7 @@ void FFmpegLibWrapper::UpdateLogLevel() {
   if (MOZ_LOG_TEST(sFFmpegLibLog, level)) {
     nsAutoCString msg;
     msg.AppendVprintf(aFmt, aArgs);
-    MOZ_LOG(sFFmpegLibLog, level, ("[%p] %s", aPtr, msg.get()));
+    MOZ_LOG_FMT(sFFmpegLibLog, level, "[{}] {}", fmt::ptr(aPtr), msg.get());
   }
 }
 

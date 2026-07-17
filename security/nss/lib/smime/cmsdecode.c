@@ -29,6 +29,7 @@ struct NSSCMSDecoderContextStr {
     PRBool first_decoded;
     PRBool need_indefinite_finish;
     unsigned int max_asn_len;
+    unsigned int depth; /* nesting depth of this decoder context */
 };
 
 struct NSSCMSDecoderDataStr {
@@ -52,6 +53,8 @@ static void nss_cms_decoder_work_data(NSSCMSDecoderContext *p7dcx,
 static NSSCMSDecoderData *nss_cms_create_decoder_data(PLArenaPool *poolp);
 
 extern const SEC_ASN1Template NSSCMSMessageTemplate[];
+
+#define NSS_CMS_MAX_NESTING_DEPTH 32
 
 void
 nss_cms_set_max_asn_length(NSSCMSDecoderContext *p7dcx, unsigned int max_asn_len)
@@ -261,6 +264,11 @@ nss_cms_before_data(NSSCMSDecoderContext *p7dcx)
 
     /* set up inner decoder */
 
+    if (p7dcx->depth >= NSS_CMS_MAX_NESTING_DEPTH) {
+        PORT_SetError(SEC_ERROR_BAD_DATA);
+        return SECFailure;
+    }
+
     if ((template = NSS_CMSUtil_GetTemplateByTypeTag(childtype)) == NULL)
         return SECFailure;
 
@@ -297,6 +305,7 @@ nss_cms_before_data(NSSCMSDecoderContext *p7dcx)
     p7dcx->childp7dcx = childp7dcx;
 
     childp7dcx->type = childtype; /* our type */
+    childp7dcx->depth = p7dcx->depth + 1;
 
     childp7dcx->cmsg = p7dcx->cmsg; /* backpointer to root message */
 
@@ -350,6 +359,13 @@ nss_cms_after_data(NSSCMSDecoderContext *p7dcx)
             rv = nss_cms_after_end(childp7dcx);
             if (rv != SECSuccess)
                 goto done;
+        } else if (childp7dcx->error) {
+            /* The child decoder already tore itself down via the
+             * NSS_CMSDecoder_Update() error path (dcx set to NULL) but
+             * recorded an error — propagate it rather than silently ignoring
+             * it and treating the parent content as successfully decoded. */
+            PORT_SetError(childp7dcx->error);
+            goto done;
         }
         p7dcx->childp7dcx = NULL;
     }
@@ -384,13 +400,18 @@ done:
 }
 
 static SECStatus
-nss_cms_after_end(NSSCMSDecoderContext *p7dcx)
+nss_cms_after_end_inner(NSSCMSDecoderContext *p7dcx, unsigned int depth)
 {
     SECStatus rv = SECSuccess, rv1 = SECSuccess, rv2 = SECSuccess;
 
+    if (depth > NSS_CMS_MAX_NESTING_DEPTH) {
+        PORT_SetError(SEC_ERROR_BAD_DATA);
+        return SECFailure;
+    }
+
     /* Finish any child decoders */
     if (p7dcx->childp7dcx) {
-        rv1 = nss_cms_after_end(p7dcx->childp7dcx) != SECSuccess;
+        rv1 = nss_cms_after_end_inner(p7dcx->childp7dcx, depth + 1) != SECSuccess;
         p7dcx->childp7dcx = NULL;
     }
     /* Finish our asn1 decoder */
@@ -430,6 +451,12 @@ nss_cms_after_end(NSSCMSDecoderContext *p7dcx)
             break;
     }
     return rv;
+}
+
+static SECStatus
+nss_cms_after_end(NSSCMSDecoderContext *p7dcx)
+{
+    return nss_cms_after_end_inner(p7dcx, 0);
 }
 
 /*

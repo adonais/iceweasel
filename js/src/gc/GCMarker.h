@@ -10,6 +10,7 @@
 
 #include "gc/Barrier.h"
 #include "gc/Cell.h"
+#include "gc/WeakMap.h"
 #include "js/HashTable.h"
 #include "js/TracingAPI.h"
 #include "js/TypeDecls.h"
@@ -341,7 +342,7 @@ class MarkingTracerT
   virtual ~MarkingTracerT() = default;
 
   template <typename T>
-  void onEdge(T** thingp, const char* name);
+  bool onEdge(T** thingp, const char* name);
   friend class GenericTracerImpl<MarkingTracerT<markingOptions>>;
 
   GCMarker* gcMarker();
@@ -463,6 +464,10 @@ class GCMarker {
     // Like RegularMarking but with multiple threads running in parallel.
     ParallelMarking,
 
+    // Same as above, but there is a single thread running (possibly not the
+    // main marker thread).
+    ParallelMarkingSingleThread,
+
     // Like RegularMarking but with a single thread running in the background.
     ConcurrentMarking,
 
@@ -512,7 +517,12 @@ class GCMarker {
 
   bool isActive() const { return state != NotActive; }
   bool isRegularMarking() const { return state == RegularMarking; }
-  bool isParallelMarking() const { return state == ParallelMarking; }
+  bool isParallelMarking() const {
+    return state == ParallelMarking || state == ParallelMarkingSingleThread;
+  }
+  bool isParallelMarkingMultipleThreads() const {
+    return state == ParallelMarking;
+  }
   bool isWeakMarking() const { return state == WeakMarking; }
   bool isConcurrentMarking() const { return state == ConcurrentMarking; }
 
@@ -550,6 +560,11 @@ class GCMarker {
   void enterConcurrentMarkingMode();
   void leaveConcurrentMarkingMode();
 
+  // Only relevant when parallel marking: transition to a mode where it is known
+  // that a single thread is running.
+  void enterSingleThreadedMode();
+  void leaveSingleThreadedMode();
+
   // Do not use linear-time weak marking for the rest of this collection.
   // Currently, this will only be triggered by an OOM when updating needed data
   // structures.
@@ -562,13 +577,17 @@ class GCMarker {
 
   bool shouldCheckCompartments() { return strictCompartmentChecking; }
 
-  bool markOneObjectForTest(JSObject* obj);
+  void markOneObjectForTest(JSObject* obj);
 
   bool isRootMarking() const { return state == RootMarking; }
 #endif
 
   bool markCurrentColorInParallel(gc::ParallelMarkTask* task,
                                   JS::SliceBudget& budget);
+
+  // Trace the children of WeakMaps that were marked while draining the mark
+  // stack (on any thread).
+  void markDeferredWeakMapChildren(WeakMapList& deferred);
 
   static void moveAllWork(GCMarker* dst, GCMarker* src);
   static size_t moveSomeWork(GCMarker* dst, GCMarker* src,
@@ -648,6 +667,9 @@ class GCMarker {
 
   void delayMarkingChildrenOnOOM(gc::Cell* cell);
 
+  // Called by stop() and reset().
+  void deactivate();
+
   /*
    * The JSTracer used for marking. This can change depending on the current
    * state.
@@ -684,9 +706,6 @@ class GCMarker {
 
   /* Track the state of marking. */
   MainThreadOrGCTaskData<MarkingState> state;
-
-  /* Whether we successfully added all edges to the implicit edges table. */
-  MainThreadOrGCTaskData<bool> haveAllImplicitEdges;
 
  public:
   /*

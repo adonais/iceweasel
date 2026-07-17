@@ -165,6 +165,7 @@ typedef struct {
                           // operations.  Which internal operations (eg in place
                           // or move, or different size classes) require
                           // different internal operations is unspecified.
+  size_t arena_run_header;
 } jemalloc_stats_t;
 
 typedef struct {

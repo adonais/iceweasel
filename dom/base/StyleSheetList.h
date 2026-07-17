@@ -20,7 +20,7 @@ namespace dom {
 class StyleSheetList final : public nsStubMutationObserver,
                              public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(StyleSheetList)
 
   NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED

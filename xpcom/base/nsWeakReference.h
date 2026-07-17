@@ -15,7 +15,7 @@ class nsWeakReference;
 
 class nsSupportsWeakReference : public nsISupportsWeakReference {
  public:
-  nsSupportsWeakReference() : mProxy(0) {}
+  nsSupportsWeakReference() : mProxy(nullptr) {}
 
   NS_DECL_NSISUPPORTSWEAKREFERENCE
 

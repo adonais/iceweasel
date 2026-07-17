@@ -390,9 +390,6 @@ class MarionetteTest(TestingMixin, MercurialScript, TransferMixin, CodeCoverageM
         else:
             cmd.append(manifest)
 
-        try_options, try_tests = self.try_args("marionette")
-        cmd.extend(self.query_tests_args(try_tests, str_format_values=config_fmt_args))
-
         env = {}
         if self.query_minidump_stackwalk():
             env["MINIDUMP_STACKWALK"] = self.minidump_stackwalk_path

@@ -14,6 +14,10 @@
   TODO: need HCM styles
 */
 
+:host([hidden]) {
+  display: none !important;
+}
+
 :host {
   display: flex;
   flex-direction: column;

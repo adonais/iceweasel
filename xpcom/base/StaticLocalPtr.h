@@ -93,7 +93,7 @@ class MOZ_STATIC_LOCAL_CLASS StaticLocalRefPtr final {
     AssignAssumingAddRef(aPtr.take());
   }
 
-  explicit StaticLocalRefPtr(already_AddRefed<T>&& aPtr) : mRawPtr(nullptr) {
+  explicit StaticLocalRefPtr(already_AddRefed<T> aPtr) : mRawPtr(nullptr) {
     AssignAssumingAddRef(aPtr.take());
   }
 

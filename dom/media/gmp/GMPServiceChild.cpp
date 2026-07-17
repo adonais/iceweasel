@@ -47,14 +47,14 @@ GeckoMediaPluginServiceChild::GetSingleton() {
 
 nsresult GeckoMediaPluginServiceChild::Init() {
   MOZ_ASSERT(NS_IsMainThread());
-  GMP_LOG_DEBUG("%s::%s", __CLASS__, __FUNCTION__);
+  GMP_LOG_DEBUG("{}::{}", __CLASS__, __FUNCTION__);
 
   nsresult rv = AddShutdownBlocker();
   if (NS_FAILED(rv)) {
     MOZ_ASSERT_UNREACHABLE(
         "We expect xpcom to be live when calling this, so we should be able to "
         "add a blocker");
-    GMP_LOG_DEBUG("%s::%s failed to add shutdown blocker!", __CLASS__,
+    GMP_LOG_DEBUG("{}::{} failed to add shutdown blocker!", __CLASS__,
                   __FUNCTION__);
     return rv;
   }
@@ -127,7 +127,7 @@ GeckoMediaPluginServiceChild::GetContentParent(
                         "SendLaunchGMPForNodeId failed with description (%s)",
                         aResult.errorDescription().get()));
 
-                GMP_LOG_DEBUG("%s failed to launch GMP with error: %s",
+                GMP_LOG_DEBUG("{} failed to launch GMP with error: {}",
                               __CLASS__, aResult.errorDescription().get());
                 self->mPendingGetContentParents -= 1;
                 self->RemoveShutdownBlockerIfNeeded();
@@ -151,7 +151,7 @@ GeckoMediaPluginServiceChild::GetContentParent(
                     "GeckoMediaPluginServiceChild::GetContentParent "
                     "SendLaunchGMPForNodeId failed with process exit"_ns);
 
-                GMP_LOG_DEBUG("%s failed to launch GMP with process exit",
+                GMP_LOG_DEBUG("{} failed to launch GMP with process exit",
                               __CLASS__);
                 self->mPendingGetContentParents -= 1;
                 self->RemoveShutdownBlockerIfNeeded();
@@ -191,7 +191,7 @@ GeckoMediaPluginServiceChild::GetContentParent(
                   "GeckoMediaPluginServiceChild::GetContentParent "
                   "SendLaunchGMPForNodeId failed with IPC error"_ns);
 
-              GMP_LOG_DEBUG("%s failed to launch GMP with IPC error",
+              GMP_LOG_DEBUG("{} failed to launch GMP with IPC error",
                             __CLASS__);
               self->mPendingGetContentParents -= 1;
               self->RemoveShutdownBlockerIfNeeded();
@@ -275,7 +275,7 @@ void GeckoMediaPluginServiceChild::UpdateGMPCapabilities(
       sGMPCapabilities->AppendElement(GMPCapabilityAndVersion(plugin));
     }
 
-    GMP_LOG_DEBUG("%s::%s {%s}", __CLASS__, __FUNCTION__,
+    GMP_LOG_DEBUG("{}::{} {{{}}}", __CLASS__, __FUNCTION__,
                   GMPCapabilitiesToString().get());
   }
 
@@ -291,8 +291,8 @@ void GeckoMediaPluginServiceChild::UpdateGMPCapabilities(
 
 void GeckoMediaPluginServiceChild::BeginShutdown() {
   AssertOnGMPThread();
-  GMP_LOG_DEBUG("%s::%s: mServiceChild=%p,", __CLASS__, __FUNCTION__,
-                mServiceChild.get());
+  GMP_LOG_DEBUG("{}::{}: mServiceChild={},", __CLASS__, __FUNCTION__,
+                fmt::ptr(mServiceChild.get()));
   // It's possible this gets called twice if the parent sends us a message to
   // shutdown and we block shutdown in content in close proximity.
   mShuttingDownOnGMPThread = true;
@@ -380,7 +380,7 @@ NS_IMETHODIMP
 GeckoMediaPluginServiceChild::Observe(nsISupports* aSubject, const char* aTopic,
                                       const char16_t* aSomeData) {
   MOZ_ASSERT(NS_IsMainThread());
-  GMP_LOG_DEBUG("%s::%s: aTopic=%s", __CLASS__, __FUNCTION__, aTopic);
+  GMP_LOG_DEBUG("{}::{}: aTopic={}", __CLASS__, __FUNCTION__, aTopic);
   if (!strcmp(NS_XPCOM_SHUTDOWN_THREADS_OBSERVER_ID, aTopic)) {
     if (mServiceChild) {
       // Resolve the GMP thread without holding mMutex across the
@@ -439,8 +439,8 @@ void GeckoMediaPluginServiceChild::SetServiceChild(
     RefPtr<GMPServiceChild>&& aServiceChild) {
   AssertOnGMPThread();
   MOZ_ASSERT(!mServiceChild, "Should not already have service child!");
-  GMP_LOG_DEBUG("%s::%s: aServiceChild=%p", __CLASS__, __FUNCTION__,
-                aServiceChild.get());
+  GMP_LOG_DEBUG("{}::{}: aServiceChild={}", __CLASS__, __FUNCTION__,
+                fmt::ptr(aServiceChild.get()));
 
   mServiceChild = std::move(aServiceChild);
 
@@ -455,16 +455,17 @@ void GeckoMediaPluginServiceChild::RemoveGMPContentParent(
     GMPContentParent* aGMPContentParent) {
   AssertOnGMPThread();
   GMP_LOG_DEBUG(
-      "%s::%s: aGMPContentParent=%p, mServiceChild=%p, "
-      "mShuttingDownOnGMPThread=%s",
-      __CLASS__, __FUNCTION__, aGMPContentParent, mServiceChild.get(),
+      "{}::{}: aGMPContentParent={}, mServiceChild={}, "
+      "mShuttingDownOnGMPThread={}",
+      __CLASS__, __FUNCTION__, fmt::ptr(aGMPContentParent),
+      fmt::ptr(mServiceChild.get()),
       mShuttingDownOnGMPThread ? "true" : "false");
 
   if (mServiceChild) {
     mServiceChild->RemoveGMPContentParent(aGMPContentParent);
     GMP_LOG_DEBUG(
-        "%s::%s: aGMPContentParent removed, "
-        "mServiceChild->HaveContentParents()=%s",
+        "{}::{}: aGMPContentParent removed, "
+        "mServiceChild->HaveContentParents()={}",
         __CLASS__, __FUNCTION__,
         mServiceChild->HaveContentParents() ? "true" : "false");
     RemoveShutdownBlockerIfNeeded();
@@ -476,7 +477,7 @@ nsresult GeckoMediaPluginServiceChild::AddShutdownBlocker() {
   MOZ_ASSERT(!mShuttingDownOnGMPThread,
              "No call paths should add blockers once we're shutting down!");
   MOZ_ASSERT(!mShutdownBlocker, "Should only add blocker once!");
-  GMP_LOG_DEBUG("%s::%s ", __CLASS__, __FUNCTION__);
+  GMP_LOG_DEBUG("{}::{} ", __CLASS__, __FUNCTION__);
 
   nsFmtString name(u"GeckoMediaPluginServiceChild {}",
                    static_cast<void*>(this));
@@ -485,7 +486,7 @@ nsresult GeckoMediaPluginServiceChild::AddShutdownBlocker() {
   if (mShutdownBlocker) {
     mShutdownBlocker->ShutdownPromise()->Then(
         mMainThread, __func__, [this, self = RefPtr(this), name]() {
-          GMP_LOG_DEBUG("GMPServiceChild::BlockShutdown: %s",
+          GMP_LOG_DEBUG("GMPServiceChild::BlockShutdown: {}",
                         NS_ConvertUTF16toUTF8(name).get());
           mXPCOMWillShutdown = true;
           nsCOMPtr gmpThread = GetGMPThread();
@@ -504,16 +505,16 @@ void GeckoMediaPluginServiceChild::RemoveShutdownBlocker() {
   MOZ_ASSERT(mShuttingDownOnGMPThread,
              "We should only remove blockers once we're "
              "shutting down!");
-  GMP_LOG_DEBUG("%s::%s ", __CLASS__, __FUNCTION__);
+  GMP_LOG_DEBUG("{}::{} ", __CLASS__, __FUNCTION__);
   mShutdownBlocker = nullptr;
 }
 
 void GeckoMediaPluginServiceChild::RemoveShutdownBlockerIfNeeded() {
   AssertOnGMPThread();
   GMP_LOG_DEBUG(
-      "%s::%s mPendingGetContentParents=%" PRIu32
-      " mServiceChild->HaveContentParents()=%s "
-      "mShuttingDownOnGMPThread=%s",
+      "{}::{} mPendingGetContentParents={} "
+      "mServiceChild->HaveContentParents()={} "
+      "mShuttingDownOnGMPThread={}",
       __CLASS__, __FUNCTION__, mPendingGetContentParents,
       mServiceChild && mServiceChild->HaveContentParents() ? "true" : "false",
       mShuttingDownOnGMPThread ? "true" : "false");

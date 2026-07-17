@@ -57,6 +57,8 @@ const COLOR_TAKING_FUNCTIONS = new Set([
   "oklab",
   "oklch",
   "rgb",
+  // image(<color>) is equivalent to linear-gradient(<color>)
+  "image",
 ]);
 // Functions that accept a shape argument.
 const BASIC_SHAPE_FUNCTIONS = new Set([
@@ -65,35 +67,10 @@ const BASIC_SHAPE_FUNCTIONS = new Set([
   "ellipse",
   "inset",
 ]);
-// TODO: Get the list from an InspectorUtils method (see Bug 2038635)
-const CSS_EXPLAINERS_SUPPORTED_FUNCTIONS = new Set([
-  "abs",
-  "acos",
-  "asin",
-  "atan",
-  "atan2",
-  "attr",
-  "calc",
-  "clamp",
-  "cos",
-  "env",
-  "exp",
-  "hypot",
-  "log",
-  "max",
-  "min",
-  "mod",
-  "pow",
-  // Not supported yet, see Bug 1975530
-  "progress",
-  "rem",
-  "round",
-  "sign",
-  "sin",
-  "sqrt",
-  "tan",
-  "var",
-]);
+
+const CSS_EXPLAINERS_SUPPORTED_FUNCTIONS = new Set(
+  InspectorUtils.getComputationStepsSupportedCSSFunctions()
+);
 
 const BACKDROP_FILTER_ENABLED = Services.prefs.getBoolPref(
   "layout.css.backdrop-filter.enabled"
@@ -176,6 +153,7 @@ class OutputParser {
       name,
       "timing-function"
     );
+    this.parsedPropertyName = name;
     options.expectDisplay = name === "display";
     options.expectFilter =
       name === "filter" ||
@@ -411,7 +389,7 @@ class OutputParser {
           break;
 
         case "ParenthesisBlock":
-          this.#createStackEntry({ isParenthesis: true, text: tokenText });
+          this.#createStackEntry({ text: tokenText });
           this.#appendTextNode(tokenText, token);
           break;
 
@@ -515,8 +493,6 @@ class OutputParser {
       // Boolean indicating if the function accepts color parameters
       // if token is a function, null otherwise.
       isColorTakingFunction: null,
-      // Boolean indicating if the stack entry represent a parenthesis block
-      isParenthesis: null,
       // Will hold the text for the stack entry, i.e. the whole function call
       // (e.g. `min(10px, max(1em, var(--w, 20w)))`),
       text: "",
@@ -629,11 +605,16 @@ class OutputParser {
       // Then update the authored text
       lastStackEntry.text += text;
 
-      // Set the nested functions by adding the one for the stack entry we just handled
-      lastStackEntry.nestedFunctions = [
-        stackEntry.lowerCaseFunctionName,
-        ...stackEntry.nestedFunctions,
-      ];
+      if (stackEntry.lowerCaseFunctionName) {
+        // Set the nested functions by adding the one for the stack entry we just handled
+        lastStackEntry.nestedFunctions = [
+          stackEntry.lowerCaseFunctionName,
+          ...stackEntry.nestedFunctions,
+        ];
+      } else {
+        // If we closed a parenthesis block, just copy the nested functions we had
+        lastStackEntry.nestedFunctions = Array.from(stackEntry.nestedFunctions);
+      }
 
       const compoundEntryToken = {
         // Associate AGGREGATED_TOKEN_TYPE to the part so consumers can know the part was for
@@ -848,6 +829,7 @@ class OutputParser {
     }
 
     let attrNameIndex = null;
+    let attrTypeIndex = null;
     let commaIndex = null;
     for (let i = 0; i < stackEntry.parts.length; i++) {
       const part = stackEntry.parts[i];
@@ -855,16 +837,24 @@ class OutputParser {
         continue;
       }
       const token = stackEntry.tokensByPart.get(part);
-      if (token.tokenType === AGGREGATED_TOKEN_TYPE) {
-        continue;
-      }
 
       // The attribute name is the first Ident
       if (token.tokenType === "Ident" && attrNameIndex === null) {
         attrNameIndex = i;
-      }
-
-      if (token.tokenType === "Comma") {
+      } else if (
+        // If we have another Ident or a closed stack entry before the comma, then that's
+        // the attr type.
+        attrNameIndex !== null &&
+        attrTypeIndex === null &&
+        // Here we're looking for <attr-type> which might be an Ident (raw-string,
+        // number, px, …), a % (Delim) or the `type()` function (which will be represented
+        // as an aggregated token at this point)
+        (token.tokenType === "Ident" ||
+          (token.tokenType === "Delim" && token.text === "%") ||
+          token.tokenType === AGGREGATED_TOKEN_TYPE)
+      ) {
+        attrTypeIndex = i;
+      } else if (token.tokenType === "Comma") {
         commaIndex = i;
         break;
       }
@@ -881,27 +871,105 @@ class OutputParser {
     // and its value
     const attrValue = options.getAttributeValue(attrName);
 
-    // we want to render the attribute name on its own element
-    const attrNameNode = this.#createNode(
-      "span",
-      {
-        class: "inspector-attr-name",
-        "data-attribute":
-          attrValue === null
-            ? STYLE_INSPECTOR_L10N.getFormatStr("rule.attributeUnset", attrName)
-            : `"${attrValue}"`,
-      },
-      attrName
-    );
-    stackEntry.parts[attrNameIndex] = attrNameNode;
-
     // as well as the first attribute (might contain attribute name + typing information),
     // with specific style if the attribute isn't set
     const attrFirstParamNode = this.#createNode("span", {
       class: "inspector-attr-param",
     });
-    if (attrValue === null) {
+
+    // > When an <attr-type> is set, attr() will try to parse the attribute into that
+    // > specified <attr-type> and return it.
+    // > If the attribute cannot be parsed into the given <attr-type>, the <fallback-value>
+    // > will be returned instead.
+    // > When no <attr-type> is set, the attribute will be parsed into a CSS string.
+    // > If no <fallback-value> is set, the return value will default to an empty string
+    // > when no <attr-type> is set or the guaranteed-invalid value when an <attr-type> is set.
+    let fallbackValueIsUsed = attrValue === null;
+    let attrTypeMismatchText;
+    if (attrTypeIndex !== null && attrValue !== null) {
+      const part = stackEntry.parts[attrTypeIndex];
+      const token = stackEntry.tokensByPart.get(part);
+      // First, we want to handle <attr-type> other than `type()`, i.e. Idents (`raw-string`,
+      // `number`, `px`, …) and `%`
+      if (
+        token.tokenType === "Ident" ||
+        (token.tokenType === "Delim" && token.text === "%")
+      ) {
+        // For `number` and units, the spec says:
+        // > If given as the number keyword, it causes the attribute’s literal value […]
+        // to be parsed as a <number-token>.
+        // > Values that fail to parse trigger fallback.
+        // […]
+        // > If given as an <attr-unit> value, the value is first parsed as if number
+        // > keyword was specified, then the resulting numeric value is turned into a
+        // > dimension with the corresponding unit, or a percentage if % was given.
+        // > Same as for number <attr-type>, values that do not correspond to the
+        // > <number-token> production trigger fallback.
+
+        // So we need to check that the attribute value is actually a number. And that's
+        // pretty much it: for <attr-unit>, if the given unit is not known, the declaration
+        // is invalid and won't be parsed anyway
+
+        if (
+          token.text !== "raw-string" &&
+          !InspectorUtils.valueMatchesSyntax(this.#doc, attrValue, "<number>")
+        ) {
+          fallbackValueIsUsed = true;
+          attrTypeMismatchText = STYLE_INSPECTOR_L10N.getFormatStr(
+            "rule.attributeNotNumber",
+            `"${attrValue}"`
+          );
+        }
+      } else if (
+        token.tokenType === AGGREGATED_TOKEN_TYPE &&
+        token.data.lowerCaseFunctionName === "type"
+      ) {
+        // Here we have a type() function. We need to extract its content to see if
+        // the attribute value can be parsed with this type.
+        // We can take a small shortcut here: we have the text of the type() function so…
+        const syntax = token.data.text
+          .slice(
+            // …we can just remove the leading "type("
+            5,
+            // …as well as the  trailing ")"
+            -1
+          )
+          .trim();
+        if (!InspectorUtils.valueMatchesSyntax(this.#doc, attrValue, syntax)) {
+          fallbackValueIsUsed = true;
+          attrTypeMismatchText = STYLE_INSPECTOR_L10N.getFormatStr(
+            "rule.attributeUnmatchedType",
+            `"${attrValue}"`,
+            `"${syntax}"`
+          );
+        }
+      }
+    }
+
+    // First, we want to render the attribute name on its own element
+    const attrNameNode = this.#createNode(
+      "span",
+      {
+        class: "inspector-attr-name",
+      },
+      attrName
+    );
+    stackEntry.parts[attrNameIndex] = attrNameNode;
+
+    if (fallbackValueIsUsed) {
       attrFirstParamNode.classList.add(options.unmatchedClass);
+    }
+
+    if (attrValue === null) {
+      attrFirstParamNode.setAttribute(
+        "data-attribute",
+        STYLE_INSPECTOR_L10N.getFormatStr("rule.attributeUnset", attrName)
+      );
+    } else if (attrTypeMismatchText) {
+      attrFirstParamNode.setAttribute("data-attribute", attrTypeMismatchText);
+    } else {
+      // Otherwise we set it on the attribute name only
+      attrNameNode.setAttribute("data-attribute", `"${attrValue}"`);
     }
 
     // Let's put all the parts starting with the attribute name until the comma
@@ -925,6 +993,7 @@ class OutputParser {
       attrFirstParamNode.append(stackEntry.parts[i]);
       attrFirstParamChildCount++;
     }
+
     stackEntry.parts.splice(
       attrNameIndex,
       attrFirstParamChildCount,
@@ -991,7 +1060,7 @@ class OutputParser {
     );
 
     const fallbackEl = this.#createNode("span", {
-      class: `inspector-attr-fallback${attrValue !== null ? " " + options.unmatchedClass : ""}`,
+      class: `inspector-attr-fallback${fallbackValueIsUsed ? "" : " " + options.unmatchedClass}`,
     });
     fallbackEl.append(...partsToWrap);
     stackEntry.parts.splice(fallbackStartIndex, 0, fallbackEl);
@@ -1765,9 +1834,9 @@ class OutputParser {
     //     property it is used in.
     // > When this happens, the property is treated as if it has value unset
 
-    // TODO: When we're in a @starting-style rule, we shouldn't use the computed value (see Bug 2016778)
-    const varComputedOrSubstitutedValue =
-      varComputedValue ?? varSubstitutedValue;
+    const varComputedOrSubstitutedValue = options.inStartingStyleRule
+      ? varSubstitutedValue
+      : (varComputedValue ?? varSubstitutedValue);
 
     // Put the substitutedText in the entry so it can then be consumed in onCloseParenthesis
     stackEntry.substitutedText = varComputedOrSubstitutedValue;
@@ -1990,7 +2059,7 @@ class OutputParser {
    * @param  {object} options
    *         Options object. For valid options and default values see #mergeOptions().
    */
-  #cssPropertySupportsValue(name, value, options) {
+  #cssPropertySupportsValue(name, value, options = {}) {
     if (
       options.isValid ||
       // The filter property is special in that we want to show the swatch even if the

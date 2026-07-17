@@ -6,6 +6,9 @@
 #define mozilla_dom_DateTimeInputTypes_h_
 
 #include "mozilla/dom/InputType.h"
+#include "mozilla/intl/DateTimeFormat.h"
+
+struct PRExplodedTime;
 
 namespace mozilla::dom {
 
@@ -38,6 +41,19 @@ class DateTimeInputTypeBase : public InputType {
    */
   bool GetTimeFromMs(double aValue, uint16_t* aHours, uint16_t* aMinutes,
                      uint16_t* aSeconds, uint16_t* aMilliseconds) const;
+
+  /**
+   * Format PRExplodedTime according to current locale
+   */
+  bool FormatDateTime(const PRExplodedTime& aTime,
+                      const intl::DateTimeFormat::ComponentsBag& aComponents,
+                      nsAString& aFormatted) const;
+  /**
+   * Format timestamp according to current locale
+   */
+  bool FormatDateTime(double aValue,
+                      const intl::DateTimeFormat::ComponentsBag& aComponents,
+                      nsAString& aFormatted) const;
 
   // Minimum year limited by HTML standard, year >= 1.
   static const double kMinimumYear;

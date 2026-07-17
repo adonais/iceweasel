@@ -9,7 +9,7 @@
 #include "mozilla/dom/SVGTransformableElement.h"
 
 nsresult NS_NewSVGClipPathElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla {
 class SVGClipPathFrame;
@@ -24,9 +24,9 @@ class SVGClipPathElement final : public SVGClipPathElementBase {
  protected:
   friend nsresult(::NS_NewSVGClipPathElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
   explicit SVGClipPathElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 
  public:

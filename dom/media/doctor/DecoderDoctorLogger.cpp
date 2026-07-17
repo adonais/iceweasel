@@ -153,7 +153,7 @@ void DecoderDoctorLogger::EnableLogging() { (void)EnsureLogIsEnabled(); }
 DecoderDoctorLogger::RetrieveMessages(
     const dom::HTMLMediaElement* aMediaElement) {
   if (MOZ_UNLIKELY(!EnsureLogIsEnabled())) {
-    DDL_WARN("Request (for %p) but there are no logs", aMediaElement);
+    DDL_WARN("Request (for {}) but there are no logs", fmt::ptr(aMediaElement));
     return DecoderDoctorLogger::LogMessagesPromise::CreateAndReject(
         NS_ERROR_DOM_MEDIA_ABORT_ERR, __func__);
   }

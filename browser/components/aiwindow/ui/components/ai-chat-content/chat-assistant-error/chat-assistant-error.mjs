@@ -7,7 +7,8 @@ import { html, nothing } from "chrome://global/content/vendor/lit.all.mjs";
 
 /**
  * Numeric error codes received from the back-end via error.error.
- * Codes 1-6 are MLPA spec codes; 7 is set locally for Fastly-blocked 406s.
+ * Codes 1-6 are MLPA spec codes; 7 is set locally for Fastly-blocked 406s
+ * (e.g. when the user's IP is blocked behind a VPN).
  */
 const ERROR_CODES = {
   BUDGET_EXCEEDED: 1,
@@ -16,7 +17,7 @@ const ERROR_CODES = {
   MAX_USERS_REACHED: 4,
   UPSTREAM_RATE_LIMIT: 5,
   FASTLY_WAF_RATE_LIMIT: 6,
-  INVALID_PAGE_CONTENT: 7,
+  FASTLY_BLOCKED: 7,
 };
 
 /**
@@ -129,9 +130,9 @@ export class ChatAssistantError extends MozLitElement {
         this.actionButton = null;
         break;
 
-      case ERROR_CODES.INVALID_PAGE_CONTENT:
+      case ERROR_CODES.FASTLY_BLOCKED:
         this.errorText = {
-          header: "smartwindow-assistant-error-page-content-header",
+          header: "smartwindow-assistant-error-request-blocked-header",
         };
         this.actionButton = null;
         break;
@@ -173,6 +174,7 @@ export class ChatAssistantError extends MozLitElement {
               class="chat-assistant-error__button"
               data-l10n-id=${this.actionButton?.label}
               size="small"
+              type="ghost"
               @click=${this.actionButton?.action}
             ></moz-button>`
           : nothing}

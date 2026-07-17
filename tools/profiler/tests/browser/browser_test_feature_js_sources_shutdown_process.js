@@ -18,10 +18,7 @@ add_task(
       ],
     });
 
-    Assert.ok(
-      !Services.profiler.IsActive(),
-      "The profiler is not currently active"
-    );
+    await ProfilerTestUtils.assertProfilerInactive();
 
     await ProfilerTestUtils.startProfiler({ features: ["js", "jssources"] });
 

@@ -121,7 +121,7 @@ class EventLogger final {
  public:
   explicit EventLogger(std::optional<Environment> env)
       : env_(env),
-        clock_(env.has_value() ? env->clock() : *Clock::GetRealTimeClockRaw()) {}
+        clock_(env.has_value() ? env->clock() : *Clock::GetRealTimeClockOnlyUseForRelativeTime()) {}
   ~EventLogger() { RTC_DCHECK(thread_checker_.IsCurrent()); }
 
   void AddTraceEvent(const char* name,

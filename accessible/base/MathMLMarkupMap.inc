@@ -55,30 +55,30 @@ MARKUPMAP(mmultiscripts, New_HyperText, roles::MATHML_MULTISCRIPTS)
 
 MARKUPMAP(
     mtable,
-    [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
-      return new HTMLTableAccessible(aElement, aContext->Document());
+    [](Element* aElement, LocalAccessible* aContext) -> already_AddRefed<LocalAccessible> {
+      return MakeAndAddRef<HTMLTableAccessible>(aElement, aContext->Document());
     },
     roles::MATHML_TABLE, AttrFromDOM(align, align),
     AttrFromDOM(columnlines, columnlines), AttrFromDOM(rowlines, rowlines))
 
 MARKUPMAP(
     mlabeledtr,
-    [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
-      return new HTMLTableRowAccessible(aElement, aContext->Document());
+    [](Element* aElement, LocalAccessible* aContext) -> already_AddRefed<LocalAccessible> {
+      return MakeAndAddRef<HTMLTableRowAccessible>(aElement, aContext->Document());
     },
     roles::MATHML_LABELED_ROW)
 
 MARKUPMAP(
     mtr,
-    [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
-      return new HTMLTableRowAccessible(aElement, aContext->Document());
+    [](Element* aElement, LocalAccessible* aContext) -> already_AddRefed<LocalAccessible> {
+      return MakeAndAddRef<HTMLTableRowAccessible>(aElement, aContext->Document());
     },
     roles::MATHML_TABLE_ROW)
 
 MARKUPMAP(
     mtd,
-    [](Element* aElement, LocalAccessible* aContext) -> LocalAccessible* {
-      return new HTMLTableCellAccessible(aElement, aContext->Document());
+    [](Element* aElement, LocalAccessible* aContext) -> already_AddRefed<LocalAccessible> {
+      return MakeAndAddRef<HTMLTableCellAccessible>(aElement, aContext->Document());
     },
     0)
 

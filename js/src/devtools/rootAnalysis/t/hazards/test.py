@@ -177,3 +177,14 @@ assert (scope + "AAv") in single
 haz_vars = byfunc["void closure()"]
 assert "lambda_safe1" not in haz_vars
 assert "lambda_unsafe2" in haz_vars
+
+# unsafely taking the address of an unrooted value.
+
+info = test.load_json_file("rootingHazards.json")
+refs = [r for r in info if r["record"] == "address"]
+reffed_vars = {r["variable"]: r for r in refs}
+assert "addr_unsafe1" in reffed_vars
+assert "unsafe_address1()" in reffed_vars["addr_unsafe1"]["functionName"]
+assert "addr_unsafe2" in reffed_vars
+assert "unsafe_address2()" in reffed_vars["addr_unsafe2"]["functionName"]
+assert len(refs) == 2

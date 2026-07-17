@@ -397,6 +397,9 @@ DefaultJitOptions::DefaultJitOptions() {
   SET_DEFAULT(js_regexp_modifiers, true);
   // Whether the stage 3 duplicate named capture groups proposal is enabled.
   SET_DEFAULT(js_regexp_duplicate_named_groups, true);
+  // Whether the regexp buffer boundaries proposal (\A, \z, \Z assertions) is
+  // enabled. See Bug 2047702.
+  SET_DEFAULT(js_regexp_buffer_boundaries, false);
   // V8 uses this for differential fuzzing to handle stack overflows.
   // We address the same problem in StackLimitCheck::HasOverflowed.
   SET_DEFAULT(correctness_fuzzer_suppressions, false);

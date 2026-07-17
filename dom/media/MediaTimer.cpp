@@ -78,7 +78,7 @@ template <typename T>
 RefPtr<MediaTimerPromise> MediaTimer<T>::WaitUntil(const T& aTimeStamp,
                                                    StaticString aCallSite) {
   MonitorAutoLock mon(mMonitor);
-  TIMER_LOG("MediaTimer::WaitUntil %" PRId64, RelativeMicroseconds(aTimeStamp));
+  TIMER_LOG("MediaTimer::WaitUntil {}", RelativeMicroseconds(aTimeStamp));
   Entry e(aTimeStamp, aCallSite);
   RefPtr<MediaTimerPromise> p = e.mPromise.get();
   mEntries.push(e);
@@ -188,7 +188,7 @@ void MediaTimer<T>::ArmTimer(const T& aTarget, const T& aNow) {
   MOZ_DIAGNOSTIC_ASSERT(aTarget > aNow);
 
   const typename T::DurationType delay = aTarget - aNow;
-  TIMER_LOG("MediaTimer::ArmTimer delay=%.3fms", delay.ToMilliseconds());
+  TIMER_LOG("MediaTimer::ArmTimer delay={:.3f}ms", delay.ToMilliseconds());
   mCurrentTimerTarget.emplace(aTarget);
   TimeDuration duration =
       TimeDuration::FromMicroseconds(delay.ToMicroseconds());

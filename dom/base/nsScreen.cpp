@@ -16,6 +16,7 @@
 #include "nsIDocShell.h"
 #include "nsIDocShellTreeItem.h"
 #include "nsLayoutUtils.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPresContext.h"
 
 using namespace mozilla;

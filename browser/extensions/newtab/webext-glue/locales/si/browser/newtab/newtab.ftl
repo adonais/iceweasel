@@ -19,6 +19,57 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = නව පටිති
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] පේළි { $num }
+           *[other] පේළි { $num }
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = ({ $extension }) දිගුව
+home-restore-defaults-srd =
+    .label = පෙරනිමියට ප්‍රත්‍යර්පණය
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (පෙරනිමි)
+home-mode-choice-custom-srd =
+    .label = අභිරුචි ඒ.ස.නි...
+home-mode-choice-blank-srd =
+    .label = හිස් පිටුව
+home-prefs-shortcuts-header-srd =
+    .label = කෙටිමං
+home-prefs-shortcuts-select =
+    .aria-label = කෙටිමං
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = අනුග්‍රහය ලද කෙටිමං
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = අනුග්‍රහය ලද කතා
+home-prefs-highlights-option-visited-pages-srd =
+    .label = දුටු පිටු
+home-prefs-highlights-options-bookmarks-srd =
+    .label = පොත්යොමු
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = වඩාත්ම මෑත බාගැනීම්
+home-prefs-recent-activity-header-srd =
+    .label = මෑත ක්‍රියාකාරකම
+home-prefs-recent-activity-select =
+    .aria-label = මෑත ක්‍රියාකාරකම
+home-prefs-weather-header-srd =
+    .label = කාලගුණය
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -116,6 +167,8 @@ newtab-menu-save-to-pocket = { -pocket-brand-name } හි සුරකින්
 newtab-menu-delete-pocket = { -pocket-brand-name } වෙතින් මකන්න
 newtab-menu-archive-pocket = { -pocket-brand-name } හි සංරක්‍ෂණය
 newtab-menu-show-privacy-info = අපගේ අනුග්‍රහකයින් හා ඔබගේ පෞද්ගලිකත්‍වය
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = තව දැනගන්න
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 

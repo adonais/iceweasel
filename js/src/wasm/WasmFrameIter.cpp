@@ -470,7 +470,7 @@ bool WasmFrameIter::hasSourceInfo() const {
 const char* WasmFrameIter::filename() const {
   MOZ_ASSERT(!done());
   MOZ_ASSERT(hasSourceInfo());
-  return code_->codeMeta().scriptedCaller().filename.get();
+  return code_->codeMeta().scriptedCaller().source.get();
 }
 
 const char16_t* WasmFrameIter::displayURL() const {
@@ -701,8 +701,11 @@ static void GenerateCallablePrologue(MacroAssembler& masm, uint32_t* entry) {
   }
 #elif defined(JS_CODEGEN_RISCV64)
   {
+    // 2 instructions for each ma_push.
+    // 1 instruction for moveStackPtrTo.
+    AutoForbidPoolsAndNops afp(&masm, 5);
+
     *entry = masm.currentOffset();
-    BlockTrampolinePoolScope block_trampoline_pool(&masm, 5);
     masm.ma_push(ra);
     MOZ_ASSERT_IF(!masm.oom(), PushedRetAddr == masm.currentOffset() - *entry);
     masm.ma_push(FramePointer);
@@ -793,7 +796,10 @@ static void GenerateCallableEpilogue(MacroAssembler& masm, unsigned framePushed,
 
 #elif defined(JS_CODEGEN_RISCV64)
   {
-    BlockTrampolinePoolScope block_trampoline_pool(&masm, 20);
+    // Actually emits less instructions (maybe 11?), but reserving 20
+    // instructions definitely ensures no pool is placed in this scope.
+    AutoForbidPoolsAndNops afp(&masm, 20);
+
     masm.loadPtr(Address(StackPointer, Frame::callerFPOffset()), FramePointer);
     poppedFP = masm.currentOffset();
     masm.loadPtr(Address(StackPointer, Frame::returnAddressOffset()), ra);
@@ -888,6 +894,12 @@ void wasm::GenerateFunctionPrologue(MacroAssembler& masm,
   // Its offset is normally zero.
   static_assert(WasmCheckedCallEntryOffset % CodeAlignment == 0,
                 "code aligned");
+
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
+    defined(JS_CODEGEN_RISCV64)
+  // Prevent nop sequences.
+  AutoForbidNops afn(&masm);
+#endif
 
   // Flush pending pools so they do not get dumped between the 'begin' and
   // 'uncheckedCallEntry' offsets since the difference must be less than
@@ -1480,20 +1492,20 @@ void wasm::GenerateJitEntryPrologue(MacroAssembler& masm,
     offsets->begin = masm.currentOffset();
     masm.push(ra);
 #elif defined(JS_CODEGEN_RISCV64)
-    BlockTrampolinePoolScope block_trampoline_pool(&masm, 10);
+    // Actually emits less instructions (maybe 5?), but reserving 10
+    // instructions definitely ensures no pool is placed in this scope.
+    AutoForbidPoolsAndNops afp(&masm, 10);
     offsets->begin = masm.currentOffset();
     masm.push(ra);
 #elif defined(JS_CODEGEN_ARM64)
-    {
-      AutoForbidPoolsAndNops afp(&masm,
-                                 /* number of instructions in scope = */ 2);
-      offsets->begin = masm.currentOffset();
-      static_assert(BeforePushRetAddr == 0);
-      static_assert(JitFrameLayout::offsetOfCallerFramePtr() == 0);
-      static_assert(JitFrameLayout::offsetOfReturnAddress() == 8);
-      masm.Stp(ARMRegister(FramePointer, 64), ARMRegister(lr, 64),
-               MemOperand(sp, -16, vixl::PreIndex));
-    }
+    AutoForbidPoolsAndNops afp(&masm,
+                               /* number of instructions in scope = */ 3);
+    offsets->begin = masm.currentOffset();
+    static_assert(BeforePushRetAddr == 0);
+    static_assert(JitFrameLayout::offsetOfCallerFramePtr() == 0);
+    static_assert(JitFrameLayout::offsetOfReturnAddress() == 8);
+    masm.Stp(ARMRegister(FramePointer, 64), ARMRegister(lr, 64),
+             MemOperand(sp, -16, vixl::PreIndex));
 #else
     // The x86/x64 call instruction pushes the return address.
     offsets->begin = masm.currentOffset();
@@ -1540,6 +1552,8 @@ void wasm::GenerateJitEntryEpilogue(MacroAssembler& masm,
   // Forbid pools for the same reason as described in GenerateCallablePrologue.
 #  if defined(JS_CODEGEN_ARM)
   AutoForbidPoolsAndNops afp(&masm, /* number of instructions in scope = */ 2);
+#  elif defined(JS_CODEGEN_RISCV64)
+  AutoForbidPoolsAndNops afp(&masm, /* number of instructions in scope = */ 5);
 #  endif
 
   masm.pop(FramePointer);
@@ -1666,6 +1680,29 @@ void ProfilingFrameIterator::initFromExitFP(const Frame* fp) {
       callerFP_ = fp->rawCaller();
       AssertMatchesCallSite(callerPC_, callerFP_);
       break;
+#ifdef ENABLE_WASM_JSPI
+    case CodeRange::ContBaseFrame: {
+      // The innermost frame runs on a continuation stack whose base frame is
+      // the cont base frame stub. Transition off the continuation stack onto
+      // the resume target, mirroring the ContBaseFrame handling in
+      // ProfilingFrameIterator::operator++.
+      category_ = Category::Other;
+      Frame* baseFrame = fp->wasmCaller();
+      // Use the handlers on the stack to get the caller's pc and fp. Unlike the
+      // async sampling path in operator++, initFromExitFP is only reached from
+      // known exit points where the stack is fully linked, so the handlers are
+      // never in the transient unlinked state seen mid-suspend.
+      ContStack* stack = ContStack::fromBaseFrameFP(baseFrame);
+      Handlers* handlers = stack->handlers();
+      MOZ_ASSERT(handlers);
+      stackAddress_ = handlers->returnTarget.stackPointer;
+      callerPC_ = handlers->returnTarget.resumePC;
+      AssertMatchesCallSite(callerPC_, baseFrame->rawCaller());
+      callerFP_ =
+          reinterpret_cast<uint8_t*>(handlers->returnTarget.framePointer);
+      break;
+    }
+#endif
     case CodeRange::ImportJitExit:
     case CodeRange::ImportInterpExit:
     case CodeRange::BuiltinThunk:
@@ -1673,9 +1710,6 @@ void ProfilingFrameIterator::initFromExitFP(const Frame* fp) {
     case CodeRange::DebugStub:
     case CodeRange::RequestTierUpStub:
     case CodeRange::UpdateCallRefMetricsStub:
-#ifdef ENABLE_WASM_JSPI
-    case CodeRange::ContBaseFrame:
-#endif
     case CodeRange::Throw:
     case CodeRange::FarJumpIsland:
       MOZ_CRASH("Unexpected CodeRange kind");

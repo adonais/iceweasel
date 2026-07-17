@@ -46,13 +46,16 @@ import java.util.concurrent.FutureTask;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.mozilla.gecko.GeckoAppShell;
 import org.mozilla.gecko.annotation.ReflectionTarget;
-import org.mozilla.gecko.util.GeckoHttpDataSource;
 import org.mozilla.geckoview.BuildConfig;
+import org.mozilla.geckoview.GeckoResult;
 import org.mozilla.geckoview.GeckoSession;
+import org.mozilla.geckoview.WebRequest;
+import org.mozilla.geckoview.WebResponse;
 
 @ReflectionTarget
 @OptIn(markerClass = UnstableApi.class)
-public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.Listener {
+public class GeckoHlsPlayer
+    implements BaseHlsPlayer, ExoPlayer.Listener, HttpChannelDataSource.ChannelProvider {
   private static final String LOGTAG = "GeckoHlsPlayer";
   private static final int MAX_TIMELINE_ITEM_LINES = 3;
   private static final boolean DEBUG = !BuildConfig.MOZILLA_OFFICIAL;
@@ -356,9 +359,8 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.Listener {
     return new HlsMediaSource.Factory(
         new DefaultDataSource.Factory(
             ctx,
-            new GeckoHttpDataSource.Factory()
-                .setUserAgent(GeckoSession.getDefaultUserAgent())
-                .setAllowCrossProtocolRedirects(true)));
+            new HttpChannelDataSource.Factory(this)
+                .setUserAgent(GeckoSession.getDefaultUserAgent())));
   }
 
   private long getDuration() {
@@ -1159,5 +1161,11 @@ public class GeckoHlsPlayer implements BaseHlsPlayer, ExoPlayer.Listener {
     } catch (final Exception e) {
       throw new RuntimeException(e);
     }
+  }
+
+  // Called by ExoPlayer when opening HttpChannelDataSource.
+  @Override
+  public GeckoResult<WebResponse> openChannel(final WebRequest request) {
+    return mResourceCallbacks.onOpenChannel(request);
   }
 }

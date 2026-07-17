@@ -426,20 +426,22 @@ dns:
       - necko@mozilla.com
     expires: never
 
-  by_type_succeeded_lookup_time:
-    type: timing_distribution
+  https_rr_lookup_time:
+    type: labeled_timing_distribution
     description: >
-      Time for a completed by-type resolution that succeeded (msec).
-
-      This metric was generated to correspond to the Legacy Telemetry
-      exponential histogram DNS_BY_TYPE_SUCCEEDED_LOOKUP_TIME.
+      Time for a completed HTTPS RR (type 65) resolution (msec), keyed by
+      whether it was resolved over DoH/TRR or natively.
     time_unit: millisecond
+    labels:
+      - doh
+      - native
     bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1481251
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044935
     data_reviews:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=1481251
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044935
     notification_emails:
       - necko@mozilla.com
+      - kershaw@mozilla.com
     expires: never
 
   native_queuing:

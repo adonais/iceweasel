@@ -236,7 +236,7 @@ MozExternalRefCountType IFoo::Release() {
 }
 
 nsresult IFoo::QueryInterface(const nsIID& aIID, void** aResult) {
-  nsISupports* rawPtr = 0;
+  nsISupports* rawPtr = nullptr;
   nsresult status = NS_OK;
 
   if (aIID.Equals(NS_GET_IID(IFoo)))

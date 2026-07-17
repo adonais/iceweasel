@@ -26,6 +26,7 @@ import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.MaterialTheme
@@ -51,7 +52,7 @@ import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
 import mozilla.components.compose.base.modifier.thenConditional
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.concept.llm.LlmProvider
-import mozilla.components.feature.summarize.content.PageMetadataExtractor
+import mozilla.components.concept.llm.RequestTooLarge
 import mozilla.components.feature.summarize.settings.SettingsAppBar
 import mozilla.components.feature.summarize.settings.SummarizeSettingsContent
 import mozilla.components.feature.summarize.settings.SummarizeSettingsState
@@ -75,12 +76,18 @@ private const val DRAG_HANDLE_CORNER_RATIO = 50
 
 /**
  * Composable function that renders the summarized text of a webpage.
+ *
+ * @param resolveError Resolves a thrown failure into a numeric code for display (long-press
+ *  reveal on the error icon, telemetry, support). The summarize feature has no knowledge of
+ *  which concrete [mozilla.components.concept.llm.Llm.Exception] subtypes exist; the caller
+ *  (app layer) supplies that mapping.
  **/
 @Composable
 fun SummarizationUi(
     productName: String,
     store: SummarizationStore,
     settingsStore: SummarizeSettingsStore? = null,
+    resolveError: (Throwable) -> Int,
 ) {
     LaunchedEffect(Unit) {
         store.dispatch(ViewAppeared)
@@ -91,6 +98,7 @@ fun SummarizationUi(
             modifier = Modifier.fillMaxWidth(),
             store = store,
             settingsStore = settingsStore,
+            errorCodeFor = resolveError,
         )
     }
 }
@@ -104,6 +112,7 @@ private fun SummarizationScreen(
     modifier: Modifier = Modifier,
     store: SummarizationStore,
     settingsStore: SummarizeSettingsStore? = null,
+    errorCodeFor: (Throwable) -> Int,
 ) {
     val state by store.stateFlow.collectAsStateWithLifecycle()
 
@@ -122,7 +131,7 @@ private fun SummarizationScreen(
             .nestedScroll(rememberNestedScrollInteropConnection()),
         color = MaterialTheme.colorScheme.surface.copy(alpha = 1f - loadingAlpha),
     ) {
-        SummarizationScreenContent(store, settingsStore)
+        SummarizationScreenContent(store, settingsStore, errorCodeFor)
     }
 }
 
@@ -143,6 +152,7 @@ private fun Modifier.summaryLoadingGradientCompat(loadingAlpha: Float): Modifier
 private fun SummarizationScreenContent(
     store: SummarizationStore,
     settingsStore: SummarizeSettingsStore? = null,
+    errorCodeFor: (Throwable) -> Int,
 ) {
     val state by store.stateFlow.collectAsStateWithLifecycle()
 
@@ -195,17 +205,17 @@ private fun SummarizationScreenContent(
         }
 
         is SummarizationState.Error -> {
-            when (state.error) {
+            when (val error = state.error) {
                 is SummarizationError.DownloadFailed -> DownloadError()
-                is SummarizationError.ContentTooLong ->
-                    ContentTooLongError(
+                is SummarizationError.SummarizationFailed -> when (error.exception) {
+                    is RequestTooLarge -> ContentTooLongError(
                         onDismiss = { store.dispatch(ErrorAction.ErrorDismissed) },
                     )
-                is SummarizationError.SummarizationFailed ->
-                    InfoError(
-                        errorCode = state.error.exception.errorCode,
+                    else -> InfoError(
+                        errorCode = errorCodeFor(error.exception),
                         onDismiss = { store.dispatch(ErrorAction.ErrorDismissed) },
                     )
+                }
             }
         }
 
@@ -241,13 +251,21 @@ private fun SummarizationScreenScaffold(
     content: @Composable (() -> Unit),
 ) {
     Surface(
-        shape = RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp),
+        shape = MaterialTheme.shapes.extraLarge.copy(
+            bottomStart = CornerSize(0.dp),
+            bottomEnd = CornerSize(0.dp),
+        ),
         color = color,
         contentColor = MaterialTheme.colorScheme.onSurface,
         modifier = Modifier
             .fillMaxWidth()
             .wrapContentHeight(align = Alignment.Bottom)
-            .clip(RoundedCornerShape(topStart = 24.dp, topEnd = 24.dp))
+            .clip(
+                MaterialTheme.shapes.extraLarge.copy(
+                    bottomStart = CornerSize(0.dp),
+                    bottomEnd = CornerSize(0.dp),
+                ),
+            )
             .then(modifier)
             .widthIn(max = AcornTheme.layout.size.containerMaxWidth),
     ) {
@@ -307,11 +325,8 @@ private class SummarizationStatePreviewProvider : PreviewParameterProvider<Summa
         SummarizationState.Settings(info = info, document = RichDocument(listOf())),
         SummarizationState.ShakeConsentRequired,
         SummarizationState.ShakeConsentWithDownloadRequired,
-        SummarizationState.Error(SummarizationError.ContentTooLong),
         SummarizationState.Error(
-            SummarizationError.SummarizationFailed(
-                PageMetadataExtractor.Exception(NullPointerException()),
-            ),
+            SummarizationError.SummarizationFailed(NullPointerException("preview failure")),
         ),
     )
 }
@@ -336,6 +351,7 @@ private fun SummarizationScreenPreview(
                 reducer = ::summarizeSettingsReducer,
                 middleware = listOf(),
             ),
+            errorCodeFor = { 9999 },
         )
     }
 }

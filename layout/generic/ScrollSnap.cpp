@@ -503,6 +503,59 @@ static void ProcessSnapPositions(CalcSnapPoints& aCalcSnapPoints,
       });
 }
 
+static void ProcessSnapOverflowForAxis(
+    CalcSnapPoints& aCalcSnapPoints, layers::ScrollDirection aScrollDirection,
+    nscoord aClampedDestination, nscoord aSnapportSize,
+    const nsTArray<ScrollSnapInfo::ScrollSnapRange>& aRanges) {
+  auto addEdge = [&](nscoord aSnapPoint, const nsRect& aSnapArea) {
+    if (aScrollDirection == layers::ScrollDirection::eHorizontal) {
+      aCalcSnapPoints.AddVerticalEdge(ScrollSnapInfo::SnapTarget{
+          Some(aSnapPoint), Nothing(), aSnapArea, StyleScrollSnapStop::Normal,
+          ScrollSnapTargetId::None});
+    } else {
+      aCalcSnapPoints.AddHorizontalEdge(ScrollSnapInfo::SnapTarget{
+          Nothing(), Some(aSnapPoint), aSnapArea, StyleScrollSnapStop::Normal,
+          ScrollSnapTargetId::None});
+    }
+  };
+
+  for (const auto& range : aRanges) {
+    if (range.IsValid(aClampedDestination, aSnapportSize)) {
+      addEdge(range.FindNearestSnapPoint(aClampedDestination, aSnapportSize),
+              range.mSnapArea);
+      break;
+    }
+  }
+}
+
+static void ProcessSnapOverflow(CalcSnapPoints& aCalcSnapPoints,
+                                const ScrollSnapInfo& aSnapInfo,
+                                const nsRect& aScrollRange,
+                                const nsPoint& aDestination) {
+  // If the distance between the first and the second candidate snap points
+  // is larger than the snapport size and the snapport is covered by larger
+  // elements, any points inside the covering area should be valid snap
+  // points.
+  // https://drafts.csswg.org/css-scroll-snap-1/#snap-overflow
+  // NOTE: |aDestination| sometimes points outside of the scroll range, e.g.
+  // by the APZC fling, so for the overflow checks we need to clamp it.
+  nsPoint clampedDestination = aScrollRange.ClampPoint(aDestination);
+  if (aCalcSnapPoints.XDistanceBetweenBestAndSecondEdge() >
+      aSnapInfo.mSnapportSize.width) {
+    ProcessSnapOverflowForAxis(
+        aCalcSnapPoints, layers::ScrollDirection::eHorizontal,
+        clampedDestination.x, aSnapInfo.mSnapportSize.width,
+        aSnapInfo.mXRangeWiderThanSnapport);
+  }
+  if (aCalcSnapPoints.YDistanceBetweenBestAndSecondEdge() >
+      aSnapInfo.mSnapportSize.height) {
+    ProcessSnapOverflowForAxis(
+        aCalcSnapPoints, layers::ScrollDirection::eVertical,
+        clampedDestination.y, aSnapInfo.mSnapportSize.height,
+        aSnapInfo.mYRangeWiderThanSnapport);
+  }
+}
+
 Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForDestination(
     const ScrollSnapInfo& aSnapInfo, ScrollUnit aUnit,
     ScrollSnapFlags aSnapFlags, const nsRect& aScrollRange,
@@ -521,35 +574,7 @@ Maybe<SnapDestination> ScrollSnapUtils::GetSnapPointForDestination(
                                 aSnapInfo.mScrollSnapStrictnessY);
 
   ProcessSnapPositions(calcSnapPoints, aSnapInfo);
-
-  // If the distance between the first and the second candidate snap points
-  // is larger than the snapport size and the snapport is covered by larger
-  // elements, any points inside the covering area should be valid snap
-  // points.
-  // https://drafts.csswg.org/css-scroll-snap-1/#snap-overflow
-  // NOTE: |aDestination| sometimes points outside of the scroll range, e.g.
-  // by the APZC fling, so for the overflow checks we need to clamp it.
-  nsPoint clampedDestination = aScrollRange.ClampPoint(aDestination);
-  for (auto range : aSnapInfo.mXRangeWiderThanSnapport) {
-    if (range.IsValid(clampedDestination.x, aSnapInfo.mSnapportSize.width) &&
-        calcSnapPoints.XDistanceBetweenBestAndSecondEdge() >
-            aSnapInfo.mSnapportSize.width) {
-      calcSnapPoints.AddVerticalEdge(ScrollSnapInfo::SnapTarget{
-          Some(clampedDestination.x), Nothing(), range.mSnapArea,
-          StyleScrollSnapStop::Normal, ScrollSnapTargetId::None});
-      break;
-    }
-  }
-  for (auto range : aSnapInfo.mYRangeWiderThanSnapport) {
-    if (range.IsValid(clampedDestination.y, aSnapInfo.mSnapportSize.height) &&
-        calcSnapPoints.YDistanceBetweenBestAndSecondEdge() >
-            aSnapInfo.mSnapportSize.height) {
-      calcSnapPoints.AddHorizontalEdge(ScrollSnapInfo::SnapTarget{
-          Nothing(), Some(clampedDestination.y), range.mSnapArea,
-          StyleScrollSnapStop::Normal, ScrollSnapTargetId::None});
-      break;
-    }
-  }
+  ProcessSnapOverflow(calcSnapPoints, aSnapInfo, aScrollRange, aDestination);
 
   bool snapped = false;
   auto finalPos = calcSnapPoints.GetBestEdge(aSnapInfo.mSnapportSize);

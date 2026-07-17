@@ -12,6 +12,7 @@
 #include "mozilla/FlushType.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MozPromise.h"
+#include "mozilla/StaticPtr.h"
 #include "mozilla/StorageAccess.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
@@ -684,6 +685,10 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   void ForgetSharedWorker(mozilla::dom::SharedWorker* aSharedWorker);
 
+  void UpdateSharedWorkersLanguageOverride(const nsCString& aLanguageOverride);
+
+  void UpdateSharedWorkerTimezoneOverride(const nsAString& aTimezoneOverride);
+
  public:
   void Alert(nsIPrincipal& aSubjectPrincipal, mozilla::ErrorResult& aError);
   void Alert(const nsAString& aMessage, nsIPrincipal& aSubjectPrincipal,
@@ -1234,7 +1239,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
   bool IsPlayingAudio() override;
 
   // Dispatch a runnable related to the global.
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const final;
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable) const final;
   nsISerialEventTarget* SerialEventTarget() const final;
 
   void DisableIdleCallbackRequests();
@@ -1503,7 +1508,7 @@ class nsGlobalWindowInner final : public mozilla::dom::EventTarget,
 
   nsTArray<mozilla::WeakPtr<Document>> mDataDocumentsForMemoryReporting;
 
-  static InnerWindowByIdTable* sInnerWindowsById;
+  static mozilla::StaticAutoPtr<InnerWindowByIdTable> sInnerWindowsById;
 
   // Members in the mChromeFields member should only be used in chrome windows.
   // All accesses to this field should be guarded by a check of mIsChrome.
@@ -1537,41 +1542,6 @@ inline nsISupports* ToSupports(nsGlobalWindowInner* p) {
 
 inline nsISupports* ToCanonicalSupports(nsGlobalWindowInner* p) {
   return static_cast<mozilla::dom::EventTarget*>(p);
-}
-
-// XXX: EWW - This is an awful hack - let's not do this
-#include "nsGlobalWindowOuter.h"
-
-inline nsIGlobalObject* nsGlobalWindowInner::GetRelevantGlobal() const {
-  return const_cast<nsGlobalWindowInner*>(this);
-}
-
-inline nsGlobalWindowOuter* nsGlobalWindowInner::GetInProcessTopInternal() {
-  nsGlobalWindowOuter* outer = GetOuterWindowInternal();
-  nsCOMPtr<nsPIDOMWindowOuter> top = outer ? outer->GetInProcessTop() : nullptr;
-  if (top) {
-    return nsGlobalWindowOuter::Cast(top);
-  }
-  return nullptr;
-}
-
-inline nsGlobalWindowOuter*
-nsGlobalWindowInner::GetInProcessScriptableTopInternal() {
-  nsPIDOMWindowOuter* top = GetInProcessScriptableTop();
-  return nsGlobalWindowOuter::Cast(top);
-}
-
-inline nsIScriptContext* nsGlobalWindowInner::GetContextInternal() {
-  if (mOuterWindow) {
-    return GetOuterWindowInternal()->mContext;
-  }
-
-  return nullptr;
-}
-
-inline nsGlobalWindowOuter* nsGlobalWindowInner::GetOuterWindowInternal()
-    const {
-  return nsGlobalWindowOuter::Cast(GetOuterWindow());
 }
 
 #endif /* nsGlobalWindowInner_h_ */

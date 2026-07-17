@@ -275,6 +275,9 @@ tags = "imagebitmap"
 ["test_imagebitmap_cropping.html"]
 tags = "imagebitmap"
 
+["test_imagebitmap_error_messages.html"]
+tags = "imagebitmap"
+
 ["test_imagebitmap_structuredclone.html"]
 tags = "imagebitmap"
 

@@ -107,9 +107,9 @@ mozilla::StaticRefPtr<nsISound> nsSound::sInstance;
 already_AddRefed<nsISound> nsSound::GetInstance() {
   if (!sInstance) {
     if (gfxPlatform::IsHeadless()) {
-      sInstance = new mozilla::widget::HeadlessSound();
+      sInstance = mozilla::MakeRefPtr<mozilla::widget::HeadlessSound>();
     } else {
-      RefPtr<nsSound> sound = new nsSound();
+      auto sound = mozilla::MakeRefPtr<nsSound>();
       nsresult rv = sound->CreatePlayerThread();
       if (NS_WARN_IF(NS_FAILED(rv))) {
         return nullptr;
@@ -256,7 +256,7 @@ NS_IMETHODIMP nsSound::PlayEventSound(uint32_t aEventId) {
   }
   NS_ASSERTION(sound, "sound is null");
   MOZ_ASSERT(!mSoundPlayer, "mSoundPlayer should be null");
-  mSoundPlayer = new nsSoundPlayer(nsDependentString(sound));
+  mSoundPlayer = mozilla::MakeRefPtr<nsSoundPlayer>(nsDependentString(sound));
   MOZ_ASSERT(mSoundPlayer, "Could not create player");
   nsresult rv = mPlayerThread->Dispatch(mSoundPlayer, NS_DISPATCH_NORMAL);
   if (NS_WARN_IF(NS_FAILED(rv))) {

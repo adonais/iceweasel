@@ -175,24 +175,10 @@ add_task(async function test_contextualsearch_install() {
     "New engine was installed"
   );
 
+  info("The third search uses the installed engine and navigates immediately");
   await loadUri(ENGINE_TEST_URL);
-  await UrlbarTestUtils.promiseAutocompleteResultPopup({
-    window,
-    value: "search",
-  });
-  let searchPromise = UrlbarTestUtils.promiseSearchComplete(window);
-  EventUtils.synthesizeKey("KEY_Tab");
-  EventUtils.synthesizeKey("KEY_Enter");
-  await searchPromise;
-
-  info("The third search uses installed engine and enters search mode");
-  await UrlbarTestUtils.assertSearchMode(window, {
-    engineName: "Foo",
-    entry: "keywordoffer",
-  });
-
-  await UrlbarTestUtils.exitSearchMode(window);
-  await UrlbarTestUtils.promisePopupClose(window);
+  await performContextualSearch("search");
+  await UrlbarTestUtils.assertSearchMode(window, null);
 
   let engine = SearchService.getEngineByName("Foo");
   await SearchService.removeEngine(engine);

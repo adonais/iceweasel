@@ -131,8 +131,8 @@ class FetchDriver final : public nsIChannelEventSink,
     mOriginStack = std::move(aOriginStack);
   }
 
-  PerformanceTimingData* GetPerformanceTimingData(nsAString& aInitiatorType,
-                                                  nsAString& aEntryName);
+  UniquePtr<PerformanceTimingData> GetPerformanceTimingData(
+      nsAString& aInitiatorType, nsAString& aEntryName);
 
   // AbortFollower
   void RunAbortAlgorithm() override;

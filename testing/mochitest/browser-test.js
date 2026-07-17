@@ -1332,6 +1332,17 @@ Tester.prototype = {
         return;
       }
 
+      // In normal Firefox use, a shrinking GC is scheduled automatically
+      // after the user has been inactive for some time. This never happens
+      // when running tests sequentially quickly, so force one here. Without
+      // it, JIT/IC stubs installed on hot shared chrome scripts keep shapes
+      // from already-destroyed realms alive, pinning closed chrome windows
+      // until shutdown. Force a CC afterward so the chrome-window cycles
+      // that the shrinking GC just unanchored actually get collected
+      // before the next test starts. See bug 2041420.
+      Cu.forceShrinkingGC();
+      Cu.forceCC();
+
       if (this.repeat > 0) {
         --this.repeat;
         if (this.currentTestIndex < 0) {

@@ -106,14 +106,14 @@ gboolean WorkSourceDispatch(GSource* source, GSourceFunc unused_func,
 
 // I wish these could be const, but g_source_new wants non-const.
 GSourceFuncs WorkSourceFuncs = {WorkSourcePrepare, WorkSourceCheck,
-                                WorkSourceDispatch, NULL};
+                                WorkSourceDispatch, nullptr};
 
 }  // namespace
 
 namespace base {
 
 MessagePumpForUI::MessagePumpForUI()
-    : state_(NULL),
+    : state_(nullptr),
       context_(g_main_context_default()),
       wakeup_gpollfd_(new GPollFD),
       pipe_full_(false) {
@@ -137,7 +137,7 @@ MessagePumpForUI::MessagePumpForUI()
 
 MessagePumpForUI::~MessagePumpForUI() {
   gdk_event_handler_set(reinterpret_cast<GdkEventFunc>(gtk_main_do_event), this,
-                        NULL);
+                        nullptr);
   g_source_destroy(work_source_);
   g_source_unref(work_source_);
   close(wakeup_pipe_read_);

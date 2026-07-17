@@ -1279,8 +1279,6 @@ TEST(GeckoMediaPlugins, MatchBaseDomain_NoMatch)
   TestMatchBaseDomain_NoMatch();
 }
 
-// Bug 1776767 - Skip all GMP tests on Windows ASAN / CCOV
-#if !(defined(XP_WIN) && (defined(MOZ_ASAN) || defined(MOZ_CODE_COVERAGE)))
 TEST(GeckoMediaPlugins, CDMStorageGetNodeId)
 {
   RefPtr<CDMStorageTest> runner = new CDMStorageTest();
@@ -1341,12 +1339,10 @@ TEST(GeckoMediaPlugins, CDMStorageLongRecordNames)
   runner->DoTest(&CDMStorageTest::TestLongRecordNames);
 }
 
-#  if defined(XP_WIN)
+#if defined(XP_WIN)
 TEST(GeckoMediaPlugins, GMPOutputProtection)
 {
   RefPtr<CDMStorageTest> runner = new CDMStorageTest();
   runner->DoTest(&CDMStorageTest::TestOutputProtection);
 }
-#  endif  // defined(XP_WIN)
-#endif    // !(defined(XP_WIN) && (defined(MOZ_ASAN) ||
-          // defined(MOZ_CODE_COVERAGE)))
+#endif  // defined(XP_WIN)

@@ -82,9 +82,11 @@ let _sensitiveInfoDetector = new SensitiveInfoDetector();
  *
  * @returns {Promise<Array<{
  *   url: string,
+ *   urlHash: number,
  *   title: string,
  *   domain: string,
  *   visitDateMicros: number,
+ *   totalViewTimeMs: number,
  *   frequencyPct: number,
  *   domainFrequencyPct: number,
  *   source: 'history'|'search'
@@ -116,6 +118,7 @@ export async function getRecentHistory(opts = {}) {
     SELECT
       p.id                                                 AS place_id,
       p.url                                                AS url,
+      p.url_hash                                           AS url_hash,
       o.host                                               AS host,
       p.title                                              AS title,
       mpm.created_at * 1000                                AS visit_date,
@@ -137,6 +140,7 @@ export async function getRecentHistory(opts = {}) {
       SELECT
         p.id                                                 AS place_id,
         p.url                                                AS url,
+        p.url_hash                                           AS url_hash,
         o.host                                               AS host,
         p.title                                              AS title,
         v.visit_date                                         AS visit_date,
@@ -163,6 +167,7 @@ export async function getRecentHistory(opts = {}) {
       SELECT
         r.place_id,
         r.url,
+        r.url_hash,
         r.host,
         r.title,
         r.visit_date,
@@ -222,6 +227,7 @@ export async function getRecentHistory(opts = {}) {
 
     SELECT
       a.url,
+      a.url_hash,
       a.host,
       a.source,
       a.title,
@@ -248,6 +254,7 @@ export async function getRecentHistory(opts = {}) {
         const out = [];
         for (const row of stmt) {
           const url = row.getResultByName("url");
+          const urlHash = row.getResultByName("url_hash");
           const host = row.getResultByName("host");
           const source = row.getResultByName("source");
           const onlyTitle = row.getResultByName("title") || "";
@@ -268,15 +275,18 @@ export async function getRecentHistory(opts = {}) {
             continue;
           }
           const visitDateMicros = row.getResultByName("visit_date") || 0;
+          const totalViewTimeMs = row.getResultByName("total_view_time") || 0;
           const frequencyPct = row.getResultByName("frecency_pct") || 0;
           const domainFrequencyPct =
             row.getResultByName("domain_frecency_pct") || 0;
 
           out.push({
             url,
+            urlHash,
             domain: host,
             title: sanitizeUntrustedContent(title, true),
             visitDateMicros,
+            totalViewTimeMs,
             frequencyPct,
             domainFrequencyPct,
             source,

@@ -224,7 +224,7 @@ class WorkerScriptLoader : public JS::loader::ScriptLoaderInterface,
 
   void MaybeMoveToLoadedList(ScriptLoadRequest* aRequest);
 
-  bool StoreCSP();
+  bool StorePolicyContainerArgs();
 
   bool ProcessPendingRequests(JSContext* aCx);
 

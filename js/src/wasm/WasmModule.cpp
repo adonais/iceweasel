@@ -49,8 +49,8 @@ using namespace js::jit;
 using namespace js::wasm;
 
 static UniqueChars Tier2ResultsContext(const ScriptedCaller& scriptedCaller) {
-  return scriptedCaller.filename
-             ? JS_smprintf("%s:%d", scriptedCaller.filename.get(),
+  return scriptedCaller.source
+             ? JS_smprintf("%s:%d", scriptedCaller.source.get(),
                            scriptedCaller.line)
              : UniqueChars();
 }

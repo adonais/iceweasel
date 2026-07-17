@@ -642,9 +642,10 @@ struct VerifyTraceProtoAndIfaceCacheCalledTracer : public JS::CallbackTracer {
       : JS::CallbackTracer(cx, JS::TracerKind::VerifyTraceProtoAndIface),
         ok(false) {}
 
-  void onChild(JS::GCCellPtr, const char* name) override {
+  bool onChild(JS::GCCellPtr, const char* name) override {
     // We don't do anything here, we only want to verify that
     // TraceProtoAndIfaceCache was called.
+    return true;
   }
 };
 #endif
@@ -3245,7 +3246,7 @@ MOZ_ALWAYS_INLINE bool CallerSubsumes(JS::Handle<JS::Value> aValue) {
 }
 
 template <class T, class S>
-inline RefPtr<T> StrongOrRawPtr(already_AddRefed<S>&& aPtr) {
+inline RefPtr<T> StrongOrRawPtr(already_AddRefed<S> aPtr) {
   return std::move(aPtr);
 }
 

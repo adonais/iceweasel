@@ -303,7 +303,7 @@ inDeepTreeWalker::NextNode(nsINode** _retval) {
   nsINode* origCurrentNode = mCurrentNode;
 #endif
   uint32_t lastChildCallsToMake = 0;
-  while (1) {
+  while (true) {
     NextSibling(_retval);
 
     if (*_retval) {

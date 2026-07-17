@@ -11,6 +11,9 @@
 var subtests = [
   {"file": "helper_scroll_position_update_on_clamp.html",
    "prefs": [["layout.disable-pixel-alignment", true]]},
+  {"file": "helper_relative_scroll_update_negative_offset.html",
+   "prefs": [["apz.test.logging_enabled", true],
+             ["apz.overscroll.enabled", false]]},
 ];
 
 if (isApzEnabled()) {

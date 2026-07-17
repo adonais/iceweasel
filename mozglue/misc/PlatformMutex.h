@@ -7,7 +7,9 @@
 
 #include "mozilla/Types.h"
 
-#if !defined(XP_WIN) && !defined(__wasi__)
+#if defined(XP_WIN)
+#  include "mozilla/Futex.h"
+#elif !defined(__wasi__)
 #  include <pthread.h>
 #endif
 
@@ -19,8 +21,6 @@ class ConditionVariableImpl;
 
 class MutexImpl {
  public:
-  struct PlatformData;
-
   explicit MFBT_API MutexImpl();
   MFBT_API ~MutexImpl();
 
@@ -41,12 +41,10 @@ class MutexImpl {
   void mutexLock();
   bool mutexTryLock();
 
-  PlatformData* platformData();
-
-#if !defined(XP_WIN) && !defined(__wasi__)
-  pthread_mutex_t platformData_[1];
-#else
-  void* platformData_[6];
+#if defined(XP_WIN)
+  SmallFutex mFutex;
+#elif !defined(__wasi__)
+  pthread_mutex_t mMutex;
 #endif
 
   friend class mozilla::detail::ConditionVariableImpl;

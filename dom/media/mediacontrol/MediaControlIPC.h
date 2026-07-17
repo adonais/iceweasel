@@ -6,6 +6,7 @@
 #define ipc_MediaControlIPC_h
 
 #include "ipc/EnumSerializer.h"
+#include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/BindingIPCUtils.h"
 #include "mozilla/dom/MediaControlKeySource.h"
 #include "mozilla/dom/MediaControllerBinding.h"
@@ -36,6 +37,19 @@ struct ParamTraits<mozilla::dom::ControlType>
     : public ContiguousEnumSerializerInclusive<
           mozilla::dom::ControlType, mozilla::dom::ControlType::eControllable,
           mozilla::dom::ControlType::eUncontrollable> {};
+
+template <>
+struct ParamTraits<mozilla::dom::AudioSessionType>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::dom::AudioSessionType, mozilla::dom::AudioSessionType::Auto,
+          mozilla::dom::AudioSessionType::Play_and_record> {};
+
+template <>
+struct ParamTraits<mozilla::dom::AudioSessionState>
+    : public ContiguousEnumSerializerInclusive<
+          mozilla::dom::AudioSessionState,
+          mozilla::dom::AudioSessionState::Inactive,
+          mozilla::dom::AudioSessionState::Interrupted> {};
 
 template <>
 struct ParamTraits<mozilla::dom::AbsoluteSeek> {

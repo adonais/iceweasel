@@ -26,10 +26,12 @@ import mozilla.components.service.fxa.manager.AccountState.Authenticated
 import mozilla.components.service.fxa.manager.AccountState.Authenticating
 import mozilla.components.service.fxa.manager.AccountState.AuthenticationProblem
 import mozilla.components.service.fxa.manager.AccountState.NotAuthenticated
+import mozilla.components.service.fxa.manager.AccountState.Unknown
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.BrowserFragmentDirections
 import org.mozilla.fenix.collections.SaveCollectionStep
+import org.mozilla.fenix.components.accounts.FenixFxAEntryPoint
 import org.mozilla.fenix.components.menu.BrowserNavigationParams
 import org.mozilla.fenix.components.menu.MenuDialogFragmentDirections
 import org.mozilla.fenix.components.menu.store.MenuAction
@@ -111,7 +113,7 @@ class MenuNavigationMiddleware(
                             ),
                         )
 
-                        is Authenticating, NotAuthenticated -> navController.nav(
+                        is Authenticating, NotAuthenticated, Unknown -> navController.nav(
                             R.id.menuDialogFragment,
                             MenuDialogFragmentDirections.actionGlobalTurnOnSync(
                                 entrypoint = action.accesspoint.toFenixFxAEntryPoint(),
@@ -123,6 +125,11 @@ class MenuNavigationMiddleware(
                 is MenuAction.Navigate.Settings -> navController.nav(
                     R.id.menuDialogFragment,
                     MenuDialogFragmentDirections.actionGlobalSettingsFragment(),
+                )
+
+                is MenuAction.Navigate.Wallpaper -> navController.nav(
+                    R.id.menuDialogFragment,
+                    MenuDialogFragmentDirections.actionGlobalWallpaperSettingsFragment(),
                 )
 
                 is MenuAction.Navigate.InstalledAddonDetails -> navController.nav(
@@ -402,7 +409,9 @@ class MenuNavigationMiddleware(
                 is MenuAction.Navigate.IPProtectionSettings -> {
                     navController.nav(
                         id = R.id.menuDialogFragment,
-                        directions = MenuDialogFragmentDirections.actionMenuDialogFragmentToIpProtectionFragment(),
+                        directions = MenuDialogFragmentDirections.actionMenuDialogFragmentToIpProtectionFragment(
+                            entrypoint = FenixFxAEntryPoint.IPProtectionMainMenu,
+                        ),
                     )
                 }
 

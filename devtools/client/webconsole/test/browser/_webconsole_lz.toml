@@ -181,7 +181,6 @@ support-files = [
   "!/image/test/mochitest/blue.png",
   "!/devtools/client/shared/test/shared-head.js",
   "!/devtools/client/debugger/test/mochitest/shared-head.js",
-  "!/devtools/client/shared/test/telemetry-test-helpers.js",
   "!/devtools/client/shared/test/highlighter-test-actor.js",
   "!/devtools/client/webconsole/test/node/fixtures/stubs/consoleApi.js",
   "!/devtools/client/webconsole/test/node/fixtures/stubs/cssMessage.js",

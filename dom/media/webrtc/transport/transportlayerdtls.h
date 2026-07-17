@@ -23,6 +23,7 @@
 #include "mozilla/UniquePtr.h"
 #include "nsCOMPtr.h"
 #include "nsITimer.h"
+#include "nsTArray.h"
 #include "ssl.h"
 #include "sslproto.h"
 #include "transportlayer.h"
@@ -88,10 +89,16 @@ class TransportLayerDtls final : public TransportLayer {
   nsresult SetVerificationDigest(const DtlsDigest& digest);
 
   nsresult GetCipherSuite(uint16_t* cipherSuite) const;
+  nsresult GetChannelInfo(SSLChannelInfo* info) const;
+
+  // Returns the DER-encoded peer certificate chain, leaf first. Only valid
+  // while the layer is in TS_OPEN; must be called on the STS thread.
+  nsTArray<nsTArray<uint8_t>> GetPeerCertChainDer() const;
 
   nsresult SetSrtpCiphers(const std::vector<uint16_t>& ciphers);
   nsresult GetSrtpCipher(uint16_t* cipher) const;
   static std::vector<uint16_t> GetDefaultSrtpCiphers();
+  static const char* GetSrtpCipherName(uint16_t cipher);
 
   nsresult ExportKeyingMaterial(const std::string& label, bool use_context,
                                 const std::string& context, unsigned char* out,

@@ -22,6 +22,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import mozilla.components.feature.qr.QrScanActivity
 import mozilla.components.lib.state.ext.flowScoped
 import mozilla.components.support.base.feature.LifecycleAwareFeature
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
@@ -30,7 +31,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.appstate.AppAction.LensAction
 import org.mozilla.fenix.components.lens.LensCameraActivity
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import java.io.IOException
 
 /**
@@ -120,21 +120,53 @@ class LensFeature(
 
         currentScope.launch {
             try {
-                val resultUrl = uploader.uploadFromUrl(imageUrl)
+                // Download and upload the image bytes ourselves; this uses the browser's
+                // User-Agent and cookies, which succeeds for hosts that block Lens's server-side
+                // fetcher. When the client-side upload yields no result, fall back to letting Lens
+                // fetch the image by URL -- but not in private mode, where we must not hand the
+                // source image URL to Google.
+                val uploadedUrl = try {
+                    uploader.uploadFromUrl(imageUrl)
+                } catch (e: IOException) {
+                    logger.debug("Lens image upload failed, falling back to uploadbyurl for $imageUrl", e)
+                    null
+                }
+
+                val isPrivate = appStore.state.mode.isPrivate
+                val resultUrl = uploadedUrl
+                    ?: if (isPrivate) null else uploader.buildUploadByUrl(imageUrl)
+
                 if (resultUrl != null) {
                     context.components.useCases.tabsUseCases.addTab(
                         url = resultUrl,
                         selectTab = true,
                         startLoading = true,
-                        private = appStore.state.mode.isPrivate,
+                        private = isPrivate,
                     )
                     appStore.dispatch(LensAction.LensResultAvailable(resultUrl))
                 }
-            } catch (e: IOException) {
-                logger.debug("uploadFromImageUrl failed for $imageUrl", e)
             } finally {
                 appStore.dispatch(LensAction.LensDismissed)
             }
+        }
+    }
+
+    /**
+     * Routes the result of the Lens camera activity. If the result intent carries a QR scan
+     * payload (from the in-camera QR mode), dismisses the Lens flow and forwards the result to
+     * [qrScanFeature]; otherwise treats it as an image capture and delegates to
+     * [handleImageResult].
+     */
+    fun handleCameraActivityResult(
+        resultCode: Int,
+        data: Intent?,
+        qrScanFeature: QrScanFenixFeature?,
+    ) {
+        if (data?.hasExtra(QrScanActivity.EXTRA_SCAN_RESULT_DATA) == true) {
+            appStore.dispatch(LensAction.LensDismissed)
+            qrScanFeature?.handleToolbarQrScanResults(resultCode, data)
+        } else {
+            handleImageResult(resultCode, data)
         }
     }
 
@@ -183,7 +215,8 @@ class LensFeature(
             activityResultLauncher: ActivityResultLauncher<Intent>,
             cameraPermissionLauncher: ActivityResultLauncher<String>,
         ): ViewBoundFeatureWrapper<LensFeature>? {
-            if (!fragment.requireContext().settings().googleLensIntegrationEnabled) {
+            val settings = fragment.requireContext().components.settings
+            if (!settings.googleLensIntegrationEnabled || !settings.googleLensIntegrationUserEnabled) {
                 return null
             }
 

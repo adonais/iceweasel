@@ -16,7 +16,6 @@
 #include "js/Class.h"               // ESClass
 #include "js/friend/StackLimits.h"  // js::AutoCheckRecursionLimit
 #include "js/Object.h"              // JS::GetBuiltinClass
-#include "js/Prefs.h"               // JS::Prefs
 #include "js/Printer.h"             // QuoteString
 #include "js/Symbol.h"              // SymbolCode, JS::WellKnownSymbolLimit
 #include "js/TypeDecls.h"  // Rooted{Object, String, Value}, HandleValue, Latin1Char
@@ -158,12 +157,11 @@ JSString* js::ValueToSource(JSContext* cx, HandleValue v) {
     }
 
     case JS::ValueType::Object: {
-      // Try the non-standard object.toSource() path first if the
-      // legacy_tosource_lookup pref is set or if we're in a realm that has the
-      // builtin toSource functions enabled (JS shell or browser chrome code).
+      // Try the non-standard object.toSource() path first if we're in a realm
+      // that has the builtin toSource functions enabled (JS shell or browser
+      // chrome code).
       RootedObject obj(cx, &v.toObject());
-      if (JS::Prefs::legacy_tosource_lookup() ||
-          cx->realm()->creationOptions().getToSourceEnabled()) {
+      if (cx->realm()->creationOptions().getToSourceEnabled()) {
         RootedValue fval(cx);
         if (!GetProperty(cx, obj, obj, cx->names().toSource, &fval)) {
           return nullptr;

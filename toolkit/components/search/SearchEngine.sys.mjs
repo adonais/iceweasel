@@ -1273,28 +1273,6 @@ export class SearchEngine {
   }
 
   /**
-   * This method should be overridden by app provided config engines.
-   *
-   * @returns {boolean}
-   *   Whether this engine is an app provided config engine, i.e. it comes
-   *   from the search-config-v2 and active in the user's environment.
-   */
-  get isAppProvided() {
-    return false;
-  }
-
-  /**
-   * This method should be overridden by config search engines.
-   *
-   * @returns {boolean}
-   *   Whether this engine is a config search engine, i.e. it comes from
-   *   the search-config-v2.
-   */
-  get isConfigEngine() {
-    return false;
-  }
-
-  /**
    * Whether or not this engine is an in-memory only search engine.
    * These engines are typically application provided or policy engines,
    * where they are loaded every time on SearchService initialization

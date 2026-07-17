@@ -542,7 +542,7 @@ DecodeGroup(void* dest,
                 rv = SECFailure;
             }
             if (SECSuccess == rv) {
-                void* entriesData = (unsigned char*)entries + (unsigned long)(sizeof(void*) * (totalEntries + 1));
+                void* entriesData = (unsigned char*)entries + sizeof(void*) * (totalEntries + 1);
                 /* and fix the pointers in the array */
                 PRUint32 entriesIndex = 0;
                 for (entriesIndex = 0; entriesIndex < totalEntries; entriesIndex++) {

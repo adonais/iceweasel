@@ -18,10 +18,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/99267b6d193fbcb3e
  9 files changed, 25 insertions(+), 16 deletions(-)
 
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index cefeb1c1cd..239083d93d 100644
+index 7dad747895..39d0e5e4fe 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
-@@ -171,10 +171,11 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -172,10 +172,11 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
      RtcpPacketTypeCounter rtcp_packet_type_counts;
      std::optional<RtpReceiveStats> rtx_rtp_stats;
  
@@ -122,7 +122,7 @@ index b9941ceb82..a43345587e 100644
    // Within this list, the sender-source SSRC pair is unique and per-pair the
    // ReportBlockData represents the latest Report Block that was received for
 diff --git a/video/rtp_video_stream_receiver2.cc b/video/rtp_video_stream_receiver2.cc
-index f155d50779..44f34822a4 100644
+index 482391f9f5..5040809f38 100644
 --- a/video/rtp_video_stream_receiver2.cc
 +++ b/video/rtp_video_stream_receiver2.cc
 @@ -1142,9 +1142,10 @@ std::optional<int64_t> RtpVideoStreamReceiver2::LastReceivedKeyframePacketMs()
@@ -153,10 +153,10 @@ index cfe182d755..8402497391 100644
   private:
    // Implements RtpVideoFrameReceiver.
 diff --git a/video/video_receive_stream2.cc b/video/video_receive_stream2.cc
-index e1a8e2488e..becc9d33a1 100644
+index c274dec4ff..7aa7e31b29 100644
 --- a/video/video_receive_stream2.cc
 +++ b/video/video_receive_stream2.cc
-@@ -593,7 +593,8 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
+@@ -602,7 +602,8 @@ VideoReceiveStreamInterface::Stats VideoReceiveStream2::GetStats() const {
    // seem to be any support for these stats right now. So, we hack this in.
    rtp_video_stream_receiver_.RemoteRTCPSenderInfo(
        &stats.rtcp_sender_packets_sent, &stats.rtcp_sender_octets_sent,

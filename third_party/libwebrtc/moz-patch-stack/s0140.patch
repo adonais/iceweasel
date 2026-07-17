@@ -1,82 +1,22 @@
-From: Jan Grulich <jgrulich@redhat.com>
-Date: Mon, 27 Apr 2026 06:10:00 +0000
-Subject: Bug 2029447 - WebRTC backport: [Pipewire] Fix mouse cursor data race.
- r=pehrsons
+From: Byron Campen <docfaraday@gmail.com>
+Date: Tue, 26 May 2026 18:03:00 -0500
+Subject: Bug 2040478 - (fix-834ea60925) Add missing std namespace r?mjf
 
-This addresses a potential data race when the mouse cursor is updated
-on the Pipewire thread and read by the capture thread.
-
-This is a simple backport of an WebRTC upstream change.
-
-Upstream commit: 90b22181ec922900e26de71463b8e0ed47a5c2dd
-
-Differential Revision: https://phabricator.services.mozilla.com/D296092
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/822a3befaf10ad30afe99c936d47fee416823731
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/89a59f60370f6df6f89b2d03eb7c8d4be7aac1c7
 ---
- .../linux/wayland/shared_screencast_stream.cc | 21 ++++++++++++++-----
- 1 file changed, 16 insertions(+), 5 deletions(-)
+ rtc_base/ssl_stream_adapter.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-index 193e37e335..e1ba7569e5 100644
---- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-+++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-@@ -147,8 +147,9 @@ class SharedScreenCastStreamPrivate {
-   Mutex latest_frame_lock_ RTC_ACQUIRED_AFTER(queue_lock_);
-   SharedDesktopFrame* latest_available_frame_
-       RTC_GUARDED_BY(&latest_frame_lock_) = nullptr;
--  std::unique_ptr<MouseCursor> mouse_cursor_;
--  DesktopVector mouse_cursor_position_ = DesktopVector(-1, -1);
-+  std::unique_ptr<MouseCursor> mouse_cursor_ RTC_GUARDED_BY(&latest_frame_lock_);
-+  DesktopVector mouse_cursor_position_ RTC_GUARDED_BY(&latest_frame_lock_) =
-+      DesktopVector(-1, -1);
- 
-   int64_t modifier_;
-   std::unique_ptr<EglDmaBuf> egl_dmabuf_;
-@@ -714,6 +715,7 @@ SharedScreenCastStreamPrivate::CaptureFrame() {
- }
- 
- std::unique_ptr<MouseCursor> SharedScreenCastStreamPrivate::CaptureCursor() {
-+  MutexLock latest_frame_lock(&latest_frame_lock_);
-   if (!mouse_cursor_) {
-     return nullptr;
+diff --git a/rtc_base/ssl_stream_adapter.h b/rtc_base/ssl_stream_adapter.h
+index 00fd5f2da9..22a854e3d3 100644
+--- a/rtc_base/ssl_stream_adapter.h
++++ b/rtc_base/ssl_stream_adapter.h
+@@ -129,7 +129,7 @@ class SSLStreamAdapter : public StreamInterface {
+   static std::unique_ptr<SSLStreamAdapter> Create(
+       std::unique_ptr<StreamInterface> stream,
+       absl::AnyInvocable<void(SSLHandshakeError)> handshake_error,
+-      nullptr_t /*field_trials*/) {
++      std::nullptr_t /*field_trials*/) {
+     return Create(std::move(stream), std::move(handshake_error));
    }
-@@ -722,6 +724,7 @@ std::unique_ptr<MouseCursor> SharedScreenCastStreamPrivate::CaptureCursor() {
- }
  
- DesktopVector SharedScreenCastStreamPrivate::CaptureCursorPosition() {
-+  MutexLock latest_frame_lock(&latest_frame_lock_);
-   return mouse_cursor_position_;
- }
- 
-@@ -793,20 +796,28 @@ void SharedScreenCastStreamPrivate::ProcessBuffer(pw_buffer* buffer) {
-           mouse_frame->CopyPixelsFrom(
-               bitmap_data, bitmap->stride,
-               DesktopRect::MakeWH(bitmap->size.width, bitmap->size.height));
--          mouse_cursor_ = std::make_unique<MouseCursor>(
--              mouse_frame, DesktopVector(cursor->hotspot.x, cursor->hotspot.y));
-+          {
-+            MutexLock latest_frame_lock(&latest_frame_lock_);
-+            mouse_cursor_ = std::make_unique<MouseCursor>(
-+                mouse_frame,
-+                DesktopVector(cursor->hotspot.x, cursor->hotspot.y));
-+          }
- 
-           if (observer_) {
-             observer_->OnCursorShapeChanged();
-           }
-         }
--        mouse_cursor_position_.set(cursor->position.x, cursor->position.y);
-+        {
-+          MutexLock latest_frame_lock(&latest_frame_lock_);
-+          mouse_cursor_position_.set(cursor->position.x, cursor->position.y);
-+        }
- 
-         if (observer_) {
-           observer_->OnCursorPositionChanged();
-         }
-       } else {
-         // Indicate an invalid cursor
-+        MutexLock latest_frame_lock(&latest_frame_lock_);
-         mouse_cursor_position_.set(-1, -1);
-       }
-     }

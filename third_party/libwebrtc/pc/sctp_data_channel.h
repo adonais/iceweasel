@@ -219,6 +219,9 @@ class SctpDataChannel : public DataChannelInterface {
   // Called when the amount of data buffered to be sent falls to or below the
   // threshold set when calling `SetBufferedAmountLowThreshold`.
   void OnBufferedAmountLow();
+  // Called when the data channel's max-message-size has changed as a result
+  // of SDP negotiation.
+  void OnMaxMessageSize(int max_message_size);
 
   DataChannelStats GetStats() const;
 
@@ -270,7 +273,7 @@ class SctpDataChannel : public DataChannelInterface {
       RTC_RUN_ON(network_thread_);
 
   bool connected_to_transport() const RTC_RUN_ON(network_thread_) {
-    return network_safety_->alive();
+    return connected_to_transport_;
   }
   void MaybeSendOnBufferedAmountChanged() RTC_RUN_ON(network_thread_);
 
@@ -296,15 +299,15 @@ class SctpDataChannel : public DataChannelInterface {
   uint64_t bytes_sent_ RTC_GUARDED_BY(network_thread_) = 0;
   uint32_t messages_received_ RTC_GUARDED_BY(network_thread_) = 0;
   uint64_t bytes_received_ RTC_GUARDED_BY(network_thread_) = 0;
+  std::optional<int> max_message_size_ RTC_GUARDED_BY(network_thread_);
   WeakPtr<SctpDataChannelControllerInterface> controller_
       RTC_GUARDED_BY(network_thread_);
   HandshakeState handshake_state_ RTC_GUARDED_BY(network_thread_) =
       kHandshakeInit;
   // Did we already start the graceful SCTP closing procedure?
   bool started_closing_procedure_ RTC_GUARDED_BY(network_thread_) = false;
+  bool connected_to_transport_ RTC_GUARDED_BY(network_thread_) = false;
   PacketQueue queued_received_data_ RTC_GUARDED_BY(network_thread_);
-  scoped_refptr<PendingTaskSafetyFlag> network_safety_ =
-      PendingTaskSafetyFlag::CreateDetachedInactive();
 };
 
 }  // namespace webrtc

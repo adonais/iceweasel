@@ -17,9 +17,39 @@ namespace mozilla {
 
 class SMILValue;
 
+class SVGAnimatedPreserveAspectRatio;
+
 namespace dom {
-class DOMSVGAnimatedPreserveAspectRatio;
+class DOMSVGPreserveAspectRatio;
 class SVGAnimationElement;
+
+class DOMSVGAnimatedPreserveAspectRatio final : public nsWrapperCache {
+  ~DOMSVGAnimatedPreserveAspectRatio();
+
+  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(
+      DOMSVGAnimatedPreserveAspectRatio)
+  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(
+      DOMSVGAnimatedPreserveAspectRatio)
+
+  DOMSVGAnimatedPreserveAspectRatio(SVGAnimatedPreserveAspectRatio* aVal,
+                                    dom::SVGElement* aSVGElement)
+      : mVal(aVal), mSVGElement(aSVGElement) {}
+
+  // WebIDL
+  dom::SVGElement* GetParentObject() const { return mSVGElement; }
+  virtual JSObject* WrapObject(JSContext* aCx,
+                               JS::Handle<JSObject*> aGivenProto) override;
+
+  // These aren't weak refs because new objects are returned each time
+  already_AddRefed<DOMSVGPreserveAspectRatio> BaseVal();
+  already_AddRefed<DOMSVGPreserveAspectRatio> AnimVal();
+
+ protected:
+  // kept alive because it belongs to content:
+  SVGAnimatedPreserveAspectRatio* mVal;
+  RefPtr<dom::SVGElement> mSVGElement;
+};
+
 }  // namespace dom
 
 class SVGAnimatedPreserveAspectRatio final {
@@ -103,35 +133,6 @@ class SVGAnimatedPreserveAspectRatio final {
   };
 };
 
-namespace dom {
-class DOMSVGAnimatedPreserveAspectRatio final : public nsWrapperCache {
-  ~DOMSVGAnimatedPreserveAspectRatio();
-
-  NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(
-      DOMSVGAnimatedPreserveAspectRatio)
-  NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_NATIVE_CLASS(
-      DOMSVGAnimatedPreserveAspectRatio)
-
-  DOMSVGAnimatedPreserveAspectRatio(SVGAnimatedPreserveAspectRatio* aVal,
-                                    dom::SVGElement* aSVGElement)
-      : mVal(aVal), mSVGElement(aSVGElement) {}
-
-  // WebIDL
-  dom::SVGElement* GetParentObject() const { return mSVGElement; }
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
-
-  // These aren't weak refs because new objects are returned each time
-  already_AddRefed<DOMSVGPreserveAspectRatio> BaseVal();
-  already_AddRefed<DOMSVGPreserveAspectRatio> AnimVal();
-
- protected:
-  // kept alive because it belongs to content:
-  SVGAnimatedPreserveAspectRatio* mVal;
-  RefPtr<dom::SVGElement> mSVGElement;
-};
-
-}  // namespace dom
 }  // namespace mozilla
 
 #endif  // DOM_SVG_SVGANIMATEDPRESERVEASPECTRATIO_H_

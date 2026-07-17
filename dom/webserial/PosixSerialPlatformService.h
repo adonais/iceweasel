@@ -29,7 +29,8 @@ class PosixSerialPlatformService final : public SerialPlatformService {
   void Shutdown() override;
 
  private:
-  nsresult EnumeratePortsImpl(SerialPortList& aPorts) override;
+  nsresult EnumeratePortsImpl(SerialPortList& aPorts,
+                              bool* aLikelyAccessDenied) override;
   nsresult OpenImpl(const nsString& aPortId,
                     const IPCSerialOptions& aOptions) override;
   nsresult CloseImpl(const nsString& aPortId) override;

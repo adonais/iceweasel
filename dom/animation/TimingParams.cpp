@@ -78,7 +78,7 @@ TimingParams TimingParams::FromEffectTiming(
   TimingParams result;
 
   Maybe<StickyTimeDuration> duration =
-      TimingParams::ParseDuration(aEffectTiming.mDuration, aRv);
+      TimingParams::CheckedDuration(aEffectTiming.mDuration, aRv);
   if (aRv.Failed()) {
     return result;
   }
@@ -123,7 +123,7 @@ TimingParams TimingParams::MergeOptionalEffectTiming(
   Maybe<StickyTimeDuration> duration;
   if (aEffectTiming.mDuration.WasPassed()) {
     duration =
-        TimingParams::ParseDuration(aEffectTiming.mDuration.Value(), aRv);
+        TimingParams::CheckedDuration(aEffectTiming.mDuration.Value(), aRv);
     if (aRv.Failed()) {
       return result;
     }
@@ -219,7 +219,7 @@ bool TimingParams::operator==(const TimingParams& aOther) const {
 // and duration because Gecko doesn't support them.
 //
 // [1]
-// https://drafts.csswg.org/web-animations-2/#time-based-animation-to-a-proportional-animation
+// https://drafts.csswg.org/web-animations-2/#normalize-specified-timing
 // [2] https://chromium-review.googlesource.com/c/chromium/src/+/2992387
 TimingParams TimingParams::Normalize(
     const TimeDuration& aTimelineDuration) const {

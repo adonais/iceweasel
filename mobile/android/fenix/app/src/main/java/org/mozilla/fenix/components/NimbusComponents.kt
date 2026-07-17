@@ -19,6 +19,7 @@ import org.mozilla.experiments.nimbus.NimbusMessagingHelperInterface
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.experiments.createNimbus
 import org.mozilla.fenix.experiments.prefhandling.NimbusGeckoPrefHandler
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.messaging.CustomAttributeProvider
 import org.mozilla.fenix.perf.lazyMonitored
 
@@ -37,7 +38,13 @@ class NimbusComponents(
      * should be mediated through a FML generated class, e.g. [FxNimbus].
      */
     val sdk: NimbusApi by lazyMonitored {
-        createNimbus(context, BuildConfig.NIMBUS_ENDPOINT, remoteSettingsService, geckoPrefHandler)
+        createNimbus(
+            context,
+            context.components.settings,
+            BuildConfig.NIMBUS_ENDPOINT,
+            remoteSettingsService,
+            geckoPrefHandler,
+        )
     }
 
     /**

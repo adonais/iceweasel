@@ -382,7 +382,11 @@ void HandleException(ResumeFromException* rfe);
 
 void EnsureUnwoundJitExitFrame(JitActivation* act, JitFrameLayout* frame);
 
-void TraceJitActivations(JSContext* cx, JSTracer* trc);
+void TraceJitFrames(JSTracer* trc, JitActivation* act);
+
+#ifdef ENABLE_WASM_JSPI
+void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc);
+#endif
 
 // Trace weak pointers in baseline stubs in activations for zones that are
 // currently being swept.

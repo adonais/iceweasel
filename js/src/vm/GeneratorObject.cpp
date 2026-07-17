@@ -8,6 +8,7 @@
 #ifdef DEBUG
 #  include "js/friend/DumpFunctions.h"  // js::DumpObject, js::DumpValue
 #endif
+#include "js/friend/UsageStatistics.h"  // JSUseCounter
 #include "js/PropertySpec.h"
 #include "vm/AsyncFunction.h"
 #include "vm/AsyncIteration.h"
@@ -25,10 +26,15 @@ AbstractGeneratorObject* AbstractGeneratorObject::create(
     JSContext* cx, HandleFunction callee, HandleScript script,
     HandleObject environmentChain, Handle<ArgumentsObject*> argsObject) {
   Rooted<AbstractGeneratorObject*> genObj(cx);
+  // TODO(Bug 2039389): Remove generator use counters
   if (!callee->isAsync()) {
     genObj = GeneratorObject::create(cx, callee);
+    cx->runtime()->setUseCounter(cx->global(),
+                                 JSUseCounter::GENERATOR_FUNCTION_CREATED);
   } else if (callee->isGenerator()) {
     genObj = AsyncGeneratorObject::create(cx, callee);
+    cx->runtime()->setUseCounter(
+        cx->global(), JSUseCounter::ASYNC_GENERATOR_FUNCTION_CREATED);
   } else {
     genObj = AsyncFunctionGeneratorObject::create(cx, callee);
   }

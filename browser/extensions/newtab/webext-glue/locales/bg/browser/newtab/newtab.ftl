@@ -28,6 +28,59 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Нов раздел
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } ред
+           *[other] { $num } реда
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Разширение ({ $extension })
+home-restore-defaults-srd =
+    .label = Стандартни настройки
+    .accesskey = с
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (По подразбиране)
+home-mode-choice-custom-srd =
+    .label = Потребителски адреси…
+home-mode-choice-blank-srd =
+    .label = Празна страница
+home-prefs-shortcuts-header-srd =
+    .label = Преки пътища
+home-prefs-shortcuts-select =
+    .aria-label = Преки пътища
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Спонсорирани препратки
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Платени публикации
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Посетени страници
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Отметки
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Последни изтегляния
+home-prefs-recent-activity-header-srd =
+    .label = Последна активност
+home-prefs-recent-activity-select =
+    .aria-label = Последна активност
+home-prefs-weather-header-srd =
+    .label = Времето
+home-prefs-support-firefox-header-srd =
+    .label = Подкрепете { -brand-product-name }
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -140,6 +193,8 @@ newtab-menu-report = Докладване
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Забраняване
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Научете повече
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Прекратяване  на следенето на темата

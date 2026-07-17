@@ -38,6 +38,26 @@ function setSearchValue(container, value) {
   return input;
 }
 
+// Per-zone Intl.DateTimeFormat mock for render tests that need
+// different localized names across multiple time zones in one run.
+// The inner stub must stay a `function` expression — arrow functions
+// can't be invoked with `new`, which production code does.
+const installMockedIntl = nameByTimeZone => {
+  const Original = Intl.DateTimeFormat;
+  Intl.DateTimeFormat = function (locale, options = {}) {
+    const tz = options.timeZone;
+    const value = tz && nameByTimeZone[tz];
+    return {
+      format: () => "",
+      formatToParts: () => (value ? [{ type: "timeZoneName", value }] : []),
+      resolvedOptions: () => ({ timeZone: tz }),
+    };
+  };
+  return () => {
+    Intl.DateTimeFormat = Original;
+  };
+};
+
 describe("<AddClockForm>", () => {
   describe("rendering", () => {
     it("renders an empty form when no initialClock is supplied", () => {
@@ -130,6 +150,31 @@ describe("<AddClockForm>", () => {
       expect(
         results[0].querySelector(".clocks-search-result-city").textContent
       ).toBe("Berlin");
+    });
+
+    it("renders and searches by the localized zone name built from Intl", () => {
+      const restore = installMockedIntl({
+        "Europe/Berlin": "Central European Time",
+        "Australia/Sydney": "Eastern Australia Time",
+        "America/New_York": "Eastern Time",
+        "America/Los_Angeles": "Pacific Time",
+        "Asia/Tokyo": "Japan Time",
+      });
+      try {
+        const { container } = renderForm();
+        setSearchValue(container, "Tok");
+        const result = container.querySelector(".clocks-search-result");
+        expect(
+          result.querySelector(".clocks-search-result-timezone").textContent
+        ).toBe("Japan Time");
+        setSearchValue(container, "Pacific");
+        const cities = Array.from(
+          container.querySelectorAll(".clocks-search-result-city")
+        ).map(el => el.textContent);
+        expect(cities).toContain("Los Angeles");
+      } finally {
+        restore();
+      }
     });
 
     it("renders results as div role='option' (not buttons) per ARIA combobox pattern", () => {

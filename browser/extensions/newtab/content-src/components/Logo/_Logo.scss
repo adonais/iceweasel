@@ -1,3 +1,6 @@
+@import './variants/FootballBounce';
+@import './variants/SpinBallSmall';
+
 .logo-and-wordmark-wrapper {
   // Override default h1 margins
   margin-block: 0;
@@ -72,6 +75,34 @@
     @include wallpaper-contrast-fix;
   }
 
+  // @backward-compat { version 153 }
+  // The .logo-variation-small + variants blocks below can be removed after
+  // Firefox 153 hits Release (2026 World Cup logo variation sunset).
+  .logo-variation-small {
+    cursor: pointer;
+    display: inline-block;
+    height: $logo-size;
+    width: $logo-size;
+
+    // Hover-dim is a motion effect: skip it for reduced-motion users so
+    // the logo behaves like a static element for them. The `.is-animating`
+    // class is set by the variation component while its animation is
+    // playing and pins opacity back to 1 so an in-flight animation reads
+    // at full brightness even if the cursor is still over the slot.
+    @media (prefers-reduced-motion: no-preference) {
+      transition: opacity 0.15s ease-out;
+
+      &:hover {
+        opacity: 0.8;
+      }
+
+      &.is-animating,
+      &.is-animating:hover {
+        opacity: 1;
+      }
+    }
+  }
+
   // @nova-cleanup(remove-conditional): Delete this entire .classic-enabled block and its contents
   .classic-enabled & {
     @media (max-width: $break-point-medium - 1) {
@@ -93,4 +124,3 @@
     }
   }
 }
-

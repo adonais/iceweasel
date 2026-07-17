@@ -14,7 +14,6 @@
 #include "mozilla/StaticPrefs_general.h"
 #include "mozilla/Sprintf.h"
 #include "WidgetUtilsGtk.h"
-#include "mozilla/widget/xx-pip-v1-client-protocol.h"
 #include "nsGtkKeyUtils.h"
 #include "nsGtkUtils.h"
 #include "nsLayoutUtils.h"
@@ -458,6 +457,23 @@ void nsWaylandDisplay::SetSubcompositor(wl_subcompositor* aSubcompositor) {
   mSubcompositor = aSubcompositor;
 }
 
+void nsWaylandDisplay::SetDataDeviceManager(
+    wl_data_device_manager* aDataDeviceManager) {
+  mDataDeviceManager = aDataDeviceManager;
+}
+
+void nsWaylandDisplay::SetPrimarySelectionDeviceManager(
+    gtk_primary_selection_device_manager* aPrimarySelectionDeviceManager) {
+  mPrimarySelectionDeviceManagerGtk = aPrimarySelectionDeviceManager;
+  mIsPrimarySelectionEnabled = !!mPrimarySelectionDeviceManagerGtk;
+}
+
+void nsWaylandDisplay::SetPrimarySelectionDeviceManager(
+    zwp_primary_selection_device_manager_v1* aPrimarySelectionDeviceManager) {
+  mPrimarySelectionDeviceManagerZwpV1 = aPrimarySelectionDeviceManager;
+  mIsPrimarySelectionEnabled = !!mPrimarySelectionDeviceManagerZwpV1;
+}
+
 void nsWaylandDisplay::SetIdleInhibitManager(
     zwp_idle_inhibit_manager_v1* aIdleInhibitManager) {
   mIdleInhibitManager = aIdleInhibitManager;
@@ -709,26 +725,21 @@ static const struct wl_output_listener output_listener = {
     output_handle_scale,
 };
 
-void nsWaylandDisplay::RefreshScreens() {
-  LOG("nsWaylandDisplay::RefreshScreens()");
-  for (unsigned int i = 0; i < mMonitors.Length(); i++) {
-    if (mMonitors[i]->pendingChanges) {
-      LOG("  monitor ID %d is not complete", mMonitors[i]->id);
-      return;
-    }
-  }
-  ScreenHelperGTK::RequestRefreshScreens();
-}
-
-void nsWaylandDisplay::AddWlOutput(wl_output* aWlOutput, int aId) {
-  wl_output_add_listener(aWlOutput, &output_listener, AddMonitorConfig(aId));
-}
-
-nsWaylandDisplay::MonitorConfig* nsWaylandDisplay::AddMonitorConfig(int aId) {
+void nsWaylandDisplay::AddMonitorConfig(int aId, wl_output* aWlOutput) {
   LOG("nsWaylandDisplay add monitor ID %d num %zu", aId, mMonitors.Length());
-  UniquePtr<MonitorConfig> monitor = MakeUnique<MonitorConfig>(aId);
-  mMonitors.AppendElement(std::move(monitor));
-  return mMonitors.LastElement().get();
+  mMonitors.AppendElement(MakeUnique<MonitorConfig>(aId, aWlOutput));
+}
+
+nsWaylandDisplay::MonitorConfig::MonitorConfig(int aId,
+                                               struct wl_output* aWlOutput)
+    : id(aId), wlOutput(aWlOutput) {
+  LOG("MonitorConfig() add ID %d", id);
+  wl_output_add_listener(wlOutput, &output_listener, this);
+}
+
+nsWaylandDisplay::MonitorConfig::~MonitorConfig() {
+  LOG("~MonitorConfig() delete ID %d", id);
+  MozClearPointer(wlOutput, wl_output_release);
 }
 
 bool nsWaylandDisplay::RemoveMonitorConfig(int aId) {
@@ -754,6 +765,17 @@ nsWaylandDisplay::MonitorConfig* nsWaylandDisplay::GetMonitorConfig(int x,
   return nullptr;
 }
 
+void nsWaylandDisplay::RefreshScreens() {
+  LOG("nsWaylandDisplay::RefreshScreens()");
+  for (unsigned int i = 0; i < mMonitors.Length(); i++) {
+    if (mMonitors[i]->pendingChanges) {
+      LOG("  monitor ID %d is not complete", mMonitors[i]->id);
+      return;
+    }
+  }
+  ScreenHelperGTK::RequestRefreshScreens();
+}
+
 static void global_registry_handler(void* data, wl_registry* registry,
                                     uint32_t id, const char* interface,
                                     uint32_t version) {
@@ -766,6 +788,24 @@ static void global_registry_handler(void* data, wl_registry* registry,
   if (iface.EqualsLiteral("wl_shm")) {
     auto* shm = WaylandRegistryBind<wl_shm>(registry, id, &wl_shm_interface, 1);
     display->SetShm(shm);
+  } else if (strcmp(interface, "wl_data_device_manager") == 0) {
+    int data_device_manager_version = MIN(version, 3);
+    auto* data_device_manager = WaylandRegistryBind<wl_data_device_manager>(
+        registry, id, &wl_data_device_manager_interface,
+        data_device_manager_version);
+    display->SetDataDeviceManager(data_device_manager);
+  } else if (strcmp(interface, "gtk_primary_selection_device_manager") == 0) {
+    auto* primary_selection_device_manager =
+        WaylandRegistryBind<gtk_primary_selection_device_manager>(
+            registry, id, &gtk_primary_selection_device_manager_interface, 1);
+    display->SetPrimarySelectionDeviceManager(primary_selection_device_manager);
+  } else if (strcmp(interface, "zwp_primary_selection_device_manager_v1") ==
+             0) {
+    auto* primary_selection_device_manager =
+        WaylandRegistryBind<zwp_primary_selection_device_manager_v1>(
+            registry, id, &zwp_primary_selection_device_manager_v1_interface,
+            1);
+    display->SetPrimarySelectionDeviceManager(primary_selection_device_manager);
   } else if (iface.EqualsLiteral("zwp_idle_inhibit_manager_v1")) {
     auto* idle_inhibit_manager =
         WaylandRegistryBind<zwp_idle_inhibit_manager_v1>(
@@ -825,9 +865,10 @@ static void global_registry_handler(void* data, wl_registry* registry,
     auto* manager = WaylandRegistryBind<wp_fractional_scale_manager_v1>(
         registry, id, &wp_fractional_scale_manager_v1_interface, 1);
     display->SetFractionalScaleManager(manager);
-  } else if (iface.EqualsLiteral("gtk_primary_selection_device_manager") ||
-             iface.EqualsLiteral("zwp_primary_selection_device_manager_v1")) {
-    display->EnablePrimarySelection();
+  } else if (iface.EqualsLiteral("xx_fractional_scale_manager_v2")) {
+    auto* manager = WaylandRegistryBind<xx_fractional_scale_manager_v2>(
+        registry, id, &xx_fractional_scale_manager_v2_interface, 1);
+    display->SetFractionalScaleManagerV2(manager);
   } else if (iface.EqualsLiteral("zwp_pointer_gestures_v1") &&
              version >=
                  ZWP_POINTER_GESTURES_V1_GET_HOLD_GESTURE_SINCE_VERSION) {
@@ -853,19 +894,23 @@ static void global_registry_handler(void* data, wl_registry* registry,
     auto* xdgWm = WaylandRegistryBind<xdg_wm_base>(
         registry, id, &xdg_wm_base_interface, vers);
     display->SetXdgWm(xdgWm);
-  } else if (iface.EqualsLiteral("wl_output") && version > 1) {
-    auto* output =
-        WaylandRegistryBind<wl_output>(registry, id, &wl_output_interface, 2);
-    display->AddWlOutput(output, id);
+  } else if (iface.EqualsLiteral("wl_output") &&
+             version >= WL_OUTPUT_RELEASE_SINCE_VERSION) {
+    auto* output = WaylandRegistryBind<wl_output>(
+        registry, id, &wl_output_interface, WL_OUTPUT_RELEASE_SINCE_VERSION);
+    display->AddMonitorConfig(id, output);
   } else if (iface.EqualsLiteral("wl_fixes")) {
     // wl_fixes_interface was introduced in libwayland-client 1.24, but
     // Ubuntu 22.04 still ships 1.20.
+    // We force wl_fixes v.1 interface.
     static auto* sWlFixesInterface =
         (wl_interface*)dlsym(RTLD_DEFAULT, "wl_fixes_interface");
     if (sWlFixesInterface) {
-      auto* fixes = WaylandRegistryBind<wl_fixes>(
-          registry, id, sWlFixesInterface, MIN(version, 2));
+      auto* fixes =
+          WaylandRegistryBind<wl_fixes>(registry, id, sWlFixesInterface, 1);
       display->SetFixes(fixes);
+    } else {
+      LOG("wl_fixes_interface is missing!");
     }
   }
 }
@@ -918,6 +963,7 @@ void nsWaylandDisplay::RequestAsyncRoundtrip() {
   wl_callback* callback = wl_display_sync(mDisplay);
   wl_callback_add_listener(callback, &async_roundtrip_listener, this);
   mAsyncRoundtrips = g_list_append(mAsyncRoundtrips, callback);
+  wl_display_flush(mDisplay);
 }
 
 void nsWaylandDisplay::WaitForAsyncRoundtrips() {
@@ -928,6 +974,11 @@ void nsWaylandDisplay::WaitForAsyncRoundtrips() {
       return;
     }
   }
+}
+
+void nsWaylandDisplay::RequestRoundtrip() {
+  LOG("nsWaylandDisplay::RequestRoundtrip()");
+  wl_display_roundtrip(mDisplay);
 }
 
 void nsWaylandDisplay::SessionCreate(void* aData, xx_session_v1* aSession,
@@ -1256,11 +1307,18 @@ void nsWaylandDisplay::Init() {
   LOG("  init finished");
 
   // Check we have critical Wayland interfaces.
-  // Missing ones indicates a compositor bug and we can't continue.
+  // Missing ones indicates a compositor bug/missing feature and
+  // we can't continue.
   MOZ_RELEASE_ASSERT(GetShm(), "We're missing shm interface!");
   MOZ_RELEASE_ASSERT(GetCompositor(), "We're missing compositor interface!");
   MOZ_RELEASE_ASSERT(GetSubcompositor(),
                      "We're missing subcompositor interface!");
+  if (!GetViewporter()) {
+    NS_WARNING("Missing viewporter wayland protocol!");
+  }
+  if (!GetFractionalScaleManager()) {
+    NS_WARNING("Missing wp_fractional_scale_v1 wayland protocol!");
+  }
 }
 
 }  // namespace mozilla::widget

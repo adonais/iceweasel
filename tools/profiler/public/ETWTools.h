@@ -6,33 +6,18 @@
 #define ETWTools_h
 
 #include "mozilla/BaseProfilerMarkers.h"
+#include "mozilla/BaseProfilerMarkersPrerequisites.h"
 #include "mozilla/Flow.h"
 #include "mozilla/TimeStamp.h"
 #include "nsString.h"
 
 namespace ETW {
 
-// Allows checking for the presence of T::PayloadFields.
-template <typename T, typename = void>
-struct MarkerHasPayload : std::false_type {};
-template <typename T>
-struct MarkerHasPayload<T, std::void_t<decltype(T::PayloadFields),
-                                       decltype(std::size(T::PayloadFields))>>
-    : std::true_type {};
-
 // Allows checking for the presence of T::Name.
 template <typename T, typename = void>
 struct MarkerSupportsETW : std::false_type {};
 template <typename T>
 struct MarkerSupportsETW<T, std::void_t<decltype(T::Name)>> : std::true_type {};
-
-// Allows checking for the presence of T::TranslateMarkerInputToSchema.
-template <typename T, typename = void>
-struct MarkerHasTranslator : std::false_type {};
-template <typename T>
-struct MarkerHasTranslator<
-    T, std::void_t<decltype(T::TranslateMarkerInputToSchema)>>
-    : std::true_type {};
 
 }  // namespace ETW
 
@@ -85,7 +70,7 @@ struct SimpleMarkerType : public mozilla::BaseMarkerType<SimpleMarkerType> {
 template <typename T>
 constexpr std::size_t GetPackingSpace() {
   size_t length = 0;
-  if constexpr (MarkerHasPayload<T>::value) {
+  if constexpr (mozilla::MarkerHasPayloadFields<T>::value) {
     for (size_t i = 0; i < std::extent_v<decltype(T::PayloadFields)>; i++) {
       length += std::string_view{T::PayloadFields[i].Key}.size() + 1;
       length += sizeof(uint8_t);
@@ -168,7 +153,7 @@ struct StaticMetaData {
       }
       fieldStorage[pos++] = TlgInANSISTRING;
     }
-    if constexpr (MarkerHasPayload<T>::value) {
+    if constexpr (mozilla::MarkerHasPayloadFields<T>::value) {
       for (uint32_t i = 0; i < std::extent_v<decltype(T::PayloadFields)>; i++) {
         for (size_t c = 0;
              c < std::string_view{T::PayloadFields[i].Key}.size() + 1; c++) {
@@ -329,7 +314,7 @@ constexpr size_t GetETWDescriptorCount() {
   if (MarkerType::StoreName) {
     count++;
   }
-  if constexpr (MarkerHasPayload<MarkerType>::value) {
+  if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
     count += std::extent_v<decltype(MarkerType::PayloadFields)>;
   }
   return count;
@@ -370,8 +355,8 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
                           aName.StringView().size() + 1);
     }
 
-    if constexpr (MarkerHasPayload<MarkerType>::value) {
-      if constexpr (MarkerHasTranslator<MarkerType>::value) {
+    if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
+      if constexpr (mozilla::MarkerHasTranslator<MarkerType>::value) {
         // When this function is implemented the arguments are passed back to
         // the MarkerType object which is expected to call OutputMarkerSchema
         // with the correct argument format.
@@ -437,8 +422,8 @@ static inline void EmitETWMarker(const mozilla::ProfilerString8View& aName,
   // Do some static checks in this function. We don't actually emit any ETW
   // markers because this code is only compiled on non-Windows. The idea is that
   // we want to catch mistakes on all platforms.
-  if constexpr (MarkerHasPayload<MarkerType>::value) {
-    if constexpr (MarkerHasTranslator<MarkerType>::value) {
+  if constexpr (mozilla::MarkerHasPayloadFields<MarkerType>::value) {
+    if constexpr (mozilla::MarkerHasTranslator<MarkerType>::value) {
       // Call TranslateMarkerInputToSchema, which we expect to be a no-op on
       // non-Windows.
       MarkerType::TranslateMarkerInputToSchema(nullptr, aPayloadArguments...);

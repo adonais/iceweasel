@@ -27,7 +27,6 @@ import org.mozilla.fenix.GleanMetrics.Translations
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.settings.SupportUtils
@@ -144,13 +143,13 @@ class TranslationSettingsFragment : Fragment(), UserInteractionHandler, SystemIn
                         ),
                     )
                     // Ensures persistence of value
-                    requireContext().settings().offerTranslation = checked
+                    requireComponents.settings.offerTranslation = checked
                 },
             ),
         )
 
         var isDownloadInSavingModeChecked by remember {
-            mutableStateOf(requireContext().settings().ignoreTranslationsDataSaverWarning)
+            mutableStateOf(requireComponents.settings.ignoreTranslationsDataSaverWarning)
         }
 
         translationSwitchItems.add(
@@ -163,7 +162,7 @@ class TranslationSettingsFragment : Fragment(), UserInteractionHandler, SystemIn
                 isEnabled = true,
                 onStateChange = { _, checked ->
                     isDownloadInSavingModeChecked = checked
-                    requireContext().settings().ignoreTranslationsDataSaverWarning = checked
+                    requireComponents.settings.ignoreTranslationsDataSaverWarning = checked
                 },
             ),
         )

@@ -168,6 +168,11 @@ sealed class TrustPanelAction : Action {
         data object QWAC : Navigate()
 
         /**
+         * [Navigate] action dispatched when showing the protections dashboard.
+         */
+        data object TrackersProtectionDashboard : Navigate()
+
+        /**
          * [Navigate] action dispatched when navigating to the IP protection settings screen.
          */
         data object IPProtectionSettings : Navigate()

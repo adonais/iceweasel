@@ -4,6 +4,7 @@
 
 UNIFIED_SOURCES += [
     "TestBuffer.cpp",
+    "TestFormattingAndStreaming.cpp",
     "TestLinkedList.cpp",
     "TestReverseIterator.cpp",
     "TestSpan.cpp",
@@ -27,5 +28,10 @@ if not CONFIG["MOZILLA_OFFICIAL"]:
 # LOCAL_INCLUDES += [
 #    "../../base",
 # ]
+
+# GCC has a false-positive -Wstringop-overread warning at computing the
+# size of constexpr mozilla::Span.
+if CONFIG["CC_TYPE"] == "gcc":
+    CXXFLAGS += ["-Wno-stringop-overread"]
 
 FINAL_LIBRARY = "xul-gtest"

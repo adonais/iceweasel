@@ -19,9 +19,8 @@ class HTMLOutputElement final : public nsGenericHTMLFormControlElement,
  public:
   using ConstraintValidation::GetValidationMessage;
 
-  explicit HTMLOutputElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-      FromParser aFromParser = NOT_FROM_PARSER);
+  explicit HTMLOutputElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                             FromParser aFromParser = NOT_FROM_PARSER);
 
   // nsISupports
   NS_DECL_ISUPPORTS_INHERITED

@@ -76,7 +76,6 @@
   pointer-events: none;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   @keyframes hover-focus-fade-in {
     0% {

@@ -105,7 +105,7 @@ nsSingletonEnumerator::~nsSingletonEnumerator() = default;
 
 NS_IMETHODIMP
 nsSingletonEnumerator::HasMoreElements(bool* aResult) {
-  MOZ_ASSERT(aResult != 0, "null ptr");
+  MOZ_ASSERT(aResult != nullptr, "null ptr");
   if (!aResult) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -116,7 +116,7 @@ nsSingletonEnumerator::HasMoreElements(bool* aResult) {
 
 NS_IMETHODIMP
 nsSingletonEnumerator::GetNext(nsISupports** aResult) {
-  MOZ_ASSERT(aResult != 0, "null ptr");
+  MOZ_ASSERT(aResult != nullptr, "null ptr");
   if (!aResult) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -134,7 +134,7 @@ nsSingletonEnumerator::GetNext(nsISupports** aResult) {
 
 nsresult NS_NewSingletonEnumerator(nsISimpleEnumerator** aResult,
                                    nsISupports* aSingleton) {
-  RefPtr<nsSingletonEnumerator> enumer = new nsSingletonEnumerator(aSingleton);
+  RefPtr enumer = mozilla::MakeRefPtr<nsSingletonEnumerator>(aSingleton);
   enumer.forget(aResult);
   return NS_OK;
 }
@@ -170,7 +170,7 @@ nsUnionEnumerator::~nsUnionEnumerator() = default;
 
 NS_IMETHODIMP
 nsUnionEnumerator::HasMoreElements(bool* aResult) {
-  MOZ_ASSERT(aResult != 0, "null ptr");
+  MOZ_ASSERT(aResult != nullptr, "null ptr");
   if (!aResult) {
     return NS_ERROR_NULL_POINTER;
   }
@@ -211,7 +211,7 @@ nsUnionEnumerator::HasMoreElements(bool* aResult) {
 
 NS_IMETHODIMP
 nsUnionEnumerator::GetNext(nsISupports** aResult) {
-  MOZ_ASSERT(aResult != 0, "null ptr");
+  MOZ_ASSERT(aResult != nullptr, "null ptr");
   if (!aResult) {
     return NS_ERROR_NULL_POINTER;
   }

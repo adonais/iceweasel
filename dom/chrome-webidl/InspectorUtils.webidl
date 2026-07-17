@@ -40,6 +40,7 @@ namespace InspectorUtils {
   InspectorRGBATuple? colorToRGBA(UTF8String colorString);
   InspectorColorToResult? colorTo(UTF8String fromColor, UTF8String toColorSpace);
   boolean isValidCSSColor(UTF8String colorString);
+  boolean isValidCSSImage(UTF8String imageString);
   [Throws] sequence<DOMString> getSubpropertiesForCSSProperty(UTF8String property);
   [Throws] boolean cssPropertyIsShorthand(UTF8String property);
 
@@ -153,6 +154,16 @@ namespace InspectorUtils {
   InspectorAnchorElement? getAnchorFor(Element element, optional DOMString? anchorName = null);
   // Given a DOM element, return a list of valid anchor anchor names.
   sequence<DOMString> getAnchorNamesFor(Element element);
+
+
+  // Returns the list of functions we support in getComputationSteps
+  sequence<UTF8String> getComputationStepsSupportedCSSFunctions();
+
+  // Given a "CSS expression" (e.g. `calc(12vw + 25%)`), return a list of string that represent
+  // the steps from it to the computed value
+  sequence<DOMString> getComputationSteps(DOMString expression,
+                                          Element element,
+                                          optional [LegacyNullToEmptyString] DOMString pseudo = "");
 };
 
 enum InspectorAnchorType {

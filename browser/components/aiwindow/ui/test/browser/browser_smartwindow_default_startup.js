@@ -108,3 +108,115 @@ add_task(async function test_onFirstWindowReady_skips_private_windows() {
     await SpecialPowers.popPrefEnv();
   }
 });
+
+/* test that getFirstWindowArgs substitutes about:home with the Smart Window
+  new tab URL when Smart Window is set as default and the user is signed in */
+add_task(
+  async function test_getFirstWindowArgs_substitutes_when_smart_default() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.isDefaultWindow", true],
+        ["browser.smartwindow.tos.consentTime", 1],
+        ["browser.startup.page", 1],
+      ],
+    });
+
+    Assert.equal(
+      Cc["@mozilla.org/browser/clh;1"]
+        .getService(Ci.nsIBrowserHandler)
+        .getFirstWindowArgs(),
+      AIWINDOW_URL,
+      "Substitutes about:home with AIWINDOW_URL when Smart Window is default"
+    );
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+/* test that getFirstWindowArgs substitutes with first run url when user has not completed it */
+add_task(
+  async function test_getFirstWindowArgs_returns_firstrun_when_not_completed() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.isDefaultWindow", true],
+        ["browser.smartwindow.tos.consentTime", 1],
+        ["browser.smartwindow.firstrun.hasCompleted", false],
+        ["browser.startup.page", 1],
+      ],
+    });
+
+    Assert.equal(
+      Cc["@mozilla.org/browser/clh;1"]
+        .getService(Ci.nsIBrowserHandler)
+        .getFirstWindowArgs(),
+      FIRSTRUN_URL,
+      "Substitutes about:home with FIRSTRUN_URL when firstrun is incomplete"
+    );
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+/* test that getFirstWindowArgs doesn't substitute a custom homepage */
+add_task(async function test_getFirstWindowArgs_respects_custom_homepage() {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      ["browser.smartwindow.isDefaultWindow", true],
+      ["browser.smartwindow.tos.consentTime", 1],
+      ["browser.startup.homepage", "https://example.com/"],
+      ["browser.startup.page", 1],
+    ],
+  });
+
+  Assert.equal(
+    Cc["@mozilla.org/browser/clh;1"]
+      .getService(Ci.nsIBrowserHandler)
+      .getFirstWindowArgs(),
+    "https://example.com/",
+    "Does NOT substitute when user has a custom homepage"
+  );
+  await SpecialPowers.popPrefEnv();
+});
+
+/* test that getFirstWindowArgs doesn't substitute when user has never signed in */
+add_task(
+  async function test_getFirstWindowArgs_does_not_substitute_without_consent() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.isDefaultWindow", true],
+        ["browser.smartwindow.tos.consentTime", 0],
+        ["browser.startup.page", 1],
+      ],
+    });
+
+    Assert.equal(
+      Cc["@mozilla.org/browser/clh;1"]
+        .getService(Ci.nsIBrowserHandler)
+        .getFirstWindowArgs(),
+      "about:home",
+      "Does NOT substitute when user has never signed in"
+    );
+    await SpecialPowers.popPrefEnv();
+  }
+);
+
+/* test that getFirstWindowArgs does NOT substitute when Smart Window is not
+  the default */
+add_task(
+  async function test_getFirstWindowArgs_does_not_substitute_when_not_default() {
+    await SpecialPowers.pushPrefEnv({
+      set: [
+        ["browser.smartwindow.isDefaultWindow", false],
+        ["browser.smartwindow.tos.consentTime", 1],
+        ["browser.startup.page", 1],
+      ],
+    });
+
+    Assert.equal(
+      Cc["@mozilla.org/browser/clh;1"]
+        .getService(Ci.nsIBrowserHandler)
+        .getFirstWindowArgs(),
+      "about:home",
+      "Does NOT substitute when Smart Window is not default"
+    );
+    await SpecialPowers.popPrefEnv();
+  }
+);

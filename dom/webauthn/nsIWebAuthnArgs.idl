@@ -121,4 +121,10 @@ interface nsIWebAuthnSignArgs : nsISupports {
     readonly attribute boolean conditionallyMediated;
 
     readonly attribute boolean privateBrowsing;
+
+    // Returns a copy of this nsIWebAuthnSignArgs identical to the original
+    // except that the allow list is replaced with the single given credential
+    // id. Used when promoting a conditional get via autofill credential
+    // selection.
+    nsIWebAuthnSignArgs cloneWithSelectedCredential(in Array<octet> aCredentialId);
 };

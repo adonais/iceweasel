@@ -27,6 +27,8 @@ namespace mozilla {
 class ErrorResult;
 template <class T>
 class OwningNonNull;
+struct StyleTransformComponent;
+using StyleTransformValue = CopyableTArray<StyleTransformComponent>;
 
 namespace dom {
 
@@ -38,6 +40,10 @@ class CSSTransformValue final : public CSSStyleValue {
  public:
   CSSTransformValue(nsCOMPtr<nsISupports> aParent,
                     nsTArray<RefPtr<CSSTransformComponent>> aValues);
+
+  static RefPtr<CSSTransformValue> Create(
+      nsCOMPtr<nsISupports> aParent,
+      const StyleTransformValue& aTransformValue);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSTransformValue, CSSStyleValue)

@@ -235,7 +235,7 @@ testRule({
     },
     {
       code: `
-        :root { --custom-token: light-dark(var(--color-gray-05), var(--color-gray-100)); }
+        :root { --custom-token: light-dark(var(--color-gray-0), var(--color-gray-100)); }
         .bg { background-color: var(--custom-token); }
       `,
       description:

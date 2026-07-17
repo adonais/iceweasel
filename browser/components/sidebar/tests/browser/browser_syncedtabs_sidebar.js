@@ -161,7 +161,7 @@ add_task(async function test_tabs() {
 
       // We need to wait for the document to flush to ensure it's completely opened
       await content.promiseDocumentFlushed(() => {});
-      await EventUtils.synthesizeMouseAtCenter(
+      EventUtils.synthesizeMouseAtCenter(
         row.mainEl,
         { type: "mouseover" },
         content
@@ -525,7 +525,7 @@ add_task(async function test_tabs_click_auxclick() {
     // See the comment in test_history_hover_buttons in
     // browser_history_sidebar.js
     AccessibilityUtils.setEnv({ focusableRule: false });
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       row.mainEl,
       {
         button: 0,
@@ -556,7 +556,7 @@ add_task(async function test_tabs_click_auxclick() {
     );
 
     AccessibilityUtils.setEnv({ focusableRule: false });
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       row.mainEl,
       {
         button: 1,
@@ -583,7 +583,7 @@ add_task(async function test_tabs_click_auxclick() {
     );
 
     AccessibilityUtils.setEnv({ focusableRule: false });
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       row.mainEl,
       {
         button: 1,

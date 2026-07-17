@@ -33,8 +33,7 @@ add_task(async function test_IPPAutoRestore_if_userEnabled() {
   // Simulate user having previously enabled the VPN
   Services.prefs.setBoolPref("browser.ipProtection.userEnabled", true);
 
-  let sandbox = sinon.createSandbox();
-  setupStubs(sandbox);
+  setupStubs();
 
   const waitForReady = waitForEvent(
     IPProtectionService,
@@ -66,7 +65,6 @@ add_task(async function test_IPPAutoRestore_if_userEnabled() {
   await IPPProxyManager.stop(false);
 
   IPProtectionService.uninit();
-  sandbox.restore();
 });
 
 /**
@@ -76,8 +74,7 @@ add_task(async function test_IPPAutoRestore_restore_if_userDisabled() {
   // Simulate user having previously disabled the VPN
   Services.prefs.setBoolPref("browser.ipProtection.userEnabled", false);
 
-  let sandbox = sinon.createSandbox();
-  setupStubs(sandbox);
+  setupStubs();
 
   const waitForReady = waitForEvent(
     IPProtectionService,
@@ -107,7 +104,6 @@ add_task(async function test_IPPAutoRestore_restore_if_userDisabled() {
   );
 
   IPProtectionService.uninit();
-  sandbox.restore();
 });
 
 /**
@@ -117,8 +113,7 @@ add_task(async function test_IPPAutoRestore_if_notReady() {
   // Simulate user having previously enabled the VPN
   Services.prefs.setBoolPref("browser.ipProtection.userEnabled", true);
 
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(IPPSignInWatcher, "isSignedIn").get(() => false);
+  IPPDummyAuthProvider.simulateSignIn(false);
 
   IPProtectionService.init();
 
@@ -146,5 +141,4 @@ add_task(async function test_IPPAutoRestore_if_notReady() {
   );
 
   IPProtectionService.uninit();
-  sandbox.restore();
 });

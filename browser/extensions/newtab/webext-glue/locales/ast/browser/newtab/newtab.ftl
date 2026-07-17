@@ -12,6 +12,46 @@ newtab-personalize-icon-label =
     .title = Personaliza «Llingüeta nueva»
     .aria-label = Personalizar «Llingüeta nueva»
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Llingüetes nueves
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } filera
+           *[other] { $num } fileres
+        }
+home-restore-defaults-srd =
+    .label = Reafitar
+    .accesskey = R
+home-mode-choice-custom-srd =
+    .label = URLs personalizaes...
+home-mode-choice-blank-srd =
+    .label = Páxina balera
+home-prefs-shortcuts-header-srd =
+    .label = Atayos
+home-prefs-shortcuts-select =
+    .aria-label = Atayos
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Atayos patrocinaos
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Páxines visitaes
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Marcadores
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = La descarga más recién
+home-prefs-recent-activity-header-srd =
+    .label = Actividá recién
+home-prefs-recent-activity-select =
+    .aria-label = Actividá recién
+
 ## Search box component.
 
 # Variables:

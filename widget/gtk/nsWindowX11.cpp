@@ -10,6 +10,7 @@
 #include <gdk/gdkkeysyms-compat.h>
 #include <X11/Xatom.h>
 #include <X11/extensions/XShm.h>
+#include <X11/extensions/Xfixes.h>
 #include <X11/extensions/shape.h>
 #include "gfxXlibSurface.h"
 #include "GLContextGLX.h"  // for GLContextGLX::FindVisual()
@@ -178,7 +179,7 @@ void nsWindowX11::ConfigureToplevelWindowNative() {
   SetCompositorHint(GTK_WIDGET_COMPOSITED_ENABLED);
 }
 
-void nsWindowX11::DestroyNative() {}
+void nsWindowX11::DestroyNative() { UnlockNativePointer(); }
 
 void nsWindowX11::SetCompositorHint(WindowComposeRequest aState) {
   gulong value = aState;
@@ -221,6 +222,100 @@ void nsWindowX11::SetProgress(unsigned long progressPercent) {
   progressPercent = MIN(progressPercent, 100);
   set_window_hint_cardinal(GDK_WINDOW_XID(GetToplevelGdkWindow()),
                            PROGRESS_HINT, progressPercent);
+}
+
+static bool SupportsPointerBarriers(Display* aDisplay) {
+  MOZ_ASSERT(StaticPrefs::dom_pointer_lock_native_lock_enabled());
+  // XXX We expect the capability doesn't change as we use only one display
+  // everywhere.
+  static const bool sSupported = [&] {
+    int eventBase = -1;
+    int errorBase = -1;
+    if (!XFixesQueryExtension(aDisplay, &eventBase, &errorBase)) {
+      return false;
+    }
+
+    int major = 0;
+    int minor = 0;
+    if (!XFixesQueryVersion(aDisplay, &major, &minor)) {
+      return false;
+    }
+
+    return major >= 5;
+  }();
+  return sSupported;
+}
+
+void nsWindowX11::UpdateNativePointerBarriers() {
+  if (!StaticPrefs::dom_pointer_lock_native_lock_enabled()) {
+    MOZ_ASSERT(!mIsNativePointerLocked);
+    MOZ_ASSERT(!mNativePointerBarriers);
+    return;
+  }
+
+  if (NS_WARN_IF(!mGdkWindow)) {
+    return;
+  }
+
+  Display* display = GDK_DISPLAY_XDISPLAY(gdk_window_get_display(mGdkWindow));
+  if (NS_WARN_IF(!SupportsPointerBarriers(display))) {
+    MOZ_ASSERT(!mNativePointerBarriers);
+    return;
+  }
+
+  if (mNativePointerBarriers) {
+    XFixesDestroyPointerBarrier(display, mNativePointerBarriers->mLeft);
+    XFixesDestroyPointerBarrier(display, mNativePointerBarriers->mRight);
+    XFixesDestroyPointerBarrier(display, mNativePointerBarriers->mTop);
+    XFixesDestroyPointerBarrier(display, mNativePointerBarriers->mBottom);
+    mNativePointerBarriers.reset();
+  }
+
+  if (mIsNativePointerLocked) {
+    Window window = GetX11Window();
+    mNativePointerBarriers.emplace(
+        XFixesCreatePointerBarrier(
+            display, window, mClientArea.X(), mClientArea.Y(), mClientArea.X(),
+            mClientArea.YMost(), BarrierPositiveX, 0, nullptr),
+        XFixesCreatePointerBarrier(display, window, mClientArea.XMost(),
+                                   mClientArea.Y(), mClientArea.XMost(),
+                                   mClientArea.YMost(), BarrierNegativeX, 0,
+                                   nullptr),
+        XFixesCreatePointerBarrier(
+            display, window, mClientArea.X(), mClientArea.Y(),
+            mClientArea.XMost(), mClientArea.Y(), BarrierPositiveY, 0, nullptr),
+        XFixesCreatePointerBarrier(display, window, mClientArea.X(),
+                                   mClientArea.YMost(), mClientArea.XMost(),
+                                   mClientArea.YMost(), BarrierNegativeY, 0,
+                                   nullptr));
+  }
+}
+
+void nsWindowX11::LockNativePointer(
+    NativePointerLockMode aNativePointerLockMode) {
+  if (!StaticPrefs::dom_pointer_lock_native_lock_enabled()) {
+    MOZ_ASSERT(!mIsNativePointerLocked);
+    MOZ_ASSERT(!mNativePointerBarriers);
+    return;
+  }
+
+  if (mIsNativePointerLocked) {
+    MOZ_ASSERT(mNativePointerBarriers);
+    return;
+  }
+
+  mIsNativePointerLocked = true;
+  UpdateNativePointerBarriers();
+}
+
+void nsWindowX11::UnlockNativePointer() {
+  if (!mIsNativePointerLocked) {
+    MOZ_ASSERT(!mNativePointerBarriers);
+    return;
+  }
+  MOZ_ASSERT(StaticPrefs::dom_pointer_lock_native_lock_enabled());
+  mIsNativePointerLocked = false;
+  UpdateNativePointerBarriers();
 }
 
 void nsWindowX11::NativeShow(bool aAction) {

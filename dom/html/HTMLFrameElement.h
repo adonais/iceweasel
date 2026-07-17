@@ -14,9 +14,8 @@ class HTMLFrameElement final : public nsGenericHTMLFrameElement {
  public:
   using nsGenericHTMLFrameElement::SwapFrameLoaders;
 
-  explicit HTMLFrameElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-      FromParser aFromParser = NOT_FROM_PARSER);
+  explicit HTMLFrameElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                            FromParser aFromParser = NOT_FROM_PARSER);
 
   // nsISupports
   NS_INLINE_DECL_REFCOUNTING_INHERITED(HTMLFrameElement,

@@ -1583,22 +1583,12 @@ add_task(async function test_updateRecipesClearsOptIns() {
   const recipes = [
     NimbusTestUtils.factories.recipe("opt-in-1", {
       isFirefoxLabsOptIn: true,
-      firefoxLabsTitle: "opt-in-1-title",
-      firefoxLabsDescription: "opt-in-1-desc",
-      firefoxLabsDescriptionLinks: null,
-      firefoxLabsGroup: "group",
-      requiresRestart: false,
       isRollout: true,
       targeting: "true",
       publishedDate: new Date(now).toISOString(),
     }),
     NimbusTestUtils.factories.recipe("opt-in-2", {
       isFirefoxLabsOptIn: true,
-      firefoxLabsTitle: "opt-in-2-title",
-      firefoxLabsDescription: "opt-in-2-desc",
-      firefoxLabsDescriptionLinks: null,
-      firefoxLabsGroup: "group",
-      requiresRestart: false,
       isRollout: true,
       targeting: "false",
       publishedDate: new Date(now + 10000).toISOString(),
@@ -1610,11 +1600,44 @@ add_task(async function test_updateRecipesClearsOptIns() {
 
   await loader.updateRecipes();
 
-  Assert.deepEqual(manager.optInRecipes, recipes);
+  const expectedLabs = recipes.map(recipe => ({ recipe, source: "rs-loader" }));
+  const forceEnroll = NimbusTestUtils.factories.recipe("force-enroll", {
+    isFirefoxLabsOptIn: true,
+    isRollout: true,
+    targeting: "true",
+    publishedDate: new Date(now + 20000).toISOString(),
+  });
+
+  Assert.ok(manager.registerOptIn(forceEnroll, "force-enrollment"));
+  expectedLabs.push({ recipe: forceEnroll, source: "force-enrollment" });
+
+  Assert.deepEqual(manager.optIns, expectedLabs);
 
   await loader.updateRecipes();
 
-  Assert.deepEqual(manager.optInRecipes, recipes);
+  Assert.deepEqual(
+    manager.optIns.toSorted(orderByRecipePublishedDate),
+    expectedLabs
+  );
+
+  recipes.splice(1, 1);
+  expectedLabs.splice(1, 1);
+
+  await loader.updateRecipes();
+
+  Assert.deepEqual(
+    manager.optIns.toSorted(orderByRecipePublishedDate),
+    expectedLabs
+  );
+
+  recipes.splice(0, 1);
+  expectedLabs.splice(0, 1);
+
+  await loader.updateRecipes();
+  Assert.deepEqual(
+    manager.optIns.toSorted(orderByRecipePublishedDate),
+    expectedLabs
+  );
 
   await cleanup();
 });
@@ -3545,7 +3568,7 @@ add_task(async function testUpdateRecipesOnlyFeatureIdsLabs() {
   });
 
   Assert.deepEqual(
-    manager.optInRecipes.map(r => r.slug),
+    manager.optIns.toSorted(orderByRecipePublishedDate).map(r => r.recipe.slug),
     ["updated-separately", "no-feature-firefox-desktop"]
   );
 
@@ -3554,7 +3577,7 @@ add_task(async function testUpdateRecipesOnlyFeatureIdsLabs() {
   });
 
   Assert.deepEqual(
-    manager.optInRecipes.map(r => r.slug),
+    manager.optIns.toSorted(orderByRecipePublishedDate).map(r => r.recipe.slug),
     ["updated-separately", "no-feature-firefox-desktop"]
   );
 

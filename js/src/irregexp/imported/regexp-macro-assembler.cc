@@ -259,6 +259,40 @@ void RegExpMacroAssembler::CheckNotInSurrogatePair(int cp_offset,
   Bind(&ok);
 }
 
+void RegExpMacroAssembler::UnanchoredAdvance(bool unicode, Label* on_failure) {
+  if (unicode && mode() == UC16) {
+    // 2-byte Unicode mode: Step forward by 1 code point dynamically.
+    Label is_lead_surrogate, advance_1_char, advance_2_chars, done;
+    LoadCurrentCharacter(0, on_failure, true);
+    // Check if lead surrogate [0xD800, 0xDBFF]
+    CheckCharacterInRange(kLeadSurrogateStart, kLeadSurrogateEnd,
+                          &is_lead_surrogate);
+    // BMP character (non-lead-surrogate)
+    AdvanceCurrentPosition(1);
+    GoTo(&done);
+
+    Bind(&is_lead_surrogate);
+    LoadCurrentCharacter(1, &advance_1_char, true);
+    // Check if trail surrogate [0xDC00, 0xDFFF]
+    CheckCharacterInRange(kTrailSurrogateStart, kTrailSurrogateEnd,
+                          &advance_2_chars);
+
+    Bind(&advance_1_char);
+    AdvanceCurrentPosition(1);
+    GoTo(&done);
+
+    Bind(&advance_2_chars);
+    AdvanceCurrentPosition(2);
+
+    Bind(&done);
+  } else {
+    // Non-Unicode or 1-byte: Step forward by 1 code unit without loading
+    // character.
+    CheckPosition(0, on_failure);
+    AdvanceCurrentPosition(1);
+  }
+}
+
 void RegExpMacroAssembler::LoadCurrentCharacter(int cp_offset,
                                                 Label* on_end_of_input,
                                                 bool check_bounds,
@@ -482,7 +516,7 @@ int NativeRegExpMacroAssembler::CheckStackGuardState(
     } else if (check.InterruptRequested()) {
       [[maybe_unused]] AllowGarbageCollection yes_gc;
       Tagged<Object> result = isolate->stack_guard()->HandleInterrupts();
-      if (IsExceptionHole(result, isolate)) return_value = EXCEPTION;
+      if (IsExceptionHole(result)) return_value = EXCEPTION;
     }
 
     // We are not using operator == here because it does a slow DCHECK

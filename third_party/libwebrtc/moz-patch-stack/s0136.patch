@@ -1,27 +1,28 @@
-From: Michael Froman <mfroman@mozilla.com>
-Date: Tue, 7 Apr 2026 18:03:00 -0500
-Subject: Bug 2030139 - (fix-1ccc59d5c9) don't use
- std::make_unique_for_overwrite for now to fix build error
+From: Landry Breuil <landry@openbsd.org>
+Date: Wed, 15 Apr 2026 13:31:00 +0000
+Subject: Bug 2030612 - define AOM_EFLAG_FREEZE_INTERNAL_STATE if not defined
+ r=mjf
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a4e2ac07bd6f2deb8fde32b147422c3918c31eca
+fixes build with system-av1/aom after bug 2029247
+
+Differential Revision: https://phabricator.services.mozilla.com/D293051
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/70d2379819582d44092dee15e1e45ddbc9cd3f22
 ---
- rtc_base/copy_on_write_buffer.cc | 6 +++++-
- 1 file changed, 5 insertions(+), 1 deletion(-)
+ modules/video_coding/codecs/av1/libaom_av1_encoder.cc | 4 ++++
+ 1 file changed, 4 insertions(+)
 
-diff --git a/rtc_base/copy_on_write_buffer.cc b/rtc_base/copy_on_write_buffer.cc
-index 68e98ce729..5877f323f6 100644
---- a/rtc_base/copy_on_write_buffer.cc
-+++ b/rtc_base/copy_on_write_buffer.cc
-@@ -28,7 +28,11 @@
- namespace webrtc {
+diff --git a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
+index dc27b1f170..6e369c1c09 100644
+--- a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
++++ b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
+@@ -67,6 +67,10 @@
+ #define AOM_EFLAG_CALCULATE_PSNR (1 << 3)
+ #endif
  
- CopyOnWriteBuffer::RawBuffer::RawBuffer(size_t size)
--    : size_(size), data_(std::make_unique_for_overwrite<uint8_t[]>(size)) {}
-+    : size_(size), data_(std::unique_ptr<uint8_t[]>(new uint8_t[size])) {}
-+// We should be able to use the form below, but our current compile setup
-+// doesn't find std::make_unique_for_overwrite.  See Bug 2030186 to revert
-+// this change.
-+//     : size_(size), data_(std::make_unique_for_overwrite<uint8_t[]>(size)) {}
- 
- scoped_refptr<CopyOnWriteBuffer::RefCountedBuffer>
- CopyOnWriteBuffer::CreateBuffer(size_t capacity) {
++#ifndef AOM_EFLAG_FREEZE_INTERNAL_STATE
++#define AOM_EFLAG_FREEZE_INTERNAL_STATE (1 << 2)
++#endif
++
+ #if defined(WEBRTC_ENCODER_PSNR_STATS)
+ constexpr bool kEnablePsnrStats = true;
+ #else

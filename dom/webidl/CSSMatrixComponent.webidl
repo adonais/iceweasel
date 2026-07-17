@@ -13,8 +13,7 @@
 [Exposed=(Window, Worker), Pref="layout.css.typed-om.enabled"]
 interface CSSMatrixComponent : CSSTransformComponent {
   constructor(DOMMatrixReadOnly matrix, optional CSSMatrixComponentOptions options = {});
-  // TODO: Remove [GetterThrows] once the matrix attribute is fully implemented
-  [GetterThrows] attribute DOMMatrix matrix;
+  attribute DOMMatrix matrix;
 };
 
 // https://drafts.css-houdini.org/css-typed-om-1/#dictdef-cssmatrixcomponentoptions

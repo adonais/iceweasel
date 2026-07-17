@@ -69,6 +69,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     compareArray(calls, [0, "0,0,0,0,0", 1, "0,42,0,0,0", 2, "0,42,43,0,0"]),
     "values are set in order"
   );
-}, null, ["passthrough"]);
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

@@ -1,7 +1,7 @@
 import pytest
 
 URL = "https://www.cwb.digital/apps/cwbDigital/#_frmLogin"
-LOGIN_CSS = "#okta_login"
+LOGIN_CSS = "input[type=email]"
 DOWN_CSS = ".cf-error-details"
 
 

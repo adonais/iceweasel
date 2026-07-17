@@ -13,7 +13,9 @@
 
 #include "gtest/gtest.h"
 
+#include "der_encode.h"
 #include "scoped_ptrs_smime.h"
+#include "secoid.h"
 #include "smime.h"
 
 namespace nss_test {
@@ -239,5 +241,52 @@ TEST_F(SMimeTest, CmsDecoderRejectsOversizeContent) {
   }
 }
 #endif  // !defined(_WIN32) && defined(__LP64__)
+
+// Helper functions for DeepNestingRejected and ShallowNestingNotRejected
+static Bytes NssOid(SECOidTag tag) {
+  const SECOidData* od = SECOID_FindOIDByTag(tag);
+  return OidVal(od->oid.data, od->oid.len);
+}
+
+static Bytes MakeNestedDigestedData(int levels) {
+  Bytes alg = Seq(NssOid(SEC_OID_SHA1));
+
+  // Innermost DigestedData: version 0 (NSS_CMS_DIGESTED_DATA_VERSION_DATA),
+  // eContentType=id-data so nss_cms_before_data() returns early without
+  // creating a child decoder.
+  Bytes encap = Seq(Cat({NssOid(SEC_OID_PKCS7_DATA), Ctx0(OctetStr({0x00}))}));
+  Bytes dd = Seq(
+      Cat({Bytes{0x02, 0x01, 0x00}, alg, encap, OctetStr(Bytes(20, 0x00))}));
+
+  // Each wrapper level uses version 2 (NSS_CMS_DIGESTED_DATA_VERSION_ENCAP)
+  // because its eContentType is id-digestedData, not id-data.
+  for (int i = 1; i < levels; i++) {
+    encap = Seq(Cat({NssOid(SEC_OID_PKCS7_DIGESTED_DATA), Ctx0(OctetStr(dd))}));
+    dd = Seq(
+        Cat({Bytes{0x02, 0x01, 0x02}, alg, encap, OctetStr(Bytes(20, 0x00))}));
+  }
+
+  // Root ContentInfo wrapper (not itself a DigestedData level).
+  return Seq(Cat({NssOid(SEC_OID_PKCS7_DIGESTED_DATA), Ctx0(dd)}));
+}
+
+// Bug 2023208: a CMS message whose nesting depth exceeds
+// NSS_CMS_MAX_NESTING_DEPTH must be rejected cleanly by the setup-time check in
+// nss_cms_before_data().
+TEST_F(SMimeTest, DeepNestingRejected) {
+  Bytes der = MakeNestedDigestedData(40);
+  SECItem item = {siBuffer, der.data(), static_cast<unsigned int>(der.size())};
+  ScopedNSSCMSMessage msg(NSS_CMSMessage_CreateFromDER(
+      &item, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr));
+  EXPECT_EQ(nullptr, msg.get());
+}
+
+TEST_F(SMimeTest, ShallowNestingNotRejected) {
+  Bytes der = MakeNestedDigestedData(3);
+  SECItem item = {siBuffer, der.data(), static_cast<unsigned int>(der.size())};
+  ScopedNSSCMSMessage msg(NSS_CMSMessage_CreateFromDER(
+      &item, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr));
+  EXPECT_NE(nullptr, msg.get());
+}
 
 }  // namespace nss_test

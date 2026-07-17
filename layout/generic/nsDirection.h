@@ -12,6 +12,7 @@
 
 enum nsDirection { eDirNext = 0, eDirPrevious = 1 };
 
-std::ostream& operator<<(std::ostream& aStream, const nsDirection& aDirection);
+std::string format_as(nsDirection);
+std::ostream& operator<<(std::ostream&, nsDirection);
 
 #endif

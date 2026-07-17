@@ -208,7 +208,7 @@ already_AddRefed<NativeFontResourceDWrite> NativeFontResourceDWrite::Create(
 
   sFontFileStreamsMutex.Lock();
   uint64_t fontFileKey = sNextFontFileKey++;
-  RefPtr<DWriteFontFileStream> ffsRef = new DWriteFontFileStream(fontFileKey);
+  RefPtr ffsRef = MakeRefPtr<DWriteFontFileStream>(fontFileKey);
   if (!ffsRef->Initialize(aFontData, aDataLength)) {
     sFontFileStreamsMutex.Unlock();
     gfxWarning() << "Failed to create DWriteFontFileStream.";
@@ -259,7 +259,7 @@ already_AddRefed<UnscaledFont> NativeFontResourceDWrite::CreateUnscaledFont(
     return nullptr;
   }
 
-  RefPtr<UnscaledFont> unscaledFont = new UnscaledFontDWrite(fontFace, nullptr);
+  RefPtr unscaledFont = MakeRefPtr<UnscaledFontDWrite>(fontFace, nullptr);
 
   return unscaledFont.forget();
 }

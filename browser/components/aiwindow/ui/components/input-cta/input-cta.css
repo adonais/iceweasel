@@ -35,6 +35,16 @@ moz-button.input-cta {
     --button-text-color-disabled: var(--color-white);
     --button-text-color-hover: var(--color-white);
     --button-text-color-selected: var(--color-white);
+    --button-background-color-ghost: var(--button-background-color);
+    --button-background-color-ghost-active: var(--button-background-color-active);
+    --button-background-color-ghost-disabled: var(--button-background-color-disabled);
+    --button-background-color-ghost-hover: var(--button-background-color-hover);
+    --button-background-color-ghost-selected: var(--button-background-color-selected);
+    --button-text-color-ghost: var(--button-text-color);
+    --button-text-color-ghost-active: var(--button-text-color-active);
+    --button-text-color-ghost-disabled: var(--button-text-color-disabled);
+    --button-text-color-ghost-hover: var(--button-text-color-hover);
+    --button-text-color-ghost-selected: var(--button-text-color-selected);
   }
 }
 
@@ -46,8 +56,8 @@ moz-button.input-cta {
   --button-padding: 0;
 
   @media not (forced-colors) {
-    --button-background-color-hover: light-dark(var(--color-violet-0), color-mix(in srgb, var(--color-violet-20) 24%, transparent));
-    --button-background-color-active: light-dark(var(--color-violet-10), color-mix(in srgb, var(--color-violet-0) 24%, transparent));
+    --button-background-color-ghost-hover: light-dark(var(--color-violet-0), color-mix(in srgb, var(--color-violet-20) 24%, transparent));
+    --button-background-color-ghost-active: light-dark(var(--color-violet-10), color-mix(in srgb, var(--color-violet-0) 24%, transparent));
     --button-icon-fill: light-dark(var(--color-violet-70), var(--color-violet-20));
   }
 }
@@ -157,7 +167,6 @@ panel-item {
 }
 
 /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   @media not (forced-colors) {
     moz-button {

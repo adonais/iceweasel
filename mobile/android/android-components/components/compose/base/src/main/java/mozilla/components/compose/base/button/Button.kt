@@ -96,7 +96,7 @@ fun FilledButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     contentColor: Color = ButtonDefaults.buttonColors().contentColor,
-    containerColor: Color = ButtonDefaults.buttonColors().containerColor,
+    containerColor: Color = MaterialTheme.colorScheme.tertiary,
     icon: Painter? = null,
     iconModifier: Modifier = Modifier,
     iconTint: Color = contentColor,

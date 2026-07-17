@@ -170,23 +170,6 @@ class nsDocViewerSelectionListener final : public nsISelectionListener {
   bool mSelectionWasCollapsed;
 };
 
-/** editor Implementation of the FocusListener interface */
-class nsDocViewerFocusListener final : public nsIDOMEventListener {
- public:
-  explicit nsDocViewerFocusListener(nsDocumentViewer* aDocViewer)
-      : mDocViewer(aDocViewer) {}
-
-  NS_DECL_ISUPPORTS
-  NS_DECL_NSIDOMEVENTLISTENER
-
-  void Disconnect() { mDocViewer = nullptr; }
-
- protected:
-  virtual ~nsDocViewerFocusListener() = default;
-
-  nsDocumentViewer* mDocViewer;
-};
-
 namespace viewer_detail {
 
 /**
@@ -360,9 +343,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
 
   nsresult SyncParentSubDocMap();
 
-  void RemoveFocusListener();
-  void ReinitializeFocusListener();
-
   mozilla::dom::Selection* GetDocumentSelection();
 
   void DestroyPresShell();
@@ -398,7 +378,6 @@ class nsDocumentViewer final : public nsIDocumentViewer,
   RefPtr<PresShell> mPresShell;
 
   RefPtr<nsDocViewerSelectionListener> mSelectionListener;
-  RefPtr<nsDocViewerFocusListener> mFocusListener;
 
   nsCOMPtr<nsIDocumentViewer> mPreviousViewer;
   // Observer that will prevent bfcaching if it gets notified.  This
@@ -548,8 +527,6 @@ nsDocumentViewer::~nsDocumentViewer() {
     mSelectionListener->Disconnect();
   }
 
-  RemoveFocusListener();
-
   // XXX(?) Revoke pending invalidate events
 }
 
@@ -567,26 +544,6 @@ void nsDocumentViewer::LoadStart(Document* aDocument) {
 
   if (!mDocument) {
     mDocument = aDocument;
-  }
-}
-
-void nsDocumentViewer::RemoveFocusListener() {
-  if (RefPtr<nsDocViewerFocusListener> oldListener =
-          std::move(mFocusListener)) {
-    oldListener->Disconnect();
-    if (mDocument) {
-      mDocument->RemoveEventListener(u"focus"_ns, oldListener, false);
-      mDocument->RemoveEventListener(u"blur"_ns, oldListener, false);
-    }
-  }
-}
-
-void nsDocumentViewer::ReinitializeFocusListener() {
-  RemoveFocusListener();
-  mFocusListener = new nsDocViewerFocusListener(this);
-  if (mDocument) {
-    mDocument->AddEventListener(u"focus"_ns, mFocusListener, false, false);
-    mDocument->AddEventListener(u"blur"_ns, mFocusListener, false, false);
   }
 }
 
@@ -733,8 +690,6 @@ nsresult nsDocumentViewer::InitPresentationStuff(bool aDoInitialReflow) {
   if (RefPtr<mozilla::dom::Selection> selection = GetDocumentSelection()) {
     selection->AddSelectionListener(mSelectionListener);
   }
-
-  ReinitializeFocusListener();
 
   if (aDoInitialReflow && mDocument) {
     nsCOMPtr<Document> document = mDocument;
@@ -1372,8 +1327,6 @@ nsDocumentViewer::Open() {
 
   SyncParentSubDocMap();
 
-  ReinitializeFocusListener();
-
   // XXX re-enable image animations once that works correctly
 
   PrepareToStartLoad();
@@ -1425,7 +1378,6 @@ nsDocumentViewer::Close() {
     }
   }
 
-  RemoveFocusListener();
   return NS_OK;
 }
 
@@ -2019,6 +1971,10 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY NS_IMETHODIMP nsDocumentViewer::SelectAll() {
     return NS_ERROR_FAILURE;
   }
 
+  // XXX Chrome and Safari select all in the shadow, but we do it in the <body>
+  // or the document element. Shouldn't we consider the root element from the
+  // selection range or the focused element if there is no selection range and
+  // use the shadow root?
   nsCOMPtr<nsINode> bodyNode;
   if (mDocument->IsHTMLOrXHTML()) {
     // XXXbz why not just do GetBody() for all documents, then GetRootElement()
@@ -2428,55 +2384,6 @@ NS_IMETHODIMP nsDocViewerSelectionListener::NotifySelectionChanged(
   if (mSelectionWasCollapsed != selectionCollapsed) {
     domWindow->UpdateCommands(u"select"_ns);
     mSelectionWasCollapsed = selectionCollapsed;
-  }
-
-  return NS_OK;
-}
-
-// nsDocViewerFocusListener
-NS_IMPL_ISUPPORTS(nsDocViewerFocusListener, nsIDOMEventListener)
-
-nsresult nsDocViewerFocusListener::HandleEvent(Event* aEvent) {
-  NS_ENSURE_STATE(mDocViewer);
-
-  RefPtr<PresShell> presShell = mDocViewer->GetPresShell();
-  NS_ENSURE_TRUE(presShell, NS_ERROR_FAILURE);
-
-  RefPtr<nsFrameSelection> selection =
-      presShell->GetLastFocusedFrameSelection();
-  NS_ENSURE_TRUE(selection, NS_ERROR_FAILURE);
-  auto selectionStatus = selection->GetDisplaySelection();
-  nsAutoString eventType;
-  aEvent->GetType(eventType);
-  if (eventType.EqualsLiteral("focus")) {
-    // If selection was disabled, re-enable it.
-    if (selectionStatus == nsISelectionController::SELECTION_DISABLED ||
-        selectionStatus == nsISelectionController::SELECTION_HIDDEN) {
-      selection->SetDisplaySelection(nsISelectionController::SELECTION_ON);
-      selection->RepaintSelection(SelectionType::eNormal);
-    }
-    // See EditorBase::FinalizeSelection. This fixes up the case where focus
-    // left the editor's selection but returned to something else.
-    if (selection != presShell->ConstFrameSelection()) {
-      RefPtr<Document> doc = presShell->GetDocument();
-      const bool selectionMatchesFocus =
-          selection->IsIndependentSelection() &&
-          selection->GetIndependentSelectionRootParentElement() ==
-              doc->GetUnretargetedFocusedContent();
-      if (NS_WARN_IF(!selectionMatchesFocus)) {
-        presShell->FrameSelectionWillLoseFocus(*selection);
-        presShell->SelectionWillTakeFocus();
-      }
-    }
-  } else {
-    MOZ_ASSERT(eventType.EqualsLiteral("blur"), "Unexpected event type");
-    // If selection was on, disable it.
-    if (selectionStatus == nsISelectionController::SELECTION_ON ||
-        selectionStatus == nsISelectionController::SELECTION_ATTENTION) {
-      selection->SetDisplaySelection(
-          nsISelectionController::SELECTION_DISABLED);
-      selection->RepaintSelection(SelectionType::eNormal);
-    }
   }
 
   return NS_OK;

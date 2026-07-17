@@ -15,13 +15,19 @@ interface IPProtectionHandler {
 
     /**
      * Activates the IP protection.
+     *
+     * @param onResult Invoked once the activation request resolves. Receives `null` on success or
+     *  the [Throwable] that caused the failure.
      */
-    fun activate()
+    fun activate(onResult: (Throwable?) -> Unit = {})
 
     /**
      * Deactivates the IP protection proxy.
+     *
+     * @param onResult Invoked once the deactivation request resolves. Receives `null` on success or
+     *  the [Throwable] that caused the failure.
      */
-    fun deactivate()
+    fun deactivate(onResult: (Throwable?) -> Unit = {})
 
     /**
      * Triggers enrollment via the active auth provider. The [onResult] callback is invoked once

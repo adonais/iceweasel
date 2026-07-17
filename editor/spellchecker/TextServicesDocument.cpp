@@ -1419,8 +1419,7 @@ nsresult TextServicesDocument::CreateFilteredContentIterator(
   // Create a FilteredContentIterator
   // This class wraps the ContentIterator in order to give itself a chance
   // to filter out certain content nodes
-  RefPtr<FilteredContentIterator> filter =
-      new FilteredContentIterator(std::move(composeFilter));
+  RefPtr filter = MakeRefPtr<FilteredContentIterator>(std::move(composeFilter));
   nsresult rv = filter->Init(aAbstractRange);
   if (NS_FAILED(rv)) {
     return rv;

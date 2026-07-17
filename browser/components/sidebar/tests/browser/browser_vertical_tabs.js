@@ -504,7 +504,7 @@ add_task(async function test_vertical_tabs_expanded() {
   Services.prefs.setBoolPref("sidebar.revamp", false);
   await SidebarTestUtils.waitForTabstripOrientation(window, "horizontal");
   ok(
-    BrowserTestUtils.isHidden(document.getElementById("sidebar-main")),
+    BrowserTestUtils.isHidden(document.getElementById("sidebar-container")),
     "Sidebar launcher is hidden."
   );
 
@@ -512,7 +512,7 @@ add_task(async function test_vertical_tabs_expanded() {
   Services.prefs.setBoolPref(VERTICAL_TABS_PREF, true);
   await SidebarTestUtils.waitForTabstripOrientation(window, "vertical");
   ok(
-    BrowserTestUtils.isVisible(document.getElementById("sidebar-main")),
+    BrowserTestUtils.isVisible(document.getElementById("sidebar-container")),
     "Sidebar launcher is shown."
   );
   // We expect the launcher to be expanded by default when enabling vertical tabs

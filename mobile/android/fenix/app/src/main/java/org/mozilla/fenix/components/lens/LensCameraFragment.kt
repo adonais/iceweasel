@@ -34,6 +34,8 @@ import android.view.TextureView
 import android.view.View
 import android.view.ViewGroup
 import androidx.annotation.VisibleForTesting
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.platform.ComposeView
 import androidx.compose.ui.platform.ViewCompositionStrategy
@@ -41,6 +43,8 @@ import androidx.core.content.FileProvider
 import androidx.core.view.WindowInsetsCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.setFragmentResult
+import kotlinx.coroutines.flow.MutableStateFlow
+import mozilla.components.feature.qr.QrAnalyzer
 import mozilla.components.feature.qr.isLowLightBoostSupported
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.hasCamera
@@ -54,6 +58,8 @@ import java.util.concurrent.Executors
 import java.util.concurrent.RejectedExecutionException
 import java.util.concurrent.Semaphore
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import kotlin.math.max
 import kotlin.math.min
 
 /**
@@ -82,6 +88,9 @@ class LensCameraFragment : Fragment() {
 
     @VisibleForTesting
     internal var previewSize: Size? = null
+
+    @VisibleForTesting
+    internal val previewAspectRatio = mutableStateOf<Float?>(null)
     private var sensorOrientation: Int = 0
 
     @VisibleForTesting
@@ -98,6 +107,23 @@ class LensCameraFragment : Fragment() {
 
     @VisibleForTesting
     internal var imageReader: ImageReader? = null
+
+    @VisibleForTesting
+    internal var qrImageReader: ImageReader? = null
+
+    @VisibleForTesting
+    internal var qrAnalyzer = QrAnalyzer()
+
+    // Source of truth for the current camera mode. MutableStateFlow rather than mutableStateOf
+    // because qrImageAvailableListener reads .value on the camera background thread.
+    @VisibleForTesting
+    internal val cameraMode = MutableStateFlow(CameraMode.LENS)
+
+    @VisibleForTesting
+    internal val qrInFlight = AtomicBoolean(false)
+
+    @VisibleForTesting
+    internal var qrResultSent = false
 
     @VisibleForTesting
     internal var getUriForFile: (Context, String, File) -> Uri = { ctx, authority, file ->
@@ -159,20 +185,48 @@ class LensCameraFragment : Fragment() {
         }
     }
 
+    override fun onCreate(savedInstanceState: Bundle?) {
+        super.onCreate(savedInstanceState)
+        restoreFromState(savedInstanceState)
+    }
+
+    @VisibleForTesting
+    internal fun restoreFromState(savedInstanceState: Bundle?) {
+        savedInstanceState?.let { state ->
+            state.getString(STATE_CAMERA_MODE)?.let { name ->
+                cameraMode.value = CameraMode.valueOf(name)
+            }
+            qrResultSent = state.getBoolean(STATE_QR_RESULT_SENT, false)
+        }
+    }
+
+    override fun onSaveInstanceState(outState: Bundle) {
+        super.onSaveInstanceState(outState)
+        outState.putString(STATE_CAMERA_MODE, cameraMode.value.name)
+        outState.putBoolean(STATE_QR_RESULT_SENT, qrResultSent)
+    }
+
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         return ComposeView(requireContext()).apply {
             setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
             setContent {
+                val mode by cameraMode.collectAsState()
                 LensCameraScreen(
-                    showError = showCameraError.value,
+                    state = LensCameraState(
+                        showError = showCameraError.value,
+                        mode = mode,
+                        previewAspectRatio = previewAspectRatio.value,
+                    ),
+                    onModeChange = ::handleModeChanged,
                     onClose = { handleResult(null) },
                     onShutter = { captureStillImage() },
                     onGallery = { requestGalleryPick() },
-                    textureViewFactory = { ctx -> AutoFitTextureView(ctx) },
-                    onTextureViewCreated = { view ->
-                        textureView = view
-                        if (isResumed) {
-                            startCamera()
+                    textureViewProvider = { ctx ->
+                        AutoFitTextureView(ctx).also { view ->
+                            textureView = view
+                            if (isResumed) {
+                                startCamera()
+                            }
                         }
                     },
                 )
@@ -188,6 +242,10 @@ class LensCameraFragment : Fragment() {
 
     override fun onResume() {
         super.onResume()
+        qrAnalyzer.reset()
+        // qrResultSent is intentionally not reset here. After a successful scan it stays true
+        // through process death + restore, so a re-entry to the activity before it finishes
+        // can't fire a duplicate result. handleModeChanged(QR) clears it on a fresh mode entry.
         startCamera()
     }
 
@@ -258,7 +316,7 @@ class LensCameraFragment : Fragment() {
 
     @VisibleForTesting
     internal fun setUpCameraOutputs(width: Int, height: Int) {
-        val displayRotation = getScreenRotation()
+        val displayRotation = getScreenRotation() ?: Surface.ROTATION_0
         val manager = activity?.getSystemService(Context.CAMERA_SERVICE) as CameraManager? ?: return
 
         for (id in manager.cameraIdList) {
@@ -280,15 +338,18 @@ class LensCameraFragment : Fragment() {
                 setOnImageAvailableListener(onImageAvailableListener, backgroundHandler)
             }
 
+            qrImageReader = ImageReader.newInstance(
+                QrAnalyzer.YUV_WIDTH,
+                QrAnalyzer.YUV_HEIGHT,
+                ImageFormat.YUV_420_888,
+                QrAnalyzer.YUV_MAX_IMAGES,
+            ).apply {
+                setOnImageAvailableListener(qrImageAvailableListener, backgroundHandler)
+            }
+
             sensorOrientation = characteristics.get(CameraCharacteristics.SENSOR_ORIENTATION) as Int
 
-            val swappedDimensions = when (displayRotation) {
-                Surface.ROTATION_0, Surface.ROTATION_180 ->
-                    sensorOrientation == ORIENTATION_90 || sensorOrientation == ORIENTATION_270
-                Surface.ROTATION_90, Surface.ROTATION_270 ->
-                    sensorOrientation == ORIENTATION_0 || sensorOrientation == ORIENTATION_180
-                else -> false
-            }
+            val swappedDimensions = areDimensionsSwapped(displayRotation, sensorOrientation)
 
             val displaySize = activity?.windowManager?.let { getDisplaySize(it) } ?: Point()
             var rotatedPreviewWidth = width
@@ -316,16 +377,24 @@ class LensCameraFragment : Fragment() {
             )
 
             previewSize = optimalSize
-            if (swappedDimensions) {
-                textureView?.setAspectRatio(optimalSize.height, optimalSize.width)
-            } else {
-                textureView?.setAspectRatio(optimalSize.width, optimalSize.height)
-            }
+            val displayWidth = if (swappedDimensions) optimalSize.height else optimalSize.width
+            val displayHeight = if (swappedDimensions) optimalSize.width else optimalSize.height
+            textureView?.setAspectRatio(displayWidth, displayHeight)
+            previewAspectRatio.value = displayWidth.toFloat() / displayHeight.toFloat()
             this.cameraId = id
             this.isLowLightBoostSupported = manager.isLowLightBoostSupported(id)
             return
         }
     }
+
+    private fun areDimensionsSwapped(displayRotation: Int, sensorOrientation: Int): Boolean =
+        when (displayRotation) {
+            Surface.ROTATION_0, Surface.ROTATION_180 ->
+                sensorOrientation == ORIENTATION_90 || sensorOrientation == ORIENTATION_270
+            Surface.ROTATION_90, Surface.ROTATION_270 ->
+                sensorOrientation == ORIENTATION_0 || sensorOrientation == ORIENTATION_180
+            else -> false
+        }
 
     @VisibleForTesting
     internal fun createCameraPreviewSession() {
@@ -335,11 +404,18 @@ class LensCameraFragment : Fragment() {
 
         val previewSurface = Surface(texture).also { surface = it }
         val imageSurface = imageReader?.surface ?: return
+        val qrSurface = qrImageReader?.surface ?: return
 
         handleCaptureException("Failed to create camera preview session") {
             cameraDevice?.let { camera ->
                 val previewRequestBuilder = camera.createCaptureRequest(CameraDevice.TEMPLATE_PREVIEW).apply {
                     addTarget(previewSurface)
+                    // qrSurface is added as a target in both LENS and QR modes. In LENS mode
+                    // qrImageAvailableListener drains frames without invoking the analyzer. The
+                    // alternative — rebuilding the repeating request on each mode toggle — costs
+                    // a brief preview stall and adds complexity, so we accept the steady-state
+                    // YUV throughput in exchange for an instantaneous mode switch.
+                    addTarget(qrSurface)
                 }
 
                 val captureCallback = object : CameraCaptureSession.CaptureCallback() {}
@@ -376,7 +452,7 @@ class LensCameraFragment : Fragment() {
                         logger.error("Failed to configure CameraCaptureSession")
                     }
                 }
-                createCaptureSessionCompat(camera, imageSurface, previewSurface, sessionStateCallback)
+                createCaptureSessionCompat(camera, imageSurface, qrSurface, previewSurface, sessionStateCallback)
             }
         }
     }
@@ -384,6 +460,7 @@ class LensCameraFragment : Fragment() {
     private fun createCaptureSessionCompat(
         camera: CameraDevice,
         imageSurface: Surface,
+        qrSurface: Surface,
         previewSurface: Surface,
         stateCallback: CameraCaptureSession.StateCallback,
     ) {
@@ -394,14 +471,18 @@ class LensCameraFragment : Fragment() {
             } ?: return
             val sessionConfig = SessionConfiguration(
                 SessionConfiguration.SESSION_REGULAR,
-                listOf(OutputConfiguration(imageSurface), OutputConfiguration(previewSurface)),
+                listOf(
+                    OutputConfiguration(imageSurface),
+                    OutputConfiguration(qrSurface),
+                    OutputConfiguration(previewSurface),
+                ),
                 executor,
                 stateCallback,
             )
             camera.createCaptureSession(sessionConfig)
         } else {
             @Suppress("DEPRECATION")
-            camera.createCaptureSession(listOf(imageSurface, previewSurface), stateCallback, null)
+            camera.createCaptureSession(listOf(imageSurface, qrSurface, previewSurface), stateCallback, null)
         }
     }
 
@@ -424,6 +505,50 @@ class LensCameraFragment : Fragment() {
     @VisibleForTesting
     internal val onImageAvailableListener = ImageReader.OnImageAvailableListener { reader ->
         processImage(reader)
+    }
+
+    @VisibleForTesting
+    internal val qrImageAvailableListener = ImageReader.OnImageAvailableListener { reader ->
+        if (cameraMode.value != CameraMode.QR) {
+            // Drain to keep the YUV buffer queue from filling up and stalling the camera pipeline.
+            reader.acquireLatestImage()?.close()
+            return@OnImageAvailableListener
+        }
+        if (!qrInFlight.compareAndSet(false, true)) return@OnImageAvailableListener
+        val image = reader.acquireLatestImage()
+        if (image == null) {
+            qrInFlight.set(false)
+            return@OnImageAvailableListener
+        }
+        try {
+            val result = qrAnalyzer.analyze(image)
+            if (!result.isNullOrEmpty()) {
+                mainHandler.post { handleQrResult(result) }
+            }
+        } finally {
+            image.close()
+            qrInFlight.set(false)
+        }
+    }
+
+    @VisibleForTesting
+    internal fun handleModeChanged(newMode: CameraMode) {
+        if (cameraMode.value == newMode) return
+        cameraMode.value = newMode
+        if (newMode == CameraMode.QR) {
+            qrAnalyzer.reset()
+            qrResultSent = false
+        }
+    }
+
+    @VisibleForTesting
+    internal fun handleQrResult(qrString: String) {
+        if (qrResultSent || cameraMode.value != CameraMode.QR) return
+        qrResultSent = true
+        val bundle = Bundle().apply { putString(RESULT_QR_STRING, qrString) }
+        if (isAdded) {
+            setFragmentResult(RESULT_REQUEST_KEY, bundle)
+        }
     }
 
     @VisibleForTesting
@@ -475,12 +600,19 @@ class LensCameraFragment : Fragment() {
 
     @VisibleForTesting
     internal fun requestGalleryPick() {
-        val bundle = Bundle().apply {
-            putBoolean(RESULT_GALLERY_REQUEST, true)
-        }
         if (isAdded) {
-            setFragmentResult(RESULT_REQUEST_KEY, bundle)
+            setFragmentResult(RESULT_REQUEST_KEY, buildGalleryRequestBundle())
         }
+    }
+
+    @VisibleForTesting
+    internal fun buildGalleryRequestBundle(): Bundle {
+        val key = if (cameraMode.value == CameraMode.QR) {
+            RESULT_QR_GALLERY_REQUEST
+        } else {
+            RESULT_GALLERY_REQUEST
+        }
+        return Bundle().apply { putBoolean(key, true) }
     }
 
     @VisibleForTesting
@@ -502,6 +634,8 @@ class LensCameraFragment : Fragment() {
             cameraDevice = null
             imageReader?.close()
             imageReader = null
+            qrImageReader?.close()
+            qrImageReader = null
             surface?.release()
             surface = null
         } catch (e: InterruptedException) {
@@ -521,8 +655,16 @@ class LensCameraFragment : Fragment() {
         val centerX = viewWidth / 2f
         val centerY = viewHeight / 2f
 
+        // LENS mode letterboxes so the user sees the full capture area (matters for framing
+        // a still image); QR mode center-crops so detection focuses on the centered viewfinder.
+        // With Compose's aspectRatio modifier the view aspect matches the buffer, so in steady
+        // state both reduce to identity — the choice only takes effect during init or if the
+        // view's effective bounds diverge from the buffer aspect.
+        val combine: (Float, Float) -> Float =
+            if (cameraMode.value == CameraMode.QR) ::max else ::min
+
         if (Surface.ROTATION_90 == rotation || Surface.ROTATION_270 == rotation) {
-            val scale = min(viewWidth.toFloat() / size.width, viewHeight.toFloat() / size.height)
+            val scale = combine(viewWidth.toFloat() / size.width, viewHeight.toFloat() / size.height)
             matrix.postScale(scale, scale, centerX, centerY)
             matrix.postRotate(
                 (ORIENTATION_90 * (rotation - ROTATION_LANDSCAPE_OFFSET)).toFloat(),
@@ -536,7 +678,7 @@ class LensCameraFragment : Fragment() {
             val effectiveBufferHeight = size.width.toFloat()
             val scaleX = viewWidth / effectiveBufferWidth
             val scaleY = viewHeight / effectiveBufferHeight
-            val scale = min(scaleX, scaleY)
+            val scale = combine(scaleX, scaleY)
             matrix.postScale(
                 scale * effectiveBufferWidth / viewWidth,
                 scale * effectiveBufferHeight / viewHeight,
@@ -563,14 +705,16 @@ class LensCameraFragment : Fragment() {
         }
     }
 
-    private fun stopBackgroundThread() {
+    @VisibleForTesting
+    internal fun stopBackgroundThread() {
         backgroundThread?.quitSafely()
         try {
             backgroundThread?.join()
-            backgroundThread = null
-            backgroundHandler = null
         } catch (e: InterruptedException) {
             logger.debug("Interrupted while stopping background thread", e)
+        } finally {
+            backgroundThread = null
+            backgroundHandler = null
         }
     }
 
@@ -612,6 +756,11 @@ class LensCameraFragment : Fragment() {
         const val RESULT_REQUEST_KEY = "lens_camera_fragment_result_key"
         const val RESULT_IMAGE_URI = "lens_camera_image_uri"
         const val RESULT_GALLERY_REQUEST = "lens_camera_gallery_request"
+        const val RESULT_QR_GALLERY_REQUEST = "lens_camera_qr_gallery_request"
+        const val RESULT_QR_STRING = "lens_camera_qr_string"
+
+        private const val STATE_CAMERA_MODE = "camera_mode"
+        private const val STATE_QR_RESULT_SENT = "qr_result_sent"
 
         private const val MAX_PREVIEW_WIDTH = 1920
         private const val MAX_PREVIEW_HEIGHT = 1080

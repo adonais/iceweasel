@@ -26,7 +26,7 @@ class nsMimeType;
 class nsPluginArray final : public nsSupportsWeakReference,
                             public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(nsPluginArray)
 
   explicit nsPluginArray(nsPIDOMWindowInner* aWindow);
@@ -58,7 +58,7 @@ class nsPluginArray final : public nsSupportsWeakReference,
   void Refresh() {}
 
  private:
-  virtual ~nsPluginArray();
+  ~nsPluginArray();
 
   bool ForceNoPlugins();
 
@@ -73,7 +73,7 @@ class nsPluginArray final : public nsSupportsWeakReference,
  */
 class nsPluginElement final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(nsPluginElement)
 
   explicit nsPluginElement(nsPluginArray* aPluginArray,
@@ -81,8 +81,8 @@ class nsPluginElement final : public nsISupports, public nsWrapperCache {
 
   nsPluginArray* GetParentObject() const;
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   // Plugin WebIDL methods
   void GetDescription(nsString& retval) const { retval = kDescription; }
@@ -111,7 +111,7 @@ class nsPluginElement final : public nsISupports, public nsWrapperCache {
   void GetSupportedNames(nsTArray<nsString>& retval);
 
  protected:
-  virtual ~nsPluginElement() = default;
+  ~nsPluginElement() = default;
 
   nsMimeTypeArray* MimeTypeArray() { return mPluginArray->MimeTypeArray(); }
 

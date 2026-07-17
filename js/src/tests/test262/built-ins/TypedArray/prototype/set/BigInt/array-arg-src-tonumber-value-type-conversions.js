@@ -46,6 +46,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     compareArray(sample, expected),
     "sample: [" + sample + "], expected: [" + expected + "]"
   );
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

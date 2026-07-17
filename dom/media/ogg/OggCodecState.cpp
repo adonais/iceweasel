@@ -24,7 +24,8 @@
 namespace mozilla {
 
 extern LazyLogModule gMediaDecoderLog;
-#define LOG(type, msg) MOZ_LOG(gMediaDecoderLog, type, msg)
+#define LOG(type, msg) \
+  MOZ_LOG_FMT(gMediaDecoderLog, type, MOZ_LOG_EXPAND_ARGS msg)
 
 using media::TimeUnit;
 
@@ -976,7 +977,7 @@ already_AddRefed<MediaRawData> OpusState::PacketOutAsMediaRawData() {
         0, std::min(endFrame - startFrame, static_cast<int64_t>(frames)));
     TimeUnit toTrim = TimeUnit(frames, 48000);
     LOG(LogLevel::Debug,
-        ("Trimming last opus packet: [%s, %s] to [%s, %s]",
+        ("Trimming last opus packet: [{}, {}] to [{}, {}]",
          data->mTime.ToString().get(), data->GetEndTime().ToString().get(),
          data->mTime.ToString().get(),
          (data->mTime + data->mDuration - toTrim).ToString().get()));
@@ -1213,7 +1214,7 @@ bool SkeletonState::DecodeIndex(ogg_packet* aPacket) {
   int64_t timeDenom =
       LittleEndian::readInt64(aPacket->packet + INDEX_TIME_DENOM_OFFSET);
   if (timeDenom <= 0) {
-    LOG(LogLevel::Debug, ("Ogg Skeleton Index packet for stream %u has "
+    LOG(LogLevel::Debug, ("Ogg Skeleton Index packet for stream {} has "
                           "non-positive timestamp denominator.",
                           serialno));
     return (mActive = false);
@@ -1247,7 +1248,7 @@ bool SkeletonState::DecodeIndex(ogg_packet* aPacket) {
     // field is possibly malicious. Don't try decoding this index, we may run
     // out of memory.
     LOG(LogLevel::Debug, ("Possibly malicious number of key points reported "
-                          "(%" PRId64 ") in index packet for stream %u.",
+                          "({}) in index packet for stream {}.",
                           numKeyPoints, serialno));
     return (mActive = false);
   }
@@ -1281,7 +1282,7 @@ bool SkeletonState::DecodeIndex(ogg_packet* aPacket) {
     mIndex.InsertOrUpdate(serialno, std::move(keyPoints));
   }
 
-  LOG(LogLevel::Debug, ("Loaded %d keypoints for Skeleton on stream %u",
+  LOG(LogLevel::Debug, ("Loaded {} keypoints for Skeleton on stream {}",
                         keyPointsRead, serialno));
   return true;
 }
@@ -1340,7 +1341,7 @@ nsresult SkeletonState::IndexedSeekTarget(const TimeUnit& aTarget,
   if (r.IsNull()) {
     return NS_ERROR_FAILURE;
   }
-  LOG(LogLevel::Debug, ("Indexed seek target for time %s is offset %" PRId64,
+  LOG(LogLevel::Debug, ("Indexed seek target for time {} is offset {}",
                         aTarget.ToString().get(), r.mKeyPoint.mOffset));
   aResult = r;
   return NS_OK;
@@ -1487,7 +1488,7 @@ bool SkeletonState::DecodeHeader(OggPacketPtr aPacket) {
     mLength =
         LittleEndian::readInt64(aPacket->packet + SKELETON_FILE_LENGTH_OFFSET);
 
-    LOG(LogLevel::Debug, ("Skeleton segment length: %" PRId64, mLength));
+    LOG(LogLevel::Debug, ("Skeleton segment length: {}", mLength));
 
     // Initialize the serialno-to-index map.
     return true;

@@ -43,6 +43,8 @@ run-if = [
 
 ["test_LinksCache.js"]
 
+["test_PermissionPromptTargeting.js"]
+
 ["test_ProfileCounter.js"]
 run-if = [
   "os == 'win'", # Test of a Windows-specific feature

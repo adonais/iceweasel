@@ -16,7 +16,6 @@ namespace mozilla::net {
 class HappyEyeballsConnectionAttempt;
 class HappyEyeballsTransaction;
 class nsAHttpSegmentReader;
-class nsAHttpSegmentWriter;
 class nsHttpTransaction;
 
 // Shared 0-RTT coordinator for a single Happy Eyeballs race. One
@@ -24,7 +23,7 @@ class nsHttpTransaction;
 // shared by every HappyEyeballsTransaction racer. The per-attempt
 // 0-RTT request-stream offset lives on each HappyEyeballsTransaction
 // (m0RttRequestStreamOffset); the handle holds only race-wide state
-// (winner, pending response, flags).
+// (winner identity, started/rejected flags).
 //
 // Design constraints:
 //  * We NEVER touch the real transaction's 0-RTT flags during the race.
@@ -88,31 +87,18 @@ class ZeroRttHandle {
   // the non-NS_OK close paths.
   bool ShouldDisqualify(const HappyEyeballsTransaction* aCaller) const;
 
-  // True if a winner has been declared AND Finish0RTT was called with
-  // aRestart=false (server accepted 0-RTT). For H1 this is reliable;
-  // for H2 the aRestart passed to us is really aAlpnChanged so the
-  // signal is only trustworthy when combined with the protocol. Used
-  // by HET::OnSucceeded to seek the real txn's request stream to the
-  // winner's offset on H1 accept, so the real txn doesn't re-send
-  // bytes the server already received as early data.
-  bool Accepted() const { return mWinner && !mRejected; }
-
-  // Winner's request stream offset — the number of bytes of the real
-  // txn's request stream the winning attempt sent as early data.
-  // Nothing() if no winner declared.
-  mozilla::Maybe<uint64_t> WinnerOffset() const;
-
-  // The winning HappyEyeballsTransaction, or nullptr if no winner yet.
-  // Raw pointer — CE keeps the winning HT alive for the rest of the
-  // race.
-  HappyEyeballsTransaction* Winner() const { return mWinner; }
-
   // True if any racer attempt entered the 0-RTT flow (Do0RTT returned
-  // true) during the race. Used by HET::OnSucceeded to detect the
-  // "0-RTT racer advanced the stream but a non-0-RTT racer won
-  // anyway" case and rewind the real txn's request stream before
-  // DispatchTransaction.
+  // true) during the race. Consulted by HCA::Abandon() to detect an
+  // abandoned 0-RTT attempt whose txn was locked from the pending queue,
+  // and by HCA::OnSucceeded() to detect the "0-RTT racer advanced the
+  // stream but a non-0-RTT conn won" case and rewind the request stream.
   bool AnyStarted() const { return mAny0RttStarted; }
+
+  // True if a winner was ever declared via Finish0RTT. Outlives mWinner:
+  // Cleanup() clears mWinner to break the RefPtr cycle but mHadWinner
+  // remains set so callers can still distinguish "no winner yet" from
+  // "winner declared and then cleaned up".
+  bool HadWinner() const { return mHadWinner; }
 
   // Resolve the real nsHttpTransaction via the HET weak ref. Returns
   // nullptr once Cleanup() has run or if the real txn is closed.
@@ -125,11 +111,15 @@ class ZeroRttHandle {
 
   void Cleanup();
 
+ private:
+  ~ZeroRttHandle() = default;
+
   // Lifecycle state.
   //   Open           : default. Race in progress. Do0RTT and Finish0RTT
   //                    can promote the handle out of this state.
-  //   WinnerDeclared : first Finish0RTT call has run, mWinner is set.
-  //                    Subsequent Finish0RTT calls are loser no-ops.
+  //   WinnerDeclared : first Finish0RTT call has run; mWinner and
+  //                    mHadWinner are set. Subsequent Finish0RTT calls
+  //                    are loser no-ops.
   //   CleanedUp      : Cleanup() has run; mHet is null and the handle's
   //                    weak ref to HE is gone. Any 0-RTT method that
   //                    requires resolving the real txn becomes a no-op.
@@ -143,10 +133,6 @@ class ZeroRttHandle {
     WinnerDeclared,
     CleanedUp,
   };
-  State GetState() const { return mState; }
-
- private:
-  ~ZeroRttHandle() = default;
 
   // Single dispatcher for state transitions. Switches on the target
   // state, asserts the move is legal from the current state, commits
@@ -165,16 +151,18 @@ class ZeroRttHandle {
   // that change up without explicit notifications.
   nsWeakPtr mHet;
 
-  // First attempt to reach Finish0RTT wins. Raw because CE keeps the
-  // winning HT alive for the rest of the race.
-  HappyEyeballsTransaction* mWinner = nullptr;
+  // First attempt to reach Finish0RTT wins.  RefPtr — Cleanup() clears
+  // mWinner to break the RefPtr cycle with HET::mZeroRttHandle.
+  RefPtr<HappyEyeballsTransaction> mWinner;
+
+  bool mHadWinner = false;
 
   // Any attempt has ever successfully entered the 0-RTT flow.
   bool mAny0RttStarted = false;
 
   // Set to true in Finish0RTT when called with aRestart=true. For H1
   // this means the server rejected early data; for H2 it means ALPN
-  // changed (so H2 can't reuse its frame cache). Consumed by Accepted().
+  // changed (so H2 can't reuse its frame cache).
   bool mRejected = false;
 
   State mState = State::Open;

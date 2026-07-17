@@ -2576,7 +2576,7 @@ static bool ZonedDateTime_round(JSContext* cx, const CallArgs& args) {
     }
 
     // Step 19.f.
-    MOZ_ASSERT(thisNs < endNs);
+    thisNs = std::min(thisNs, endNs - EpochDuration{0, 1});
 
     // Step 19.g.
     auto dayLengthNs = endNs - startNs;

@@ -901,7 +901,7 @@ struct TypedQuad final {
 
 /// [1-16]x32-bit primitives, with a type tag.
 struct GetUniformData final {
-  alignas(alignof(float)) uint8_t data[4 * 4 * sizeof(float)] = {};
+  alignas(alignof(float)) std::array<uint8_t, 4 * 4 * sizeof(float)> data = {};
   GLenum type = 0;
 };
 

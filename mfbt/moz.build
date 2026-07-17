@@ -98,6 +98,7 @@ EXPORTS.mozilla = [
     "Saturate.h",
     "ScopeExit.h",
     "SegmentedVector.h",
+    "SEH.h",
     "SHA1.h",
     "SharedLibrary.h",
     "SmallPointerArray.h",

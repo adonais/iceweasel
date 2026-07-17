@@ -60,7 +60,7 @@ class OutputStreamHolder final : public nsIOutputStreamCallback {
 
 class FetchStreamReader final : public nsISupports, public SupportsWeakPtr {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(FetchStreamReader)
 
   // This creates a nsIInputStream able to retrieve data from the ReadableStream

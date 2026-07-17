@@ -2,10 +2,16 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { DEFAULT_ENGINE_ID, MODEL_FEATURES, openAIEngine, renderPrompt } =
-  ChromeUtils.importESModule(
-    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-  );
+const {
+  DEFAULT_ENGINE_ID,
+  MODEL_FEATURES,
+  openAIEngine,
+  renderPrompt,
+  SERVICE_TYPES,
+  PURPOSES,
+} = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+);
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -16,6 +22,7 @@ const { sinon } = ChromeUtils.importESModule(
  */
 const PREF_API_KEY = "browser.smartwindow.apiKey";
 const PREF_ENDPOINT = "browser.smartwindow.endpoint";
+const PREF_CUSTOM_ENDPOINT = "browser.smartwindow.customEndpoint";
 const PREF_MODEL = "browser.smartwindow.model";
 const PREF_EXTRA_HEADERS = "browser.smartwindow.extraHeaders";
 
@@ -28,7 +35,12 @@ const EXTRA_HEADERS = '{"x-fastly-request": "fake-key"}';
  * Cleans up preferences after testing
  */
 registerCleanupFunction(() => {
-  for (let pref of [PREF_API_KEY, PREF_ENDPOINT, PREF_MODEL]) {
+  for (let pref of [
+    PREF_API_KEY,
+    PREF_ENDPOINT,
+    PREF_CUSTOM_ENDPOINT,
+    PREF_MODEL,
+  ]) {
     if (Services.prefs.prefHasUserValue(pref)) {
       Services.prefs.clearUserPref(pref);
     }
@@ -54,7 +66,13 @@ add_task(async function test_createOpenAIEngine_with_chat_feature() {
     };
 
     const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-    const engine = await openAIEngine.build(MODEL_FEATURES.CHAT);
+    const engine = await openAIEngine.build({
+      model: MODEL,
+      serviceType: SERVICE_TYPES.AI,
+      purpose: PURPOSES.CHAT,
+      flowId: null,
+      feature: MODEL_FEATURES.CHAT,
+    });
     Assert.strictEqual(
       engine.engineInstance,
       fakeEngine,
@@ -64,13 +82,13 @@ add_task(async function test_createOpenAIEngine_with_chat_feature() {
 
     // Test preferences were read correctly
     const opts = stub.firstCall.args[0];
-    Assert.equal(opts.apiKey, API_KEY, "apiKey should come from pref");
+    Assert.equal(opts.apiKey, "", "apiKey is empty on MLPA endpoint");
     Assert.equal(opts.backend, "openai", "backend should be openai");
     Assert.equal(opts.baseURL, ENDPOINT, "baseURL should come from pref");
     Assert.equal(
       opts.engineId,
-      `${DEFAULT_ENGINE_ID}-${MODEL_FEATURES.CHAT}`,
-      "engineId should be derived from the feature name"
+      `${DEFAULT_ENGINE_ID}-${MODEL_FEATURES.CHAT}-${opts.modelId}`,
+      "engineId should be derived from the feature name and model"
     );
     Assert.ok(opts.modelId, "modelId should be set");
     Assert.equal(opts.modelRevision, "main", "modelRevision should be main");
@@ -91,25 +109,39 @@ add_task(async function test_createOpenAIEngine_with_chat_feature() {
 });
 
 /**
- * Tests that apiKey is passed when a custom endpoint is configured
+ * Tests that apiKey is passed when the custom model choice is active
  */
 add_task(
-  async function test_createOpenAIEngine_apiKey_when_custom_endpoint_set() {
+  async function test_createOpenAIEngine_apiKey_when_custom_model_choice_active() {
     Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
-    Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
+    Services.prefs.setStringPref(PREF_CUSTOM_ENDPOINT, ENDPOINT);
     Services.prefs.setStringPref(PREF_MODEL, MODEL);
 
     const sb = sinon.createSandbox();
     try {
       const fakeEngine = { runWithGenerator() {} };
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      await openAIEngine.build(MODEL_FEATURES.CHAT);
+      const { baseURL, apiKey } = openAIEngine.resolveEndpointConfig("0");
+      await openAIEngine.build({
+        model: MODEL,
+        serviceType: SERVICE_TYPES.AI,
+        purpose: PURPOSES.CHAT,
+        flowId: null,
+        feature: MODEL_FEATURES.CHAT,
+        baseURL,
+        apiKey,
+      });
 
       const opts = stub.firstCall.args[0];
       Assert.equal(
         opts.apiKey,
         API_KEY,
-        "apiKey should be returned when custom endpoint is set"
+        "apiKey should be returned when custom model choice is active"
+      );
+      Assert.equal(
+        opts.baseURL,
+        ENDPOINT,
+        "baseURL should be the saved custom endpoint"
       );
     } finally {
       sb.restore();
@@ -118,31 +150,97 @@ add_task(
 );
 
 /**
- * Tests that apiKey is blank when no custom endpoint is configured
+ * Tests that apiKey is blank when a preset model choice is set
  */
 add_task(
-  async function test_createOpenAIEngine_apiKey_blank_without_custom_endpoint() {
+  async function test_createOpenAIEngine_apiKey_blank_for_preset_choice() {
     Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
-    Services.prefs.clearUserPref(PREF_ENDPOINT);
+    Services.prefs.setStringPref(PREF_CUSTOM_ENDPOINT, ENDPOINT);
     Services.prefs.setStringPref(PREF_MODEL, MODEL);
 
     const sb = sinon.createSandbox();
     try {
       const fakeEngine = { runWithGenerator() {} };
       const stub = sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
-      await openAIEngine.build(MODEL_FEATURES.CHAT);
+      const { baseURL, apiKey } = openAIEngine.resolveEndpointConfig("1");
+      await openAIEngine.build({
+        model: MODEL,
+        serviceType: SERVICE_TYPES.AI,
+        purpose: PURPOSES.CHAT,
+        flowId: null,
+        feature: MODEL_FEATURES.CHAT,
+        baseURL,
+        apiKey,
+      });
 
       const opts = stub.firstCall.args[0];
       Assert.equal(
         opts.apiKey,
         "",
-        "apiKey should be blank when no custom endpoint is set"
+        "apiKey should be blank for a preset model choice"
       );
     } finally {
       sb.restore();
     }
   }
 );
+
+/**
+ * Tests resolveEndpointConfig routing for preset and custom model choices
+ */
+add_task(async function test_resolveEndpointConfig() {
+  Services.prefs.setStringPref(PREF_CUSTOM_ENDPOINT, ENDPOINT);
+  Services.prefs.setStringPref(PREF_API_KEY, API_KEY);
+  // Set endpoint pref should not affect custom model routing
+  Services.prefs.setStringPref(PREF_ENDPOINT, `${ENDPOINT}/preset`);
+
+  const custom = openAIEngine.resolveEndpointConfig("0");
+  Assert.equal(
+    custom.baseURL,
+    ENDPOINT,
+    "custom choice uses the custom endpoint"
+  );
+  Assert.equal(custom.apiKey, API_KEY, "custom forwards the key");
+
+  const preset = openAIEngine.resolveEndpointConfig("2");
+  Assert.equal(
+    preset.baseURL,
+    `${ENDPOINT}/preset`,
+    "preset uses the set endpoint pref"
+  );
+  Assert.equal(preset.apiKey, "", "preset do not use an API key");
+
+  const none = openAIEngine.resolveEndpointConfig(undefined);
+  Assert.equal(
+    none.baseURL,
+    `${ENDPOINT}/preset`,
+    "no choice behaves as preset"
+  );
+  Assert.equal(none.apiKey, "", "no choice sends no key");
+
+  Services.prefs.clearUserPref(PREF_CUSTOM_ENDPOINT);
+  Services.prefs.clearUserPref(PREF_API_KEY);
+  Services.prefs.clearUserPref(PREF_ENDPOINT);
+});
+
+/**
+ * Tests hasCustomEndpoint reads the persistent custom endpoint
+ */
+add_task(async function test_hasCustomEndpoint() {
+  Services.prefs.clearUserPref(PREF_CUSTOM_ENDPOINT);
+  Assert.ok(
+    !openAIEngine.hasCustomEndpoint(),
+    "no custom model when custom endpoint is unset"
+  );
+
+  Services.prefs.setStringPref(PREF_CUSTOM_ENDPOINT, ENDPOINT);
+  Assert.ok(
+    openAIEngine.hasCustomEndpoint(),
+    "custom model configured once custom endpoint has a value"
+  );
+
+  Services.prefs.clearUserPref(PREF_CUSTOM_ENDPOINT);
+});
 
 /**
  * Tests rendering a prompt from a file with placeholder string replacements

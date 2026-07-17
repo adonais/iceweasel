@@ -19,6 +19,7 @@ JUnit usages to `kotlin-test` with the expectation to transition to using it mor
 
 `kotlin-test` adds about 17 new functions (mostly assertions) and 6 annotations on top of JUnit.
 Their advantages include:
+
 * idiomatic Kotlin API,
 * improved compiler/IDE code analysis (smart casts, dead code detection),
 * improved failure messages.

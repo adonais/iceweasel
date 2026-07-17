@@ -25,7 +25,6 @@ from taskgraph.util.yaml import load_yaml
 
 from gecko_taskgraph import GECKO, TEST_CONFIGS
 from gecko_taskgraph.util.attributes import (
-    is_try,
     match_run_on_hg_branches,
     match_run_on_projects,
     match_run_on_repo_type,
@@ -453,6 +452,102 @@ def target_tasks_mozilla_central(full_task_graph, parameters, graph_config):
     return [l for l in filtered_for_project if filter(full_task_graph[l])]
 
 
+@register_target_task("enterprise_firefox_tasks")
+def target_tasks_enterprise_firefox(full_task_graph, parameters, graph_config):
+    """
+    Filter to run Enterprise-specific builds, i.e., those allowed to run from
+    GitHub repos and that matches the "enterprise-firefox" project.
+    """
+    filtered_for_enterprise = target_tasks_enterprise_firefox_with_tests(
+        full_task_graph, parameters, graph_config
+    )
+
+    def filter(task):
+        if task.kind in TEST_KINDS:
+            return False
+
+        return True
+
+    return [l for l in filtered_for_enterprise if filter(full_task_graph[l])]
+
+
+@register_target_task("enterprise_firefox_with_tests_tasks")
+def target_tasks_enterprise_firefox_with_tests(
+    full_task_graph, parameters, graph_config
+):
+    """
+    Filter to run Enterprise-specific builds, i.e., those allowed to run from
+    GitHub repos and that matches the "enterprise-firefox" project.
+    """
+
+    filtered_for_project = target_tasks_default(
+        full_task_graph, parameters, graph_config
+    )
+
+    def filter(task):
+        test_platform = task.attributes.get("test_platform")
+        # Skip android-hw tests, windows11-aarch64: they require special hardware and credentials
+        if (
+            "test" in task.kind
+            and test_platform
+            and ("android-hw" in test_platform or "windows11-aarch64" in test_platform)
+        ):
+            return False
+
+        # Only keep builds that have been explicitely flagged
+        if task.kind == "build" and not "enterprise-firefox" in task.attributes.get(
+            "run_on_projects"
+        ):
+            return False
+
+        if task.attributes.get("shipping_product") not in (None, "firefox-enterprise"):
+            return False
+
+        build_platform = task.attributes.get("build_platform")
+        test_platform = task.attributes.get("test_platform")
+        build_type = task.attributes.get("build_type")
+        shippable = task.attributes.get("shippable", False)
+
+        level = int(parameters["level"])
+        if level < 3:
+            if "shippable" in task.label or shippable:
+                return False
+
+            if task.kind == "complete":
+                return False
+
+            if build_platform and "enterprise" not in build_platform:
+                return False
+
+            if test_platform and "enterprise" not in test_platform:
+                return False
+
+        if not build_platform or not build_type:
+            return True
+
+        if shippable and "enterprise" not in build_platform:
+            return False
+
+        family = platform_family(build_platform)
+        # We need to know whether this test is against a "regular" opt build
+        # (which is to say, not shippable, asan, tsan, or any other opt build
+        # with other properties). There's no positive test for this, so we have to
+        # do it somewhat hackily. Android doesn't have variants other than shippable
+        # so it is pretty straightforward to check for. Other platforms have many
+        # variants, but none of the regular opt builds we're looking for have a "-"
+        # in their platform name, so this works (for now).
+        is_regular_opt = (
+            family == "android" and not shippable
+        ) or "-" not in build_platform
+
+        if build_type != "opt" or not is_regular_opt:
+            return True
+
+        return False
+
+    return [l for l in filtered_for_project if filter(full_task_graph[l])]
+
+
 @register_target_task("graphics_tasks")
 def target_tasks_graphics(full_task_graph, parameters, graph_config):
     """In addition to doing the filtering by project that the 'default'
@@ -472,18 +567,6 @@ def target_tasks_graphics(full_task_graph, parameters, graph_config):
 
 
 @register_target_task("mozilla_beta_tasks")
-def target_tasks_mozilla_beta(full_task_graph, parameters, graph_config):
-    """Select the set of tasks required for a promotable beta or release build
-    of desktop, plus android CI. The candidates build process involves a pipeline
-    of builds and signing, but does not include beetmover or balrog jobs."""
-
-    return [
-        l
-        for l, t in full_task_graph.tasks.items()
-        if filter_release_tasks(t, parameters) and standard_filter(t, parameters)
-    ]
-
-
 @register_target_task("mozilla_release_tasks")
 def target_tasks_mozilla_release(full_task_graph, parameters, graph_config):
     """Select the set of tasks required for a promotable beta or release build
@@ -497,8 +580,9 @@ def target_tasks_mozilla_release(full_task_graph, parameters, graph_config):
     ]
 
 
+@register_target_task("mozilla_esr153_tasks")
 @register_target_task("mozilla_esr140_tasks")
-def target_tasks_mozilla_esr140(full_task_graph, parameters, graph_config):
+def target_tasks_mozilla_esr(full_task_graph, parameters, graph_config):
     """Select the set of tasks required for a promotable beta or release build
     of desktop, without android CI. The candidates build process involves a pipeline
     of builds and signing, but does not include beetmover or balrog jobs."""
@@ -767,6 +851,9 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
             if "windows11" in platform and "bing-search" in try_name:
                 return False
             if "browsertime" in try_name:
+                if "chrome" in try_name or "custom-car" in try_name:
+                    if "linux2404" in platform:
+                        return False
                 if "chrome" in try_name:
                     if "tp6" in try_name and "essential" not in try_name:
                         return False
@@ -778,6 +865,8 @@ def target_tasks_general_perf_testing(full_task_graph, parameters, graph_config)
                             for x in ["speedometer3", "jetstream3", "motionmark"]
                         ):
                             return False
+                    if "wasm-godot" in try_name:
+                        return False
                     return True
                 # chromium-as-release has its own cron
                 if "custom-car" in try_name:
@@ -1126,12 +1215,13 @@ def target_tasks_build_linux64_clang_trunk_perf(
 ):
     """Select tasks required to run perf test on linux64 build with clang trunk"""
 
-    # Only keep tasks generated from platform `linux1804-64-clang-trunk-qr/opt`
+    # Only keep tasks generated from platform `linux2404-64-clang-trunk/opt`
     def filter(task_label):
         # Bug 1961141 - Disable unity webgl for linux1804-64-clang-trunk-qr
-        if "linux1804-64-clang-trunk-qr/opt" in task_label and "unity" in task_label:
+        # (changed to linux2404-64-clang-trunk since then)
+        if "linux2404-64-clang-trunk/opt" in task_label and "unity" in task_label:
             return False
-        if "linux1804-64-clang-trunk-qr/opt" in task_label and "live" not in task_label:
+        if "linux2404-64-clang-trunk/opt" in task_label and "live" not in task_label:
             return True
         return False
 
@@ -1213,14 +1303,17 @@ def _filter_by_release_project(parameters):
         "nightly": "mozilla-central",
         "beta": "mozilla-beta",
         "release": "mozilla-release",
+        "esr153": "mozilla-esr153",
         "esr140": "mozilla-esr140",
     }
     target_project = project_by_release.get(parameters["release_type"])
     if target_project is None:
         raise Exception("Unknown or unspecified release type in simulation run.")
 
+    # Pretend we're running on the target project for purposes of run-on-projects filtering
     params = parameters.copy()
     params["project"] = target_project
+    params["level"] = "3"
     return lambda task: filter_for_project(task, params)
 
 
@@ -1731,7 +1824,7 @@ def target_tasks_os_integration(full_task_graph, parameters, graph_config):
         if not any(attrmatch(task.attributes, **c) for c in candidate_attrs):
             continue
 
-        if not is_try(parameters):
+        if parameters["try_mode"] is not None:
             # Only run hardware tasks if scheduled from try. We do this because
             # the `cron` task is designed to provide a base for testing worker
             # images, which isn't something that impacts our hardware pools.

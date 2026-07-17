@@ -39,6 +39,11 @@ sealed interface TabsTrayAction : Action {
     object EnterSelectMode : TabsTrayAction
 
     /**
+     * Dispatched when the user requests to select all tabs in the current tray.
+     */
+    object SelectAllNormalTabs : TabsTrayAction
+
+    /**
      * Exited multi-select mode.
      */
     object ExitSelectMode : TabsTrayAction

@@ -31,6 +31,127 @@ newtab-card-dismiss-button =
     .title = Ignorer
     .aria-label = Ignorer
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-title =
+    .label = Startside
+home-homepage-new-windows =
+    .label = Nye vinduer
+home-homepage-new-tabs =
+    .label = Nye faner
+# This option leads to the "Custom Homepage" subpage
+home-homepage-custom-homepage-button =
+    .label = Velg et bestemt nettsted
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = Nettadresse(r)
+home-custom-homepage-address =
+    .placeholder = Skriv inn adresse
+home-custom-homepage-address-button =
+    .label = Legg til adresse
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-results =
+    .label = Ingen nettsteder lagt til ennå.
+home-custom-homepage-delete-address-button =
+    .aria-label = Slett adresse
+    .title = Slett adresse
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with-prompt =
+    .label = Erstatt med
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-current-pages-button =
+    .label = Gjeldende åpnede sider
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-bookmarks-button =
+    .label = Bokmerker…
+
+## Firefox Home content
+
+home-prefs-content-header =
+    .label = { -firefox-home-brand-name }
+home-prefs-search-header2 =
+    .label = Søk
+home-prefs-stories-header2 =
+    .label = Artikler
+    .description = Enestående innhold kuratert av { -brand-product-name }-familien
+home-prefs-widgets-header =
+    .label = Widgeter
+# Lists is a widget on New Tab, similar to a to-do widget
+home-prefs-lists-header =
+    .label = Lister
+# Timer is a widget on New Tab, similar to the Pomodoro timer.
+home-prefs-timer-header =
+    .label = Nedtelling
+# Sports is a widget on New Tab showing sports scores and schedules.
+home-prefs-sports-widget-header =
+    .label = Sport
+# Clock is a widget on New Tab that displays time zones around the world.
+home-prefs-clocks-header =
+    .label = Klokke
+home-prefs-mission-message2 =
+    .message = Våre sponsorer støtter vårt oppdrag om å bygge et bedre internett.
+home-prefs-manage-topics-link2 =
+    .label = Behandle emner
+home-prefs-choose-wallpaper-link2 =
+    .label = Velg et bakgrunnsbilde
+home-prefs-firefox-logo-header =
+    .label = { -brand-short-name }-logo
+# Informational message bar that appears in the Firefox Home section when the options are disabled.
+# The user must select Firefox Home as their homepage for either new tabs or new windows to enable
+# the features in settings.
+home-prefs-firefox-home-disabled-notice =
+    .message = For å bruke disse funksjonene må du sette nye faner eller nye vinduer til { -firefox-home-brand-name }.
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } rekke
+           *[other] { $num } rekker
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Utvidelse ({ $extension })
+home-restore-defaults-srd =
+    .label = Bruk standard
+    .accesskey = r
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (standard)
+home-mode-choice-custom-srd =
+    .label = Tilpassede nettadresser…
+home-mode-choice-blank-srd =
+    .label = Blank side
+home-prefs-shortcuts-header-srd =
+    .label = Snarveier
+home-prefs-shortcuts-select =
+    .aria-label = Snarveier
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Sponsede snarveier
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Sponsede historier
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Besøkte nettsider
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Bokmerker
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Siste nedlasting
+home-prefs-recent-activity-header-srd =
+    .label = Nylig aktivitet
+home-prefs-recent-activity-select =
+    .aria-label = Nylig aktivitet
+home-prefs-weather-header-srd =
+    .label = Vær
+home-prefs-support-firefox-header-srd =
+    .label = Støtt { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = Finn ut hvordan
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -151,6 +272,8 @@ newtab-menu-section-block = Blokker
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow-topic = Slutt å følge
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Les mer
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Slutt å følge emnet
@@ -370,6 +493,8 @@ newtab-custom-widget-sports-toggle =
     .label = VM
 newtab-custom-widget-clock-toggle =
     .label = Klokke
+newtab-custom-widget-sports-toggle2 =
+    .label = Sport
 newtab-custom-widget-section-title = Widgeter
 newtab-custom-widget-section-toggle =
     .label = Widgeter
@@ -755,8 +880,6 @@ newtab-widget-lists-button-add-item = Legg til et element
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Legg til et element
     .aria-label = Legg til et element
-newtab-widget-lists-input-add-an-item =
-    .placeholder = Legg til et element
 newtab-widget-lists-input-error = Legg til tekst for å legge til et element.
 newtab-widget-lists-input-menu-open-link = Åpne lenke
 newtab-widget-lists-input-menu-move-up = Flytt opp
@@ -765,6 +888,9 @@ newtab-widget-lists-input-menu-delete = Slett
 newtab-widget-lists-input-menu-edit = Rediger
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = Rediger element
+newtab-widget-lists-edit-clear =
+    .aria-label = Avbryt
+    .title = Avbryt
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Lag en ny liste
@@ -781,11 +907,6 @@ newtab-widget-lists-name-placeholder-checklist2 =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = Ny liste
     .aria-label = Rediger listenavn
-newtab-widget-lists-name-placeholder-checklist =
-    .placeholder = Sjekkliste
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Ny liste
 newtab-widget-section-title = Widgeter
 newtab-widget-menu-hide = Skjul widget
 newtab-widget-menu-change-size = Endre størrelse
@@ -794,10 +915,10 @@ newtab-widget-menu-change-size = Endre størrelse
 newtab-widget-menu-move = Flytt
 # Submenu item under "Move"; moves the widget one position to the left.
 # RTL locales should translate this as "Right".
-newtab-widget-menu-move-left = Venstre
+newtab-widget-menu-move-left = Til venstre
 # Submenu item under "Move"; moves the widget one position to the right.
 # RTL locales should translate this as "Left".
-newtab-widget-menu-move-right = Høyre
+newtab-widget-menu-move-right = Til høyre
 newtab-widget-size-small = Liten
 newtab-widget-size-medium = Mellomstor
 newtab-widget-size-large = Stor
@@ -821,6 +942,14 @@ newtab-widget-section-menu-manage = Behandle widgeter
 newtab-widget-section-menu-hide-all = Skjul widgeter
 newtab-widget-section-menu-learn-more = Les mer
 newtab-widget-section-feedback = Fortell oss hva du synes
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Vis flere widgeter
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Vis færre widgeter
 newtab-widget-lists-name-default = Sjekkliste
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -851,6 +980,9 @@ newtab-daily-briefing-card-timestamp = Oppdatert for { $minutes } minutter siden
 newtab-widget-message-title = Hold fokus med lister og en innebygd nedteller
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Fra kjappe påminnelser til daglige gjøremål, fokuserte arbeidsøkter til strekkpauser — hold deg til oppgaven og tidsplanen.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = Ett sted for fokus, værmeldinger og mer
+newtab-widget-message-focus-forecasts-body = Hold flyten gjennom dagen med widgeter i { -brand-product-name }. Sjekk værmeldingen, hold fokus på oppgavene dine eller følg tiden rundt om i verden.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -901,7 +1033,7 @@ newtab-widget-timer-celebration-message-focus = Trenger du en pause?
 # Message shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-message-break = Klar til å fokusere?
 
-## Sports widget
+##
 
 newtab-sports-widget-menu-follow-teams = Følg lag
 newtab-sports-widget-menu-view-schedule = Se kampoppsettet
@@ -936,7 +1068,59 @@ newtab-sports-widget-back-button =
     .aria-label = Tilbake
 newtab-sports-widget-done-button =
     .label = Ferdig
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (utslått)
+newtab-sports-widget-view-all =
+    .label = Vis alle
+newtab-sports-widget-show-less =
+    .label = Vis mindre
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = Bare fulgte lag
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = Se
+    .title = Se direkte
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = Se direkte
+    .title = Se direkte
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = Lukk
+    .title = Lukk
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = Gratis
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = Gratis prøveperiode
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = Gratis og betalt
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = Betalt
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = Bare utvalgte kamper
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = Tilgjengelig i din region
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = Andre regioner
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = Åpne strøm
+    .title = Åpne strøm
 newtab-sports-widget-group-stage = Gruppespill
+newtab-sports-widget-group-a = Gruppe A
+newtab-sports-widget-group-b = Gruppe B
+newtab-sports-widget-group-c = Gruppe C
+newtab-sports-widget-group-d = Gruppe D
+newtab-sports-widget-group-e = Gruppe E
+newtab-sports-widget-group-f = Gruppe F
+newtab-sports-widget-group-g = Gruppe G
+newtab-sports-widget-group-h = Gruppe H
+newtab-sports-widget-group-i = Gruppe I
+newtab-sports-widget-group-j = Gruppe J
+newtab-sports-widget-group-k = Gruppe K
+newtab-sports-widget-group-l = Gruppe L
 newtab-sports-widget-round-32 = Sekstendedelsfinale
 newtab-sports-widget-round-16 = Åttendedelsfinale
 newtab-sports-widget-quarter-finals = Kvartfinaler
@@ -974,6 +1158,110 @@ newtab-sports-widget-third-place = Tredjeplass
 newtab-sports-widget-runner-up = Andreplass
 newtab-sports-widget-champions = Mestere
 newtab-sports-widget-world-cup-champions = VM 2026 – verdensmestere
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Slutt
+newtab-sports-widget-match-halftime = Pause
+newtab-sports-widget-match-extra-time = Ekstra tid
+newtab-sports-widget-match-penalties = Straffer
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = mot
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = Følg med for kommende kampdetaljer
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Forrige
+    .title = Forrige
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Neste
+    .title = Neste
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Pågående kamp { $index } av { $total }
+    .title = Pågående kamp { $index } av { $total }
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } mot { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) mot { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = Direkte: { $homeTeam }, { $homeScore } mot { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } mot { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } mot { $awayTeam }, forsinket
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } mot { $awayTeam }, utsatt
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } mot { $awayTeam }, avbrutt
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } mot { $awayTeam }, kansellert
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Bosnia og Herzegovina
+newtab-sports-widget-team-name-label-civ =
+    .label = Elfenbenskysten
+newtab-sports-widget-team-name-label-cod =
+    .label = DR Kongo
+newtab-sports-widget-team-name-label-eng =
+    .label = England
+newtab-sports-widget-team-name-label-sco =
+    .label = Skottland
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = Ikke avgjort
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = Spark i gang VM med nye bakgrunnsbilder
+newtab-sports-widget-message-wallpapers-body = Gi nettleseren litt kampstemning under turneringen.
+newtab-sports-widget-message-wallpapers-cta = Velg bakgrunnsbilde
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Legg til widgeter
+newtab-sports-widget-message-day-in-play-title = Hold dagen i gang med widgeter i { -brand-product-name }
+newtab-sports-widget-message-day-in-play-body = Følg VM, hold fokus på oppgavene dine, følg tiden rundt om i verden og mer.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Utforsk widgeter
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1035,6 +1323,19 @@ newtab-clock-widget-button-save = Lagre
 newtab-clock-widget-button-remove-clock =
     .title = Fjern klokke
     .aria-label = Fjern klokke
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, kallenavn: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Legg til klokke
 newtab-clock-widget-edit-clock-form =
@@ -1044,6 +1345,10 @@ newtab-clock-widget-edit-clock-form =
 # It means "results of the search", not "search within the results".
 newtab-clock-widget-search-results =
     .aria-label = Søkeresultat
+# Shown in place of the search results when the user's query does not match any
+# supported city — e.g. typing a misspelled name or a place not in the IANA
+# time zone list.
+newtab-clock-widget-search-no-results = Ingen treff
 # "Open menu for clock" is an icon-only button in the widget toolbar — the
 # attributes are consumed as tooltip/screen-reader label only. The button
 # never renders visible text.

@@ -24,7 +24,7 @@ namespace dom {
 // http://www.whatwg.org/specs/web-apps/current-work/multipage/video.html#timeranges
 class TimeRanges final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(TimeRanges)
 
   TimeRanges();

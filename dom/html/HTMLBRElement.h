@@ -29,7 +29,7 @@ ASSERT_NODE_FLAGS_SPACE(HTML_ELEMENT_TYPE_SPECIFIC_BITS_OFFSET + 2);
 
 class HTMLBRElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLBRElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLBRElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLBRElement, br)
 

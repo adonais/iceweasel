@@ -31,9 +31,6 @@ export class AboutPrivateBrowsingChild extends RemotePageChild {
       window,
       { defineAs: "PrivateBrowsingPromoExposureTelemetry" }
     );
-    Cu.exportFunction(this.FeltPrivacyExposureTelemetry.bind(this), window, {
-      defineAs: "FeltPrivacyExposureTelemetry",
-    });
   }
 
   PrivateBrowsingRecordClick(source) {
@@ -53,9 +50,5 @@ export class AboutPrivateBrowsingChild extends RemotePageChild {
 
   PrivateBrowsingPromoExposureTelemetry() {
     lazy.NimbusFeatures.pbNewtab.recordExposureEvent({ once: false });
-  }
-
-  FeltPrivacyExposureTelemetry() {
-    lazy.NimbusFeatures.feltPrivacy.recordExposureEvent({ once: true });
   }
 }

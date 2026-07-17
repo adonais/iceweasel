@@ -6,6 +6,7 @@ import os
 import re
 
 from mach.decorators import Command, CommandArgument
+from mach.util import UserError
 
 FIXME_COMMENT = "// FIXME: replace with path to your reusable widget\n"
 LICENSE_HEADER = """/* This Source Code Form is subject to the terms of the Mozilla Public
@@ -280,16 +281,12 @@ def addstory(command_context, name, project_name, path):
     description="Build the design tokens CSS files",
 )
 @CommandArgument(
-    "--nova",
+    "--fetch-figma",
     action="store_true",
-    help="Also fetch (unless --no-fetch) and build Nova design tokens overrides from Figma",
+    help="Fetch the current Nova design tokens from Figma before building. "
+    "Requires a valid FIGMA_ACCESS_TOKEN in your environment.",
 )
-@CommandArgument(
-    "--no-fetch",
-    action="store_true",
-    help="Don't download the new tokens, just update the .nova.tokens.json files",
-)
-def buildtokens(command_context, nova, no_fetch):
+def buildtokens(command_context, fetch_figma):
     if run_mach(
         command_context,
         "npm",
@@ -300,31 +297,33 @@ def buildtokens(command_context, nova, no_fetch):
             "npm",
             args=["ci", "--prefix=toolkit/themes/shared/design-system"],
         )
-    if nova:
-        if not no_fetch:
-            run_mach(
-                command_context,
-                "npm",
-                args=[
-                    "run",
-                    "fetch-figma-nova",
-                    "--prefix=toolkit/themes/shared/design-system",
-                ],
-            )
-        run_mach(
+    if fetch_figma:
+        failed = run_mach(
             command_context,
             "npm",
             args=[
                 "run",
-                "build-figma-nova",
+                "fetch-figma-nova",
                 "--prefix=toolkit/themes/shared/design-system",
             ],
         )
+        if failed:
+            raise UserError(
+                "Failed to access Figma API, is FIGMA_ACCESS_TOKEN set and valid?"
+            )
+    run_mach(
+        command_context,
+        "npm",
+        args=[
+            "run",
+            "build-figma-nova",
+            "--prefix=toolkit/themes/shared/design-system",
+        ],
+    )
     run_mach(
         command_context,
         "npm",
         args=["run", "build", "--prefix=toolkit/themes/shared/design-system"],
     )
-    if nova:
-        run_mach(command_context, "newtab", subcommand="install")
-        run_mach(command_context, "newtab", subcommand="bundle")
+    run_mach(command_context, "newtab", subcommand="install")
+    run_mach(command_context, "newtab", subcommand="bundle")

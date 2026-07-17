@@ -25,7 +25,7 @@ class XULContentSinkImpl final : public nsIXMLContentSink, public nsIExpatSink {
   XULContentSinkImpl();
 
   // nsISupports
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSIEXPATSINK
 
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(XULContentSinkImpl,

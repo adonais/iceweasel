@@ -298,9 +298,8 @@ export class LoginManagerPrompter {
       const passwordField = chromeDoc.getElementById(
         "password-notification-password"
       );
-      // Ensure the type is reset so the field is masked.
-      passwordField.type = "password";
-      passwordField.revealPassword = false;
+      // Ensure the field is masked.
+      passwordField.inputEl.revealPassword = false;
       passwordField.value = login.password;
 
       updateButtonLabel();
@@ -344,14 +343,12 @@ export class LoginManagerPrompter {
 
     const onKeyUp = e => {
       if (e.key == "Enter") {
-        e.target.closest("popupnotification").button.doCommand();
+        e.target.closest("popupnotification").button.click();
       }
     };
 
-    const togglePopup = event => {
-      event.target.parentElement
-        .getElementsByClassName("ac-has-end-icon")[0]
-        .toggleHistoryPopup();
+    const onDropmarkerClick = event => {
+      event.currentTarget.inputEl.toggleHistoryPopup();
     };
 
     const persistData = async () => {
@@ -628,34 +625,23 @@ export class LoginManagerPrompter {
                   .getElementById("password-notification-username")
                   .addEventListener("keyup", onKeyUp);
                 chromeDoc
+                  .getElementById("password-notification-username")
+                  .addEventListener("dropmarker-click", onDropmarkerClick);
+                chromeDoc
                   .getElementById("password-notification-password")
                   .addEventListener("keyup", onKeyUp);
                 chromeDoc
                   .getElementById("password-notification-password")
                   .addEventListener("input", onPasswordInput);
-                chromeDoc
-                  .getElementById("password-notification-username-dropmarker")
-                  .addEventListener("click", togglePopup);
-
                 LoginManagerPrompter._getUsernameSuggestions(
                   login,
                   possibleValues?.usernames
                 ).then(usernameSuggestions => {
-                  const dropmarker = chromeDoc?.getElementById(
-                    "password-notification-username-dropmarker"
-                  );
-                  if (dropmarker) {
-                    dropmarker.hidden = !usernameSuggestions.length;
-                  }
-
                   const usernameField = chromeDoc?.getElementById(
                     "password-notification-username"
                   );
                   if (usernameField) {
-                    usernameField.classList.toggle(
-                      "ac-has-end-icon",
-                      !!usernameSuggestions.length
-                    );
+                    usernameField.showDropmarker = !!usernameSuggestions.length;
                   }
                 });
 
@@ -682,6 +668,13 @@ export class LoginManagerPrompter {
             case "dismissed":
               // Note that this can run after `showing` but before `shown` upon tab switch.
               this.wasDismissed = true;
+              // The username field hosts its <input> in a shadow root, so when
+              // the panel hides the platform doesn't reliably return focus to
+              // the content browser. Restore it here, but only for the selected
+              // browser so we don't steal focus on a tab switch.
+              if (PopupNotifications.tabbrowser?.selectedBrowser === browser) {
+                browser.focus();
+              }
             // Fall through.
             case "removed": {
               // Note that this can run after `showing` and `shown` for the
@@ -694,14 +687,16 @@ export class LoginManagerPrompter {
               );
               usernameField.removeEventListener("input", onUsernameInput);
               usernameField.removeEventListener("keyup", onKeyUp);
+              usernameField.removeEventListener(
+                "dropmarker-click",
+                onDropmarkerClick
+              );
+              usernameField.inputEl?.detachController();
               const passwordField = chromeDoc.getElementById(
                 "password-notification-password"
               );
               passwordField.removeEventListener("input", onPasswordInput);
               passwordField.removeEventListener("keyup", onKeyUp);
-              chromeDoc
-                .getElementById("password-notification-username-dropmarker")
-                .removeEventListener("click", togglePopup);
               break;
             }
           }
@@ -1027,8 +1022,8 @@ export class LoginManagerPrompter {
       acceptDifferentSubdomains: true,
     });
 
-    const saved = baseDomainLogins.map(login => {
-      return { text: login.username, style: "login" };
+    const saved = baseDomainLogins.map(savedLogin => {
+      return { text: savedLogin.username, style: "login" };
     });
     const possible = [...possibleUsernames].map(username => {
       return { text: username, style: "possible-username" };

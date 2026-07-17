@@ -12,6 +12,7 @@ store, which is tied to a profile. A preference can also have a default value.
 
 DevTools relies on nsIPrefBranch for preferences, which supports different types of
 preferences:
+
 * `Int`
 * `Boolean`
 * `Char`
@@ -19,6 +20,7 @@ preferences:
 
 Choose the appropriate type depending on the data you need to store. If you need to store
 a JavaScript object or array, the recommended way is to:
+
 * use a `String` type preference
 * use JSON.stringify to save
 * use JSON.parse to read
@@ -31,12 +33,14 @@ Note that nsIPrefBranch also supports a `Complex` type.
 
 DevTools relies on Services.pref to handle preferences. You can access the API docs for
 this service at:
+
 * [Source for nsIPrefBranch](https://searchfox.org/firefox-main/source/modules/libpref/nsIPrefBranch.idl)
 * [Source for nsIPrefService](https://searchfox.org/firefox-main/source/modules/libpref/nsIPrefService.idl)
 
 ### Services.pref.get* and Services.pref.set*
 
 The main APIs you will have to know and use are getters and setters.
+
 * `Services.pref.getIntPref(prefName, defaultValue);` This method will throw if the
 preference cannot be found and you didn't pass a default value!
 * `Services.pref.setIntPref(prefName, prefValue)` This method will throw if the provided

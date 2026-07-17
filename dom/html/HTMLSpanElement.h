@@ -11,7 +11,7 @@ namespace mozilla::dom {
 
 class HTMLSpanElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLSpanElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit HTMLSpanElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;

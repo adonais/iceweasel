@@ -39,30 +39,10 @@ add_setup(async function () {
   await SidebarTestUtils.waitForInitialized(window);
 });
 
-// Bug 2036783 - Investigate leaks for legacy bookmarks panel
-// The places context menu icons have intersection observers that aren't torn
-// down cleanly when the sidebar window unloads, leaking the window until
-// shutdown. As a workaround, remove those images from the menu before hiding.
-async function _withSidebarTree(type, taskFn, win) {
-  return withSidebarTree(
-    type,
-    async tree => {
-      try {
-        await taskFn(tree);
-      } finally {
-        const contextMenu = tree.ownerDocument.getElementById("placesContext");
-        for (const icon of contextMenu.getElementsByClassName("menu-icon")) {
-          icon.remove();
-        }
-        PlacesUIUtils.lastContextMenuTriggerNode = null;
-      }
-    },
-    win
-  );
-}
-
 registerCleanupFunction(async () => {
   await PlacesUtils.bookmarks.eraseEverything();
+  Services.fog.testResetFOG();
+  Services.telemetry.clearScalars();
 });
 
 /**
@@ -109,7 +89,7 @@ async function activateContextMenuItem(tree, menuItemId) {
 }
 
 add_task(async function test_search_label() {
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     let searchBox = tree.ownerDocument.getElementById("search-box");
     await setSearch(searchBox, "mozilla");
   });
@@ -118,7 +98,7 @@ add_task(async function test_search_label() {
 });
 
 add_task(async function test_open_commands() {
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     tree.selectItems([bookmarks[0].guid]);
 
     const promiseNewTab = BrowserTestUtils.waitForNewTab(gBrowser);
@@ -140,7 +120,7 @@ add_task(async function test_open_commands() {
 
 add_task(async function test_edit_vs_rename_folder_cancelled() {
   const { sidebarBookmarks } = Glean.browserUiInteraction;
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     tree.selectItems([bookmarks[0].guid]);
     let dialogClosed = BrowserTestUtils.promiseAlertDialogOpen(
       "cancel",
@@ -174,7 +154,7 @@ add_task(async function test_edit_vs_rename_folder_cancelled() {
 
 add_task(async function test_edit_vs_rename_folder_confirmed() {
   const { sidebarBookmarks } = Glean.browserUiInteraction;
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     tree.selectItems([bookmarks[0].guid]);
     let dialogClosed = BrowserTestUtils.promiseAlertDialogOpen(
       null,
@@ -219,7 +199,7 @@ add_task(async function test_edit_vs_rename_folder_confirmed() {
 });
 
 add_task(async function test_copy_bookmark_url() {
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     tree.selectItems([bookmarks[0].guid]);
     await activateContextMenuItem(tree, "placesContext_copy");
     assertLabeledCounterValue("copy_bookmark_url", 1);
@@ -227,7 +207,7 @@ add_task(async function test_copy_bookmark_url() {
 });
 
 add_task(async function test_cut_bookmark() {
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     tree.selectItems([bookmarks[0].guid]);
     await activateContextMenuItem(tree, "placesContext_cut");
     assertLabeledCounterValue("cut_bookmark", 1);
@@ -236,7 +216,7 @@ add_task(async function test_cut_bookmark() {
 
 add_task(async function test_add_bookmark_and_folder_cancelled() {
   const { sidebarBookmarks } = Glean.browserUiInteraction;
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     tree.selectItems([bookmarks[0].guid]);
 
     info("Start the Add Bookmark flow. Cancel the resulting dialog box.");
@@ -271,7 +251,7 @@ add_task(async function test_add_bookmark_and_folder_cancelled() {
 
 add_task(async function test_add_bookmark_and_folder_confirmed() {
   const { sidebarBookmarks } = Glean.browserUiInteraction;
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     tree.selectItems([bookmarks[0].guid]);
 
     info("Start the Add Bookmark flow. Confirm the resulting dialog box.");
@@ -323,7 +303,7 @@ add_task(async function test_add_bookmark_and_folder_confirmed() {
 });
 
 add_task(async function test_add_separator() {
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     tree.selectItems([bookmarks[0].guid]);
 
     const promiseAdded = PlacesTestUtils.waitForNotification("bookmark-added");
@@ -339,7 +319,7 @@ add_task(async function test_add_separator() {
 });
 
 add_task(async function test_sort_by_name() {
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     tree.selectItems([folder.guid]);
     await activateContextMenuItem(tree, "placesContext_sortBy:name");
     assertLabeledCounterValue("sort_bookmarks_by_name", 1);
@@ -347,7 +327,7 @@ add_task(async function test_sort_by_name() {
 });
 
 add_task(async function test_open_all_bookmarks_label() {
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     tree.selectItems([folder.guid]);
 
     const promiseNewTab = BrowserTestUtils.waitForNewTab(gBrowser);
@@ -369,7 +349,7 @@ add_task(async function test_open_in_container_tab_label() {
     set: [["privacy.userContext.enabled", true]],
   });
 
-  await _withSidebarTree("bookmarks", async tree => {
+  await withSidebarTree("bookmarks", async tree => {
     let sidebarDoc = tree.ownerDocument;
     let placesContext = sidebarDoc.getElementById("placesContext");
 

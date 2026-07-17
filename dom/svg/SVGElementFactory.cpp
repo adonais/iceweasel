@@ -24,11 +24,11 @@ StaticAutoPtr<TagAtomTable> sTagAtomTable;
 #define SVG_TAG(_tag, _classname)                                         \
   nsresult NS_NewSVG##_classname##Element(                                \
       nsIContent** aResult,                                               \
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);              \
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);                \
                                                                           \
   nsresult NS_NewSVG##_classname##Element(                                \
       nsIContent** aResult,                                               \
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,               \
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,                 \
       FromParser aFromParser) {                                           \
     return NS_NewSVG##_classname##Element(aResult, std::move(aNodeInfo)); \
   }
@@ -40,7 +40,7 @@ StaticAutoPtr<TagAtomTable> sTagAtomTable;
 #undef SVG_FROM_PARSER_TAG
 
 nsresult NS_NewSVGElement(Element** aResult,
-                          already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+                          already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 enum SVGTag {
 #define SVG_TAG(_tag, _classname) eSVGTag_##_tag,
@@ -70,7 +70,7 @@ void SVGElementFactory::Init() {
 void SVGElementFactory::Shutdown() { sTagAtomTable = nullptr; }
 
 nsresult NS_NewSVGElement(Element** aResult,
-                          already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+                          already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                           FromParser aFromParser) {
   NS_ASSERTION(sTagAtomTable, "no lookup table, needs SVGElementFactory::Init");
 
@@ -94,7 +94,7 @@ nsresult NS_NewSVGElement(Element** aResult,
 }
 
 nsresult NS_NewSVGUnknownElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     FromParser aFromParser) {
   RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
   nsCOMPtr<Element> element;

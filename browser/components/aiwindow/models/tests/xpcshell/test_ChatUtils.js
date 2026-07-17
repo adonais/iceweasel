@@ -234,23 +234,10 @@ add_task(async function test_constructRelevantMemoriesContextMessage() {
       },
     ]);
 
-    // Create fake engine instance for loading prompts
-    const fakeEngine = {
-      async loadPrompt() {
-        return `# Existing Memories
-
-Below is a list of existing memory texts with their unique IDs:
-
-{relevantMemoriesList}
-
-Use them to personalized your response using the following guidelines:`;
-      },
-    };
-
     const relevantMemoriesContextMessage =
       await constructRelevantMemoriesContextMessage(
         "I love drinking coffee",
-        fakeEngine
+        {}
       );
     Assert.ok(stub.calledOnce, "getRelevantMemories should be called once");
 
@@ -295,17 +282,10 @@ add_task(
       // Mock getRelevantMemories to return empty array (no matches)
       const stub = sb.stub(MemoriesManager, "getRelevantMemories").resolves([]);
 
-      // Create fake engine instance (won't be called since no memories returned)
-      const fakeEngine = {
-        async loadPrompt() {
-          return "# Existing Memories";
-        },
-      };
-
       const relevantMemoriesContextMessage =
         await constructRelevantMemoriesContextMessage(
           "I love drinking coffee",
-          fakeEngine
+          {}
         );
       Assert.ok(stub.calledOnce, "getRelevantMemories should be called once");
 

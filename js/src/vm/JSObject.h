@@ -83,7 +83,7 @@ bool SetImmutablePrototype(JSContext* cx, JS::HandleObject obj,
  * NOTE: Some operations can change the contents of an object (including class)
  *       in-place so avoid assuming an object with same pointer has same class
  *       as before.
- *       - JSObject::swap()
+ *       - ProxyObject::swap()
  */
 class JSObject
     : public js::gc::CellWithTenuredGCPointer<js::gc::Cell, js::Shape> {
@@ -153,6 +153,15 @@ class JSObject
   void setShape(js::Shape* shape) {
     MOZ_ASSERT(maybeCCWRealm() == shape->realm());
     setHeaderPtr(shape);
+  }
+
+  // Like setShape but for use by ProxyObject::swap. It can change the realm of
+  // an object but not its compartment.
+  void setShapeForProxySwap(js::Shape* newShape) {
+    MOZ_ASSERT(shape()->isProxy());
+    MOZ_ASSERT(newShape->isProxy());
+    MOZ_RELEASE_ASSERT(compartment() == newShape->compartment());
+    setHeaderPtr(newShape);
   }
 
   static bool setFlags(JSContext* cx, JS::HandleObject obj,
@@ -485,9 +494,6 @@ class JSObject
                                   js::HandleValue receiver,
                                   JS::ObjectOpResult& result);
 
-  static void swap(JSContext* cx, JS::HandleObject a, JS::HandleObject b,
-                   js::AutoEnterOOMUnsafeRegion& oomUnsafe);
-
   /*
    * In addition to the generic object interface provided by JSObject,
    * specific types of objects may provide additional operations. To access,
@@ -776,8 +782,8 @@ constexpr size_t JSObject::thingSize(js::gc::AllocKind kind) {
 
 namespace js {
 
-// Returns true if object may possibly use JSObject::swap. The JITs may better
-// optimize objects that can never swap (and thus change their type).
+// Returns true if object may possibly use ProxyObject::swap. The JITs may
+// better optimize objects that can never swap (and thus change their type).
 //
 // If ObjectMayBeSwapped is false, it is safe to guard on pointer identity to
 // test immutable features of the object. For example, the target of a

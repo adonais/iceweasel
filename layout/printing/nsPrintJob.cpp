@@ -84,6 +84,7 @@ static const char sPrintSettingsServiceContractID[] =
 #include "nsRange.h"
 
 #if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
+#  include "mozilla/a11y/DocManager.h"
 #  include "mozilla/a11y/PdfStructTreeBuilder.h"
 #endif
 
@@ -899,14 +900,12 @@ nsresult nsPrintJob::SetupToPrintContent() {
   if (mIsDoingPrinting) {
 #if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
     if (!mIsCreatingPrintPreview) {
-      if (nsAccessibilityService* serv = GetAccService()) {
-        serv->NotifyOfPrintDocument(mPrintObject->mDocument);
-        // XXX Out-of-process iframes inside a parent process document won't be
-        // accessible. We need to wait for the iframe accessibility trees to
-        // arrive asynchronously using
-        // a11y::PdfStructTreeBuilder::GetReadyPromise, but there's no clear
-        // place to do that right now when printing in-process.
-      }
+      a11y::DocManager::NotifyOfPrintDocument(mPrintObject->mDocument);
+      // XXX Out-of-process iframes inside a parent process document won't be
+      // accessible. We need to wait for the iframe accessibility trees to
+      // arrive asynchronously using
+      // a11y::PdfStructTreeBuilder::GetReadyPromise, but there's no clear
+      // place to do that right now when printing in-process.
     }
 #endif
     rv = printData->mPrintDC->BeginDocument(

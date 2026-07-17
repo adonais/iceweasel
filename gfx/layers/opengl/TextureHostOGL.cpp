@@ -329,7 +329,7 @@ DirectMapTextureSource::DirectMapTextureSource(gl::GLContext* aContext,
                                                gfx::DataSourceSurface* aSurface)
     : GLTextureSource(aContext, 0, LOCAL_GL_TEXTURE_RECTANGLE_ARB,
                       aSurface->GetSize(), aSurface->GetFormat()),
-      mSync(0) {
+      mSync(nullptr) {
   MOZ_ASSERT(aSurface);
 
   UpdateInternal(aSurface, nullptr, nullptr, true);
@@ -345,7 +345,7 @@ DirectMapTextureSource::~DirectMapTextureSource() {
   }
 
   gl()->fDeleteSync(mSync);
-  mSync = 0;
+  mSync = nullptr;
 }
 
 bool DirectMapTextureSource::Update(gfx::DataSourceSurface* aSurface,
@@ -433,7 +433,7 @@ bool DirectMapTextureSource::UpdateInternal(gfx::DataSourceSurface* aSurface,
 
   if (mSync) {
     gl()->fDeleteSync(mSync);
-    mSync = 0;
+    mSync = nullptr;
   }
 
   gl()->fPixelStorei(LOCAL_GL_UNPACK_CLIENT_STORAGE_APPLE, LOCAL_GL_FALSE);
@@ -549,10 +549,9 @@ void SurfaceTextureHost::CreateRenderTexture(
   MOZ_ASSERT(mExternalImageId.isSome());
 
   bool isRemoteTexture = !!(mFlags & TextureFlags::REMOTE_TEXTURE);
-  RefPtr<wr::RenderTextureHost> texture =
-      new wr::RenderAndroidSurfaceTextureHost(
-          mSurfTex, mSize, mFormat, mContinuousUpdate, mTransformOverride,
-          isRemoteTexture);
+  RefPtr texture = MakeRefPtr<wr::RenderAndroidSurfaceTextureHost>(
+      mSurfTex, mSize, mFormat, mContinuousUpdate, mTransformOverride,
+      isRemoteTexture);
   wr::RenderThread::Get()->RegisterExternalImage(aExternalImageId,
                                                  texture.forget());
 }
@@ -599,10 +598,10 @@ void SurfaceTextureHost::PushResourceUpdates(
 
       // XXX Add RGBA handling. Temporary hack to avoid crash
       // With BGRA format setting, rendering works without problem.
-      auto format = GetFormat() == gfx::SurfaceFormat::R8G8B8A8
-                        ? gfx::SurfaceFormat::B8G8R8A8
-                        : gfx::SurfaceFormat::B8G8R8X8;
-      wr::ImageDescriptor descriptor(GetSize(), format);
+      wr::ImageDescriptor descriptor(GetSize(), wr::ImageFormat::BGRA8,
+                                     GetFormat() == gfx::SurfaceFormat::R8G8B8A8
+                                         ? wr::OpacityType::HasAlphaChannel
+                                         : wr::OpacityType::Opaque);
       (aResources.*method)(aImageKeys[0], descriptor, aExtID, imageType, 0,
                            normalizedUvs);
       break;
@@ -795,8 +794,7 @@ AndroidHardwareBufferTextureHost::Create(
   if (!buffer) {
     return nullptr;
   }
-  RefPtr<AndroidHardwareBufferTextureHost> host =
-      new AndroidHardwareBufferTextureHost(aFlags, buffer);
+  RefPtr host = MakeRefPtr<AndroidHardwareBufferTextureHost>(aFlags, buffer);
   return host.forget();
 }
 
@@ -889,10 +887,10 @@ void AndroidHardwareBufferTextureHost::PushResourceUpdates(
 
       // XXX Add RGBA handling. Temporary hack to avoid crash
       // With BGRA format setting, rendering works without problem.
-      auto format = GetFormat() == gfx::SurfaceFormat::R8G8B8A8
-                        ? gfx::SurfaceFormat::B8G8R8A8
-                        : gfx::SurfaceFormat::B8G8R8X8;
-      wr::ImageDescriptor descriptor(GetSize(), format);
+      wr::ImageDescriptor descriptor(GetSize(), wr::ImageFormat::BGRA8,
+                                     GetFormat() == gfx::SurfaceFormat::R8G8B8A8
+                                         ? wr::OpacityType::HasAlphaChannel
+                                         : wr::OpacityType::Opaque);
       (aResources.*method)(aImageKeys[0], descriptor, aExtID, imageType, 0,
                            /* aNormalizedUvs */ false);
       break;
@@ -1021,8 +1019,8 @@ void EGLImageTextureHost::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
   MOZ_ASSERT(mExternalImageId.isSome());
 
-  RefPtr<wr::RenderTextureHost> texture =
-      new wr::RenderEGLImageTextureHost(mImage, mSync, mSize, GetFormat());
+  RefPtr texture = MakeRefPtr<wr::RenderEGLImageTextureHost>(
+      mImage, mSync, mSize, GetFormat());
   wr::RenderThread::Get()->RegisterExternalImage(aExternalImageId,
                                                  texture.forget());
 }
@@ -1053,10 +1051,10 @@ void EGLImageTextureHost::PushResourceUpdates(
 
   // XXX Add RGBA handling. Temporary hack to avoid crash
   // With BGRA format setting, rendering works without problem.
-  auto formatTmp = format == gfx::SurfaceFormat::R8G8B8A8
-                       ? gfx::SurfaceFormat::B8G8R8A8
-                       : gfx::SurfaceFormat::B8G8R8X8;
-  wr::ImageDescriptor descriptor(GetSize(), formatTmp);
+  wr::ImageDescriptor descriptor(GetSize(), wr::ImageFormat::BGRA8,
+                                 format == gfx::SurfaceFormat::R8G8B8A8
+                                     ? wr::OpacityType::HasAlphaChannel
+                                     : wr::OpacityType::Opaque);
   (aResources.*method)(aImageKeys[0], descriptor, aExtID, imageType, 0,
                        /* aNormalizedUvs */ false);
 }

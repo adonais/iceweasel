@@ -23,7 +23,6 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.semantics
@@ -166,15 +165,12 @@ internal fun CustomTabMenu(
         MenuGroup {
             val badgeText: String
             val menuItemState: MenuItemState
-            val badgeBackgroundColor: Color
 
             if (isDesktopMode) {
                 badgeText = stringResource(id = R.string.browser_feature_desktop_site_on)
-                badgeBackgroundColor = MaterialTheme.colorScheme.primaryContainer
                 menuItemState = if (isPdf) MenuItemState.DISABLED else MenuItemState.ACTIVE
             } else {
                 badgeText = stringResource(id = R.string.browser_feature_desktop_site_off)
-                badgeBackgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
                 menuItemState = if (isPdf) MenuItemState.DISABLED else MenuItemState.ENABLED
             }
 

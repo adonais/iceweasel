@@ -13,6 +13,7 @@
 #include "nsDeviceContext.h"
 #include "nsDocShell.h"
 #include "nsIContent.h"
+#include "nsPIDOMWindowInlines.h"  // FIXME: Stop including inline definitions!
 #include "nsPresContext.h"
 
 class nsINode;

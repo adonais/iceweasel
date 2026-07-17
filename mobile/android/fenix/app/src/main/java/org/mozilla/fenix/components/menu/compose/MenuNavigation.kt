@@ -64,7 +64,7 @@ internal fun MenuNavigation(
             .fillMaxWidth()
             .background(
                 color = if (isExtensionsExpanded || isMoreMenuExpanded) {
-                    MaterialTheme.colorScheme.surfaceContainerHighest
+                    MaterialTheme.colorScheme.surfaceContainerHigh
                 } else {
                     MaterialTheme.colorScheme.surface
                 },

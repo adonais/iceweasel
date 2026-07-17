@@ -185,6 +185,79 @@
       widget-celebration-illustration-out var(--widget-celebration-exit-duration) ease forwards;
     animation-delay: var(--widget-celebration-illustration-delay), var(--widget-celebration-hold-duration);
   }
+
+  // Optional confetti shower. Widgets opt in by passing `confettiColors` to
+  // <WidgetCelebration>; pieces are generated in JS (colors + randomized
+  // position/spin via CSS custom props) and fall through this clipped layer.
+  .#{$prefix}-confetti {
+    position: absolute;
+    inset: 0;
+    overflow: hidden;
+    border-radius: inherit;
+    pointer-events: none;
+  }
+
+  // Holds the <symbol> soccer-ball geometry; never painted itself.
+  .#{$prefix}-confetti-defs {
+    position: absolute;
+    inline-size: 0;
+    block-size: 0;
+  }
+
+  // Shared faller: position, size, fall/spin animation. Per-piece values come
+  // from JS-set custom props, so design tokens don't apply.
+  .#{$prefix}-confetti-piece {
+    position: absolute;
+    inset-block-start: -12%;
+    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+    inset-inline-start: var(--confetti-x);
+    inline-size: var(--confetti-w);
+    block-size: var(--confetti-h);
+    /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+    opacity: 0;
+    animation-name: widget-celebration-confetti-fall;
+    animation-duration: var(--confetti-duration);
+    animation-timing-function: cubic-bezier(0.3, 0.45, 0.55, 1);
+    animation-delay: var(--confetti-delay);
+    animation-fill-mode: forwards;
+  }
+
+  // Flat shapes: solid color fill + border-radius/clip-path silhouette.
+  i.#{$prefix}-confetti-piece {
+    /* stylelint-disable stylelint-plugin-mozilla/use-design-tokens */
+    background-color: var(--confetti-color);
+    border-radius: var(--confetti-radius);
+    /* stylelint-enable stylelint-plugin-mozilla/use-design-tokens */
+    clip-path: var(--confetti-clip);
+  }
+
+  // Soccer balls: the <use>d symbol tints its body via currentColor.
+  svg.#{$prefix}-confetti-piece {
+    /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+    color: var(--confetti-color);
+  }
+}
+
+@keyframes widget-celebration-confetti-fall {
+  0% {
+    opacity: 0;
+    translate: 0 0;
+    rotate: 0deg;
+  }
+
+  12% {
+    opacity: 1;
+  }
+
+  85% {
+    opacity: 1;
+  }
+
+  100% {
+    opacity: 0;
+    translate: var(--confetti-drift) var(--confetti-fall, 360px);
+    rotate: var(--confetti-rotate);
+  }
 }
 
 @keyframes widget-celebration-lifecycle {

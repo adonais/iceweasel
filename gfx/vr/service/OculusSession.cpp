@@ -742,7 +742,7 @@ bool OculusSession::StartSession() {
   // ovr_Create can be slow when no HMD is present and we wish
   // to keep the same oculus session when possible, so we detect
   // presence of an HMD with ovr_GetHmdDesc before calling ovr_Create
-  ovrHmdDesc desc = ovr_GetHmdDesc(NULL);
+  ovrHmdDesc desc = ovr_GetHmdDesc(nullptr);
   if (desc.Type == ovrHmd_None) {
     // No HMD connected, destroy any existing session
     if (mSession) {

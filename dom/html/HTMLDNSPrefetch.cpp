@@ -217,6 +217,58 @@ nsresult HTMLDNSPrefetch::DeferPrefetch(SupportsDNSPrefetch& aSupports,
       aSupports, aElement);
 }
 
+// Issues the speculative address prefetch for `aHost`. When Happy Eyeballs is
+// enabled, issues two per-family lookups (A and AAAA) instead of one AF_UNSPEC
+// lookup so a later HE connection can reuse them; the AAAA lookup is skipped
+// when IPv6 is disabled. Returns the result of the first issued lookup.
+static nsresult IssueSpeculativeAddrPrefetch(
+    const nsACString& aHost, nsIDNSService::DNSFlags aFlags,
+    const OriginAttributes& aOriginAttributes) {
+  auto resolve = [&](nsIDNSService::DNSFlags aResolveFlags) -> nsresult {
+    nsCOMPtr<nsICancelable> tmpOutstanding;
+    return sDNSService->AsyncResolveNative(
+        aHost, nsIDNSService::RESOLVE_TYPE_DEFAULT,
+        aResolveFlags | nsIDNSService::RESOLVE_SPECULATE, nullptr, sDNSListener,
+        nullptr, aOriginAttributes, getter_AddRefs(tmpOutstanding));
+  };
+
+  if (!StaticPrefs::network_http_happy_eyeballs_enabled()) {
+    return resolve(aFlags);
+  }
+
+  nsresult rv = resolve(aFlags | nsIDNSService::RESOLVE_DISABLE_IPV6);
+  if (NS_FAILED(rv)) {
+    return rv;
+  }
+  if (!StaticPrefs::network_dns_disableIPv6()) {
+    rv = resolve(aFlags | nsIDNSService::RESOLVE_DISABLE_IPV4);
+  }
+  return rv;
+}
+
+// Cancels a prefetch issued by IssueSpeculativeAddrPrefetch, cancelling both
+// per-family lookups when Happy Eyeballs is enabled to match what was issued.
+static nsresult CancelSpeculativeAddrPrefetch(
+    const nsACString& aHost, nsIDNSService::DNSFlags aFlags, nsresult aReason,
+    const OriginAttributes& aOriginAttributes) {
+  auto cancel = [&](nsIDNSService::DNSFlags aResolveFlags) -> nsresult {
+    return sDNSService->CancelAsyncResolveNative(
+        aHost, nsIDNSService::RESOLVE_TYPE_DEFAULT,
+        aResolveFlags | nsIDNSService::RESOLVE_SPECULATE, nullptr, sDNSListener,
+        aReason, aOriginAttributes);
+  };
+
+  if (!StaticPrefs::network_http_happy_eyeballs_enabled()) {
+    return cancel(aFlags);
+  }
+
+  nsresult rv = cancel(aFlags | nsIDNSService::RESOLVE_DISABLE_IPV6);
+  if (!StaticPrefs::network_dns_disableIPv6()) {
+    (void)cancel(aFlags | nsIDNSService::RESOLVE_DISABLE_IPV4);
+  }
+  return rv;
+}
+
 nsresult HTMLDNSPrefetch::Prefetch(
     const nsAString& hostname, bool isHttps,
     const OriginAttributes& aPartitionedPrincipalOriginAttributes,
@@ -238,17 +290,9 @@ nsresult HTMLDNSPrefetch::Prefetch(
   if (!(sInitialized && sPrefetches && sDNSListener) || !EnsureDNSService())
     return NS_ERROR_NOT_AVAILABLE;
 
-  nsCOMPtr<nsICancelable> tmpOutstanding;
-  nsresult rv = sDNSService->AsyncResolveNative(
-      NS_ConvertUTF16toUTF8(hostname), nsIDNSService::RESOLVE_TYPE_DEFAULT,
-      flags | nsIDNSService::RESOLVE_SPECULATE, nullptr, sDNSListener, nullptr,
-      aPartitionedPrincipalOriginAttributes, getter_AddRefs(tmpOutstanding));
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-
   if (StaticPrefs::network_dns_upgrade_with_https_rr() ||
       StaticPrefs::network_dns_use_https_rr_as_altsvc()) {
+    nsCOMPtr<nsICancelable> tmpOutstanding;
     (void)sDNSService->AsyncResolveNative(
         NS_ConvertUTF16toUTF8(hostname), nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
         flags | nsIDNSService::RESOLVE_SPECULATE, nullptr, sDNSListener,
@@ -256,7 +300,8 @@ nsresult HTMLDNSPrefetch::Prefetch(
         getter_AddRefs(tmpOutstanding));
   }
 
-  return NS_OK;
+  return IssueSpeculativeAddrPrefetch(NS_ConvertUTF16toUTF8(hostname), flags,
+                                      aPartitionedPrincipalOriginAttributes);
 }
 
 nsresult HTMLDNSPrefetch::Prefetch(
@@ -324,11 +369,9 @@ nsresult HTMLDNSPrefetch::CancelPrefetch(
   }
 
   // Forward cancellation to DNS service
-  nsresult rv = sDNSService->CancelAsyncResolveNative(
-      NS_ConvertUTF16toUTF8(hostname), nsIDNSService::RESOLVE_TYPE_DEFAULT,
-      flags | nsIDNSService::RESOLVE_SPECULATE,
-      nullptr,  // AdditionalInfo
-      sDNSListener, aReason, aPartitionedPrincipalOriginAttributes);
+  nsresult rv = CancelSpeculativeAddrPrefetch(
+      NS_ConvertUTF16toUTF8(hostname), flags, aReason,
+      aPartitionedPrincipalOriginAttributes);
 
   if (StaticPrefs::network_dns_upgrade_with_https_rr() ||
       StaticPrefs::network_dns_use_https_rr_as_altsvc()) {
@@ -397,23 +440,19 @@ void HTMLDNSPrefetch::SendRequest(Element& aElement,
                                        oa, aFlags);
     }
   } else {
-    nsCOMPtr<nsICancelable> tmpOutstanding;
-
-    rv = sDNSService->AsyncResolveNative(
-        hostName, nsIDNSService::RESOLVE_TYPE_DEFAULT,
-        aFlags | nsIDNSService::RESOLVE_SPECULATE, nullptr, sDNSListener,
-        nullptr, oa, getter_AddRefs(tmpOutstanding));
-    if (NS_FAILED(rv)) {
-      return;
-    }
-
     // Fetch HTTPS RR if needed.
     if (StaticPrefs::network_dns_upgrade_with_https_rr() ||
         StaticPrefs::network_dns_use_https_rr_as_altsvc()) {
+      nsCOMPtr<nsICancelable> tmpOutstanding;
       sDNSService->AsyncResolveNative(
           hostName, nsIDNSService::RESOLVE_TYPE_HTTPSSVC,
           aFlags | nsIDNSService::RESOLVE_SPECULATE, nullptr, sDNSListener,
           nullptr, oa, getter_AddRefs(tmpOutstanding));
+    }
+
+    rv = IssueSpeculativeAddrPrefetch(hostName, aFlags, oa);
+    if (NS_FAILED(rv)) {
+      return;
     }
   }
 

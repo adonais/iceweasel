@@ -28,6 +28,64 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Ivinelloù nevez
+
+## Firefox Home content
+
+home-prefs-firefox-logo-header =
+    .label = Logo { -brand-short-name }
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } renk
+            [two] { $num } renk
+            [few] { $num } renk
+            [many] { $num } a renkoù
+           *[other] { $num } renk
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Askouezh ({ $extension })
+home-restore-defaults-srd =
+    .label = Assav an arventennoù dre ziouer
+    .accesskey = A
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (Dre ziouer)
+home-mode-choice-custom-srd =
+    .label = URLoù personelaet…
+home-mode-choice-blank-srd =
+    .label = Pajenn wenn
+home-prefs-shortcuts-header-srd =
+    .label = Berradennoù
+home-prefs-shortcuts-select =
+    .aria-label = Berradennoù
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Berradennoù paeroniet
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Istorioù paeroniet
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Pajennoù gweladennet
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Sinedoù
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Pellgargadurioù nevez
+home-prefs-recent-activity-header-srd =
+    .label = Oberiantiz a-nevez
+home-prefs-recent-activity-select =
+    .aria-label = Oberiantiz a-nevez
+home-prefs-weather-header-srd =
+    .label = Liv an amzer
+home-prefs-support-firefox-header-srd =
+    .label = Skoazellit { -brand-product-name }
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -130,6 +188,8 @@ newtab-menu-about-fakespot = A-zivout { -fakespot-brand-name }
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Stankañ
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Gouzout hiroc’h
 
 ## Context menu options for sponsored stories and new ad formats on New Tab.
 
@@ -475,6 +535,4 @@ newtab-report-submit = Kas
 newtab-widget-lists-label-new =
     .label = Nevez
 newtab-widget-lists-menu-create = Krouiñ ur roll nevez
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Roll nevez
+newtab-widget-lists-input-menu-open-link = Digeriñ an ere

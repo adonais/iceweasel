@@ -1782,7 +1782,7 @@ class SelectorView {
 
     const { sheet, line, column } = this.#generatedLocation;
     if (ToolDefinitions.styleEditor.isToolSupported(inspector.toolbox)) {
-      inspector.toolbox.viewSourceInStyleEditorByResource(sheet, line, column);
+      inspector.toolbox.viewStyleSourceByResource(sheet, line, column);
     }
   }
 

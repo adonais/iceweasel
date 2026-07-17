@@ -1168,4 +1168,7 @@ struct outparam_as_pointer<nsGetterAddRefs<T>> {
 };
 }  // namespace mozilla::detail
 
+template <typename T>
+struct fmt::formatter<nsCOMPtr<T>> : fmt::ostream_formatter {};
+
 #endif  // !defined(nsCOMPtr_h_)

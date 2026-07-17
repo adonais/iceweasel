@@ -45,7 +45,7 @@ list of acceptable features is given below:
      -
    * - Current minimal requirement
      - 10.1
-     - 17.0
+     - 19.0
      -
    * - Feature
      - GCC
@@ -242,7 +242,7 @@ list of acceptable features is given below:
    * - Concepts (C++20)
      - 10.0
      - 10.0
-     - **Yes** (but see notes)
+     - Yes
    * - Inline variables (C++17)
      - 7.0
      - 3.9
@@ -332,9 +332,6 @@ Sized deallocation
   but turning it on breaks some classes' ``operator new`` methods, and `some
   work <https://bugzilla.mozilla.org/show_bug.cgi?id=1250998>`__ would need to
   be done to make it an efficiency win with our custom memory allocator.
-
-Concepts
-  libstdc++10 doesn't support concepts, so we can't use concept functionality that requires standard library support, like the <concepts>, <iterator>, and <ranges> headers. We can however use concepts's core language functionality that is implemented purely by the compiler, like ``concept`` definitions and ``requires`` clauses.
 
 Aligned allocation/deallocation
   Our custom memory allocator doesn't have support for these functions.

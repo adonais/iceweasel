@@ -25,8 +25,7 @@ inline Activation::Activation(JSContext* cx, Kind kind)
       prev_(cx->activation_),
       prevProfiling_(prev_ ? prev_->mostRecentProfiling() : nullptr),
       hideScriptedCallerCount_(0),
-      frameCache_(cx),
-      asyncStack_(cx, cx->asyncStackForNewActivations()),
+      asyncStack_(cx->asyncStackForNewActivations()),
       asyncCause_(cx->asyncCauseForNewActivations),
       asyncCallIsExplicit_(cx->asyncCallIsExplicit),
       kind_(kind) {
@@ -63,10 +62,10 @@ inline Activation* Activation::mostRecentProfiling() {
 }
 
 inline LiveSavedFrameCache* Activation::getLiveSavedFrameCache(JSContext* cx) {
-  if (!frameCache_.get().initialized() && !frameCache_.get().init(cx)) {
+  if (!frameCache_.initialized() && !frameCache_.init(cx)) {
     return nullptr;
   }
-  return frameCache_.address();
+  return &frameCache_;
 }
 
 /* static */ inline mozilla::Maybe<LiveSavedFrameCache::FramePtr>

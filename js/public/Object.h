@@ -42,6 +42,14 @@ extern JS_PUBLIC_API bool GetBuiltinClass(JSContext* cx, Handle<JSObject*> obj,
                                           js::ESClass* cls);
 
 /**
+ * Returns true if |obj| is a plain object: a standard JS object with no exotic
+ * behavior, such as one created from a '{}' object literal or 'Object.create'.
+ * Unlike |GetBuiltinClass|, this does not unwrap proxies and tests |obj|
+ * directly.
+ */
+extern JS_PUBLIC_API bool IsPlainObject(JSObject* obj);
+
+/**
  * Get the |JS::Compartment*| of an object.
  *
  * Note that the compartment of an object in this realm, that is a

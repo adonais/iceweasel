@@ -13,6 +13,8 @@ struct TimelineRangeOffset;
 }  // namespace mozilla
 
 namespace mozilla::dom {
+class CSSNumericValue;
+struct ViewTimelineOptions;
 
 /*
  * A view progress timeline is a segment of a scroll progress timeline that are
@@ -34,8 +36,8 @@ class ViewTimeline final : public ScrollTimeline {
   // property, and we use this subject to look up its nearest scroll container.
   static already_AddRefed<ViewTimeline> MakeNamed(
       Document* aDocument, Element* aSubject,
-      const PseudoStyleRequest& aPseudoRequest,
-      const StyleViewTimeline& aStyleTimeline);
+      const PseudoStyleRequest& aPseudoRequest, StyleScrollAxis aAxis,
+      const StyleViewTimelineInset& aInset);
 
   static already_AddRefed<ViewTimeline> MakeAnonymous(
       Document* aDocument, const NonOwningAnimationTarget& aTarget,
@@ -45,19 +47,21 @@ class ViewTimeline final : public ScrollTimeline {
                        JS::Handle<JSObject*> aGivenProto) override;
 
   // ViewTimeline methods.
-  Element* Subject() const {
-    MOZ_ASSERT(mSubject);
-    return mSubject;
-  }
-  Nullable<double> GetStartOffset() const;
-  Nullable<double> GetEndOffset() const;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
+  static already_AddRefed<ViewTimeline> Constructor(
+      const GlobalObject& aGlobal, const ViewTimelineOptions& aOptions,
+      ErrorResult& aRv);
+  Element* GetSubject() const { return mSubject; }
+  already_AddRefed<CSSNumericValue> GetStartOffset(ErrorResult& aRv) const;
+  already_AddRefed<CSSNumericValue> GetEndOffset(ErrorResult& aRv) const;
 
   bool IsViewTimeline() const override { return true; }
   const ViewTimeline* AsViewTimeline() const override { return this; }
 
   void ReplacePropertiesWith(Element* aSubjectElement,
                              const PseudoStyleRequest& aPseudoRequest,
-                             const StyleViewTimeline& aNew);
+                             nsAtom* aName, StyleScrollAxis aAxis,
+                             const StyleViewTimelineInset& aInset);
 
   bool UpdateCachedCurrentTime() override;
 

@@ -115,7 +115,7 @@ add_task(
 
     await SpecialPowers.popPrefEnv();
 
-    await cleanup();
+    await cleanup({ browser: window2.gBrowser.selectedBrowser });
     await BrowserTestUtils.closeWindow(window2);
   }
 );
@@ -274,7 +274,7 @@ add_task(
 
     await SpecialPowers.popPrefEnv();
 
-    await cleanup();
+    await cleanup({ browser: window2.gBrowser.selectedBrowser });
     await BrowserTestUtils.closeWindow(window2);
   }
 );

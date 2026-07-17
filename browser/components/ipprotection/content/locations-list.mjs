@@ -86,6 +86,7 @@ export default class LocationsList extends MozLitElement {
           <span class="location-label-group">
             ${aLocation.code === LocationsList.defaultLocation
               ? html`<span
+                    id="location-label-recommended"
                     class="location-label"
                     data-l10n-id="ipprotecion-locations-subview-recommended-label"
                   ></span>
@@ -97,7 +98,14 @@ export default class LocationsList extends MozLitElement {
                   >${countryName(aLocation.code)}</span
                 >`}
           </span>
-          <!--TODO: append an "unavailable" label if a location option is considered disabled-->
+          ${!aLocation.available
+            ? html`
+                <span
+                  class="location-unavailable-label"
+                  data-l10n-id="ipprotection-locations-unavailable-label"
+                ></span>
+              `
+            : null}
         </button>
       </li>
     `;

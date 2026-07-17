@@ -12,7 +12,7 @@ namespace mozilla::dom {
 class HTMLParagraphElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLParagraphElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   // nsISupports

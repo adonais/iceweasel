@@ -35,11 +35,13 @@
 #include "mozilla/dom/DocumentInlines.h"
 #include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Event.h"
+#include "mozilla/dom/HTMLHeadingElement.h"
 #include "mozilla/dom/NodeInfo.h"
 #include "mozilla/dom/RadioGroupContainer.h"
 #include "mozilla/dom/ScriptLoader.h"
 #include "mozilla/dom/StylePropertyMap.h"
 #include "mozilla/dom/StylePropertyMapReadOnly.h"
+#include "mozilla/dom/TreeIterator.h"
 #include "mozilla/dom/UnbindContext.h"
 #include "mozilla/mozInlineSpellChecker.h"
 #include "nsAtom.h"
@@ -287,6 +289,18 @@ nsresult nsIContent::LookupNamespaceURIInternal(
   return NS_ERROR_FAILURE;
 }
 
+nsIContent* nsIContent::GetInclusiveEditableAncestor() const {
+  if (IsEditable()) {
+    return const_cast<nsIContent*>(this);
+  }
+  for (auto* const content : AncestorsOfType<nsIContent>()) {
+    if (content->IsEditable()) {
+      return content;
+    }
+  }
+  return nullptr;
+}
+
 nsAtom* nsIContent::GetLang() const {
   for (const Element* element = GetAsElementOrParentElement(); element;
        element = element->GetParentElement()) {
@@ -348,6 +362,15 @@ already_AddRefed<URLExtraData> nsIContent::GetURLDataForStyleAttr(
                                        aSubjectPrincipal);
   }
   return do_AddRef(doc->DefaultStyleAttrURLData());
+}
+
+void nsIContent::UpdateHeadingElementsOffsetChange() {
+  TreeIterator<FlattenedChildIterator> iter(*this);
+  for (; iter.GetCurrent(); iter.GetNext()) {
+    if (auto* heading = HTMLHeadingElement::FromNode(iter.GetCurrent())) {
+      heading->UpdateLevel(true);
+    }
+  }
 }
 
 void nsIContent::ConstructUbiNode(void* storage) {
@@ -781,7 +804,7 @@ size_t FragmentOrElement::nsExtendedDOMSlots::SizeOfExcludingThis(
 }
 
 FragmentOrElement::FragmentOrElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsIContent(std::move(aNodeInfo)) {}
 
 FragmentOrElement::~FragmentOrElement() {

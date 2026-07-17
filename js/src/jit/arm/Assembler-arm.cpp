@@ -1581,16 +1581,17 @@ BufferOffset Assembler::as_dtm(LoadStore ls, Register rn, uint32_t mask,
   return writeInst(0x08000000 | RN(rn) | ls | mode | mask | c | wb);
 }
 
-BufferOffset Assembler::allocLiteralLoadEntry(
-    size_t numInst, unsigned numPoolEntries, PoolHintPun& php, uint8_t* data,
-    const LiteralDoc& doc, ARMBuffer::PoolEntry* pe, bool loadToPC) {
+BufferOffset Assembler::allocLiteralLoadEntry(size_t numInst,
+                                              unsigned numPoolEntries,
+                                              PoolHintPun& php, uint8_t* data,
+                                              const LiteralDoc& doc,
+                                              bool loadToPC) {
   uint8_t* inst = (uint8_t*)&php.raw;
 
   MOZ_ASSERT(inst);
   MOZ_ASSERT(numInst == 1);  // Or fix the disassembly
 
-  BufferOffset offs =
-      m_buffer.allocEntry(numInst, numPoolEntries, inst, data, pe);
+  BufferOffset offs = m_buffer.allocEntry(numInst, numPoolEntries, inst, data);
   propagateOOM(offs.assigned());
 #ifdef JS_DISASM_ARM
   Instruction* instruction = m_buffer.getInstOrNull(offs);
@@ -1608,8 +1609,8 @@ BufferOffset Assembler::as_Imm32Pool(Register dest, uint32_t value,
                                      Condition c) {
   PoolHintPun php;
   php.phd.init(0, c, PoolHintData::PoolDTR, dest);
-  BufferOffset offs = allocLiteralLoadEntry(
-      1, 1, php, (uint8_t*)&value, LiteralDoc(value), nullptr, dest == pc);
+  BufferOffset offs = allocLiteralLoadEntry(1, 1, php, (uint8_t*)&value,
+                                            LiteralDoc(value), dest == pc);
   return offs;
 }
 

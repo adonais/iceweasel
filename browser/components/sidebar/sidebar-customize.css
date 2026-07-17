@@ -46,7 +46,6 @@
   color: var(--sidebar-box-color);
   border-radius: var(--border-radius-medium);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     background-color: var(--sidebar-box-background);
     border: var(--sidebar-box-border);
@@ -73,7 +72,6 @@ moz-fieldset {
   display: block;
 
   &::part(inputs) {
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       background-color: var(--sidebar-box-background);
       border: var(--sidebar-box-border);
@@ -88,7 +86,6 @@ moz-fieldset {
 moz-checkbox {
   padding-block: var(--space-medium);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     &:not(:last-of-type) {
       border-bottom: 0.5px solid var(--panel-separator-color);

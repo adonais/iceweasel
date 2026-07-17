@@ -60,8 +60,11 @@ body {
 }
 
 #qrcode-image {
+  box-sizing: border-box;
   width: var(--size-layout-medium);
   height: var(--size-layout-medium);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--border-radius-large);
 }
 
 #qrcode-url {

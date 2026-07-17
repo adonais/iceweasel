@@ -116,7 +116,7 @@ NS_IMPL_ISUPPORTS_INHERITED(PrioritizableRunnable, Runnable,
                             nsIRunnablePriority)
 
 PrioritizableRunnable::PrioritizableRunnable(
-    already_AddRefed<nsIRunnable>&& aRunnable, uint32_t aPriority)
+    already_AddRefed<nsIRunnable> aRunnable, uint32_t aPriority)
     // Real runnable name is managed by overridding the GetName function.
     : Runnable("PrioritizableRunnable"),
       mRunnable(std::move(aRunnable)),
@@ -152,7 +152,7 @@ PrioritizableRunnable::GetPriority(uint32_t* aPriority) {
 }
 
 already_AddRefed<nsIRunnable> mozilla::CreateRenderBlockingRunnable(
-    already_AddRefed<nsIRunnable>&& aRunnable) {
+    already_AddRefed<nsIRunnable> aRunnable) {
   nsCOMPtr<nsIRunnable> runnable = new PrioritizableRunnable(
       std::move(aRunnable), nsIRunnablePriority::PRIORITY_RENDER_BLOCKING);
   return runnable.forget();
@@ -209,7 +209,7 @@ nsresult NS_GetMainThread(nsIThread** aResult) {
   return nsThreadManager::get().nsThreadManager::GetMainThread(aResult);
 }
 
-nsresult NS_DispatchToCurrentThread(already_AddRefed<nsIRunnable>&& aEvent) {
+nsresult NS_DispatchToCurrentThread(already_AddRefed<nsIRunnable> aEvent) {
   nsCOMPtr<nsIRunnable> event(aEvent);
   // XXX: Consider using GetCurrentSerialEventTarget() to support TaskQueues.
   nsISerialEventTarget* thread = NS_GetCurrentThread();
@@ -229,7 +229,7 @@ nsresult NS_DispatchToCurrentThread(nsIRunnable* aEvent) {
   return NS_DispatchToCurrentThread(do_AddRef(aEvent));
 }
 
-nsresult NS_DispatchToMainThread(already_AddRefed<nsIRunnable>&& aEvent,
+nsresult NS_DispatchToMainThread(already_AddRefed<nsIRunnable> aEvent,
                                  nsIEventTarget::DispatchFlags aDispatchFlags) {
   MaybeLeakRefPtr<nsIRunnable> event(std::move(aEvent),
                                      aDispatchFlags & NS_DISPATCH_FALLIBLE);
@@ -252,8 +252,8 @@ nsresult NS_DispatchToMainThread(nsIRunnable* aEvent,
   return NS_DispatchToMainThread(do_AddRef(aEvent), aDispatchFlags);
 }
 
-nsresult NS_DelayedDispatchToCurrentThread(
-    already_AddRefed<nsIRunnable>&& aEvent, uint32_t aDelayMs) {
+nsresult NS_DelayedDispatchToCurrentThread(already_AddRefed<nsIRunnable> aEvent,
+                                           uint32_t aDelayMs) {
   nsCOMPtr<nsIRunnable> event(aEvent);
 
   // XXX: Consider using GetCurrentSerialEventTarget() to support TaskQueues.
@@ -265,7 +265,7 @@ nsresult NS_DelayedDispatchToCurrentThread(
   return thread->DelayedDispatch(event.forget(), aDelayMs);
 }
 
-nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
+nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable> aEvent,
                                   nsIThread* aThread,
                                   EventQueuePriority aQueue) {
   nsCOMPtr<nsIRunnable> event(aEvent);
@@ -279,14 +279,14 @@ nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
   return aThread->DispatchToQueue(event.forget(), aQueue);
 }
 
-nsresult NS_DispatchToCurrentThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
+nsresult NS_DispatchToCurrentThreadQueue(already_AddRefed<nsIRunnable> aEvent,
                                          EventQueuePriority aQueue) {
   return NS_DispatchToThreadQueue(std::move(aEvent), NS_GetCurrentThread(),
                                   aQueue);
 }
 
 extern nsresult NS_DispatchToMainThreadQueue(
-    already_AddRefed<nsIRunnable>&& aEvent, EventQueuePriority aQueue) {
+    already_AddRefed<nsIRunnable> aEvent, EventQueuePriority aQueue) {
   nsCOMPtr<nsIRunnable> event(std::move(aEvent));
   nsCOMPtr<nsIThread> mainThread;
   nsresult rv = NS_GetMainThread(getter_AddRefs(mainThread));
@@ -300,7 +300,7 @@ class IdleRunnableWrapper final : public Runnable,
                                   public nsIDiscardableRunnable,
                                   public nsIIdleRunnable {
  public:
-  explicit IdleRunnableWrapper(already_AddRefed<nsIRunnable>&& aEvent)
+  explicit IdleRunnableWrapper(already_AddRefed<nsIRunnable> aEvent)
       : Runnable("IdleRunnableWrapper"),
         mRunnable(std::move(aEvent)),
         mDiscardable(do_QueryInterface(mRunnable)) {}
@@ -382,7 +382,7 @@ NS_INTERFACE_MAP_BEGIN(IdleRunnableWrapper)
   NS_INTERFACE_MAP_ENTRY_CONDITIONAL(nsIDiscardableRunnable, mDiscardable)
 NS_INTERFACE_MAP_END_INHERITING(Runnable)
 
-extern nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
+extern nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable> aEvent,
                                          uint32_t aTimeout, nsIThread* aThread,
                                          EventQueuePriority aQueue) {
   nsCOMPtr<nsIRunnable> event(std::move(aEvent));
@@ -414,7 +414,7 @@ extern nsresult NS_DispatchToThreadQueue(already_AddRefed<nsIRunnable>&& aEvent,
 }
 
 extern nsresult NS_DispatchToCurrentThreadQueue(
-    already_AddRefed<nsIRunnable>&& aEvent, uint32_t aTimeout,
+    already_AddRefed<nsIRunnable> aEvent, uint32_t aTimeout,
     EventQueuePriority aQueue) {
   return NS_DispatchToThreadQueue(std::move(aEvent), aTimeout,
                                   NS_GetCurrentThread(), aQueue);
@@ -763,8 +763,8 @@ nsresult NS_DispatchAndSpinEventLoopUntilComplete(
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  RefPtr<nsThreadSyncDispatch> wrapper =
-      new nsThreadSyncDispatch(current.forget(), std::move(aEvent));
+  RefPtr wrapper =
+      MakeRefPtr<nsThreadSyncDispatch>(current.forget(), std::move(aEvent));
 
   // NOTE: We use NS_DISPATCH_FALLIBLE here to avoid leaking the wrapper object.
   // As nsThreadSyncDispatch internally holds aEvent with a MaybeLeakRefPtr, we

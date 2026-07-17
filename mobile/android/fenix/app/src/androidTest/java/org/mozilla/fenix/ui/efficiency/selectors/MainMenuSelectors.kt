@@ -24,56 +24,56 @@ object MainMenuSelectors {
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = getStringResource(R.string.browser_menu_extensions),
         description = "Main menu Extensions button",
-        groups = listOf("requiredForPage"),
+        groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
     )
 
     val BOOKMARKS_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = getStringResource(R.string.library_bookmarks),
         description = "Main menu Bookmarks button",
-        groups = listOf("requiredForPage"),
+        groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
     )
 
     val HISTORY_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = getStringResource(R.string.library_history),
         description = "Main menu History button",
-        groups = listOf("requiredForPage"),
+        groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
     )
 
-    val DOWLOADS_BUTTON = Selector(
+    val DOWNLOADS_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = getStringResource(R.string.library_downloads),
         description = "Main menu Downloads button",
-        groups = listOf("requiredForPage"),
+        groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
     )
 
     val PASSWORDS_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = getStringResource(R.string.browser_menu_passwords),
         description = "Main menu Passwords button",
-        groups = listOf("requiredForPage"),
+        groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
     )
 
     val SIGN_IN_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = getStringResource(R.string.browser_menu_sign_in),
         description = "Main menu Sign in button",
-        groups = listOf("requiredForPage"),
+        groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
     )
 
     val SETTINGS_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = getStringResource(R.string.browser_menu_settings),
         description = "Main menu Settings button",
-        groups = listOf("requiredForPage"),
+        groups = listOf("requiredForPage", "homePageMainMenuItems", "browserViewMainMenuItems"),
     )
 
     val BOOKMARK_THIS_PAGE_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
         value = getStringResource(R.string.browser_menu_bookmark_this_page_2),
         description = "Bookmark this page button",
-        groups = listOf("bookmarkActions", "browserMenu"),
+        groups = listOf("bookmarkActions", "browserViewMainMenuItems"),
     )
 
     val EDIT_BOOKMARK_BUTTON = Selector(
@@ -87,49 +87,49 @@ object MainMenuSelectors {
         strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
         value = getStringResource(R.string.browser_menu_find_in_page),
         description = "Main menu Find in page button",
-        groups = listOf("browserMenu"),
+        groups = listOf("browserViewMainMenuItems"),
     )
 
     val BACK_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = "Back",
         description = "Main menu Back button",
-        groups = listOf("browserMenu"),
+        groups = listOf("browserViewMainMenuItems"),
     )
 
     val FORWARD_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = "Forward",
         description = "Main menu Forward button",
-        groups = listOf("browserMenu"),
+        groups = listOf("browserViewMainMenuItems"),
     )
 
     val REFRESH_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = "Refresh",
         description = "Main menu Refresh button",
-        groups = listOf("browserMenu"),
+        groups = listOf("browserViewMainMenuItems"),
     )
 
     val SHARE_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = "Share",
         description = "Main menu Share button",
-        groups = listOf("browserMenu"),
+        groups = listOf("browserViewMainMenuItems"),
     )
 
     val DESKTOP_SITE_BUTTON = Selector(
-        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION_SUBSTRING,
         value = getStringResource(R.string.browser_menu_desktop_site),
         description = "Main menu Desktop site button",
-        groups = listOf("browserMenu"),
+        groups = listOf("browserViewMainMenuItems"),
     )
 
     val MORE_BUTTON = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
         value = "More Collapsed",
         description = "Main menu More button",
-        groups = listOf("browserMenu"),
+        groups = listOf("browserViewMainMenuItems"),
     )
 
     // TODO (M. Barone 3/20/2026): add getting 'appName' to our base helpers
@@ -137,21 +137,49 @@ object MainMenuSelectors {
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = getStringResource(R.string.browser_menu_default_banner_title, appName),
         description = "Make Firefox your default banner title",
-        groups = listOf("homeBanner"),
+        groups = listOf("homeBanner", "homePageMainMenuItems"),
     )
 
     val DEFAULT_BROWSER_BANNER_SUBTITLE = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_TEXT,
         value = getStringResource(R.string.browser_menu_default_banner_subtitle_2),
         description = "Make Firefox your default banner subtitle",
-        groups = listOf("homeBanner"),
+        groups = listOf("homeBanner", "homePageMainMenuItems"),
     )
 
     val DEFAULT_BROWSER_BANNER_DISMISS = Selector(
         strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
         value = getStringResource(R.string.browser_menu_default_banner_dismiss_promotion),
         description = "Make Firefox your default banner dismiss button",
-        groups = listOf("homeBanner"),
+        groups = listOf("homeBanner", "homePageMainMenuItems"),
+    )
+
+    val QUIT_FIREFOX_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = "Quit $appName",
+        description = "Quit Firefox button",
+        groups = listOf(),
+    )
+
+    val CHANGE_WALLPAPER_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_change_wallpaper),
+        description = "Change wallpaper Settings button",
+        groups = listOf("homePageMainMenuItems"),
+    )
+
+    val SAVE_TO_COLLECTIONS_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_save_to_collection_2),
+        description = "Save to collections button",
+        groups = listOf("moreMainMenuItems"),
+    )
+
+    val ADD_TO_SHORTCUTS_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.browser_menu_add_to_shortcuts),
+        description = "Main menu Add to shortcuts button",
+        groups = listOf("browserViewMainMenuMoreItems"),
     )
 
     val all = listOf(
@@ -159,7 +187,7 @@ object MainMenuSelectors {
         EXTENSIONS_BUTTON,
         BOOKMARKS_BUTTON,
         HISTORY_BUTTON,
-        DOWLOADS_BUTTON,
+        DOWNLOADS_BUTTON,
         PASSWORDS_BUTTON,
         SIGN_IN_BUTTON,
         SETTINGS_BUTTON,
@@ -175,5 +203,8 @@ object MainMenuSelectors {
         SHARE_BUTTON,
         DESKTOP_SITE_BUTTON,
         MORE_BUTTON,
+        CHANGE_WALLPAPER_BUTTON,
+        SAVE_TO_COLLECTIONS_BUTTON,
+        ADD_TO_SHORTCUTS_BUTTON,
     )
 }

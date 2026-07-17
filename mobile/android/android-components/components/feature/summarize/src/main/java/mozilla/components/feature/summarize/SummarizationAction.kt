@@ -43,7 +43,7 @@ sealed interface LlmProviderAction : SummarizationAction {
 /**
  * There was a failure in summarizing content from the current page.
  */
-data class SummarizationFailed(val exception: Llm.Exception) : SummarizationAction
+data class SummarizationFailed(val exception: Throwable) : SummarizationAction
 
 /**
  * We've requested a response from a Llm.

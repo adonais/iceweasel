@@ -37,7 +37,7 @@ class nsXULPrototypeDocument final : public nsISerializable {
   using Callback = std::function<void()>;
 
   // nsISupports interface
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
 
   // nsISerializable interface
   NS_DECL_NSISERIALIZABLE

@@ -9,6 +9,7 @@
 #  include <sys/ucontext.h>
 #  include "linux/crash_generation/client_info.h"
 #  include "linux/crash_generation/crash_generation_server.h"
+#  include "mozilla/toolkit/crashreporter/rust_minidump_writer_linux_ffi_generated.h"
 using breakpad_char = char;
 using breakpad_string = std::string;
 using breakpad_init_type = int;
@@ -20,6 +21,7 @@ using breakpad_char = wchar_t;
 using breakpad_string = std::wstring;
 using breakpad_init_type = wchar_t*;
 using breakpad_pid = DWORD;
+using ExtraCrashData = void;
 #elif defined(XP_MACOSX)
 #  include <mach/mach_types.h>
 #  include <unistd.h>
@@ -29,6 +31,7 @@ using breakpad_char = char;
 using breakpad_string = std::string;
 using breakpad_init_type = const char*;
 using breakpad_pid = pid_t;
+using ExtraCrashData = void;
 #else
 #  error "Unsupported platform"
 #endif
@@ -61,8 +64,8 @@ struct BreakpadProcessId {
 #endif
 };
 
-using RustDumpCallback = void (*)(const void*, BreakpadProcessId, const char*,
-                                  const breakpad_char*);
+using RustDumpCallback = void (*)(const void*, BreakpadProcessId,
+                                  const ExtraCrashData*, const breakpad_char*);
 
 struct BreakpadContext {
   RustDumpCallback callback;
@@ -85,14 +88,13 @@ void onClientDumpRequestCallback(void* context, const ClientInfo& client_info,
       .handle = client_info.process_handle(),
 #endif
   };
-  const char* error_msg =
 #if defined(XP_LINUX)
-      client_info.error_msg();
+  const ExtraCrashData* extra_data = client_info.extra_data();
 #else
-      nullptr;
+  const ExtraCrashData* extra_data = nullptr;
 #endif  // XP_LINUX
 
-  callback(breakpad_context->generator, process_id, error_msg,
+  callback(breakpad_context->generator, process_id, extra_data,
            file_path.c_str());
 }
 

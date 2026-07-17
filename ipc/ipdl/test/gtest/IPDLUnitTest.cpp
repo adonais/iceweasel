@@ -38,7 +38,7 @@ already_AddRefed<IPDLUnitTestParent> IPDLUnitTestParent::CreateCrossProcess() {
   nsCOMPtr<nsIAppShell> _appShell = do_GetService(NS_APPSHELL_CID);
 #endif
 
-  RefPtr<IPDLUnitTestParent> parent = new IPDLUnitTestParent();
+  RefPtr parent = MakeRefPtr<IPDLUnitTestParent>();
   parent->mSubprocess =
       new ipc::GeckoChildProcessHost(GeckoProcessType_IPDLUnitTest);
 
@@ -68,8 +68,8 @@ already_AddRefed<IPDLUnitTestParent> IPDLUnitTestParent::CreateCrossProcess() {
 }
 
 already_AddRefed<IPDLUnitTestParent> IPDLUnitTestParent::CreateCrossThread() {
-  RefPtr<IPDLUnitTestParent> parent = new IPDLUnitTestParent();
-  RefPtr<IPDLUnitTestChild> child = new IPDLUnitTestChild();
+  RefPtr parent = MakeRefPtr<IPDLUnitTestParent>();
+  RefPtr child = MakeRefPtr<IPDLUnitTestChild>();
 
   nsresult rv =
       NS_NewNamedThread("IPDL UnitTest", getter_AddRefs(parent->mOtherThread));
@@ -257,7 +257,7 @@ class IPDLUnitTestProcessChild : public ipc::ProcessChild {
       return false;
     }
 
-    RefPtr<IPDLUnitTestChild> child = new IPDLUnitTestChild();
+    RefPtr child = MakeRefPtr<IPDLUnitTestChild>();
     if (!TakeInitialEndpoint().Bind(child.get())) {
       MOZ_CRASH("Bind of IPDLUnitTestChild failed");
       return false;

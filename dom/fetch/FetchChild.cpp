@@ -27,6 +27,7 @@
 #include "nsIRunnable.h"
 #include "nsIURI.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla::dom {

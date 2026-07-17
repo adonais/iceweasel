@@ -57,7 +57,7 @@ class MockVoiceMediaReceiveChannelInterface
               GetDefaultRtpReceiveParameters,
               (),
               (const, override));
-  MOCK_METHOD(void, SetPlayout, (bool playout), (override));
+  MOCK_METHOD(void, SetReceive, (bool receive), (override));
   MOCK_METHOD(bool,
               SetOutputVolume,
               (uint32_t ssrc, double volume),
@@ -76,7 +76,7 @@ class MockVoiceMediaReceiveChannelInterface
               (webrtc::VoiceMediaReceiveInfo * stats, bool reset_legacy),
               (override));
   MOCK_METHOD(absl::AnyInvocable<std::optional<VoiceMediaReceiveInfo>()>,
-              GetStatsCallback,
+              GetStatsTask,
               (bool reset_legacy),
               (override));
   MOCK_METHOD(::webrtc::RtcpMode, RtcpMode, (), (const, override));
@@ -101,6 +101,10 @@ class MockVoiceMediaReceiveChannelInterface
               (override));
   MOCK_METHOD(bool, RemoveRecvStream, (uint32_t ssrc), (override));
   MOCK_METHOD(void, ResetUnsignaledRecvStream, (), (override));
+  MOCK_METHOD(absl::AnyInvocable<void() &&>,
+              GetResetUnsignaledRecvStreamTask,
+              (),
+              (override));
   MOCK_METHOD(void,
               SetInterface,
               (webrtc::MediaChannelNetworkInterface * iface),

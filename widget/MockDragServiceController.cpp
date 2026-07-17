@@ -66,7 +66,7 @@ class MockDragService : public nsBaseDragService {
 
  protected:
   already_AddRefed<nsIDragSession> CreateDragSession() override {
-    RefPtr<nsIDragSession> session = new MockDragSession();
+    auto session = MakeRefPtr<MockDragSession>();
     return session.forget();
   }
 };

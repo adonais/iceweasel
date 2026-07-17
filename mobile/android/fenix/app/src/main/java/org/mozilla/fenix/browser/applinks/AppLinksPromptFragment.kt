@@ -15,6 +15,7 @@ import android.widget.FrameLayout
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -50,18 +51,17 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
-import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.core.view.ViewCompat
+import androidx.core.view.WindowInsetsCompat.Type.systemBars
 import androidx.fragment.compose.content
 import com.google.accompanist.drawablepainter.rememberDrawablePainter
 import com.google.android.material.bottomsheet.BottomSheetBehavior
 import com.google.android.material.bottomsheet.BottomSheetDialog
 import mozilla.components.feature.app.links.RedirectDialogFragment
-import mozilla.components.support.ktx.android.view.setNavigationBarColorCompat
-import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
-import org.mozilla.fenix.browser.browsingmode.BrowsingModeManager
 import org.mozilla.fenix.components.menu.compose.ExpandableMenuItemAnimation
+import org.mozilla.fenix.ext.runIfFragmentIsAttached
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -73,8 +73,6 @@ import mozilla.components.ui.icons.R as iconsR
  * Dialog fragment that prompts the user to confirm opening a link in an external app.
  */
 class AppLinksPromptFragment : RedirectDialogFragment() {
-
-    private lateinit var browsingModeManager: BrowsingModeManager
 
     private val appName: String
         get() = requireArguments().getString(KEY_APP_NAME, "")
@@ -115,21 +113,20 @@ class AppLinksPromptFragment : RedirectDialogFragment() {
     override fun onCreateDialog(savedInstanceState: Bundle?): Dialog =
         (super.onCreateDialog(savedInstanceState) as BottomSheetDialog).apply {
             setOnShowListener {
-                val safeActivity = activity ?: return@setOnShowListener
-                browsingModeManager = (safeActivity as HomeActivity).browsingModeManager
+                runIfFragmentIsAttached {
+                    val bottomSheet = findViewById<FrameLayout>(materialR.id.design_bottom_sheet)
+                    bottomSheet?.let {
+                        ViewCompat.setOnApplyWindowInsetsListener(it) { view, insets ->
+                            val systemBarInsets = insets.getInsets(systemBars())
+                            view.setPadding(0, systemBarInsets.top, 0, systemBarInsets.bottom)
+                            insets
+                        }
+                    }
+                    bottomSheet?.setBackgroundResource(R.drawable.bottom_sheet_with_top_rounded_corners)
 
-                val navigationBarColor = if (browsingModeManager.mode.isPrivate) {
-                    ContextCompat.getColor(context, R.color.fx_mobile_private_layer_color_3)
-                } else {
-                    ContextCompat.getColor(context, R.color.fx_mobile_layer_color_3)
+                    behavior.peekHeight = context.resources.displayMetrics.heightPixels
+                    behavior.state = BottomSheetBehavior.STATE_EXPANDED
                 }
-                window?.setNavigationBarColorCompat(navigationBarColor)
-
-                findViewById<FrameLayout>(materialR.id.design_bottom_sheet)
-                    ?.setBackgroundResource(android.R.color.transparent)
-
-                behavior.peekHeight = resources.displayMetrics.heightPixels
-                behavior.state = BottomSheetBehavior.STATE_EXPANDED
             }
         }
 
@@ -212,6 +209,8 @@ class AppLinksPromptFragment : RedirectDialogFragment() {
     }
 }
 
+private const val WWW_PREFIX = "www."
+
 private data class AppLinkRedirectConfig(
     val appName: String,
     val title: String,
@@ -234,7 +233,8 @@ private fun AppLinkRedirectBottomSheetContent(
     var isCheckboxChecked by remember { mutableStateOf(false) }
 
     val sourceDomain = if (config.sourceUrl.isNotEmpty()) {
-        config.sourceUrl.toUri().host ?: ""
+        // Strip "www." per design. Other prefixes are kept as they carry meaningful context.
+        config.sourceUrl.toUri().host?.removePrefix(WWW_PREFIX) ?: ""
     } else {
         ""
     }
@@ -247,7 +247,7 @@ private fun AppLinkRedirectBottomSheetContent(
         modifier = Modifier
             .background(
                 color = MaterialTheme.colorScheme.surface,
-                shape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp),
+                shape = MaterialTheme.shapes.large,
             )
             .padding(top = 8.dp)
             .fillMaxWidth(),
@@ -270,12 +270,6 @@ private fun AppLinkRedirectBottomSheetContent(
                 ),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            Text(
-                text = config.message,
-                style = FirefoxTheme.typography.subtitle1,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-
             AppLinkDetailsSection(config, initialExpanded = initialDetailsExpanded)
         }
 
@@ -287,6 +281,7 @@ private fun AppLinkRedirectBottomSheetContent(
         }
 
         AppLinkActionButtons(
+            appName = config.appName,
             onConfirm = { onConfirm(isCheckboxChecked) },
             onCancel = onCancel,
         )
@@ -332,7 +327,7 @@ private fun AppLinkDetailsSection(config: AppLinkRedirectConfig, initialExpanded
     var isExpanded by remember { mutableStateOf(initialExpanded) }
 
     Column(
-        modifier = Modifier.clip(shape = RoundedCornerShape(24.dp)),
+        modifier = Modifier.clip(shape = RoundedCornerShape(28.dp)),
         verticalArrangement = Arrangement.spacedBy(2.dp),
     ) {
         AppLinkItem(
@@ -405,7 +400,7 @@ private fun AppLinkDetailItem(
     Column(
         modifier = Modifier
             .fillMaxWidth()
-            .clip(shape = RoundedCornerShape(4.dp))
+            .clip(shape = MaterialTheme.shapes.extraSmall)
             .background(color = MaterialTheme.colorScheme.surfaceContainerHigh)
             .padding(
                 horizontal = 16.dp,
@@ -453,6 +448,7 @@ private fun AppLinkCheckboxSection(
 
 @Composable
 private fun AppLinkActionButtons(
+    appName: String,
     onConfirm: () -> Unit,
     onCancel: () -> Unit,
 ) {
@@ -463,7 +459,7 @@ private fun AppLinkActionButtons(
     ) {
         TextButton(onClick = onCancel) {
             Text(
-                text = stringResource(AppLinksR.string.mozac_feature_applinks_confirm_dialog_deny),
+                text = stringResource(R.string.applinks_prompt_negative_button, appName),
                 style = FirefoxTheme.typography.button,
                 color = MaterialTheme.colorScheme.secondary,
             )
@@ -478,7 +474,7 @@ private fun AppLinkActionButtons(
             ),
         ) {
             Text(
-                text = stringResource(AppLinksR.string.mozac_feature_applinks_confirm_dialog_confirm),
+                text = stringResource(AppLinksR.string.mozac_feature_applinks_confirm_dialog_confirm_2),
                 style = FirefoxTheme.typography.button,
                 color = MaterialTheme.colorScheme.onPrimary,
             )
@@ -499,24 +495,28 @@ private fun AppHeader(
             .semantics(mergeDescendants = true) {},
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        if (appIcon != null) {
-            Icon(
-                painter = rememberDrawablePainter(appIcon),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(40.dp)
-                    .padding(all = 4.dp),
-                tint = null,
-            )
-        } else {
-            Icon(
-                painter = painterResource(iconsR.drawable.mozac_ic_android_robot_fill_24),
-                contentDescription = null,
-                modifier = Modifier
-                    .size(40.dp)
-                    .padding(all = 4.dp),
-                tint = MaterialTheme.colorScheme.onSurface,
-            )
+        Box(
+            modifier = Modifier
+                .size(32.dp)
+                .clip(RoundedCornerShape(4.dp))
+                .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (appIcon != null) {
+                Icon(
+                    painter = rememberDrawablePainter(appIcon),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = null,
+                )
+            } else {
+                Icon(
+                    painter = painterResource(iconsR.drawable.mozac_ic_globe_24),
+                    contentDescription = null,
+                    modifier = Modifier.size(24.dp),
+                    tint = MaterialTheme.colorScheme.onSurface,
+                )
+            }
         }
 
         Spacer(modifier = Modifier.size(8.dp))
@@ -527,11 +527,13 @@ private fun AppHeader(
                 style = FirefoxTheme.typography.headline7,
                 color = MaterialTheme.colorScheme.onSurface,
             )
-            Text(
-                text = url,
-                style = FirefoxTheme.typography.caption,
-                color = MaterialTheme.colorScheme.secondary,
-            )
+            if (url.isNotEmpty()) {
+                Text(
+                    text = stringResource(AppLinksR.string.mozac_feature_applinks_link_from, url),
+                    style = FirefoxTheme.typography.caption,
+                    color = MaterialTheme.colorScheme.secondary,
+                )
+            }
         }
     }
 }

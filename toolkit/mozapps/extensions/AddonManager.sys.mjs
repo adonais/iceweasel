@@ -2429,7 +2429,7 @@ var AddonManagerInternal = {
    * @param  aMimetype
    *         The mimetype of the add-on being installed
    * @param  aBrowser
-   *         The optional browser element that started the install
+   *         The browser element that started the install
    * @param  aInstallingPrincipal
    *         The nsIPrincipal that initiated the install
    * @param  aInstall
@@ -2461,9 +2461,9 @@ var AddonManagerInternal = {
       );
     }
 
-    if (aBrowser && !Element.isInstance(aBrowser)) {
+    if (!Element.isInstance(aBrowser)) {
       throw Components.Exception(
-        "aSource must be an Element, or null",
+        "aBrowser must be an Element",
         Cr.NS_ERROR_INVALID_ARG
       );
     }
@@ -2482,12 +2482,11 @@ var AddonManagerInternal = {
     // website we want to do our security checks on the inner-browser but
     // notify front-end that install events came from the top browser (the
     // main tab's browser).
-    // aBrowser is null in GeckoView.
-    let topBrowser = aBrowser?.browsingContext.top.embedderElement;
+    let topBrowser = aBrowser.browsingContext.top.embedderElement;
     try {
       // Use fullscreenElement to check for DOM fullscreen, while still allowing
       // macOS fullscreen, which still has a browser chrome.
-      if (topBrowser && topBrowser.ownerDocument.fullscreenElement) {
+      if (topBrowser.ownerDocument.fullscreenElement) {
         // Addon installation and the resulting notifications should be
         // blocked in DOM fullscreen for security and usability reasons.
         // Installation prompts in fullscreen can trick the user into
@@ -2535,20 +2534,8 @@ var AddonManagerInternal = {
         aDetails?.hasCrossOriginAncestor ||
         // Block the install if triggered by a null principal.
         aInstallingPrincipal.isNullPrincipal ||
-        (aBrowser &&
-          (!aBrowser.contentPrincipal ||
-            // When we attempt to handle an XPI load immediately after a
-            // process switch, the DocShell it's being loaded into will have
-            // a null principal, since it won't have been initialized yet.
-            // Allowing installs in this case is relatively safe, since
-            // there isn't much to gain by spoofing an install request from
-            // a null principal in any case. This exception can be removed
-            // once content handlers are triggered by DocumentChannel in the
-            // parent process.
-            !(
-              aBrowser.contentPrincipal.isNullPrincipal ||
-              aInstallingPrincipal.subsumes(aBrowser.contentPrincipal)
-            )))
+        !aBrowser.contentPrincipal ||
+        !aInstallingPrincipal.subsumes(aBrowser.contentPrincipal)
       ) {
         aInstall.cancel();
 
@@ -2561,12 +2548,10 @@ var AddonManagerInternal = {
         return;
       }
 
-      if (aBrowser) {
-        // The install may start now depending on the web install listener,
-        // listen for the browser navigating to a new origin and cancel the
-        // install in that case.
-        new BrowserListener(aBrowser, aInstallingPrincipal, aInstall);
-      }
+      // The install may start now depending on the web install listener,
+      // listen for the browser navigating to a new origin and cancel the
+      // install in that case.
+      new BrowserListener(aBrowser, aInstallingPrincipal, aInstall);
 
       let startInstall = source => {
         AddonManagerInternal.setupPromptHandler(
@@ -5903,6 +5888,8 @@ AMTelemetry = {
         updated_from: extra.updated_from,
         install_origins: extra.install_origins,
         step: extra.step,
+        // will be undefined for non-site permission addons
+        site_permission: install.newSitePerm,
       })
     );
   },

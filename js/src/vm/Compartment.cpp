@@ -257,6 +257,13 @@ bool Compartment::getNonWrapperObjectForCurrentCompartment(
 
     MOZ_ASSERT(IsWindowProxy(obj) || IsDOMRemoteProxyObject(obj));
 
+    // The WindowProxy may live in a different (nuked) realm than the Window we
+    // checked above, so re-check AllowNewWrapper.
+    if (obj->compartment() != this && !AllowNewWrapper(this, obj)) {
+      obj.set(NewDeadProxyObject(cx, obj));
+      return !!obj;
+    }
+
     // We crossed a compartment boundary there, so may now have a gray object.
     // This function is not allowed to return gray objects, so don't do that.
     ExposeObjectToActiveJS(obj);

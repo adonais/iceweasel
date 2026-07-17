@@ -75,7 +75,7 @@
   fill-opacity: 0.75;
 
   :host([notificationIcon="breached"]) & {
-    fill: var(--red-60);
+    fill: var(--icon-color-critical);
     fill-opacity: 1;
   }
 }

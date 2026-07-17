@@ -6,6 +6,7 @@
 #define mozilla_dom_AnimationTimeline_h
 
 #include "mozilla/AnimationUtils.h"
+#include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsHashKeys.h"
 #include "nsIGlobalObject.h"
@@ -45,10 +46,14 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   nsIGlobalObject* GetParentObject() const { return mWindow; }
 
   // AnimationTimeline methods
+  // This base implementation returns a plain double in milliseconds.
+  // The ScrollTimeline override returns a CSSUnitValue percent.
+  virtual void GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const;
+  void GetDuration(Nullable<OwningDoubleOrCSSNumericValue>& aRetVal,
+                   ErrorResult& aRv) const;
+
   virtual Nullable<TimeDuration> GetCurrentTimeAsDuration() const = 0;
 
-  // Wrapper functions for AnimationTimeline DOM methods when called from
-  // script.
   Nullable<double> GetCurrentTimeAsDouble() const {
     return AnimationUtils::TimeDurationToDouble(GetCurrentTimeAsDuration(),
                                                 mRTPCallerType);
@@ -115,6 +120,7 @@ class AnimationTimeline : public nsISupports, public nsWrapperCache {
   virtual const ScrollTimeline* AsScrollTimeline() const { return nullptr; }
   virtual bool IsViewTimeline() const { return false; }
   virtual const ViewTimeline* AsViewTimeline() const { return nullptr; }
+  virtual bool IsInactiveTimeline() const { return false; }
 
   // For a monotonic timeline, there is no upper bound on current time, and
   // timeline duration is unresolved. For a non-monotonic (e.g. scroll)

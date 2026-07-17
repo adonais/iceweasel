@@ -15,6 +15,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/shared/listeners/DataChannelListener.sys.mjs",
   NetworkRequest: "chrome://remote/content/shared/NetworkRequest.sys.mjs",
   NetworkResponse: "chrome://remote/content/shared/NetworkResponse.sys.mjs",
+  SessionDataCategory:
+    "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
 });
 
 class NetworkModule extends WindowGlobalBiDiModule {
@@ -187,7 +189,7 @@ class NetworkModule extends WindowGlobalBiDiModule {
       for (const { value } of filteredSessionData) {
         this.#subscribeEvent(value);
       }
-    } else if (category === "response-collector") {
+    } else if (category === lazy.SessionDataCategory.ResponseCollector) {
       this.#hasResponseCollector = params.sessionData.some(item =>
         this.messageHandler.matchesContext(item.contextDescriptor)
       );

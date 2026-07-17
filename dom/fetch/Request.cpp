@@ -382,18 +382,6 @@ SafeRefPtr<Request> Request::Constructor(
 
   RefPtr<InternalHeaders> requestHeaders = request->Headers();
 
-  RefPtr<InternalHeaders> headers;
-  if (aInit.mHeaders.WasPassed()) {
-    RefPtr<Headers> h = Headers::Create(aGlobal, aInit.mHeaders.Value(), aRv);
-    if (aRv.Failed()) {
-      return nullptr;
-    }
-    headers = h->GetInternalHeaders();
-  } else {
-    headers = new InternalHeaders(*requestHeaders);
-  }
-
-  requestHeaders->Clear();
   // From "Let r be a new Request object associated with request and a new
   // Headers object whose guard is "request"."
   requestHeaders->SetGuard(HeadersGuardEnum::Request, aRv);
@@ -413,9 +401,24 @@ SafeRefPtr<Request> Request::Constructor(
     }
   }
 
-  requestHeaders->Fill(*headers, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
+  // Step 33. Remove privileged no-CORS request-headers, if any member presented
+  // in aInit.
+  if (aInit.IsAnyMemberPresent()) {
+    RefPtr<InternalHeaders> headers;
+    if (aInit.mHeaders.WasPassed()) {
+      RefPtr<Headers> h = Headers::Create(aGlobal, aInit.mHeaders.Value(), aRv);
+      if (aRv.Failed()) {
+        return nullptr;
+      }
+      headers = h->GetInternalHeaders();
+    } else {
+      headers = new InternalHeaders(*requestHeaders);
+    }
+    requestHeaders->Clear();
+    requestHeaders->Fill(*headers, aRv);
+    if (aRv.Failed()) {
+      return nullptr;
+    }
   }
 
   if ((aInit.mBody.WasPassed() && !aInit.mBody.Value().IsNull()) ||
@@ -492,6 +495,12 @@ SafeRefPtr<Request> Request::Clone(ErrorResult& aRv) {
     aRv.Throw(NS_ERROR_FAILURE);
     return nullptr;
   }
+
+  // InternalRequest::Clone() may have replaced our underlying input stream (a
+  // non-cloneable body is now consumed by the cloning copy). If an unread
+  // native ReadableStream still reflects this request's body, repoint it at the
+  // current stream so the original is not read from two places.
+  MaybeRebindReadableStreamBody();
 
   return MakeSafeRefPtr<Request>(mGlobal, std::move(ir), GetOrCreateSignal());
 }

@@ -42,7 +42,7 @@
             }
           },
           "replacement": {
-            "type": "string"
+            "type": ["string", "null"]
           },
           "fallback": {
             "type": "string"

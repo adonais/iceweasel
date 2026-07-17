@@ -29,6 +29,7 @@ EXPORTS += [
     "nsHtml5Parser.h",
     "nsHtml5PlainTextUtils.h",
     "nsHtml5Portability.h",
+    "nsHtml5PortabilityHSupplement.h",
     "nsHtml5Speculation.h",
     "nsHtml5SpeculativeLoad.h",
     "nsHtml5StreamListener.h",

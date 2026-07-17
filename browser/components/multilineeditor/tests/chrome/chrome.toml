@@ -7,6 +7,8 @@ support-files = [
 
 ["test_multiline_editor_input.html"]
 
+["test_multiline_editor_placeholder_hints.html"]
+
 ["test_multiline_editor_rendering.html"]
 
 ["test_multiline_editor_selection.html"]

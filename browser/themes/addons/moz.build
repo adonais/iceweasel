@@ -13,3 +13,13 @@ GeneratedFile(
         "/toolkit/themes/shared/design-system/src/tokens/base/color.tokens.json",
     ],
 )
+
+GeneratedFile(
+    "privatewindow/manifest.json",
+    script="process_tokens.py",
+    entry_point="process_tokens",
+    inputs=[
+        "privatewindow/manifest.in.json",
+        "/toolkit/themes/shared/design-system/src/tokens/base/color.nova.tokens.json",
+    ],
+)

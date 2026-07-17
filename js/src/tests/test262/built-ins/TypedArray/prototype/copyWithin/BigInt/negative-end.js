@@ -92,6 +92,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     ),
     '[0, 1, 2, 3, 4].copyWithin(-5, -2, -1) -> [3, 1, 2, 3, 4]'
   );
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

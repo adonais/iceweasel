@@ -1,7 +1,7 @@
 {
   "label": "useinsider.com",
   "bugs": {
-    "1984434": {
+    "1989241": {
       "issue": "firefox-blocked-completely",
       "matches": ["*://*.useinsider.com/*"]
     }

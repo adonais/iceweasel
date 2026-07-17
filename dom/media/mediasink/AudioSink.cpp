@@ -20,12 +20,12 @@
 namespace mozilla {
 
 mozilla::LazyLogModule gAudioSinkLog("AudioSink");
-#define SINK_LOG(msg, ...)                \
-  MOZ_LOG(gAudioSinkLog, LogLevel::Debug, \
-          ("AudioSink=%p " msg, this, ##__VA_ARGS__))
-#define SINK_LOG_V(msg, ...)                \
-  MOZ_LOG(gAudioSinkLog, LogLevel::Verbose, \
-          ("AudioSink=%p " msg, this, ##__VA_ARGS__))
+#define SINK_LOG(msg, ...)                                         \
+  MOZ_LOG_FMT(gAudioSinkLog, LogLevel::Debug, "AudioSink={} " msg, \
+              fmt::ptr(this), ##__VA_ARGS__)
+#define SINK_LOG_V(msg, ...)                                         \
+  MOZ_LOG_FMT(gAudioSinkLog, LogLevel::Verbose, "AudioSink={} " msg, \
+              fmt::ptr(this), ##__VA_ARGS__)
 
 // The amount of audio frames that is used to fuzz rounding errors.
 static const int64_t AUDIO_FUZZ_FRAMES = 1;
@@ -64,7 +64,7 @@ AudioSink::AudioSink(AbstractThread* aThread,
                  std::numeric_limits<int>::max() - 1.));
   elementCount -= elementCount % mOutputChannels;
   mProcessedSPSCQueue = MakeUnique<SPSCQueue<AudioDataValue>>(elementCount);
-  SINK_LOG("Ringbuffer has space for %u elements (%lf seconds)",
+  SINK_LOG("Ringbuffer has space for {} elements ({} seconds)",
            mProcessedSPSCQueue->Capacity(),
            static_cast<float>(elementCount) / mOutputChannels / mOutputRate);
   // Determine if the data is likely to be audible when the stream will be
@@ -74,7 +74,7 @@ AudioSink::AudioSink(AbstractThread* aThread,
     mAudibilityMonitor.ProcessInterleaved(frontPacket->Data(),
                                           frontPacket->mChannels);
     mIsAudioDataAudible = mAudibilityMonitor.RecentlyAudible();
-    SINK_LOG("New AudioSink -- audio is likely to be %s",
+    SINK_LOG("New AudioSink -- audio is likely to be {}",
              mIsAudioDataAudible ? "audible" : "inaudible");
   } else {
     // If no packets are available, consider the audio audible.
@@ -104,7 +104,7 @@ nsresult AudioSink::InitializeAudioStream(
     // finishes when unmuting, in case initialization takes some time and it
     // looked audible when the AudioSink was created.
     mAudibleEvent.Notify(mIsAudioDataAudible);
-    SINK_LOG("InitializeAudioStream (Unmuting) notifying that audio is %s",
+    SINK_LOG("InitializeAudioStream (Unmuting) notifying that audio is {}",
              mIsAudioDataAudible ? "audible" : "inaudible");
   } else {
     // If not unmuting, the audibility event will be dispatched as usual,
@@ -269,8 +269,8 @@ void AudioSink::ReenqueueUnplayedAudioDataIfNeeded() {
     MOZ_DIAGNOSTIC_ASSERT(duration == packet->mDuration, "must be equal");
 
     SINK_LOG(
-        "Muting: Pushing back %u frames (%lfms) from the ring buffer back into "
-        "the audio queue at pts %lf",
+        "Muting: Pushing back {} frames ({}ms) from the ring buffer back into "
+        "the audio queue at pts {}",
         packetFrameCount, 1000 * static_cast<float>(packetFrameCount) / rate,
         time.ToSeconds());
     // The audio data's timestamp would be adjusted already if we're in looping,
@@ -379,7 +379,7 @@ uint32_t AudioSink::PopFrames(AudioDataValue* aBuffer, uint32_t aFrames,
 
   mAudioPopped.Notify();
 
-  SINK_LOG_V("Popping %u frames. Remaining in ringbuffer %u / %u\n", aFrames,
+  SINK_LOG_V("Popping {} frames. Remaining in ringbuffer {} / {}\n", aFrames,
              SampleToFrame(mProcessedSPSCQueue->AvailableRead()),
              SampleToFrame(mProcessedSPSCQueue->Capacity()));
   CheckIsAudible(Span(aBuffer, samplesRead), mOutputChannels);
@@ -400,7 +400,7 @@ void AudioSink::CheckIsAudible(const Span<AudioDataValue>& aInterleaved,
 
   if (isAudible != mIsAudioDataAudible) {
     mIsAudioDataAudible = isAudible;
-    SINK_LOG("Notifying that audio is now %s",
+    SINK_LOG("Notifying that audio is now {}",
              mIsAudioDataAudible ? "audible" : "inaudible");
     mAudibleEvent.Notify(mIsAudioDataAudible);
   }
@@ -435,13 +435,13 @@ void AudioSink::NotifyAudioNeeded() {
     // Check if there's room in our ring buffer.
     if (mAudioQueue.PeekFront()->Frames() >
         SampleToFrame(mProcessedSPSCQueue->AvailableWrite())) {
-      SINK_LOG_V("Can't push %u frames. In ringbuffer %u / %u\n",
+      SINK_LOG_V("Can't push {} frames. In ringbuffer {} / {}\n",
                  mAudioQueue.PeekFront()->Frames(),
                  SampleToFrame(mProcessedSPSCQueue->AvailableRead()),
                  SampleToFrame(mProcessedSPSCQueue->Capacity()));
       return;
     }
-    SINK_LOG_V("Pushing %u frames. In ringbuffer %u / %u\n",
+    SINK_LOG_V("Pushing {} frames. In ringbuffer {} / {}\n",
                mAudioQueue.PeekFront()->Frames(),
                SampleToFrame(mProcessedSPSCQueue->AvailableRead()),
                SampleToFrame(mProcessedSPSCQueue->Capacity()));
@@ -455,7 +455,7 @@ void AudioSink::NotifyAudioNeeded() {
     if (!mConverter ||
         (data->mRate != mConverter->InputConfig().Rate() ||
          data->mChannels != mConverter->InputConfig().Channels())) {
-      SINK_LOG_V("Audio format changed from %u@%uHz to %u@%uHz",
+      SINK_LOG_V("Audio format changed from {}@{}Hz to {}@{}Hz",
                  mConverter ? mConverter->InputConfig().Channels() : 0,
                  mConverter ? mConverter->InputConfig().Rate() : 0,
                  data->mChannels, data->mRate);
@@ -517,8 +517,8 @@ void AudioSink::NotifyAudioNeeded() {
       // we pushed to the audio hardware. We must push silence into the audio
       // hardware so that the next audio packet begins playback at the correct
       // time. But don't push more than the ring buffer can receive.
-      SINK_LOG("Sample time %" PRId64 " > frames parsed %" PRId64,
-               sampleTime.value(), mFramesParsed);
+      SINK_LOG("Sample time {} > frames parsed {}", sampleTime.value(),
+               mFramesParsed);
 
       // Convert available output frames to input frames to correctly bound the
       // silence buffer size when input and output sample rates differ.
@@ -530,7 +530,7 @@ void AudioSink::NotifyAudioNeeded() {
                             inputFramesAvail);
       mFramesParsed += missingFrames.value();
 
-      SINK_LOG("Gap in the audio input, push %" PRId64 " frames of silence",
+      SINK_LOG("Gap in the audio input, push {} frames of silence",
                missingFrames.value());
 
       RefPtr<AudioData> silenceData;

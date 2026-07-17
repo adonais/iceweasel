@@ -221,6 +221,80 @@ class TestResourceMonitor(unittest.TestCase):
         self.assertTrue(any(m.get("type") == "LSanLeak" for m in markers))
         self.assertTrue(any(m.get("type") == "LSanSummary" for m in markers))
 
+    def test_tsan_error(self):
+        monitor = SystemResourceMonitor(poll_interval=0.25)
+
+        monitor.start()
+        time.sleep(0.1)
+
+        now = int(time.time() * 1000)
+        # A lock-order inversion with two labeled acquisition stacks: it should
+        # produce two markers sharing a report_index, each carrying one stack.
+        SystemResourceMonitor.tsan_error({
+            "time": now,
+            "kind": "lock-order-inversion (potential deadlock)",
+            "signature": "Mutex_posix.cpp:91:3 in mutexLock",
+            "pid": 1234,
+            "description": "Cycle in lock order graph: M0 => M1 => M0",
+            "scope": "browser/foo",
+            "stacks": [
+                {
+                    "label": "Mutex M1 acquired here while holding mutex M0",
+                    "stack": [
+                        {
+                            "function": "mutexLock",
+                            "module": "firefox",
+                            "file": "/builds/worker/checkouts/gecko/mozglue/misc/Mutex_posix.cpp",
+                            "line": 91,
+                        },
+                        {"function": "main", "module": "firefox"},
+                    ],
+                },
+                {
+                    "label": "Mutex M0 acquired here while holding mutex M1",
+                    "stack": [{"function": "other", "module": "libxul.so"}],
+                },
+            ],
+        })
+
+        # A report with no stacks should still produce a single marker.
+        SystemResourceMonitor.tsan_error({
+            "time": now,
+            "kind": "data race",
+            "signature": "Activation.cpp:16 in registerProfiling",
+            "stacks": [],
+        })
+
+        time.sleep(0.1)
+        monitor.stop()
+
+        events = [e[2] for e in monitor.events if e[1] == "TSan Error"]
+        # 2 markers for the lock-order report + 1 for the stackless data race.
+        self.assertEqual(len(events), 3)
+
+        lock_order = [e for e in events if e["kind"].startswith("lock-order-inversion")]
+        self.assertEqual(len(lock_order), 2)
+        first, second = lock_order
+        self.assertEqual(first["type"], "TSanError")
+        self.assertEqual(first["color"], "orange")
+        self.assertEqual(first["pid"], 1234)
+        self.assertEqual(first["scope"], "browser/foo")
+        # Both markers of one report share a report_index.
+        self.assertEqual(first["report_index"], second["report_index"])
+        self.assertNotEqual(first["label"], second["label"])
+        self.assertEqual(first["stack"][0]["function"], "mutexLock")
+        # checkouts/gecko paths are rewritten to a repo-relative/hg view.
+        self.assertNotIn("/builds/worker/checkouts/gecko/", first["stack"][0]["file"])
+
+        data_race = [e for e in events if e["kind"] == "data race"]
+        self.assertEqual(len(data_race), 1)
+        self.assertNotIn("stack", data_race[0])
+        # The two reports get distinct report_index values.
+        self.assertNotEqual(first["report_index"], data_race[0]["report_index"])
+
+        markers = monitor.as_profile()["threads"][0]["markers"]["data"]
+        self.assertTrue(any(m.get("type") == "TSanError" for m in markers))
+
     def test_as_profile(self):
         monitor = SystemResourceMonitor(poll_interval=0.25)
 

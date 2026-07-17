@@ -2,8 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
-
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -1178,11 +1176,6 @@ class _QuickSuggest {
     }
   }
 
-  // Lets tests easily mock whether the build is a Nightly build.
-  get _isNightlyBuild() {
-    return AppConstants.NIGHTLY_BUILD;
-  }
-
   async _test_reset(testOverrides = null) {
     if (this.#initStarted) {
       await this.initPromise;
@@ -1253,7 +1246,7 @@ function userAcceptedSuggestToU() {
  *   checks.
  */
 function shouldOnlineBeAvailable() {
-  return QuickSuggest._isNightlyBuild && userAcceptedSuggestToU();
+  return userAcceptedSuggestToU();
 }
 
 function getDismissalKey(result) {

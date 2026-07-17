@@ -14,6 +14,38 @@ newtab-personalize-icon-label =
 newtab-personalize-dialog-label =
     .aria-label = Moslashtirish
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Yangi varaqlar
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } qator
+           *[other] { $num } qator
+        }
+home-restore-defaults-srd =
+    .label = Asliga tiklash
+    .accesskey = t
+home-mode-choice-custom-srd =
+    .label = Boshqa URL manzillar
+home-mode-choice-blank-srd =
+    .label = Bo‘sh sahifa
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Homiylik maqolalari
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Kirilgan sahifalar
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Xatcho‘plar
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Oxirgi yuklanmalar
+
 ## Search box component.
 
 # "Search" is a verb/action

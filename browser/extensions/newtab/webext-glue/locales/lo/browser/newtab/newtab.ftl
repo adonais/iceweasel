@@ -16,6 +16,46 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = ແທັບໃຫມ່
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label = { $num } ແຖວ
+home-restore-defaults-srd =
+    .label = ກູ້ຄືນຄ່າເລີ່ມຕົ້ນ
+    .accesskey = ກ
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (ຄ່າເລີ່ມຕົ້ນ)
+home-mode-choice-custom-srd =
+    .label = URLs ທີ່ກຳນົດເອງ…
+home-mode-choice-blank-srd =
+    .label = ຫນ້າເປົ່າ
+home-prefs-shortcuts-header-srd =
+    .label = ທາງລັດ
+home-prefs-shortcuts-select =
+    .aria-label = ທາງລັດ
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = ທາງລັດສະປອນເຊີ
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = ເລື່ອງລາວທີ່ໄດ້ຮັບການສະຫນັບສະຫນູນ
+home-prefs-highlights-option-visited-pages-srd =
+    .label = ຫນ້າທີ່ເຂົ້າໄປເບິ່ງແລ້ວ
+home-prefs-highlights-options-bookmarks-srd =
+    .label = ບຸກມາກ
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = ການດາວໂຫລດລ່າສຸດ
+home-prefs-recent-activity-header-srd =
+    .label = ກິດ​ຈະ​ກໍາ​ທີ່​ຜ່ານ​ມາ
+home-prefs-recent-activity-select =
+    .aria-label = ກິດ​ຈະ​ກໍາ​ທີ່​ຜ່ານ​ມາ
+
 ## Search box component.
 
 # "Search" is a verb/action

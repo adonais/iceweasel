@@ -17,6 +17,7 @@
 #include "nsISupportsUtils.h"
 #include "nsIWidget.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 #include "mozilla/ipc/IPCTypes.h"

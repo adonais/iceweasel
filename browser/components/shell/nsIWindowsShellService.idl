@@ -11,6 +11,27 @@ interface nsIFile;
 interface nsIWindowsShellService : nsIShellService
 {
   /*
+   * Bit flags for launchSetDefaultAppPicker's aFlags argument. They map 1:1
+   * onto the flags accepted by the undocumented Windows IOpenWithLauncher COM
+   * interface's Launch method.
+   * The mapping below was determined empirically and determines the picker's
+   * messaging and actions.
+   */
+  // Suppresses the default open-in-selected-app behavior. Remote-controlled
+  // by Microsoft.
+  const long OPEN_WITH_SUPPRESS_OPEN = 1 << 2;
+  // Switches picker messaging to protocol mode ("Select a default handler
+  // for ___ links").
+  const long OPEN_WITH_PROTOCOL_MESSAGING = 1 << 3;
+  // Opens with the selected app just once; does not set a default.
+  const long OPEN_WITH_OPEN_ONCE = 1 << 6;
+  // Asks the user to set a default for the given file type or protocol. Messaging is
+  // ideal on Windows 11 only.
+  const long OPEN_WITH_SET_HANDLER = 1 << 7;
+  // Like OPEN_WITH_SET_HANDLER, but with ideal messaging for Windows 10.
+  const long OPEN_WITH_SET_HANDLER_WIN10 = 1 << 13;
+
+  /*
    * Creates a new shortcut (.lnk) file. This shortcut will be recorded in
    * a new shortcuts log file located in %PROGRAMDATA%\Mozilla-1de4eec8-1241-4177-a864-e594e8d1fb38
    * that is named after the currently running application and current user, eg:
@@ -349,16 +370,19 @@ interface nsIWindowsShellService : nsIShellService
   );
 
   /*
-   * Launch the default app picker for a given file type via the Windows
-   * IOpenWithLauncher COM interface.
+   * Launch the default app picker via the Windows IOpenWithLauncher COM
+   * interface. The caller picks the target (a file path whose extension
+   * determines the picker for file-type defaults, or a URL for protocol
+   * defaults) and the flag bits that drive the picker's messaging and actions.
    *
-   * @param aFileType
-   *        The file extension (e.g. ".pdf") for which to open
-   *        the default app picker.
+   * @param aTarget
+   *        File path or URL.
+   * @param aFlags
+   *        Flag combination that determines the behavior of the IOpenWithLauncher dialog.
    * @throws NS_ERROR_FAILURE
    *         If IOpenWithLauncher is unavailable or fails.
    */
-  void launchOpenWithDefaultPickerForFileType(in AString aFileType);
+  void launchSetDefaultAppPicker(in AString aTarget, in long aFlags);
 
   /*
    * Open the Windows modern settings dialog for choosing default apps

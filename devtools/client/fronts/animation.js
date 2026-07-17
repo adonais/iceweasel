@@ -49,11 +49,7 @@ class AnimationFront extends FrontClassWithSpec(animationSpec) {
       currentTime: this._form.currentTime,
       playState: this._form.playState,
       playbackRate: this._form.playbackRate,
-      playBackRateMultiplier:
-        // @backward-compat { version 151 } playBackRateMultiplier was added in 151,
-        // we need to set a default when connecting to older server.
-        // Once 151 hits release, the `|| 1` can be removed.
-        this._form.playBackRateMultiplier || 1,
+      playBackRateMultiplier: this._form.playBackRateMultiplier,
       name: this._form.name,
       duration: this._form.duration,
       delay: this._form.delay,

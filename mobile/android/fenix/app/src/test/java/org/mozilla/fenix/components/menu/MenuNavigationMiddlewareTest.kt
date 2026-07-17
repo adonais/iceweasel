@@ -176,6 +176,21 @@ class MenuNavigationMiddlewareTest {
     }
 
     @Test
+    fun `WHEN navigate to wallpaper action is dispatched THEN navigate to wallpaper settings`() = runTest {
+        val store = createStore(this)
+
+        store.dispatch(MenuAction.Navigate.Wallpaper)
+        testScheduler.advanceUntilIdle()
+
+        verify {
+            navController.navigate(
+                MenuDialogFragmentDirections.actionGlobalWallpaperSettingsFragment(),
+                null,
+            )
+        }
+    }
+
+    @Test
     fun `WHEN navigate to bookmarks action is dispatched THEN navigate to bookmarks`() = runTest {
         val store = createStore(this)
 

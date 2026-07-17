@@ -23,9 +23,8 @@ class MOZ_STACK_CLASS nsQueryArrayElementAt final : public nsCOMPtr_helper {
   nsresult* mErrorPtr;
 };
 
-inline const nsQueryArrayElementAt do_QueryElementAt(nsIArray* aArray,
-                                                     uint32_t aIndex,
-                                                     nsresult* aErrorPtr = 0) {
+inline const nsQueryArrayElementAt do_QueryElementAt(
+    nsIArray* aArray, uint32_t aIndex, nsresult* aErrorPtr = nullptr) {
   return nsQueryArrayElementAt(aArray, aIndex, aErrorPtr);
 }
 

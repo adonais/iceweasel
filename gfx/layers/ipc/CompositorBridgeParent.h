@@ -452,6 +452,42 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
   static bool CallWithLayerTreeState(
       LayersId aId, const std::function<void(LayerTreeState&)>& aFunc);
 
+  // The indirect layer tree map and its lock are private. Code outside of
+  // CompositorBridgeParent must go through the accessors below, which makes the
+  // dangerous std::map::operator[] (which silently resurrects an erased entry
+  // with a null state) unavailable to callers. WithIndirectLayerTreesLock is
+  // the only way to take the lock; it passes a proof token that the *UnderLock
+  // accessors require.
+  template <typename Function>
+  static auto WithIndirectLayerTreesLock(Function&& aFn) {
+    StaticMonitorAutoLock lock(sIndirectLayerTreesLock);
+    return aFn(lock);
+  }
+
+  // Non-inserting lookup; returns nullptr if there is no entry for |aId|.
+  static LayerTreeState* GetLayerTreeStateUnderLock(
+      LayersId aId, const StaticMonitorAutoLock& aProofOfLock);
+
+  // Returns the entry for |aId|, inserting a fresh one if absent. This is the
+  // only way for external callers to add an entry, so insertion is always
+  // explicit at the call site.
+  static LayerTreeState& EnsureLayerTreeStateUnderLock(
+      LayersId aId, const StaticMonitorAutoLock& aProofOfLock);
+
+  // Erases the entry for |aId| if present.
+  static void EraseLayerTreeStateUnderLock(
+      LayersId aId, const StaticMonitorAutoLock& aProofOfLock);
+
+  // Iterates every entry. aFn should take (LayersId, LayerTreeState&).
+  template <typename Function>
+  static void ForEachLayerTreeStateUnderLock(
+      const StaticMonitorAutoLock& aProofOfLock, Function&& aFn) {
+    sIndirectLayerTreesLock.AssertCurrentThreadOwns();
+    for (auto& entry : sIndirectLayerTrees) {
+      aFn(entry.first, entry.second);
+    }
+  }
+
   /**
    * Given the layers id for a content process, get the APZCTreeManagerParent
    * for the corresponding *root* layers id. That is, the APZCTreeManagerParent,
@@ -602,9 +638,20 @@ class CompositorBridgeParent final : public CompositorBridgeParentBase {
   bool ResumeCompositionAndResize(int x, int y, int width, int height);
   bool IsPaused();
 
-  typedef std::map<LayersId, CompositorBridgeParent::LayerTreeState>
-      LayerTreeMap;
+  // A std::map, but with operator[] deleted. operator[] silently inserts a
+  // default (null) entry on a missing key, and using it to read or mutate an
+  // already-erased layer tree during shutdown resurrects a bogus entry. Callers
+  // must instead go through the accessors below, which make lookup vs insertion
+  // explicit: GetLayerTreeStateUnderLock (non-inserting),
+  // CallWithLayerTreeState (mutate-if-present), EnsureLayerTreeStateUnderLock
+  // (explicit insert) and EraseLayerTreeStateUnderLock.
+  struct LayerTreeMap
+      : public std::map<LayersId, CompositorBridgeParent::LayerTreeState> {
+    mapped_type& operator[](const key_type&) = delete;
+    mapped_type& operator[](key_type&&) = delete;
+  };
 
+ private:
   static StaticMonitor sIndirectLayerTreesLock;
   static LayerTreeMap sIndirectLayerTrees
       MOZ_GUARDED_BY(sIndirectLayerTreesLock);

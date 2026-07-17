@@ -15,7 +15,7 @@ static const double kDefaultMin = 0.0;
 static const double kDefaultMax = 1.0;
 
 HTMLMeterElement::HTMLMeterElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
 HTMLMeterElement::~HTMLMeterElement() = default;

@@ -6,6 +6,7 @@ import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import React, { Component } from "devtools/client/shared/vendor/react";
 
 import FileSearchBar from "devtools/client/shared/components/FileSearchBar";
+import CloseButton from "devtools/client/shared/components/CloseButton";
 
 class FileSearch extends Component {
   static contextTypes = {
@@ -30,8 +31,6 @@ class FileSearch extends Component {
       findNext: PropTypes.func.isRequired,
       findPrev: PropTypes.func.isRequired,
       searchKey: PropTypes.string.isRequired,
-      SearchInput: PropTypes.oneOfType([PropTypes.func, PropTypes.object])
-        .isRequired,
       scrollList: PropTypes.func.isRequired,
     };
   }
@@ -82,6 +81,7 @@ class FileSearch extends Component {
       setCursorLocation: this.setCursorLocation,
       ...this.props,
       shortcuts: this.context.shortcuts,
+      CloseButton,
     });
   }
 }

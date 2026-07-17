@@ -28,6 +28,63 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Novi tabovi
+
+## Firefox Home content
+
+home-prefs-firefox-logo-header =
+    .label = { -brand-short-name } logo
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } red
+            [few] { $num } redovi
+           *[other] { $num } redovi
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Ekstenzija ({ $extension })
+home-restore-defaults-srd =
+    .label = Vrati na početne vrijednosti
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (Zadano)
+home-mode-choice-custom-srd =
+    .label = Prilagođeni URL-ovi…
+home-mode-choice-blank-srd =
+    .label = Prazna stranica
+home-prefs-shortcuts-header-srd =
+    .label = Prečice
+home-prefs-shortcuts-select =
+    .aria-label = Prečice
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Sponzorisane prečice
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Sponzorisane priče
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Posjećene stranice
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Zabilješke
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Najnovija preuzimanja
+home-prefs-recent-activity-header-srd =
+    .label = Nedavne aktivnosti
+home-prefs-recent-activity-select =
+    .aria-label = Nedavne aktivnosti
+home-prefs-weather-header-srd =
+    .label = Vrijeme
+home-prefs-support-firefox-header-srd =
+    .label = Podržite { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = Saznajte kako
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -132,6 +189,8 @@ newtab-menu-report = Prijavi
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Blokiraj
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Saznajte više
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Prestani pratiti temu

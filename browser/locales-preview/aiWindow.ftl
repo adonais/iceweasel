@@ -81,10 +81,18 @@ aiwindow-input-cta-menu-label-search-with = Search with…
 
 aiwindow-input-cta-search-submenu-header = Search
 
+aiwindow-input-cta-stop-button =
+    .aria-label = Stop response generation
+    .title = Stop response
+
 ## Smartbar
 
 smartbar-placeholder =
     .placeholder = Ask, search, or type a URL
+smartbar-placeholder-hint-1 = Use @ to mention recent tabs…
+smartbar-placeholder-hint-2 = Ask anything…
+smartbar-placeholder-hint-3 = Enter a web address…
+smartbar-placeholder-hint-4 = Search the web…
 
 ## Mentions
 
@@ -122,6 +130,23 @@ aiwindow-firstrun-model-personal-body = Most tailored answers
 aiwindow-firstrun-button = Let’s go!
 aiwindow-firstrun-back-button = Back
 aiwindow-firstrun-next-button = Next
+
+## These are labels describing model types in the smartbar model select.
+
+aiwindow-input-model-select-button-label-fast = Fast
+aiwindow-input-model-select-button-label-allpurpose = Flexible
+aiwindow-input-model-select-button-label-personal = Personal
+aiwindow-input-model-select-button-label-custom = Custom
+
+# Variables:
+# $ownerName (string) - The name of the model owner/provider
+# $model (string) - The model name
+aiwindow-input-model-select-menu-item-description = { $ownerName } { $model }
+aiwindow-input-model-select-menu-item-description-custom = Use your own LLM
+aiwindow-input-model-select-default-badge =
+    .label = Default
+    .title = The selected default model
+aiwindow-input-model-select-settings-link = Model settings
 
 ## Firstrun memories onboarding
 
@@ -199,7 +224,7 @@ smartwindow-footer-history =
 ## Disclaimer
 ## Text displayed to user to warn user about potential mistakes.
 
-smartwindow-disclaimer = AI can make mistakes. <a data-l10n-name="report-link">Report any issues</a>.
+smartwindow-disclaimer = AI can make mistakes.
 
 ## FirefoxView Chats
 ## Chats in this context refers to chats saved from the Smart Window Assistant
@@ -290,7 +315,7 @@ aiwindow-feedback-modal-title = Share feedback
 aiwindow-feedback-what-worked-well = What worked well? No personal info, please.
 aiwindow-feedback-choose-any = Choose any that apply
 aiwindow-feedback-add-details = Add details if you’d like. No personal info, please.
-aiwindow-feedback-disclaimer = Submitting shares your feedback and a few details, like { -brand-shorter-name } version and model used, to help improve Smart Window. <a data-l10n-name="learn-more">Learn more</a>
+aiwindow-feedback-disclaimer = Submitting shares your feedback and this chat to help { -brand-shorter-name } improve Smart Window. Your other chats stay private. <a data-l10n-name="learn-more">Learn more</a>
 aiwindow-feedback-submit = Submit
 aiwindow-feedback-cancel = Cancel
 aiwindow-feedback-reason-incorrect-or-misleading = Incorrect or misleading

@@ -42,6 +42,10 @@
   --smartbar-width: calc(100% - var(--space-large));
 }
 
+:host([mode="sidebar"]) .smartbar-glow {
+  display: none;
+}
+
 /* Expands browser to full height and removes prompts from grid when chat starts */
 :host(.chat-active) {
   grid-template-areas:
@@ -94,6 +98,9 @@
 }
 
 #ai-window-smartbar {
+  /* make smartbar fill the #smartbar-wrapper */
+  --smartbar-max-width: var(--smartwindow-content-max-width);
+
   position: absolute;
   z-index: 1;
 }
@@ -181,16 +188,51 @@ smartwindow-prompts {
 moz-button.new-chat-icon-button,
 moz-button.close-sidebar-button {
   --button-border-radius: var(--border-radius-circle);
-  --button-background-color: light-dark(var(--color-white), var(--color-black-alpha-30));
-  --button-background-color-hover: light-dark(var(--color-violet-20), color-mix(in srgb, currentColor 11%, transparent));
-  --button-background-color-active: light-dark(var(--color-violet-30), color-mix(in srgb, currentColor 17%, transparent));
-  --button-text-color: light-dark(var(--color-violet-90), var(--color-violet-0));
-}
 
-moz-button.new-chat-icon-button::part(button),
-moz-button.close-sidebar-button::part(button) {
-  backdrop-filter: blur(12px);
-  box-shadow: var(--box-shadow-level-1);
+  @media not (forced-colors) {
+    --button-background-color-ghost: light-dark(var(--color-white), var(--color-black-alpha-30));
+    --button-background-color-ghost-hover: light-dark(var(--color-violet-20), color-mix(in srgb, currentColor 11%, transparent));
+    --button-background-color-ghost-active: light-dark(var(--color-violet-30), color-mix(in srgb, currentColor 17%, transparent));
+    --button-text-color-ghost: light-dark(var(--color-violet-90), var(--color-violet-0));
+
+    @media -moz-pref("browser.nova.enabled") {
+      --button-icon-fill: light-dark(var(--color-violet-desaturated-60), var(--color-violet-desaturated-40));
+      --button-background-color-ghost: light-dark(var(--color-white), var(--color-gray-70));
+      --button-background-color-ghost-hover: var(--button-background-color-ghost);
+      --button-background-color-ghost-active: var(--button-background-color-ghost);
+      --button-background-color-ghost-selected: var(--button-background-color-ghost);
+    }
+  }
+
+  &::part(button) {
+    backdrop-filter: blur(12px);
+    box-shadow: var(--box-shadow-level-1);
+  }
+
+  @media -moz-pref("browser.nova.enabled") and (not (forced-colors)) {
+    &::part(button) {
+      --nova-border-gradient: linear-gradient(
+        180deg,
+        transparent 35%,
+        color-mix(in srgb, var(--color-violet-40) 30%, transparent) 80%,
+        color-mix(in srgb, var(--color-violet-40) 50%, transparent) 100%
+      );
+      border: var(--border-width) solid transparent;
+      background:
+        image(var(--button-background-color-ghost)) padding-box,
+        var(--nova-border-gradient) border-box;
+    }
+
+    &:is(:hover, :active)::part(button) {
+      --nova-border-gradient: linear-gradient(
+        180deg,
+        color-mix(in srgb, var(--color-violet-40) 10%, transparent) 5%,
+        color-mix(in srgb, var(--color-violet-40) 30%, transparent) 20%,
+        color-mix(in srgb, var(--color-violet-40) 40%, transparent) 40%,
+        color-mix(in srgb, var(--color-violet-40) 90%, transparent) 100%
+      );
+    }
+  }
 }
 
 moz-button.close-sidebar-button {

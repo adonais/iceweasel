@@ -68,6 +68,11 @@ HTMLEditor::InsertParagraphSeparatorAsSubAction(const Element& aEditingHost) {
     }
   }
 
+  if (GetEditContext()) {
+    // Don't insert paragraph if there is an EditContext
+    return EditActionResult::HandledResult();
+  }
+
   // XXX This may be called by execCommand() with "insertParagraph".
   //     In such case, naming the transaction "TypingTxnName" is odd.
   AutoPlaceholderBatch treatAsOneTransaction(*this, *nsGkAtoms::TypingTxnName,

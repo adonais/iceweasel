@@ -63,6 +63,10 @@ class AppLinksUseCasesTest {
         "https://mozilla.org/?link=https://example.com"
     private val urlWithBrowserFallbackLink =
         "https://mozilla.org/?S.browser_fallback_url=https://example.com"
+    private val appIntentWithUnsafeScheme =
+         "intent:foo#Intent;package=org.mozilla.fenix;scheme=file;end;"
+    private val appIntentWithUnsafeUpperScheme =
+         "intent:foo#Intent;package=org.mozilla.fenix;scheme=FILE;end;"
 
     @Before
     fun setup() {
@@ -363,6 +367,24 @@ class AppLinksUseCasesTest {
 
         assertNull(redirect.appIntent)
         assertFalse(redirect.hasExternalApp())
+    }
+
+    @Test
+    fun `A intent scheme with unsafe scheme is not an app link`() {
+        val context = createContext(Triple(appIntentWithUnsafeScheme, appPackage, ""))
+        val subject = AppLinksUseCases(context, { true })
+
+        val redirect = subject.interceptedAppLinkRedirect(appIntentWithUnsafeScheme)
+        assertNull(redirect.appIntent)
+    }
+
+    @Test
+    fun `A intent scheme with unsafe upper scheme is not an app link`() {
+        val context = createContext(Triple(appIntentWithUnsafeUpperScheme, appPackage, ""))
+        val subject = AppLinksUseCases(context, { true })
+
+        val redirect = subject.interceptedAppLinkRedirect(appIntentWithUnsafeUpperScheme)
+        assertNull(redirect.appIntent)
     }
 
     @Test

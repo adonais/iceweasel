@@ -20,6 +20,8 @@ import org.mozilla.fenix.GlobalDirections
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.NavGraphDirections
 import org.mozilla.fenix.browser.browsingmode.BrowsingMode
+import org.mozilla.fenix.components.share.ShareSource
+import org.mozilla.fenix.components.usecases.ShareUseCases
 import org.mozilla.fenix.ext.alreadyOnDestination
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
 import org.mozilla.fenix.utils.maybeShowAddSearchWidgetPrompt
@@ -33,6 +35,7 @@ private const val EXTRA_TAB_TRAY_ANIMATION = "EXTRA_TAB_TRAY_ANIMATION"
  */
 class HomeDeepLinkIntentProcessor(
     private val activity: HomeActivity,
+    private val shareUseCases: ShareUseCases,
     private val showAddSearchWidgetPrompt: (Activity) -> Unit = ::maybeShowAddSearchWidgetPrompt,
 ) : HomeIntentProcessor {
     private val logger = Logger("DeepLinkIntentProcessor")
@@ -155,17 +158,27 @@ class HomeDeepLinkIntentProcessor(
         val title = deepLink.getQueryParameter("title").orEmpty()
         val text = deepLink.getQueryParameter("text").orEmpty()
         val subject = deepLink.getQueryParameter("subject").orEmpty()
-        if (!url.isNullOrEmpty() && url.startsWith("https://")) {
-            val shareData = arrayOf(ShareData(url = url, title = title, text = text))
-            val direction = NavGraphDirections.actionGlobalShareFragment(
-                data = shareData,
-                shareSubject = subject,
-                showPage = false,
-                sessionId = null,
-            )
-            navController.navigate(direction)
-        } else {
+
+        if (url.isNullOrEmpty() || !url.startsWith("https://")) {
             logger.error("Invalid or missing URL for share_sheet deep link")
+            return
         }
+
+        shareUseCases.shareUrl(
+            id = null,
+            url = url,
+            title = title,
+            source = ShareSource.DEEP_LINK,
+            navigateToShareFragment = {
+                navController.navigate(
+                    NavGraphDirections.actionGlobalShareFragment(
+                        data = arrayOf(ShareData(url = url, title = title, text = text)),
+                        shareSubject = subject,
+                        showPage = false,
+                        sessionId = null,
+                    ),
+                )
+            },
+        )
     }
 }

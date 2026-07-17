@@ -75,7 +75,7 @@ class AutoMemMap {
   uint32_t size_ = 0;
   void* addr = nullptr;
 
-  bool persistent_ = 0;
+  bool persistent_ = false;
 };
 
 }  // namespace loader

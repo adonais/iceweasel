@@ -25,7 +25,6 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.crashes.CrashActionDispatcher
 import org.mozilla.fenix.crashes.UnsubmittedCrashDialog
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityTestRule
@@ -236,7 +235,7 @@ class UnsubmittedCrashDialogTest {
 
     @Test
     fun unsubmittedCrashDialog_PullingOneCrash_ClickOnSubmit_UpdateDontShowBefore() {
-        var dontShowBeforeValue = TestHelper.appContext.settings().crashPullDontShowBefore
+        var dontShowBeforeValue = TestHelper.appContext.components.settings.crashPullDontShowBefore
 
         addCrashToStore(CrashAction.CheckDeferred(listOf("1")))
         verifyDialogText(getUnsubmittedCrashPullOne())
@@ -244,7 +243,7 @@ class UnsubmittedCrashDialogTest {
         verifyDialogTextGone(getUnsubmittedCrashPullOne())
 
         var newDate = System.currentTimeMillis()
-        var dontShowBeforeValueSubmit = TestHelper.appContext.settings().crashPullDontShowBefore
+        var dontShowBeforeValueSubmit = TestHelper.appContext.components.settings.crashPullDontShowBefore
         var expectedDontShowBeforeValueSubmitUp = newDate + 6 * DateUtils.DAY_IN_MILLIS
         var expectedDontShowBeforeValueSubmitDown = newDate + 8 * DateUtils.DAY_IN_MILLIS
         assertTrue("$dontShowBeforeValueSubmit >= $expectedDontShowBeforeValueSubmitUp && $dontShowBeforeValueSubmit <= $expectedDontShowBeforeValueSubmitDown", dontShowBeforeValueSubmit >= expectedDontShowBeforeValueSubmitUp && dontShowBeforeValueSubmit <= expectedDontShowBeforeValueSubmitDown)
@@ -252,28 +251,28 @@ class UnsubmittedCrashDialogTest {
 
     @Test
     fun unsubmittedCrashDialog_PullingOneCrash_DontShowBefore_PreviousWeek_NotBlocked() {
-        var dontShowBeforeValue = TestHelper.appContext.settings().crashReportDeferredUntil
+        var dontShowBeforeValue = TestHelper.appContext.components.settings.crashReportDeferredUntil
         var oneWeekBefore = System.currentTimeMillis() - 7 * DateUtils.DAY_IN_MILLIS
-        TestHelper.appContext.settings().crashReportDeferredUntil = oneWeekBefore
+        TestHelper.appContext.components.settings.crashReportDeferredUntil = oneWeekBefore
 
         addCrashToStore(CrashAction.CheckDeferred(listOf("1")))
         verifyDialogText(getUnsubmittedCrashPullOne())
         clickButton(submitUnsubmittedCrashPull().uppercase())
         verifyDialogTextGone(getUnsubmittedCrashPullOne())
 
-        TestHelper.appContext.settings().crashReportDeferredUntil = dontShowBeforeValue
+        TestHelper.appContext.components.settings.crashReportDeferredUntil = dontShowBeforeValue
     }
 
     @OptIn(ExperimentalTestApi::class)
     @Test
     fun unsubmittedCrashDialog_PullingOneCrash_DontShowBefore_NextWeek_Blocked() {
-        var dontShowBeforeValue = TestHelper.appContext.settings().crashPullDontShowBefore
+        var dontShowBeforeValue = TestHelper.appContext.components.settings.crashPullDontShowBefore
         var oneWeekAfter = System.currentTimeMillis() + 7 * DateUtils.DAY_IN_MILLIS
-        TestHelper.appContext.settings().crashPullDontShowBefore = oneWeekAfter
+        TestHelper.appContext.components.settings.crashPullDontShowBefore = oneWeekAfter
 
         addCrashToStore(CrashAction.CheckDeferred(listOf("1")))
         composeTestRule.waitUntilDoesNotExist(hasTextExactly(getUnsubmittedCrashPullOne()))
 
-        TestHelper.appContext.settings().crashPullDontShowBefore = dontShowBeforeValue
+        TestHelper.appContext.components.settings.crashPullDontShowBefore = dontShowBeforeValue
     }
 }

@@ -42,11 +42,17 @@ marionette-unittest:
             webrender-sw:
                 by-test-platform:
                     .*-wayland.*: []
+                    # Compositor shutdown assertion in DisconnectApzcTreeManager
+                    # on headless macOS aarch64 VM workers (Bug 2039987 family).
+                    macosx1500-aarch64-vms/debug: []
                     .*/debug: built-projects
                     default: []
             default:
                 by-test-platform:
                     .*-wayland.*: []
+                    # Compositor shutdown assertion in DisconnectApzcTreeManager
+                    # on headless macOS aarch64 VM workers (Bug 2039987 family).
+                    macosx1500-aarch64-vms/debug: []
                     default: built-projects
     tier:
         by-variant:
@@ -84,12 +90,18 @@ marionette-integration:
             webrender-sw:
                 by-test-platform:
                     .*-wayland.*: []
+                    # Compositor shutdown assertion in DisconnectApzcTreeManager
+                    # on headless macOS aarch64 VM workers (Bug 2039987 family).
+                    macosx1500-aarch64-vms/debug: []
                     .*/debug: built-projects
                     default: []
             inc-origin-init: []
             default:
                 by-test-platform:
                     .*-wayland.*: []
+                    # Compositor shutdown assertion in DisconnectApzcTreeManager
+                    # on headless macOS aarch64 VM workers (Bug 2039987 family).
+                    macosx1500-aarch64-vms/debug: []
                     default: built-projects
     tier:
         by-variant:

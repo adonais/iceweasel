@@ -11,6 +11,5 @@
 [Exposed=(Window, Worker, PaintWorklet), Pref="layout.css.typed-om.enabled"]
 interface CSSMathMin : CSSMathValue {
   [Throws] constructor(CSSNumberish... args);
-  // TODO: Remove [Throws] once the values attribute is fully implemented
-  [Throws] readonly attribute CSSNumericArray values;
+  readonly attribute CSSNumericArray values;
 };

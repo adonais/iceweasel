@@ -282,8 +282,53 @@ function useConfetti(count = 80, spread = Math.PI / 3) {
   return [canvasRef, fireConfetti];
 }
 
+/**
+ * Wires a click listener onto a widget's "change size" submenu and returns a
+ * ref callback to attach to its <panel-list slot="submenu"> element.
+ *
+ * moz-panel-list moves the submenu into shadow DOM, so React synthetic events
+ * don't reach the inner <panel-item> elements; we listen on the submenu element
+ * directly and resolve the clicked item across the shadow boundary via
+ * composedPath() and its data-size attribute.
+ *
+ * A ref callback is required because several widgets gate their whole render on
+ * async data and only mount the submenu once that data loads. The ref callback
+ * fires whenever the node attaches, so the listener is wired up no matter when
+ * the menu first appears.
+ *
+ * @function useSizeSubmenu
+ * @param {function} onChangeSize - Called with the selected size string when a
+ *   submenu item is clicked.
+ * @returns {function} A ref callback for the submenu <panel-list> element.
+ */
+function useSizeSubmenu(onChangeSize) {
+  const onChangeSizeRef = useRef(onChangeSize);
+  const cleanupRef = useRef(null);
+
+  useEffect(() => {
+    onChangeSizeRef.current = onChangeSize;
+  }, [onChangeSize]);
+
+  return useCallback(el => {
+    cleanupRef.current?.();
+    cleanupRef.current = null;
+    if (!el) {
+      return;
+    }
+    const listener = e => {
+      const item = e.composedPath().find(node => node.dataset?.size);
+      if (item) {
+        onChangeSizeRef.current(item.dataset.size);
+      }
+    };
+    el.addEventListener("click", listener);
+    cleanupRef.current = () => el.removeEventListener("click", listener);
+  }, []);
+}
+
 export {
   useIntersectionObserver,
+  useSizeSubmenu,
   getActiveCardSize,
   getActiveColumnLayout,
   getNovaColumnLayout,

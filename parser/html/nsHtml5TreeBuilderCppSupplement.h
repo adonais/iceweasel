@@ -40,7 +40,6 @@ nsHtml5TreeBuilder::nsHtml5TreeBuilder(nsHtml5OplessBuilder* aBuilder)
       quirks(false),
       forceNoQuirks(false),
       allowDeclarativeShadowRoots(false),
-      noInSelectMode(false),
       keepBuffer(false),
       mBuilder(aBuilder),
       mViewSource(nullptr),
@@ -85,7 +84,6 @@ nsHtml5TreeBuilder::nsHtml5TreeBuilder(nsAHtml5TreeOpSink* aOpSink,
       quirks(false),
       forceNoQuirks(false),
       allowDeclarativeShadowRoots(false),
-      noInSelectMode(false),
       keepBuffer(false),
       mBuilder(nullptr),
       mViewSource(nullptr),
@@ -1104,7 +1102,7 @@ void nsHtml5TreeBuilder::addAttributesToElement(
   MOZ_ASSERT(aElement, "Null element");
   MOZ_ASSERT(aAttributes, "Null attributes");
 
-  if (aAttributes == nsHtml5HtmlAttributes::EMPTY_ATTRIBUTES) {
+  if (aAttributes->isEmpty()) {
     return;
   }
 

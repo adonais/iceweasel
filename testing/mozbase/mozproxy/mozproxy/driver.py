@@ -139,8 +139,7 @@ def main():
                 "obj_path": args.objdir,
                 "platform": mozinfo.os,
                 "playback_tool": args.tool,
-                # bug 1883701 linux uses a different version for now
-                "playback_version": ("8.1.1" if mozinfo.isLinux else args.tool_version),
+                "playback_version": args.tool_version,
                 "record": True,
                 "recording_file": args.file[0],
                 "app": args.app,

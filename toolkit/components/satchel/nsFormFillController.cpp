@@ -49,7 +49,7 @@ using mozilla::LogLevel;
 static mozilla::LazyLogModule sLogger("satchel");
 
 NS_IMPL_CYCLE_COLLECTION(nsFormFillController, mController, mFocusedPopup,
-                         mLastListener, mFocusListeners)
+                         mLastListener, mFocusListeners, mFocusPendingPromise)
 
 NS_INTERFACE_MAP_BEGIN_CYCLE_COLLECTION(nsFormFillController)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIFormFillController)
@@ -202,12 +202,6 @@ void nsFormFillController::AttributeWillChange(mozilla::dom::Element*, int32_t,
                                                nsAtom*, AttrModType) {}
 
 void nsFormFillController::ParentChainChanged(nsIContent*) {}
-
-void nsFormFillController::ARIAAttributeDefaultWillChange(
-    mozilla::dom::Element*, nsAtom*, AttrModType) {}
-
-void nsFormFillController::ARIAAttributeDefaultChanged(mozilla::dom::Element*,
-                                                       nsAtom*, AttrModType) {}
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY
 void nsFormFillController::NodeWillBeDestroyed(nsINode* aNode) {

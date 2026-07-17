@@ -74,7 +74,7 @@ mozilla::ipc::IPCResult WebSocketEventListenerChild::RecvFrameReceived(
     const uint32_t& aWebSocketSerialID, const WebSocketFrameData& aFrameData) {
   if (mService) {
     nsCOMPtr<nsIEventTarget> target = GetNeckoTarget();
-    RefPtr<WebSocketFrame> frame = new WebSocketFrame(aFrameData);
+    RefPtr frame = MakeRefPtr<WebSocketFrame>(aFrameData);
     mService->FrameReceived(aWebSocketSerialID, mInnerWindowID, frame.forget(),
                             target);
   }
@@ -86,7 +86,7 @@ mozilla::ipc::IPCResult WebSocketEventListenerChild::RecvFrameSent(
     const uint32_t& aWebSocketSerialID, const WebSocketFrameData& aFrameData) {
   if (mService) {
     nsCOMPtr<nsIEventTarget> target = GetNeckoTarget();
-    RefPtr<WebSocketFrame> frame = new WebSocketFrame(aFrameData);
+    RefPtr frame = MakeRefPtr<WebSocketFrame>(aFrameData);
     mService->FrameSent(aWebSocketSerialID, mInnerWindowID, frame.forget(),
                         target);
   }

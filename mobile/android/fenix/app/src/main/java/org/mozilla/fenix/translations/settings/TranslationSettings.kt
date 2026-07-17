@@ -110,7 +110,7 @@ fun TranslationSettings(
                                     vertical = FirefoxTheme.layout.space.static100,
                                 )
                                 .semantics { heading() },
-                            color = MaterialTheme.colorScheme.tertiary.copy(
+                            color = MaterialTheme.colorScheme.onSurface.copy(
                                 alpha = if (state.translationsEnabled) 1.0f else 0.3f,
                             ),
                             style = FirefoxTheme.typography.headline8,
@@ -175,6 +175,7 @@ private fun TranslationsControlSwitchItem(
         description = stringResource(R.string.translation_settings_control_description),
         checked = enabled,
         maxLabelLines = Int.MAX_VALUE,
+        maxDescriptionLines = Int.MAX_VALUE,
         showSwitchAfter = true,
         onClick = onFeatureControlToggled,
     )

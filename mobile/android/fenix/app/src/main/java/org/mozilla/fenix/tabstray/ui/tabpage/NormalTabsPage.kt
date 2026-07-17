@@ -50,6 +50,7 @@ private val EmptyPageWidth = 170.dp
  * @param inactiveTabsExpanded Whether the Inactive Tabs section is expanded.
  * @param displayTabsInGrid Whether the normal and private tabs should be displayed in a grid.
  * @param dragAndDropEnabled Whether the grid supports dragging and dropping for tab groups.
+ * @param displayTabGroupOnboarding Whether onboarding for tab groups should be shown.
  * @param tabInteractionHandler Handles tab interactions, such as moves and drag and drop.
  * @param trackersBlockedCount The number of trackers blocked to display in the footer card.
  * @param focusEnabled Whether the focus indicator is enabled.
@@ -74,6 +75,8 @@ private val EmptyPageWidth = 170.dp
  * @param onDeleteTabGroupClick Invoked when the user clicks on delete tab group.
  * @param onEditTabGroupClick Invoked when the user clicks to edit a tab group.
  * @param onCloseTabGroupClick Invoked when the user clicks to close a tab group.
+ * @param onTabGroupOnboardingDismiss Invoked when the user dismisses the tab group onboarding card.
+ * @param onPrivacyReportTapped Invoked when the trackers blocked pill is tapped.
  */
 @Composable
 @Suppress("LongParameterList")
@@ -85,6 +88,7 @@ internal fun NormalTabsPage(
     inactiveTabsExpanded: Boolean,
     displayTabsInGrid: Boolean,
     dragAndDropEnabled: Boolean,
+    displayTabGroupOnboarding: Boolean,
     tabInteractionHandler: TabInteractionHandler,
     trackersBlockedCount: Int? = null,
     focusEnabled: Boolean,
@@ -106,6 +110,8 @@ internal fun NormalTabsPage(
     onDeleteTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onEditTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
     onCloseTabGroupClick: (TabsTrayItem.TabGroup) -> Unit,
+    onTabGroupOnboardingDismiss: () -> Unit,
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     if (items.isNotEmpty() || inactiveTabs.isNotEmpty()) {
         var showAutoCloseDialog by remember { mutableStateOf(shouldShowInactiveTabsAutoCloseDialog) }
@@ -135,6 +141,9 @@ internal fun NormalTabsPage(
                     onCFRClick = onInactiveTabsCFRClick,
                     onCFRDismiss = onInactiveTabsCFRDismiss,
                 )
+                if (!displayTabsInGrid) {
+                    Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))
+                }
             }
         }
 
@@ -146,6 +155,7 @@ internal fun NormalTabsPage(
             tabs = items,
             displayTabsInGrid = displayTabsInGrid,
             dragAndDropEnabled = dragAndDropEnabled,
+            displayTabGroupOnboarding = displayTabGroupOnboarding,
             selectedItemIndex = selectedItemIndex,
             selectionMode = selectionMode,
             trackersBlockedCount = trackersBlockedCount,
@@ -157,11 +167,16 @@ internal fun NormalTabsPage(
             onDeleteTabGroupClick = onDeleteTabGroupClick,
             onEditTabGroupClick = onEditTabGroupClick,
             onCloseTabGroupClick = onCloseTabGroupClick,
+            onTabGroupOnboardingDismiss = onTabGroupOnboardingDismiss,
             tabInteractionHandler = tabInteractionHandler,
             focusEnabled = focusEnabled,
+            onPrivacyReportTapped = onPrivacyReportTapped,
         )
     } else {
-        EmptyNormalTabsPage(trackersBlockedCount = trackersBlockedCount)
+        EmptyNormalTabsPage(
+            trackersBlockedCount = trackersBlockedCount,
+            onPrivacyReportTapped = onPrivacyReportTapped,
+        )
     }
 }
 
@@ -170,11 +185,13 @@ internal fun NormalTabsPage(
  *
  * @param modifier The [Modifier] to be applied to the layout.
  * @param trackersBlockedCount The number of trackers blocked to display in the footer card.
+ * @param onPrivacyReportTapped Invoked when the trackers blocked pill is tapped.
  */
 @Composable
 private fun EmptyNormalTabsPage(
     modifier: Modifier = Modifier,
     trackersBlockedCount: Int? = null,
+    onPrivacyReportTapped: (() -> Unit)? = null,
 ) {
     val bottomBarHeight = dimensionResource(id = R.dimen.browser_toolbar_height)
 
@@ -206,7 +223,10 @@ private fun EmptyNormalTabsPage(
         }
 
         if (trackersBlockedCount != null) {
-            TrackersBlockedCard(trackersBlockedCount = trackersBlockedCount)
+            TrackersBlockedCard(
+                trackersBlockedCount = trackersBlockedCount,
+                onPrivacyReportTapped = onPrivacyReportTapped,
+            )
             Spacer(modifier = Modifier.height(bottomBarHeight + 32.dp))
         }
     }

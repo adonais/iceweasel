@@ -299,9 +299,9 @@ colorama==0.4.6 \
     #   click
     #   mozilla-third-party-python-vendor-dir
     #   tqdm
-compare-locales==9.0.4 \
-    --hash=sha256:73d0d384aefa0bc96f5fd8521c08c8bb89b16a37316701323a77960accabd551 \
-    --hash=sha256:933d2b6e20f460d3ac2d3176295684505a42085b25e6c31944fcafbaf52f1cc0
+compare-locales==9.0.5 \
+    --hash=sha256:40eaa40fe9290996f5972fa83bc4f9f1e580a6e2ea06087e636e77378d8ed168 \
+    --hash=sha256:82f2177552666d0f7af1ccc2940a8d562f345ce3a2e64f1b67853d457ea8ae33
     # via
     #   fluent-migrate
     #   mozilla-third-party-python-vendor-dir
@@ -456,9 +456,9 @@ giturlparse==0.12.0 \
     --hash=sha256:412b74f2855f1da2fefa89fd8dde62df48476077a72fc19b62039554d27360eb \
     --hash=sha256:c0fff7c21acc435491b1779566e038757a205c1ffdcb47e4f81ea52ad8c3859a
     # via mozilla-repo-urls
-glean-parser==19.0.0 \
-    --hash=sha256:82d7dcaca116dc02487ca184c634daf3e9c9c15670ab072c695bd460bf611022 \
-    --hash=sha256:bb2e0a4ab6be7e0daa704e4d4e9e34a2020f845a71dfc6c45366a917cbcbf4b3
+glean-parser==19.1.0 \
+    --hash=sha256:498399ea5da2f022ffb1ae71a958d1810e61c4f280401fe20ae00888902890ea \
+    --hash=sha256:981e53fbfe17f837445640970fb0a99381d56381c790cebea6eaa27c30e9f209
     # via mozilla-third-party-python-vendor-dir
 idna==3.10 \
     --hash=sha256:12f65c9b470abda6dc35cf8e63cc574b1c52b11df2c86030af0ac09b01b13ea9 \
@@ -583,17 +583,17 @@ mohawk==1.1.0 \
     --hash=sha256:3ed296a30453d0b724679e0fd41e4e940497f8e461a9a9c3b7f36e43bab0fa09 \
     --hash=sha256:d2a0e3ab10a209cc79e95e28f2dd54bd4a73fd1998ffe27b7ba0f962b6be9723
     # via taskcluster
-moz-l10n==0.9.0 \
-    --hash=sha256:664474d284b1484c471d53544e0213458fe4e4ad3d12b4b7a3fdf57057a5e9ab \
-    --hash=sha256:cb435e0bb4f1cf85c8417c21f7cc90f8e4404e869a7fa1f5b828a42ee3ae37db
+moz-l10n==0.11.3 \
+    --hash=sha256:30b2d81aac683fe1c6c8ce17131c177fb10f8bed38f426872da3f52ffa4c1bdf \
+    --hash=sha256:f6e65ee6249b104161dcaf43f8a6b65da6c93d88206fcbdce4986993a03bd77a
     # via mozilla-third-party-python-vendor-dir
 mozilla-repo-urls==0.1.1 \
     --hash=sha256:30510d3519479aa70211145d0ac9cf6e2fadcb8d30fa3b196bb957bd773502ba \
     --hash=sha256:7364da790751db2a060eb45adbf1d7db89a145ed279ba235f3425db9dd255915
     # via mozilla-third-party-python-vendor-dir
-mozilla-version==4.1.0 \
-    --hash=sha256:816b0cd03456105f49ad8661e47934e66118f84ddae38c4193082f297396a7ed \
-    --hash=sha256:f32f6f5607c345bb4db0aba0077511b196cba80af70c83cfe606a913a478f7e8
+mozilla-version==5.1.0 \
+    --hash=sha256:2e8de52712c3fbefac7f42f69319a664c6ba01d6e97bf07d5353a65ed34de94b \
+    --hash=sha256:b09d56f0d7e66fa2ff3df5ad1299df456afd8a63e6c2b9521a94b4616a6cb1e8
     # via mozilla-third-party-python-vendor-dir
 multidict==6.7.0 \
     --hash=sha256:03ca744319864e92721195fa28c7a3b2bc7b686246b35e4078c1e4d0eb5466d3 \

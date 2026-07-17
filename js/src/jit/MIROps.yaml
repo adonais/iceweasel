@@ -774,6 +774,7 @@
   result_type: Object
   guard: true
   congruent_to: if_operands_equal
+  # The handler slot is cleared when the proxy is revoked.
   alias_set:
     load: ObjectFields
   generate_lir: true
@@ -1843,18 +1844,11 @@
   operands:
     specifier: Value
     options: Value
+  arguments:
+    phase: ImportPhase
   result_type: Object
   possibly_calls: true
   generate_lir: true
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-- name: DynamicImportSource
-  operands:
-    specifier: Value
-  result_type: Object
-  possibly_calls: true
-  generate_lir: true
-#endif
 
 - name: Lambda
   gen_boilerplate: false
@@ -2368,7 +2362,6 @@
   arguments:
     resultShape: Shape*
   result_type: Object
-  can_recover: custom
   possibly_calls: true
   generate_lir: true
 
@@ -2457,15 +2450,6 @@
   result_type: Object
   generate_lir: true
   lir_temps: 1
-
-- name: CallBindVar
-  operands:
-    environmentChain: Object
-  result_type: Object
-  movable: true
-  congruent_to: if_operands_equal
-  alias_set: none
-  generate_lir: true
 
 - name: GuardShape
   operands:
@@ -2852,18 +2836,6 @@
   lir_result_type: none
   lir_temps: 1
 
-- name: GuardIsTypedArray
-  operands:
-    object: Object
-  result_type: Object
-  guard: true
-  movable: true
-  congruent_to: if_operands_equal
-  alias_set: none
-  generate_lir: true
-  lir_result_type: none
-  lir_temps: 1
-
 - name: GuardIsNonResizableTypedArray
   operands:
     object: Object
@@ -2897,6 +2869,8 @@
   guard: true
   movable: true
   congruent_to: if_operands_and_arguments_equal
+  # The proxy handler can change when a proxy is swapped with another object or
+  # when nuking a cross-compartment wrapper.
   alias_set:
     load: ObjectFields
   generate_lir: true
@@ -3705,15 +3679,6 @@
   possibly_calls: true
   generate_lir: true
 
-- name: AsyncReject
-  operands:
-    generator: Object
-    reason: Value
-    stack: Value
-  result_type: Object
-  possibly_calls: true
-  generate_lir: true
-
 # Returns from this function to the previous caller; this looks like a regular
 # Unary instruction and is used to lie to the MIR generator about suspending
 # ops like Yield/Await, which are emitted like returns, but MIR-Build like
@@ -3935,10 +3900,15 @@
   alias_set: none
   generate_lir: true
 
-# Load the JSValueTag on all platforms except ARM64. See the comments in
-# MacroAssembler-arm64.h for the |cmpTag(Register, ImmTag)| method for why
-# ARM64 doesn't use the raw JSValueTag, but instead a modified tag value. That
-# modified tag value can't be directly compared against JSValueTag constants.
+# Load the JSValueTag on all platforms except ARM64 and RISCV64.
+#
+# See the comments in MacroAssembler-arm64.h for the |cmpTag(Register, ImmTag)|
+# method for why ARM64 doesn't use the raw JSValueTag, but instead a modified
+# tag value. That modified tag value can't be directly compared against
+# JSValueTag constants.
+#
+# RISCV64 uses a similar scheme, see comments in MacroAssembler-riscv64.h for
+# the |splitSignExtTag(...)| method.
 - name: LoadValueTag
   operands:
     value: Value
@@ -4603,32 +4573,32 @@
 - name: YearFromTime
   operands:
     utcTime: Double
-  result_type: Double
+  result_type: Value
   # Neither movable nor implements congruentTo, see DateParse.
   alias_set: none
   possibly_calls: true
   generate_lir: true
-  lir_temps: 1
+  lir_temps: 2
 
 - name: MonthFromTime
   operands:
     utcTime: Double
-  result_type: Double
+  result_type: Value
   # Neither movable nor implements congruentTo, see DateParse.
   alias_set: none
   possibly_calls: true
   generate_lir: true
-  lir_temps: 1
+  lir_temps: 2
 
 - name: DateFromTime
   operands:
     utcTime: Double
-  result_type: Double
+  result_type: Value
   # Neither movable nor implements congruentTo, see DateParse.
   alias_set: none
   possibly_calls: true
   generate_lir: true
-  lir_temps: 1
+  lir_temps: 2
 
 - name: NewDateObject
   operands:
@@ -4654,9 +4624,6 @@
   gen_boilerplate: false
 
 - name: WasmLoadInstance
-  gen_boilerplate: false
-
-- name: WasmStoreInstance
   gen_boilerplate: false
 
 - name: WasmHeapReg

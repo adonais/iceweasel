@@ -86,42 +86,6 @@ popupnotificationcontent {
   }
 }
 
-.popup-notification-secondary-button:not([dropmarkerhidden]) {
-  border-start-end-radius: 0;
-  border-end-end-radius: 0;
-
-  /**
-   * The focus ring is an outline thicker than 1px, meaning that for split buttons,
-   * if the main button part of the split button has :focus-visible, the ring will
-   * be partially hidden behind the dropmarker button. We work around this by
-   * temporarily boosting the z-index of the main button while showing its focus
-   * ring.
-   */
-  &:focus-visible {
-    z-index: 2;
-  }
-}
-
-.popup-notification-dropmarker {
-  border-start-start-radius: 0 !important;
-  border-end-start-radius: 0 !important;
-  margin-inline-start: 1px !important;
-  padding: var(--space-small) !important;
-  max-width: var(--size-item-large);
-
-  > .button-box > hbox {
-    display: none;
-  }
-
-  > .button-box > .button-menu-dropmarker {
-    appearance: none;
-    display: flex;
-    content: url(chrome://global/skin/icons/arrow-down.svg);
-    -moz-context-properties: fill;
-    fill: currentColor;
-  }
-}
-
 .popup-notification-warning {
   color: var(--text-color-error);
 }

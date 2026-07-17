@@ -52,6 +52,7 @@ if CONFIG["MOZ_WEBRTC"]:
     ]
     EXPORTS.mozilla.dom += ["RTCIdentityProviderRegistrar.h"]
     UNIFIED_SOURCES += [
+        "H264FmtpParser.cpp",
         "MediaEngineRemoteVideoSource.cpp",
         "MediaEngineWebRTCAudio.cpp",
         "RTCCertificate.cpp",
@@ -118,6 +119,7 @@ EXPORTS.mozilla.dom += [
 ]
 EXPORTS.mozilla.media.webrtc += [
     "CodecInfo.h",
+    "H264FmtpParser.h",
 ]
 
 include("/ipc/chromium/chromium-config.mozbuild")

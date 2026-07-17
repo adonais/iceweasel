@@ -186,12 +186,6 @@ NR_reg_set_registry(NR_registry_name name)
     return nr_reg_set(name, NR_REG_TYPE_REGISTRY, 0);
 }
 
-int
-NR_reg_set_bytes(NR_registry_name name, const unsigned char *data, size_t length)
-{
-    return nr_reg_set_array(name, NR_REG_TYPE_BYTES, data, length);
-}
-
 
 int
 NR_reg_del(NR_registry_name name)
@@ -357,7 +351,6 @@ abort:                                                               \
 }
 
 NRSET2(NR_reg_set2_uchar,    UCHAR,   NR_reg_set_uchar)
-NRSET2(NR_reg_set2_string,   const char*,   NR_reg_set_string)
 
 /* requires parent already in legal form */
 int

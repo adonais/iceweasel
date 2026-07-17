@@ -314,7 +314,7 @@ class MediaDecoderStateMachine
   // Called on the state machine thread.
   void UpdatePlaybackPositionPeriodically();
 
-  MediaSink* CreateAudioSink();
+  already_AddRefed<MediaSink> CreateAudioSink();
 
   // Always create mediasink which contains an AudioSink or DecodedStream
   // inside.

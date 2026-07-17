@@ -11,9 +11,9 @@ ChromeUtils.defineESModuleGetters(this, {
   ProvidersManager:
     "moz-src:///browser/components/urlbar/UrlbarProvidersManager.sys.mjs",
   SearchService: "moz-src:///toolkit/components/search/SearchService.sys.mjs",
-  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
-  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
+  sinon: "resource://testing-common/Sinon.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
@@ -23,10 +23,6 @@ ChromeUtils.defineLazyGetter(this, "UrlbarTestUtils", () => {
   module.init(this);
   return module;
 });
-
-// How long to wait for view-update mutations to settle (i.e., to finish
-// happening) before assuming they're done and moving on with the test.
-const MUTATION_SETTLE_TIME_MS = 500;
 
 const MAX_RESULTS = 10;
 
@@ -44,15 +40,11 @@ add_setup(async function headInit() {
 
       // Make sure maxRichResults is 10 for sanity.
       ["browser.urlbar.maxRichResults", MAX_RESULTS],
-    ],
-  });
 
-  // Increase the timeout of the remove-stale-rows timer so that it doesn't
-  // interfere with the tests.
-  let originalRemoveStaleRowsTimeout = UrlbarView.removeStaleRowsTimeout;
-  UrlbarView.removeStaleRowsTimeout = 30000;
-  registerCleanupFunction(() => {
-    UrlbarView.removeStaleRowsTimeout = originalRemoveStaleRowsTimeout;
+      // Increase the timeout of the remove-stale-rows timer so that it doesn't
+      // interfere with the tests.
+      ["browser.urlbar.removeStaleRowsTimeout", 30000],
+    ],
   });
 });
 
@@ -385,44 +377,18 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
     0
   );
 
-  // DOMLocalization schedules DOM updates one animation frame after
-  // setAttributes(), so wait here to flush any pending updates from search 1.
-  await new Promise(r => requestAnimationFrame(r));
-
-  // Don't allow the search to finish until we check the updated rows by
-  // delaying the provider's finishQueryPromise. We observe mutations on the
-  // view's subtree: every mutation updates `lastMutationTime`, and the promise
-  // resolves once `lastMutationTime` is sufficiently old. We require at least
-  // one mutation before checking the interval to avoid resolving early if
-  // focus loss delays the search start.
-  let mutationPromise = new Promise(resolve => {
-    let lastMutationTime = null;
-    let observer = new MutationObserver(() => {
-      info("Observed mutation");
-      lastMutationTime = ChromeUtils.now();
+  // Hook into onQueryResults to get a reliable signal that #updateResults()
+  // has run for search 2, before the provider finishes.
+  let { promise: viewUpdatePromise, resolve: viewUpdateResolve } =
+    Promise.withResolvers();
+  let stub = sinon
+    .stub(gURLBar.view, "onQueryResults")
+    .callsFake(queryContext => {
+      stub.restore();
+      gURLBar.view.onQueryResults(queryContext);
+      viewUpdateResolve();
     });
-    observer.observe(UrlbarTestUtils.getResultsContainer(window), {
-      attributes: true,
-      characterData: true,
-      childList: true,
-      subtree: true,
-    });
-
-    let interval = setInterval(
-      () => {
-        if (
-          lastMutationTime !== null &&
-          MUTATION_SETTLE_TIME_MS < ChromeUtils.now() - lastMutationTime
-        ) {
-          info("No further mutations observed, stopping");
-          clearInterval(interval);
-          observer.disconnect();
-          resolve();
-        }
-      },
-      Math.ceil(MUTATION_SETTLE_TIME_MS / 10)
-    );
-  });
+  registerCleanupFunction(() => stub.restore());
 
   // Now do the second search but don't wait for it to finish.
   let resolveQuery;
@@ -434,9 +400,9 @@ async function doSuggestedIndexTest({ search1, search2, duringUpdate }) {
     value: "test",
   });
 
-  // Wait for the update to finish.
-  info("Waiting for mutations to settle");
-  await mutationPromise;
+  // Wait for the view update.
+  info("Waiting for view update");
+  await viewUpdatePromise;
 
   // Check the rows. We can't use UrlbarTestUtils.getDetailsOfResultAt() here
   // because it waits for the search to finish.

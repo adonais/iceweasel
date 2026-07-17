@@ -38,7 +38,7 @@ class JSWindowActorProtocol final : public JSActorProtocol,
  public:
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIDOMEVENTLISTENER
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(JSWindowActorProtocol, nsIObserver)
 
   static already_AddRefed<JSWindowActorProtocol> FromIPC(

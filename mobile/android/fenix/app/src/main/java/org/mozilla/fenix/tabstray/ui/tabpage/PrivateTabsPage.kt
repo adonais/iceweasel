@@ -83,7 +83,9 @@ internal fun PrivateTabsPage(
                 onDeleteTabGroupClick = {},
                 onEditTabGroupClick = {},
                 onCloseTabGroupClick = {},
+                onTabGroupOnboardingDismiss = {},
                 dragAndDropEnabled = false,
+                displayTabGroupOnboarding = false,
                 focusEnabled = true, // Drag and drop is not possible, so there's no reason to hide the focus state
             )
         }

@@ -471,8 +471,15 @@ static inline BorderRadius ZeroBorderRadius() {
   return {{{zero, zero}}, {{zero, zero}}, {{zero, zero}}, {{zero, zero}}};
 }
 
+static inline mozilla::StyleCornerShapeRect RoundCornerShapeRect() {
+  // Initial value of `corner-shape` is `round`, i.e. `superellipse(1)`.
+  mozilla::StyleCornerShape round{1.0f};
+  return {round, round, round, round};
+}
+
 nsStyleBorder::nsStyleBorder()
     : mBorderRadius(ZeroBorderRadius()),
+      mCornerShape(RoundCornerShapeRect()),
       mBorderImageSource(StyleImage::None()),
       mBorderImageWidth(
           StyleRectWithAllSides(StyleBorderImageSideWidth::Number(1.))),
@@ -496,6 +503,7 @@ nsStyleBorder::nsStyleBorder()
 
 nsStyleBorder::nsStyleBorder(const nsStyleBorder& aSrc)
     : mBorderRadius(aSrc.mBorderRadius),
+      mCornerShape(aSrc.mCornerShape),
       mBorderImageSource(aSrc.mBorderImageSource),
       mBorderImageWidth(aSrc.mBorderImageWidth),
       mBorderImageOutset(aSrc.mBorderImageOutset),
@@ -567,6 +575,10 @@ nsChangeHint nsStyleBorder::CalcDifference(
   // layout.css.outline-follows-border-radius.enabled pref is set. Any
   // optimizations here should apply to both.
   if (mBorderRadius != aNewData.mBorderRadius) {
+    return nsChangeHint_RepaintFrame;
+  }
+
+  if (mCornerShape != aNewData.mCornerShape) {
     return nsChangeHint_RepaintFrame;
   }
 
@@ -2048,7 +2060,7 @@ nsStyleImageLayers::Layer::Layer()
       mSize(StyleBackgroundSize::ExplicitSize(LengthPercentageOrAuto::Auto(),
                                               LengthPercentageOrAuto::Auto())),
 
-      mClip(StyleGeometryBox::BorderBox),
+      mClip(StyleBackgroundClip::BorderBox),
       mAttachment(StyleImageLayerAttachment::Scroll),
       mBlendMode(StyleBlend::Normal),
       mComposite(StyleMaskComposite::Add),
@@ -2572,6 +2584,13 @@ nsChangeHint nsStyleDisplay::CalcDifference(
       // Here only whether we have a 'clip' changes, so just repaint and
       // update our overflow areas in that case.
       hint |= nsChangeHint_UpdateOverflow | nsChangeHint_RepaintFrame;
+      // For the root element, 'visible' and 'clip' propagate to the viewport
+      // as 'auto' and 'hidden' respectively (see
+      // https://drafts.csswg.org/css-overflow/#overflow-propagation), so the
+      // viewport's scrollbar state must be re-evaluated.
+      if (aOldStyle.IsRootElementStyle()) {
+        hint |= nsChangeHint_ScrollbarChange;
+      }
     }
   }
 
@@ -3385,7 +3404,8 @@ nsStyleUIReset::nsStyleUIReset(const nsStyleUIReset& aSource)
       mViewTimelineInsetCount(aSource.mViewTimelineInsetCount),
       mViewTransitionName(aSource.mViewTransitionName),
       mViewTransitionClass(aSource.mViewTransitionClass),
-      mTimelineScope(aSource.mTimelineScope) {
+      mTimelineScope(aSource.mTimelineScope),
+      mLinkParameters(aSource.mLinkParameters) {
   MOZ_COUNT_CTOR(nsStyleUIReset);
 }
 
@@ -3432,6 +3452,10 @@ nsChangeHint nsStyleUIReset::CalcDifference(
 
   if (mViewTransitionClass.value != aNewData.mViewTransitionClass.value) {
     hint |= nsChangeHint_NeutralChange;
+  }
+
+  if (mLinkParameters != aNewData.mLinkParameters) {
+    hint |= nsChangeHint_RepaintFrame;
   }
 
   if (!hint &&
@@ -3633,98 +3657,6 @@ bool StyleTransform::HasPercent() const {
     }
   }
   return false;
-}
-
-template <>
-void StyleCalcNode::ScaleLengthsBy(float aScale) {
-  auto ScaleNode = [aScale](const StyleCalcNode& aNode) {
-    // This const_cast could be removed by generating more mut-casts, if
-    // needed.
-    const_cast<StyleCalcNode&>(aNode).ScaleLengthsBy(aScale);
-  };
-
-  switch (tag) {
-    case Tag::Leaf: {
-      const auto& leaf = AsLeaf();
-      if (leaf.IsLength()) {
-        // This const_cast could be removed by generating more mut-casts, if
-        // needed.
-        const_cast<Length&>(leaf.AsLength()).ScaleBy(aScale);
-      }
-      break;
-    }
-    case Tag::Clamp: {
-      const auto& clamp = AsClamp();
-      ScaleNode(*clamp.min);
-      ScaleNode(*clamp.center);
-      ScaleNode(*clamp.max);
-      break;
-    }
-    case Tag::Round: {
-      const auto& round = AsRound();
-      ScaleNode(*round.value);
-      ScaleNode(*round.step);
-      break;
-    }
-    case Tag::ModRem: {
-      const auto& modRem = AsModRem();
-      ScaleNode(*modRem.dividend);
-      ScaleNode(*modRem.divisor);
-      break;
-    }
-    case Tag::MinMax: {
-      for (const auto& child : AsMinMax()._0.AsSpan()) {
-        ScaleNode(child);
-      }
-      break;
-    }
-    case Tag::Sum: {
-      for (const auto& child : AsSum().AsSpan()) {
-        ScaleNode(child);
-      }
-      break;
-    }
-    case Tag::Product: {
-      for (const auto& child : AsProduct().AsSpan()) {
-        ScaleNode(child);
-      }
-      break;
-    }
-    case Tag::Negate: {
-      const auto& negate = AsNegate();
-      ScaleNode(*negate);
-      break;
-    }
-    case Tag::Invert: {
-      const auto& invert = AsInvert();
-      ScaleNode(*invert);
-      break;
-    }
-    case Tag::Hypot: {
-      for (const auto& child : AsHypot().AsSpan()) {
-        ScaleNode(child);
-      }
-      break;
-    }
-    case Tag::Abs: {
-      const auto& abs = AsAbs();
-      ScaleNode(*abs);
-      break;
-    }
-    case Tag::Sign: {
-      const auto& sign = AsSign();
-      ScaleNode(*sign);
-      break;
-    }
-    case Tag::Anchor: {
-      MOZ_ASSERT_UNREACHABLE("Unresolved anchor() function");
-      break;
-    }
-    case Tag::AnchorSize: {
-      MOZ_ASSERT_UNREACHABLE("Unresolved anchor-size() function");
-      break;
-    }
-  }
 }
 
 bool nsStyleDisplay::PrecludesSizeContainmentOrContentVisibilityWithFrame(

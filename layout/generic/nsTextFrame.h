@@ -225,6 +225,10 @@ class nsTextFrame : public nsIFrame {
       mStartOfLineOffset = aPosition.GetSkippedOffset();
     }
 
+    bool HasSpacing() const {
+      return mLetterSpacing || mWordSpacing || mTextAutospace;
+    }
+
    protected:
     void SetupJustificationSpacing(bool aPostReflow);
 

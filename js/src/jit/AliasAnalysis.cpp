@@ -44,9 +44,7 @@ class LoopAliasInfo : public TempObject {
 void AliasAnalysis::spewDependencyList() {
 #ifdef JS_JITSPEW
   if (JitSpewEnabled(JitSpew_AliasSummaries)) {
-    Fprinter& print = JitSpewPrinter();
-    JitSpewHeader(JitSpew_AliasSummaries);
-    print.printf("Dependency list for other passes:\n");
+    JitSpew(JitSpew_AliasSummaries, "Dependency list for other passes:");
 
     for (ReversePostorderIterator block(graph_.rpoBegin());
          block != graph_.rpoEnd(); block++) {
@@ -60,12 +58,11 @@ void AliasAnalysis::spewDependencyList() {
           continue;
         }
 
-        JitSpewHeader(JitSpew_AliasSummaries);
-        print.printf(" ");
-        MDefinition::PrintOpcodeName(print, def->op());
-        print.printf("%u marked depending on ", def->id());
-        MDefinition::PrintOpcodeName(print, def->dependency()->op());
-        print.printf("%u\n", def->dependency()->id());
+        AutoJitSpewMessage msg(JitSpew_AliasSummaries, " ");
+        MDefinition::PrintOpcodeName(msg.printer(), def->op());
+        msg.append("%u marked depending on ", def->id());
+        MDefinition::PrintOpcodeName(msg.printer(), def->dependency()->op());
+        msg.append("%u", def->dependency()->id());
       }
     }
   }
@@ -105,13 +102,11 @@ static void IonSpewDependency(MInstruction* load, MInstruction* store,
     return;
   }
 
-  JitSpewHeader(JitSpew_Alias);
-  Fprinter& out = JitSpewPrinter();
-  out.printf("  Load ");
-  load->printName(out);
-  out.printf(" %s on store ", verb);
-  store->printName(out);
-  out.printf(" (%s)\n", reason);
+  AutoJitSpewMessage msg(JitSpew_Alias, "  Load ");
+  load->printName(msg.printer());
+  msg.append(" %s on store ", verb);
+  store->printName(msg.printer());
+  msg.append(" (%s)", reason);
 #endif
 }
 
@@ -122,11 +117,9 @@ static void IonSpewAliasInfo(const char* pre, MInstruction* ins,
     return;
   }
 
-  JitSpewHeader(JitSpew_Alias);
-  Fprinter& out = JitSpewPrinter();
-  out.printf("  %s ", pre);
-  ins->printName(out);
-  out.printf(" %s\n", post);
+  AutoJitSpewMessage msg(JitSpew_Alias, "  %s ", pre);
+  ins->printName(msg.printer());
+  msg.append(" %s", post);
 #endif
 }
 
@@ -238,11 +231,9 @@ bool AliasAnalysis::analyze() {
 
 #ifdef JS_JITSPEW
         if (JitSpewEnabled(JitSpew_Alias)) {
-          JitSpewHeader(JitSpew_Alias);
-          Fprinter& out = JitSpewPrinter();
-          out.printf("Processing store ");
-          def->printName(out);
-          out.printf(" (flags %x)\n", set.flags());
+          AutoJitSpewMessage msg(JitSpew_Alias, "Processing store ");
+          def->printName(msg.printer());
+          msg.append(" (flags %x)", set.flags());
         }
 #endif
       } else {

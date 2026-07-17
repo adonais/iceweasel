@@ -9,6 +9,10 @@
 
 requestLongerTimeout(3);
 
+const { AboutAddonsTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/AboutAddonsTestUtils.sys.mjs"
+);
+
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -18,13 +22,6 @@ add_setup(async function setup() {
     ],
   });
 });
-
-let isSelected = async selector =>
-  SpecialPowers.spawn(gBrowser.selectedBrowser, [selector], arg => {
-    return ContentTaskUtils.waitForCondition(() =>
-      content.document.querySelector(arg)?.hasAttribute("selected")
-    );
-  });
 
 add_task(async function test_about_pages() {
   const testData = [
@@ -43,18 +40,18 @@ add_task(async function test_about_pages() {
     {
       firstInput: "add-ons",
       uri: "about:addons",
-      component: "button[name=discover]",
+      aboutAddonsCategory: "discover",
     },
     {
       firstInput: "extensions",
       uri: "about:addons",
-      component: "button[name=extension]",
+      aboutAddonsCategory: "extension",
       numTabPress: 2,
     },
     {
       firstInput: "themes",
       uri: "about:addons",
-      component: "button[name=theme]",
+      aboutAddonsCategory: "theme",
       numTabPress: 2,
     },
     {
@@ -69,7 +66,7 @@ add_task(async function test_about_pages() {
     firstLoad,
     secondInput,
     uri,
-    component,
+    aboutAddonsCategory,
     numTabPress = 1,
   } of testData) {
     info("Setup initial state");
@@ -95,9 +92,15 @@ add_task(async function test_about_pages() {
     }
     await onLoad;
 
-    if (component) {
-      info("Check whether the component is in the page");
-      Assert.ok(await isSelected(component), "There is expected component");
+    if (aboutAddonsCategory) {
+      info("Check whether the expected about:addons category is in the page");
+      Assert.ok(
+        AboutAddonsTestUtils.isCategoryButtonSelected(
+          gBrowser.selectedBrowser.contentWindow,
+          aboutAddonsCategory
+        ),
+        `There is expected about:addons category ${aboutAddonsCategory}`
+      );
     }
 
     info("Do the second quick action in second tab");
@@ -122,9 +125,15 @@ add_task(async function test_about_pages() {
     );
     Assert.equal(gBrowser.tabs.length, 3, "Not opened a new tab");
 
-    if (component) {
+    if (aboutAddonsCategory) {
       info("Check whether the component is still in the page");
-      Assert.ok(await isSelected(component), "There is expected component");
+      Assert.ok(
+        AboutAddonsTestUtils.isCategoryButtonSelected(
+          gBrowser.selectedBrowser.contentWindow,
+          aboutAddonsCategory
+        ),
+        `There is expected about:addons category ${aboutAddonsCategory}`
+      );
     }
 
     BrowserTestUtils.removeTab(secondTab);
@@ -136,16 +145,28 @@ add_task(async function test_about_addons_pages() {
   let testData = [
     {
       cmd: "add-ons",
-      testFun: async () => isSelected("button[name=discover]"),
+      testFun: async () =>
+        AboutAddonsTestUtils.isCategoryButtonSelected(
+          gBrowser.selectedBrowser.contentWindow,
+          "discover"
+        ),
     },
     {
       cmd: "extensions",
-      testFun: async () => isSelected("button[name=extension]"),
+      testFun: async () =>
+        AboutAddonsTestUtils.isCategoryButtonSelected(
+          gBrowser.selectedBrowser.contentWindow,
+          "extension"
+        ),
       numTabPress: 2,
     },
     {
       cmd: "themes",
-      testFun: async () => isSelected("button[name=theme]"),
+      testFun: async () =>
+        AboutAddonsTestUtils.isCategoryButtonSelected(
+          gBrowser.selectedBrowser.contentWindow,
+          "theme"
+        ),
       numTabPress: 2,
     },
   ];

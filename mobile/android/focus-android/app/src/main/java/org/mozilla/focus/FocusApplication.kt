@@ -319,10 +319,10 @@ open class FocusApplication : Application(), Provider {
         WebExtensionSupport.initialize(
             components.engine,
             components.store,
-            onNewTabOverride = { _, engineSession, url ->
+            onNewTabOverride = { _, engineSession, url, selected ->
                 components.tabsUseCases.addTab(
                     url = url,
-                    selectTab = true,
+                    selectTab = selected,
                     engineSession = engineSession,
                     private = true,
                 )

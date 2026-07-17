@@ -12,8 +12,9 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -40,7 +41,6 @@ import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
 private const val BOTTOM_SHEET_HANDLE_WIDTH_PERCENT = 0.1f
-private val bottomSheetShape = RoundedCornerShape(topStart = 16.dp, topEnd = 16.dp)
 
 /**
  * The microsurvey bottom sheet.
@@ -112,7 +112,10 @@ fun MicrosurveyBottomSheet(
             modifier = Modifier
                 .wrapContentHeight()
                 .padding(innerPadding),
-            shape = bottomSheetShape,
+            shape = MaterialTheme.shapes.large.copy(
+                bottomStart = CornerSize(0.dp),
+                bottomEnd = CornerSize(0.dp),
+            ),
         ) {
             if (isSubmitted) {
                 MicrosurveyCompleted()

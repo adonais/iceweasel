@@ -28,6 +28,9 @@ class nsAttrName {
     NS_ADDREF(aAtom);
   }
 
+  explicit nsAttrName(already_AddRefed<nsAtom> aAtom)
+      : mBits(reinterpret_cast<uintptr_t>(aAtom.take())) {}
+
   explicit nsAttrName(mozilla::dom::NodeInfo* aNodeInfo) {
     NS_ASSERTION(aNodeInfo, "null nodeinfo-name in nsAttrName");
     if (aNodeInfo->NamespaceEquals(kNameSpaceID_None)) {

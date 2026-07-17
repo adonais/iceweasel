@@ -22,7 +22,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - thasan@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     extra_keys:
       flow_id: &flow_id
@@ -51,7 +51,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - thasan@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     extra_keys:
       flow_id: *flow_id
@@ -79,7 +79,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - thasan@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     extra_keys:
       flow_id: *flow_id
@@ -105,7 +105,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     labels: &engine_labels
       - autofill-ml
@@ -137,8 +137,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
-      - tshasan@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     extra_keys:
       flow_id: *flow_id
@@ -171,8 +170,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
-      - tshasan@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     extra_keys:
       flow_id: *flow_id
@@ -200,7 +198,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - thasan@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     extra_keys:
       flow_id: *flow_id
@@ -250,7 +248,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     labels: *engine_labels
 
@@ -265,7 +263,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     extra_keys:
       modelDownloadId:
@@ -307,7 +305,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
     extra_keys:
       deletedBy:
@@ -381,9 +379,7 @@ firefox.ai.runtime:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
-      - gtatum@mozilla.com
-      - thasan@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     expires: never
 
 model_management:
@@ -399,8 +395,7 @@ model_management:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
-      - ngrato@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     extra_keys:
       extension_ids:
         description: Ids of the extensions that use this model
@@ -440,8 +435,7 @@ model_management:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
-      - ngrato@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     extra_keys:
       extension_ids:
         description: Ids of the extensions that use this model
@@ -472,8 +466,7 @@ model_management:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
-      - ngrato@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     extra_keys:
       extension_ids:
         description: Ids of the extensions that use this model
@@ -500,8 +493,7 @@ model_management:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
-      - ngrato@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     extra_keys:
       extension_ids:
         description: Ids of the extensions that use this model
@@ -528,8 +520,7 @@ model_management:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
-      - ngrato@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     extra_keys:
       models:
         description: Number of models in the list
@@ -547,8 +538,7 @@ model_management:
     data_sensitivity:
       - interaction
     notification_emails:
-      - tziade@mozilla.com
-      - ngrato@mozilla.com
+      - firefox-ai-and-ml@mozilla.com
     extra_keys:
       extension_ids:
         description: Ids of the extensions that use this model

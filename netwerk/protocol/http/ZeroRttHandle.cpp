@@ -10,6 +10,8 @@
 
 #include "HappyEyeballsConnectionAttempt.h"
 #include "HappyEyeballsTransaction.h"
+#include "HttpConnectionBase.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "nsAHttpTransaction.h"
 #include "nsHttpRequestHead.h"
 #include "nsHttpTransaction.h"
@@ -83,13 +85,16 @@ bool ZeroRttHandle::Do0RTT(HappyEyeballsTransaction* aCaller,
   // leaving the HE race with nothing to adopt at Finish0RTT time.
   if (!mAny0RttStarted) {
     RefPtr<HappyEyeballsConnectionAttempt> attempt = do_QueryReferent(mHet);
-    if (!attempt || !attempt->LockInRealTxnFromPendingQueue()) {
+    if (!attempt || !attempt->LockInRealTransactionFromPendingQueue()) {
       LOG(
           ("ZeroRttHandle::Do0RTT %p caller=%p declining — real txn "
            "already dispatched elsewhere",
            this, aCaller));
       return false;
     }
+
+    MOZ_ASSERT(mState == State::Open,
+               "Do0RTT locking transaction from queue on a non-Open handle");
   }
 
   LOG(("ZeroRttHandle::Do0RTT %p caller=%p accepted, offset=0", this, aCaller));
@@ -188,12 +193,66 @@ nsresult ZeroRttHandle::Finish0RTT(HappyEyeballsTransaction* aCaller,
     return NS_OK;
   }
 
+  // At this point we are about to declare a winner.  The handle must still be
+  // Open.
+  MOZ_ASSERT(mState == State::Open,
+             "Finish0RTT declaring winner on a non-Open handle");
+
+  // H1/H2, alpnChanged=1: early data was sent for a protocol the server no
+  //   longer speaks, so the request must restart.  For H2, Http2Session also
+  //   calls Close(NS_ERROR_NET_RESET) immediately after, killing the
+  //   connection; declaring the HE winner at this point would insert a dead
+  //   connection into mActiveConns (mReportedSpdy=false, so npnPending=true in
+  //   RestrictConnections(), blocking all future connections).
+  //   Action: close the HET so HE treats this as a failure, not a winner.
+  //
+  // H1/H2, alpnChanged=0: early data was rejected but the connection is still
+  //   usable (H1 retries the request; H2 rewinds its output queue).
+  //   Action: fall through to InvokeCallback(NS_OK) so HE declares the winner
+  //   and the session retries the request on the same connection.
+  //
+  // H3, any: the QUIC connection survives a 0-RTT restart.
+  //   Action: fall through so HE declares the winner and retries normally.
+  if (aRestart && aAlpnChanged) {
+    bool isH3 = false;
+    if (nsAHttpConnection* conn = aCaller->Connection()) {
+      if (RefPtr<HttpConnectionBase> base = conn->HttpConnection()) {
+        isH3 = base->UsingHttp3();
+      }
+    }
+    if (!isH3) {
+      nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
+      if (realTxn) {
+        realTxn->FinishAdopted0RTT(/*aRestart=*/true);
+      }
+      // Remove SSL tokens via the live connection (uses GetPeerId(), not
+      // HashKey()).  Without removal, Check0RttEnabled sets
+      // mEarlyDataState=USED before Do0RTT runs, so Finish0RTT(restart=1) loops
+      // on the re-queued txn.
+      aCaller->MaybeRemoveSSLTokens();
+      aCaller->Close(NS_ERROR_NET_RESET);
+      return NS_OK;
+    }
+  }
+
   nsHttpTransaction* realTxn = ResolveRealTxn(mHet);
+  if (realTxn && StaticPrefs::network_http_0rtt_force_txn_gone_for_testing()) {
+    realTxn->Close(NS_ERROR_ABORT);
+    realTxn = nullptr;
+  }
   if (!realTxn) {
     LOG(("ZeroRttHandle::Finish0RTT %p real txn gone; closing caller=%p", this,
          aCaller));
+    RefPtr<HttpConnectionBase> base;
+    if (nsAHttpConnection* conn = aCaller->Connection()) {
+      base = conn->HttpConnection();
+    }
     Cleanup();
-    aCaller->Close(NS_ERROR_ABORT);
+    if (base) {
+      base->Close(NS_ERROR_ABORT);
+    } else {
+      aCaller->Close(NS_ERROR_ABORT);
+    }
     return NS_OK;
   }
 
@@ -279,6 +338,7 @@ void ZeroRttHandle::Transition(State aNext, HappyEyeballsTransaction* aWinner,
       MOZ_ASSERT(aWinner, "WinnerDeclared entry requires winner");
       mState = State::WinnerDeclared;
       mWinner = aWinner;
+      mHadWinner = true;
       if (aRejected) {
         mRejected = true;
       }
@@ -289,19 +349,13 @@ void ZeroRttHandle::Transition(State aNext, HappyEyeballsTransaction* aWinner,
                  "CleanedUp entry from Open or WinnerDeclared only");
       mState = State::CleanedUp;
       mHet = nullptr;
+      mWinner = nullptr;  // break RefPtr cycle with HET::mZeroRttHandle
       break;
   }
 }
 
 nsHttpTransaction* ZeroRttHandle::RealTxn() const {
   return ResolveRealTxn(mHet);
-}
-
-Maybe<uint64_t> ZeroRttHandle::WinnerOffset() const {
-  if (!mWinner) {
-    return Nothing();
-  }
-  return mWinner->Request0RttStreamOffset();
 }
 
 }  // namespace mozilla::net

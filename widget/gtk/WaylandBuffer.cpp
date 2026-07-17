@@ -206,6 +206,7 @@ void WaylandBufferSHM::Clear() {
 #ifdef MOZ_LOGGING
 void WaylandBufferSHM::DumpToFile(const char* aHint) {
   if (!mDumpSerial) {
+    NS_WARNING("mDumpSerial is not set!");
     return;
   }
 
@@ -292,6 +293,7 @@ WaylandBufferDMABUF::~WaylandBufferDMABUF() {
 #ifdef MOZ_LOGGING
 void WaylandBufferDMABUF::DumpToFile(const char* aHint) {
   if (!mDumpSerial) {
+    NS_WARNING("mDumpSerial is not set!");
     return;
   }
   nsCString filename;

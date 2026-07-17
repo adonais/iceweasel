@@ -11,7 +11,6 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -25,6 +24,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
+import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.textfield.TextField
 import mozilla.components.support.ktx.kotlin.isUrl
 import mozilla.components.support.ktx.kotlin.toNormalizedUrl
@@ -68,6 +68,7 @@ internal fun AddShortcutDialog(
         },
         confirmButton = {
             TextButton(
+                text = stringResource(R.string.top_sites_edit_dialog_save),
                 onClick = {
                     if (url.isUrl()) {
                         onConfirm(shortcutName, url.toNormalizedUrl())
@@ -76,14 +77,13 @@ internal fun AddShortcutDialog(
                     }
                 },
                 enabled = url.isNotBlank() && shortcutName.isNotBlank(),
-            ) {
-                Text(text = stringResource(R.string.top_sites_edit_dialog_save))
-            }
+            )
         },
         dismissButton = {
-            TextButton(onClick = onDismiss) {
-                Text(text = stringResource(R.string.top_sites_rename_dialog_cancel))
-            }
+            TextButton(
+                text = stringResource(R.string.top_sites_rename_dialog_cancel),
+                onClick = onDismiss,
+            )
         },
     )
 }

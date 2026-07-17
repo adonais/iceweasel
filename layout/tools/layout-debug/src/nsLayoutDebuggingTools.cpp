@@ -24,6 +24,7 @@
 #include "nsIPrintSettingsService.h"
 #include "nsLayoutUtils.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 
 using namespace mozilla;
 using mozilla::dom::Document;

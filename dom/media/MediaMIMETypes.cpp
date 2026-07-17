@@ -257,6 +257,15 @@ size_t MediaExtendedMIMEType::GetParameterCount() const {
   return mNumParams;
 }
 
+nsDependentCSubstring MediaExtendedMIMEType::Subtype() const {
+  const nsCString& mimeStr = mMIMEType.AsString();
+  const int32_t slash = mimeStr.FindChar('/');
+  if (slash < 0) {
+    return {};
+  }
+  return Substring(mimeStr, slash + 1);
+}
+
 size_t MediaExtendedMIMEType::SizeOfExcludingThis(
     MallocSizeOf aMallocSizeOf) const {
   return mOriginalString.SizeOfExcludingThisIfUnshared(aMallocSizeOf) +

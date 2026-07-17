@@ -163,7 +163,7 @@ export default class RestoreFromBackup extends MozLitElement {
 
   handleEvent(event) {
     if (event.type == "BackupUI:SelectNewFilepickerPath") {
-      let { path, iconURL } = event.detail;
+      let { iconURL } = event.detail;
       this._fileIconURL = iconURL;
 
       // Check the backup info again even if it was the same file.
@@ -188,6 +188,8 @@ export default class RestoreFromBackup extends MozLitElement {
           payload.os_name = this.backupServiceState?.backupFileInfo?.osName;
           payload.os_version =
             this.backupServiceState?.backupFileInfo?.osVersion;
+          payload.os_build_number =
+            this.backupServiceState?.backupFileInfo?.osBuildNumber;
           payload.telemetry_enabled =
             this.backupServiceState?.backupFileInfo?.healthTelemetryEnabled;
         }
@@ -195,7 +197,7 @@ export default class RestoreFromBackup extends MozLitElement {
         Services.obs.notifyObservers(null, "browser-backup-glean-sent");
       });
 
-      this.getBackupFileInfo(path);
+      this.getBackupFileInfo();
     } else if (event.type == "BackupUI:StateWasUpdated") {
       this.#initializedResolvers.resolve();
       if (this.#backupFileReadPromise) {
@@ -223,8 +225,8 @@ export default class RestoreFromBackup extends MozLitElement {
     );
   }
 
-  getBackupFileInfo(pathToFile = null) {
-    let backupFile = pathToFile || this.backupServiceState?.backupFileToRestore;
+  getBackupFileInfo() {
+    let backupFile = this.backupServiceState?.backupFileToRestore;
     if (!backupFile || this.#lastBackupInfoFilename === backupFile) {
       return;
     }
@@ -234,9 +236,6 @@ export default class RestoreFromBackup extends MozLitElement {
       new CustomEvent("BackupUI:GetBackupFileInfo", {
         bubbles: true,
         composed: true,
-        detail: {
-          backupFile,
-        },
       })
     );
   }
@@ -251,8 +250,10 @@ export default class RestoreFromBackup extends MozLitElement {
   }
 
   handleConfirm() {
-    let backupFile = this.backupServiceState?.backupFileToRestore;
-    if (!backupFile || this.backupServiceState?.recoveryInProgress) {
+    if (
+      !this.backupServiceState?.backupFileToRestore ||
+      this.backupServiceState?.recoveryInProgress
+    ) {
       return;
     }
     let backupPassword = this.passwordInput?.value;
@@ -261,7 +262,6 @@ export default class RestoreFromBackup extends MozLitElement {
         bubbles: true,
         composed: true,
         detail: {
-          backupFile,
           backupPassword,
           restoreType: this._restoreType,
           source: this.aboutWelcomeEmbedded ? "onboarding" : "preferences",

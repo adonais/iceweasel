@@ -17,7 +17,5 @@ interface CSSRotate : CSSTransformComponent {
   [SetterThrows] attribute CSSNumberish x;
   [SetterThrows] attribute CSSNumberish y;
   [SetterThrows] attribute CSSNumberish z;
-  // TODO: Change to [SetterThrows] once the angle attribute is fully
-  //       implemented
-  [Throws] attribute CSSNumericValue angle;
+  [SetterThrows] attribute CSSNumericValue angle;
 };

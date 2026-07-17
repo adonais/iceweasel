@@ -12,13 +12,8 @@ use crate::{lang, logging::LogTarget, std};
 use anyhow::Context;
 use once_cell::sync::Lazy;
 
-/// The number of the most recent minidump files to retain when pruning.
-const MINIDUMP_PRUNE_SAVE_COUNT: usize = 10;
-
 #[cfg(test)]
 pub mod test {
-    pub const MINIDUMP_PRUNE_SAVE_COUNT: usize = super::MINIDUMP_PRUNE_SAVE_COUNT;
-
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {
             use crate::std::{mock, env, fs::MockFS, fs::MockFiles};
@@ -434,70 +429,6 @@ impl Config {
         }
     }
 
-    /// Prune old minidump files adjacent to the dump file.
-    pub fn prune_files(&self) -> anyhow::Result<()> {
-        log::info!("pruning minidump files to the {MINIDUMP_PRUNE_SAVE_COUNT} most recent");
-        let Some(file) = &self.dump_file else {
-            anyhow::bail!("no dump file")
-        };
-        let Some(dir) = file.parent() else {
-            anyhow::bail!("no parent directory for dump file")
-        };
-        log::debug!("pruning {} directory", dir.display());
-        let read_dir = dir.read_dir().with_context(|| {
-            format!(
-                "failed to read dump file parent directory {}",
-                dir.display()
-            )
-        })?;
-
-        let mut minidump_files = Vec::new();
-        for entry in read_dir {
-            match entry {
-                Err(e) => log::error!(
-                    "error while iterating over {} directory entry: {e}",
-                    dir.display()
-                ),
-                Ok(e) if e.path().extension() == Some("dmp".as_ref()) => {
-                    // Return if the metadata can't be read, since not being able to get metadata
-                    // for any file could make the selection of minidumps to delete incorrect.
-                    let meta = e.metadata().with_context(|| {
-                        format!("failed to read metadata for {}", e.path().display())
-                    })?;
-                    if meta.is_file() {
-                        let modified_time =
-                            meta.modified().expect(
-                                "file modification time should be available on all crashreporter platforms",
-                            );
-                        minidump_files.push((modified_time, e.path()));
-                    }
-                }
-                _ => (),
-            }
-        }
-
-        // Sort by modification time first, then path (just to have a defined behavior in the case
-        // of identical times). The reverse leaves the files in order from newest to oldest.
-        minidump_files.sort_unstable_by(|a, b| a.cmp(b).reverse());
-
-        // Delete files, skipping the most recent MINIDUMP_PRUNE_SAVE_COUNT.
-        for dump_file in minidump_files
-            .into_iter()
-            .skip(MINIDUMP_PRUNE_SAVE_COUNT)
-            .map(|v| v.1)
-        {
-            log::debug!("pruning {} and related files", dump_file.display());
-            if let Err(e) = std::fs::remove_file(&dump_file) {
-                log::warn!("failed to delete {}: {e}", dump_file.display());
-            }
-
-            // Ignore errors for the extra file and the memory file: they may not exist.
-            let _ = std::fs::remove_file(extra_file_for_dump_file(dump_file.clone()));
-            let _ = std::fs::remove_file(memory_file_for_dump_file(dump_file));
-        }
-        Ok(())
-    }
-
     /// Restart the program based on the configured restart command.
     pub fn restart_process(&self) {
         if self.restart_command.is_none() {
@@ -628,7 +559,7 @@ impl Config {
                 };
 
                 let mut path: PWSTR = std::ptr::null_mut();
-                let result = unsafe { SHGetKnownFolderPath(&FOLDERID_RoamingAppData, 0, 0, &mut path) };
+                let result = unsafe { SHGetKnownFolderPath(&FOLDERID_RoamingAppData, 0, std::ptr::null_mut(), &mut path) };
                 if result != 0 {
                     unsafe { CoTaskMemFree(path as _) };
                     anyhow::bail!("failed to get known path for roaming appdata");

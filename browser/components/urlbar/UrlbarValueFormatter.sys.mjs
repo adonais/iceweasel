@@ -86,6 +86,8 @@ export class UrlbarValueFormatter {
    */
   #urlbarInput;
 
+  #hostRange = null;
+
   get #document() {
     return this.#urlbarInput.document;
   }
@@ -102,6 +104,25 @@ export class UrlbarValueFormatter {
     return /** @type {HTMLInputElement} */ (
       this.#urlbarInput.querySelector("#urlbar-scheme")
     );
+  }
+
+  #scrollHostIntoView(isRTL) {
+    if (this.#hostRange) {
+      const hostRect = this.#hostRange.getBoundingClientRect();
+      const urlbarRect = this.#inputField.getBoundingClientRect();
+
+      const scrollDelta = isRTL
+        ? hostRect.left - urlbarRect.left
+        : hostRect.right - urlbarRect.right;
+
+      const scrollTarget = this.#inputField.scrollLeft + scrollDelta;
+
+      this.#inputField.scrollLeft = isRTL
+        ? Math.min(this.#inputField.scrollLeftMax, scrollTarget)
+        : Math.max(0, scrollTarget);
+    } else {
+      this.#inputField.scrollLeft = isRTL ? this.#inputField.scrollLeftMax : 0;
+    }
   }
 
   #ensureFormattedHostVisible(urlMetaData) {
@@ -124,10 +145,10 @@ export class UrlbarValueFormatter {
       url[preDomain.length + domain.length] != "\u200E"
     ) {
       this.#urlbarInput.setAttribute("domaindir", "rtl");
-      this.#inputField.scrollLeft = this.#inputField.scrollLeftMax;
+      this.#scrollHostIntoView(true);
     } else {
       this.#urlbarInput.setAttribute("domaindir", "ltr");
-      this.#inputField.scrollLeft = 0;
+      this.#scrollHostIntoView(false);
     }
     this.#urlbarInput.updateTextOverflow();
   }
@@ -192,7 +213,7 @@ export class UrlbarValueFormatter {
       if (
         !uriInfo ||
         !uriInfo.fixedURI ||
-        uriInfo.keywordProviderName ||
+        uriInfo.keywordProviderId ||
         !["http", "https"].includes(uriInfo.fixedURI.scheme)
       ) {
         return null;
@@ -273,6 +294,7 @@ export class UrlbarValueFormatter {
   }
 
   #removeURLFormat() {
+    this.#hostRange = null;
     if (!this.#formattingApplied) {
       return;
     }
@@ -418,18 +440,29 @@ export class UrlbarValueFormatter {
       );
     }
 
+    let editor = this.#urlbarInput.editor;
+    let textNode = editor.rootElement.firstChild;
+
+    const hostStart = preDomain.length - trimmedLength;
+    const hostEnd = hostStart + domain.length;
+
+    if (hostStart < hostEnd) {
+      this.#hostRange = this.#document.createRange();
+      this.#hostRange.setStart(textNode, hostStart);
+      this.#hostRange.setEnd(textNode, hostEnd);
+    } else {
+      this.#hostRange = null;
+    }
+
     this.#ensureFormattedHostVisible(urlMetaData);
 
     if (!this.formattingEnabled) {
       return false;
     }
 
-    let editor = this.#urlbarInput.editor;
     let controller = editor.selectionController;
 
     this.#formatScheme(controller.SELECTION_URLSECONDARY);
-
-    let textNode = editor.rootElement.firstChild;
 
     // Strike out the "https" part if mixed active content status should be
     // shown.
@@ -649,7 +682,16 @@ export class UrlbarValueFormatter {
       let instance = (this.#resizeInstance = {});
       this.#window.requestAnimationFrame(() => {
         if (instance == this.#resizeInstance) {
-          this.#ensureFormattedHostVisible();
+          if (
+            this.#hostRange &&
+            !this.#hostRange.commonAncestorContainer.isConnected
+          ) {
+            // The host range is no longer valid.
+            this.#removeURLFormat();
+            this.#formatURL();
+          } else {
+            this.#ensureFormattedHostVisible();
+          }
         }
       });
     }, 100);

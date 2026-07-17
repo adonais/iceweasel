@@ -13,10 +13,11 @@
 #include "util/Text.h"
 
 class TestTracer final : public JS::CallbackTracer {
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     if (thing.asCell() == expectedCell && thing.kind() == expectedKind) {
       found = true;
     }
+    return true;
   }
 
  public:

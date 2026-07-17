@@ -45,7 +45,7 @@ nsresult nsQueryReferent::operator()(const nsIID& aIID, void** aAnswer) const {
   nsresult status;
   if (mWeakPtr) {
     if (NS_FAILED(status = mWeakPtr->QueryReferent(aIID, aAnswer))) {
-      *aAnswer = 0;
+      *aAnswer = nullptr;
     }
   } else {
     status = NS_ERROR_NULL_POINTER;

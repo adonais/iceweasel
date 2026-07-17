@@ -33,8 +33,14 @@
   // Content area (.content): minimum 4 columns wide, grows up to 16 columns max
   --content-col-width: minmax(calc((4 * var(--col-width)) + 34px), var(--content-max-width));
 
+  // Pre-computed widths spanning N grid columns including (N-1) gaps
+  --col-span-2: #{--col-span(2)};
+  --col-span-3: #{--col-span(3)};
+  --col-span-12: #{--col-span(12)};
+  --col-span-16: #{--col-span(16)};
+
   // Maximum width of .content: 16 columns + 15 gaps
-  --content-max-width: calc(16 * var(--col-width) + 15 * var(--space-medium));
+  --content-max-width: var(--col-span-16);
 }
 
 .nova-enabled.container {
@@ -58,7 +64,10 @@
   justify-content: center;
   grid-column: 2;
   grid-row: 2 / span 2;
-
+  // Size to intrinsic content rather than stretching to the fixed-size
+  // grid track so descendants with position: sticky have a containing
+  // block that extends through the full document.
+  align-self: start;
 }
 
 .nova-enabled .sidebar-inline-end {

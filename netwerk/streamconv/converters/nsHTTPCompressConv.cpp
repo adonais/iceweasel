@@ -150,9 +150,9 @@ class ZstdWrapper {
 #else
     mDStream = ZSTD_createDStream();  // fallible
     if (!mDStream) {
-      MOZ_RELEASE_ASSERT(ZSTD_defaultCMem.customAlloc == NULL &&
-                         ZSTD_defaultCMem.customFree == NULL &&
-                         ZSTD_defaultCMem.opaque == NULL);
+      MOZ_RELEASE_ASSERT(ZSTD_defaultCMem.customAlloc == nullptr &&
+                         ZSTD_defaultCMem.customFree == nullptr &&
+                         ZSTD_defaultCMem.opaque == nullptr);
       return;
     }
 #endif

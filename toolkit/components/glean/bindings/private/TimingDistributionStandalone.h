@@ -61,7 +61,7 @@ class TimingDistributionStandalone {
   class MOZ_RAII AutoTimer {
    public:
     void Cancel();
-    ~AutoTimer();
+    ~AutoTimer();  // NOLINT(performance-trivially-destructible)
 
    private:
     AutoTimer(uint32_t aMetricId, TimerId aTimerId)

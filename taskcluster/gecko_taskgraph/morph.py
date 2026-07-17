@@ -21,6 +21,7 @@ import copy
 import logging
 import os
 import re
+from collections import defaultdict
 
 from slugid import nice as slugid
 from taskgraph.graph import Graph
@@ -329,7 +330,16 @@ def add_try_task_duplicates(taskgraph, label_to_taskid, parameters, graph_config
 
     rebuild = try_config.get("rebuild")
     if rebuild:
+        if isinstance(rebuild, int):
+            rebuild = defaultdict(lambda n=rebuild: n)
+        else:
+            rebuild = defaultdict(lambda: 1, rebuild)
         for task in taskgraph.tasks.values():
+            count = rebuild[task.label]
+
+            if count == 1:
+                continue
+
             chunk_index = -1
             if task.label.endswith("-cf"):
                 chunk_index = -2
@@ -337,7 +347,7 @@ def add_try_task_duplicates(taskgraph, label_to_taskid, parameters, graph_config
             label_no_chunk = "-".join(label_parts[:chunk_index])
 
             if label_parts[chunk_index].isnumeric() and label_no_chunk in glob_tasks:
-                task.attributes["task_duplicates"] = rebuild
+                task.attributes["task_duplicates"] = count
             elif task.label in tasks:
-                task.attributes["task_duplicates"] = rebuild
+                task.attributes["task_duplicates"] = count
     return taskgraph, label_to_taskid

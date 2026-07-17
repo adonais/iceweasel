@@ -498,85 +498,45 @@ class AnimationInspector extends EventEmitter {
 
     let { animations } = this.state;
 
-    // @backward-compat { version 151 } Once 151 hits release, we can remove this boolean
-    // and always consider it true (i.e. only keep the code inside the if block, and remove
-    // everything that comes after it)
-    const hasTargetConfigurationSupport =
-      await this.inspector.commands.targetConfigurationCommand.supports(
-        "animationsPlayBackRateMultiplier"
-      );
-    if (hasTargetConfigurationSupport) {
-      // "changed" event on each animation will fire respectively when the playback
-      // rate changed. Since for each occurrence of event, change of UI is urged.
-      // To avoid this, disable the listeners once in order to not capture the event.
-      this.setAnimationStateChangedListenerEnabled(false);
-
-      const wasRunning = hasRunningAnimation(animations);
-
-      // We only have an animationsFront if the selected node can have animations in its
-      // subtree (that excludes doctype, comment or text nodes for example)
-      if (this.animationsFront) {
-        // Pause the animations so we have a clean slate to set the multiplier.
-        // If the animation was running, we'll resume it after setting the multiplier.
-        // TODO: Eventually this should be handled by the platform, where the currentTime
-        // should be adjusted, but that requires more work and we want to make this feature
-        // available as soon as possible.
-        await this.animationsFront.pauseSome(animations);
-      }
-
-      try {
-        await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
-          {
-            animationsPlayBackRateMultiplier: multiplier,
-          }
-        );
-
-        if (wasRunning) {
-          await this.animationsFront.playSome(animations);
-        }
-        this.inspector.store.dispatch(updatePlaybackRateMultiplier(multiplier));
-        animations = await this.refreshAnimationsState(animations);
-      } catch (e) {
-        // Expected if we've already been destroyed (e.g. this.inspector is null)
-        if (!this.inspector) {
-          console.error(e);
-          return;
-        }
-
-        // Actually throw the error if the animation panel isn't destroyed.
-        throw new Error(e);
-      } finally {
-        this.setAnimationStateChangedListenerEnabled(true);
-      }
-
-      if (animations) {
-        await this.fireUpdateAction(animations);
-      }
-
-      this.emitForTests("playbackrate-multiplier-updated");
-
-      return;
-    }
-
-    // If we don't have an animationsFront, it means that we don't have visible animations
-    // so we can safely bail here.
-    if (!this.animationsFront) {
-      return;
-    }
-
     // "changed" event on each animation will fire respectively when the playback
     // rate changed. Since for each occurrence of event, change of UI is urged.
     // To avoid this, disable the listeners once in order to not capture the event.
     this.setAnimationStateChangedListenerEnabled(false);
+
+    const wasRunning = hasRunningAnimation(animations);
+
+    // We only have an animationsFront if the selected node can have animations in its
+    // subtree (that excludes doctype, comment or text nodes for example)
+    if (this.animationsFront) {
+      // Pause the animations so we have a clean slate to set the multiplier.
+      // If the animation was running, we'll resume it after setting the multiplier.
+      // TODO: Eventually this should be handled by the platform, where the currentTime
+      // should be adjusted, but that requires more work and we want to make this feature
+      // available as soon as possible.
+      await this.animationsFront.pauseSome(animations);
+    }
+
     try {
-      await this.animationsFront.setPlaybackRates(animations, multiplier);
+      await this.inspector.commands.targetConfigurationCommand.updateConfiguration(
+        {
+          animationsPlayBackRateMultiplier: multiplier,
+        }
+      );
+
+      if (wasRunning) {
+        await this.animationsFront.playSome(animations);
+      }
       this.inspector.store.dispatch(updatePlaybackRateMultiplier(multiplier));
       animations = await this.refreshAnimationsState(animations);
     } catch (e) {
-      // Expected if we've already been destroyed or another node has been
-      // selected in the meantime.
-      console.error(e);
-      return;
+      // Expected if we've already been destroyed (e.g. this.inspector is null)
+      if (!this.inspector) {
+        console.error(e);
+        return;
+      }
+
+      // Actually throw the error if the animation panel isn't destroyed.
+      throw new Error(e);
     } finally {
       this.setAnimationStateChangedListenerEnabled(true);
     }
@@ -584,6 +544,8 @@ class AnimationInspector extends EventEmitter {
     if (animations) {
       await this.fireUpdateAction(animations);
     }
+
+    this.emitForTests("playbackrate-multiplier-updated");
   }
 
   async setAnimationsPlayState(doPlay) {

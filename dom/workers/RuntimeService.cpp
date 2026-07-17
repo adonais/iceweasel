@@ -1915,6 +1915,15 @@ void RuntimeService::PropagateStorageAccessPermissionGranted(
   }
 }
 
+void RuntimeService::UpdateTimezoneOverrideForWorkers(
+    const nsPIDOMWindowInner& aWindow, const nsAString& aTimezone) {
+  AssertIsOnMainThread();
+
+  for (WorkerPrivate* const worker : GetWorkersForWindow(aWindow)) {
+    worker->UpdateTimezoneOverride(aTimezone);
+  }
+}
+
 template <typename Func>
 void RuntimeService::BroadcastAllWorkers(const Func& aFunc) {
   AssertIsOnMainThread();
@@ -2194,6 +2203,21 @@ void RuntimeService::UpdateWorkersPeerConnections(
   for (WorkerPrivate* const worker : GetWorkersForWindow(aWindow)) {
     MOZ_ASSERT(!worker->IsSharedWorker());
     worker->SetActivePeerConnections(aHasPeerConnections);
+  }
+}
+
+void RuntimeService::UpdateWorkersLanguageOverride(
+    const nsPIDOMWindowInner& aWindow, const nsCString& aLanguageOverride) {
+  AssertIsOnMainThread();
+
+  nsTArray<nsString> resolvedLanguages;
+  Navigator::GetAcceptLanguages(resolvedLanguages, aLanguageOverride.IsEmpty()
+                                                       ? nullptr
+                                                       : &aLanguageOverride);
+
+  for (WorkerPrivate* const worker : GetWorkersForWindow(aWindow)) {
+    MOZ_ASSERT(!worker->IsSharedWorker());
+    worker->UpdateLanguageOverride(aLanguageOverride, resolvedLanguages);
   }
 }
 
@@ -2478,6 +2502,15 @@ void PropagateStorageAccessPermissionGrantedToWorkers(
   RuntimeService* runtime = RuntimeService::GetService();
   if (runtime) {
     runtime->PropagateStorageAccessPermissionGranted(aWindow);
+  }
+}
+
+void UpdateTimezoneOverrideForWorkers(const nsPIDOMWindowInner& aWindow,
+                                      const nsAString& aTimezone) {
+  AssertIsOnMainThread();
+  RuntimeService* runtime = RuntimeService::GetService();
+  if (runtime) {
+    runtime->UpdateTimezoneOverrideForWorkers(aWindow, aTimezone);
   }
 }
 

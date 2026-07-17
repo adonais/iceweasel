@@ -39,4 +39,4 @@ void TelemetryIPCAccumulator::IPCTimerFired(nsITimer* aTimer, void* aClosure) {}
 void TelemetryIPCAccumulator::DeInitializeGlobalState() {}
 
 void TelemetryIPCAccumulator::DispatchToMainThread(
-    already_AddRefed<nsIRunnable>&& aEvent) {}
+    already_AddRefed<nsIRunnable> aEvent) {}

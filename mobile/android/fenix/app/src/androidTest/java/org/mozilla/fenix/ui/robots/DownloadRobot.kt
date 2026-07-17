@@ -18,6 +18,7 @@ import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
 import androidx.compose.ui.test.longClick
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
@@ -31,6 +32,7 @@ import androidx.test.uiautomator.Until
 import org.hamcrest.CoreMatchers.allOf
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.snackbar.SNACKBAR_TEST_TAG
+import org.mozilla.fenix.downloads.DownloadsScreenTestTag
 import org.mozilla.fenix.downloads.listscreen.DownloadsListTestTag
 import org.mozilla.fenix.helpers.AppAndSystemHelper.assertExternalAppOpens
 import org.mozilla.fenix.helpers.AppAndSystemHelper.getPermissionAllowID
@@ -124,6 +126,20 @@ class DownloadRobot(private val composeTestRule: ComposeTestRule) {
                 ignoreCase = true,
             ).performClick()
         Log.i(TAG, "clickMultiSelectDeleteDialogButton: Clicked the \"Delete\" dialog button")
+    }
+
+    fun confirmDeleteDownloadDialogIfDisplayed() {
+        val nodes = this@DownloadRobot.composeTestRule
+            .onAllNodesWithTag(DownloadsScreenTestTag.DELETE_DIALOG_CONFIRM_BUTTON)
+            .fetchSemanticsNodes()
+        if (nodes.isNotEmpty()) {
+            Log.i(TAG, "confirmDeleteDownloadDialogIfDisplayed: Dialog present, clicking \"Confirm\"")
+            this@DownloadRobot.composeTestRule
+                .onNodeWithTag(DownloadsScreenTestTag.DELETE_DIALOG_CONFIRM_BUTTON)
+                .performClick()
+        } else {
+            Log.i(TAG, "confirmDeleteDownloadDialogIfDisplayed: No dialog present, skipping")
+        }
     }
 
     fun openPageAndDownloadFile(url: Uri, downloadFile: String) {

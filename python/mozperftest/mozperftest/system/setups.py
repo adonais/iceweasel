@@ -14,6 +14,7 @@ from mozperftest.utils import (
     FIREFOX_DESKTOP_APPS,
     FIREFOX_MOBILE_APPS,
     ON_TRY,
+    get_adb_device_or_emu,
 )
 
 
@@ -124,9 +125,7 @@ class MobileVersionProducer(BaseVersionProducer):
         except Exception:
             pass
 
-        from mozdevice import ADBDeviceFactory
-
-        device = ADBDeviceFactory(verbose=True)
+        device = get_adb_device_or_emu()
         pkg_info = device.shell_output(f"dumpsys package {binary}")
         version_matcher = re.compile(r".*versionName=([\d.]+)")
         for line in pkg_info.split("\n"):

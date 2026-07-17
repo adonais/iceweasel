@@ -7,6 +7,7 @@ import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
 import { ExtensionUtils } from "resource://gre/modules/ExtensionUtils.sys.mjs";
 
 const lazy = XPCOMUtils.declareLazy({
+  ExtensionDocumentId: "resource://gre/modules/ExtensionDocumentId.sys.mjs",
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
   ProxyService: {
     service: "@mozilla.org/network/protocol-proxy-service;1",
@@ -332,6 +333,12 @@ export class ProxyChannelFilter {
 
       frameId: channel.frameId,
       parentFrameId: channel.parentFrameId,
+      documentId: lazy.ExtensionDocumentId.getDocumentId(
+        channel.documentInnerWindowId
+      ),
+      parentDocumentId: lazy.ExtensionDocumentId.getDocumentId(
+        channel.parentDocumentInnerWindowId
+      ),
 
       frameAncestors: channel.frameAncestors || undefined,
 

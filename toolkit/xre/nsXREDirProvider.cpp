@@ -675,7 +675,7 @@ nsXREDirProvider::DoStartup() {
       nsCOMPtr<nsIPKCS11Token> token(
           do_CreateInstance("@mozilla.org/security/internalkeytoken;1"));
       if (token) {
-        (void)token->Login(false);
+        (void)token->Login();
       }
     }
 #endif

@@ -153,32 +153,19 @@ PKCS11Token::GetTokenSerialNumber(/*out*/ nsACString& tokenSerialNum) {
 }
 
 NS_IMETHODIMP
-PKCS11Token::IsLoggedIn(bool* _retval) {
-  NS_ENSURE_ARG_POINTER(_retval);
-  *_retval = PK11_IsLoggedIn(mSlot.get(), 0);
+PKCS11Token::GetIsLoggedIn(bool* isLoggedIn) {
+  *isLoggedIn = PK11_IsLoggedIn(mSlot.get(), nullptr);
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PKCS11Token::Login(bool force) {
-  bool test;
-  nsresult rv = this->NeedsLogin(&test);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (test && force) {
-    rv = this->LogoutSimple();
-    if (NS_FAILED(rv)) {
-      return rv;
-    }
-  }
-
+PKCS11Token::Login() {
   return mozilla::MapSECStatus(
       PK11_Authenticate(mSlot.get(), true, mUIContext));
 }
 
 NS_IMETHODIMP
-PKCS11Token::LogoutSimple() {
+PKCS11Token::Logout() {
   // PK11_Logout() can fail if the user wasn't logged in beforehand. We want
   // this method to succeed even in this case, so we ignore the return value.
   (void)PK11_Logout(mSlot.get());
@@ -186,95 +173,64 @@ PKCS11Token::LogoutSimple() {
 }
 
 NS_IMETHODIMP
-PKCS11Token::LogoutAndDropAuthenticatedResources() {
-  static NS_DEFINE_CID(kNSSComponentCID, NS_NSSCOMPONENT_CID);
-
-  nsresult rv = LogoutSimple();
-
-  if (NS_FAILED(rv)) return rv;
-
-  nsCOMPtr<nsINSSComponent> nssComponent(do_GetService(kNSSComponentCID, &rv));
-  if (NS_FAILED(rv)) return rv;
-
-  return nssComponent->LogoutAuthenticatedPK11();
-}
-
-NS_IMETHODIMP
 PKCS11Token::Reset() {
-  return mozilla::MapSECStatus(PK11_ResetToken(mSlot.get(), nullptr));
-}
-
-NS_IMETHODIMP
-PKCS11Token::GetNeedsUserInit(bool* aNeedsUserInit) {
-  NS_ENSURE_ARG_POINTER(aNeedsUserInit);
-  *aNeedsUserInit = PK11_NeedUserInit(mSlot.get());
-  return NS_OK;
-}
-
-NS_IMETHODIMP
-PKCS11Token::CheckPassword(const nsACString& password, bool* _retval) {
-  NS_ENSURE_ARG_POINTER(_retval);
-  SECStatus srv =
-      PK11_CheckUserPassword(mSlot.get(), PromiseFlatCString(password).get());
-  if (srv != SECSuccess) {
-    *_retval = false;
-    PRErrorCode error = PR_GetError();
-    if (error != SEC_ERROR_BAD_PASSWORD) {
-      /* something really bad happened - throw an exception */
-      return mozilla::psm::GetXPCOMFromNSSError(error);
+  SECStatus rv = PK11_ResetToken(mSlot.get(), nullptr);
+  if (rv != SECSuccess) {
+    return mozilla::MapSECStatus(rv);
+  }
+  // If this is the internal key token, set an empty password to enable the SQL
+  // DB to work properly.
+  if (mIsInternalKeyToken) {
+    rv = PK11_InitPin(mSlot.get(), nullptr, nullptr);
+    if (rv != SECSuccess) {
+      return mozilla::MapSECStatus(rv);
     }
-  } else {
-    *_retval = true;
   }
   return NS_OK;
-}
-
-NS_IMETHODIMP
-PKCS11Token::InitPassword(const nsACString& initialPassword) {
-  const nsCString& passwordCStr = PromiseFlatCString(initialPassword);
-  // PSM initializes the sqlite-backed softoken with an empty password. The
-  // implementation considers this not to be a password (GetHasPassword returns
-  // false), but we can't actually call PK11_InitPin again. Instead, we call
-  // PK11_ChangePW with the empty password.
-  bool hasPassword;
-  nsresult rv = GetHasPassword(&hasPassword);
-  if (NS_FAILED(rv)) {
-    return rv;
-  }
-  if (!PK11_NeedUserInit(mSlot.get()) && !hasPassword) {
-    return mozilla::MapSECStatus(
-        PK11_ChangePW(mSlot.get(), "", passwordCStr.get()));
-  }
-  return mozilla::MapSECStatus(
-      PK11_InitPin(mSlot.get(), "", passwordCStr.get()));
 }
 
 NS_IMETHODIMP
 PKCS11Token::ChangePassword(const nsACString& oldPassword,
                             const nsACString& newPassword) {
-  // PK11_ChangePW() has different semantics for the empty string and for
-  // nullptr. In order to support this difference, we need to check IsVoid() to
-  // find out if our caller supplied null/undefined args or just empty strings.
-  // See Bug 447589.
-  return mozilla::MapSECStatus(PK11_ChangePW(
-      mSlot.get(),
-      oldPassword.IsVoid() ? nullptr : PromiseFlatCString(oldPassword).get(),
-      newPassword.IsVoid() ? nullptr : PromiseFlatCString(newPassword).get()));
+  if (oldPassword.IsEmpty() && PK11_NeedUserInit(mSlot.get())) {
+    return mozilla::MapSECStatus(
+        PK11_InitPin(mSlot.get(), "", PromiseFlatCString(newPassword).get()));
+  }
+  SECStatus rv = PK11_CheckUserPassword(mSlot.get(),
+                                        PromiseFlatCString(oldPassword).get());
+  if (rv != SECSuccess) {
+    return mozilla::MapSECStatus(rv);
+  }
+  return mozilla::MapSECStatus(
+      PK11_ChangePW(mSlot.get(), PromiseFlatCString(oldPassword).get(),
+                    PromiseFlatCString(newPassword).get()));
 }
 
+// Two PKCS#11 flags are relevant here: CKF_LOGIN_REQUIRED and
+// CKF_USER_PIN_INITIALIZED.
+// CKF_LOGIN_REQUIRED is set if there are some cryptographic operations on the
+// token that require logging in to perform. If this flag is not set, no
+// password is required.
+// CKF_USER_PIN_INITIALIZED is set if the token's user pin (password) has been
+// set.
+// CKF_LOGIN_REQUIRED is obtained by calling PK11_NeedLogin.
+// CKF_USER_PIN_INITIALIZED is obtained by negating the result of calling
+// PK11_NeedUserInit.
+
 NS_IMETHODIMP
-PKCS11Token::GetHasPassword(bool* hasPassword) {
-  NS_ENSURE_ARG_POINTER(hasPassword);
-  // PK11_NeedLogin returns true if the token is currently configured to require
-  // the user to log in (whether or not the user is actually logged in makes no
-  // difference).
-  *hasPassword = PK11_NeedLogin(mSlot.get()) && !PK11_NeedUserInit(mSlot.get());
+PKCS11Token::GetCanHavePassword(bool* canHavePassword) {
+  // A token is considered able to have a password if CKF_LOGIN_REQUIRED is set
+  // or if CKF_USER_PIN_INITIALIZED is set.
+  *canHavePassword =
+      PK11_NeedLogin(mSlot.get()) || !PK11_NeedUserInit(mSlot.get());
+  ;
   return NS_OK;
 }
 
 NS_IMETHODIMP
-PKCS11Token::NeedsLogin(bool* _retval) {
-  NS_ENSURE_ARG_POINTER(_retval);
-  *_retval = PK11_NeedLogin(mSlot.get());
+PKCS11Token::GetHasPassword(bool* hasPassword) {
+  // A token has a password if CKF_LOGIN_REQUIRED is set and
+  // CKF_USER_PIN_INITIALIZED is set.
+  *hasPassword = PK11_NeedLogin(mSlot.get()) && !PK11_NeedUserInit(mSlot.get());
   return NS_OK;
 }

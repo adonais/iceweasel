@@ -151,8 +151,8 @@ StorageAccessPermissionStatus::StorageAccessPermissionStatus(
 
 already_AddRefed<PermissionStatusSink>
 StorageAccessPermissionStatus::CreateSink() {
-  RefPtr<StorageAccessPermissionStatusSink> sink =
-      new StorageAccessPermissionStatusSink(this, Name(), GetPermissionType());
+  RefPtr sink = MakeRefPtr<StorageAccessPermissionStatusSink>(
+      this, Name(), GetPermissionType());
   sink->Init();
   return sink.forget();
 }

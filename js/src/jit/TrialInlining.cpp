@@ -296,9 +296,7 @@ Maybe<InlinableCallData> FindInlinableCallData(ICCacheIRStub* stub) {
         if (!opInfo.transpile) {
           return mozilla::Nothing();
         }
-        if (data.isSome()) {
-          MOZ_ASSERT(op == CacheOp::ReturnFromIC);
-        }
+        MOZ_ASSERT(data.isNothing());
         reader.skip(argLength);
         break;
     }
@@ -393,9 +391,7 @@ Maybe<InlinableGetterData> FindInlinableGetterData(ICCacheIRStub* stub) {
         if (!opInfo.transpile) {
           return mozilla::Nothing();
         }
-        if (data.isSome()) {
-          MOZ_ASSERT(op == CacheOp::ReturnFromIC);
-        }
+        MOZ_ASSERT(data.isNothing());
         reader.skip(argLength);
         break;
     }
@@ -482,9 +478,7 @@ Maybe<InlinableSetterData> FindInlinableSetterData(ICCacheIRStub* stub) {
         if (!opInfo.transpile) {
           return mozilla::Nothing();
         }
-        if (data.isSome()) {
-          MOZ_ASSERT(op == CacheOp::ReturnFromIC);
-        }
+        MOZ_ASSERT(data.isNothing());
         reader.skip(argLength);
         break;
     }
@@ -862,7 +856,6 @@ bool TrialInliner::maybeInlineCall(ICEntry& entry, ICFallbackStub* fallback,
   writer.callInlinedFunction(data->calleeOperand, argcId, newICScript,
                              data->callFlags,
                              ClampFixedArgc(loc.getCallArgc()));
-  writer.returnFromIC();
 
   return replaceICStub(entry, fallback, writer, CacheKind::Call);
 }
@@ -910,7 +903,6 @@ bool TrialInliner::maybeInlineGetter(ICEntry& entry, ICFallbackStub* fallback,
   writer.callInlinedGetterResult(data->receiverOperand, data->calleeOperand,
                                  data->target->function(), newICScript,
                                  data->sameRealm);
-  writer.returnFromIC();
 
   return replaceICStub(entry, fallback, writer, kind);
 }
@@ -955,7 +947,6 @@ bool TrialInliner::maybeInlineSetter(ICEntry& entry, ICFallbackStub* fallback,
   writer.callInlinedSetter(data->receiverOperand, data->calleeOperand,
                            data->target->function(), data->rhsOperand,
                            newICScript, data->sameRealm);
-  writer.returnFromIC();
 
   return replaceICStub(entry, fallback, writer, kind);
 }

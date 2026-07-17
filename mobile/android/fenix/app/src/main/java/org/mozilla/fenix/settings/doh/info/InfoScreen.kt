@@ -97,7 +97,7 @@ private fun Title(
     ) {
         Text(
             text = title,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            color = MaterialTheme.colorScheme.onSurface,
             style = FirefoxTheme.typography.headline8,
         )
     }

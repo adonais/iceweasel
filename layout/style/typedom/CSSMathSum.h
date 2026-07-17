@@ -21,7 +21,8 @@ namespace mozilla {
 
 struct CSSPropertyId;
 class ErrorResult;
-struct StyleMathSum;
+struct StyleNumericValue;
+using StyleMathSum = CopyableTArray<StyleNumericValue>;
 
 namespace dom {
 
@@ -55,6 +56,7 @@ class CSSMathSum final : public CSSMathValue {
   // end of CSSMathSum Web IDL declarations
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             const SerializationContext& aContext,
                              nsACString& aDest) const;
 
   StyleMathSum ToStyleMathSum() const;

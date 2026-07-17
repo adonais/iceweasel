@@ -12,6 +12,7 @@ use crate::invalidation::element::restyle_hints::RestyleHint;
 use crate::properties::ComputedValues;
 use crate::selector_parser::{PseudoElement, RestyleDamage, EAGER_PSEUDO_COUNT};
 use crate::style_resolver::{PrimaryStyle, ResolvedElementStyles, ResolvedStyle};
+use crate::values::specified::TreeCountingFunction;
 #[cfg(feature = "gecko")]
 use malloc_size_of::MallocSizeOfOps;
 use selectors::matching::SelectorCaches;
@@ -224,6 +225,34 @@ impl ElementStyles {
         usage
     }
 
+    /// Whether this element uses sibling-count() or sibling-index().
+    pub fn uses_tree_counting_function(&self, t: TreeCountingFunction) -> bool {
+        let usage_from_flags = |flags: ComputedValueFlags| -> bool {
+            if t == TreeCountingFunction::SiblingCount
+                && flags.intersects(ComputedValueFlags::USES_SIBLING_COUNT)
+            {
+                return true;
+            }
+            if t == TreeCountingFunction::SiblingIndex
+                && flags.intersects(ComputedValueFlags::USES_SIBLING_INDEX)
+            {
+                return true;
+            }
+            false
+        };
+
+        let primary = self.primary();
+        let mut usage = usage_from_flags(primary.flags);
+
+        for pseudo_style in self.pseudos.as_array() {
+            if let Some(ref pseudo_style) = pseudo_style {
+                usage |= usage_from_flags(pseudo_style.flags);
+            }
+        }
+
+        usage
+    }
+
     #[cfg(feature = "gecko")]
     fn size_of_excluding_cvs(&self, _ops: &mut MallocSizeOfOps) -> usize {
         // As the method name suggests, we don't measures the ComputedValues
@@ -369,12 +398,40 @@ fn needs_to_match_self(hint: RestyleHint, style: &ComputedValues) -> bool {
     if hint.intersects(RestyleHint::RESTYLE_SELF_IF_PSEUDO) && style.is_pseudo_style() {
         return true;
     }
+    if hint.intersects(RestyleHint::RESTYLE_IF_AFFECTED_BY_ANCESTOR_FONT)
+        && style
+            .flags
+            .intersects(ComputedValueFlags::USES_FONT_RELATIVE_UNITS_ON_CONTAINER_QUERIES)
+    {
+        return true;
+    }
     hint.intersects(
         RestyleHint::RESTYLE_IF_AFFECTED_BY_STYLE_QUERIES
             | RestyleHint::RESTYLE_IF_AFFECTED_BY_NAMED_STYLE_CONTAINER,
     ) && style
         .flags
-        .contains(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY)
+        .intersects(ComputedValueFlags::DEPENDS_ON_CONTAINER_STYLE_QUERY)
+}
+
+fn needs_to_recascade_self(hint: RestyleHint, style: &ComputedValues) -> bool {
+    if hint.intersects(RestyleHint::RECASCADE_SELF) {
+        return true;
+    }
+    if hint.intersects(RestyleHint::RECASCADE_SELF_IF_INHERIT_RESET_STYLE)
+        && style
+            .flags
+            .contains(ComputedValueFlags::INHERITS_RESET_STYLE)
+    {
+        return true;
+    }
+    if hint.intersects(RestyleHint::RESTYLE_IF_AFFECTED_BY_ANCESTOR_FONT)
+        && style
+            .flags
+            .contains(ComputedValueFlags::USES_FONT_RELATIVE_UNITS)
+    {
+        return true;
+    }
+    return false;
 }
 
 impl ElementData {
@@ -503,12 +560,7 @@ impl ElementData {
             ));
         }
 
-        let needs_to_recascade_self = hint.intersects(RestyleHint::RECASCADE_SELF)
-            || (hint.intersects(RestyleHint::RECASCADE_SELF_IF_INHERIT_RESET_STYLE)
-                && style
-                    .flags
-                    .contains(ComputedValueFlags::INHERITS_RESET_STYLE));
-        if needs_to_recascade_self {
+        if needs_to_recascade_self(hint, style) {
             return Some(RestyleKind::CascadeOnly);
         }
 
@@ -545,12 +597,7 @@ impl ElementData {
             ));
         }
 
-        let needs_to_recascade_self = hint.intersects(RestyleHint::RECASCADE_SELF)
-            || (hint.intersects(RestyleHint::RECASCADE_SELF_IF_INHERIT_RESET_STYLE)
-                && style
-                    .flags
-                    .contains(ComputedValueFlags::INHERITS_RESET_STYLE));
-        if needs_to_recascade_self {
+        if needs_to_recascade_self(hint, style) {
             return Some(RestyleKind::CascadeOnly);
         }
         return None;

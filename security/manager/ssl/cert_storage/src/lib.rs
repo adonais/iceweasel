@@ -29,7 +29,9 @@ use wr_malloc_size_of as malloc_size_of;
 use base64::prelude::*;
 use byteorder::{NetworkEndian, ReadBytesExt, WriteBytesExt};
 use clubcard::{ApproximateSizeOf, Queryable};
-use clubcard_crlite::{CRLiteClubcard, CRLiteKey, CRLiteQuery, CRLiteStatus};
+use clubcard_crlite::{
+    CRLiteClubcard, CRLiteKey, CRLiteQuery, CRLiteStatus, IssuerSpkiHash, LogId, Timestamp,
+};
 use crossbeam_utils::atomic::AtomicCell;
 use malloc_size_of::{MallocSizeOf, MallocSizeOfOps};
 use moz_task::{create_background_task_queue, is_main_thread, Task, TaskRunnable};
@@ -155,7 +157,7 @@ impl Filter {
                 (&*timestamp.log_id) /* ThinVec -> &[u8; 32] */
                     .try_into()
                     .ok()
-                    .map(|log_id| (log_id, timestamp.timestamp))
+                    .map(|log_id| (LogId(log_id), Timestamp(timestamp.timestamp)))
             })
             .flatten();
         let mut covered_timestamp_count = 0;
@@ -563,8 +565,8 @@ impl SecurityState {
         let mut maybe_good = false;
         let mut covered = false;
 
-        let issuer_spki_hash = Sha256::digest(issuer_spki);
-        let clubcard_crlite_key = CRLiteKey::new(issuer_spki_hash.as_ref(), serial_number);
+        let issuer_spki_hash = IssuerSpkiHash(Sha256::digest(issuer_spki).into());
+        let clubcard_crlite_key = CRLiteKey::new(&issuer_spki_hash, serial_number);
         for filter in &self.crlite_filters {
             match filter.has(&clubcard_crlite_key, timestamps) {
                 nsICertStorage::STATE_ENFORCE => return nsICertStorage::STATE_ENFORCE,

@@ -17,6 +17,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
   renderPrompt: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   MODEL_FEATURES: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
+  loadPrompt:
+    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "md", () => {
@@ -25,6 +27,21 @@ ChromeUtils.defineLazyGetter(lazy, "md", () => {
   );
   return new MarkdownIt({ html: false, linkify: true });
 });
+
+let _savedLoadPromptDescriptor = null;
+export function _setLoadPromptForTesting(fn) {
+  if (fn !== null) {
+    _savedLoadPromptDescriptor = Object.getOwnPropertyDescriptor(
+      lazy,
+      "loadPrompt"
+    );
+    lazy.loadPrompt = fn;
+  } else if (_savedLoadPromptDescriptor) {
+    // eslint-disable-next-line mozilla/valid-lazy
+    Object.defineProperty(lazy, "loadPrompt", _savedLoadPromptDescriptor);
+    _savedLoadPromptDescriptor = null;
+  }
+}
 
 /**
  * Truncates and spotlights untrusted metadata text to guard against prompt injection by adding an
@@ -158,13 +175,9 @@ export async function constructRealTimeInfoInjectionMessage(
  * Constructs the relevant memories context message to be inejcted before the user message.
  *
  * @param {string} message                                                          User message to find relevant memories for
- * @param {openAIEngine} engineInstance
  * @returns {Promise<null|{role: string, tool_call_id: string, content: string}>}   Relevant memories context message or null if no relevant memories
  */
-export async function constructRelevantMemoriesContextMessage(
-  message,
-  engineInstance
-) {
+export async function constructRelevantMemoriesContextMessage(message) {
   const relevantMemories =
     await lazy.MemoriesManager.getRelevantMemories(message);
 
@@ -177,7 +190,7 @@ export async function constructRelevantMemoriesContextMessage(
           return `${memory.id} - ${memory.memory_summary}`;
         })
         .join("\n- ");
-    const relevantMemoriesContextPrompt = await engineInstance.loadPrompt(
+    const { prompt: relevantMemoriesContextPrompt } = await lazy.loadPrompt(
       lazy.MODEL_FEATURES.MEMORIES_RELEVANT_CONTEXT
     );
     const content = lazy.renderPrompt(relevantMemoriesContextPrompt, {

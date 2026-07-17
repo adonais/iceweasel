@@ -11,8 +11,8 @@
 #include <dlfcn.h>
 #include <fcntl.h>
 #include "ScreenHelperGTK.h"
-#include "DMABufFormats.h"
 #include "nsWindow.h"
+#include "DMABufFormats.h"
 #include "mozilla/gfx/gfxVars.h"
 #include "mozilla/gfx/Logging.h"
 #ifdef MOZ_LOGGING
@@ -85,20 +85,37 @@ bool WaylandSurface::IsOpaqueRegionEnabled() {
   return sIsOpaqueRegionEnabled;
 }
 
-WaylandSurface::WaylandSurface(RefPtr<WaylandSurface> aParent)
-    : mParent(aParent) {
-  LOGWAYLAND("WaylandSurface::WaylandSurface(), parent [%p]",
-             mParent ? mParent->GetLoggingWidget() : nullptr);
-  struct wl_compositor* compositor = WaylandDisplayGet()->GetCompositor();
-  mSurface = wl_compositor_create_surface(compositor);
+WaylandSurface::WaylandSurface() = default;
+
+void WaylandSurface::Init(RefPtr<WaylandSurface> aRootLayer) {
+  LOGWAYLAND("WaylandSurface::Init() root layer [%p]",
+             aRootLayer ? aRootLayer->GetLoggingWidget() : nullptr);
+
+  mSurface = wl_compositor_create_surface(WaylandDisplayGet()->GetCompositor());
   LOGWAYLAND("    created surface %p ID %d", (void*)mSurface,
              wl_proxy_get_id((struct wl_proxy*)mSurface));
   MOZ_RELEASE_ASSERT(mSurface, "Can't create wl_surface!");
+  if (WaylandDisplayGet()->GetViewporter()) {
+    mViewport = wp_viewporter_get_viewport(WaylandDisplayGet()->GetViewporter(),
+                                           mSurface);
+  }
+
+  // Layered child surfaces uses the same scale setup as parent ones
+  // and don't use scale callbacks/handlers to get scale directly
+  // from system.
+  if (aRootLayer) {
+    WaylandSurfaceLock lock(this, /* aSkipCommit */ true);
+    SetScaleTypeLocked(lock, aRootLayer->mScaleType,
+                       /* aSetProtocolHandler */ false);
+  }
 }
 
 WaylandSurface::~WaylandSurface() {
   LOGWAYLAND("WaylandSurface::~WaylandSurface()");
 
+  MozClearPointer(mFractionalScaleListener, wp_fractional_scale_v1_destroy);
+  MozClearPointer(mCoordinatesScaleManager, xx_fractional_scale_v2_destroy);
+  MozClearPointer(mViewport, wp_viewport_destroy);
   wl_egl_window* tmp = nullptr;
   mEGLWindow.exchange(tmp);
   MozClearPointer(tmp, wl_egl_window_destroy);
@@ -348,27 +365,9 @@ void WaylandSurface::SetVSyncEmulateCheckLocked(
   }
 }
 
-bool WaylandSurface::CreateViewportLocked(
-    const WaylandSurfaceLock& aProofOfLock, bool aFollowsSizeChanges) {
-  LOGWAYLAND("WaylandSurface::CreateViewportLocked() follow size %d",
-             aFollowsSizeChanges);
-  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-  MOZ_DIAGNOSTIC_ASSERT(mIsMapped);
-  MOZ_DIAGNOSTIC_ASSERT(!mViewport);
-
-  auto* viewPorter = WaylandDisplayGet()->GetViewporter();
-  if (viewPorter) {
-    mViewport = wp_viewporter_get_viewport(viewPorter, mSurface);
-  }
-  if (!mViewport) {
-    LOGWAYLAND(
-        "WaylandSurface::CreateViewportLocked(): Failed to get "
-        "WaylandViewport!");
-    return false;
-  }
-  mSurfaceNeedsCommit = true;
-  mViewportFollowsSizeChanges = aFollowsSizeChanges;
-  return !!mViewport;
+void WaylandSurface::SetViewportFollowsSizeChangesLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
+  mViewportFollowsSizeChanges = true;
 }
 
 void WaylandSurface::EnableDMABufFormatsLocked(
@@ -450,6 +449,7 @@ bool WaylandSurface::MapLocked(const WaylandSurfaceLock& aProofOfLock,
     LOGWAYLAND("    Failed - can't create sub-surface!");
     return false;
   }
+
   mSubsurfaceDesync = aSubsurfaceDesync;
   if (aSubsurfaceDesync) {
     wl_subsurface_set_desync(mSubsurface);
@@ -568,14 +568,12 @@ void WaylandSurface::UnmapLocked(WaylandSurfaceLock& aSurfaceLock) {
 
   RemoveAttachedBufferLocked(aSurfaceLock);
   ClearVSyncCallbackLocked(aSurfaceLock);
-  ClearScaleLocked(aSurfaceLock);
   ClearOpaqueCallbackLocked(aSurfaceLock);
 
-  MozClearPointer(mViewport, wp_viewport_destroy);
-  mViewportDestinationSize = DesktopIntSize(-1, -1);
-  mViewportSourceRect = DesktopIntRect(-1, -1, -1, -1);
+  ClearScaleCallbacksLocked(aSurfaceLock);
+  SetScaleTypeLocked(aSurfaceLock, ScaleType::Disabled,
+                     /* aSetProtocolHandler */ false);
 
-  MozClearPointer(mFractionalScaleListener, wp_fractional_scale_v1_destroy);
   MozClearPointer(mSubsurface, wl_subsurface_destroy);
   MozClearPointer(mColorSurface, wp_color_management_surface_v1_destroy);
   MozClearPointer(mColorRepresentationSurface,
@@ -616,7 +614,7 @@ void WaylandSurface::Commit(WaylandSurfaceLock* aProofOfLock, bool aForceCommit,
       return;
     }
     if (!mSubsurfaceDesync && mParent) {
-      LOGVERBOSE("  request force commit to parent [%p]", mParent.get());
+      LOGVERBOSE("  request force commit to parent layer [%p]", mParent.get());
       mParent->ForceCommit();
     }
     mSurfaceNeedsCommit = false;
@@ -759,105 +757,271 @@ void WaylandSurface::ClearOpaqueRegionLocked(
   SetOpaqueCallbackLocked(aProofOfLock);
 }
 
-void WaylandSurface::FractionalScaleHandler(void* data,
-                                            struct wp_fractional_scale_v1* info,
-                                            uint32_t wire_scale) {
-  AssertIsOnMainThread();
-
-  WaylandSurface* waylandSurface = static_cast<WaylandSurface*>(data);
-  waylandSurface->mScreenScale = wire_scale / 120.0;
-
-  LOGS("[%p]: WaylandSurface::FractionalScaleHandler() scale: %f\n",
-       waylandSurface->mLoggingWidget, (double)waylandSurface->mScreenScale);
-
-  waylandSurface->mFractionalScaleCallback();
-}
-
-static const struct wp_fractional_scale_v1_listener fractional_scale_listener =
-    {
-        .preferred_scale = WaylandSurface::FractionalScaleHandler,
-};
-
-bool WaylandSurface::EnableFractionalScaleLocked(
-    const WaylandSurfaceLock& aProofOfLock,
-    std::function<void(void)> aFractionalScaleCallback, bool aManageViewport) {
+bool WaylandSurface::ConfigureCoordinateScaleLocked(
+    const WaylandSurfaceLock& aProofOfLock, bool aSetProtocolHandler) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-
-  LOGWAYLAND("WaylandSurface::SetupFractionalScale()");
-
-  MOZ_DIAGNOSTIC_ASSERT(!mFractionalScaleListener);
-  auto* manager = WaylandDisplayGet()->GetFractionalScaleManager();
-  if (!manager) {
-    LOGWAYLAND(
-        "WaylandSurface::SetupFractionalScale(): Failed to get "
-        "FractionalScaleManager");
-    return false;
+  if (!mCoordinatesScaleManager) {
+    auto* manager = WaylandDisplayGet()->GetFractionalScaleManagerV2();
+    if (manager) {
+      mCoordinatesScaleManager =
+          xx_fractional_scale_manager_v2_get_fractional_scale(manager,
+                                                              mSurface);
+    }
+    if (!mCoordinatesScaleManager) {
+      return false;
+    }
+    // Coordinates scale needs mCoordinatesScaleManager to set scale to
+    // particular surface. Create it even without handlers then.
+    if (!aSetProtocolHandler) {
+      return true;
+    }
+    static const struct xx_fractional_scale_v2_listener listener = {
+        .scale_factor =
+            [](void* data,
+               struct xx_fractional_scale_v2* xx_fractional_scale_v2,
+               uint32_t scale_8_24) {
+              AssertIsOnMainThread();
+              WaylandSurface* waylandSurface =
+                  static_cast<WaylandSurface*>(data);
+              if (!waylandSurface) {
+                return;
+              }
+              // Don't run callbacks under lock
+              std::function<void(void)> cbs[ScaleCallbackType::CallbackNum] = {
+                  nullptr, nullptr};
+              {
+                WaylandSurfaceLock lock(waylandSurface);
+                // Run changes only on an actual scale only
+                if (waylandSurface->SetCoordinatesScaleLocked(lock,
+                                                              scale_8_24)) {
+                  LOGS_VERBOSE(
+                      "xx_fractional_scale_v2_listener() surface [%p] scale %f",
+                      waylandSurface,
+                      waylandSurface->GetCoordinatesScaleRounded());
+                  for (int i = 0; i < ScaleCallbackType::CallbackNum; i++) {
+                    cbs[i] = waylandSurface->mScaleCallbacks[i];
+                  }
+                }
+              }
+              for (auto const& cb : cbs) {
+                if (cb) {
+                  cb();
+                }
+              }
+            }};
+    xx_fractional_scale_v2_add_listener(mCoordinatesScaleManager, &listener,
+                                        this);
+    return true;
   }
-  mFractionalScaleListener =
-      wp_fractional_scale_manager_v1_get_fractional_scale(manager, mSurface);
-  wp_fractional_scale_v1_add_listener(mFractionalScaleListener,
-                                      &fractional_scale_listener, this);
 
-  // Create Viewport with aFollowsSizeChanges enabled,
-  // regular rendering uses Viewport for fraction scale only.
-  if (aManageViewport &&
-      !CreateViewportLocked(aProofOfLock, /* aFollowsSizeChanges */ true)) {
-    LOGWAYLAND("WaylandSurface::SetupFractionalScale() failed");
-    return false;
+  // We can set listener by xx_fractional_scale_v2_add_listener() only once
+  // so set/uset handler processing by setting WaylandSurface param
+  // if mCoordinatesScaleManager is already present.
+  if (aSetProtocolHandler) {
+    wl_proxy_set_user_data((struct wl_proxy*)mCoordinatesScaleManager, this);
   }
-  mFractionalScaleCallback = std::move(aFractionalScaleCallback);
-
-  if (mViewportFollowsSizeChanges) {
-    SetViewPortDestLocked(aProofOfLock, mSize);
-  }
-
-  // Init scale to default values and load ceiled screen scale from GdkWindow.
-  // We use it as fallback before we get mScreenScale from system.
-  mScaleType = ScaleType::Fractional;
   return true;
 }
 
-bool WaylandSurface::EnableCeiledScaleLocked(
+bool WaylandSurface::ConfigureFractionalScaleLocked(
+    const WaylandSurfaceLock& aProofOfLock, bool aSetProtocolHandler) {
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+  // Fractional scale uses mFractionalScaleListener with callbacks
+  // only so we can ignore it here.
+  if (!aSetProtocolHandler) {
+    return true;
+  }
+  if (!mFractionalScaleListener &&
+      WaylandDisplayGet()->GetFractionalScaleManager()) {
+    mFractionalScaleListener =
+        wp_fractional_scale_manager_v1_get_fractional_scale(
+            WaylandDisplayGet()->GetFractionalScaleManager(), mSurface);
+    if (!mFractionalScaleListener) {
+      return false;
+    }
+    static const struct wp_fractional_scale_v1_listener listener = {
+        .preferred_scale = [](void* data, struct wp_fractional_scale_v1* info,
+                              uint32_t wire_scale) {
+          AssertIsOnMainThread();
+          WaylandSurface* waylandSurface = static_cast<WaylandSurface*>(data);
+          if (!waylandSurface) {
+            return;
+          }
+
+          LOGS_VERBOSE(
+              "wp_fractional_scale_v1_listener() surface [%p] scale %f",
+              waylandSurface, wire_scale / 120.0);
+          // Don't run callbacks under lock
+          std::function<void(void)> cbs[ScaleCallbackType::CallbackNum] = {
+              nullptr, nullptr};
+          {
+            WaylandSurfaceLock lock(waylandSurface);
+            waylandSurface->mScreenScale = wire_scale / 120.0;
+            for (int i = 0; i < ScaleCallbackType::CallbackNum; i++) {
+              cbs[i] = waylandSurface->mScaleCallbacks[i];
+            }
+          }
+          for (auto const& cb : cbs) {
+            if (cb) {
+              cb();
+            }
+          }
+        }};
+    wp_fractional_scale_v1_add_listener(mFractionalScaleListener, &listener,
+                                        this);
+    return true;
+  }
+
+  // We can set listener by xx_fractional_scale_v2_add_listener() only once
+  // so set/uset handler processing by setting WaylandSurface param
+  // if mCoordinatesScaleManager is already present.
+  if (mFractionalScaleListener) {
+    wl_proxy_set_user_data((struct wl_proxy*)mFractionalScaleListener, this);
+  }
+  return true;
+}
+
+bool WaylandSurface::ConfigureScaleLocked(
+    const WaylandSurfaceLock& aProofOfLock, ScaleType aScaleType,
+    bool aSetProtocolHandler) {
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+
+  LOGWAYLAND(
+      "WaylandSurface::ConfigureScaleLocked() new scale type %d old "
+      "scale type %d set handler %d",
+      int(aScaleType), int(mScaleType), aSetProtocolHandler);
+
+  // Remove old handlers
+  switch (mScaleType) {
+    case ScaleType::Coordinates:
+      if (mCoordinatesScaleManager) {
+        wl_proxy_set_user_data((struct wl_proxy*)mCoordinatesScaleManager,
+                               nullptr);
+      }
+      break;
+    case ScaleType::Fractional:
+      if (mFractionalScaleListener) {
+        wl_proxy_set_user_data((struct wl_proxy*)mFractionalScaleListener,
+                               nullptr);
+      }
+      break;
+    default:
+      break;
+  }
+
+  mScaleType = aScaleType;
+  if (!aSetProtocolHandler) {
+    MOZ_DIAGNOSTIC_ASSERT(
+        !HasScaleCallbacksLocked(aProofOfLock),
+        "Active callbacks with disabled compositor handlers!");
+  }
+
+  // Configure/set new handlers for callbacks
+  if (aScaleType == ScaleType::Coordinates) {
+    return ConfigureCoordinateScaleLocked(aProofOfLock, aSetProtocolHandler);
+  } else if (aScaleType == ScaleType::Fractional) {
+    return ConfigureFractionalScaleLocked(aProofOfLock, aSetProtocolHandler);
+  }
+  return true;
+}
+
+void WaylandSurface::SetScaleTypeLocked(const WaylandSurfaceLock& aProofOfLock,
+                                        ScaleType aScaleType,
+                                        bool aSetProtocolHandler) {
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+  if (mScaleType == aScaleType) {
+    return;
+  }
+  switch (aScaleType) {
+    case ScaleType::Coordinates: {
+      if (ConfigureScaleLocked(aProofOfLock, aScaleType, aSetProtocolHandler)) {
+        LOGWAYLAND(
+            "WaylandSurface::SetScaleTypeLocked() use coordinates scale");
+        return;
+      }
+      LOGWAYLAND(
+          "WaylandSurface::SetScaleTypeLocked() fractional-scale-v2 is "
+          "missing, "
+          "fallback to fractional scale.");
+      [[fallthrough]];
+    }
+    case ScaleType::Fractional: {
+      if (ConfigureScaleLocked(aProofOfLock, ScaleType::Fractional,
+                               aSetProtocolHandler)) {
+        LOGWAYLAND("WaylandSurface::SetScaleTypeLocked() use fractional scale");
+        return;
+      }
+      LOGWAYLAND(
+          "WaylandSurface::SetScaleTypeLocked() fractional-scale-v1 is "
+          "missing, "
+          "fallback to ceiled scale.");
+      [[fallthrough]];
+    }
+    // Disabled/Ceiled
+    default:
+      ConfigureScaleLocked(aProofOfLock, aScaleType,
+                           /* aSetProtocolHandler */ false);
+      break;
+  }
+}
+
+void WaylandSurface::SetScaleCallbackLocked(
+    const WaylandSurfaceLock& aProofOfLock, ScaleCallbackType aCallbackType,
+    std::function<void(void)> aScaleCallback) {
+  MOZ_DIAGNOSTIC_ASSERT(aCallbackType < ScaleCallbackType::CallbackNum);
+  mScaleCallbacks[aCallbackType] = std::move(aScaleCallback);
+}
+
+void WaylandSurface::ClearScaleCallbacksLocked(
     const WaylandSurfaceLock& aProofOfLock) {
-  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-  LOGWAYLAND("WaylandSurface::EnableCeiledScaleLocked()");
-
-  if (!CreateViewportLocked(aProofOfLock, /* aFollowsSizeChanges */ true)) {
-    LOGWAYLAND("WaylandSurface::EnableCeiledScaleLocked() failed");
-    return false;
+  for (auto& cb : mScaleCallbacks) {
+    cb = nullptr;
   }
-
-  if (mViewportFollowsSizeChanges) {
-    SetViewPortDestLocked(aProofOfLock, mSize);
-  }
-
-  mScaleType = ScaleType::Ceiled;
-  return true;
 }
 
-void WaylandSurface::ClearScaleLocked(const WaylandSurfaceLock& aProofOfLock) {
-  LOGWAYLAND("WaylandSurface::ClearScaleLocked()");
-  mFractionalScaleCallback = []() {};
-  mScreenScale = sNoScale;
+bool WaylandSurface::HasScaleCallbacksLocked(
+    const WaylandSurfaceLock& aProofOfLock) {
+  for (auto& cb : mScaleCallbacks) {
+    if (cb) {
+      return true;
+    }
+  }
+  return false;
 }
 
 void WaylandSurface::SetCeiledScaleLocked(
     const WaylandSurfaceLock& aProofOfLock, int aScreenCeiledScale) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-  if (IsCeiledScaleLocked(aProofOfLock)) {
+  if (mScaleType == ScaleType::Ceiled) {
     mScreenScale = aScreenCeiledScale;
     LOGWAYLAND("WaylandSurface::SetCeiledScaleLocked() scale %f",
                (double)mScreenScale);
   }
 }
 
+bool WaylandSurface::SetCoordinatesScaleLocked(
+    const WaylandSurfaceLock& aProofOfLock, uint32_t scale_8_24) {
+  MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
+  if (mScaleType != ScaleType::Coordinates || mCoordinatesScale == scale_8_24) {
+    return false;
+  }
+  MOZ_DIAGNOSTIC_ASSERT(mCoordinatesScaleManager);
+  mCoordinatesScale = scale_8_24;
+  mScreenScale = GetCoordinatesScaleRounded();
+  xx_fractional_scale_v2_set_scale_factor(mCoordinatesScaleManager,
+                                          mCoordinatesScale);
+  LOGWAYLAND("WaylandSurface::SetCoordinatesScaleLocked() scale %f",
+             GetCoordinatesScaleRounded());
+  return true;
+}
+
 void WaylandSurface::SetViewPortDestLocked(
     const WaylandSurfaceLock& aProofOfLock, const DesktopIntSize& aDestSize) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
-  if (!mViewport) {
-    return;
-  }
-  if (mViewportDestinationSize == aDestSize) {
+
+  // Silently ignore missing viewport to allow broken compositors to show
+  // something at least.
+  if (!mViewport || mViewportDestinationSize == aDestSize) {
     return;
   }
   mViewportDestinationSize = aDestSize;
@@ -881,6 +1045,8 @@ void WaylandSurface::SetViewPortSourceRectLocked(
     const WaylandSurfaceLock& aProofOfLock, const DesktopIntRect& aRect) {
   MOZ_DIAGNOSTIC_ASSERT(&aProofOfLock == mSurfaceLock);
 
+  // Silently ignore missing viewport to allow broken compositors to show
+  // something at least.
   if (!mViewport || mViewportSourceRect == aRect) {
     return;
   }
@@ -1134,8 +1300,8 @@ BufferTransaction* WaylandSurface::GetNextTransactionLocked(
   }
 
   // Iterate through transactions attached to this WaylandSurface
-  // and delete detached transactions which belongs to old (previously attached)
-  // WaylandBuffer.
+  // and delete detached transactions which belongs to old (previously
+  // attached) WaylandBuffer.
   auto transactions = std::move(mBufferTransactions);
   bool addedNext = false;
   // DeleteTransactionLocked() may delete BufferTransaction so
@@ -1304,6 +1470,7 @@ double WaylandSurface::GetScale() const {
     return scale;
   }
 
+  LOGVERBOSE("WaylandSurface::GetScale() fall back to monitor scale!");
   return ScreenHelperGTK::GetGTKMonitorFractionalScaleFactor();
 }
 
@@ -1436,7 +1603,8 @@ void WaylandSurface::SetColorRepresentationLocked(
   }
 
   LOGWAYLAND(
-      "WaylandSurface::SetColorRepresentationLocked() colorspace %s full range "
+      "WaylandSurface::SetColorRepresentationLocked() colorspace %s full "
+      "range "
       "%d",
       YUVColorSpaceToString(aColorSpace), aFullRange);
 

@@ -25,6 +25,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
 
     return 0n;
   });
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

@@ -164,6 +164,7 @@ pk11_FreeSlotListStatic(PK11SlotList *list)
     }
     list->lock = NULL;
     list->head = NULL;
+    list->tail = NULL;
 }
 
 /*
@@ -850,6 +851,7 @@ pk11_InitSlotListStatic(PK11SlotList *list)
 {
     list->lock = PR_NewLock();
     list->head = NULL;
+    list->tail = NULL;
 }
 
 /* initialize the system slotlists */
@@ -1385,7 +1387,9 @@ PK11_InitToken(PK11SlotInfo *slot, PRBool loadCerts)
         ((slot->tokenInfo.flags & CKF_PROTECTED_AUTHENTICATION_PATH)
              ? PR_TRUE
              : PR_FALSE);
+    PK11_EnterSlotMonitor(slot);
     slot->lastLoginCheck = 0;
+    PK11_ExitSlotMonitor(slot);
     slot->lastState = 0;
     /* on some platforms Active Card incorrectly sets the
      * CKF_PROTECTED_AUTHENTICATION_PATH bit when it doesn't mean to. */
@@ -2754,10 +2758,11 @@ PK11_ResetToken(PK11SlotInfo *slot, char *sso_pwd)
     /* now re-init the token */
     crv = PK11_GETTAB(slot)->C_InitToken(slot->slotID,
                                          (unsigned char *)sso_pwd, sso_pwd ? PORT_Strlen(sso_pwd) : 0, tokenName);
-
-    /* finally bring the token back up */
-    PK11_InitToken(slot, PR_TRUE);
     PK11_ExitSlotMonitor(slot);
+
+    /* finally bring the token back up. PK11_InitToken takes the slot monitor
+     * itself, so it must be called without the monitor held. */
+    PK11_InitToken(slot, PR_TRUE);
     if (crv != CKR_OK) {
         PORT_SetError(PK11_MapError(crv));
         return SECFailure;

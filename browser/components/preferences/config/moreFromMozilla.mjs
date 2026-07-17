@@ -170,10 +170,10 @@ Preferences.addSetting({
 Preferences.addSetting({
   id: "promoGroupLink",
   getControlConfig: config => {
-    let actionURL = lazy.BrowserUtils.isChinaRepack()
-      ? "https://www.firefox.com.cn/browsers/mobile/"
-      : "https://www.mozilla.org/firefox/browsers/mobile/";
-    let href = getURL({ url: actionURL, region: "global" });
+    let href = getURL({
+      url: "https://www.mozilla.org/firefox/browsers/mobile/",
+      region: "global",
+    });
     return {
       ...config,
       controlAttrs: {
@@ -190,15 +190,10 @@ Preferences.addSetting({
     let option =
       lazy.NimbusFeatures.moreFromMozilla.getVariable("template") || "default";
     let templateName = option === "default" ? "simple" : option;
-    let cnSuffix =
-      lazy.BrowserUtils.isChinaRepack() && templateName.includes("simple")
-        ? "-cn"
-        : "";
-    let imagesrc = `chrome://browser/content/preferences/more-from-mozilla-qr-code-${templateName}${cnSuffix}.svg`;
     return {
       ...config,
       controlAttrs: {
-        imagesrc,
+        imagesrc: `chrome://browser/content/preferences/more-from-mozilla-qr-code-${templateName}.svg`,
         imagealignment: "start",
       },
     };
@@ -209,10 +204,11 @@ Preferences.addSetting({
   id: "firefoxMobilePromoLink",
   visible: () => lazy.BrowserUtils.sendToDeviceEmailsSupported(),
   getControlConfig: config => {
-    let actionURL = lazy.BrowserUtils.isChinaRepack()
-      ? "https://www.firefox.com.cn/mobile/get-app/"
-      : "https://www.mozilla.org/firefox/mobile/get-app/?v=mfm";
-    let href = getURL({ url: actionURL, region: "global", hasEmail: true });
+    let href = getURL({
+      url: "https://www.mozilla.org/firefox/mobile/get-app/?v=mfm",
+      region: "global",
+      hasEmail: true,
+    });
     return {
       ...config,
       controlAttrs: {

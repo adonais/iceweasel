@@ -25,7 +25,7 @@ class Element;
 class nsOpenURIInFrameParams final : public nsIOpenURIInFrameParams {
  public:
   NS_DECL_CYCLE_COLLECTION_CLASS(nsOpenURIInFrameParams)
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSIOPENURIINFRAMEPARAMS
 
   explicit nsOpenURIInFrameParams(nsIOpenWindowInfo* aOpenWindowInfo,

@@ -137,6 +137,7 @@ UNIFIED_SOURCES += [
     "NotifyUtilsCommon.cpp",
     "nsIndexedDBProtocolHandler.cpp",
     "NSSCipherStrategy.cpp",
+    "NSSRandomAccessCipherStrategy.cpp",
     "OpenClientDirectoryInfo.cpp",
     "OriginDirectoryLock.cpp",
     "OriginInfo.cpp",

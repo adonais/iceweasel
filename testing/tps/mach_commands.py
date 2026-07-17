@@ -226,6 +226,15 @@ def run_tps(
         fxa_url = "https://api-accounts.stage.mozaws.net/v1"
         fxa_staging = True
 
+    # FxA stage has a WAF that requires a bypass token for automation.
+    fxa_ci_token = os.environ.get("TPS_FXA_CI_TOKEN")
+    if fxa_staging and not fxa_ci_token:
+        print(
+            "ERROR: TPS_FXA_CI_TOKEN env var is required for FxA staging.\n"
+            "       See testing/tps/README for how to obtain a token."
+        )
+        return 1
+
     # Handle account creation or validate credentials
     if auto_account:
         import secrets
@@ -292,6 +301,8 @@ def run_tps(
 
     preferences = TPS_PREFERENCES.copy()
     preferences["tps.config"] = json.dumps(config)
+    if fxa_ci_token:
+        preferences["tps.fxa.bypassToken"] = fxa_ci_token
     if debug:
         preferences.update(TPS_DEBUG_PREFERENCES)
         print("Debug logging enabled")

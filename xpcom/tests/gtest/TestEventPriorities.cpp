@@ -49,10 +49,10 @@ TEST(EventPriorities, IdleAfterNormal)
 {
   int normalRan = 0, idleRan = 0;
 
-  RefPtr<TestEvent> evNormal =
-      new TestEvent(&normalRan, [&] { ASSERT_EQ(idleRan, 0); });
-  RefPtr<TestEvent> evIdle =
-      new TestEvent(&idleRan, [&] { ASSERT_EQ(normalRan, 3); });
+  RefPtr evNormal =
+      MakeRefPtr<TestEvent>(&normalRan, [&] { ASSERT_EQ(idleRan, 0); });
+  RefPtr evIdle =
+      MakeRefPtr<TestEvent>(&idleRan, [&] { ASSERT_EQ(normalRan, 3); });
 
   NS_DispatchToCurrentThreadQueue(do_AddRef(evIdle), EventQueuePriority::Idle);
   NS_DispatchToCurrentThreadQueue(do_AddRef(evIdle), EventQueuePriority::Idle);
@@ -70,9 +70,9 @@ TEST(EventPriorities, HighNormal)
 {
   int normalRan = 0, highRan = 0;
 
-  RefPtr<TestEvent> evNormal = new TestEvent(
+  RefPtr evNormal = MakeRefPtr<TestEvent>(
       &normalRan, [&] { ASSERT_TRUE((highRan - normalRan) >= 0); });
-  RefPtr<TestEvent> evHigh = new TestEvent(
+  RefPtr evHigh = MakeRefPtr<TestEvent>(
       &highRan, [&] { ASSERT_TRUE((highRan - normalRan) >= 0); },
       nsIRunnablePriority::PRIORITY_VSYNC);
 

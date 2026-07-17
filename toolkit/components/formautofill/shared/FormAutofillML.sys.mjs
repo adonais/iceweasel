@@ -7,14 +7,6 @@ import {
   FEATURES,
 } from "chrome://global/content/ml/EngineProcess.sys.mjs";
 
-import { AIFeature } from "chrome://global/content/ml/AIFeature.sys.mjs";
-
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  AutofillTelemetry: "resource://gre/modules/shared/AutofillTelemetry.sys.mjs",
-  FormAutofillUtils: "resource://gre/modules/shared/FormAutofillUtils.sys.mjs",
-});
-
 const FORM_AUTOFILL_FEATURE_ID = "formfill-classification";
 const ML_TASKNAME = "text-classification";
 
@@ -31,74 +23,35 @@ const FormFill_Config = {
   dtype: "fp32",
 };
 
-export class FormAutofillML extends AIFeature {
-  static async id() {
-    return "formfill-ml";
-  }
+export class FormAutofillML {
+  #engine;
 
-  // For now, these are just placeholders.
-  static async enable() {}
-  static async block() {}
-  static async makeAvailable() {}
-  static async isEnabled() {
-    return true;
-  }
-  static async isAllowed() {
-    return true;
-  }
-  static async isBlocked() {
-    return false;
-  }
-  static async isManagedByPolicy() {
-    return false;
-  }
-
-  static addToHash(hash, str) {
-    for (let i of str) {
-      hash = ((hash << 5) - hash + i.charCodeAt(0)) | 0;
-    }
-    return hash;
-  }
-
-  static async detectFields(window, fieldDetails) {
-    let engine;
-    try {
-      engine = await createEngine(FormFill_Config);
-    } catch (ex) {
-      return;
-    }
-
-    // Hash of the data for the form
-    let hash = 0;
-    let beforeTime = window.performance.now();
-
-    let results = [];
-    for (let fd of fieldDetails) {
-      const request = {
-        args: [fd.extraInfo.mlData],
-        options: { pooling: "mean", normalize: true },
-      };
-
-      hash = this.addToHash(hash, fd.extraInfo.mlData);
-
-      let result = await engine.run(request);
-      results.push(result[0].label == "other" ? "" : result[0].label);
-    }
-
-    let mlTime = window.performance.now() - beforeTime;
-
-    let mlEnabled = lazy.FormAutofillUtils.enableMLAutofill;
-
-    // If ML is enabled, then it will be used for autofill.
-    // Otherwise, we just calculate the ML inferred fields for
-    // telemetry but don't use them for autofill.
-    for (let f = 0; f < fieldDetails.length; f++) {
-      fieldDetails[f].mlFieldName = results[f];
-      if (mlEnabled) {
-        fieldDetails[f].fieldName = results[f];
+  async detectFields(fieldDetails) {
+    if (!this.#engine || this.#engine.engineStatus == "closed") {
+      try {
+        this.#engine = await createEngine(FormFill_Config);
+      } catch (ex) {
+        return;
       }
     }
 
-    lazy.AutofillTelemetry.recordMLDetection(fieldDetails, hash, mlTime);
+    for (let fd of fieldDetails) {
+      if (fd.fieldName || !fd.mlData) {
+        continue;
+      }
+
+      const request = {
+        args: [fd.mlData],
+        options: { pooling: "mean", normalize: true },
+      };
+
+      let result = await this.#engine.run(request);
+      let fieldName = result[0].label;
+      if (fieldName && fieldName != "other") {
+        fd.fieldName = fieldName;
+      }
+
+      fd.reason = "ml";
+    }
   }
 }

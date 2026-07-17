@@ -5,7 +5,7 @@
         "prefersContrast": "CanvasText",
         "brand": {
           "light": "{color.gray.100}",
-          "dark": "{color.gray.05}"
+          "dark": "{color.gray.0}"
         },
         "platform": {
           "default": "currentColor"

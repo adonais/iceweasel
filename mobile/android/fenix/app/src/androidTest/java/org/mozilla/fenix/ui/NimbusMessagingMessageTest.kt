@@ -39,7 +39,7 @@ class NimbusMessagingMessageTest {
 
     @get:Rule
     val activityTestRule =
-        HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true)
+        HomeActivityIntentTestRule.withDefaultSettingsOverrides()
 
     @Before
     fun setUp() {

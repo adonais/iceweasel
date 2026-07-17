@@ -200,6 +200,30 @@ export const getSupportedTimeZones = () => {
   return FIXED_DEFAULT_ZONES;
 };
 
+/**
+ * Returns a localized generic time-zone name, or the IANA id on failure.
+ */
+export const getLocalizedTimeZoneName = (timeZone, locale) => {
+  try {
+    const parts = new Intl.DateTimeFormat(locale, {
+      timeZone,
+      timeZoneName: "longGeneric",
+    }).formatToParts(new Date());
+    const part = parts.find(p => p.type === "timeZoneName");
+    return part?.value || timeZone;
+  } catch (e) {
+    return timeZone;
+  }
+};
+
+export const buildLocalizedTimeZoneMap = (timeZones, locale) => {
+  const map = new Map();
+  for (const tz of timeZones) {
+    map.set(tz, getLocalizedTimeZoneName(tz, locale));
+  }
+  return map;
+};
+
 const normalizeClockZone = clock => {
   const normalizedClock =
     typeof clock === "string" ? { timeZone: clock } : clock;
@@ -287,25 +311,43 @@ export const getClockFormDerivedState = ({
   clockSearchQuery,
   clockSelectedTimeZone,
   isEditingClock,
+  localizedTimeZoneMap,
   supportedTimeZones,
 }) => {
   let resolvedClockTimeZone = "";
   const query = clockSearchQuery.trim().toLowerCase();
+  const getLocalized = timeZone =>
+    (localizedTimeZoneMap?.get(timeZone) ?? "").toLowerCase();
+
   if (clockSelectedTimeZone && isValidTimeZone(clockSelectedTimeZone)) {
     resolvedClockTimeZone = clockSelectedTimeZone;
   } else if (query) {
-    resolvedClockTimeZone =
-      supportedTimeZones.find(timeZone => {
-        const city = getCityFromTimeZone(timeZone).toLowerCase();
-        return timeZone.toLowerCase() === query || city === query;
-      }) ?? "";
+    const idOrCityMatch = supportedTimeZones.find(timeZone => {
+      const city = getCityFromTimeZone(timeZone).toLowerCase();
+      return timeZone.toLowerCase() === query || city === query;
+    });
+    if (idOrCityMatch) {
+      resolvedClockTimeZone = idOrCityMatch;
+    } else {
+      // Localized zone names can be shared by multiple IANA zones.
+      const localizedMatches = supportedTimeZones.filter(
+        timeZone => getLocalized(timeZone) === query
+      );
+      if (localizedMatches.length === 1) {
+        [resolvedClockTimeZone] = localizedMatches;
+      }
+    }
   }
 
   const filteredTimeZones = query
     ? supportedTimeZones
         .filter(timeZone => {
           const city = getCityFromTimeZone(timeZone).toLowerCase();
-          return timeZone.toLowerCase().includes(query) || city.includes(query);
+          return (
+            timeZone.toLowerCase().includes(query) ||
+            city.includes(query) ||
+            getLocalized(timeZone).includes(query)
+          );
         })
         .slice(0, 8)
     : [];

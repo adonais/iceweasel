@@ -23,6 +23,8 @@ import mozilla.components.feature.media.facts.MediaFacts
 import mozilla.components.feature.prompts.dialog.GeneratedPasswordFacts
 import mozilla.components.feature.prompts.dialog.LoginDialogFacts
 import mozilla.components.feature.prompts.facts.CreditCardAutofillDialogFacts
+import mozilla.components.feature.protection.dashboard.TrackerCategory
+import mozilla.components.feature.protection.dashboard.facts.ProtectionDashboardFacts
 import mozilla.components.feature.pwa.ProgressiveWebAppFacts
 import mozilla.components.feature.search.telemetry.ads.AdsTelemetry
 import mozilla.components.feature.search.telemetry.incontent.InContentTelemetry
@@ -53,6 +55,7 @@ import org.mozilla.fenix.GleanMetrics.PerfAwesomebar
 import org.mozilla.fenix.GleanMetrics.ProgressiveWebApp
 import org.mozilla.fenix.GleanMetrics.SitePermissions
 import org.mozilla.fenix.GleanMetrics.SyncedTabs
+import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.components.metrics.ReleaseMetricController.Companion
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.utils.Settings
@@ -502,6 +505,36 @@ class MetricControllerTest {
         assertNotNull(MediaNotification.pause.testGetValue())
         assertEquals(1, MediaNotification.pause.testGetValue()!!.size)
         assertNull(MediaNotification.pause.testGetValue()!!.single().extra)
+    }
+
+    @Test
+    fun `WHEN processing a FEATURE_PROTECTION_DASHBOARD tracker category fact THEN the matching metric is recorded`() {
+        val controller = createReleaseMetricController()
+
+        fun process(category: TrackerCategory) = controller.run {
+            Fact(
+                Component.FEATURE_PROTECTION_DASHBOARD,
+                Action.CLICK,
+                ProtectionDashboardFacts.Items.TRACKER_CATEGORY,
+                value = category.name,
+            ).process()
+        }
+
+        assertNull(TrackingProtection.privacyReportTrackingCookiesTapped.testGetValue())
+        process(TrackerCategory.CROSS_SITE_COOKIES)
+        assertNotNull(TrackingProtection.privacyReportTrackingCookiesTapped.testGetValue())
+
+        assertNull(TrackingProtection.privacyReportSocialTapped.testGetValue())
+        process(TrackerCategory.SOCIAL_MEDIA_TRACKERS)
+        assertNotNull(TrackingProtection.privacyReportSocialTapped.testGetValue())
+
+        assertNull(TrackingProtection.privacyReportFingerprintsTapped.testGetValue())
+        process(TrackerCategory.FINGERPRINTERS)
+        assertNotNull(TrackingProtection.privacyReportFingerprintsTapped.testGetValue())
+
+        assertNull(TrackingProtection.privacyReportTrackingContentTapped.testGetValue())
+        process(TrackerCategory.TRACKING_CONTENT)
+        assertNotNull(TrackingProtection.privacyReportTrackingContentTapped.testGetValue())
     }
 
     @Test

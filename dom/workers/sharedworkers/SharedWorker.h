@@ -81,6 +81,11 @@ class SharedWorker final : public DOMEventTargetHelper {
 
   void Thaw();
 
+  void UpdateLanguageOverride(const nsACString& aLanguageOverride,
+                              const nsTArray<nsString>& aLanguages);
+
+  void UpdateTimezoneOverride(const nsAString& aTimezoneOverride);
+
  private:
   MOZ_CAN_RUN_SCRIPT static already_AddRefed<SharedWorker> Constructor(
       const GlobalObject& aGlobal,

@@ -307,6 +307,12 @@ partial interface Document {
   readonly attribute FullscreenKeyboardLock fullscreenKeyboardLock;
 };
 
+// https://w3c.github.io/picture-in-picture/#extensions-to-the-document-interface
+partial interface Document {
+  [Pref="dom.media-pip.enabled"] readonly attribute boolean pictureInPictureEnabled;
+  [Pref="dom.media-pip.enabled", NewObject, Throws] Promise<undefined> exitPictureInPicture();
+};
+
 // https://w3c.github.io/pointerlock/#extensions-to-the-document-interface
 // https://w3c.github.io/pointerlock/#extensions-to-the-documentorshadowroot-mixin
 partial interface Document {

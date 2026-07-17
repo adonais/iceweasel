@@ -64,7 +64,7 @@ static PRLibrary* MozAVLink(nsIFile* aFile) {
   PRLibrary* lib = PR_LoadLibraryWithFlags(lspec, PR_LD_NOW | PR_LD_LOCAL);
 #endif
   if (!lib) {
-    FFMPEGV_LOG("unable to load library %s", aFile->HumanReadablePath().get());
+    FFMPEGV_LOG("unable to load library {}", aFile->HumanReadablePath().get());
   }
   return lib;
 }
@@ -141,7 +141,7 @@ bool FFVPXRuntimeLinker::Init() {
   }
   sFFVPXLib.mAVCodecLib = MozAVLink(libFile);
   FFmpegLibWrapper::LinkResult res = sFFVPXLib.Link();
-  FFMPEGP_LOG("Link result: %s", ToString(res).c_str());
+  FFMPEGP_LOG("Link result: {}", ToString(res).c_str());
   if (res == FFmpegLibWrapper::LinkResult::Success) {
     sLinkStatus = LinkStatus_SUCCEEDED;
     FFmpegDecoderModule<FFVPX_VERSION>::Init(&sFFVPXLib);

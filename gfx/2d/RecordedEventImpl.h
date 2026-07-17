@@ -2085,7 +2085,7 @@ void RecordedStrokeOptionsMixin::RecordStrokeOptions(
 template <class S>
 void RecordedStrokeOptionsMixin::ReadStrokeOptions(
     S& aStream, StrokeOptions& aStrokeOptions) {
-  uint64_t dashLength64 = 0;
+  uint64_t dashLength64;
   JoinStyle joinStyle;
   CapStyle capStyle;
 
@@ -2112,9 +2112,8 @@ void RecordedStrokeOptionsMixin::ReadStrokeOptions(
     aStream.SetIsBad();
     return;
   }
-  aStream.read((char*)mDashPatternStorage.get(), sizeof(Float) * dashLength);
-  if (!aStream.good()) {
-    aStream.SetIsBad();
+  if (!aStream.read((char*)mDashPatternStorage.get(),
+                    sizeof(Float) * dashLength)) {
     return;
   }
   aStrokeOptions.mDashLength = dashLength;
@@ -2264,8 +2263,11 @@ RecordedDrawTargetCreation::RecordedDrawTargetCreation(S& aStream)
 
     DataSourceSurface::ScopedMap map(dataSurf, DataSourceSurface::READ);
     for (int y = 0; y < mRect.height; y++) {
-      aStream.read((char*)map.GetData() + y * map.GetStride(),
-                   BytesPerPixel(mFormat) * mRect.width);
+      if (!aStream.read((char*)map.GetData() + y * map.GetStride(),
+                        BytesPerPixel(mFormat) * mRect.width)) {
+        mHasExistingData = false;
+        return;
+      }
     }
     mExistingData = dataSurf;
   }
@@ -2815,7 +2817,7 @@ RecordedDrawGlyphs<T>::RecordedDrawGlyphs(RecordedEvent::EventType aType,
   ReadElement(aStream, mScaledFont);
   ReadDrawOptions(aStream, mOptions);
   this->ReadPatternData(aStream, mPattern);
-  uint32_t numGlyphs = 0;
+  uint32_t numGlyphs;
   ReadElement(aStream, numGlyphs);
   if (!aStream.good() || numGlyphs <= 0) {
     return;
@@ -3332,36 +3334,38 @@ struct ElementStreamFormat<S, layers::SurfaceDescriptor> {
     }
   }
 
-  static void Read(S& s, T& t) {
-    uint32_t size = 0;
-    s.read(reinterpret_cast<char*>(&size), sizeof(size));
+  [[nodiscard]] static bool Read(S& s, T& t) {
+    uint32_t size;
+    if (!s.read(reinterpret_cast<char*>(&size), sizeof(size))) {
+      return false;
+    }
 
-    if (!s.good() || size == 0 || size > 1024 * 16) {
+    if (size == 0 || size > 1024 * 16) {
       s.SetIsBad();
-      return;
+      return false;
     }
 
     // TODO: We should revise/extend the API to avoid copying here.
     nsTArray<char> buffer;
     buffer.SetLength(size);
-    s.read(buffer.Elements(), size);
-
-    if (!s.good()) {
-      return;
+    if (!s.read(buffer.Elements(), size)) {
+      return false;
     }
 
     auto result = mozilla::ipc::DeserializeFromBytesUtil<T>(buffer);
     if (!result) {
       s.SetIsBad();
-      return;
+      return false;
     }
 
     t = std::move(*result);
 
     if (!dom::ValidSurfaceDescriptorForRemoteCanvas2d(t)) {
       s.SetIsBad();
-      return;
+      return false;
     }
+
+    return true;
   }
 };
 
@@ -3666,28 +3670,41 @@ RecordedSourceSurfaceCreation::RecordedSourceSurfaceCreation(S& aStream)
   }
 
   mDataSurface = Factory::CreateDataSourceSurface(size, format);
+  const char* failedAction = nullptr;
   if (mDataSurface) {
     DataSourceSurface::ScopedMap map(mDataSurface, DataSourceSurface::WRITE);
     if (!map.IsMapped()) {
       mDataSurface = nullptr;
+      failedAction = "map";
     } else {
       char* data = (char*)map.GetData();
       size_t stride = map.GetStride();
       size_t dataFormatWidth = BytesPerPixel(format) * size.width;
       if (stride == dataFormatWidth) {
-        aStream.read(data, stride * size.height);
+        if (!aStream.read(data, stride * size.height)) {
+          failedAction = "read";
+          mDataSurface = nullptr;
+        }
+
       } else {
         for (int y = 0; y < size.height; y++) {
-          aStream.read(data, dataFormatWidth);
+          if (!aStream.read(data, dataFormatWidth)) {
+            failedAction = "read";
+            mDataSurface = nullptr;
+            break;
+          }
           data += stride;
         }
       }
     }
+  } else {
+    failedAction = "allocate";
   }
-  if (!mDataSurface) {
-    gfxCriticalNote
-        << "RecordedSourceSurfaceCreation failed to allocate data of size "
-        << size.width << " x " << size.height;
+  if (failedAction) {
+    MOZ_ASSERT(!mDataSurface);
+    gfxCriticalNote << "RecordedSourceSurfaceCreation failed to "
+                    << failedAction << " data of size " << size.width << " x "
+                    << size.height;
     aStream.SetIsBad();
   }
 }
@@ -3950,7 +3967,9 @@ RecordedGradientStopsCreation::RecordedGradientStopsCreation(S& aStream)
         << mNumStops;
     aStream.SetIsBad();
   } else {
-    aStream.read((char*)mStops, mNumStops * sizeof(GradientStop));
+    (void)aStream.read((char*)mStops, mNumStops * sizeof(GradientStop));
+    // GradientStop is a non-scalar type, it's default initialized, it's safe
+    // to ignore the deserialization here.
   }
 }
 
@@ -4187,7 +4206,7 @@ RecordedFontData::RecordedFontData(S& aStream)
     : RecordedEventDerived(FONTDATA), mType(FontType::UNKNOWN) {
   ReadElementConstrained(aStream, mType, FontType::DWRITE, FontType::UNKNOWN);
   ReadElement(aStream, mFontDetails.fontDataKey);
-  uint32_t dataSize = 0;
+  uint32_t dataSize;
   ReadElement(aStream, dataSize);
   if (!dataSize || !aStream.good()) {
     return;
@@ -4246,7 +4265,7 @@ RecordedFontDescriptor::RecordedFontDescriptor(S& aStream)
   ReadElement(aStream, mRefPtr);
   ReadElement(aStream, mIndex);
 
-  size_t size = 0;
+  size_t size;
   ReadElement(aStream, size);
   if (!aStream.good()) {
     return;
@@ -4302,7 +4321,7 @@ RecordedUnscaledFontCreation::RecordedUnscaledFontCreation(S& aStream)
   ReadElement(aStream, mFontDataKey);
   ReadElement(aStream, mIndex);
 
-  size_t size = 0;
+  size_t size;
   ReadElement(aStream, size);
   if (!aStream.good()) {
     return;
@@ -4387,7 +4406,7 @@ RecordedScaledFontCreation::RecordedScaledFontCreation(S& aStream)
   ReadElement(aStream, mUnscaledFont);
   ReadElement(aStream, mGlyphSize);
 
-  size_t size = 0;
+  size_t size;
   ReadElement(aStream, size);
   if (!aStream.good()) {
     return;
@@ -4397,7 +4416,7 @@ RecordedScaledFontCreation::RecordedScaledFontCreation(S& aStream)
     return;
   }
 
-  size_t numVariations = 0;
+  size_t numVariations;
   ReadElement(aStream, numVariations);
   if (!aStream.good()) {
     return;
@@ -4527,7 +4546,7 @@ RecordedFilterNodeSetAttribute::RecordedFilterNodeSetAttribute(S& aStream)
   ReadElement(aStream, mIndex);
   ReadElementConstrained(aStream, mArgType, ArgType::ARGTYPE_UINT32,
                          ArgType::ARGTYPE_FLOAT_ARRAY);
-  size_t size = 0;
+  size_t size;
   ReadElement(aStream, size);
   if (!aStream.good()) {
     return;
@@ -4611,14 +4630,14 @@ void RecordedLink::Record(S& aStream) const {
 template <class S>
 RecordedLink::RecordedLink(S& aStream) : RecordedEventDerived(LINK) {
   ReadElement(aStream, mRect);
-  size_t localDestLen = 0;
+  size_t localDestLen;
   ReadElement(aStream, localDestLen);
   if (!aStream.good() ||
       (localDestLen && !mLocalDest.Read(aStream, localDestLen))) {
     aStream.SetIsBad();
     return;
   }
-  size_t uriLen = 0;
+  size_t uriLen;
   ReadElement(aStream, uriLen);
   if (!aStream.good() || (uriLen && !mURI.Read(aStream, uriLen))) {
     aStream.SetIsBad();
@@ -4656,7 +4675,7 @@ template <class S>
 RecordedDestination::RecordedDestination(S& aStream)
     : RecordedEventDerived(DESTINATION) {
   ReadElement(aStream, mPoint);
-  size_t len = 0;
+  size_t len;
   ReadElement(aStream, len);
   if (!aStream.good() || (len && !mDestination.Read(aStream, len))) {
     aStream.SetIsBad();

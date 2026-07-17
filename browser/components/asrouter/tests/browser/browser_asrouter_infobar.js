@@ -290,8 +290,12 @@ add_task(
   }
 );
 
+function getMessageEl(infobar) {
+  return infobar.notification.querySelector(':scope > [slot="message"]');
+}
+
 function getMeaningfulNodes(infobar) {
-  return [...infobar.notification.messageText.childNodes].filter(
+  return [...getMessageEl(infobar).childNodes].filter(
     n =>
       n.nodeType === Node.ELEMENT_NODE ||
       (n.nodeType === Node.TEXT_NODE && n.textContent.trim())
@@ -377,7 +381,7 @@ add_task(async function test_specialMessageAction_onLinkClick() {
   ];
   let { infobar } = await showInfobar(parts, box, browser);
 
-  let link = infobar.notification.messageText.querySelector("a[href]");
+  let link = getMessageEl(infobar).querySelector("a[href]");
   Assert.ok(link, "Found the link");
   EventUtils.synthesizeMouseAtCenter(link, {}, browser.documentGlobal);
 
@@ -623,7 +627,7 @@ add_task(async function test_buildMessageFragment_withInlineAnchors() {
     "Template anchor carries the correct href"
   );
 
-  const rendered = infobar.notification.messageText.querySelector(
+  const rendered = getMessageEl(infobar).querySelector(
     'a[data-l10n-name="foo"]'
   );
   Assert.ok(rendered, "Rendered anchor is present in infobar");
@@ -727,7 +731,7 @@ add_task(
       dispatchStub
     );
 
-    const rendered = infobar.notification.messageText.querySelector(
+    const rendered = getMessageEl(infobar).querySelector(
       'a[data-l10n-name="foo"]'
     );
     Assert.ok(rendered, "Rendered inline anchor present");
@@ -1125,9 +1129,7 @@ add_task(
     // Ignore impression ping.
     dispatch.resetHistory();
 
-    infobar.notification.messageText
-      .querySelector('a[data-l10n-name="test"]')
-      .click();
+    getMessageEl(infobar).querySelector('a[data-l10n-name="test"]').click();
 
     await BrowserTestUtils.waitForCondition(
       () => !infobar.notification,

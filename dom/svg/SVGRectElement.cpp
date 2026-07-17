@@ -46,7 +46,7 @@ SVGElement::LengthInfo SVGRectElement::sLengthInfo[6] = {
 // Implementation
 
 SVGRectElement::SVGRectElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGRectElementBase(std::move(aNodeInfo)) {}
 
 bool SVGRectElement::IsAttributeMapped(const nsAtom* aAttribute) const {

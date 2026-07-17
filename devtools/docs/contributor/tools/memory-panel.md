@@ -147,7 +147,7 @@ commands.
 There are also `JS::ubi::Node` related unit tests in
 `js/src/jit-test/tests/heap-analysis/*`, `js/src/jit-test/tests/debug/Memory-*`,
 and `js/src/jsapi-tests/testUbiNode.cpp`. See
-https://firefox-source-docs.mozilla.org/js/test.html#running-jit-tests-locally
+<https://firefox-source-docs.mozilla.org/js/test.html#running-jit-tests-locally>
 for running the JIT tests.
 
 ## `HeapAnalysesWorker`

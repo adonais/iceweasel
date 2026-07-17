@@ -9,6 +9,13 @@ newtab-page-title = Ak' ika'ye'
 newtab-settings-button =
     .title = B'an tuch ak' xaj u'uje' tu k'uchb'al tetze'
 
+## Firefox Home content
+
+home-mode-choice-custom-srd =
+    .label = Eetz chitu' URLs…
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Aq'ol texhlal
+
 ## Search box component.
 
 # "Search" is a verb/action

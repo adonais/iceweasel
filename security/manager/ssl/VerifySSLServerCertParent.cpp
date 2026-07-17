@@ -13,6 +13,7 @@
 #include "nsNSSIOLayer.h"
 #include "nsISocketProvider.h"
 #include "mozilla/Components.h"
+#include "mozilla/psm/EnabledSignatureSchemes.h"
 
 extern mozilla::LazyLogModule gPIPNSSLog;
 
@@ -20,6 +21,21 @@ using namespace mozilla::pkix;
 
 namespace mozilla {
 namespace psm {
+
+namespace {
+
+SSLSignatureScheme FromIPCSignatureScheme(EnabledSignatureScheme aScheme) {
+  switch (aScheme) {
+#define CASE_IPC_TO_SSL_SCHEME(NAME, _) \
+  case EnabledSignatureScheme::NAME:    \
+    return NAME;
+    FOR_EACH_ENABLED_SIGNATURE_SCHEME(CASE_IPC_TO_SSL_SCHEME)
+#undef CASE_IPC_TO_SSL_SCHEME
+  }
+  MOZ_CRASH("Unexpected EnabledSignatureScheme value");
+}
+
+}  // namespace
 
 VerifySSLServerCertParent::VerifySSLServerCertParent() = default;
 
@@ -141,12 +157,12 @@ bool VerifySSLServerCertParent::Dispatch(
   Maybe<DelegatedCredentialInfo> dcInfo;
   if (aDcInfo) {
     dcInfo.emplace();
-    dcInfo->scheme = static_cast<SSLSignatureScheme>(aDcInfo->scheme());
+    dcInfo->scheme = FromIPCSignatureScheme(aDcInfo->scheme());
     dcInfo->authKeyBits = aDcInfo->authKeyBits();
   }
 
-  RefPtr<IPCServerCertVerificationResult> resultTask =
-      new IPCServerCertVerificationResult(mBackgroundThread, this);
+  RefPtr resultTask =
+      MakeRefPtr<IPCServerCertVerificationResult>(mBackgroundThread, this);
 
   nsresult rv = sts->Dispatch(NS_NewRunnableFunction(
       "VerifySSLServerCertParent::Dispatch",

@@ -519,7 +519,6 @@ export default [
     files: [
       "devtools/shared/heapsnapshot/tests/xpcshell/dominator-tree-worker.js",
       "devtools/shared/heapsnapshot/tests/xpcshell/heap-snapshot-worker.js",
-      "dom/broadcastchannel/tests/broadcastchannel_sharedWorker.js",
       "dom/cache/test/mochitest/worker_wrapper.js",
       "dom/crypto/test/test-worker.js",
       "dom/filesystem/tests/worker_basic.js",
@@ -530,8 +529,6 @@ export default [
       "dom/indexedDB/test/test_blob_worker_xhr_post.html",
       "dom/indexedDB/test/test_blob_worker_xhr_read_slice.html",
       "dom/indexedDB/test/test_blob_worker_xhr_read.html",
-      "dom/messagechannel/tests/sharedWorker_messageChannel.js",
-      "dom/messagechannel/tests/sharedWorker2_messageChannel.js",
       "dom/quota/test/modules/content/worker/head.js",
       "dom/url/tests/esm_url_worker.js",
       "dom/url/tests/url_worker.js",
@@ -542,12 +539,41 @@ export default [
       "dom/xhr/tests/subdir/relativeLoad_sub_worker.js",
       "dom/xhr/tests/subdir/relativeLoad_sub_worker2.js",
       "dom/xhr/tests/worker_temporaryFileBlob.js",
-      "dom/xhr/tests/xhr_sharedworker.js",
       "dom/xhr/tests/xhr2_worker.js",
       "dom/xhr/tests/xhrAbort_worker.js",
       "xpcom/ioutils/tests/file_ioutils_worker.js",
       "xpcom/ioutils/tests/pathutils_worker.js",
     ],
     languageOptions: { globals: globals.worker },
+  },
+  {
+    // The "globals" npm package doesn't currently have globals for shared workers.
+    name: "globals-shared-worker",
+    files: [
+      "browser/components/originattributes/test/browser/file_shared.worker.js",
+      "browser/components/resistfingerprinting/test/browser/file_navigator.worker.js",
+      "dom/broadcastchannel/tests/broadcastchannel_sharedWorker.js",
+      "dom/messagechannel/tests/sharedWorker_messageChannel.js",
+      "dom/messagechannel/tests/sharedWorker2_messageChannel.js",
+      "dom/xhr/tests/xhr_sharedworker.js",
+    ],
+    languageOptions: {
+      globals: {
+        ...globals.worker,
+        onconnect: "writable",
+      },
+    },
+  },
+  {
+    name: "globals-audioWorklet",
+    files: [
+      "browser/extensions/webcompat/injections/js/bug1994562-shim-mstp-mstg-on-window.js",
+      "devtools/client/webconsole/test/browser/test-error-worklet.mjs",
+      "dom/origin-trials/tests/mochitest/common.js",
+      "dom/worklet/tests/*worklet*.js",
+    ],
+    languageOptions: {
+      globals: globals.audioWorklet,
+    },
   },
 ];

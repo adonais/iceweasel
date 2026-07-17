@@ -44,7 +44,7 @@
         "@base": {
           "value": {
             "light": "{color.gray.100}",
-            "dark": "{color.gray.05}",
+            "dark": "{color.gray.0}",
             "nativeTheme": "inherit",
             "prefersContrast": "FieldText"
           }
@@ -52,7 +52,7 @@
         "focus": {
           "value": {
             "light": "{color.black.@base}",
-            "dark": "{color.gray.05}",
+            "dark": "{color.gray.0}",
             "nativeTheme": "FieldText"
           }
         }
@@ -72,7 +72,7 @@
     "color": {
       "value": {
         "light": "{color.gray.100}",
-        "dark": "{color.gray.05}",
+        "dark": "{color.gray.0}",
         "nativeTheme": "-moz-dialogtext"
       }
     }

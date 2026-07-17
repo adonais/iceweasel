@@ -350,7 +350,7 @@ add_task(async function test_sort_history_search_telemetry() {
     }, "There is one matching search result.");
     Services.fog.testResetFOG();
     // Select sort by site option
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       historyComponent.sortInputs[1],
       {},
       content
@@ -369,7 +369,7 @@ add_task(async function test_sort_history_search_telemetry() {
     Services.fog.testResetFOG();
 
     // Select sort by date option
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       historyComponent.sortInputs[0],
       {},
       content

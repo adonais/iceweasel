@@ -11,15 +11,17 @@ import mozilla.components.lib.state.Action
  */
 internal sealed interface BookmarksAction : Action
 
-/**
- * The Store is initializing.
- */
-internal data object Init : BookmarksAction
-internal data class InitEdit(val guid: String) : BookmarksAction
-internal data class InitEditLoaded(
+internal data class BookmarkToEditLoaded(
     val bookmark: BookmarkItem.Bookmark,
     val folder: BookmarkItem.Folder,
 ) : BookmarksAction
+
+/**
+ * Dispatched when the bookmark view appears.
+ *
+ * @property bookmarkToLoad The guid of the bookmark to load in the edit state.
+ */
+internal data class ViewAppeared(val bookmarkToLoad: String? = null) : BookmarksAction
 
 /**
  * Bookmarks have been loaded from the storage layer.
@@ -167,6 +169,5 @@ internal sealed class ImportAction : BookmarksAction {
     internal data class ImportSucceeded(val count: Int) : ImportAction()
     internal sealed class ImportFileClicked : ImportAction() {
         internal data object FromMenu : ImportFileClicked()
-        internal data object FromButton : ImportFileClicked()
     }
 }

@@ -1569,7 +1569,8 @@ bool SavedStacks::insertFrames(JSContext* cx, MutableHandle<SavedFrame*> frame,
       }
     }
 
-    if (captureIsSatisfied(cx, principals, location.source(), capture)) {
+    if (framePushed &&
+        captureIsSatisfied(cx, principals, location.source(), capture)) {
       break;
     }
 

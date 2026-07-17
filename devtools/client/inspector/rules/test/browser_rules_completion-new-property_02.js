@@ -40,7 +40,7 @@ const testData = [
   ["VK_DOWN", {}, "rosybrown", OPEN, SELECTED, CHANGE],
   ["VK_DOWN", {}, "royalblue", OPEN, SELECTED, CHANGE],
   ["VK_RIGHT", {}, "royalblue", !OPEN, !SELECTED, !CHANGE],
-  [" ", {}, "royalblue aliceblue", OPEN, SELECTED, CHANGE],
+  [" ", {}, "royalblue aliceblue", OPEN, SELECTED, !CHANGE], // There is no change as the value is only set to "royalblue"
   ["!", {}, "royalblue !important", !OPEN, !SELECTED, CHANGE],
   ["VK_ESCAPE", {}, null, !OPEN, !SELECTED, CHANGE],
 ];

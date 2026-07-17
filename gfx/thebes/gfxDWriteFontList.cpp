@@ -968,7 +968,7 @@ FontFamily gfxDWriteFontList::GetDefaultFontForPlatform(
   return ff;
 }
 
-gfxFontEntry* gfxDWriteFontList::LookupLocalFont(
+already_AddRefed<gfxFontEntry> gfxDWriteFontList::LookupLocalFont(
     FontVisibilityProvider* aFontVisibilityProvider,
     const nsACString& aFontName, WeightRange aWeightForEntry,
     StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) {
@@ -988,14 +988,14 @@ gfxFontEntry* gfxDWriteFontList::LookupLocalFont(
   }
 
   gfxDWriteFontEntry* dwriteLookup = static_cast<gfxDWriteFontEntry*>(lookup);
-  gfxDWriteFontEntry* fe =
-      new gfxDWriteFontEntry(lookup->Name(), dwriteLookup->mFont,
-                             aWeightForEntry, aStretchForEntry, aStyleForEntry);
+  RefPtr fe = MakeRefPtr<gfxDWriteFontEntry>(
+      lookup->Name(), dwriteLookup->mFont, aWeightForEntry, aStretchForEntry,
+      aStyleForEntry);
   fe->SetForceGDIClassic(dwriteLookup->GetForceGDIClassic());
-  return fe;
+  return fe.forget();
 }
 
-gfxFontEntry* gfxDWriteFontList::MakePlatformFont(
+already_AddRefed<gfxFontEntry> gfxDWriteFontList::MakePlatformFont(
     const nsACString& aFontName, WeightRange aWeightForEntry,
     StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
     const uint8_t* aFontData, uint32_t aLength) {
@@ -1021,7 +1021,7 @@ gfxFontEntry* gfxDWriteFontList::MakePlatformFont(
   DWRITE_FONT_FILE_TYPE fileType;
   UINT32 numFaces;
 
-  auto entry = MakeUnique<gfxDWriteFontEntry>(
+  RefPtr entry = MakeRefPtr<gfxDWriteFontEntry>(
       NS_ConvertUTF16toUTF8(uniqueName), fontFile, fontFileStream,
       aWeightForEntry, aStretchForEntry, aStyleForEntry);
 
@@ -1040,7 +1040,7 @@ gfxFontEntry* gfxDWriteFontList::MakePlatformFont(
     return nullptr;
   }
 
-  return entry.release();
+  return entry.forget();
 }
 
 bool gfxDWriteFontList::UseGDIFontTableAccess() const {
@@ -1068,7 +1068,7 @@ static void GetPostScriptNameFromNameTable(IDWriteFontFace* aFace,
   }
 }
 
-gfxFontEntry* gfxDWriteFontList::CreateFontEntry(
+already_AddRefed<gfxFontEntry> gfxDWriteFontList::CreateFontEntry(
     fontlist::Face* aFace, const fontlist::Family* aFamily) {
   IDWriteFontCollection* collection =
 #ifdef MOZ_BUNDLED_FONTS
@@ -1161,11 +1161,12 @@ gfxFontEntry* gfxDWriteFontList::CreateFontEntry(
       return nullptr;
     }
 
-    auto fe = new gfxDWriteFontEntry(faceName, font, !aFamily->IsBundled());
+    RefPtr fe =
+        MakeRefPtr<gfxDWriteFontEntry>(faceName, font, !aFamily->IsBundled());
     fe->InitializeFrom(aFace, aFamily);
     fe->mForceGDIClassic = aFamily->IsForceClassic();
     fe->mMayUseGDIAccess = aFamily->IsSimple();
-    return fe;
+    return fe.forget();
   }
   MOZ_SEH_EXCEPT(EXCEPTION_EXECUTE_HANDLER) {
     gfxCriticalNote << "Exception occurred while creating font entry for "
@@ -1792,7 +1793,7 @@ nsresult gfxDWriteFontList::InitFontListForPlatform() {
       // add faces to Gill Sans MT
       for (const auto& face : faces) {
         // change the entry's family name to match its adoptive family
-        face->mFamilyName = gillSansMTFamily->Name();
+        face->SetFamilyName(gillSansMTFamily->Name());
         gillSansMTFamily->AddFontEntry(face);
 
         if (LOG_FONTLIST_ENABLED()) {
@@ -2576,9 +2577,9 @@ already_AddRefed<FontInfoData> gfxDWriteFontList::CreateFontInfoData() {
   return fi.forget();
 }
 
-gfxFontFamily* gfxDWriteFontList::CreateFontFamily(
+already_AddRefed<gfxFontFamily> gfxDWriteFontList::CreateFontFamily(
     const nsACString& aName, FontVisibility aVisibility) const {
-  return new gfxDWriteFontFamily(aName, aVisibility, nullptr);
+  return MakeAndAddRef<gfxDWriteFontFamily>(aName, aVisibility, nullptr);
 }
 
 #ifdef MOZ_BUNDLED_FONTS

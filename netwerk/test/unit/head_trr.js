@@ -461,7 +461,7 @@ function dohHandler(req, res) {
             { key: "alpn", value: "h2" },
             { key: "ipv4hint", value: ["1.2.3.4", "5.6.7.8"] },
             { key: "echconfig", value: "abc..." },
-            { key: "ipv6hint", value: ["::1", "fe80::794f:6d2c:3d5e:7836"] },
+            { key: "ipv6hint", value: ["::1", "2001:db8::1"] },
             { key: "odoh", value: "def..." },
           ],
         },
@@ -482,7 +482,10 @@ function dohHandler(req, res) {
       responseIP = "none";
       if (packet.questions[0].type == "HTTPS") {
         let priority = 1;
-        if (packet.questions[0].name === "foo.notexisted.com") {
+        // The query name may be port-prefixed (e.g. _8080._https.foo...) when
+        // network.dns.port_prefixed_qname_https_rr is enabled, so match the
+        // host as a suffix rather than exactly.
+        if (packet.questions[0].name.endsWith("foo.notexisted.com")) {
           priority = 0;
         }
         answers.push({
@@ -1222,9 +1225,10 @@ class TRRProxyCode {
         }
       });
       socket.on("error", error => {
-        throw new Error(
-          `Unxpected error when conneting the HTTP/2 server from the HTTP/2 proxy during CONNECT handling: '${error}'`
+        console.log(
+          `Error connecting to HTTP/2 server from proxy during CONNECT: ${error}`
         );
+        stream.close();
       });
     });
   }

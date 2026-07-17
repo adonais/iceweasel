@@ -436,21 +436,39 @@ class BackgroundRequestChild final : public BackgroundRequestChildBase,
 
   UniquePtr<JSStructuredCloneData> GetNextCloneData();
 
+  [[nodiscard]] bool DeserializeCloneInfos(
+      nsTArray<SerializedStructuredCloneReadInfo>& aSerialized,
+      nsTArray<StructuredCloneReadInfoChild>& aOut);
+
+  [[nodiscard]]
   nsCOMPtr<nsIRunnable> HandleResponse(nsresult aResponse);
 
+  [[nodiscard]]
   nsCOMPtr<nsIRunnable> HandleResponse(Key&& aResponse);
 
+  [[nodiscard]]
   nsCOMPtr<nsIRunnable> HandleResponse(nsTArray<Key>&& aResponse);
 
+  [[nodiscard]]
   nsCOMPtr<nsIRunnable> HandleResponse(
       SerializedStructuredCloneReadInfo&& aResponse);
 
+  [[nodiscard]]
   nsCOMPtr<nsIRunnable> HandleResponse(
       nsTArray<SerializedStructuredCloneReadInfo>&& aResponse);
 
+  [[nodiscard]]
+  nsCOMPtr<nsIRunnable> HandleResponse(
+      ObjectStoreGetAllRecordsResponse&& aResponse);
+
+  [[nodiscard]]
+  nsCOMPtr<nsIRunnable> HandleResponse(IndexGetAllRecordsResponse&& aResponse);
+
+  [[nodiscard]]
   nsCOMPtr<nsIRunnable> HandleResponse(
       UndefinedJSHandleValue /* overload selector */);
 
+  [[nodiscard]]
   nsCOMPtr<nsIRunnable> HandleResponse(uint64_t aResponse);
 
   // Wraps |aAction(request, transaction)| in a runnable that first handles

@@ -7,7 +7,7 @@ package mozilla.components.compose.base
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
@@ -24,7 +24,6 @@ import mozilla.components.compose.base.theme.AcornTheme
 
 private val BottomSheetHandleWidth = 32.dp
 private val BottomSheetHandleHeight = 4.dp
-private val BottomSheetHandleShape = RoundedCornerShape(100.dp)
 
 /**
  * A handle present on top of a bottom sheet. This is selectable when talkback is enabled.
@@ -50,7 +49,7 @@ fun BottomSheetHandle(
                 true
             }
         },
-        shape = BottomSheetHandleShape,
+        shape = CircleShape,
         color = color,
     ) {
         Box(modifier = Modifier.size(width = BottomSheetHandleWidth, height = BottomSheetHandleHeight))

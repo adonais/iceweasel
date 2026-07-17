@@ -20,6 +20,8 @@ import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import kotlinx.coroutines.launch
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.storeProvider
+import org.mozilla.fenix.components.ReviewPromptAttemptResult.Error
+import org.mozilla.fenix.components.ReviewPromptAttemptResult.NotDisplayed
 import org.mozilla.fenix.ext.openInNewTab
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.reviewprompt.CustomReviewPromptAction.LeaveFeedbackButtonClicked
@@ -87,11 +89,11 @@ class CustomReviewPromptBottomSheetFragment : BottomSheetDialogFragment() {
                     CustomReviewPromptNavigationEvent.OpenPlayStoreReviewPrompt -> {
                         val activity = activity ?: return@collect
                         with(requireComponents.playStoreReviewPromptController) {
-                            tryPromptReview(
-                                activity = activity,
-                                onNotDisplayed = { tryLaunchPlayStoreReview(activity, ::openInNewTab) },
-                                onError = { tryLaunchPlayStoreReview(activity, ::openInNewTab) },
-                            )
+                            val result = tryPromptReview(activity)
+                            when (result) {
+                                NotDisplayed, is Error -> tryLaunchPlayStoreReview(activity, ::openInNewTab)
+                                else -> {}
+                            }
                         }
                     }
 

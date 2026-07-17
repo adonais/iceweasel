@@ -551,11 +551,15 @@ RangeBasedTextDirectiveCreator::FindAllMatchingCandidates() {
   if (mWatchdog && mWatchdog->IsDone()) {
     return Ok();
   }
-  TEXT_FRAGMENT_LOG(
-      "Searching all occurrences of last word of end content ({}) in the "
-      "partial document from beginning of the target range to the end of the "
-      "target range, excluding the last word.",
-      NS_ConvertUTF16toUTF8(mLastWordOfEndContent));
+  // Skip past the first word of the start content. Per "find a range from a
+  // text directive", the search for the end content should start at the end of
+  // the start content.
+  // https://wicg.github.io/scroll-to-text-fragment/#find-a-range-from-a-text-directive
+  // 2.4 Let rangeEndSearchRange be a range whose start is potentialMatch’s end
+  //     and whose end is searchRange’s end.
+  auto searchStart =
+      TextDirectiveUtil::FindWordBoundary<TextScanDirection::Right>(
+          mRange->StartRef(), TextDirectiveUtil::BreakOnPunctuation::No);
 
   auto searchEnd =
       TextDirectiveUtil::FindNextNonWhitespacePosition<TextScanDirection::Left>(
@@ -563,9 +567,14 @@ RangeBasedTextDirectiveCreator::FindAllMatchingCandidates() {
   searchEnd = TextDirectiveUtil::FindWordBoundary<TextScanDirection::Left>(
       searchEnd, TextDirectiveUtil::BreakOnPunctuation::No);
 
-  const nsTArray<RefPtr<AbstractRange>> endContentRanges =
-      MOZ_TRY(FindAllMatchingRanges(mLastWordOfEndContent, mRange->StartRef(),
-                                    searchEnd));
+  TEXT_FRAGMENT_LOG(
+      "Searching all occurrences of last word of end content ({}) in the "
+      "partial document from after the first word of the start content to "
+      "the end of the target range, excluding the last word.",
+      NS_ConvertUTF16toUTF8(mLastWordOfEndContent));
+
+  const nsTArray<RefPtr<AbstractRange>> endContentRanges = MOZ_TRY(
+      FindAllMatchingRanges(mLastWordOfEndContent, searchStart, searchEnd));
   FindEndMatchCommonSubstringLengths(endContentRanges);
   return Ok();
 }

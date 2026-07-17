@@ -19,6 +19,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.StandardTestDispatcher
 import mozilla.components.browser.state.state.BrowserState
 import mozilla.components.browser.state.state.TabSessionState
+import mozilla.components.browser.state.state.createTab
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.feature.tabs.TabsUseCases
 import mozilla.components.support.test.robolectric.testContext
@@ -374,6 +375,65 @@ class TabsCleanupFeatureTest {
             navController.navigate(
                 HomeFragmentDirections.actionGlobalBrowser(null),
             )
+        }
+    }
+
+    @Test
+    fun `GIVEN a session ID to delete and inactive tabs exist WHEN feature is started THEN remove tab excluding inactive tabs`() {
+        val activeTab = createTab(
+            id = "1",
+            url = "https://mozilla.org",
+            private = false,
+            lastAccess = System.currentTimeMillis(),
+            createdAt = System.currentTimeMillis(),
+        )
+
+        val inactiveTab = createTab(
+            id = "99",
+            url = "https://mozilla.org",
+            private = false,
+            lastAccess = 0L,
+            createdAt = 0L,
+        )
+
+        every { browserStore.state } returns BrowserState(tabs = listOf(activeTab, inactiveTab))
+        every { viewModel.sessionToDelete } returns "1"
+
+        every { settings.inactiveTabsAreEnabled } returns true
+
+        feature.start()
+
+        verify {
+            tabsUseCases.removeTab(tabId = "1", excludedTabIds = setOf("99"))
+
+            feature.showUndoSnackbar(testContext.getString(R.string.snackbar_tab_closed), any())
+
+            viewModel.sessionToDelete = null
+        }
+    }
+
+    @Test
+    fun `GIVEN a session ID to delete and no inactive tabs exist WHEN feature is started THEN remove tab excluding empty set`() {
+        val activeTab = createTab(
+            id = "1",
+            url = "https://mozilla.org",
+            private = false,
+            lastAccess = System.currentTimeMillis(),
+            createdAt = System.currentTimeMillis(),
+        )
+
+        every { browserStore.state } returns BrowserState(tabs = listOf(activeTab))
+
+        every { viewModel.sessionToDelete } returns "1"
+
+        feature.start()
+
+        verify {
+            tabsUseCases.removeTab(tabId = "1", excludedTabIds = emptySet())
+
+            feature.showUndoSnackbar(testContext.getString(R.string.snackbar_tab_closed), any())
+
+            viewModel.sessionToDelete = null
         }
     }
 }

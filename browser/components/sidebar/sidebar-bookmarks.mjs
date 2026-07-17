@@ -99,6 +99,11 @@ export class SidebarBookmarks extends SidebarPage {
     );
     const editBookmark = q("#sidebar-bookmarks-context-edit-bookmark");
     const deleteBookmark = q("#sidebar-bookmarks-context-delete-bookmark");
+    const showInFolder = q("#sidebar-bookmarks-context-show-in-folder");
+    const sepAdd = q("#sidebar-bookmarks-context-sep-add");
+    const addBookmark = q("#sidebar-bookmarks-context-add-bookmark");
+    const addFolder = q("#sidebar-bookmarks-context-add-folder");
+    const addSeparator = q("#sidebar-bookmarks-context-add-separator");
     this.#contextMenuItems = {
       folderItems: [openAllBookmarks, sepOpenAll, sepSort, sortByName],
       bookmarkItems: [
@@ -125,6 +130,11 @@ export class SidebarBookmarks extends SidebarPage {
       openInPrivateWindow,
       editBookmark,
       deleteBookmark,
+      showInFolder,
+      sepAdd,
+      addBookmark,
+      addFolder,
+      addSeparator,
       paste: q("#sidebar-bookmarks-context-paste"),
     };
   }
@@ -145,6 +155,7 @@ export class SidebarBookmarks extends SidebarPage {
       this.#onPlacesEvents
     );
     this.addContextMenuListeners();
+    this.addSidebarFocusedListeners();
   }
 
   disconnectedCallback() {
@@ -154,6 +165,7 @@ export class SidebarBookmarks extends SidebarPage {
       this.#onPlacesEvents
     );
     this.removeContextMenuListeners();
+    this.removeSidebarFocusedListeners();
   }
 
   async firstUpdated() {
@@ -164,27 +176,85 @@ export class SidebarBookmarks extends SidebarPage {
     this.requestUpdate();
   }
 
-  getRowsInOrder() {
-    return this.#getRowsForList(this.bookmarkList);
+  handleSidebarFocusedEvent() {
+    this.searchInput?.focus();
   }
 
-  #getRowsForList(list) {
-    let rows = [];
+  getNodesInOrder() {
+    const nodes = [];
+    this.#collectNodesFromList(this.bookmarkList, nodes);
+    return nodes;
+  }
+
+  #collectNodesFromList(list, nodes) {
     for (const item of list.tabItems) {
       const isFolder = Array.isArray(item.children);
-      if (!isFolder) {
-        rows.push({ list, item });
-      } else if (
-        item.children.length &&
-        this.#expandedFolderGuids.has(item.guid)
-      ) {
-        const sublist = list.findSublistForGuid(item.guid);
-        if (sublist) {
-          rows = rows.concat(this.#getRowsForList(sublist));
-        }
+      if (isFolder) {
+        this.#collectNodesFromFolder(item, list, nodes);
+      } else {
+        nodes.push({
+          list,
+          item,
+          type: item.url ? "row" : "separator",
+          get domNode() {
+            return list.shadowRoot.querySelector(
+              `[data-guid="${CSS.escape(item.guid)}"]`
+            );
+          },
+        });
       }
     }
-    return rows;
+  }
+
+  #collectNodesFromFolder(folder, list, nodes) {
+    const isExpanded = this.#expandedFolderGuids.has(folder.guid);
+    if (folder.children.length) {
+      nodes.push({
+        list,
+        item: folder,
+        type: "folder",
+        get domNode() {
+          return list.shadowRoot.querySelector(
+            `summary[data-guid="${CSS.escape(folder.guid)}"]`
+          );
+        },
+      });
+      if (isExpanded) {
+        const sublist = list.findSublistForGuid(folder.guid);
+        if (sublist) {
+          this.#collectNodesFromList(sublist, nodes);
+        }
+      }
+    } else {
+      nodes.push({
+        list,
+        item: folder,
+        type: "empty-folder",
+        get domNode() {
+          return list.shadowRoot.querySelector(
+            `[data-guid="${CSS.escape(folder.guid)}"]`
+          );
+        },
+      });
+    }
+  }
+
+  setExpanded(node, expanded) {
+    if (node.type === "folder") {
+      const sublist = node.list?.findSublistForGuid(node.item.guid);
+      const details = sublist?.closest("details");
+      if (details && details.open !== expanded) {
+        details.open = expanded;
+        if (expanded) {
+          this.#expandedFolderGuids.add(node.item.guid);
+        } else {
+          this.#expandedFolderGuids.delete(node.item.guid);
+        }
+        return true;
+      }
+      return false;
+    }
+    return super.setExpanded(node, expanded);
   }
 
   onPrimaryAction(e) {
@@ -239,13 +309,24 @@ export class SidebarBookmarks extends SidebarPage {
             folderEl.querySelector("summary")?.textContent?.trim() ??
             folderEl.textContent?.trim() ??
             "";
+          const folderKind = folderEl.dataset.folderKind;
+          const children = folderEl.querySelector(
+            "sidebar-bookmark-list"
+          )?.tabItems;
           this.triggerNode = {
             guid: folderEl.guid,
             title,
+            children,
             isFolder: true,
             isEmpty,
             isRootFolder: lazy.PlacesUtils.isRootItem(folderEl.guid),
+            isPlaceContainer:
+              folderKind === "place-container" || folderKind === "tags-root",
+            isTagContainer: folderKind === "tag-container",
+            isTagsRoot: folderKind === "tags-root",
           };
+        } else if (this.findTriggerNode(e, "moz-input-search")) {
+          return;
         } else {
           e.preventDefault();
           return;
@@ -274,6 +355,11 @@ export class SidebarBookmarks extends SidebarPage {
       return;
     }
 
+    if (this.triggerNode.isPlaceContainer || this.triggerNode.isTagContainer) {
+      this.#configureSmartFolderContextMenu(this.triggerNode);
+      return;
+    }
+
     const {
       folderItems,
       bookmarkItems,
@@ -284,6 +370,13 @@ export class SidebarBookmarks extends SidebarPage {
       openInPrivateWindow,
       editBookmark,
       deleteBookmark,
+      showInFolder,
+      copyLink,
+      sepEditCopy,
+      sepAdd,
+      addBookmark,
+      addFolder,
+      addSeparator,
       paste,
     } = this.#contextMenuItems;
 
@@ -307,7 +400,32 @@ export class SidebarBookmarks extends SidebarPage {
     editBookmark.disabled = isRootFolder;
     paste.hidden = !this.#hasClipboardData();
 
-    openAllBookmarks.disabled = isEmpty;
+    const isSearchResult = isBookmark && !!this.searchQuery;
+    showInFolder.hidden = !isSearchResult;
+    if (isSearchResult) {
+      copyLink.hidden = true;
+      paste.hidden = true;
+      sepEditCopy.hidden = true;
+      sepAdd.hidden = true;
+      addBookmark.hidden = true;
+      addFolder.hidden = true;
+      addSeparator.hidden = true;
+    } else {
+      sepAdd.hidden = false;
+      addBookmark.hidden = false;
+      addFolder.hidden = false;
+      addSeparator.hidden = false;
+    }
+
+    if (isFolder) {
+      const hasBookmarkItems = !!this.triggerNode.children?.some(
+        child => child.url && !child.isPlaceContainer
+      );
+      openAllBookmarks.disabled = isEmpty || !hasBookmarkItems;
+    } else {
+      openAllBookmarks.disabled = isEmpty;
+    }
+    openAllBookmarks.setAttribute("data-l10n-id", "places-open-all-bookmarks");
     sortByName.disabled = isEmpty;
 
     let deleteLabelId;
@@ -335,6 +453,75 @@ export class SidebarBookmarks extends SidebarPage {
     );
   }
 
+  #configureSmartFolderContextMenu(node) {
+    const isPlaceContainer = !!node.isPlaceContainer;
+    const isTagContainer = !!node.isTagContainer;
+    const isTagsRoot = !!node.isTagsRoot;
+    const {
+      openAllBookmarks,
+      sepOpenAll,
+      sortByName,
+      sepSort,
+      openInTab,
+      openInWindow,
+      sepOpenOptions,
+      sepEditCopy,
+      copyLink,
+      sepCutCopy,
+      cut,
+      copy,
+      openInContainerTab,
+      openInPrivateWindow,
+      editBookmark,
+      deleteBookmark,
+      showInFolder,
+      sepAdd,
+      addBookmark,
+      addFolder,
+      addSeparator,
+      paste,
+    } = this.#contextMenuItems;
+
+    openAllBookmarks.hidden = false;
+    openAllBookmarks.disabled = isTagsRoot || !!node.isEmpty;
+    openAllBookmarks.setAttribute(
+      "data-l10n-id",
+      isTagContainer ? "places-open-all-bookmarks" : "places-open-all-in-tabs"
+    );
+    sepOpenAll.hidden = false;
+
+    openInTab.hidden = true;
+    openInContainerTab.hidden = true;
+    openInWindow.hidden = true;
+    openInPrivateWindow.hidden = true;
+    sepOpenOptions.hidden = true;
+    showInFolder.hidden = true;
+
+    editBookmark.hidden = false;
+    editBookmark.disabled = isPlaceContainer;
+    editBookmark.setAttribute("data-l10n-id", "places-edit-generic");
+
+    deleteBookmark.hidden = false;
+    deleteBookmark.setAttribute("data-l10n-id", "text-action-delete");
+    deleteBookmark.removeAttribute("data-l10n-args");
+
+    sepSort.hidden = true;
+    sortByName.hidden = true;
+
+    sepCutCopy.hidden = false;
+    cut.hidden = isTagContainer;
+    copy.hidden = false;
+    paste.hidden = true;
+
+    sepEditCopy.hidden = true;
+    copyLink.hidden = true;
+
+    sepAdd.hidden = true;
+    addBookmark.hidden = true;
+    addFolder.hidden = true;
+    addSeparator.hidden = true;
+  }
+
   #configureMultiSelectContextMenu(selectedItems) {
     const {
       openAllBookmarks,
@@ -353,11 +540,13 @@ export class SidebarBookmarks extends SidebarPage {
       openInPrivateWindow,
       editBookmark,
       deleteBookmark,
+      showInFolder,
       paste,
     } = this.#contextMenuItems;
 
     openAllBookmarks.hidden = false;
     openAllBookmarks.disabled = false;
+    openAllBookmarks.setAttribute("data-l10n-id", "places-open-all-bookmarks");
     sepOpenAll.hidden = false;
 
     openInTab.hidden = true;
@@ -365,6 +554,7 @@ export class SidebarBookmarks extends SidebarPage {
     openInWindow.hidden = true;
     openInPrivateWindow.hidden = true;
     sepOpenOptions.hidden = true;
+    showInFolder.hidden = true;
 
     editBookmark.hidden = false;
     editBookmark.disabled = true;
@@ -477,6 +667,9 @@ export class SidebarBookmarks extends SidebarPage {
       case "sidebar-bookmarks-context-delete-bookmark":
         this.#deleteBookmarks(this.selectedItems ?? [this.triggerNode]);
         break;
+      case "sidebar-bookmarks-context-show-in-folder":
+        this.showInFolder(this.triggerNode.guid).catch(console.error);
+        break;
       case "sidebar-bookmarks-context-copy-link":
         lazy.BrowserUtils.copyLink(
           this.triggerNode.url,
@@ -543,9 +736,93 @@ export class SidebarBookmarks extends SidebarPage {
     }).transact();
   }
 
+  async showInFolder(guid) {
+    this.searchQuery = "";
+    this.searchResults = [];
+    if (this.searchInput) {
+      this.searchInput.value = "";
+    }
+
+    const fetchInfo = await lazy.PlacesUtils.bookmarks.fetch({ guid }, null, {
+      includePath: true,
+    });
+    if (!fetchInfo) {
+      return;
+    }
+    for (const ancestor of fetchInfo.path ?? []) {
+      this.#expandedFolderGuids.add(ancestor.guid);
+    }
+    this.#expandedFolderGuids.add(fetchInfo.parentGuid);
+    this.sidebarController._state.bookmarksExpandedFolders = [
+      ...this.#expandedFolderGuids,
+    ];
+
+    // #expandedFolderGuids is mutated in place, so Lit can't detect the
+    // change; request an update explicitly so the tree re-renders with the
+    // ancestor folders expanded before we scroll to the row.
+    this.requestUpdate();
+    await this.updateComplete;
+    await this.#scrollAndFocusBookmarkRow(guid);
+  }
+
+  async #scrollAndFocusBookmarkRow(guid) {
+    const findRow = list => {
+      if (!list) {
+        return null;
+      }
+      for (const row of list.rowEls ?? []) {
+        if (row.guid === guid) {
+          return { row, list };
+        }
+      }
+      for (const details of list.folderEls ?? []) {
+        const sublist = details.querySelector("sidebar-bookmark-list");
+        const found = findRow(sublist);
+        if (found) {
+          return found;
+        }
+      }
+      return null;
+    };
+
+    const found = await this.#waitForElement(() => findRow(this.bookmarkList));
+    if (!found) {
+      return;
+    }
+
+    const { row, list } = found;
+    this.treeView.resetSelection();
+    this.treeView.selectRowInList(list, row.guid);
+    await list.requestVirtualListUpdate();
+    row.scrollIntoView({ block: "nearest" });
+    row.mainEl?.focus?.();
+  }
+
+  async #waitForElement(probe, { maxFrames = 60 } = {}) {
+    for (let i = 0; i < maxFrames; i++) {
+      const found = probe();
+      if (found) {
+        return found;
+      }
+      await this.bookmarkList?.updateComplete;
+      await new Promise(resolve =>
+        this.documentGlobal.requestAnimationFrame(resolve)
+      );
+    }
+    return probe();
+  }
+
   async #addItem(type) {
+    const dialogInfo = { action: "add", type };
+    const defaultInsertionPoint = await this.#getInsertionPoint();
+    if (defaultInsertionPoint) {
+      dialogInfo.defaultInsertionPoint = defaultInsertionPoint;
+      // The folder picker ignores the insertion index, so hide it to honor the
+      // position derived from the right-clicked node.
+      dialogInfo.hiddenRows = ["folderPicker"];
+    }
     const guid = await lazy.PlacesUIUtils.showBookmarkDialog(
-      { action: "add", type },
+      dialogInfo,
       this.topWindow
     );
     const outcome = guid ? "confirmed" : "cancelled";
@@ -554,6 +831,36 @@ export class SidebarBookmarks extends SidebarPage {
         ? `add_bookmark_folder_${outcome}`
         : `add_bookmark_${outcome}`;
     Glean.browserUiInteraction.sidebarBookmarks[label].add(1);
+  }
+
+  /**
+   * Builds the insertion point for a new item added from the context menu,
+   * based on the right-clicked node. Right-clicking a folder inserts at the
+   * end of that folder, while right-clicking a bookmark or separator inserts
+   * just before it. Returns undefined when the right-clicked bookmark can no
+   * longer be fetched (e.g. it was removed between opening the menu and
+   * confirming the dialog), so the dialog falls back to its default parent.
+   *
+   * @returns {Promise<?{guid: string, getIndex: function(): number}>}
+   */
+  async #getInsertionPoint() {
+    const node = this.triggerNode;
+    if (node.isFolder) {
+      return {
+        guid: node.guid,
+        getIndex: () => lazy.PlacesUtils.bookmarks.DEFAULT_INDEX,
+      };
+    }
+    const fetchInfo = await lazy.PlacesUtils.bookmarks.fetch({
+      guid: node.guid,
+    });
+    if (!fetchInfo) {
+      return undefined;
+    }
+    return {
+      guid: fetchInfo.parentGuid,
+      getIndex: () => fetchInfo.index,
+    };
   }
 
   async #addSeparator() {
@@ -593,8 +900,6 @@ export class SidebarBookmarks extends SidebarPage {
     for (const child of node.children ?? []) {
       if (child.uri) {
         urls.push(child.uri);
-      } else if (child.children) {
-        urls.push(...this.#collectBookmarkUrls(child));
       }
     }
     return urls;
@@ -860,6 +1165,11 @@ export class SidebarBookmarks extends SidebarPage {
     }
     if (node.type === lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER) {
       node.children ??= [];
+    } else if (
+      node.type === lazy.PlacesUtils.TYPE_X_MOZ_PLACE &&
+      node.uri?.startsWith("place:")
+    ) {
+      this.#expandPlaceQuery(node);
     }
     const l10nId = guidToL10nId?.[node.guid];
     if (l10nId) {
@@ -870,6 +1180,132 @@ export class SidebarBookmarks extends SidebarPage {
     }
     for (const child of node.children ?? []) {
       this.#normalizeBookmarkNode(child, guidToL10nId);
+    }
+  }
+
+  /**
+   * Execute a smart-bookmark (place:) query and attach its results as
+   * children, so it renders as a folder like the legacy bookmarks sidebar.
+   *
+   * TODO (Bug 2043613): migrate to asyncExecuteLegacyQuery to avoid
+   * main-thread I/O. That requires the bookmarks tree pipeline to support
+   * async child expansion.
+   *
+   * @param {object} node
+   *   The bookmark tree node whose `uri` is a `place:` query.
+   */
+  #expandPlaceQuery(node) {
+    const placesHistory = lazy.PlacesUtils.history;
+    const queryRef = {};
+    const optionsRef = {};
+    placesHistory.queryStringToQuery(node.uri, queryRef, optionsRef);
+    let result;
+    try {
+      result = placesHistory.executeQuery(queryRef.value, optionsRef.value);
+    } catch (e) {
+      return;
+    }
+    const wasOpen = result.root.containerOpen;
+    result.root.containerOpen = true;
+    try {
+      node.children = this.#collectPlaceChildren(result.root, new Set());
+      node.isPlaceContainer = true;
+      node.isTagsRoot =
+        optionsRef.value.resultType ===
+        Ci.nsINavHistoryQueryOptions.RESULTS_AS_TAGS_ROOT;
+    } finally {
+      if (!wasOpen) {
+        result.root.containerOpen = false;
+      }
+    }
+  }
+
+  #collectPlaceChildren(container, ancestorGuids) {
+    const children = [];
+    for (let i = 0; i < container.childCount; i++) {
+      const child = this.#convertPlaceResultNode(
+        container.getChild(i),
+        ancestorGuids
+      );
+      if (child) {
+        children.push(child);
+      }
+    }
+    return children;
+  }
+
+  #convertPlaceResultNode(placeNode, ancestorGuids) {
+    const {
+      RESULT_TYPE_URI,
+      RESULT_TYPE_FOLDER_SHORTCUT,
+      RESULT_TYPE_QUERY,
+      RESULT_TYPE_FOLDER,
+    } = Ci.nsINavHistoryResultNode;
+    switch (placeNode.type) {
+      case RESULT_TYPE_URI:
+        return {
+          title: placeNode.title,
+          uri: placeNode.uri,
+          guid: placeNode.bookmarkGuid || placeNode.pageGuid,
+          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
+          isPlaceChild: true,
+        };
+      case RESULT_TYPE_FOLDER_SHORTCUT: {
+        // Folder shortcuts are symlinks (place:parentGuid=...) to a concrete
+        // folder. Render them as a leaf reference rather than recursing, so
+        // deletion targets the shortcut rather than the linked folder.
+        return {
+          title: placeNode.title,
+          uri: placeNode.uri,
+          guid: placeNode.bookmarkGuid || placeNode.uri,
+          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE,
+          isPlaceChild: true,
+        };
+      }
+      case RESULT_TYPE_QUERY:
+      case RESULT_TYPE_FOLDER: {
+        const isTagContainer =
+          placeNode.type === RESULT_TYPE_QUERY &&
+          lazy.PlacesUtils.nodeIsTagQuery(placeNode);
+        const guid =
+          placeNode.bookmarkGuid || placeNode.pageGuid || placeNode.uri;
+        const node = {
+          title: placeNode.title,
+          uri: placeNode.uri,
+          guid,
+          type: lazy.PlacesUtils.TYPE_X_MOZ_PLACE_CONTAINER,
+          isPlaceContainer: true,
+          isPlaceChild: true,
+          isTagContainer,
+        };
+        // Guard against query results that loop back into an ancestor.
+        if (ancestorGuids.has(guid)) {
+          node.children = [];
+          return node;
+        }
+        const container = lazy.PlacesUtils.asContainer(placeNode);
+        if (container) {
+          ancestorGuids.add(guid);
+          const wasOpen = container.containerOpen;
+          container.containerOpen = true;
+          try {
+            node.children = this.#collectPlaceChildren(
+              container,
+              ancestorGuids
+            );
+          } finally {
+            if (!wasOpen) {
+              container.containerOpen = false;
+            }
+            ancestorGuids.delete(guid);
+          }
+        } else {
+          node.children = [];
+        }
+        return node;
+      }
+      default:
+        return null;
     }
   }
 
@@ -891,6 +1327,7 @@ export class SidebarBookmarks extends SidebarPage {
         .tabItems=${this.searchResults}
         @fxview-tab-list-primary-action=${this.onPrimaryAction}
         @fxview-tab-list-secondary-action=${this.onSecondaryAction}
+        @fxview-tab-list-middleclick-action=${this.onPrimaryAction}
       ></sidebar-bookmark-list>
     `;
   }
@@ -929,7 +1366,10 @@ export class SidebarBookmarks extends SidebarPage {
                 .expandedFolderGuids=${this.#expandedFolderGuids}
                 @fxview-tab-list-primary-action=${this.onPrimaryAction}
                 @fxview-tab-list-secondary-action=${this.onSecondaryAction}
+                @fxview-tab-list-middleclick-action=${this.onPrimaryAction}
                 @bookmark-folder-toggle=${this.#onFolderToggle}
+                @bookmark-folder-middleclick=${({ detail }) =>
+                  this.#openBookmarks([detail])}
               ></sidebar-bookmark-list>`
           )}
         </div>

@@ -11,7 +11,7 @@
 #include "mozilla/Assertions.h"
 #include "mozilla/LoggingCore.h"
 
-#include "jit/JitSpewer.h"
+#include "jit/JitSpewChannelList.h"
 #include "js/experimental/LoggingInterface.h"
 
 struct JSContext;
@@ -33,8 +33,10 @@ using mozilla::LogLevel;
 // required around their storage an initialization.
 class LogModule {
  public:
-  explicit constexpr LogModule(const char* name) : name(name) {
+  explicit constexpr LogModule(const char* name, const char* help)
+      : name(name), help(help) {
     MOZ_ASSERT(name);
+    MOZ_ASSERT(help);
   }
 
   // Return true iff we should log a message at this level.
@@ -60,6 +62,10 @@ class LogModule {
   // Name of this logger
   const char* name{};
 
+  // Short one-line description used by the MOZ_LOG=help / IONFLAGS=help
+  // listing. Empty string for modules without a description.
+  const char* help{};
+
  private:
   // Is this logger ready to be used.
   inline bool isSetup() const { return interface.isComplete() && logger; }
@@ -82,21 +88,22 @@ class LogModule {
   mutable mozilla::AtomicLogLevel* levelPtr{};
 };
 
-#define FOR_EACH_JS_LOG_MODULE(_)                                            \
-  _(debug)                /* A predefined log module for casual debugging */ \
-  _(wasmPerf)             /* Wasm performance statistics */                  \
-  _(wasmApi)              /* Wasm JS-API tracing */                          \
-  _(fuseInvalidation)     /* Invalidation triggered by a fuse  */            \
-  _(thenable)             /* Thenable on standard proto*/                    \
-  _(startup)              /* engine startup logging */                       \
-  _(teleporting)          /* Shape Teleporting */                            \
-  _(selfHosted)           /* self-hosted script logging */                   \
-  _(gc)                   /* The garbage collector */                        \
-  _(mtq)                  /* MicroTask queue */                              \
+// Each entry is `_(name, "one-line help text")`. Help may be empty.
+#define FOR_EACH_JS_LOG_MODULE(_)                          \
+  _(debug, "A predefined log module for casual debugging") \
+  _(wasmPerf, "Wasm performance statistics")               \
+  _(wasmApi, "Wasm JS-API tracing")                        \
+  _(fuseInvalidation, "Invalidation triggered by a fuse")  \
+  _(thenable, "Thenable on standard proto")                \
+  _(startup, "Engine startup logging")                     \
+  _(teleporting, "Shape Teleporting")                      \
+  _(selfHosted, "Self-hosted script logging")              \
+  _(gc, "The garbage collector")                           \
+  _(mtq, "MicroTask queue")                                \
   JITSPEW_CHANNEL_LIST(_) /* A module for each JitSpew channel. */
 
 // Declare Log modules
-#define DECLARE_MODULE(X) inline constexpr LogModule X##Module(#X);
+#define DECLARE_MODULE(X, HELP) inline constexpr LogModule X##Module(#X, HELP);
 
 FOR_EACH_JS_LOG_MODULE(DECLARE_MODULE);
 

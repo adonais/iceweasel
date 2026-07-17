@@ -83,7 +83,12 @@ WebTransportIncomingStreamsAlgorithms::PullCallbackImpl(
     return returnResult.unwrap().forget();
   }
   self->BuildStream(aCx, aRv);
-  // Step 4: Return p and run the remaining steps in parallel.
+  if (aRv.Failed()) {
+    promise->MaybeReject(aRv.StealNSResult());
+    return promise.forget();
+  }
+  // Step 7.3: Resolve p with undefined.
+  promise->MaybeResolveWithUndefined();
   return promise.forget();
 }
 

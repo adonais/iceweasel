@@ -36,7 +36,6 @@ task-defaults:
     treeherder:
         kind: test
         tier: 1
-    run-on-repo-type: [hg]
     run:
         using: mach
         use-caches: [checkout, pip, uv]
@@ -377,6 +376,19 @@ tryselect:
             - 'taskcluster/gecko_taskgraph/transforms/**'
             - 'taskcluster/requirements.txt'
             - 'tools/tryselect/**'
+
+update-packaging:
+    description: tools/update-packaging unit tests
+    platform:
+        - linux2404-64/opt
+    treeherder:
+        symbol: update-packaging
+    run:
+        using: python-test
+        subsuite: update-packaging
+    when:
+        files-changed:
+            - 'tools/update-packaging/**'
 
 mozbuild:
     matrix:

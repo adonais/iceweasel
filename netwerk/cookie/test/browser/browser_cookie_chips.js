@@ -10,7 +10,7 @@ requestLongerTimeout(3);
 add_setup(() => {
   Services.prefs.setIntPref(
     "network.cookie.cookieBehavior",
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN
   );
   Services.prefs.setBoolPref(
     "network.cookieJarSettings.unblocked_for_testing",
@@ -89,7 +89,7 @@ add_task(
       Ci.nsICookieService.BEHAVIOR_ACCEPT,
       Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN,
       Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+      Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     ];
 
     for (let behavior of TEST_COOKIE_BEHAVIORS) {
@@ -145,7 +145,7 @@ add_task(
     const TEST_COOKIE_BEHAVIORS = [
       Ci.nsICookieService.BEHAVIOR_ACCEPT,
       Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+      Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     ];
 
     for (let behavior of TEST_COOKIE_BEHAVIORS) {
@@ -224,7 +224,7 @@ add_task(async function test_chips_store_partitioned_http_first_party_parent() {
     Ci.nsICookieService.BEHAVIOR_ACCEPT,
     Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN,
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
   ];
 
   for (let behavior of TEST_COOKIE_BEHAVIORS) {
@@ -269,7 +269,7 @@ add_task(
     const TEST_COOKIE_BEHAVIORS = [
       Ci.nsICookieService.BEHAVIOR_ACCEPT,
       Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+      Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     ];
 
     for (let behavior of TEST_COOKIE_BEHAVIORS) {
@@ -354,7 +354,7 @@ add_task(
       Ci.nsICookieService.BEHAVIOR_ACCEPT,
       Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN,
       Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+      Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     ];
 
     for (let behavior of TEST_COOKIE_BEHAVIORS) {
@@ -401,7 +401,7 @@ add_task(
     // access API. The other cookieBehaviors doesn't have the same behavior
     // on StorageAccess API, so the test doesn't apply.
     const TEST_COOKIE_BEHAVIORS = [
-      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+      Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     ];
 
     for (let behavior of TEST_COOKIE_BEHAVIORS) {
@@ -516,7 +516,7 @@ add_task(
       Ci.nsICookieService.BEHAVIOR_ACCEPT,
       Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN,
       Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+      Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     ];
 
     for (let behavior of TEST_COOKIE_BEHAVIORS) {
@@ -594,7 +594,7 @@ add_task(
 add_task(async function test_chips_filter_nonchips_from_partitioned_jar() {
   Services.prefs.setIntPref(
     "network.cookie.cookieBehavior",
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN
   );
 
   // Step 1: Set a non-CHIPS cookie in a third-party context. Under
@@ -741,7 +741,7 @@ add_task(
       Ci.nsICookieService.BEHAVIOR_ACCEPT,
       Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN,
       Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+      Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     ];
 
     for (let behavior of TEST_COOKIE_BEHAVIORS) {

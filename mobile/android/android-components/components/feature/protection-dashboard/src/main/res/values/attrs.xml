@@ -4,15 +4,10 @@
    - You can obtain one at http://mozilla.org/MPL/2.0/.  -->
 <resources>
     <declare-styleable name="ProtectionsDashboard">
-        <attr name="mozacProtectionsDashboardBackground" format="reference"/>
-        <attr name="mozacProtectionsDashboardTextPrimary" format="reference"/>
-        <attr name="mozacProtectionsDashboardTextAccent" format="reference"/>
         <attr name="mozacProtectionsDashboardChipBackground" format="reference"/>
         <attr name="mozacProtectionsDashboardChipText" format="reference"/>
-        <attr name="mozacProtectionsDashboardWaveGradient1" format="reference"/>
-        <attr name="mozacProtectionsDashboardWaveGradient2" format="reference"/>
-        <attr name="mozacProtectionsDashboardWaveGradient3" format="reference"/>
-        <attr name="mozacProtectionsDashboardWaveGradient4" format="reference"/>
         <attr name="mozacProtectionsDashboardProgressBar" format="reference"/>
+        <attr name="mozacProtectionsDashboardGradientStart" format="reference"/>
+        <attr name="mozacProtectionsDashboardGradientEnd" format="reference"/>
     </declare-styleable>
 </resources>

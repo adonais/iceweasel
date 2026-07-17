@@ -108,6 +108,18 @@ Allowed actions, and subfields:
       allowed - Boolean indicating whether all detected leaks matched allow rules
       subsuite - Name of the subsuite for the tests that ran (optional)
 
+  tsan_error
+      kind - ThreadSanitizer report kind (e.g. "data race",
+             "lock-order-inversion (potential deadlock)")
+      signature - The SUMMARY location (e.g. "Mutex_posix.cpp:91:3 in mutexLock")
+      pid - PID of the process the report is about (optional)
+      description - Extra context line such as the lock-order cycle graph (optional)
+      stacks - List of the report's labeled stacks, each a dict with a "label"
+               (the stack's role, e.g. "Mutex M1 acquired here while holding M0")
+               and a "stack" (list of profiler-format frame dicts)
+      scope - An identifier for the set of tests run during the browser session
+              (e.g. a directory name) (optional)
+
   mozleak_object
      process - Process that leaked
      count - Number of instances that leaked
@@ -685,6 +697,17 @@ class StructuredLogger:
     )
     def lsan_summary(self, data):
         self._log_data("lsan_summary", data)
+
+    @log_action(
+        Unicode("kind"),
+        Unicode("signature"),
+        List(Dict(Any), "stacks"),
+        Int("pid", optional=True, default=None),
+        Unicode("description", optional=True, default=None),
+        Unicode("scope", optional=True, default=None),
+    )
+    def tsan_error(self, data):
+        self._log_data("tsan_error", data)
 
     @log_action(
         Unicode("process"),

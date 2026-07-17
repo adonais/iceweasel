@@ -39,7 +39,6 @@
 
 moz-button.close-button {
   --button-border-radius: 24px;
-  --button-background-color: var(--background-color-box);
   --icon-size: calc(var(--icon-size-xsmall) - 2px);
 
   position: absolute;
@@ -48,6 +47,10 @@ moz-button.close-button {
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
   inset-inline-end: -10px;
   z-index: 10;
+
+  @media not (forced-colors) {
+    --button-background-color-ghost: var(--background-color-box);
+  }
 }
 
 moz-button.close-button::part(button) {

@@ -18,7 +18,7 @@ class SerialPort;
 // owns the SerialPort DOM object (main thread or worker thread).
 class SerialPortChild final : public PSerialPortChild, public nsISupports {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(SerialPortChild)
 
   SerialPortChild() = default;

@@ -37,8 +37,6 @@ class CTFontEntry final : public gfxFontEntry {
               WeightRange aWeight, StretchRange aStretch,
               SlantStyleRange aStyle, bool aIsDataUserFont, bool aIsLocal);
 
-  virtual ~CTFontEntry() { ::CGFontRelease(mFontRef); }
-
   gfxFontEntry* Clone() const override;
 
   // Return a non-owning reference to our CGFont; caller must not release it.
@@ -83,6 +81,9 @@ class CTFontEntry final : public gfxFontEntry {
   }
 
  protected:
+  // Protected destructor, to discourage deletion outside of Release():
+  virtual ~CTFontEntry() { ::CGFontRelease(mFontRef); }
+
   gfxFont* CreateFontInstance(const gfxFontStyle* aFontStyle) override;
 
   bool HasFontTable(uint32_t aTableTag) override;
@@ -160,23 +161,20 @@ class CoreTextFontList : public gfxPlatformFontList {
   using FontFamilyListEntry = mozilla::dom::SystemFontListEntry;
 
  public:
-  gfxFontFamily* CreateFontFamily(const nsACString& aName,
-                                  FontVisibility aVisibility) const override;
+  already_AddRefed<gfxFontFamily> CreateFontFamily(
+      const nsACString& aName, FontVisibility aVisibility) const override;
 
   static int32_t AppleWeightToCSSWeight(int32_t aAppleWeight);
 
-  gfxFontEntry* LookupLocalFont(FontVisibilityProvider* aFontVisibilityProvider,
-                                const nsACString& aFontName,
-                                WeightRange aWeightForEntry,
-                                StretchRange aStretchForEntry,
-                                SlantStyleRange aStyleForEntry) override;
+  already_AddRefed<gfxFontEntry> LookupLocalFont(
+      FontVisibilityProvider* aFontVisibilityProvider,
+      const nsACString& aFontName, WeightRange aWeightForEntry,
+      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) override;
 
-  gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
-                                 WeightRange aWeightForEntry,
-                                 StretchRange aStretchForEntry,
-                                 SlantStyleRange aStyleForEntry,
-                                 const uint8_t* aFontData,
-                                 uint32_t aLength) override;
+  already_AddRefed<gfxFontEntry> MakePlatformFont(
+      const nsACString& aFontName, WeightRange aWeightForEntry,
+      StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
+      const uint8_t* aFontData, uint32_t aLength) override;
 
   bool FindAndAddFamiliesLocked(
       FontVisibilityProvider* aFontVisibilityProvider,
@@ -255,7 +253,7 @@ class CoreTextFontList : public gfxPlatformFontList {
       const nsACString& aDir,
       nsTHashSet<nsCStringHashKey>* aLoadedFamilies = nullptr);
 
-  gfxFontEntry* CreateFontEntry(
+  already_AddRefed<gfxFontEntry> CreateFontEntry(
       mozilla::fontlist::Face* aFace,
       const mozilla::fontlist::Family* aFamily) override;
 

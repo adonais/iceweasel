@@ -120,8 +120,7 @@ export const SMART_TAB_GROUPING_CONFIG = {
     taskName: ML_TASK_FEATURE_EXTRACTION,
     featureId: STG_EMBEDDING_FEATURE_ID,
     engineId: FEATURES[STG_EMBEDDING_FEATURE_ID].engineId,
-    backend: "onnx-native",
-    fallbackBackend: "onnx",
+    backend: "best-onnx",
   },
   topicGeneration: {
     dtype: "q8",
@@ -129,8 +128,7 @@ export const SMART_TAB_GROUPING_CONFIG = {
     taskName: ML_TASK_TEXT2TEXT,
     featureId: STG_TOPIC_FEATURE_ID,
     engineId: FEATURES[STG_TOPIC_FEATURE_ID].engineId,
-    backend: "onnx-native",
-    fallbackBackend: "onnx",
+    backend: "best-onnx",
   },
   dataConfig: {
     titleKey: "label",
@@ -1062,7 +1060,6 @@ export class SmartTabGroupingManager extends AIFeature {
       modelId,
       modelRevision,
       backend,
-      fallbackBackend,
     } = engineConfig;
     let initData = {
       featureId,
@@ -1076,20 +1073,13 @@ export class SmartTabGroupingManager extends AIFeature {
     };
 
     initData = SmartTabGroupingManager.getUpdatedInitData(initData, featureId);
-    let engine;
-    try {
-      engine = await createEngine(initData, progressCallback);
-      this.backend = backend;
-    } catch (e) {
-      engine = await createEngine(
-        {
-          ...initData,
-          backend: fallbackBackend,
-        },
-        progressCallback
-      );
-      this.backend = fallbackBackend;
-    }
+    const engine = await createEngine(initData, progressCallback);
+    // For "best-onnx" (and similar) the actual backend is decided in the
+    // inference child and reported back via EnginePort:EngineReady, so
+    // read it off the engine. We deliberately don't fall back to the
+    // requested backend here: telemetry consumers only care about which
+    // concrete backend ran, never the "best-*" sentinel.
+    this.backend = engine.pipelineOptions?.backend;
     return engine;
   }
 

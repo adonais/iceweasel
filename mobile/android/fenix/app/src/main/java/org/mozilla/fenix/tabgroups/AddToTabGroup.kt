@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -53,7 +52,6 @@ import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
 import mozilla.components.ui.icons.R as iconsR
 
-private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(4.dp)
 private val NEW_TAB_GROUP_COMPONENT_HEIGHT = 40.dp
 private val NEW_TAB_GROUP_COMPONENT_WIDTH = 78.dp
 
@@ -152,7 +150,7 @@ private fun NewTabGroupContent(
         Box(
             modifier = Modifier
                 .size(width = NEW_TAB_GROUP_COMPONENT_WIDTH, height = NEW_TAB_GROUP_COMPONENT_HEIGHT)
-                .background(MaterialTheme.colorScheme.surfaceContainerHighest, shape = ROUNDED_CORNER_SHAPE),
+                .background(MaterialTheme.colorScheme.surfaceContainerHighest, shape = MaterialTheme.shapes.extraSmall),
             contentAlignment = Alignment.Center,
         ) {
             Icon(

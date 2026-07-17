@@ -1116,7 +1116,7 @@ struct SharedDataContainer {
   bool isMap() const { return (data_ & TagMask) == MapTag; }
   bool isBorrow() const { return (data_ & TagMask) == BorrowTag; }
 
-  void setSingle(already_AddRefed<SharedImmutableScriptData>&& data) {
+  void setSingle(already_AddRefed<SharedImmutableScriptData> data) {
     MOZ_ASSERT(isEmpty());
     data_ = reinterpret_cast<uintptr_t>(data.take());
     MOZ_ASSERT(isSingle());

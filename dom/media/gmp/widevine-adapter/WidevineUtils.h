@@ -16,7 +16,7 @@ namespace mozilla {
 #define ENSURE_TRUE(condition, rv)                                   \
   {                                                                  \
     if (!(condition)) {                                              \
-      GMP_LOG_DEBUG("ENSURE_TRUE FAILED %s:%d", __FILE__, __LINE__); \
+      GMP_LOG_DEBUG("ENSURE_TRUE FAILED {}:{}", __FILE__, __LINE__); \
       return rv;                                                     \
     }                                                                \
   }
@@ -24,7 +24,7 @@ namespace mozilla {
 #define ENSURE_GMP_SUCCESS(err, rv)                                         \
   {                                                                         \
     if (GMP_FAILED(err)) {                                                  \
-      GMP_LOG_DEBUG("ENSURE_GMP_SUCCESS FAILED %s:%d", __FILE__, __LINE__); \
+      GMP_LOG_DEBUG("ENSURE_GMP_SUCCESS FAILED {}:{}", __FILE__, __LINE__); \
       return rv;                                                            \
     }                                                                       \
   }

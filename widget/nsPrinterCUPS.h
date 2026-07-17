@@ -37,8 +37,8 @@ class nsPrinterCUPS final : public nsPrinterBase {
 
   nsPrinterCUPS(const mozilla::CommonPaperInfoArray* aArray,
                 const nsCUPSShim& aShim, nsString aDisplayName,
-                cups_dest_t* aPrinter)
-      : nsPrinterBase(aArray),
+                cups_dest_t* aPrinter, bool aSortAfterLocal)
+      : nsPrinterBase(aArray, aSortAfterLocal),
         mShim(aShim),
         mDisplayName(std::move(aDisplayName)),
         mPrinterInfoMutex(CUPSPrinterInfo{aPrinter},

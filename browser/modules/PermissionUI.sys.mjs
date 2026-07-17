@@ -597,6 +597,13 @@ class PermissionPrompt {
         action.dismiss = promptAction.dismiss;
       }
 
+      // Deny actions are not a clickjacking target (an attacker has nothing
+      // to gain by tricking a user into denying a permission), so they fire
+      // immediately without the security delay. See bug 2035581.
+      if (promptAction.action === lazy.SitePermissions.BLOCK) {
+        action.disableSecurityDelay = true;
+      }
+
       popupNotificationActions.push(action);
     }
 

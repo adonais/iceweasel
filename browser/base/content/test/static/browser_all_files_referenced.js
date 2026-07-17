@@ -29,8 +29,6 @@ var gExceptionPaths = [
   "chrome://activity-stream/content/data/content/tippytop/images/",
   "chrome://activity-stream/content/data/content/tippytop/favicons/",
   // These resources are referenced by messages delivered through Remote Settings
-  "chrome://activity-stream/content/data/content/assets/mobile-download-qr-new-user-cn.svg",
-  "chrome://activity-stream/content/data/content/assets/mobile-download-qr-existing-user-cn.svg",
   "chrome://activity-stream/content/data/content/assets/mr-amo-collection.svg",
   "chrome://activity-stream/content/data/content/assets/person-typing.svg",
   "chrome://activity-stream/content/data/content/assets/tabs-side-zap-transparent.svg",
@@ -107,6 +105,9 @@ var gExceptionPaths = [
   // The profile avatars are directly referenced.
   "chrome://browser/content/profiles/assets/",
 
+  // The custom model choice icon is referenced programatically in input-model-select.mjs.
+  "chrome://browser/content/aiwindow/assets/model-choice-0.svg",
+
   // The picture-in-picture add-on.
   "resource://builtin-addons/pictureinpicture/",
 
@@ -179,7 +180,7 @@ var allowlist = [
 
   // devtools/client/inspector/bin/dev-server.js
   {
-    file: "chrome://devtools/content/inspector/markup/markup.xhtml",
+    file: "chrome://devtools/content/inspector/markup/markup.html",
     isFromDevTools: true,
   },
 
@@ -193,9 +194,6 @@ var allowlist = [
   // These files URLs are constructed programatically at run time.
   {
     file: "chrome://browser/content/preferences/more-from-mozilla-qr-code-simple.svg",
-  },
-  {
-    file: "chrome://browser/content/preferences/more-from-mozilla-qr-code-simple-cn.svg",
   },
 
   { file: "resource://gre/greprefs.js" },
@@ -239,13 +237,9 @@ var allowlist = [
   // File from the ipp-activator add-on
   { file: "resource://builtin-addons/ipp-activator/breakages/tab.json" },
 
-  // Referenced by devtools/client/themes/toolbox.css and
-  // devtools/client/debugger/src/components/PrimaryPanes/Tracer.css. The test
-  // splits devtools and non-devtools passes, so the non-devtools pass can't
-  // see those cross-domain references.
-  { file: "chrome://global/skin/icons/experiments.svg" },
-
   // Starting from here, files in the allowlist are bugs that need fixing.
+  // Bug 2042933 - consumed by PermissionUI.sys.mjs in a follow-up patch.
+  { file: "resource://app/modules/PermissionPromptTargeting.sys.mjs" },
   // Bug 1339424 (wontfix?)
   {
     file: "chrome://browser/locale/taskbar.properties",
@@ -339,6 +333,12 @@ var allowlist = [
   // richlist items with autocomplete-row-item
   {
     file: "chrome://global/content/autocomplete-row-item/autocomplete-row-item.mjs",
+  },
+
+  // Bug 2041770: MemoriesSessions is introduced ahead of its production
+  // Remove this entry once the consumer lands.
+  {
+    file: "moz-src:///browser/components/aiwindow/models/memories/MemoriesSessions.sys.mjs",
   },
 
   // Referenced dynamically in newtab components via template literals:

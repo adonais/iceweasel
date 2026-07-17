@@ -820,17 +820,18 @@ exports.ToolboxButtons = [
   },
 ];
 
-function createHighlightButton(highlighters, id) {
+function createHighlightButton(highlighterTypes, id) {
   return {
     id: `command-button-${id}`,
     description: l10n(`toolbox.buttons.${id}`),
+    highlighterTypes,
     isToolSupported: toolbox =>
       toolbox.commands.descriptorFront.isTabDescriptor,
     async onClick(event, toolbox) {
       const inspectorFront = await toolbox.target.getFront("inspector");
 
       await Promise.all(
-        highlighters.map(async name => {
+        highlighterTypes.map(async name => {
           const highlighter =
             await inspectorFront.getOrCreateHighlighterByType(name);
 
@@ -854,7 +855,7 @@ function createHighlightButton(highlighters, id) {
         return false;
       }
 
-      return highlighters.every(name =>
+      return highlighterTypes.every(name =>
         inspectorFront.getKnownHighlighter(name)?.isShown()
       );
     },

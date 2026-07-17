@@ -144,20 +144,6 @@ class RemoteMediaManagerChild final
  protected:
   void HandleFatalError(const char* aMsg) override;
 
-  PRemoteDecoderChild* AllocPRemoteDecoderChild(
-      const RemoteDecoderInfoIPDL& aRemoteDecoderInfo,
-      const CreateDecoderParams::OptionSet& aOptions,
-      const Maybe<layers::TextureFactoryIdentifier>& aIdentifier,
-      const Maybe<uint64_t>& aMediaEngineId,
-      const Maybe<TrackingId>& aTrackingId, PRemoteCDMChild* aCDM);
-  bool DeallocPRemoteDecoderChild(PRemoteDecoderChild* actor);
-
-  PMFMediaEngineChild* AllocPMFMediaEngineChild();
-  bool DeallocPMFMediaEngineChild(PMFMediaEngineChild* actor);
-
-  PMFCDMChild* AllocPMFCDMChild(const nsAString& aKeySystem);
-  bool DeallocPMFCDMChild(PMFCDMChild* actor);
-
  private:
   explicit RemoteMediaManagerChild(RemoteMediaIn aLocation);
   ~RemoteMediaManagerChild() = default;

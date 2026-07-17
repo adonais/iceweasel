@@ -55,7 +55,7 @@ class FormData final : public nsISupports,
 
   already_AddRefed<FormData> Clone() const;
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(FormData)
 
   // nsWrapperCache
@@ -153,7 +153,7 @@ class FormData final : public nsISupports,
 
   nsresult CopySubmissionDataTo(HTMLFormSubmission* aFormSubmission) const;
 
-  Element* GetSubmitterElement() const { return mSubmitter.get(); }
+  Element* GetSubmitterElement() const override { return mSubmitter.get(); }
 
   CustomElementFormValue ConvertToCustomElementFormValue();
 

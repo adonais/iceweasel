@@ -482,6 +482,18 @@ class Call final : public webrtc::Call,
 };
 }  // namespace internal
 
+std::string Call::Stats::ToString(int64_t time_ms) const {
+  StringBuilder ss;
+  ss << "Call stats: " << time_ms << ", {";
+  ss << "send_bw_bps: " << send_bandwidth_bps << ", ";
+  ss << "recv_bw_bps: " << recv_bandwidth_bps << ", ";
+  ss << "max_pad_bps: " << max_padding_bitrate_bps << ", ";
+  ss << "pacer_delay_ms: " << pacer_delay_ms << ", ";
+  ss << "rtt_ms: " << rtt_ms;
+  ss << '}';
+  return ss.Release();
+}
+
 std::unique_ptr<Call> Call::Create(CallConfig config) {
   auto transport_send = std::make_unique<RtpTransportControllerSend>(
       config.ExtractTransportConfig());
@@ -1217,7 +1229,11 @@ void Call::OnUpdateSyncGroup(webrtc::AudioReceiveStreamInterface& stream,
   RTC_DCHECK_RUN_ON(worker_thread_);
   webrtc::AudioReceiveStreamImpl& receive_stream =
       static_cast<webrtc::AudioReceiveStreamImpl&>(stream);
+  std::string old_sync_group(receive_stream.sync_group());
   receive_stream.SetSyncGroup(sync_group);
+  if (old_sync_group != sync_group) {
+    ConfigureSync(old_sync_group);
+  }
   ConfigureSync(sync_group);
 }
 

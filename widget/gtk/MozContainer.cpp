@@ -43,15 +43,15 @@ GType moz_container_get_type(void) {
   if (!moz_container_type) {
     static GTypeInfo moz_container_info = {
         sizeof(MozContainerClass),                /* class_size */
-        NULL,                                     /* base_init */
-        NULL,                                     /* base_finalize */
+        nullptr,                                  /* base_init */
+        nullptr,                                  /* base_finalize */
         (GClassInitFunc)moz_container_class_init, /* class_init */
-        NULL,                                     /* class_destroy */
-        NULL,                                     /* class_data */
+        nullptr,                                  /* class_destroy */
+        nullptr,                                  /* class_data */
         sizeof(MozContainer),                     /* instance_size */
         0,                                        /* n_preallocs */
         (GInstanceInitFunc)moz_container_init,    /* instance_init */
-        NULL,                                     /* value_table */
+        nullptr,                                  /* value_table */
     };
 
     moz_container_type =

@@ -55,7 +55,7 @@ class EventQueueInternal {
   // nsIRunnablePriority::GetPriority().  *aDelay is time the event has
   // already been delayed (used when moving an event from one queue to
   // another)
-  void PutEvent(already_AddRefed<nsIRunnable>&& aEvent,
+  void PutEvent(already_AddRefed<nsIRunnable> aEvent,
                 EventQueuePriority aPriority, const MutexAutoLock& aProofOfLock,
                 mozilla::TimeDuration* aDelay = nullptr);
 

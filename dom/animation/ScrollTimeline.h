@@ -191,8 +191,7 @@ class ScrollTimeline : public AnimationTimeline,
   // scroll-timeline-name property.
   static already_AddRefed<ScrollTimeline> MakeNamed(
       Document* aDocument, Element* aReferenceElement,
-      const PseudoStyleRequest& aPseudoRequest,
-      const StyleScrollTimeline& aStyleTimeline);
+      const PseudoStyleRequest& aPseudoRequest, StyleScrollAxis aAxis);
 
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(ScrollTimeline, AnimationTimeline)
@@ -201,19 +200,17 @@ class ScrollTimeline : public AnimationTimeline,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   // ScrollTimeline methods.
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   static already_AddRefed<ScrollTimeline> Constructor(
       const GlobalObject& aGlobal, const ScrollTimelineOptions& aOptions,
       ErrorResult& aRv);
-  // MOZ_CAN_RUN_SCRIPT because GetScrollingElement may flush in quirks mode.
-  MOZ_CAN_RUN_SCRIPT Element* GetSource() const;
+  Element* GetSource() const;
   dom::ScrollAxis GetScrollAxis() const;
 
-  State GetState() const {
-    return State{mScrollerInfo.Source(), mAxis,
-                 mScrollerInfo.mType == ScrollerInfo::Type::Root};
-  };
+  State GetState() const;
 
   // AnimationTimeline methods.
+  void GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const override;
   Nullable<TimeDuration> GetCurrentTimeAsDuration() const override;
   bool TracksWallclockTime() const override { return false; }
   Nullable<TimeDuration> ToTimelineTime(
@@ -266,7 +263,7 @@ class ScrollTimeline : public AnimationTimeline,
 
   void ReplacePropertiesWith(const Element* aReferenceElement,
                              const PseudoStyleRequest& aPseudoRequest,
-                             const StyleScrollTimeline& aNew);
+                             nsAtom* aName, StyleScrollAxis aAxis);
 
   void NotifyAnimationUpdated(Animation& aAnimation) override;
 
@@ -330,6 +327,49 @@ class ScrollTimeline : public AnimationTimeline,
 
  private:
   Maybe<CurrentTimeData> mCachedCurrentTime;
+};
+
+// In both engines, inactive timelines seem to be a specialization of a scroll
+// timeline. Deriving from AnimationTimeline adds a lot of special handling,
+// unfortunately. Note that inactive timelines can be constructed through
+// JS, like `new ScrollTimeline({source: null})`, but this timeline handles
+// timelines referenced by name in particular.
+// TODO(dshin): Should this be given for JS-constructed inactive timelines as
+// well?
+// TODO(dshin): May be worth discussing this within spec.
+class InactiveTimeline final : public ScrollTimeline {
+ public:
+  Nullable<TimeDuration> GetCurrentTimeAsDuration() const override {
+    // Inactive timeline, by definition.
+    return {};
+  }
+
+  TimeStamp ToTimeStamp(const TimeDuration& aTimelineTime) const override {
+    return {};
+  }
+  bool IsInactiveTimeline() const override { return true; }
+
+  JSObject* WrapObject(JSContext*, JS::Handle<JSObject*>) override {
+    // OM should return null for timeline, so this should be ok.
+    return nullptr;
+  }
+
+  Nullable<TimeDuration> TimelineDuration(
+      const AnimationRange&) const override {
+    return TimeDuration::FromMilliseconds(PROGRESS_TIMELINE_DURATION_MILLISEC);
+  }
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(InactiveTimeline, ScrollTimeline)
+
+ private:
+  explicit InactiveTimeline(Document* aDocument);
+  ~InactiveTimeline() override = default;
+
+  // ctor is private because only dynamic allocation is permitted, so this is
+  // fine.
+  template <typename T, typename... Args>
+  friend already_AddRefed<T> mozilla::MakeAndAddRef(Args&&... aArgs);
 };
 
 }  // namespace dom

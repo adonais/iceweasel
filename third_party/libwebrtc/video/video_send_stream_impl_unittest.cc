@@ -116,6 +116,12 @@ class MockRtpVideoSender : public RtpVideoSenderInterface {
               OnEncodedImage,
               (const EncodedImage&, const CodecSpecificInfo*),
               (override));
+  MOCK_METHOD(void,
+              OnFrameDropped,
+              (uint32_t rtp_timestamp,
+               int spatial_id,
+               bool is_end_of_temporal_unit),
+              (override));
   MOCK_METHOD(void, OnTransportOverheadChanged, (size_t), (override));
   MOCK_METHOD(void,
               OnBitrateUpdated,
@@ -1277,26 +1283,6 @@ TEST_F(VideoSendStreamImplTest, DisablesPaddingOnPausedEncoder) {
   // Since no more frames are sent the last 5s, no padding is supposed to be
   // sent.
   EXPECT_EQ(0, padding_bitrate);
-  testing::Mock::VerifyAndClearExpectations(&bitrate_allocator_);
-  vss_impl->Stop();
-}
-
-TEST_F(VideoSendStreamImplTest, KeepAliveOnDroppedFrame) {
-  auto vss_impl = CreateVideoSendStreamImpl(TestVideoEncoderConfig());
-  EXPECT_CALL(bitrate_allocator_, RemoveObserver(vss_impl.get())).Times(0);
-  vss_impl->Start();
-  const uint32_t kBitrateBps = 100000;
-  EXPECT_CALL(rtp_video_sender_, GetPayloadBitrateBps())
-      .Times(1)
-      .WillOnce(Return(kBitrateBps));
-  static_cast<BitrateAllocatorObserver*>(vss_impl.get())
-      ->OnBitrateUpdated(CreateAllocation(kBitrateBps));
-  encoder_queue_->PostTask([&] {
-    // Keep the stream from deallocating by dropping a frame.
-    static_cast<EncodedImageCallback*>(vss_impl.get())
-        ->OnDroppedFrame(EncodedImageCallback::DropReason::kDroppedByEncoder);
-  });
-  time_controller_.AdvanceTime(TimeDelta::Seconds(2));
   testing::Mock::VerifyAndClearExpectations(&bitrate_allocator_);
   vss_impl->Stop();
 }

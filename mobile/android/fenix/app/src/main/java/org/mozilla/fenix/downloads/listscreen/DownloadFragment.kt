@@ -27,6 +27,7 @@ import org.mozilla.fenix.downloads.listscreen.store.FileItem
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.hideToolbar
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -73,7 +74,10 @@ class DownloadFragment : Fragment(), SystemInsetsPaddedFragment {
             val fileUtils = DefaultDownloadFileUtils(
                 context = requireContext(),
                 downloadLocation = {
-                    DownloadLocationManager(requireContext()).defaultLocation
+                    DownloadLocationManager(
+                        requireComponents.settings,
+                        requireContext().contentResolver,
+                    ).defaultLocation
                 },
             )
             val canOpenFile = fileUtils.openFile(

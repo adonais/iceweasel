@@ -682,6 +682,7 @@ void Statistics::formatJsonDescription(JSONPrinter& json) const {
   // We might be able to omit reason if profiler.firefox.com was able to retrive
   // it from the first slice.  But it doesn't do this yet.
   json.property("reason", ExplainGCReason(slices_[0].reason));
+  json.property("options", ExplainGCOptions(gcOptions));
   json.property("zones_collected", zoneStats.collectedZoneCount);
   json.property("total_zones", zoneStats.zoneCount);
   json.property("total_compartments", zoneStats.compartmentCount);

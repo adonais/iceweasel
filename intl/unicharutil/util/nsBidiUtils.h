@@ -80,10 +80,13 @@ nsresult HandleNumbers(char16_t* aBuffer, uint32_t aSize, uint32_t aNumFlag);
 #define PDI_CHAR 0x2069
 
 #define ALM_CHAR 0x061C
+
 inline bool IsBidiControl(uint32_t aChar) {
-  return ((LRE_CHAR <= aChar && aChar <= RLO_CHAR) ||
-          (LRI_CHAR <= aChar && aChar <= PDI_CHAR) || (aChar == ALM_CHAR) ||
-          (aChar & 0xfffffe) == LRM_CHAR);
+  return ((aChar & 0x0000ff00) == 0x00002000 &&
+          (aChar - LRE_CHAR <= RLO_CHAR - LRE_CHAR ||
+           aChar - LRI_CHAR <= PDI_CHAR - LRI_CHAR ||
+           (aChar & ~1) == LRM_CHAR)) ||
+         aChar == ALM_CHAR;
 }
 
 /**

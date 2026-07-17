@@ -166,53 +166,6 @@ class subsuite(InstanceFilter):
                 yield test
 
 
-class chunk_by_slice(InstanceFilter):
-    """
-    Basic chunking algorithm that splits tests evenly across total chunks.
-
-    :param this_chunk: the current chunk, 1 <= this_chunk <= total_chunks
-    :param total_chunks: the total number of chunks
-    :param disabled: Whether to include disabled tests in the chunking
-                     algorithm. If False, each chunk contains an equal number
-                     of non-disabled tests. If True, each chunk contains an
-                     equal number of tests (default False)
-    """
-
-    def __init__(self, this_chunk, total_chunks, disabled=False):
-        assert 1 <= this_chunk <= total_chunks
-        InstanceFilter.__init__(self, this_chunk, total_chunks, disabled=disabled)
-        self.this_chunk = this_chunk
-        self.total_chunks = total_chunks
-        self.disabled = disabled
-
-    def __call__(self, tests, values, strict=False):
-        tests = list(tests)
-        if self.disabled:
-            chunk_tests = tests[:]
-        else:
-            chunk_tests = [t for t in tests if "disabled" not in t]
-
-        tests_per_chunk = float(len(chunk_tests)) / self.total_chunks
-        # pylint: disable=W1633
-        start = int(round((self.this_chunk - 1) * tests_per_chunk))
-        end = int(round(self.this_chunk * tests_per_chunk))
-
-        if not self.disabled:
-            # map start and end back onto original list of tests. Disabled
-            # tests will still be included in the returned list, but each
-            # chunk will contain an equal number of enabled tests.
-            if self.this_chunk == 1:
-                start = 0
-            elif start < len(chunk_tests):
-                start = tests.index(chunk_tests[start])
-
-            if self.this_chunk == self.total_chunks:
-                end = len(tests)
-            elif end < len(chunk_tests):
-                end = tests.index(chunk_tests[end])
-        return (t for t in tests[start:end])
-
-
 class chunk_by_dir(InstanceFilter):
     """
     Basic chunking algorithm that splits directories of tests evenly at a

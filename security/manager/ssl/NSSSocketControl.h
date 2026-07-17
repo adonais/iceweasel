@@ -280,6 +280,10 @@ class NSSSocketControl final : public CommonSocketControl {
     COMMON_SOCKET_CONTROL_ASSERT_ON_OWNING_THREAD();
     mClientAuthCertificateRequest.emplace(ClientAuthCertificateRequest{
         std::move(serverCertificate), std::move(caNames)});
+    // Let HE pause other racers before PSM may show a cert dialog.
+    if (mTlsHandshakeCallback) {
+      (void)mTlsHandshakeCallback->ClientAuthCertificateRequested();
+    }
   }
 
   void MaybeSelectClientAuthCertificate();

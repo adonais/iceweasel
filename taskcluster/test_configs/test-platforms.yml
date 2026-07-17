@@ -24,20 +24,12 @@ linux1804-64-qr/opt:
     build-platform: linux64/opt
     test-sets:
         - talos
-        - browsertime
 
 linux1804-64-shippable-qr/opt:
     build-platform: linux64-shippable/opt
     test-sets:
         - talos
         - talos-profiling
-        - browsertime
-        - browsertime-profiling
-
-linux1804-64-nightlyasrelease-qr/opt:
-    build-platform: linux64-nightlyasrelease/opt
-    test-sets:
-        - browsertime
 
 linux2404-64-nightlyasrelease/opt:
     build-platform: linux64-nightlyasrelease/opt
@@ -49,11 +41,6 @@ linux2404-64-tsan/opt:
     test-sets:
         - linux-2404-tsan-tests
         - web-platform-tests-2404-tsan
-
-linux1804-64-clang-trunk-qr/opt:
-    build-platform: linux64-plain-clang-trunk/opt
-    test-sets:
-        - browsertime-clang
 
 linux2404-64/opt:
     build-platform: linux64/opt

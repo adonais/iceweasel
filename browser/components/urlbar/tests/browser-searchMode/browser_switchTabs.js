@@ -284,7 +284,7 @@ add_task(async function userTypedValue_nonEmpty() {
  *   The search string to enter search mode with.
  */
 async function doUserTypedValueTest(searchString) {
-  let value = `${UrlbarTokenizer.RESTRICT.BOOKMARK} ${searchString}`;
+  let value = `${UrlbarShared.RESTRICT_TOKENS.BOOKMARK} ${searchString}`;
   await UrlbarTestUtils.promiseAutocompleteResultPopup({
     window,
     value,

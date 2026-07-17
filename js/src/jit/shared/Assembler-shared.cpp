@@ -43,23 +43,23 @@ AssemblerShared::~AssemblerShared() {
 #ifdef DEBUG
 void AssemblerShared::pushCreator(const char* who) {
   (void)creators_.append(who);
-  JitSpewStart(JitSpew_Codegen, "# BEGIN creators: ");
+  AutoJitSpewMessage msg(JitSpew_Codegen, "# BEGIN creators: ");
   bool first = true;
   for (const char* str : creators_) {
-    JitSpewCont(JitSpew_Codegen, "%s%s", first ? "" : "/", str);
+    msg.append("%s%s", first ? "" : "/", str);
     first = false;
   }
-  JitSpewCont(JitSpew_Codegen, "\n");
 }
 
 void AssemblerShared::popCreator() {
-  JitSpewStart(JitSpew_Codegen, "# END   creators: ");
-  bool first = true;
-  for (const char* str : creators_) {
-    JitSpewCont(JitSpew_Codegen, "%s%s", first ? "" : "/", str);
-    first = false;
+  {
+    AutoJitSpewMessage msg(JitSpew_Codegen, "# END   creators: ");
+    bool first = true;
+    for (const char* str : creators_) {
+      msg.append("%s%s", first ? "" : "/", str);
+      first = false;
+    }
   }
-  JitSpewCont(JitSpew_Codegen, "\n");
   if (creators_.empty()) {
     JitSpew(JitSpew_Codegen, " ");
   }

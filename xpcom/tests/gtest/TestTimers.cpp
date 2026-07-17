@@ -225,9 +225,14 @@ constexpr unsigned AddCoalescingSlack(unsigned aMs) {
   return aMs + (aMs + 7) / 8;
 }
 
-constexpr unsigned kUpperToleranceMs = 10;
+constexpr unsigned kUpperToleranceMs = 40;
 constexpr unsigned kLowerToleranceMs = 5;
 constexpr unsigned kTightLowerToleranceMs = 1;
+// For REPEATING_PRECISE_CAN_SKIP timers, fires happen at absolute scheduled
+// times, but the measured callback-to-callback interval is shortened by any
+// dispatch latency on the *previous* callback. Use a larger lower tolerance
+// to account for coalescing slop and thread dispatch delay on slow machines.
+constexpr unsigned kPreciseLowerToleranceMs = 20;
 
 void WaitAssertFired(TimerHelper* timer, unsigned expectedMs,
                      unsigned upperTolMs, unsigned lowerTolMs,
@@ -257,6 +262,7 @@ TEST_F(SimpleTimerTest, TimerWithStoppedTarget) {
 TEST_F(SimpleTimerTest, SlackRepeating) {
   auto timer = MakeTimer(100 * kSlowdownFactor, nsITimer::TYPE_REPEATING_SLACK);
   WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 50);
+  if (HasFatalFailure()) return;
   // REPEATING_SLACK timers re-schedule with the full duration when the timer
   // callback completes
   WaitAssertFired(timer.get(), 150, kUpperToleranceMs, kLowerToleranceMs, 0);
@@ -266,14 +272,22 @@ TEST_F(SimpleTimerTest, RepeatingPrecise) {
   auto timer = MakeTimer(100 * kSlowdownFactor,
                          nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP);
   WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 50);
+  if (HasFatalFailure()) return;
 
   // Delays smaller than the timer's period do not effect the period.
-  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
+  // Use kPreciseLowerToleranceMs: if the previous callback dispatched late,
+  // the measured interval is shorter than the timer period by that amount.
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  0);
+  if (HasFatalFailure()) return;
 
   // Delays larger than the timer's period should result in the skipping of
   // firings, but the cadence should remain the same.
-  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 150);
-  WaitAssertFired(timer.get(), 200, kUpperToleranceMs, kLowerToleranceMs, 0);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  150);
+  if (HasFatalFailure()) return;
+  WaitAssertFired(timer.get(), 200, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  0);
 }
 
 // gtest on 32bit Win7 debug build is unstable and somehow this test
@@ -282,11 +296,12 @@ TEST_F(SimpleTimerTest, RepeatingPrecise) {
 
 class FindExpirationTimeState final {
  public:
-  // We'll offset the timers 10 seconds into the future to assure that they
-  // won't fire
-  const uint32_t kTimerOffset = 10 * 1000;
-  // And we'll set the timers spaced by 5 seconds.
-  const uint32_t kTimerInterval = 5 * 1000;
+  // Offset the timers far enough into the future that they won't fire during
+  // the test, but small enough that the pre-clear loop in InitTimers isn't a
+  // wall-time bottleneck on slow runners (Bug 1952147).
+  const uint32_t kTimerOffset = 1000;
+  // And we'll set the timers spaced by 250 ms.
+  const uint32_t kTimerInterval = 250;
   // We'll use 20 timers
   const uint32_t kNumTimers = 20;
 
@@ -581,10 +596,15 @@ TEST_F(SimpleTimerTest, SleepWakeRepeatingPrecise) {
   // fire pretty much immediately.
   WaitAssertFired(timer.get(), 350, kUpperToleranceMs, kTightLowerToleranceMs,
                   0);
+  if (HasFatalFailure()) return;
 
-  // After that, we should get back on our original cadence
-  WaitAssertFired(timer.get(), 50, kUpperToleranceMs, kLowerToleranceMs, 0);
-  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
+  // After that, we should get back on our original cadence.
+  WaitAssertFired(timer.get(), 50, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  0);
+  if (HasFatalFailure()) return;
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  0);
+  if (HasFatalFailure()) return;
 
   PauseTimerThread();
   delay = timer->Wait(50 * kSlowdownFactor);
@@ -593,7 +613,8 @@ TEST_F(SimpleTimerTest, SleepWakeRepeatingPrecise) {
 
   // Timer thread only slept for ~50 ms, shorter than the duration of the
   // timer, so there should be no effect on the timing.
-  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kLowerToleranceMs, 0);
+  WaitAssertFired(timer.get(), 100, kUpperToleranceMs, kPreciseLowerToleranceMs,
+                  0);
 }
 
 #define FUZZ_MAX_TIMEOUT 9

@@ -425,6 +425,7 @@ class Decoder {
   bool fail(size_t errorOffset, const char* msg);
 
   UniqueChars* error() { return error_; }
+  UniqueCharsVector* warnings() { return warnings_; }
 
   void clearError() {
     if (error_) {
@@ -459,6 +460,23 @@ class Decoder {
     return true;
   }
 
+  [[nodiscard]] bool peekLiteral(const char* lit) {
+    size_t nBytes = strlen(lit);
+    const uint8_t* actualBytes;
+    if (!peekBytes(nBytes, &actualBytes)) {
+      return false;
+    }
+    return memcmp(lit, actualBytes, nBytes) == 0;
+  }
+
+  [[nodiscard]] bool readLiteral(const char* lit) {
+    bool match = peekLiteral(lit);
+    if (match) {
+      cur_ += strlen(lit);
+    }
+    return match;
+  }
+
   // Fixed-size encoding operations simply copy the literal bytes (without
   // attempting to align).
 
@@ -476,6 +494,17 @@ class Decoder {
     return true;
   }
 #endif
+
+  // Utility for the common case where a single byte is used as a boolean value
+  // (0 = false, 1 = true, all other values invalid).
+  [[nodiscard]] bool readBool(bool* b) {
+    uint8_t byte;
+    if (!readFixedU8(&byte) || byte > 1) {
+      return false;
+    }
+    *b = (byte != 0);
+    return true;
+  }
 
   // Variable-length encodings that all use LEB128.
 
@@ -532,15 +561,52 @@ class Decoder {
 
   // See writeBytes comment.
 
-  [[nodiscard]] bool readBytes(uint32_t numBytes,
+  [[nodiscard]] bool peekBytes(uint32_t numBytes,
                                const uint8_t** bytes = nullptr) {
     if (bytes) {
       *bytes = cur_;
     }
-    if (bytesRemain() < numBytes) {
+    return bytesRemain() >= numBytes;
+  }
+
+  [[nodiscard]] bool readBytes(uint32_t numBytes,
+                               const uint8_t** bytes = nullptr) {
+    bool result = peekBytes(numBytes, bytes);
+    if (result) {
+      cur_ += numBytes;
+    }
+    return result;
+  }
+
+  [[nodiscard]] bool readBytesSpan(uint32_t numBytes, BytecodeSpan* bytes,
+                                   size_t* offset = nullptr) {
+    size_t offset_ = currentOffset();
+    const uint8_t* data;
+    if (!readBytes(numBytes, &data)) {
       return false;
     }
-    cur_ += numBytes;
+    *bytes = BytecodeSpan(data, numBytes);
+    if (offset) {
+      *offset = offset_;
+    }
+    return true;
+  }
+
+  bool readUTF8Bytes(uint32_t numBytes, UTF8Bytes* bytes) {
+    const uint8_t* rawBytes;
+    if (!readBytes(numBytes, &rawBytes)) {
+      return false;
+    }
+
+    if (!IsUtf8(AsChars(mozilla::Span(rawBytes, numBytes)))) {
+      return false;
+    }
+
+    if (!bytes->resizeUninitialized(numBytes)) {
+      return false;
+    }
+    memcpy(bytes->begin(), rawBytes, numBytes);
+
     return true;
   }
 

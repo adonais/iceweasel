@@ -804,6 +804,16 @@ bool TRRService::ConfirmationContext::HandleEvent(ConfirmationEvent aEvent,
       return;
     }
 
+    if (StaticPrefs::network_trr_start_confirmation_in_failed_state()) {
+      // Don't optimistically assume TRR is usable. Starting in CONFIRM_FAILED
+      // makes lookups fall back to native DNS until the first confirmation
+      // succeeds, instead of blocking on the TRR connection being established.
+      // The next call to maybeConfirm will transition to CONFIRM_TRYING_FAILED.
+      LOG(("mConfirmation.mState -> CONFIRM_FAILED"));
+      SetState(CONFIRM_FAILED);
+      return;
+    }
+
     // The next call to maybeConfirm will transition to CONFIRM_TRYING_OK
     LOG(("mConfirmation.mState -> CONFIRM_OK"));
     SetState(CONFIRM_OK);
@@ -1040,16 +1050,27 @@ bool TRRService::IsTemporarilyBlocked(const nsACString& aHost,
   return false;
 }
 
-bool TRRService::IsExcludedFromTRR(const nsACString& aHost) {
+bool TRRService::IsExcludedFromTRR(const nsACString& aHost,
+                                   nsIRequest::TRRMode aRequestMode) {
   // This method may be called off the main thread. We need to lock so
   // mExcludedDomains and mDNSSuffixDomains don't change while this code
   // is running.
   MutexAutoLock lock(mLock);
 
-  return IsExcludedFromTRR_unlocked(aHost);
+  return IsExcludedFromTRR_unlocked(aHost, aRequestMode);
 }
 
-bool TRRService::IsExcludedFromTRR_unlocked(const nsACString& aHost) {
+bool TRRService::IsExcludedFromTRR_unlocked(const nsACString& aHost,
+                                            nsIRequest::TRRMode aRequestMode) {
+  // The effective resolver mode for this lookup is TRR-only when either the
+  // request explicitly asked for TRR_ONLY_MODE, or the request doesn't
+  // override the mode and the global mode is MODE_TRRONLY.
+  const bool trrOnly = aRequestMode == nsIRequest::TRR_ONLY_MODE ||
+                       (aRequestMode == nsIRequest::TRR_DEFAULT_MODE &&
+                        mMode == nsIDNSService::MODE_TRRONLY);
+  const bool checkDNSSuffix =
+      !trrOnly || StaticPrefs::network_trr_exclude_dns_suffix_in_mode_trronly();
+
   int32_t dot = 0;
   // iteratively check the sub-domain of |aHost|
   while (dot < static_cast<int32_t>(aHost.Length())) {
@@ -1062,7 +1083,7 @@ bool TRRService::IsExcludedFromTRR_unlocked(const nsACString& aHost) {
            nsPromiseFlatCString(aHost).get()));
       return true;
     }
-    if (mDNSSuffixDomains.Contains(subdomain)) {
+    if (checkDNSSuffix && mDNSSuffixDomains.Contains(subdomain)) {
       LOG(
           ("Subdomain [%s] of host [%s] Is Excluded From TRR via DNSSuffix "
            "domains\n",
@@ -1332,6 +1353,7 @@ void TRRService::ConfirmationContext::RequestCompleted(
 
 void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
                                                            TRR* aTRRRequest) {
+  bool confirmOK;
   {
     MutexAutoLock lock(OwningObject()->mLock);
     // Ignore confirmations that dont match the pending task.
@@ -1359,7 +1381,12 @@ void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
       HandleEvent(ConfirmationEvent::ConfirmFail, lock);
     }
 
-    if (State() == CONFIRM_OK) {
+    // Capture the final state while still holding the lock. The retry timer
+    // set by ConfirmFail can fire as soon as the lock is released and advance
+    // the state from CONFIRM_FAILED to CONFIRM_TRYING_FAILED, so we must not
+    // read State() after the lock drops.
+    confirmOK = (State() == CONFIRM_OK);
+    if (confirmOK) {
       // Record event and start new confirmation context
       RecordEvent("success", lock);
     }
@@ -1367,18 +1394,15 @@ void TRRService::ConfirmationContext::CompleteConfirmation(nsresult aStatus,
          OwningObject()->mPrivateURI.get(), State(), (unsigned int)aStatus));
   }
 
-  if (State() == CONFIRM_OK) {
+  if (confirmOK) {
     // A fresh confirmation means previous blocked entries might not
     // be valid anymore.
     auto bl = OwningObject()->mTRRBLStorage.Lock();
     bl->Clear();
-  } else {
-    MOZ_ASSERT(State() == CONFIRM_FAILED);
   }
 
   glean::dns::trr_ns_verfified
-      .Get(TRRService::ProviderKey(),
-           (State() == CONFIRM_OK) ? "true"_ns : "false"_ns)
+      .Get(TRRService::ProviderKey(), confirmOK ? "true"_ns : "false"_ns)
       .Add();
 }
 

@@ -17,6 +17,9 @@ interface CustomElementRegistry {
   [Throws]
   Promise<CustomElementConstructor> whenDefined(DOMString name);
   [CEReactions] undefined upgrade(Node root);
+
+  [CEReactions, Pref="dom.scoped-custom-element-registries.enabled", Throws]
+  undefined initialize(Node root);
 };
 
 dictionary ElementDefinitionOptions {

@@ -207,8 +207,8 @@ already_AddRefed<nsIInputStreamCallback> NS_NewInputStreamReadyEvent(
     nsIEventTarget* aTarget, uint32_t aPriority) {
   NS_ASSERTION(aCallback, "null callback");
   NS_ASSERTION(aTarget, "null target");
-  RefPtr<nsInputStreamReadyEvent> ev =
-      new nsInputStreamReadyEvent(aName, aCallback, aTarget, aPriority);
+  RefPtr ev =
+      MakeRefPtr<nsInputStreamReadyEvent>(aName, aCallback, aTarget, aPriority);
   return ev.forget();
 }
 
@@ -216,8 +216,7 @@ already_AddRefed<nsIOutputStreamCallback> NS_NewOutputStreamReadyEvent(
     nsIOutputStreamCallback* aCallback, nsIEventTarget* aTarget) {
   NS_ASSERTION(aCallback, "null callback");
   NS_ASSERTION(aTarget, "null target");
-  RefPtr<nsOutputStreamReadyEvent> ev =
-      new nsOutputStreamReadyEvent(aCallback, aTarget);
+  RefPtr ev = MakeRefPtr<nsOutputStreamReadyEvent>(aCallback, aTarget);
   return ev.forget();
 }
 

@@ -16,6 +16,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   CleanupManager: "resource://normandy/lib/CleanupManager.sys.mjs",
   ExperimentManager: "resource://nimbus/lib/ExperimentManager.sys.mjs",
   FeatureManifest: "resource://nimbus/FeatureManifest.sys.mjs",
+  FirstStartup: "resource://gre/modules/FirstStartup.sys.mjs",
   NimbusMigrations: "resource://nimbus/lib/Migrations.sys.mjs",
   NimbusTelemetry: "resource://nimbus/lib/Telemetry.sys.mjs",
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
@@ -189,6 +190,11 @@ export const ExperimentAPI = new (class {
    */
   #studiesEnabled = false;
 
+  /**
+   * @type {FirstStartupTimestamps | null }
+   */
+  #firstStartupTimestamps = null;
+
   constructor() {
     if (IS_MAIN_PROCESS) {
       // Ensure that the profile ID is cached in a pref.
@@ -265,6 +271,10 @@ export const ExperimentAPI = new (class {
   }
 
   async #init({ extraContext, forceSync }) {
+    if (lazy.FirstStartup.state === lazy.FirstStartup.IN_PROGRESS) {
+      this.#firstStartupTimestamps = {};
+    }
+
     // Compute the enabled state and cache it. It is possible for the enabled
     // state to change during ExperimentAPI initialization, but we do not
     // register our observers until the end of this function.
@@ -302,10 +312,18 @@ export const ExperimentAPI = new (class {
       );
     }
 
+    if (this.#firstStartupTimestamps) {
+      this.#firstStartupTimestamps.storeInitEnd = ChromeUtils.now();
+    }
+
     try {
       await this.manager.onStartup(extraContext);
     } catch (e) {
       lazy.log.error("Failed to initialize ExperimentManager:", e);
+    }
+
+    if (this.#firstStartupTimestamps) {
+      this.#firstStartupTimestamps.managerInitEnd = ChromeUtils.now();
     }
 
     try {
@@ -325,6 +343,10 @@ export const ExperimentAPI = new (class {
         }`,
         e
       );
+    }
+
+    if (this.#firstStartupTimestamps) {
+      this.#firstStartupTimestamps.loaderInitEnd = ChromeUtils.now();
     }
 
     if (CRASHREPORTER_ENABLED) {
@@ -359,6 +381,10 @@ export const ExperimentAPI = new (class {
     // If the enabled state hasn't actually changed, calling this function is a
     // no-op.
     await this._onEnabledPrefChange();
+
+    if (this.#firstStartupTimestamps) {
+      this.#firstStartupTimestamps.nimbusInitEnd = ChromeUtils.now();
+    }
   }
 
   /**
@@ -667,6 +693,39 @@ export const ExperimentAPI = new (class {
    */
   async optInToExperiment(options) {
     return this._rsLoader._optInToExperiment(options);
+  }
+
+  /**
+   * @typedef {object} FirstStartupTimestamps
+   *
+   * All properties are timestamps in milliseconds, as reported by
+   * `ChromeUtils.now`.
+   *
+   * @property {number | undefined} storeInitEnd
+   * The time that the ExperimentStore finished initializing.
+   *
+   * @property {number | undefined} managerInitEnd
+   * The time that the ExperimentManager finished initialization.
+   *
+   * @property {number | undefined} loaderInitEnd
+   * The time that the RemoteSettingsExperimentLoader finished
+   * initialization.
+   *
+   * @property {number | undefined} nimbusInitEnd
+   * The time that Nimbus became fully initialized.
+   */
+
+  /**
+   * Return the first startup timestamps.
+   *
+   * The timestamps will be cleared.
+   *
+   * @returns {FirstStartupTimestamps | null} The timestamps, if any.
+   */
+  getAndClearFirstStartupTimestamps() {
+    const timestamps = this.#firstStartupTimestamps;
+    this.#firstStartupTimestamps = null;
+    return timestamps;
   }
 })();
 

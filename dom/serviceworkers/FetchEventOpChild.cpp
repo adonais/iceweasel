@@ -422,6 +422,24 @@ nsresult FetchEventOpChild::StartSynthesizedResponse(
     return NS_ERROR_FAILURE;
   }
 
+  // This implements https://fetch.spec.whatwg.org/#main-fetch step 20 for the
+  // response from ServiceWorker.
+  const IPCInternalRequest& request = mArgs.common().internalRequest();
+  if ((response->GetUnfilteredStatus() == 206 ||
+       response->GetUnfilteredStatus() == 416) &&
+      response->GetTainting() == LoadTainting::Opaque) {
+    bool isRangedRequest = false;
+    for (const auto& headerEntry : request.headers()) {
+      if (headerEntry.name().Equals("Range"_ns)) {
+        isRangedRequest = true;
+        break;
+      }
+    }
+    if (!isRangedRequest) {
+      return NS_ERROR_FAILURE;
+    }
+  }
+
   nsCOMPtr<nsIChannel> underlyingChannel;
   nsresult rv =
       mInterceptedChannel->GetChannel(getter_AddRefs(underlyingChannel));
@@ -478,7 +496,6 @@ nsresult FetchEventOpChild::StartSynthesizedResponse(
   // Propagate the URL to the content if the request mode is not "navigate".
   // Note that, we only reflect the final URL if the response.redirected is
   // false. We propagate all the URLs if the response.redirected is true.
-  const IPCInternalRequest& request = mArgs.common().internalRequest();
   nsCOMPtr<nsIURI> responseURL;
   if (request.requestMode() != RequestMode::Navigate &&
       response->GetUnfilteredURL()) {

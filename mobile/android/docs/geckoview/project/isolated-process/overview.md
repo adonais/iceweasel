@@ -20,8 +20,8 @@ Some important differences include:
 
 * Many system calls and kernel interactions are restricted compared to regular app processes
 
-
 Some links to external documentation:
+
 * [Video overview of isolated processes](https://www.youtube.com/watch?v=Ive8WaeldWA)
 * [SELinux Contexts](https://docs.redhat.com/en/documentation/red_hat_enterprise_linux/6/html/security-enhanced_linux/chap-security-enhanced_linux-selinux_contexts)
 * [Android SE Policy](https://cs.android.com/android/platform/superproject/main/+/main:system/sepolicy/README.md)
@@ -29,17 +29,21 @@ Some links to external documentation:
 
 ### How to run isolated process mode
 
-#### GeckoView Test Runner Locally:
+#### GeckoView Test Runner Locally
+
 [`ac_add_options --enable-isolated-process`](https://searchfox.org/firefox-main/rev/f37efeb9fd346125bfc98d132ae0dea48a1e2584/mobile/android/moz.configure#62)
 (Should apply to junit, supported mochitests, xpcshell, wpt, and reftests.)
 
-#### GeckoView Example:
+#### GeckoView Example
+
 [Hardcode](https://searchfox.org/firefox-main/rev/5c6d4ae3f944972de57bd80adb49fcf18fa5f3bb/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntimeSettings.java#869) `mIsolatedProcess` to true in `GeckoRuntimeSettings.java`.
 
-#### CI:
+#### CI
+
 Currently in CI as a build type of [debug-isolated-process](https://searchfox.org/firefox-main/rev/f37efeb9fd346125bfc98d132ae0dea48a1e2584/mobile/android/config/mozconfigs/android-x86_64/debug-isolated-process). It is in the process of transitioning to a variant of [geckoview-isolated-process.](https://phabricator.services.mozilla.com/D265099)
 
-#### Fenix:
+#### Fenix
+
 Isolated processes may be tested by enabling it in Fenix’s secret settings and restarting the app.
 
 Note: If app zygote preloading is also enabled, those settings will take precedence. Also, the GV flags will not apply because Fenix has control of the setting.
@@ -92,17 +96,21 @@ App zygote preloading requires Android 10 (level 29\) or higher.
 
 ### How to run app zygote preloading
 
-#### GeckoView Test Runner Locally:
+#### GeckoView Test Runner Locally
+
 [`ac_add_options --enable-isolated-zygote-process`](https://searchfox.org/firefox-main/rev/f37efeb9fd346125bfc98d132ae0dea48a1e2584/mobile/android/moz.configure#43)
 (Should apply to junit, supported mochitests, xpcshell, wpt, and reftests.)
 
-#### GeckoView Example:
+#### GeckoView Example
+
 [Hardcode](https://searchfox.org/firefox-main/rev/0fce12de99c5e7d74536d8f93cf9778ce6199a1f/mobile/android/geckoview/src/main/java/org/mozilla/geckoview/GeckoRuntimeSettings.java#870) `mAppZygoteProcess` to true in `GeckoRuntimeSettings.java`.
 
-#### CI:
+#### CI
+
 [geckoview-zygote](https://searchfox.org/firefox-main/rev/f37efeb9fd346125bfc98d132ae0dea48a1e2584/taskcluster/test_configs/variants.yml#232) variant
 
-#### Fenix:
+#### Fenix
+
 App zygote preloading can be tested by enabling it in Fenix’s secret settings and restarting the app.
 
 Note: The GV flags will not apply because Fenix has control of the setting.

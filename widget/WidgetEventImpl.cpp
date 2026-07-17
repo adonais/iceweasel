@@ -122,7 +122,6 @@ bool IsForbiddenDispatchingToNonElementContent(EventMessage aMessage) {
     case ePointerOut:
     case ePointerEnter:
     case ePointerLeave:
-    case ePointerRawUpdate:
     case ePointerCancel:
     case ePointerGotCapture:
     case ePointerLostCapture:
@@ -174,10 +173,14 @@ bool IsForbiddenDispatchingToNonElementContent(EventMessage aMessage) {
     case eTouchPointerCancel:
       return true;
 
+    case ePointerRawUpdate:
+    // eMouseRawUpdate and eTouchRawUpdate are internal event messages to
+    // dispatch ePointerRawUpdate. However, somebody may use this method to
+    // consider the event target before converting the event to
+    // ePointerRawUpdate. Therefore, we need to return the same value as
+    // ePointerRawUpdate for them.
     case eMouseRawUpdate:
     case eTouchRawUpdate:
-      MOZ_ASSERT_UNREACHABLE(
-          "Internal raw update events shouldn't be dispatched to the DOM");
       return true;
 
     default:

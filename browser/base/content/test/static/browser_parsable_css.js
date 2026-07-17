@@ -61,6 +61,11 @@ if (!Services.prefs.getBoolPref("dom.select.customizable_select.enabled")) {
     errorMessage: /Unknown pseudo-class or pseudo-element ‘picker’./i,
     isFromDevTools: false,
   });
+  ignoreList.push({
+    sourceName: /\bforms\.css$/i,
+    errorMessage: /Unknown pseudo-class or pseudo-element ‘checkmark’./i,
+    isFromDevTools: false,
+  });
 }
 
 if (!Services.prefs.getBoolPref("layout.css.zoom.enabled")) {
@@ -116,6 +121,14 @@ if (
   });
 }
 
+if (!Services.prefs.getBoolPref("dom.headingoffset.enabled")) {
+  ignoreList.push({
+    sourceName: /\b(html)\.css$/i,
+    errorMessage: /Unknown pseudo-class.*heading/i,
+    isFromDevTools: false,
+  });
+}
+
 let propNameAllowlist = [
   // These custom properties are retrieved directly from CSSOM
   // in videocontrols.xml to get pre-defined style instead of computed
@@ -149,6 +162,13 @@ let propNameAllowlist = [
   { propName: "--panel-background-color", isFromDevTools: true },
   { propName: "--panel-border-color", isFromDevTools: true },
   { propName: "--panel-box-shadow", isFromDevTools: true },
+
+  // This is a semantic panel design token provided by the design system that
+  // currently has no chrome CSS consumer, so it isn't referenced via var().
+  {
+    propName: "--panel-background-color-dimmed-further",
+    isFromDevTools: false,
+  },
 
   // These variables are set in host CSS but consumed in shadow DOM CSS
   // (content-search-handoff-ui component), which confuses the test.

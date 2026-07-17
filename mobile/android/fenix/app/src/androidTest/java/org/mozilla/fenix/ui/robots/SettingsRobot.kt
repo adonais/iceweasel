@@ -478,6 +478,14 @@ class SettingsRobot {
         Log.i(TAG, "verifySettingsOptionSummary: Verified that setting: $setting with summary:$summary is visible")
     }
 
+    fun verifyPageSummariesButton() {
+        scrollToElementByText("Page summaries")
+        Log.i(TAG, "verifyPageSummariesButton: Trying to verify that the \"Page summaries\" button is visible")
+        onView(withText(R.string.preferences_page_summaries))
+            .check(matches(withEffectiveVisibility(Visibility.VISIBLE)))
+        Log.i(TAG, "verifyPageSummariesButton: Verified that the \"Page summaries\" button is visible")
+    }
+
     class Transition {
         fun goBack(composeTestRule: ComposeTestRule, interact: HomeScreenRobot.() -> Unit): HomeScreenRobot.Transition {
             Log.i(TAG, "goBack: Trying to click the navigate up button")
@@ -755,6 +763,16 @@ class SettingsRobot {
 
             SettingsSubMenuExperimentsRobot().interact()
             return SettingsSubMenuExperimentsRobot.Transition()
+        }
+
+        fun openPageSummariesSubMenu(composeTestRule: ComposeTestRule, interact: SettingsSubMenuPageSummariesRobot.() -> Unit): SettingsSubMenuPageSummariesRobot.Transition {
+            assertUIObjectExists(itemContainingText(getStringResource(R.string.preferences_page_summaries)))
+            Log.i(TAG, "openPageSummariesSubMenu: Trying to click the \"Page summaries\" button")
+            itemContainingText(getStringResource(R.string.preferences_page_summaries)).click()
+            Log.i(TAG, "openPageSummariesSubMenu: Clicked the \"Page summaries\" button")
+
+            SettingsSubMenuPageSummariesRobot(composeTestRule).interact()
+            return SettingsSubMenuPageSummariesRobot.Transition(composeTestRule)
         }
     }
 

@@ -398,9 +398,6 @@ function _setupDevToolsServer(breakpointFiles, callback) {
   if (_Services.env.get("DEVTOOLS_DEBUGGER_LOG")) {
     _Services.prefs.setBoolPref("devtools.debugger.log", true);
   }
-  if (_Services.env.get("DEVTOOLS_DEBUGGER_LOG_VERBOSE")) {
-    _Services.prefs.setBoolPref("devtools.debugger.log.verbose", true);
-  }
 
   let require;
   try {
@@ -849,7 +846,8 @@ function _wrap_with_quotes_if_necessary(val) {
  * Prints a message to the output log.
  */
 function info(msg, data) {
-  ChromeUtils.addProfilerMarker("INFO", { category: "Test" }, msg);
+  // String() to force addProfilerMarker's text-marker path.
+  ChromeUtils.addProfilerMarker("INFO", { category: "Test" }, String(msg));
   msg = _wrap_with_quotes_if_necessary(msg);
   data = data ? data : null;
   _testLogger.info(msg, data);

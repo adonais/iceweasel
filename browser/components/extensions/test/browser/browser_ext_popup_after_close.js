@@ -85,14 +85,22 @@ async function showNotificationPanel() {
   });
   info("Waiting for Notification panel to appear");
   await shownPromise;
-  return PopupNotifications.panel;
+
+  const panel = PopupNotifications.panel;
+  const button = panel.querySelector(".popup-notification-primary-button");
+  // Resolve the button's Lit render cycle while the panel is in a stable,
+  // fully-shown state. clickNotificationPanel is later called inside a tight
+  // synchronous window (immediately after a browser action popup closes),
+  // where the panel may be mid-transition and querySelector would return null.
+  // Pre-fetching here avoids that race entirely.
+  await button.updateComplete;
+  return { panel, button };
 }
 
-function clickNotificationPanel(panel) {
+function clickNotificationPanel({ panel, button }) {
   is(panel.state, "open", "Sanity check: notification panel is open");
-  const but = panel.querySelector("button.popup-notification-primary-button");
-  ok(but, "Found button to click in notification panel");
-  EventUtils.synthesizeMouseAtCenter(but, {}, window);
+  ok(button, "Found button to click in notification panel");
+  EventUtils.synthesizeMouseAtCenter(button, {}, window);
 }
 
 function clickNotificationInToolbar(notifInToolbar) {
@@ -142,7 +150,7 @@ async function verifyClickImmediatelyAfterPopupClose({
 }
 
 add_task(async function test_panel_click_after_browserAction_close() {
-  let otherPanel = await showNotificationPanel();
+  let notification = await showNotificationPanel();
 
   let popupOpened = awaitExtensionPanel(gPopupExtension);
   await clickBrowserAction(gPopupExtension);
@@ -152,9 +160,9 @@ add_task(async function test_panel_click_after_browserAction_close() {
   info("Browser action panel closed");
 
   await verifyClickImmediatelyAfterPopupClose({
-    triggerRealClick: () => clickNotificationPanel(otherPanel),
+    triggerRealClick: () => clickNotificationPanel(notification),
     promiseFinalClickResult() {
-      return BrowserTestUtils.waitForEvent(otherPanel, "popuphidden");
+      return BrowserTestUtils.waitForEvent(notification.panel, "popuphidden");
     },
   });
 });
@@ -162,7 +170,7 @@ add_task(async function test_panel_click_after_browserAction_close() {
 // Verify that the common logic also works for page actions. We do not need to
 // enumerate every case, but as a sanity check do it at least once.
 add_task(async function test_panel_click_after_pageAction_close() {
-  let otherPanel = await showNotificationPanel();
+  let notification = await showNotificationPanel();
 
   let popupOpened = awaitExtensionPanel(gPopupExtension);
   await clickPageAction(gPopupExtension);
@@ -172,9 +180,9 @@ add_task(async function test_panel_click_after_pageAction_close() {
   info("pageAction panel closed");
 
   await verifyClickImmediatelyAfterPopupClose({
-    triggerRealClick: () => clickNotificationPanel(otherPanel),
+    triggerRealClick: () => clickNotificationPanel(notification),
     promiseFinalClickResult() {
-      return BrowserTestUtils.waitForEvent(otherPanel, "popuphidden");
+      return BrowserTestUtils.waitForEvent(notification.panel, "popuphidden");
     },
   });
 });

@@ -1,10 +1,6 @@
 {
   "gray": {
     "0": {
-      "override": true,
-      "value": "unset"
-    },
-    "05": {
       "value": "#fbfbfe"
     },
     "10": {
@@ -482,48 +478,6 @@
       }
     }
   },
-  "purple-desaturated": {
-    "0": {
-      "override": true,
-      "value": "unset"
-    },
-    "10": {
-      "override": true,
-      "value": "unset"
-    },
-    "20": {
-      "override": true,
-      "value": "unset"
-    },
-    "30": {
-      "override": true,
-      "value": "unset"
-    },
-    "40": {
-      "override": true,
-      "value": "unset"
-    },
-    "50": {
-      "override": true,
-      "value": "unset"
-    },
-    "60": {
-      "override": true,
-      "value": "unset"
-    },
-    "70": {
-      "override": true,
-      "value": "unset"
-    },
-    "80": {
-      "override": true,
-      "value": "unset"
-    },
-    "90": {
-      "override": true,
-      "value": "unset"
-    }
-  },
   "violet-desaturated": {
     "0": {
       "override": true,
@@ -570,63 +524,43 @@
     "primary": {
       "@base": {
         "value": {
-          "forcedColors": "ButtonText",
-          "brand": {
-            "light": "{color.blue.60}",
-            "dark": "{color.cyan.30}"
-          },
-          "platform": {
-            "default": "AccentColor"
-          }
+          "light": "{color.blue.60}",
+          "dark": "{color.cyan.30}",
+          "nativeTheme": "AccentColor",
+          "forcedColors": "ButtonText"
         }
       },
       "hover": {
         "value": {
           "forcedColors": "SelectedItem",
-          "brand": {
-            "light": "{color.blue.70}",
-            "dark": "{color.cyan.20}"
-          },
-          "platform": {
-            "default": "color-mix(in srgb, black 10%, {color.accent.primary.@base})"
-          }
+          "light": "{color.blue.70}",
+          "dark": "{color.cyan.20}",
+          "nativeTheme": "color-mix(in srgb, black 10%, {color.accent.primary.@base})"
         }
       },
       "active": {
         "value": {
           "forcedColors": "{color.accent.primary.hover}",
-          "brand": {
-            "light": "{color.blue.80}",
-            "dark": "{color.cyan.10}"
-          },
-          "platform": {
-            "default": "color-mix(in srgb, black 20%, {color.accent.primary.@base})"
-          }
+          "light": "{color.blue.80}",
+          "dark": "{color.cyan.10}",
+          "nativeTheme": "color-mix(in srgb, black 20%, {color.accent.primary.@base})"
         }
       },
       "selected": {
         "value": {
           "forcedColors": "SelectedItem",
-          "brand": {
-            "light": "{color.blue.60}",
-            "dark": "{color.cyan.30}"
-          },
-          "platform": {
-            "default": "SelectedItem"
-          }
+          "light": "{color.blue.60}",
+          "dark": "{color.cyan.30}",
+          "nativeTheme": "SelectedItem"
         }
       }
     },
     "attention": {
       "value": {
-        "platform": {
-          "default": "AccentColor"
-        },
-        "brand": {
-          "light": "#2ac3a2",
-          "dark": "#54ffbd"
-        },
-        "prefersContrast": "AccentColor"
+        "prefersContrast": "AccentColor",
+        "light": "#2ac3a2",
+        "dark": "#54ffbd",
+        "nativeTheme": "AccentColor"
       }
     }
   }

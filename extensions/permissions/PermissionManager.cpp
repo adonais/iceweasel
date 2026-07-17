@@ -697,7 +697,7 @@ nsresult NotifySecondaryKeyPermissionUpdateInContentProcess(
 
 ////////////////////////////////////////////////////////////////////////////////
 
-PermissionManager::PermissionKey*
+already_AddRefed<PermissionManager::PermissionKey>
 PermissionManager::PermissionKey::CreateFromPrincipal(nsIPrincipal* aPrincipal,
                                                       bool aForceStripOA,
                                                       bool aScopeToSite,
@@ -711,10 +711,10 @@ PermissionManager::PermissionKey::CreateFromPrincipal(nsIPrincipal* aPrincipal,
   if (NS_WARN_IF(NS_FAILED(aResult))) {
     return nullptr;
   }
-  return new PermissionKey(keyString);
+  return MakeAndAddRef<PermissionKey>(keyString);
 }
 
-PermissionManager::PermissionKey*
+already_AddRefed<PermissionManager::PermissionKey>
 PermissionManager::PermissionKey::CreateFromURIAndOriginAttributes(
     nsIURI* aURI, const OriginAttributes* aOriginAttributes, bool aForceStripOA,
     nsresult& aResult) {
@@ -725,10 +725,10 @@ PermissionManager::PermissionKey::CreateFromURIAndOriginAttributes(
     return nullptr;
   }
 
-  return new PermissionKey(origin);
+  return MakeAndAddRef<PermissionKey>(origin);
 }
 
-PermissionManager::PermissionKey*
+already_AddRefed<PermissionManager::PermissionKey>
 PermissionManager::PermissionKey::CreateFromURI(nsIURI* aURI,
                                                 nsresult& aResult) {
   nsAutoCString origin;
@@ -737,7 +737,7 @@ PermissionManager::PermissionKey::CreateFromURI(nsIURI* aURI,
     return nullptr;
   }
 
-  return new PermissionKey(origin);
+  return MakeAndAddRef<PermissionKey>(origin);
 }
 
 ////////////////////////////////////////////////////////////////////////////////

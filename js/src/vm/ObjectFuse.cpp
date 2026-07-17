@@ -88,7 +88,10 @@ bool ObjectFuse::markPropertyConstant(PropertyInfo prop) {
   return true;
 }
 
-bool ObjectFuse::tryOptimizeConstantProperty(PropertyInfo prop) {
+bool ObjectFuse::tryOptimizeConstantProperty(PropertyKey key,
+                                             PropertyInfo prop) {
+  MOZ_RELEASE_ASSERT(ObjectFuse::tracksPropertyKey(key));
+
   if (MOZ_UNLIKELY(!generation_.isValid())) {
     return false;
   }

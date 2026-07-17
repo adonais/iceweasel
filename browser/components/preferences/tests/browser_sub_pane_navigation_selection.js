@@ -8,6 +8,8 @@
 // (Bug 2038759), and clicking a nav button performs a forward
 // navigation that starts the destination pane fresh (scroll at 0).
 
+requestLongerTimeout(2);
+
 /**
  * Helper to get a nav button by its view attribute.
  */

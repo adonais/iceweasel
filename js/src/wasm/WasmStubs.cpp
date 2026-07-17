@@ -2865,6 +2865,13 @@ bool wasm::GenerateContBaseFrameStub(jit::MacroAssembler& masm,
 
   int32_t offsetFromFPToStack = -ContStack::offsetOfBaseFrameFP();
 
+  // Store initial callee's InstanceReg into calleeInstance_ before clearing
+  // initialResumeTarget_.
+  masm.storePtr(InstanceReg,
+                Address(FramePointer,
+                        static_cast<int32_t>(
+                            wasm::FrameWithInstances::calleeInstanceOffset())));
+
   // Clear the 'resumeTarget' in our frame.
   masm.computeEffectiveAddress(
       Address(FramePointer,
@@ -3045,6 +3052,9 @@ static bool GenerateDebugStub(MacroAssembler& masm, Label* throwLabel,
     masm.addToStackPtr(Imm32(ShadowStackSpace));
   }
 
+  MOZ_ASSERT(NonVolatileRegs.has(InstanceReg));
+  masm.loadWasmPinnedRegsFromInstance(mozilla::Nothing());
+
   masm.setFramePushed(framePushed);
 
   GenerateExitEpilogue(masm, ExitReason::Fixed::DebugStub,
@@ -3069,7 +3079,7 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
   masm.setFramePushed(0);
 
   GenerateExitPrologue(masm, ExitReason::Fixed::RequestTierUp,
-                       /*switchToMainStack*/ false, ExitFrameAlignment::Dynamic,
+                       /*switchToMainStack*/ true, ExitFrameAlignment::Dynamic,
                        0, offsets);
 
   uint32_t framePushed = masm.framePushed();
@@ -3115,7 +3125,7 @@ static bool GenerateRequestTierUpStub(MacroAssembler& masm,
   masm.setFramePushed(framePushed);
 
   GenerateExitEpilogue(masm, ExitReason::Fixed::RequestTierUp,
-                       /*switchToMainStack*/ false, ExitFrameAlignment::Dynamic,
+                       /*switchToMainStack*/ true, ExitFrameAlignment::Dynamic,
                        offsets);
 
   return FinishOffsets(masm, offsets);

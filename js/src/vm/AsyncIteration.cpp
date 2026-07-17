@@ -143,10 +143,8 @@ AsyncGeneratorRequest* AsyncGeneratorObject::createRequest(
       return false;
     }
 
-    if (!queue->append(cx, ObjectValue(*generator->singleQueueRequest()))) {
-      return false;
-    }
-    if (!queue->append(cx, ObjectValue(*request))) {
+    if (!queue->append(cx, ObjectValue(*generator->singleQueueRequest()),
+                       ObjectValue(*request))) {
       return false;
     }
 

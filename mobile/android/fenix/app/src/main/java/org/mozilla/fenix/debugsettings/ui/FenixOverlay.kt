@@ -34,6 +34,7 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.ClientUUID
 import org.mozilla.fenix.components.appstate.AppAction
+import org.mozilla.fenix.components.components
 import org.mozilla.fenix.debugsettings.addresses.AddressesDebugRegionRepository
 import org.mozilla.fenix.debugsettings.addresses.AddressesTools
 import org.mozilla.fenix.debugsettings.addresses.FakeAddressesDebugRegionRepository
@@ -90,6 +91,7 @@ fun FenixOverlay(
                 CfrToolsPreferencesMiddleware(
                     cfrPreferencesRepository = DefaultCfrPreferencesRepository(
                         context = LocalContext.current,
+                        settings = components.settings,
                         lifecycleOwner = lifecycleOwner,
                         coroutineScope = lifecycleOwner.lifecycleScope,
                     ),

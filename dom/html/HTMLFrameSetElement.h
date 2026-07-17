@@ -44,7 +44,7 @@ class OnBeforeUnloadEventHandlerNonNull;
 class HTMLFrameSetElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLFrameSetElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)),
         mCurrentRowColHint(NS_STYLE_HINT_REFLOW) {
     SetHasWeirdParserInsertionMode();

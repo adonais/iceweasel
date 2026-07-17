@@ -275,6 +275,7 @@ static const char* const kTestFileExtensions[] = {
     ".wim",       // Windows Imaging
     ".workflow",  // Mac Automator
     ".ws",        // Windows script
+    ".wsb",       // Windows Sandbox configuration
     ".wsc",       // Windows script
     ".wsf",       // Windows script
     ".wsh",       // Windows script

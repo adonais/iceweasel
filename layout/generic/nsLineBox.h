@@ -85,18 +85,18 @@ class nsLineBox final : public nsLineLink {
   bool IsInline() const { return !mFlags.mBlock; }
 
   // mDirty bit
-  void MarkDirty() { mFlags.mDirty = 1; }
-  void ClearDirty() { mFlags.mDirty = 0; }
+  void MarkDirty() { mFlags.mDirty = true; }
+  void ClearDirty() { mFlags.mDirty = false; }
   bool IsDirty() const { return mFlags.mDirty; }
 
   // mPreviousMarginDirty bit
-  void MarkPreviousMarginDirty() { mFlags.mPreviousMarginDirty = 1; }
-  void ClearPreviousMarginDirty() { mFlags.mPreviousMarginDirty = 0; }
+  void MarkPreviousMarginDirty() { mFlags.mPreviousMarginDirty = true; }
+  void ClearPreviousMarginDirty() { mFlags.mPreviousMarginDirty = false; }
   bool IsPreviousMarginDirty() const { return mFlags.mPreviousMarginDirty; }
 
   // mHasClearance bit
-  void SetHasClearance() { mFlags.mHasClearance = 1; }
-  void ClearHasClearance() { mFlags.mHasClearance = 0; }
+  void SetHasClearance() { mFlags.mHasClearance = true; }
+  void ClearHasClearance() { mFlags.mHasClearance = false; }
   bool HasClearance() const { return mFlags.mHasClearance; }
 
   // mImpactedByFloat bit
@@ -171,7 +171,7 @@ class nsLineBox final : public nsLineLink {
   void SwitchToHashtable() {
     MOZ_ASSERT(!mFlags.mHasHashedFrames);
     uint32_t count = GetChildCount();
-    mFlags.mHasHashedFrames = 1;
+    mFlags.mHasHashedFrames = true;
     uint32_t minLength =
         std::max(kMinChildCountForHashtable,
                  uint32_t(PLDHashTable::kDefaultInitialLength));
@@ -184,7 +184,7 @@ class nsLineBox final : public nsLineLink {
     MOZ_ASSERT(mFlags.mHasHashedFrames);
     uint32_t count = GetChildCount();
     delete mFrames;
-    mFlags.mHasHashedFrames = 0;
+    mFlags.mHasHashedFrames = false;
     mChildCount = count;
   }
 

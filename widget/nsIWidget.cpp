@@ -107,7 +107,7 @@ namespace mozilla::widget {
 
 // Helper class used in shutting down gfx related code.
 class WidgetShutdownObserver final : public nsIObserver {
-  ~WidgetShutdownObserver();
+  ~WidgetShutdownObserver() = default;
 
  public:
   explicit WidgetShutdownObserver(nsIWidget* aWidget);
@@ -132,7 +132,6 @@ WidgetShutdownObserver::WidgetShutdownObserver(nsIWidget* aWidget)
 // No need to call Unregister(), we can't be destroyed until nsIWidget
 // gets torn down. The observer service and nsIWidget.have a ref on us
 // so nsIWidget.has to call Unregister and then clear its ref.
-WidgetShutdownObserver::~WidgetShutdownObserver() = default;
 
 NS_IMETHODIMP
 WidgetShutdownObserver::Observe(nsISupports* aSubject, const char* aTopic,
@@ -192,7 +191,10 @@ void WidgetShutdownObserver::Unregister() {
 
 // Helper class used for observing locales change.
 class LocalesChangedObserver final : public nsIObserver {
-  ~LocalesChangedObserver();
+  // No need to call Unregister(), we can't be destroyed until nsIWidget
+  // gets torn down. The observer service and nsIWidget.have a ref on us
+  // so nsIWidget.has to call Unregister and then clear its ref.
+  ~LocalesChangedObserver() = default;
 
  public:
   explicit LocalesChangedObserver(nsIWidget* aWidget);
@@ -213,11 +215,6 @@ LocalesChangedObserver::LocalesChangedObserver(nsIWidget* aWidget)
     : mWidget(aWidget), mRegistered(false) {
   Register();
 }
-
-// No need to call Unregister(), we can't be destroyed until nsIWidget
-// gets torn down. The observer service and nsIWidget.have a ref on us
-// so nsIWidget.has to call Unregister and then clear its ref.
-LocalesChangedObserver::~LocalesChangedObserver() = default;
 
 NS_IMETHODIMP
 LocalesChangedObserver::Observe(nsISupports* aSubject, const char* aTopic,
@@ -1026,8 +1023,8 @@ void nsIWidget::PauseOrResumeCompositor(bool aPause) {
 
 already_AddRefed<GeckoContentController>
 nsIWidget::CreateRootContentController() {
-  RefPtr<GeckoContentController> controller =
-      new ChromeProcessController(this, mAPZEventState, mAPZC);
+  auto controller =
+      MakeRefPtr<ChromeProcessController>(this, mAPZEventState, mAPZC);
   return controller.forget();
 }
 
@@ -2339,7 +2336,8 @@ WidgetWheelEvent nsIWidget::MayStartSwipeForAPZ(
     return event;
   }
 
-  if (aPanInput.mHandledByAPZ && aPanInput.AllowsSwipe()) {
+  if (aPanInput.mHandledByAPZ && aPanInput.AllowsSwipe() &&
+      !aApzResult.mTargetCanScrollHorizontally) {
     SwipeInfo swipeInfo = SendMayStartSwipe(aPanInput);
     event.mCanTriggerSwipe = swipeInfo.wantsSwipe;
     if (swipeInfo.wantsSwipe) {

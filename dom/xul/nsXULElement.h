@@ -337,7 +337,7 @@ class nsXULElement : public nsStyledElement {
   using Document = mozilla::dom::Document;
 
   // Use Construct to construct elements instead of this constructor.
-  explicit nsXULElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit nsXULElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
  public:
   using Element::Blur;
@@ -348,7 +348,7 @@ class nsXULElement : public nsStyledElement {
 
   // This is the constructor for nsXULElements.
   static nsXULElement* Construct(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   NS_IMPL_FROMNODE(nsXULElement, kNameSpaceID_XUL)
 
@@ -504,7 +504,7 @@ class nsXULElement : public nsStyledElement {
   void RegUnRegAccessKey(bool aDoReg) override;
 
   friend nsXULElement* NS_NewBasicXULElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   friend nsresult NS_NewXULElement(mozilla::dom::Element** aResult,
                                    mozilla::dom::NodeInfo* aNodeInfo,

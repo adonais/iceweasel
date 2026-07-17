@@ -229,7 +229,9 @@ add_task(async function test_viewable_internally() {
 });
 
 add_task(async function test_jxl_viewable_internally() {
-  // JXL is gated on image.jxl.enabled, which defaults to false.
+  // JXL is gated on image.jxl.enabled, first set it to false and then work
+  // through the scenarios to test.
+  Services.prefs.setBoolPref("image.jxl.enabled", false);
   Services.prefs.setCharPref(PREF_ENABLED_TYPES, "jxl");
   checkAll(JXL_MIME, "jxl", false);
 

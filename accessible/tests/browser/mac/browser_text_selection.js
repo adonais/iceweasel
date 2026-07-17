@@ -189,3 +189,86 @@ addAccessibleTask(
     );
   }
 );
+
+/**
+ * Verify setting AXSelectedTextRange on a text field sets DOM focus on the field
+ * for both collapsed and non-collapsed ranges.
+ */
+addAccessibleTask(
+  `<p><input id="one" value="goodbye"> Hello <input id="two" value="world"></p>`,
+  async (browser, accDoc) => {
+    let inputIface = getNativeInterface(accDoc, "two");
+
+    is(
+      inputIface.getAttributeValue("AXFocused"),
+      0,
+      "second input is not focused"
+    );
+
+    let focusChanged = waitForMacEvent(
+      "AXFocusedUIElementChanged",
+      iface => iface.getAttributeValue("AXDOMIdentifier") == "two"
+    );
+
+    inputIface.setAttributeValue("AXSelectedTextRange", NSRange(0, 5));
+    await focusChanged;
+
+    is(inputIface.getAttributeValue("AXFocused"), 1, "second input is focused");
+    // now move focus to the other input via setting AXSelectedTextRange
+    // with a collapsed range value
+    inputIface = getNativeInterface(accDoc, "one");
+
+    focusChanged = waitForMacEvent(
+      "AXFocusedUIElementChanged",
+      iface => iface.getAttributeValue("AXDOMIdentifier") == "one"
+    );
+
+    inputIface.setAttributeValue("AXSelectedTextRange", NSRange(0, 0));
+    await focusChanged;
+    is(inputIface.getAttributeValue("AXFocused"), 1, "first input is focused");
+  }
+);
+
+/**
+ * Verify setting AXSelectedTextMarkerRange does not move DOM focus away
+ * from a link that was already focused.
+ */
+addAccessibleTask(
+  `<p id="p">Hello <a href="#" id="link">World</a> more text</p>`,
+  async (browser, accDoc) => {
+    const p = getNativeInterface(accDoc, "p");
+    const link = getNativeInterface(accDoc, "link");
+
+    // focus the link
+    const focusChanged = waitForMacEvent(
+      "AXFocusedUIElementChanged",
+      iface => iface.getAttributeValue("AXDOMIdentifier") == "link"
+    );
+    link.setAttributeValue("AXFocused", true);
+    await focusChanged;
+    is(link.getAttributeValue("AXFocused"), 1, "link is focused");
+
+    // set selection to the beginning of the paragraph via collapsed
+    // selection range
+    const startMarker = p.getAttributeValue("AXStartTextMarker");
+    const startRange = p.getParameterizedAttributeValue(
+      "AXTextMarkerRangeForUnorderedTextMarkers",
+      [startMarker, startMarker]
+    );
+
+    const selChanged = waitForMacEventWithInfo(
+      "AXSelectedTextChanged",
+      (elem, info) =>
+        info.AXTextStateChangeType == AXTextStateChangeTypeSelectionMove
+    );
+
+    p.setAttributeValue("AXSelectedTextMarkerRange", startRange);
+    await selChanged;
+
+    is(
+      link.getAttributeValue("AXFocused"),
+      1,
+      "link should remain focused after selection moves elsewhere"
+    );
+  }
+);

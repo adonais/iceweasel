@@ -485,7 +485,7 @@
               border: 4px solid var(--fc-step-color);
 
               &.current {
-                border-color: var(--fc-accent-color);
+                border-color: var(--fc-current-step-color);
               }
             }
 
@@ -932,31 +932,41 @@
   // end (center) arrow positioning
   &[arrow-position='inline-end'] .arrow-box {
     top: var(--arrow-center-inset);
-    inset-inline-end: var(--arrow-offset);
+    // For inline arrow positions, these should not use logical direction
+    // properties, since direction reversal is already handled at a higher
+    // level. In RTL mode, an `inline-end` arrow position will actually be
+    // reversed to an `inline-start` position. Using a logical property here
+    // would mean effectively applying direction reversal twice, like a
+    // double-negative.
+    right: var(--arrow-offset);
     --fc-arrow-clip-path: polygon(100% 0, 100% 100%, 98% 100%, 0 2%, 0 0);
   }
 
   @at-root panel#{&}[arrow-position='inline-end']::part(content) {
-    margin-inline-end: var(--panel-arrow-space);
+    // stylelint-disable-next-line property-disallowed-list
+    margin-right: var(--panel-arrow-space);
   }
 
   @at-root panel#{&}[arrow-position='inline-end'] {
-    margin-inline-end: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+    // stylelint-disable-next-line property-disallowed-list
+    margin-right: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // start (center) arrow positioning
   &[arrow-position='inline-start'] .arrow-box {
     top: var(--arrow-center-inset);
-    inset-inline-start: var(--arrow-offset);
+    left: var(--arrow-offset);
     --fc-arrow-clip-path: polygon(0 100%, 100% 100%, 100% 98%, 2% 0, 0 0);
   }
 
   @at-root panel#{&}[arrow-position='inline-start']::part(content) {
-    margin-inline-start: var(--panel-arrow-space);
+    // stylelint-disable-next-line property-disallowed-list
+    margin-left: var(--panel-arrow-space);
   }
 
   @at-root panel#{&}[arrow-position='inline-start'] {
-    margin-inline-start: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+    // stylelint-disable-next-line property-disallowed-list
+    margin-left: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // top-end arrow positioning
@@ -1022,61 +1032,69 @@
   // inline-end-top arrow positioning
   &[arrow-position='inline-end-top'] .arrow-box {
     top: var(--arrow-corner-inset);
-    inset-inline-end: var(--arrow-offset);
+    right: var(--arrow-offset);
     --fc-arrow-clip-path: polygon(100% 0, 100% 100%, 98% 100%, 0 2%, 0 0);
   }
 
   @at-root panel#{&}[arrow-position='inline-end-top']::part(content) {
-    margin-inline-end: var(--panel-arrow-space);
+    // stylelint-disable-next-line property-disallowed-list
+    margin-right: var(--panel-arrow-space);
   }
 
   @at-root panel#{&}[arrow-position='inline-end-top'] {
-    margin-inline-end: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+    // stylelint-disable-next-line property-disallowed-list
+    margin-right: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // inline-end-bottom arrow positioning
   &[arrow-position='inline-end-bottom'] .arrow-box {
     bottom: var(--arrow-corner-inset);
-    inset-inline-end: var(--arrow-offset);
+    right: var(--arrow-offset);
     --fc-arrow-clip-path: polygon(100% 0, 100% 100%, 98% 100%, 0 2%, 0 0);
   }
 
   @at-root panel#{&}[arrow-position='inline-end-bottom']::part(content) {
-    margin-inline-end: var(--panel-arrow-space);
+    // stylelint-disable-next-line property-disallowed-list
+    margin-right: var(--panel-arrow-space);
   }
 
   @at-root panel#{&}[arrow-position='inline-end-bottom'] {
-    margin-inline-end: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+    // stylelint-disable-next-line property-disallowed-list
+    margin-right: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // inline-start-top arrow positioning
   &[arrow-position='inline-start-top'] .arrow-box {
     top: var(--arrow-corner-inset);
-    inset-inline-start: var(--arrow-offset);
+    left: var(--arrow-offset);
     --fc-arrow-clip-path: polygon(0 100%, 100% 100%, 100% 98%, 2% 0, 0 0);
   }
 
   @at-root panel#{&}[arrow-position='inline-start-top']::part(content) {
-    margin-inline-start: var(--panel-arrow-space);
+    // stylelint-disable-next-line property-disallowed-list
+    margin-left: var(--panel-arrow-space);
   }
 
   @at-root panel#{&}[arrow-position='inline-start-top'] {
-    margin-inline-start: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+    // stylelint-disable-next-line property-disallowed-list
+    margin-left: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   // inline-start-bottom arrow positioning
   &[arrow-position='inline-start-bottom'] .arrow-box {
     bottom: var(--arrow-corner-inset);
-    inset-inline-start: var(--arrow-offset);
+    left: var(--arrow-offset);
     --fc-arrow-clip-path: polygon(0 100%, 100% 100%, 100% 98%, 2% 0, 0 0);
   }
 
   @at-root panel#{&}[arrow-position='inline-start-bottom']::part(content) {
-    margin-inline-start: var(--panel-arrow-space);
+    // stylelint-disable-next-line property-disallowed-list
+    margin-left: var(--panel-arrow-space);
   }
 
   @at-root panel#{&}[arrow-position='inline-start-bottom'] {
-    margin-inline-start: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+    // stylelint-disable-next-line property-disallowed-list
+    margin-left: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
   }
 
   /* Smart window feature callout custom styles */

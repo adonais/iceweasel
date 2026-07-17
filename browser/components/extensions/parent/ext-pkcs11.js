@@ -176,7 +176,7 @@ this.pkcs11 = class extends ExtensionAPI {
                 HWVersion: token.tokenHWVersion,
                 FWVersion: token.tokenFWVersion,
                 serial: token.tokenSerialNumber,
-                isLoggedIn: token.isLoggedIn(),
+                isLoggedIn: token.isLoggedIn,
               };
             }
             rv.push(slotobj);

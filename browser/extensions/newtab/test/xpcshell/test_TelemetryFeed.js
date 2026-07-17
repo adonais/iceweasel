@@ -3143,10 +3143,15 @@ add_task(async function test_recordEnabledWidgets_partial() {
     getState: () => ({
       Prefs: {
         values: {
+          "widgets.enabled": true,
           "widgets.lists.enabled": true,
+          "widgets.system.lists.enabled": true,
           "widgets.focusTimer.enabled": false,
+          "widgets.system.focusTimer.enabled": true,
           "widgets.weather.enabled": true,
+          "widgets.system.weather.enabled": true,
           "widgets.sportsWidget.enabled": false,
+          "widgets.system.sportsWidget.enabled": true,
         },
       },
     }),
@@ -3158,6 +3163,63 @@ add_task(async function test_recordEnabledWidgets_partial() {
     Glean.newtab.widgetsEnabledList.testGetValue(),
     ["lists", "weather"],
     "widgetsEnabledList should contain only enabled widget names"
+  );
+});
+
+add_task(async function test_recordEnabledWidgets_trainhop() {
+  info(
+    "recordEnabledWidgets should count a widget enabled via trainhopConfig when the system pref is off"
+  );
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+  instance.store = {
+    getState: () => ({
+      Prefs: {
+        values: {
+          "widgets.enabled": true,
+          "widgets.lists.enabled": true,
+          "widgets.system.lists.enabled": false,
+          trainhopConfig: { widgets: { listsEnabled: true } },
+        },
+      },
+    }),
+  };
+
+  instance.recordEnabledWidgets();
+
+  Assert.deepEqual(
+    Glean.newtab.widgetsEnabledList.testGetValue(),
+    ["lists"],
+    "widgetsEnabledList should include widgets gated on by trainhopConfig"
+  );
+});
+
+add_task(async function test_recordEnabledWidgets_container_disabled() {
+  info(
+    "recordEnabledWidgets should return an empty list when the widgets container is off"
+  );
+  Services.fog.testResetFOG();
+
+  let instance = new TelemetryFeed();
+  instance.store = {
+    getState: () => ({
+      Prefs: {
+        values: {
+          "widgets.enabled": false,
+          "widgets.lists.enabled": true,
+          "widgets.system.lists.enabled": true,
+        },
+      },
+    }),
+  };
+
+  instance.recordEnabledWidgets();
+
+  Assert.deepEqual(
+    Glean.newtab.widgetsEnabledList.testGetValue(),
+    [],
+    "widgetsEnabledList should be empty when widgets.enabled is false"
   );
 });
 

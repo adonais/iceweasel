@@ -36,20 +36,10 @@ RemoteDecoderParent::RemoteDecoderParent(
       mManagerThread(aManagerThread) {
   MOZ_COUNT_CTOR(RemoteDecoderParent);
   MOZ_ASSERT(OnManagerThread());
-  // We hold a reference to ourselves to keep us alive until IPDL
-  // explicitly destroys us. There may still be refs held by
-  // tasks, but no new ones should be added after we're
-  // destroyed.
-  mIPDLSelfRef = this;
 }
 
 RemoteDecoderParent::~RemoteDecoderParent() {
   MOZ_COUNT_DTOR(RemoteDecoderParent);
-}
-
-void RemoteDecoderParent::Destroy() {
-  MOZ_ASSERT(OnManagerThread());
-  mIPDLSelfRef = nullptr;
 }
 
 mozilla::ipc::IPCResult RemoteDecoderParent::RecvInit(

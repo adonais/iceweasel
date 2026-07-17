@@ -16,7 +16,7 @@ static uint64_t sIdleRequestCounter = 0;
 
 namespace mozilla {
 
-IdlePeriodState::IdlePeriodState(already_AddRefed<nsIIdlePeriod>&& aIdlePeriod)
+IdlePeriodState::IdlePeriodState(already_AddRefed<nsIIdlePeriod> aIdlePeriod)
     : mIdlePeriod(aIdlePeriod) {
   MOZ_ASSERT(NS_IsMainThread(),
              "Why are we touching idle state off the main thread?");

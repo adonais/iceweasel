@@ -207,6 +207,14 @@ class PropertyKey {
     return reinterpret_cast<JSLinearString*>(toString());
   }
 
+  // Relaxed atomic load and store operations on a PropertyKey.
+  PropertyKey atomicGet() const {
+    return fromRawBits(__atomic_load_n(&asBits_, __ATOMIC_RELAXED));
+  }
+  void atomicSet(const PropertyKey& other) {
+    __atomic_store_n(&asBits_, other.asBits_, __ATOMIC_RELAXED);
+  }
+
 #if defined(DEBUG) || defined(JS_JITSPEW)
   void dump() const;
   void dump(js::GenericPrinter& out) const;

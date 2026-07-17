@@ -35,6 +35,8 @@ class nsAlertsIconListener : public nsISupports {
   void SendClosed();
   void Disconnect();
 
+  static void MaybeSetActivationToken(NotifyNotification* aNotification);
+
  protected:
   virtual ~nsAlertsIconListener();
 
@@ -63,6 +65,8 @@ class nsAlertsIconListener : public nsISupports {
   using notify_notification_set_hint_t = void (*)(NotifyNotification*,
                                                   const char*, GVariant*);
   using notify_notification_set_timeout_t = void (*)(NotifyNotification*, gint);
+  using notify_notification_get_activation_token_t =
+      const char* (*)(NotifyNotification*);
 
   nsCOMPtr<nsICancelable> mIconRequest;
   nsCString mAlertTitle;
@@ -93,6 +97,8 @@ class nsAlertsIconListener : public nsISupports {
   static notify_notification_close_t notify_notification_close;
   static notify_notification_set_hint_t notify_notification_set_hint;
   static notify_notification_set_timeout_t notify_notification_set_timeout;
+  static notify_notification_get_activation_token_t
+      notify_notification_get_activation_token;
   NotifyNotification* mNotification = nullptr;
   gulong mClosureHandler = 0;
 

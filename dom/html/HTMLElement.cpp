@@ -18,7 +18,7 @@
 
 namespace mozilla::dom {
 
-HTMLElement::HTMLElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+HTMLElement::HTMLElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                          FromParser aFromParser)
     : nsGenericHTMLFormElement(std::move(aNodeInfo)) {
   if (NodeInfo()->Equals(nsGkAtoms::bdi)) {
@@ -460,7 +460,7 @@ void HTMLElement::UpdateBarredFromConstraintValidation() {
 // Here, we expand 'NS_IMPL_NS_NEW_HTML_ELEMENT()' by hand.
 // (Calling the macro directly (with no args) produces compiler warnings.)
 nsGenericHTMLElement* NS_NewHTMLElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();
@@ -470,7 +470,7 @@ nsGenericHTMLElement* NS_NewHTMLElement(
 // Distinct from the above in order to have function pointer that compared
 // unequal to a function pointer to the above.
 nsGenericHTMLElement* NS_NewCustomElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();

@@ -34,7 +34,6 @@ struct StatisticData
   uint64_t droppedFrames;
 };
 
-[ManualDealloc]
 async protocol PMFMediaEngine
 {
   manager PRemoteMediaManager;

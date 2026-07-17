@@ -141,6 +141,7 @@ EXPORTS.mozilla.dom += [
     "AncestorIterator.h",
     "AnimationFrameProvider.h",
     "AnonymousContent.h",
+    "AtomAttributes.h",
     "Attr.h",
     "AutoPrintEventDispatcher.h",
     "AutoSuppressEventHandlingAndSuspend.h",

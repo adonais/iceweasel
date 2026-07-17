@@ -27,7 +27,7 @@ using nsStyledElementBase = mozilla::dom::Element;
 class nsStyledElement : public nsStyledElementBase {
  protected:
   inline explicit nsStyledElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsStyledElementBase(std::move(aNodeInfo)) {}
 
  public:

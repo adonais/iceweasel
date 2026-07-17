@@ -335,6 +335,14 @@ IPCResult DocumentChannelChild::RecvRedirectToRealChannel(
     nsHashPropertyBag::CopyFrom(bag, aArgs.properties());
   }
 
+  // Track the provided parent-process channel handle on our channel.
+  if (aArgs.channelHandle()) {
+    rv = newChannel->SetParentProcessChannelHandle(aArgs.channelHandle());
+    if (NS_FAILED(rv)) {
+      return IPC_OK();
+    }
+  }
+
   // connect parent.
   nsCOMPtr<nsIChildChannel> childChannel = do_QueryInterface(newChannel);
   if (childChannel) {

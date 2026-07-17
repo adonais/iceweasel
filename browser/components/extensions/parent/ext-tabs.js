@@ -68,82 +68,6 @@ function showHiddenTabs(id) {
   }
 }
 
-let tabListener = {
-  tabReadyInitialized: false,
-  // Map[tab -> Promise]
-  tabBlockedPromises: new WeakMap(),
-  // Map[tab -> Deferred]
-  tabReadyPromises: new WeakMap(),
-  initializingTabs: new WeakSet(),
-
-  initTabReady() {
-    if (!this.tabReadyInitialized) {
-      windowTracker.addListener("progress", this);
-
-      this.tabReadyInitialized = true;
-    }
-  },
-
-  onLocationChange(browser, webProgress) {
-    if (webProgress.isTopLevel) {
-      let { gBrowser } = browser.documentGlobal;
-      let nativeTab = gBrowser.getTabForBrowser(browser);
-
-      // Now we are certain that the first page in the tab was loaded.
-      this.initializingTabs.delete(nativeTab);
-
-      // browser.innerWindowID is now set, resolve the promises if any.
-      let deferred = this.tabReadyPromises.get(nativeTab);
-      if (deferred) {
-        deferred.resolve(nativeTab);
-        this.tabReadyPromises.delete(nativeTab);
-      }
-    }
-  },
-
-  blockTabUntilRestored(nativeTab) {
-    let promise = ExtensionUtils.promiseEvent(nativeTab, "SSTabRestored").then(
-      ({ target }) => {
-        this.tabBlockedPromises.delete(target);
-        return target;
-      }
-    );
-
-    this.tabBlockedPromises.set(nativeTab, promise);
-  },
-
-  /**
-   * Returns a promise that resolves when the tab is ready.
-   * Tabs created via the `tabs.create` method are "ready" once the location
-   * changes to the requested URL. Other tabs are assumed to be ready once their
-   * inner window ID is known.
-   *
-   * @param {XULElement} nativeTab The <tab> element.
-   * @returns {Promise} Resolves with the given tab once ready.
-   */
-  awaitTabReady(nativeTab) {
-    let deferred = this.tabReadyPromises.get(nativeTab);
-    if (!deferred) {
-      let promise = this.tabBlockedPromises.get(nativeTab);
-      if (promise) {
-        return promise;
-      }
-      deferred = Promise.withResolvers();
-      if (
-        !this.initializingTabs.has(nativeTab) &&
-        (nativeTab.linkedBrowser.innerWindowID ||
-          nativeTab.linkedBrowser.currentURI.spec === "about:blank")
-      ) {
-        deferred.resolve(nativeTab);
-      } else {
-        this.initTabReady();
-        this.tabReadyPromises.set(nativeTab, deferred);
-      }
-    }
-    return deferred.promise;
-  },
-};
-
 const allAttrs = new Set([
   "attention",
   "audible",
@@ -676,7 +600,7 @@ this.tabs = class extends ExtensionAPIPersistent {
         );
       }
 
-      await tabListener.awaitTabReady(tab.nativeTab);
+      await tabTracker.awaitTabReady(tab.nativeTab);
 
       return tab;
     }
@@ -826,7 +750,6 @@ this.tabs = class extends ExtensionAPIPersistent {
               setContentTriggeringPrincipal(url, window.gBrowser, options);
             }
 
-            tabListener.initTabReady();
             const currentTab = window.gBrowser.selectedTab;
             const { frameLoader } = currentTab.linkedBrowser;
             const currentTabSize = {
@@ -884,6 +807,7 @@ this.tabs = class extends ExtensionAPIPersistent {
             }
 
             let nativeTab = window.gBrowser.addTab(url, options);
+            tabTracker.addTabReadyBlocker(nativeTab);
 
             if (active) {
               window.gBrowser.selectedTab = nativeTab;
@@ -892,27 +816,13 @@ this.tabs = class extends ExtensionAPIPersistent {
               }
             }
 
-            if (
-              createProperties.url &&
-              createProperties.url !== window.BROWSER_NEW_TAB_URL &&
-              !createProperties.url.startsWith("about:blank")
-            ) {
-              // We can't wait for a location change event for about:newtab,
-              // since it may be pre-rendered, in which case its initial
-              // location change event has already fired.
-              // The same goes for about:blank, since the initial blank document
-              // is loaded synchronously.
-
-              // Mark the tab as initializing, so that operations like
-              // `executeScript` wait until the requested URL is loaded in
-              // the tab before dispatching messages to the inner window
-              // that contains the URL we're attempting to load.
-              tabListener.initializingTabs.add(nativeTab);
-            }
-
             if (createProperties.muted) {
               nativeTab.toggleMuteAudio(extension.id);
             }
+
+            // We intentionally return as soon as possible after creating the
+            // tab, without waiting for load completion. Some tabs APIs use
+            // tabTracker.awaitTabReady to await load completion if needed.
 
             return tabManager.convert(nativeTab, currentTabSize);
           });
@@ -1094,7 +1004,7 @@ this.tabs = class extends ExtensionAPIPersistent {
 
         async captureTab(tabId, options) {
           let nativeTab = getTabOrActive(tabId);
-          await tabListener.awaitTabReady(nativeTab);
+          await tabTracker.awaitTabReady(nativeTab);
 
           let browser = nativeTab.linkedBrowser;
           let window = browser.documentGlobal;
@@ -1117,7 +1027,7 @@ this.tabs = class extends ExtensionAPIPersistent {
           ) {
             throw new ExtensionError("Missing activeTab permission");
           }
-          await tabListener.awaitTabReady(tab.nativeTab);
+          await tabTracker.awaitTabReady(tab.nativeTab);
 
           let zoom = window.ZoomManager.getZoomForBrowser(
             tab.nativeTab.linkedBrowser
@@ -1330,10 +1240,12 @@ this.tabs = class extends ExtensionAPIPersistent {
             tabIndex,
           });
 
-          tabListener.blockTabUntilRestored(newTab);
+          tabTracker.addTabReadyBlocker(newTab);
           return new Promise(resolve => {
             // Use SSTabRestoring to ensure that the tab's URL is ready before
             // resolving the promise.
+            // We do not wait for SSTabRestored; tab methods using
+            // tabTracker.awaitTabReady will wait as needed.
             newTab.addEventListener(
               "SSTabRestoring",
               () => resolve(tabManager.convert(newTab)),

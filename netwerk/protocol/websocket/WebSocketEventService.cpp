@@ -228,7 +228,7 @@ void WebSocketEventService::WebSocketCreated(uint32_t aWebSocketSerialID,
     return;
   }
 
-  RefPtr<WebSocketCreatedRunnable> runnable = new WebSocketCreatedRunnable(
+  RefPtr runnable = MakeRefPtr<WebSocketCreatedRunnable>(
       aWebSocketSerialID, aInnerWindowID, aURI, aProtocols);
   DebugOnly<nsresult> rv = aTarget
                                ? aTarget->Dispatch(runnable, NS_DISPATCH_NORMAL)
@@ -248,7 +248,7 @@ void WebSocketEventService::WebSocketOpened(uint32_t aWebSocketSerialID,
     return;
   }
 
-  RefPtr<WebSocketOpenedRunnable> runnable = new WebSocketOpenedRunnable(
+  RefPtr runnable = MakeRefPtr<WebSocketOpenedRunnable>(
       aWebSocketSerialID, aInnerWindowID, aEffectiveURI, aProtocols,
       aExtensions, aHttpChannelId);
   DebugOnly<nsresult> rv = aTarget
@@ -265,9 +265,8 @@ void WebSocketEventService::WebSocketMessageAvailable(
     return;
   }
 
-  RefPtr<WebSocketMessageAvailableRunnable> runnable =
-      new WebSocketMessageAvailableRunnable(aWebSocketSerialID, aInnerWindowID,
-                                            aData, aMessageType);
+  RefPtr runnable = MakeRefPtr<WebSocketMessageAvailableRunnable>(
+      aWebSocketSerialID, aInnerWindowID, aData, aMessageType);
   DebugOnly<nsresult> rv = aTarget
                                ? aTarget->Dispatch(runnable, NS_DISPATCH_NORMAL)
                                : NS_DispatchToMainThread(runnable);
@@ -284,7 +283,7 @@ void WebSocketEventService::WebSocketClosed(uint32_t aWebSocketSerialID,
     return;
   }
 
-  RefPtr<WebSocketClosedRunnable> runnable = new WebSocketClosedRunnable(
+  RefPtr runnable = MakeRefPtr<WebSocketClosedRunnable>(
       aWebSocketSerialID, aInnerWindowID, aWasClean, aCode, aReason);
   DebugOnly<nsresult> rv = aTarget
                                ? aTarget->Dispatch(runnable, NS_DISPATCH_NORMAL)
@@ -303,9 +302,9 @@ void WebSocketEventService::FrameReceived(
     return;
   }
 
-  RefPtr<WebSocketFrameRunnable> runnable =
-      new WebSocketFrameRunnable(aWebSocketSerialID, aInnerWindowID,
-                                 frame.forget(), false /* frameSent */);
+  RefPtr runnable =
+      MakeRefPtr<WebSocketFrameRunnable>(aWebSocketSerialID, aInnerWindowID,
+                                         frame.forget(), false /* frameSent */);
   DebugOnly<nsresult> rv = aTarget
                                ? aTarget->Dispatch(runnable, NS_DISPATCH_NORMAL)
                                : NS_DispatchToMainThread(runnable);
@@ -324,7 +323,7 @@ void WebSocketEventService::FrameSent(uint32_t aWebSocketSerialID,
     return;
   }
 
-  RefPtr<WebSocketFrameRunnable> runnable = new WebSocketFrameRunnable(
+  RefPtr runnable = MakeRefPtr<WebSocketFrameRunnable>(
       aWebSocketSerialID, aInnerWindowID, frame.forget(), true /* frameSent */);
 
   DebugOnly<nsresult> rv = aTarget

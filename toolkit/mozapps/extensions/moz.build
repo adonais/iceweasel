@@ -49,6 +49,10 @@ elif CONFIG["MOZ_BUILD_APP"] == "mobile/android":
         "!%s" % built_in_addons,
     ]
 elif CONFIG["MOZ_BUILD_APP"] == "comm/mail":
+    manifest.flags = [
+        "--builtin-addons=chrome/messenger/builtin-addons",
+    ]
+
     # NOTE: used by Thunderbird to auto-install the default en-US dictionary.
     FINAL_TARGET_FILES.chrome.browser.content += [
         "!%s" % built_in_addons,

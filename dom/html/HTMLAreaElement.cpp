@@ -16,7 +16,7 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(Area)
 namespace mozilla::dom {
 
 HTMLAreaElement::HTMLAreaElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)), Link(this) {}
 
 HTMLAreaElement::~HTMLAreaElement() = default;

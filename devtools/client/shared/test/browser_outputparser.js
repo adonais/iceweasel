@@ -412,6 +412,18 @@ function testParseCssProperty(doc, parser) {
 
     {
       name: "background-image",
+      value: `image(rgb(255 0 0 / 0.5)), url("bg-image.png")`,
+      expected:
+        `image(` +
+        getColorMarkup({
+          color: "rgb(255 0 0 / 0.5)",
+          colorFunction: "image",
+        }) +
+        `), url("bg-image.png")`,
+    },
+
+    {
+      name: "background-image",
       value: "linear-gradient(to right, #F60 10%, rgb(from gold r g b))",
       expected:
         `linear-gradient(to right, ` +
@@ -2642,8 +2654,8 @@ function testParseAttr(doc, parser) {
       // prettier-ignore
       expected:
         `attr(` +
-        `<span class="inspector-attr-param unmatched-class">` +
-          `<span class="inspector-attr-name" data-attribute="Attribute data-x is not set">data-x</span>` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute data-x is not set">` +
+          `<span class="inspector-attr-name">data-x</span>` +
         `</span>` +
         `)`,
     },
@@ -2655,8 +2667,8 @@ function testParseAttr(doc, parser) {
       // prettier-ignore
       expected:
         `attr(` +
-        `<span class="inspector-attr-param unmatched-class">` +
-          `<span class="inspector-attr-name" data-attribute="Attribute data-x is not set">data-x</span>` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute data-x is not set">` +
+          `<span class="inspector-attr-name">data-x</span>` +
         `</span>` +
         `, ` +
         `<span class="inspector-attr-fallback">"fallback"</span>` +
@@ -2706,13 +2718,14 @@ function testParseAttr(doc, parser) {
     },
     {
       message: "Modern attr() with known attribute and type()",
+      propertyName: "width",
       propertyValue: "attr(data-x type(<length> | <percentage>))",
-      attributes: { "data-x": "x" },
+      attributes: { "data-x": "10px" },
       // prettier-ignore
       expected:
         `attr(` +
         `<span class="inspector-attr-param">` +
-          `<span class="inspector-attr-name" data-attribute="&quot;x&quot;">data-x</span>` +
+          `<span class="inspector-attr-name" data-attribute="&quot;10px&quot;">data-x</span>` +
           ` type(&lt;length&gt; | &lt;percentage&gt;)` +
         `</span>` +
         `)`,
@@ -2724,8 +2737,8 @@ function testParseAttr(doc, parser) {
       // prettier-ignore
       expected:
         `attr(` +
-        `<span class="inspector-attr-param unmatched-class">` +
-          `<span class="inspector-attr-name" data-attribute="Attribute data-x is not set">data-x</span>` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute data-x is not set">` +
+          `<span class="inspector-attr-name">data-x</span>` +
           ` raw-string` +
         `</span>` +
         `)`,
@@ -2737,8 +2750,8 @@ function testParseAttr(doc, parser) {
       // prettier-ignore
       expected:
         `attr(` +
-        `<span class="inspector-attr-param unmatched-class">` +
-          `<span class="inspector-attr-name" data-attribute="Attribute data-x is not set">data-x</span>` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute data-x is not set">` +
+          `<span class="inspector-attr-name">data-x</span>` +
           ` type(&lt;length&gt; | &lt;percentage&gt;)` +
         `</span>` +
         `)`,
@@ -2747,12 +2760,12 @@ function testParseAttr(doc, parser) {
       message:
         "Modern attr() with known attribute, simple type and simple fallback",
       propertyValue: `attr(data-x raw-string, "fallback")`,
-      attributes: { "data-x": "x" },
+      attributes: { "data-x": "12" },
       // prettier-ignore
       expected:
         `attr(` +
         `<span class="inspector-attr-param">` +
-          `<span class="inspector-attr-name" data-attribute="&quot;x&quot;">data-x</span>` +
+          `<span class="inspector-attr-name" data-attribute="&quot;12&quot;">data-x</span>` +
           ` raw-string` +
         `</span>` +
         `, ` +
@@ -2761,13 +2774,14 @@ function testParseAttr(doc, parser) {
     },
     {
       message: "Modern attr() with known attribute, type() and simple fallback",
+      propertyName: "width",
       propertyValue: `attr(data-x type(<length> | <percentage>), "fallback")`,
-      attributes: { "data-x": "x" },
+      attributes: { "data-x": "10%" },
       // prettier-ignore
       expected:
         `attr(` +
         `<span class="inspector-attr-param">` +
-          `<span class="inspector-attr-name" data-attribute="&quot;x&quot;">data-x</span>` +
+          `<span class="inspector-attr-name" data-attribute="&quot;10%&quot;">data-x</span>` +
           ` type(&lt;length&gt; | &lt;percentage&gt;)` +
         `</span>` +
         `, ` +
@@ -2782,8 +2796,8 @@ function testParseAttr(doc, parser) {
       // prettier-ignore
       expected:
         `attr(` +
-        `<span class="inspector-attr-param unmatched-class">` +
-          `<span class="inspector-attr-name" data-attribute="Attribute data-x is not set">data-x</span>` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute data-x is not set">` +
+          `<span class="inspector-attr-name">data-x</span>` +
           ` raw-string` +
         `</span>` +
         `, ` +
@@ -2798,8 +2812,8 @@ function testParseAttr(doc, parser) {
       // prettier-ignore
       expected:
         `attr(` +
-        `<span class="inspector-attr-param unmatched-class">` +
-          `<span class="inspector-attr-name" data-attribute="Attribute data-x is not set">data-x</span>` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute data-x is not set">` +
+          `<span class="inspector-attr-name">data-x</span>` +
           ` type(&lt;length&gt; | &lt;percentage&gt;)` +
         `</span>` +
         `, ` +
@@ -2833,23 +2847,23 @@ function testParseAttr(doc, parser) {
     {
       message:
         "Modern attr() with known attribute, type() and nested attr() fallback",
-      propertyValue: `attr(data-x type(<length> | <percentage>), attr(data-y, "fallback"))`,
-      attributes: { "data-x": "x" },
+      propertyValue: `attr(data-x type(<length> | <percentage>), attr(data-y, 300px))`,
+      attributes: { "data-x": "20em" },
       // prettier-ignore
       expected:
         `attr(` +
         `<span class="inspector-attr-param">` +
-          `<span class="inspector-attr-name" data-attribute="&quot;x&quot;">data-x</span>` +
+          `<span class="inspector-attr-name" data-attribute="&quot;20em&quot;">data-x</span>` +
           ` type(&lt;length&gt; | &lt;percentage&gt;)` +
         `</span>` +
         `, ` +
         `<span class="inspector-attr-fallback unmatched-class">` +
           `attr(` +
-          `<span class="inspector-attr-param unmatched-class">` +
-            `<span class="inspector-attr-name" data-attribute="Attribute data-y is not set">data-y</span>` +
+          `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute data-y is not set">` +
+            `<span class="inspector-attr-name">data-y</span>` +
           `</span>` +
           `, ` +
-          `<span class="inspector-attr-fallback">"fallback"</span>` +
+          `<span class="inspector-attr-fallback">300px</span>` +
           `)` +
         `</span>` +
         `)`,
@@ -2862,8 +2876,8 @@ function testParseAttr(doc, parser) {
       // prettier-ignore
       expected:
         `attr(` +
-        `<span class="inspector-attr-param unmatched-class">` +
-          `<span class="inspector-attr-name" data-attribute="Attribute data-x is not set">data-x</span>` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute data-x is not set">` +
+          `<span class="inspector-attr-name">data-x</span>` +
           ` raw-string` +
         `</span>` +
         `, ` +
@@ -2881,37 +2895,247 @@ function testParseAttr(doc, parser) {
     {
       message:
         "Modern attr() with unknown attribute, type() and nested attr() fallback",
-      propertyValue: `attr(data-x type(<length> | <percentage>), attr(data-y, "fallback"))`,
+      propertyValue: `attr(data-x type(<length> | <percentage>), attr(data-y, 99%))`,
       attributes: {},
       // prettier-ignore
       expected:
         `attr(` +
-        `<span class="inspector-attr-param unmatched-class">` +
-          `<span class="inspector-attr-name" data-attribute="Attribute data-x is not set">data-x</span>` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute data-x is not set">` +
+          `<span class="inspector-attr-name">data-x</span>` +
           ` type(&lt;length&gt; | &lt;percentage&gt;)` +
         `</span>` +
         `, ` +
         `<span class="inspector-attr-fallback">` +
           `attr(` +
-          `<span class="inspector-attr-param unmatched-class">` +
-            `<span class="inspector-attr-name" data-attribute="Attribute data-y is not set">data-y</span>` +
+          `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute data-y is not set">` +
+            `<span class="inspector-attr-name">data-y</span>` +
           `</span>` +
           `, ` +
-          `<span class="inspector-attr-fallback">"fallback"</span>` +
+          `<span class="inspector-attr-fallback">99%</span>` +
           `)` +
         `</span>` +
+        `)`,
+    },
+    {
+      message: "Modern attr() with `number` attr type and value matching type",
+      propertyName: "line-height",
+      propertyValue: `attr(data-x number, 2)`,
+      attributes: { "data-x": "3" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param">` +
+          `<span class="inspector-attr-name" data-attribute="&quot;3&quot;">data-x</span>` +
+          ` number` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback unmatched-class">2</span>` +
+        `)`,
+    },
+    {
+      message:
+        "Modern attr() with `number` attr type and value not matching type",
+      propertyName: "line-height",
+      propertyValue: `attr(data-x number, 2)`,
+      attributes: { "data-x": "x" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute value (&quot;x&quot;) is not a valid numeric value">` +
+          `<span class="inspector-attr-name">data-x</span>` +
+          ` number` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback">2</span>` +
+        `)`,
+    },
+    {
+      message: "Modern attr() with `deg` attr type and value matching type",
+      propertyName: "rotate",
+      propertyValue: `attr(data-x deg, 90deg)`,
+      attributes: { "data-x": "1.5" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param">` +
+          `<span class="inspector-attr-name" data-attribute="&quot;1.5&quot;">data-x</span>` +
+          ` deg` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback unmatched-class">` +
+          `<span data-angle="90deg"><span>90deg</span></span>` +
+        `</span>` +
+        `)`,
+    },
+    {
+      message: "Modern attr() with `deg` attr type and value not matching type",
+      propertyName: "rotate",
+      propertyValue: `attr(data-x deg, 90deg)`,
+      attributes: { "data-x": "x" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute value (&quot;x&quot;) is not a valid numeric value">` +
+          `<span class="inspector-attr-name">data-x</span>` +
+          ` deg` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback">` +
+          `<span data-angle="90deg"><span>90deg</span></span>` +
+        `</span>` +
+        `)`,
+    },
+    {
+      message: "Modern attr() with `%` attr type and value matching type",
+      propertyName: "height",
+      propertyValue: `attr(data-x %, 50%)`,
+      attributes: { "data-x": "99" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param">` +
+          `<span class="inspector-attr-name" data-attribute="&quot;99&quot;">data-x</span>` +
+          ` %` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback unmatched-class">50%</span>` +
+        `)`,
+    },
+    {
+      message: "Modern attr() with `%` attr type and value not matching type",
+      propertyName: "height",
+      propertyValue: `attr(data-x %, 50%)`,
+      attributes: { "data-x": "20%" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute value (&quot;20%&quot;) is not a valid numeric value">` +
+          `<span class="inspector-attr-name">data-x</span>` +
+          ` %` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback">50%</span>` +
+        `)`,
+    },
+    {
+      message:
+        "Modern attr() with `type(<color>)` attr type and value matching type",
+      propertyName: "color",
+      propertyValue: `attr(data-x type(<color>), hotpink)`,
+      attributes: { "data-x": "tomato" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param">` +
+          `<span class="inspector-attr-name" data-attribute="&quot;tomato&quot;">data-x</span>` +
+          ` type(&lt;color&gt;)` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback unmatched-class">` +
+          `<span data-color="hotpink"><span>hotpink</span></span>` +
+        `</span>` +
+        `)`,
+    },
+    {
+      message:
+        "Modern attr() with `type(<color>)` attr type and value not matching type",
+      propertyName: "color",
+      propertyValue: `attr(data-x type(<color>), hotpink)`,
+      attributes: { "data-x": "uwu" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute value (&quot;uwu&quot;) does not match expected &quot;&lt;color&gt;&quot; syntax">` +
+          `<span class="inspector-attr-name">data-x</span>` +
+          ` type(&lt;color&gt;)` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback">` +
+          `<span data-color="hotpink"><span>hotpink</span></span>` +
+        `</span>` +
+        `)`,
+    },
+    {
+      message:
+        "Modern attr() with `type(<length> | <percentage>)` attr type and a length value",
+      propertyName: "width",
+      propertyValue: `attr(data-x type(<length> | <percentage>), 33px)`,
+      attributes: { "data-x": "42em" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param">` +
+          `<span class="inspector-attr-name" data-attribute="&quot;42em&quot;">data-x</span>` +
+          ` type(&lt;length&gt; | &lt;percentage&gt;)` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback unmatched-class">33px</span>` +
+        `)`,
+    },
+    {
+      message:
+        "Modern attr() with `type(<length> | <percentage>)` attr type and a percentage value",
+      propertyName: "width",
+      propertyValue: `attr(data-x type(<length> | <percentage>), 33px)`,
+      attributes: { "data-x": "42%" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param">` +
+          `<span class="inspector-attr-name" data-attribute="&quot;42%&quot;">data-x</span>` +
+          ` type(&lt;length&gt; | &lt;percentage&gt;)` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback unmatched-class">33px</span>` +
+        `)`,
+    },
+    {
+      message:
+        "Modern attr() with `type(<length> | <percentage>)` attr type and value not matching type",
+      propertyName: "width",
+      propertyValue: `attr(data-x type(<length> | <percentage>), 33px)`,
+      attributes: { "data-x": "42" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param unmatched-class" data-attribute="Attribute value (&quot;42&quot;) does not match expected &quot;&lt;length&gt; | &lt;percentage&gt;&quot; syntax">` +
+          `<span class="inspector-attr-name">data-x</span>` +
+          ` type(&lt;length&gt; | &lt;percentage&gt;)` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback">33px</span>` +
+        `)`,
+    },
+    {
+      message: "Modern attr() with `type(<custom-ident>)` attr type",
+      propertyName: "position-anchor",
+      propertyValue: `attr(data-x type(<custom-ident>), match-parent)`,
+      attributes: { "data-x": "--my-anchor" },
+      // prettier-ignore
+      expected:
+        `attr(` +
+        `<span class="inspector-attr-param">` +
+          `<span class="inspector-attr-name" data-attribute="&quot;--my-anchor&quot;">data-x</span>` +
+          ` type(&lt;custom-ident&gt;)` +
+        `</span>` +
+        `, ` +
+        `<span class="inspector-attr-fallback unmatched-class">match-parent</span>` +
         `)`,
     },
   ];
 
   for (const test of TESTS) {
-    const frag = parser.parseCssProperty("content", test.propertyValue, {
-      unmatchedClass: "unmatched-class",
-      getAttributeValue:
-        "getAttributeValue" in test
-          ? test.getAttributeValue
-          : attrName => test.attributes[attrName] ?? null,
-    });
+    const frag = parser.parseCssProperty(
+      test.propertyName || "content",
+      test.propertyValue,
+      {
+        unmatchedClass: "unmatched-class",
+        getAttributeValue:
+          "getAttributeValue" in test
+            ? test.getAttributeValue
+            : attrName => test.attributes[attrName] ?? null,
+      }
+    );
 
     const target = doc.querySelector("div");
     target.appendChild(frag);
@@ -3020,6 +3244,34 @@ function testParseFunctionsForCssExplainers(doc, parser) {
         `</span>`,
     },
     {
+      message: "Custom elements and attributes when using parenthesis block",
+      propertyName: "opacity",
+      propertyValue: "calc(1 - (var(--x) - 0.8rem))",
+      cssExplainersEnabled: true,
+      variables: { "--x": "2em" },
+      expected:
+        // prettier-ignore
+        `<span data-function-expression="calc(1 - (var(--x) - 0.8rem))">` +
+          `<span class="css-explainers-function-name">calc</span>` +
+          `(` +
+          `1 - (` +
+          `<span data-function-expression="var(--x)">` +
+            `<span>` +
+              `<span class="css-explainers-function-name">var</span>` +
+              `(` +
+              `<span data-variable="2em">` +
+                `--x` +
+                `<button class="ruleview-variable-link jump-definition" data-variable-name="--x" title="Jump to variable definition"></button>` +
+              `</span>` +
+              `)` +
+            `</span>` +
+          `</span>` +
+          ` - 0.8rem` +
+          `)` +
+          `)` +
+        `</span>`,
+    },
+    {
       message:
         "No data-function-expression attribute when a nested function isn't supported",
       propertyName: "width",
@@ -3052,7 +3304,13 @@ function testParseFunctionsForCssExplainers(doc, parser) {
           "getAttributeValue" in test
             ? test.getAttributeValue
             : attrName => test.attributes[attrName] ?? null,
-        getVariableData: () => ({}),
+        getVariableData: varName => {
+          if (typeof test.variables?.[varName] === "string") {
+            return { value: test.variables[varName] };
+          }
+
+          return test.variables?.[varName] || {};
+        },
       }
     );
 

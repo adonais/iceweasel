@@ -37,17 +37,11 @@ interface nsIPKCS11Token : nsISupports
    * Login information
    */
   [must_use]
-  boolean isLoggedIn();
+  readonly attribute boolean isLoggedIn;
   [must_use]
-  void login(in boolean force);
+  void login();
   [must_use]
-  void logoutSimple();
-  [must_use]
-  void logoutAndDropAuthenticatedResources();
-  [must_use]
-  boolean needsLogin();
-  [must_use]
-  readonly attribute boolean needsUserInit;
+  void logout();
 
   /*
    * Reset password
@@ -56,23 +50,25 @@ interface nsIPKCS11Token : nsISupports
   void reset();
 
   /**
-   * Checks whether the given password is correct. Logs the token out if an
-   * incorrect password is given.
-   *
-   * @param password The password to check.
-   * @return true if the password was correct, false otherwise.
+   * Changes the user pin (password) on the token. If no password has been set
+   * and `oldPassword` is empty, initializes the password to `newPassword`.
+   * Otherwise, if `oldPassword` is the current password, changes it to
+   * `newPassword`.
+   * Tokens with protected authentication paths are not supported.
    */
-  [must_use]
-  boolean checkPassword(in AUTF8String password);
-  [must_use]
-  void initPassword(in AUTF8String initialPassword);
   [must_use]
   void changePassword(in AUTF8String oldPassword, in AUTF8String newPassword);
 
-  /*
+  /**
+   * True if a password can be set on this token, and false otherwise.
+   */
+  [must_use]
+  readonly attribute boolean canHavePassword;
+
+  /**
    * True if a password has been configured for this token, and false otherwise.
    * (Whether or not the user is currently logged in makes no difference.)
-   * In particular, this can be used to determine if a user has set a master
+   * In particular, this can be used to determine if a user has set a primary
    * password (if this is the internal key token).
    */
   [must_use]

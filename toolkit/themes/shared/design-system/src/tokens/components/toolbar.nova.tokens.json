@@ -28,7 +28,10 @@
           "value": "{toolbar.background.color}"
         },
         "focus": {
-          "value": "{background.color.box.@base}"
+          "value": {
+            "nativeTheme": "Field",
+            "default": "{background.color.box.@base}"
+          }
         }
       }
     },
@@ -36,13 +39,17 @@
       "color": {
         "@base": {
           "value": {
+            "nativeTheme": "inherit",
             "light": "{color.violet-desaturated.70}",
             "dark": "{color.violet-desaturated.10}",
             "forcedColors": "{text.color.@base}"
           }
         },
         "focus": {
-          "value": "{toolbar.field.text.color.@base}"
+          "value": {
+            "nativeTheme": "FieldText",
+            "default": "{toolbar.field.text.color.@base}"
+          }
         }
       }
     }
@@ -50,6 +57,7 @@
   "background": {
     "color": {
       "value": {
+        "nativeTheme": "color-mix(in srgb, -moz-dialog 85%, {color.white.@base})",
         "default": "{background.color.box.@base}",
         "forcedColors": "Canvas"
       }

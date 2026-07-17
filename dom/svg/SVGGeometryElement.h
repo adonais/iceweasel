@@ -21,10 +21,11 @@ struct SVGMark {
     End,
   };
 
-  float x, y, angle;
+  gfx::Point pos;
+  float angle;
   Type type;
-  SVGMark(float aX, float aY, float aAngle, Type aType)
-      : x(aX), y(aY), angle(aAngle), type(aType) {}
+  SVGMark(const gfx::Point& aPos, float aAngle, Type aType)
+      : pos(aPos), angle(aAngle), type(aType) {}
 };
 
 // Glue to make EnumeratedArray work with SVGMark::Type.
@@ -57,7 +58,7 @@ class SVGGeometryElement : public SVGGeometryElementBase {
 
  public:
   explicit SVGGeometryElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   NS_IMPL_FROMNODE_HELPER(SVGGeometryElement, IsSVGGeometryElement())
 
@@ -129,6 +130,13 @@ class SVGGeometryElement : public SVGGeometryElementBase {
       mY = y;
       mWidthOrX2 = width;
       mHeightOrY2 = height;
+      mType = Type::Rect;
+    }
+    void SetRect(const gfx::Rect& rect) {
+      mX = rect.x;
+      mY = rect.y;
+      mWidthOrX2 = rect.width;
+      mHeightOrY2 = rect.height;
       mType = Type::Rect;
     }
     Rect AsRect() const {

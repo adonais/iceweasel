@@ -23,6 +23,16 @@ parent:
                       uint64_t aRequestingWindowContextId)
         returns (IPCTransferableDataOrError transferableDataOrError);
 
+    // Given a list of supported types, returns the clipboard data for the
+    // first type that matches if the data byte size <= aThreshold.
+    // aRequestingWindowContext is the window that is requesting the clipboard,
+    // which is used for content analysis.
+    async GetClipboardDataIfSmallerThan(nsCString[] aTypes,
+                                        uint64_t aThreshold,
+                                        ClipboardType aWhichClipboard,
+                                        uint64_t aRequestingWindowContextId)
+        returns (IPCTransferableDataOrError transferableDataOrError);
+
     // Requests getting data from clipboard.
     // aRequestingWindowContextId is the ID of the window that is requesting
     // the clipboard, which is used for content analysis.

@@ -561,8 +561,10 @@ secmod_InitializeModuleAndGetSlotInfo(SECMODModule *mod, SECMODModule **oldModul
 
     /* This test operation makes sure our locking system is
      * consistent even if we are using non-thread safe tokens by
-     * simulating unsafe tokens with safe ones. */
-    mod->isThreadSafe = !PR_GetEnvSecure("NSS_FORCE_TOKEN_LOCK");
+     * simulating unsafe tokens with safe ones. An empty value counts as
+     * unset, so the override can be cleared with "NSS_FORCE_TOKEN_LOCK=". */
+    const char *forceTokenLock = PR_GetEnvSecure("NSS_FORCE_TOKEN_LOCK");
+    mod->isThreadSafe = !(forceTokenLock && *forceTokenLock);
 
     /* Now we initialize the module */
     rv = secmod_ModuleInit(mod, oldModule, &alreadyLoaded);

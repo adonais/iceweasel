@@ -529,8 +529,6 @@ nsresult TCPConnectionEstablisher::CreateAndConfigureSocketTransport() {
     tmpFlags |= nsISocketTransport::NO_PERMANENT_STORAGE;
   }
 
-  (void)socketTransport->SetIsPrivate(mConnInfo->GetPrivate());
-
   if (mCaps & NS_HTTP_DISALLOW_ECH) {
     tmpFlags |= nsISocketTransport::DONT_TRY_ECH;
   }

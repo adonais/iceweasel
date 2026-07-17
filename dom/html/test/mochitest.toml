@@ -346,8 +346,6 @@ skip-if = [
 
 ["test_restore_from_parser_fragment.html"]
 
-["test_select_innerHTML_noInSelectMode.html"]
-
 ["test_rowscollection.html"]
 
 ["test_script_module.html"]

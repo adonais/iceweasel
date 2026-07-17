@@ -378,7 +378,7 @@ Result<EditActionResult, nsresult> TextEditor::HandleInsertText(
   uint32_t start = 0;
   if (IsPasswordEditor()) {
     if (GetComposition() && !GetComposition()->String().IsEmpty()) {
-      start = GetComposition()->XPOffsetInTextNode();
+      start = GetComposition()->ClampedStartOffsetInTextNode();
     } else {
       uint32_t end = 0;
       nsContentUtils::GetSelectionInTextControl(&SelectionRef(), GetRoot(),

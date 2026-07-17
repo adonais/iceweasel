@@ -31,6 +31,114 @@ newtab-card-dismiss-button =
     .title = Відхилити
     .aria-label = Відхилити
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-title =
+    .label = Домівка
+home-homepage-new-windows =
+    .label = Нові вікна
+home-homepage-new-tabs =
+    .label = Нові вкладки
+# This option leads to the "Custom Homepage" subpage
+home-homepage-custom-homepage-button =
+    .label = Вибрати певний сайт
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = Адреса вебсайту
+home-custom-homepage-address =
+    .placeholder = Введіть адресу
+home-custom-homepage-address-button =
+    .label = Додати адресу
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-results =
+    .label = Ще не додано жодного вебсайту.
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with-prompt =
+    .label = Замінити на
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-current-pages-button =
+    .label = Поточні відкриті сторінки
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-bookmarks-button =
+    .label = Закладки…
+
+## Firefox Home content
+
+home-prefs-content-header =
+    .label = { -firefox-home-brand-name }
+home-prefs-search-header2 =
+    .label = Пошук
+home-prefs-stories-header2 =
+    .label = Історії
+    .description = Добірні матеріали від { -brand-product-name }
+home-prefs-widgets-header =
+    .label = Віджети
+# Lists is a widget on New Tab, similar to a to-do widget
+home-prefs-lists-header =
+    .label = Списки
+# Timer is a widget on New Tab, similar to the Pomodoro timer.
+home-prefs-timer-header =
+    .label = Таймер
+home-prefs-mission-message2 =
+    .message = Наші спонсори підтримують нашу місію зі створення кращого інтернету.
+home-prefs-manage-topics-link2 =
+    .label = Керувати темами
+home-prefs-choose-wallpaper-link2 =
+    .label = Виберіть шпалеру
+home-prefs-firefox-logo-header =
+    .label = Логотип { -brand-short-name }
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } рядок
+            [few] { $num } рядки
+           *[many] { $num } рядків
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Розширення ({ $extension })
+home-restore-defaults-srd =
+    .label = Відновити типові
+    .accesskey = т
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (Типово)
+home-mode-choice-custom-srd =
+    .label = Власні URL-адреси…
+home-mode-choice-blank-srd =
+    .label = Чиста сторінка
+home-prefs-shortcuts-header-srd =
+    .label = Ярлики
+home-prefs-shortcuts-select =
+    .aria-label = Ярлики
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Спонсоровані ярлики
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Матеріали від спонсорів
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Відвідані сторінки
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Закладки
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Останні завантаження
+home-prefs-recent-activity-header-srd =
+    .label = Нещодавня активність
+home-prefs-recent-activity-select =
+    .aria-label = Нещодавня активність
+home-prefs-weather-header-srd =
+    .label = Погода
+home-prefs-support-firefox-header-srd =
+    .label = Підтримка { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = Дізнайтеся як
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -148,6 +256,8 @@ newtab-menu-report = Повідомити
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Блокувати
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Докладніше
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Відписатися від теми
@@ -687,8 +797,6 @@ newtab-widget-lists-button-add-item = Додати запис
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Додати запис
     .aria-label = Додати запис
-newtab-widget-lists-input-add-an-item =
-    .placeholder = Додати запис
 newtab-widget-lists-input-error = Введіть текст, щоб додати запис
 newtab-widget-lists-input-menu-open-link = Відкрити посилання
 newtab-widget-lists-input-menu-move-up = Посунути вгору
@@ -706,9 +814,6 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = Новий список
     .aria-label = Редагувати назву списку
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Новий список
 newtab-widget-section-title = Віджети
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =

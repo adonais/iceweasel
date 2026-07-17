@@ -202,9 +202,6 @@ const UPDATE_PROPS = [
   "status",
   "statusText",
   "httpVersion",
-  // @backward-compat { version 151 } isRacing can be removed once 151 is on
-  // release. It was part of RCWN which was removed in Bug 2020946.
-  "isRacing",
   "securityState",
   "securityInfo",
   "securityInfoAvailable",

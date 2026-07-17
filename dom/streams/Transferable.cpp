@@ -86,7 +86,7 @@ class SetUpTransformWritableMessageEventListener final
       WritableStreamDefaultController* aController, Promise* aPromise)
       : mController(aController), mBackpressurePromise(aPromise) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(SetUpTransformWritableMessageEventListener)
 
   // https://streams.spec.whatwg.org/#abstract-opdef-setupcrossrealmtransformwritable
@@ -214,7 +214,7 @@ class SetUpTransformWritableMessageErrorEventListener final
       WritableStreamDefaultController* aController, MessagePort* aPort)
       : mController(aController), mPort(aPort) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(
       SetUpTransformWritableMessageErrorEventListener)
 
@@ -490,7 +490,7 @@ class SetUpTransformReadableMessageEventListener final
       ReadableStreamDefaultController* aController, MessagePort* aPort)
       : mController(aController), mPort(aPort) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(SetUpTransformReadableMessageEventListener)
 
   // https://streams.spec.whatwg.org/#abstract-opdef-setupcrossrealmtransformreadable
@@ -624,7 +624,7 @@ class SetUpTransformReadableMessageErrorEventListener final
       ReadableStreamDefaultController* aController, MessagePort* aPort)
       : mController(aController), mPort(aPort) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(
       SetUpTransformReadableMessageErrorEventListener)
 

@@ -24,7 +24,6 @@
 //   ValueForCache() and ExpirationTime() members. For style, this is the
 //   SheetLoadData.
 
-#include "mozilla/MemoryReporting.h"
 #include "mozilla/PrincipalHashKey.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/StaticPtr.h"
@@ -35,7 +34,6 @@
 #include "mozilla/dom/CacheablePerformanceTimingData.h"
 #include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
-#include "nsIMemoryReporter.h"
 #include "nsISupportsImpl.h"
 #include "nsRefPtrHashtable.h"
 #include "nsTHashMap.h"
@@ -65,7 +63,7 @@ void RemoveMemoryPressureObserver(nsIObserver* aObserver);
 // SharedSubResourceCache::Result::mNetworkMetadata and use it for notifying
 // the observers once the necessary data becomes ready.
 // This struct is ref-counted in order to allow this usage.
-class SubResourceNetworkMetadataHolder {
+class SubResourceNetworkMetadataHolder final {
  public:
   SubResourceNetworkMetadataHolder() = delete;
 

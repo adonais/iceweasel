@@ -14,6 +14,48 @@ newtab-personalize-icon-label =
 newtab-personalize-dialog-label =
     .aria-label = Personalitza
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Pestanyes noves
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } fila
+           *[other] { $num } files
+        }
+home-restore-defaults-srd =
+    .label = Restaura els valors per defecte
+    .accesskey = R
+home-mode-choice-custom-srd =
+    .label = URL personalitzats…
+home-mode-choice-blank-srd =
+    .label = Pàgina en blanc
+home-prefs-shortcuts-header-srd =
+    .label = Dreceres
+home-prefs-shortcuts-select =
+    .aria-label = Dreceres
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Dreceres patrocinades
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Articles patrocinats
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Pàgines visitades
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Adreces d'interés
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Baixada més recent
+home-prefs-recent-activity-header-srd =
+    .label = Activitat recent
+home-prefs-recent-activity-select =
+    .aria-label = Activitat recent
+
 ## Search box component.
 
 # "Search" is a verb/action

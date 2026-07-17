@@ -22,7 +22,7 @@ import mozilla.components.service.fxa.sync.WorkManagerSyncManager
 data class SyncState(
     val status: SyncStatus = SyncStatus.NotInitialized,
     val account: Account? = null,
-    val accountState: AccountState = AccountState.NotAuthenticated,
+    val accountState: AccountState = AccountState.Unknown,
     val constellationState: ConstellationState? = null,
 ) : State
 

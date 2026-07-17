@@ -310,6 +310,64 @@ class WebExtensionActionTest {
     }
 
     @Test
+    fun `UpdateOptionsPageSessionAction - Adds options page session to the web extension state`() {
+        var state = BrowserState()
+        val extension = WebExtensionState("id")
+        state = BrowserStateReducer.reduce(state, WebExtensionAction.InstallWebExtensionAction(extension))
+
+        assertEquals(extension, state.extensions[extension.id])
+        assertNull(state.extensions[extension.id]?.activeOptionsPage)
+
+        state = BrowserStateReducer.reduce(
+            state,
+            WebExtensionAction.UpdateOptionsPageSessionAction(
+                extension.id,
+                "testSessionId",
+                "testUrl",
+                "testTitle",
+            ),
+        )
+        assertEquals("testSessionId", state.extensions[extension.id]?.activeOptionsPage?.instanceId)
+        assertEquals("testUrl", state.extensions[extension.id]?.activeOptionsPage?.url)
+        assertEquals("testTitle", state.extensions[extension.id]?.activeOptionsPage?.name)
+    }
+
+    @Test
+    fun `UpdateOptionsPageSessionAction - Ignored when another options page session is already active`() {
+        val extensionA = WebExtensionState("idA")
+        val extensionB = WebExtensionState("idB")
+        var state = BrowserState(
+            extensions = mapOf(extensionA.id to extensionA, extensionB.id to extensionB),
+        )
+
+        state = BrowserStateReducer.reduce(
+            state,
+            WebExtensionAction.UpdateOptionsPageSessionAction(
+                extensionA.id,
+                "instanceIdA",
+                "urlA",
+                "nameA",
+            ),
+        )
+        assertEquals("instanceIdA", state.extensions[extensionA.id]?.activeOptionsPage?.instanceId)
+        assertEquals("urlA", state.extensions[extensionA.id]?.activeOptionsPage?.url)
+        assertNull(state.extensions[extensionB.id]?.activeOptionsPage)
+
+        state = BrowserStateReducer.reduce(
+            state,
+            WebExtensionAction.UpdateOptionsPageSessionAction(
+                extensionB.id,
+                "instanceIdB",
+                "urlB",
+                "nameB",
+            ),
+        )
+        assertEquals("instanceIdA", state.extensions[extensionA.id]?.activeOptionsPage?.instanceId)
+        assertEquals("urlA", state.extensions[extensionA.id]?.activeOptionsPage?.url)
+        assertNull(state.extensions[extensionB.id]?.activeOptionsPage)
+    }
+
+    @Test
     fun `UpdateWebExtensionEnabledAction - Updates enabled state of an existing web extension`() {
         var state = BrowserState()
         val extension = WebExtensionState("id", "url")

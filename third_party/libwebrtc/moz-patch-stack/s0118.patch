@@ -1,44 +1,47 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Wed, 17 Sep 2025 15:41:00 +0000
-Subject: Bug 1988042 - android build fix in
- third_party/libwebrtc/rtc_base/cpu_info.cc r?ng!
+Date: Wed, 8 Oct 2025 17:49:00 +0000
+Subject: Bug 1980501 - use forward class decl rather than include
+ audio_state.h r?ng!
 
-Supports(...) is really used in unittests and outside of unittests
-it is only used when WEBRTC_ARCH_X86_FAMILY is defined.  For now,
-we'll return false when checking for arm/neon suport.
+This avoids code outside of libwebrtc inadvertently including
+rtc_base/containers/flat_set.h which uses c++20 features.  Once
+the rest of the Mozilla tree is compiling with c++20, we can
+remove this modification (see Bug 1768116).
 
-Differential Revision: https://phabricator.services.mozilla.com/D265018
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/eae7b6ec4f7ca191e8eaa8e36787142528f2c132
+Differential Revision: https://phabricator.services.mozilla.com/D267993
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/9c487a574d218cc1c261b646c501db4d159754f0
 ---
- rtc_base/cpu_info.cc | 9 +++++++++
- 1 file changed, 9 insertions(+)
+ audio/audio_receive_stream.h | 12 ++++++++++++
+ 1 file changed, 12 insertions(+)
 
-diff --git a/rtc_base/cpu_info.cc b/rtc_base/cpu_info.cc
-index ec74055c26..a0f289e2ed 100644
---- a/rtc_base/cpu_info.cc
-+++ b/rtc_base/cpu_info.cc
-@@ -25,7 +25,9 @@
- #elif defined(WEBRTC_MAC)
- #include <sys/sysctl.h>
- #elif defined(WEBRTC_ANDROID)
+diff --git a/audio/audio_receive_stream.h b/audio/audio_receive_stream.h
+index 41a470f8b8..5e40cebfa9 100644
+--- a/audio/audio_receive_stream.h
++++ b/audio/audio_receive_stream.h
+@@ -34,7 +34,11 @@
+ #include "api/transport/rtp/rtp_source.h"
+ #include "api/units/time_delta.h"
+ #include "api/units/timestamp.h"
++// This can be removed after Bug 1768116 enables
++// c++20 builds across the entire Mozilla tree.
 +#if !defined(WEBRTC_MOZILLA_BUILD)
- #include <cpu-features.h>
+ #include "audio/audio_state.h"
 +#endif
- #include <unistd.h>
- #elif defined(WEBRTC_FUCHSIA)
- #include <zircon/syscalls.h>
-@@ -175,7 +177,14 @@ bool Supports(ISA instruction_set_architecture) {
- #elif defined(WEBRTC_ARCH_ARM_FAMILY)
-   if (instruction_set_architecture == ISA::kNeon) {
- #if defined(WEBRTC_ANDROID)
+ #include "call/audio_receive_stream.h"
+ #include "call/audio_state.h"
+ #include "call/syncable.h"
+@@ -47,6 +51,14 @@ class PacketRouter;
+ class RtpStreamReceiverControllerInterface;
+ class RtpStreamReceiverInterface;
+ 
++// This can be removed after Bug 1768116 enables
++// c++20 builds across the entire Mozilla tree.
 +#if defined(WEBRTC_MOZILLA_BUILD)
-+    // We should revisit this if Supports(...) is ever more widely used.
-+    // Currently, it is used in unittests and when WEBRTC_ARCH_X86_FAMILY
-+    // is defined in non-unittest code.
-+    return false;
-+#else
-     return 0 != (android_getCpuFeatures() & ANDROID_CPU_ARM_FEATURE_NEON);
++namespace internal {
++class AudioState;
++}
 +#endif
- #elif defined(WEBRTC_BSD)
-     // OpenBSD does not have getauxval() and does not have /proc reading
-     return false;
++
+ namespace voe {
+ class ChannelReceiveInterface;
+ }  // namespace voe

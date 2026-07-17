@@ -31,6 +31,116 @@ newtab-card-dismiss-button =
     .title = Hidhe tej
     .aria-label = Hidhe tej
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-title =
+    .label = Faqe hyrëse
+home-homepage-new-windows =
+    .label = Dritare të reja
+home-homepage-new-tabs =
+    .label = Skeda të reja
+# This option leads to the "Custom Homepage" subpage
+home-homepage-custom-homepage-button =
+    .label = Zgjidhni një sajt specifik
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = Adresë(a) sajti
+home-custom-homepage-address =
+    .placeholder = Jepni adresë
+home-custom-homepage-address-button =
+    .label = Shtoni adresë
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-results =
+    .label = Ende pa sajte të shtuar.
+home-custom-homepage-delete-address-button =
+    .aria-label = Fshije adresën
+    .title = Fshije adresën
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with-prompt =
+    .label = Zëvendësoje me
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-current-pages-button =
+    .label = Faqe aktualisht të hapura
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-bookmarks-button =
+    .label = Faqerojtës…
+
+## Firefox Home content
+
+home-prefs-content-header =
+    .label = { -firefox-home-brand-name }
+home-prefs-search-header2 =
+    .label = Kërko
+home-prefs-stories-header2 =
+    .label = Histori
+    .description = Lëndë e veçantë, nën kujdesin e familjes { -brand-product-name }
+home-prefs-widgets-header =
+    .label = Widget-e
+# Lists is a widget on New Tab, similar to a to-do widget
+home-prefs-lists-header =
+    .label = Lista
+# Timer is a widget on New Tab, similar to the Pomodoro timer.
+home-prefs-timer-header =
+    .label = Kohëmatës
+home-prefs-mission-message2 =
+    .message = Sponsorët tanë përkrahin misionin tonë për ndërtimin e një interneti më të mirë.
+home-prefs-manage-topics-link2 =
+    .label = Administroni subjekte
+home-prefs-choose-wallpaper-link2 =
+    .label = Zgjidhni një sfond
+home-prefs-firefox-logo-header =
+    .label = Stemë e { -brand-short-name }-it
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } rresht
+           *[other] { $num } rreshta
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Zgjerim ({ $extension })
+home-restore-defaults-srd =
+    .label = Rikthe Parazgjedhjet
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (Parazgjedhje)
+home-mode-choice-custom-srd =
+    .label = URL Vetjake…
+home-mode-choice-blank-srd =
+    .label = Faqe të Zbrazët
+home-prefs-shortcuts-header-srd =
+    .label = Shkurtore
+home-prefs-shortcuts-select =
+    .aria-label = Shkurtore
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Shkurtore të sponsorizuara
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Histori të Sponsorizuara
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Faqe të Vizituara
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Faqerojtës
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Shkarkimet Më të Reja
+home-prefs-recent-activity-header-srd =
+    .label = Veprimtari së fundi
+home-prefs-recent-activity-select =
+    .aria-label = Veprimtari së fundi
+home-prefs-weather-header-srd =
+    .label = Moti
+home-prefs-support-firefox-header-srd =
+    .label = Përkrahni { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = Mësoni se si
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -148,6 +258,8 @@ newtab-menu-report = Raportojeni
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Bllokoje
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Mësoni më tepër
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Hiqe Ndjekjen e Subjektit
@@ -682,8 +794,6 @@ newtab-widget-lists-button-add-item = Shtoni një objekt
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Shtoni një objekt
     .aria-label = Shtoni një objekt
-newtab-widget-lists-input-add-an-item =
-    .placeholder = Shtoni një objekt
 newtab-widget-lists-input-error = Ju lutemi, që të shtohet një objekt, përfshini tekst.
 newtab-widget-lists-input-menu-open-link = Hape lidhjen
 newtab-widget-lists-input-menu-move-up = Ngjite sipër
@@ -701,9 +811,6 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = Listë e re
     .aria-label = Përpunoni emër liste
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Listë e re
 newtab-widget-section-title = Widget-e
 newtab-widget-menu-hide = Fshihe widget-in
 # Tooltip for hide all widgets button

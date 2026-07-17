@@ -22,18 +22,40 @@ internal class GeckoIPProtectionHandler(
 
     private val logger = Logger("IPP:GeckoHandler")
 
-    override fun activate() {
-        runtime.ipProtectionController.activate()
+    override fun activate(onResult: (Throwable?) -> Unit) {
+        runtime.ipProtectionController.activate().then(
+            {
+                onResult(null)
+                GeckoResult.fromValue(null)
+            },
+            { ex ->
+                logger.error("activate() failed", ex)
+                onResult(ex)
+                GeckoResult.fromValue(null)
+            },
+        )
     }
 
-    override fun deactivate() {
-        runtime.ipProtectionController.deactivate()
+    override fun deactivate(onResult: (Throwable?) -> Unit) {
+        runtime.ipProtectionController.deactivate().then(
+            {
+                onResult(null)
+                GeckoResult.fromValue(null)
+            },
+            { ex ->
+                logger.error("deactivate() failed", ex)
+                onResult(ex)
+                GeckoResult.fromValue(null)
+            },
+        )
     }
 
     override fun enroll(onResult: (IPProtectionHandler.EnrollResult) -> Unit) {
         runtime.ipProtectionController.enroll().then(
             { result ->
-                logger.info("Enrollment request success. Status: ${result?.isEnrolledAndEntitled}")
+                val logMessage =
+                    "Enrollment request success. Status: ${result?.isEnrolledAndEntitled}, error: ${result?.error}"
+                logger.info(logMessage)
                 onResult(
                     IPProtectionHandler.EnrollResult(
                         isEnrolledAndEntitled = result?.isEnrolledAndEntitled == true,

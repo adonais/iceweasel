@@ -36,6 +36,7 @@ static unsigned int HexStrToInt(NSString* str) {
 - (void)open:(NSColor*)aInitialColor title:(NSString*)aTitle;
 - (void)colorChanged:(NSColorPanel*)aPanel;
 - (void)windowWillClose:(NSNotification*)aNotification;
+- (void)cancel;
 - (void)close;
 @end
 
@@ -53,6 +54,14 @@ static unsigned int HexStrToInt(NSString* str) {
 }
 
 - (void)open:(NSColor*)aInitialColor title:(NSString*)aTitle {
+  // If another color input already has the panel open, close it first so its
+  // HTMLInputElement gets PickerClosed() and can be reopened later.
+  id oldDelegate = [mColorPanel delegate];
+  if (oldDelegate && oldDelegate != self &&
+      [oldDelegate isKindOfClass:[NSColorPanelWrapper class]]) {
+    [oldDelegate cancel];
+  }
+
   [mColorPanel setTarget:self];
   [mColorPanel setAction:@selector(colorChanged:)];
   [mColorPanel setDelegate:self];
@@ -71,6 +80,13 @@ static unsigned int HexStrToInt(NSString* str) {
 }
 
 - (void)windowWillClose:(NSNotification*)aNotification {
+  if (!mColorPicker) {
+    return;
+  }
+  mColorPicker->Done();
+}
+
+- (void)cancel {
   if (!mColorPicker) {
     return;
   }

@@ -14,7 +14,7 @@ namespace js {
 using JSONParseNode = JSString;
 
 class ParseRecordObject : public NativeObject {
-  enum { ParseNodeSlot, ValueSlot, KeySlot, SlotCount };
+  enum { ParseNodeSlot, ValueSlot, SlotCount };
 
  public:
   static const JSClass class_;
@@ -30,12 +30,6 @@ class ParseRecordObject : public NativeObject {
     const Value& slot = getReservedSlot(ParseNodeSlot);
     return slot.isUndefined() ? nullptr : slot.toString();
   }
-
-  // For object members, the member key. For arrays, the index. For JSON
-  // primitives, it will be undefined.
-  JS::PropertyKey getKey(JSContext* cx) const;
-
-  bool setKey(JSContext* cx, const JS::PropertyKey& key);
 
   // The original value corresponding to this record, used to determine if the
   // reviver function has modified it.

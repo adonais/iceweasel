@@ -174,6 +174,8 @@ def WebCompatBuildTest(harness):
         non_generated_files={
             "generic_needing_logging.js": "{window.__webcompat}",
             "generic_not_needing_logging.js": "test;window.__webcompat_spoof_platform",
+            "bug104-custom-1.js": "bug104customJS1",
+            "bug104-custom-2.js": "bug104customJS2",
         },
         inputs=[
             template("hide_alerts.js", '{"param:alertsToHide"}'),
@@ -321,6 +323,39 @@ def WebCompatBuildTest(harness):
                     ],
                 },
             ),
+            # test that custom JS (with filenames starting with "bug") are mixed into one generated
+            # content-script in the order specified by the JSON (if they are mixed with generated scripts).
+            intervention(
+                "104-example.com",
+                {
+                    "bugs": {
+                        "104": {
+                            "matches": ["*://example.com/*"],
+                            "issue": "blocked-content",
+                        },
+                    },
+                    "interventions": [
+                        {
+                            "content_scripts": {
+                                "js": [
+                                    "bug104-custom-2.js",
+                                    "generic_not_needing_logging.js",
+                                    "generic_needing_logging.js",
+                                    "bug104-custom-1.js",
+                                ]
+                            },
+                        },
+                        {
+                            "content_scripts": {
+                                "js": [
+                                    "bug104-custom-2.js",
+                                    "bug104-custom-1.js",
+                                ]
+                            },
+                        },
+                    ],
+                },
+            ),
         ],
         expected_run_js={
             "100": {
@@ -438,6 +473,29 @@ def WebCompatBuildTest(harness):
                 ],
                 "label": "example.com",
             },
+            "104": {
+                "bugs": {
+                    "104": {
+                        "issue": "blocked-content",
+                        "matches": ["*://example.com/*"],
+                    }
+                },
+                "interventions": [
+                    {
+                        "content_scripts": {
+                            "js": ["injections/generated/bug104-example.com.js"]
+                        },
+                        "platforms": ["all"],
+                    },
+                    {
+                        "content_scripts": {
+                            "js": ["bug104-custom-2.js", "bug104-custom-1.js"]
+                        },
+                        "platforms": ["all"],
+                    },
+                ],
+                "label": "example.com",
+            },
         },
         expected_generated_files={
             "bug100-example.com-test1.css": "c1 {}",
@@ -452,6 +510,7 @@ def WebCompatBuildTest(harness):
             "bug100-example.com-7.js": 'try{{"height": null, "initial-scale": "new-initial-scale", "interactive-widget": {"only_if_equals": "==1", "only_if_not_equals": "!=1", "value": null}, "maximum-scale": {"only_if_equals": ["==2"], "only_if_not_equals": ["!=2"], "value": "new-maximum-scale"}, "minimum-scale": {"only_if_equals": "==3", "value": "new-minimum-scale"}, "user-scalable": {"only_if_not_equals": "!=4", "value": "new-user-scalable"}, "viewport-fit": {"only_if_equals": ["==5"], "value": "new-viewport-fit"}, "width": {"only_if_not_equals": ["!=6"], "value": "new-width"}}}catch(_){}',
             "bug100-example.com-8.js": 'try{{"height": null, "width": {"only_if_not_equals": ["!=7"], "value": "new-width2"}}}catch(_){}',
             "bug101-example.com.js": """{window.__webcompat}\n\n{console.info([["example.com", ["101"]], ["example2.com", ["101", "103"]], ["example3.com", ["102"]]]})}""",
+            "bug104-example.com.js": """{\n  bug104customJS2\n}\n\n{\n  test;window.__webcompat_spoof_platform\n}\n\n{window.__webcompat}\n\n{\n  bug104customJS1\n}\n\ndelete window.__webcompat_spoof_platform;\n\n{console.info([["example.com", ["104"]]]})}""",
         },
     )
 

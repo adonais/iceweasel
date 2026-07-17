@@ -8,6 +8,9 @@ prefs = [
   "browser.backup.log=true",
   "browser.backup.archive.enabled=true",
   "browser.backup.restore.enabled=true",
+  # Profile backup is disabled when SQLite at-rest encryption is on
+  # (Bug 1996558); run these tests with it off (the production default).
+  "security.storage.encryption.sqlite.enabled=false",
 ]
 
 ["test_AddonsBackupResource.js"]
@@ -75,6 +78,8 @@ run-sequentially = ["true"] # Mock Windows registry interferes with normal opera
 ["test_BackupService_resolveArchiveDestFolderPath.js"]
 
 ["test_BackupService_resolveDownloadLink.js"]
+
+["test_BackupService_restoreStepTelemetry.js"]
 
 ["test_BackupService_retryHeuristic.js"]
 

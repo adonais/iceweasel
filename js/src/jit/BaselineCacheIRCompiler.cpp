@@ -254,7 +254,11 @@ JitCode* BaselineCacheIRCompiler::compile() {
   } while (reader.more());
 
   MOZ_ASSERT(!enteredStubFrame_);
-  masm.assumeUnreachable("Should have returned from IC");
+  allocator.discardStack(masm);
+  if (JitOptions.enableICFramePointers) {
+    PopICFrameRegs(masm);
+  }
+  EmitReturnFromIC(masm);
 
   // Done emitting the main IC code. Now emit the failure paths.
   perfSpewer_.recordOffset(masm, "FailurePath");
@@ -1810,16 +1814,6 @@ bool BaselineCacheIRCompiler::emitMegamorphicSetElement(ObjOperandId objId,
   callVM<Fn, SetElementMegamorphic<false>>(masm);
 
   stubFrame.leave(masm);
-  return true;
-}
-
-bool BaselineCacheIRCompiler::emitReturnFromIC() {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-  allocator.discardStack(masm);
-  if (JitOptions.enableICFramePointers) {
-    PopICFrameRegs(masm);
-  }
-  EmitReturnFromIC(masm);
   return true;
 }
 

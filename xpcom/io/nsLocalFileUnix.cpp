@@ -1996,9 +1996,9 @@ nsLocalFile::IsExecutable(bool* aResult) {
     return NS_ERROR_FAILURE;
   }
 
-  CFBooleanRef isApp = NULL;
+  CFBooleanRef isApp = nullptr;
   *aResult = ::CFURLCopyResourcePropertyForKey(url, kCFURLIsApplicationKey,
-                                               &isApp, NULL) &&
+                                               &isApp, nullptr) &&
              (isApp == kCFBooleanTrue);
   ::CFRelease(url);
   if (isApp) {

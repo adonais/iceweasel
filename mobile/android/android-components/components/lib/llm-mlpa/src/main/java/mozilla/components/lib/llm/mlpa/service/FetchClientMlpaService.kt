@@ -18,6 +18,7 @@ import mozilla.components.concept.fetch.MutableHeaders
 import mozilla.components.concept.fetch.Request
 import mozilla.components.concept.fetch.Response
 import mozilla.components.concept.fetch.isClientError
+import mozilla.components.concept.llm.Llm
 import mozilla.components.lib.llm.mlpa.service.ext.contentFlow
 import mozilla.components.lib.llm.mlpa.service.ext.rateLimitDetailedError
 import java.io.IOException
@@ -57,7 +58,9 @@ class FetchClientMlpaService(
         val fetchRequest = Request(
             url = "${config.baseUrl}/verify/play",
             method = Request.Method.POST,
-            headers = MutableHeaders(),
+            headers = MutableHeaders(
+                "content-type" to "application/json",
+            ),
             body = Request.Body.fromString(json.encodeToString(request)),
         )
 
@@ -70,9 +73,8 @@ class FetchClientMlpaService(
             }
         }.recoverCatching { e ->
             throw when (e) {
-                is IOException -> ChatServiceError.VerificationNetworkError(e)
-                is SerializationException ->
-                    ChatServiceError.VerificationResponseParseError(e)
+                is IOException -> VerificationNetworkError(e)
+                is SerializationException -> VerificationResponseParseError(e)
                 else -> e
             }
         }
@@ -110,7 +112,7 @@ class FetchClientMlpaService(
             val httpResponse = try {
                 client.fetch(fetchRequest)
             } catch (e: IOException) {
-                throw ChatServiceError.ChatNetworkError(e)
+                throw ChatNetworkError(e)
             }
             httpResponse.use {
                 it.error?.also { error -> throw error }
@@ -127,22 +129,22 @@ class FetchClientMlpaService(
     private val Response.nonStreamedResponse get() = try {
         json.decodeFromString<ChatService.Response>(bodyString).choices.first().message.content
     } catch (e: SerializationException) {
-        throw ChatServiceError.ResponseParseError(e)
+        throw ResponseParseError(e)
     }
 
     private val Response.bodyString get() = use { body.string(Charsets.UTF_8) }
     private val Response.retryAfter: Long? get() = headers["Retry-After"]?.toLongOrNull()
-    private val Response.error: ChatServiceError? get() = when (status) {
+    private val Response.error: Llm.Exception? get() = when (status) {
         in 200..299 -> null
-        401 -> ChatServiceError.InvalidToken()
-        403 -> ChatServiceError.UserBlocked()
-        413 -> ChatServiceError.RequestTooLarge()
+        401 -> InvalidToken()
+        403 -> UserBlocked()
+        413 -> RequestTooLarge()
         429 -> json.rateLimitDetailedError(bodyString, retryAfter)
         502 -> try {
-            ChatServiceError.UpstreamError(json.decodeFromString<ChatService.ResponseErrorReason>(bodyString).error)
+            UpstreamError(json.decodeFromString<ChatService.ResponseErrorReason>(bodyString).error)
         } catch (e: SerializationException) {
-            ChatServiceError.UpstreamResponseParseError(e)
+            UpstreamResponseParseError(e)
         }
-        else -> ChatServiceError.ServerError(status)
+        else -> ServerError(status)
     }
 }

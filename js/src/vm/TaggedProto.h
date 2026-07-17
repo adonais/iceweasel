@@ -41,6 +41,14 @@ class TaggedProto {
   }
   JSObject* raw() const { return proto; }
 
+  // Relaxed atomic load and store operations on a TaggedProto.
+  TaggedProto atomicGet() const {
+    return TaggedProto(__atomic_load_n(&proto, __ATOMIC_RELAXED));
+  }
+  void atomicSet(const TaggedProto& other) {
+    __atomic_store_n(&proto, other.proto, __ATOMIC_RELAXED);
+  }
+
   bool operator==(const TaggedProto& other) const {
     return proto == other.proto;
   }
@@ -115,6 +123,16 @@ struct InternalBarrierMethods<TaggedProto> {
     AssertTaggedProtoIsNotGray(proto);
   }
 #endif
+};
+
+template <>
+struct AtomicMethods<TaggedProto> {
+  static TaggedProto atomicGet(TaggedProto const* vp) {
+    return vp->atomicGet();
+  }
+  static void atomicSet(TaggedProto* vp, const TaggedProto& v) {
+    vp->atomicSet(v);
+  }
 };
 
 template <class Wrapper>

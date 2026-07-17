@@ -43,6 +43,7 @@
 #include "system_wrappers/include/ntp_time.h"
 #include "test/gmock.h"
 #include "test/gtest.h"
+#include "test/run_loop.h"
 
 namespace webrtc {
 namespace {
@@ -130,7 +131,7 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest, TransformFrame) {
 
 TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
      ManageFrameOnTransformedFrame) {
-  AutoThread main_thread_;
+  test::RunLoop main_thread_;
   TestRtpVideoFrameReceiver receiver;
   auto mock_frame_transformer(
       make_ref_counted<NiceMock<MockFrameTransformer>>());
@@ -259,7 +260,7 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
 
 TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
      TransformableFrameMetadataHasCorrectValueAfterSetMetadata) {
-  AutoThread main_thread;
+  test::RunLoop main_thread;
   TestRtpVideoFrameReceiver receiver;
   auto mock_frame_transformer =
       make_ref_counted<NiceMock<MockFrameTransformer>>();
@@ -322,7 +323,7 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
 
 TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
      SenderFramesAreConvertedToReceiverFrames) {
-  AutoThread main_thread_;
+  test::RunLoop main_thread_;
   TestRtpVideoFrameReceiver receiver;
   auto mock_frame_transformer =
       make_ref_counted<NiceMock<MockFrameTransformer>>();
@@ -362,7 +363,7 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
 
 TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
      ManageFrameFromDifferentReceiver) {
-  AutoThread main_thread_;
+  test::RunLoop main_thread_;
   std::vector<uint32_t> csrcs = {234, 345, 456};
   const int frame_id = 11;
 
@@ -414,7 +415,7 @@ TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
 
 TEST(RtpVideoStreamReceiverFrameTransformerDelegateTest,
      ShortCircuitingSkipsTransform) {
-  AutoThread main_thread_;
+  test::RunLoop main_thread_;
   TestRtpVideoFrameReceiver receiver;
   auto mock_frame_transformer =
       make_ref_counted<NiceMock<MockFrameTransformer>>();

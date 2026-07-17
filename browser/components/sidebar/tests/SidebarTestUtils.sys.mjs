@@ -4,6 +4,7 @@
 
 import { BrowserTestUtils } from "resource://testing-common/BrowserTestUtils.sys.mjs";
 import { Assert } from "resource://testing-common/Assert.sys.mjs";
+import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
 
 const initialStates = new WeakMap();
 let gTestScope;
@@ -156,10 +157,13 @@ class _SidebarTestUtils {
    * @param {ChromeWindow} win
    */
   async waitForInitialized(win) {
-    await BrowserTestUtils.waitForCondition(
-      () => win.SidebarController?.uiStateInitialized,
-      "Waiting for sidebar UI state to be initialized"
-    );
+    if (!win.SidebarController) {
+      await TestUtils.topicObserved(
+        "browser-delayed-startup-finished",
+        subject => subject == win
+      );
+    }
+    await win.SidebarController.promiseInitialized;
   }
 
   /**

@@ -349,7 +349,7 @@ class AudioContext final : public DOMEventTargetHelper,
     return mWorkletParamDescriptors.Lookup(aName).DataPtrOrNull();
   }
 
-  void Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
+  void Dispatch(already_AddRefed<nsIRunnable> aRunnable);
 
  private:
   void DisconnectFromWindow();

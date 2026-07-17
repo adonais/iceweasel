@@ -30,6 +30,7 @@ constexpr size_t StrLen(const char* str) {
 // skips the prefix while reading the file name strings at runtime.
 constexpr size_t StrippedFilePathPrefixLength() {
   constexpr char path[] = __FILE__;
+  // Only keep the file path starting from the src directory.
 #if defined(__clang__) && defined(_WIN32)
   constexpr char stripped[] = "base\\location.cc";
 #else
@@ -68,7 +69,7 @@ static_assert(StrEndsWith(__FILE__, kStrippedPrefixLength, "base\\location.cc"),
 #else
 static_assert(StrEndsWith(__FILE__, kStrippedPrefixLength, "base/location.cc"),
               "The file name does not match the expected prefix format.");
-#endif  // defined(MOZ_ZUCCHINI)
+#endif
 
 }  // namespace
 

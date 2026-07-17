@@ -154,6 +154,9 @@
   ret: General
   args: [General, Float64, General, General]
 
+- ret: General
+  args: [General, Float64, General]
+
 - name: Int_GeneralGeneralGeneralInt64
   ret: General
   args: [General, General, General, Int64]

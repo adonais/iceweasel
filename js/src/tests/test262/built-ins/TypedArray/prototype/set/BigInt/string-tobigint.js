@@ -63,6 +63,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     typedArray.set(["1e7"]);
   }, "Replace the StrUnsignedDecimalLiteral production with DecimalDigits to not allow... exponents...");
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

@@ -198,7 +198,7 @@ TEST(Base64, StreamEncoder)
       do_CreateInstance("@mozilla.org/scriptablebase64encoder;1");
   ASSERT_TRUE(encoder);
 
-  RefPtr<FakeInputStream> stream = new FakeInputStream();
+  RefPtr stream = mozilla::MakeRefPtr<FakeInputStream>();
   do {
     nsString wideString;
     nsCString string;

@@ -122,7 +122,7 @@ The returned object provides the following API:
 | `content`                                 | This property returns the wrapped AnonymousContent object. |
 | `destroy()`                               | Destroy the helper instance.                               |
 
-  ### Creating a new highlighter class
+### Creating a new highlighter class
 
 A good way to get started is by taking a look at [existing highlighters here](https://searchfox.org/mozilla-central/rev/1a973762afcbc5066f73f1508b0c846872fe3952/devtools/server/actors/highlighters.js#519-530).
 

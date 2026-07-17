@@ -300,7 +300,7 @@ def run_xpcshell_test(command_context, test_objects=None, **params):
             except KeyError:
                 # .get("tags") may raise KeyError.
                 tags = []
-            if "webextensions" in tags and "portal" in tags:
+            if "portal" in tags:
                 install_portal_test_dependencies = True
         else:
             # When run from "mach xpcshell-test", the manifest is not available
@@ -311,11 +311,10 @@ def run_xpcshell_test(command_context, test_objects=None, **params):
             install_portal_test_dependencies = False
 
         if install_portal_test_dependencies:
-            dir_relpath = params["manifest"].get("dir_relpath")[0]
-            # Only Linux Native Messaging Portal xpcshell tests need this.
+            # Only Linux xpcshell tests that mock D-Bus interfaces need this.
             req = os.path.join(
-                dir_relpath,
-                "linux_native-messaging-portal_requirements.txt",
+                here,
+                "linux_portal_requirements.txt",
             )
             command_context.virtualenv_manager.activate()
             command_context.virtualenv_manager.install_pip_requirements(

@@ -77,7 +77,7 @@ class DocumentChannel : public nsIIdentChannel {
 
   nsDocShell* GetDocShell();
 
-  virtual ~DocumentChannel() = default;
+  virtual ~DocumentChannel();
 
   const RefPtr<nsDocShellLoadState> mLoadState;
   const uint32_t mCacheKey;
@@ -94,6 +94,7 @@ class DocumentChannel : public nsIIdentChannel {
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
   nsCOMPtr<nsIStreamListener> mListener;
   nsCOMPtr<nsISupports> mOwner;
+  RefPtr<dom::ParentProcessChannelHandle> mParentProcessChannelHandle;
   RefPtr<nsDOMNavigationTiming> mTiming;
   Maybe<dom::ClientInfo> mInitialClientInfo;
   // mUriModified is true if we're doing a history load and the URI of the

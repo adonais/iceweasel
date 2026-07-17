@@ -1197,6 +1197,7 @@ SchedulingComponents = ContextDerivedTypedRecord(
 GeneratedFilesList = StrictOrderingOnAppendListWithFlagsFactory({
     "script": str,
     "inputs": list,
+    "extra_deps": list,
     "force": bool,
     "flags": list,
 })
@@ -1521,13 +1522,14 @@ VARIABLES = {
         Unless you have a reason not to, use the GeneratedFile template rather
         than referencing GENERATED_FILES directly. The GeneratedFile template
         has all the same arguments as the attributes listed below (``script``,
-        ``inputs``, ``flags``, ``force``), plus an additional ``entry_point``
-        argument to specify a particular function to run in the given script.
+        ``inputs``, ``extra_deps``, ``flags``, ``force``), plus an additional
+        ``entry_point`` argument to specify a particular function to run in
+        the given script.
 
         This variable contains a list of files for the build system to
         generate at export time. The generation method may be declared
-        with optional ``script``, ``inputs``, ``flags``, and ``force``
-        attributes on individual entries.
+        with optional ``script``, ``inputs``, ``extra_deps``, ``flags``,
+        and ``force`` attributes on individual entries.
         If the optional ``script`` attribute is not present on an entry, it
         is assumed that rules for generating the file are present in
         the associated Makefile.in.
@@ -1565,6 +1567,16 @@ VARIABLES = {
 
         When the ``flags`` attribute is present, the given list of flags is
         passed as extra arguments following the inputs.
+
+        When the ``extra_deps`` attribute is present, the listed paths are
+        added as build-graph prerequisites for the generation step but are
+        not passed to ``script`` as positional arguments. Use this when the
+        script opens additional files itself at runtime (e.g. via the
+        preprocessor's #include @TOPOBJDIR@/...) and those files must
+        therefore exist on disk before the step runs. An objdir-relative
+        path like ``"!/source-repo.h"`` resolves against ``$topobjdir``,
+        and a plain path resolves relative to the directory containing the
+        moz.build file.
 
         When the ``force`` attribute is present, the file is generated every
         build, regardless of whether it is stale.  This is special to the
@@ -1741,6 +1753,19 @@ VARIABLES = {
         of the omni.ja, maintaining the path that they have in the source dir.
         """,
     ),
+    "JS_SHELL_ARCHIVE_FILES": (
+        ContextDerivedTypedList(Path),
+        list,
+        """List of files to include in the JS shell zip archive.
+
+        Each entry is a Path, typically of the form ``!/dist/bin/<basename>``
+        for files built into ``$(DIST)/bin``, or ``%/absolute/path`` for files
+        outside the build tree. The build backend writes the basenames to
+        <topobjdir>/jsshell-archive.list; the packager reads it via
+        --files-from when producing the archive named by JSSHELL_NAME (from
+        package-name.mk).
+        """,
+    ),
     "OBJDIR_FILES": (
         ContextDerivedTypedHierarchicalStringList(Path),
         list,
@@ -1756,6 +1781,23 @@ VARIABLES = {
         ContextDerivedTypedHierarchicalStringList(Path),
         list,
         """Like ``OBJDIR_FILES``, with preprocessing. Use sparingly.
+        """,
+    ),
+    "PP_FILES_EXTRA_DEPS": (
+        ContextDerivedTypedList(Path, StrictOrderingOnAppendList),
+        list,
+        """Extra build-graph dependencies for preprocessed files in this directory.
+
+        Applies to every entry in ``FINAL_TARGET_PP_FILES``,
+        ``OBJDIR_PP_FILES``, ``LOCALIZED_PP_FILES``, and the
+        ``EXTRA_PP_*`` variants in this moz.build. Use this when those
+        entries reference generated files via
+        ``#include @TOPOBJDIR@/...``: the preprocessor opens those files
+        at build time, so they must exist before the preprocess step runs.
+
+        Path syntax matches ``GENERATED_FILES``'s ``extra_deps``: an
+        objdir-relative path like ``"!/source-repo.h"`` resolves against
+        ``$topobjdir``; a plain path resolves against the source tree.
         """,
     ),
     "FINAL_LIBRARY": (
@@ -2642,6 +2684,18 @@ VARIABLES = {
            Note that the ordering of flags matters here; these flags will be
            added to the linker's command line in the same order as they
            appear in the moz.build file.
+        """,
+    ),
+    "EXTRA_LINK_DEPS": (
+        ContextDerivedTypedList(Path, StrictOrderingOnAppendList),
+        list,
+        """Extra prerequisites for the programs and shared libraries
+           declared in this directory.
+
+           Use this for files referenced by LDFLAGS that the linker reads
+           at link time (sectcreate inputs, response files, version
+           scripts) so backends can declare them as prerequisites of the
+           link target.
         """,
     ),
     "EXTRA_DSO_LDOPTS": (

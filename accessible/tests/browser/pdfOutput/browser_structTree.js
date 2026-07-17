@@ -155,6 +155,9 @@ addPdfStructTreeTest(
             {
               role: "NonStruct", // iframe
               children: [
+                // XXX We render an empty marked content sequence before an
+                // iframe document for some unknown reason. This is inconsequential.
+                { content: [] },
                 {
                   role: "Document",
                   children: [
@@ -169,9 +172,6 @@ addPdfStructTreeTest(
                     },
                   ],
                 },
-                // XXX We render an empty marked content sequence after an
-                // iframe document for some unknown reason. This is inconsequential.
-                { content: [] },
               ],
             },
           ],
@@ -205,6 +205,7 @@ addPdfStructTreeTest(
             {
               role: "NonStruct", // iframe
               children: [
+                { content: [] },
                 {
                   role: "Document",
                   children: [
@@ -219,7 +220,6 @@ addPdfStructTreeTest(
                     },
                   ],
                 },
-                { content: [] },
               ],
             },
             {

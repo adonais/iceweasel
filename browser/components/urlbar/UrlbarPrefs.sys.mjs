@@ -429,6 +429,9 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // Allow the result menu button to be reached with the Tab key.
   ["resultMenu.keyboardAccessible", true],
 
+  // Timeout in milliseconds before stale rows are removed from the view.
+  ["removeStaleRowsTimeout", 400],
+
   // Feature gate pref for rich suggestions being shown in the urlbar.
   ["richSuggestions.featureGate", true],
 

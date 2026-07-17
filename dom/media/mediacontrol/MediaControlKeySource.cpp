@@ -13,19 +13,19 @@ namespace mozilla::dom {
 
 // avoid redefined macro in unified build
 #undef LOG_SOURCE
-#define LOG_SOURCE(msg, ...)                 \
-  MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
-          ("MediaControlKeySource=%p, " msg, this, ##__VA_ARGS__))
+#define LOG_SOURCE(msg, ...)                     \
+  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug, \
+              "MediaControlKeySource={}, " msg, fmt::ptr(this), ##__VA_ARGS__)
 
 #undef LOG_KEY
-#define LOG_KEY(msg, key, ...)                                                 \
-  MOZ_LOG(gMediaControlLog, LogLevel::Debug,                                   \
-          ("MediaControlKeyHandler=%p, " msg, this, ToMediaControlKeyStr(key), \
-           ##__VA_ARGS__));
+#define LOG_KEY(msg, key, ...)                                   \
+  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug,                 \
+              "MediaControlKeyHandler={}, " msg, fmt::ptr(this), \
+              ToMediaControlKeyStr(key), ##__VA_ARGS__);
 
 void MediaControlKeyHandler::OnActionPerformed(
     const MediaControlAction& aAction) {
-  LOG_KEY("OnActionPerformed '%s'", aAction.mKey);
+  LOG_KEY("OnActionPerformed '{}'", aAction.mKey);
 
   RefPtr<MediaControlService> service = MediaControlService::GetService();
   MOZ_ASSERT(service);
@@ -110,13 +110,13 @@ MediaControlKeySource::MediaControlKeySource()
 
 void MediaControlKeySource::AddListener(MediaControlKeyListener* aListener) {
   MOZ_ASSERT(aListener);
-  LOG_SOURCE("Add listener %p", aListener);
+  LOG_SOURCE("Add listener {}", fmt::ptr(aListener));
   mListeners.AppendElement(aListener);
 }
 
 void MediaControlKeySource::RemoveListener(MediaControlKeyListener* aListener) {
   MOZ_ASSERT(aListener);
-  LOG_SOURCE("Remove listener %p", aListener);
+  LOG_SOURCE("Remove listener {}", fmt::ptr(aListener));
   mListeners.RemoveElement(aListener);
 }
 
@@ -133,7 +133,7 @@ void MediaControlKeySource::SetPlaybackState(MediaSessionPlaybackState aState) {
   if (mPlaybackState == aState) {
     return;
   }
-  LOG_SOURCE("SetPlaybackState '%s'", ToMediaSessionPlaybackStateStr(aState));
+  LOG_SOURCE("SetPlaybackState '{}'", ToMediaSessionPlaybackStateStr(aState));
   mPlaybackState = aState;
 }
 

@@ -53,7 +53,7 @@ class ShutdownActionFinishedPromiseHandler;
 //
 // clang-format on
 class PipeToPump final : public AbortFollower {
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(PipeToPump)
 
   friend struct PipeToReadRequest;
@@ -137,7 +137,7 @@ class PipeToPumpHandler final : public PromiseNativeHandler {
   FunPtr mRejected;
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(PipeToPumpHandler)
 
   explicit PipeToPumpHandler(PipeToPump* aPipeToPump, FunPtr aResolved,
@@ -347,7 +347,7 @@ class WriteFinishedPromiseHandler final : public PromiseNativeHandler {
   virtual ~WriteFinishedPromiseHandler() { mozilla::DropJSObjects(this); };
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(WriteFinishedPromiseHandler)
 
   explicit WriteFinishedPromiseHandler(
@@ -440,7 +440,7 @@ class ShutdownActionFinishedPromiseHandler final : public PromiseNativeHandler {
   }
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(
       ShutdownActionFinishedPromiseHandler)
 

@@ -5,6 +5,24 @@
 const DOH_DOORHANGER_DECISION_PREF = "doh-rollout.doorhanger-decision";
 const NETWORK_TRR_MODE_PREF = "network.trr.mode";
 
+// Allowlist of about page IDs that OPEN_ABOUT_PAGE is permitted to open.
+// Sourced from pages listened in AboutRedirector.
+const ALLOWED_ABOUT_PAGES = new Set([
+  "addons",
+  "profiles",
+  "translations",
+  "keyboard",
+  "logins",
+  "preferences",
+  "privatebrowsing",
+  "protections",
+  "settings",
+  "welcome",
+  "newtab",
+  "home",
+  "robots",
+]);
+
 const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -185,8 +203,14 @@ export const SpecialMessageActions = {
    *
    * @param {Window} window Reference to a window object
    */
-  async setDefaultPDFHandler(window, onlyIfKnownBrowser = false) {
-    await window.getShellService().setAsDefaultPDFHandler(onlyIfKnownBrowser);
+  async setDefaultPDFHandler(
+    window,
+    onlyIfKnownBrowser = false,
+    openInFirefox = false
+  ) {
+    await window
+      .getShellService()
+      .setAsDefaultPDFHandler(onlyIfKnownBrowser, openInFirefox);
   },
 
   /**
@@ -747,6 +771,11 @@ export const SpecialMessageActions = {
         break;
       case "OPEN_ABOUT_PAGE": {
         let aboutPageURL = new URL(`about:${action.data.args}`);
+        if (!ALLOWED_ABOUT_PAGES.has(aboutPageURL.pathname)) {
+          throw new Error(
+            `SpecialMessageActions: OPEN_ABOUT_PAGE disallows about:${action.data.args}`
+          );
+        }
         if (action.data.entrypoint) {
           aboutPageURL.search = action.data.entrypoint;
         }
@@ -815,7 +844,8 @@ export const SpecialMessageActions = {
       case "SET_DEFAULT_PDF_HANDLER":
         await this.setDefaultPDFHandler(
           window,
-          action.data?.onlyIfKnownBrowser ?? false
+          action.data?.onlyIfKnownBrowser ?? false,
+          action.data?.openInFirefox ?? false
         );
         break;
       case "DECLINE_DEFAULT_PDF_HANDLER":
@@ -829,6 +859,13 @@ export const SpecialMessageActions = {
           "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs"
         );
         await WindowsLaunchOnLogin.createLaunchOnLogin();
+        break;
+      }
+      case "REMOVE_LAUNCH_ON_LOGIN": {
+        const { WindowsLaunchOnLogin } = ChromeUtils.importESModule(
+          "resource://gre/modules/WindowsLaunchOnLogin.sys.mjs"
+        );
+        await WindowsLaunchOnLogin.removeLaunchOnLogin();
         break;
       }
       case "CREATE_GROUP_FROM_CURRENT_TAB": {
@@ -944,10 +981,6 @@ export const SpecialMessageActions = {
           action.data.orderedExecution
         );
         break;
-      default:
-        throw new Error(
-          `Special message action with type ${action.type} is unsupported.`
-        );
       case "RELOAD_BROWSER":
         browser.reload();
         break;
@@ -1016,6 +1049,10 @@ export const SpecialMessageActions = {
       case "IPPROTECTION_ENROLL":
         await lazy.IPProtection.getPanel(window)?.enroll();
         break;
+      default:
+        throw new Error(
+          `Special message action with type ${action.type} is unsupported.`
+        );
     }
     return undefined;
   },

@@ -203,21 +203,27 @@ SystemGeolocationPermissionBehavior GetGeolocationPermissionBehavior() {
         return SystemGeolocationPermissionBehavior::GeckoWillPromptUser;
       case kCLAuthorizationStatusNotDetermined:
         // The system says that it will ask the user if they want to give us
-        // permission, but it often doesn't, so we open OS permissions
-        // anyway (depending on pref value).  We think this behavior is due to
+        // permission, but it often doesn't.  We think this behavior is due to
         // throttling that MacOS does to prevent the app spamming the user
         // with requests -- it seems to return this value even when it plans
-        // to do that.  Ideally, we would be returning SystemWillPromptUser.
-        if (StaticPrefs::geo_prompt_macos_use_not_determined()) {
-          LOGI(
-              "%s | kCLAuthorizationStatusNotDetermined.  SystemWillPromptUser",
-              __func__);
-          return SystemGeolocationPermissionBehavior::SystemWillPromptUser;
-        }
+        // to throttle.  Ideally, we would be returning SystemWillPromptUser.
+        // If we return GeckoWillPromptUser instead, we end up spamming users
+        // with the permissions prompt, despite them having permanently
+        // granted site permission.  This is because system permissions are
+        // normally required for geolocation, so we still need to ask for them,
+        // despite site permissions.  Additionally, the additional information
+        // would probably be wrong as this error is returned for users with
+        // location permission already enabled in MacOS.  For these reasons,
+        // when we get this error, we give up and silently leave setting
+        // correct system permissions to the user.
+        // NB: Because of this behavior, if the
+        // kCLAuthorizationStatusNotDetermined error persists then
+        // we will soon resort to the network geolocation fallback.  That
+        // will not happen for other errors.
         LOGI("%s | kCLAuthorizationStatusNotDetermined.  SystemWillPromptUser "
-             "overridden as GeckoWillPromptUser.",
+             "overridden as NoPrompt.",
              __func__);
-        return SystemGeolocationPermissionBehavior::GeckoWillPromptUser;
+        return SystemGeolocationPermissionBehavior::NoPrompt;
       case kCLAuthorizationStatusAuthorized:
         // Authorized is used by older versions of MacOS that we still support
         // but is deprecated in newer versions.  AuthorizedAlways is for mobile

@@ -16,10 +16,10 @@ use std::net::{SocketAddr, TcpListener as StdTcpListener};
 use std::sync::mpsc::{Receiver, Sender, channel};
 use std::sync::{Arc, Mutex};
 use std::thread;
+use bytes::Buf;
 use tokio::net::TcpListener;
-use tokio_stream::wrappers::TcpListenerStream;
 use url::{Host, Url};
-use warp::{Buf, Filter, Rejection};
+use warp::{Filter, Rejection};
 
 enum DispatchMessage<U: WebDriverExtensionRoute> {
     HandleWebDriver(
@@ -301,7 +301,7 @@ where
             &extension_routes,
             msg_send.clone(),
         );
-        let fut = warp::serve(wroutes).run_incoming(TcpListenerStream::new(listener));
+        let fut = warp::serve(wroutes).incoming(listener).run();
         rt.block_on(async move {
             let mut shutdown_signal = ShutdownSignal::new();
             tokio::select! {

@@ -182,6 +182,20 @@ this.userScripts = class extends ExtensionAPI {
             return usm.getWorldConfigurations();
           });
         },
+
+        execute: async injection => {
+          ensureValidWorldId(injection.worldId);
+          let { promise, resolve } = Promise.withResolvers();
+          await usm.runReadTask(async () => {
+            // The usm.executeScript call may take an arbitrary amount of time,
+            // e.g. if the executed code ends up returning a promise. To prevent
+            // that from blocking the queue (when a "write" operation is queued),
+            // we do not await the resolution of usm.executeScript, instead we
+            // return the promise to the function caller.
+            resolve(usm.executeScript(context, injection));
+          });
+          return promise;
+        },
       },
     };
   }

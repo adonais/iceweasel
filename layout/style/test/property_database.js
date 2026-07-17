@@ -873,6 +873,7 @@ var basicShapeOtherValues = [
   "circle(calc(20px + 30px))",
   "circle(farthest-side)",
   "circle(closest-side)",
+  "circle(closest-corner)",
   "circle(closest-side at center)",
   "circle(farthest-side at top)",
   "circle(20px at top right)",
@@ -891,6 +892,7 @@ var basicShapeOtherValues = [
   "ellipse(closest-side farthest-side)",
   "ellipse(farthest-side farthest-side)",
   "ellipse(closest-side closest-side)",
+  "ellipse(closest-corner farthest-corner)",
   "ellipse(closest-side closest-side at center)",
   "ellipse(20% farthest-side at top)",
   "ellipse(20px 50% at top right)",
@@ -954,7 +956,6 @@ var basicShapeInvalidValues = [
   "circle(at 20% 20% 30%)",
   "circle(20px 2px at center)",
   "circle(2at center)",
-  "circle(closest-corner)",
   "circle(at center top closest-side)",
   "circle(-20px)",
   "circle(farthest-side closest-side)",
@@ -967,7 +968,6 @@ var basicShapeInvalidValues = [
   "ellipse(at 20% 20% 30%)",
   "ellipse(20px at center)",
   "ellipse(-20px 20px)",
-  "ellipse(closest-corner farthest-corner)",
   "ellipse(20px -20px)",
   "ellipse(-20px -20px)",
   "ellipse(farthest-side)",
@@ -14719,6 +14719,164 @@ if (IsCSSPropertyPrefEnabled("layout.css.text-decoration-inset.enabled")) {
         "0px 10% 9em",
         "calc(10% + 1cm)",
         "0 calc(100% - 10px)",
+      ],
+    },
+  });
+}
+
+if (IsCSSPropertyPrefEnabled("layout.css.corner-shape.enabled")) {
+  const cornerShapeLonghand = {
+    inherited: false,
+    type: CSS_TYPE_LONGHAND,
+    initial_values: ["round"],
+    other_values: [
+      "scoop",
+      "bevel",
+      "notch",
+      "square",
+      "squircle",
+      "superellipse(0)",
+      "superellipse(1)",
+      "superellipse(2)",
+      "superellipse(-1)",
+      "superellipse(0.5)",
+      "superellipse(infinity)",
+      "superellipse(-infinity)",
+    ],
+    invalid_values: [
+      "none",
+      "auto",
+      "1",
+      "2px",
+      "superellipse()",
+      "superellipse(round)",
+      "superellipse(1, 2)",
+      "superellipse 1",
+      "round scoop",
+    ],
+  };
+  Object.assign(gCSSProperties, {
+    "corner-shape": {
+      domProp: "cornerShape",
+      subproperties: [
+        "corner-top-left-shape",
+        "corner-top-right-shape",
+        "corner-bottom-right-shape",
+        "corner-bottom-left-shape",
+      ],
+      ...cornerShapeLonghand,
+      type: CSS_TYPE_TRUE_SHORTHAND,
+    },
+    "corner-top-left-shape": {
+      domProp: "cornerTopLeftShape",
+      ...cornerShapeLonghand,
+    },
+    "corner-top-right-shape": {
+      domProp: "cornerTopRightShape",
+      ...cornerShapeLonghand,
+    },
+    "corner-bottom-right-shape": {
+      domProp: "cornerBottomRightShape",
+      ...cornerShapeLonghand,
+    },
+    "corner-bottom-left-shape": {
+      domProp: "cornerBottomLeftShape",
+      ...cornerShapeLonghand,
+    },
+    "corner-start-start-shape": {
+      domProp: "cornerStartStartShape",
+      logical: true,
+      ...cornerShapeLonghand,
+    },
+    "corner-start-end-shape": {
+      domProp: "cornerStartEndShape",
+      logical: true,
+      ...cornerShapeLonghand,
+    },
+    "corner-end-start-shape": {
+      domProp: "cornerEndStartShape",
+      logical: true,
+      ...cornerShapeLonghand,
+    },
+    "corner-end-end-shape": {
+      domProp: "cornerEndEndShape",
+      logical: true,
+      ...cornerShapeLonghand,
+    },
+    "corner-top-shape": {
+      domProp: "cornerTopShape",
+      subproperties: ["corner-top-left-shape", "corner-top-right-shape"],
+      ...cornerShapeLonghand,
+      type: CSS_TYPE_TRUE_SHORTHAND,
+    },
+    "corner-right-shape": {
+      domProp: "cornerRightShape",
+      subproperties: ["corner-top-right-shape", "corner-bottom-right-shape"],
+      ...cornerShapeLonghand,
+      type: CSS_TYPE_TRUE_SHORTHAND,
+    },
+    "corner-bottom-shape": {
+      domProp: "cornerBottomShape",
+      subproperties: ["corner-bottom-left-shape", "corner-bottom-right-shape"],
+      ...cornerShapeLonghand,
+      type: CSS_TYPE_TRUE_SHORTHAND,
+    },
+    "corner-left-shape": {
+      domProp: "cornerLeftShape",
+      subproperties: ["corner-top-left-shape", "corner-bottom-left-shape"],
+      ...cornerShapeLonghand,
+      type: CSS_TYPE_TRUE_SHORTHAND,
+    },
+    "corner-block-start-shape": {
+      domProp: "cornerBlockStartShape",
+      subproperties: ["corner-start-start-shape", "corner-start-end-shape"],
+      ...cornerShapeLonghand,
+      type: CSS_TYPE_TRUE_SHORTHAND,
+    },
+    "corner-block-end-shape": {
+      domProp: "cornerBlockEndShape",
+      subproperties: ["corner-end-start-shape", "corner-end-end-shape"],
+      ...cornerShapeLonghand,
+      type: CSS_TYPE_TRUE_SHORTHAND,
+    },
+    "corner-inline-start-shape": {
+      domProp: "cornerInlineStartShape",
+      subproperties: ["corner-start-start-shape", "corner-end-start-shape"],
+      ...cornerShapeLonghand,
+      type: CSS_TYPE_TRUE_SHORTHAND,
+    },
+    "corner-inline-end-shape": {
+      domProp: "cornerInlineEndShape",
+      subproperties: ["corner-start-end-shape", "corner-end-end-shape"],
+      ...cornerShapeLonghand,
+      type: CSS_TYPE_TRUE_SHORTHAND,
+    },
+  });
+}
+
+if (IsCSSPropertyPrefEnabled("layout.css.link-parameters.enabled")) {
+  Object.assign(gCSSProperties, {
+    "link-parameters": {
+      domProp: "linkParameters",
+      inherited: false,
+      type: CSS_TYPE_LONGHAND,
+      applies_to_first_letter: false,
+      applies_to_first_line: false,
+      applies_to_placeholder: false,
+      initial_values: ["none"],
+      other_values: []
+        .concat(validNonUrlImageValues)
+        .concat(basicShapeSVGBoxValues)
+        .concat(basicShapeOtherValues)
+        .concat(basicShapeOtherValuesWithFillRule)
+        .concat(basicShapeXywhRectValues)
+        .concat(basicShapeShapeValues)
+        .concat(basicShapeShapeValuesWithFillRule)
+        .map(i => `param(--a, ${i})`)
+        .concat("param(--foo)")
+        .concat("param(--foo), param(--bar)"),
+      invalid_values: [
+        "param(--foo) param(--bar)", // Needs comma
       ],
     },
   });

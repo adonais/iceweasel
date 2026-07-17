@@ -109,7 +109,7 @@ TEST_F(TestAsyncBlockers, NoRegister_WaitUntilClear) {
   nsCOMPtr<nsITimer> timer = NS_NewTimer();
   ASSERT_TRUE(timer);
 
-  RefPtr<AsyncBlockerTimerCallback> timerCb = new AsyncBlockerTimerCallback();
+  RefPtr timerCb = MakeRefPtr<AsyncBlockerTimerCallback>();
   timer->InitWithCallback(timerCb, 1 * 1000, nsITimer::TYPE_ONE_SHOT);
 
   blockers.WaitUntilClear(10 * 1000)->Then(GetCurrentSerialEventTarget(),

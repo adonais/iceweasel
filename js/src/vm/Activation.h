@@ -373,7 +373,7 @@ static_assert(
     "should consider figuring out a way to make js::Activation have a "
     "LiveSavedFrameCache* instead of a Rooted<LiveSavedFrameCache>.");
 
-class Activation {
+class MOZ_STACK_CLASS Activation {
  protected:
   JSContext* cx_;
   JS::Compartment* compartment_;
@@ -389,7 +389,7 @@ class Activation {
 
   // The cache of SavedFrame objects we have already captured when walking
   // this activation's stack.
-  JS::Rooted<LiveSavedFrameCache> frameCache_;
+  LiveSavedFrameCache frameCache_;
 
   // Youngest saved frame of an async stack that will be iterated during stack
   // capture in place of the actual stack of previous activations. Note that
@@ -397,7 +397,7 @@ class Activation {
   //
   // Usually this is nullptr, meaning that normal stack capture will occur.
   // When this is set, the stack of any previous activation is ignored.
-  JS::Rooted<SavedFrame*> asyncStack_;
+  SavedFrame* asyncStack_;
 
   // Value of asyncCause to be attached to asyncStack_.
   const char* asyncCause_;
@@ -406,11 +406,13 @@ class Activation {
   // callFunctionWithAsyncStack.
   bool asyncCallIsExplicit_;
 
-  enum Kind { Interpreter, Jit };
+  enum Kind : bool { Interpreter, Jit };
   Kind kind_;
 
   inline Activation(JSContext* cx, Kind kind);
   inline ~Activation();
+
+  void traceCommon(JSTracer* trc);
 
  public:
   JSContext* cx() const { return cx_; }
@@ -450,11 +452,13 @@ class Activation {
   bool asyncCallIsExplicit() const { return asyncCallIsExplicit_; }
 
   inline LiveSavedFrameCache* getLiveSavedFrameCache(JSContext* cx);
-  void clearLiveSavedFrameCache() { frameCache_.get().clear(); }
+  void clearLiveSavedFrameCache() { frameCache_.clear(); }
+
+  void trace(JSTracer* trc);
 
   Activation(const Activation& other) = delete;
   void operator=(const Activation& other) = delete;
-};
+} JS_HAZ_ROOTED;
 
 // This variable holds a special opcode value which is greater than all normal
 // opcodes, and is chosen such that the bitwise or of this value with any
@@ -511,6 +515,8 @@ class InterpreterActivation : public Activation {
     opMask_ = EnableInterruptsPseudoOpcode;
   }
   void clearInterruptsMask() { opMask_ = 0; }
+
+  void trace(JSTracer* trc);
 };
 
 // Iterates over a thread's activation list.

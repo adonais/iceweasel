@@ -191,6 +191,21 @@ async function runSearchInput(input) {
   await searchCompletedPromise;
 }
 
+async function clearSearch(doc) {
+  let searchInput = doc.getElementById("searchInput");
+  searchInput.focus();
+  let searchCompletedPromise = BrowserTestUtils.waitForEvent(
+    gBrowser.contentWindow,
+    "PreferencesSearchCompleted",
+    evt => evt.detail == ""
+  );
+  let count = searchInput.value.length;
+  while (count--) {
+    EventUtils.sendKey("BACK_SPACE");
+  }
+  await searchCompletedPromise;
+}
+
 async function evaluateSearchResults(
   keyword,
   searchResults,
@@ -350,7 +365,7 @@ async function selectHistoryMode(win, value) {
 
   let popupShownPromise = BrowserTestUtils.waitForSelectPopupShown(window);
 
-  await EventUtils.synthesizeMouseAtCenter(
+  EventUtils.synthesizeMouseAtCenter(
     historyMode,
     {},
     historyMode.documentGlobal
@@ -427,11 +442,7 @@ async function updateCheckBoxElement(checkbox, value) {
   checkbox.scrollIntoView();
 
   // Toggle the state.
-  await EventUtils.synthesizeMouseAtCenter(
-    checkbox,
-    {},
-    checkbox.documentGlobal
-  );
+  EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.documentGlobal);
 }
 
 async function updateCheckBox(win, id, value) {
@@ -448,11 +459,7 @@ async function updateCheckBox(win, id, value) {
   checkbox.scrollIntoView();
 
   // Toggle the state.
-  await EventUtils.synthesizeMouseAtCenter(
-    checkbox,
-    {},
-    checkbox.documentGlobal
-  );
+  EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.documentGlobal);
 }
 
 /**
@@ -657,7 +664,7 @@ async function setupTestSubPane({
   });
   win.SettingPaneManager.registerPane("testSubPane", {
     parent: "testTopLevel",
-    l10nId: "containers-section-header",
+    l10nId: "containers-section-header2",
     groupIds: ["testSubGroup"],
   });
 

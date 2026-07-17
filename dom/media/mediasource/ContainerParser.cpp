@@ -511,7 +511,7 @@ class MP4ContainerParser : public ContainerParser,
     Maybe<size_t> mMediaOffset;
     Maybe<size_t> mDataOffset;
     bool mValid;
-    char mLastInvalidBox[5];
+    char mLastInvalidBox[5]{};
   };
 
  public:

@@ -10,8 +10,8 @@
 #include "mozilla/dom/SVGGraphicsElement.h"
 #include "nsDOMTokenList.h"
 
-nsresult NS_NewSVGAElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+nsresult NS_NewSVGAElement(nsIContent** aResult,
+                           already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla {
 
@@ -26,10 +26,10 @@ class SVGAElement final : public SVGAElementBase, public Link {
  protected:
   using Element::GetCharacterDataBuffer;
 
-  explicit SVGAElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
-  friend nsresult(::NS_NewSVGAElement(
-      nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+  explicit SVGAElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
+  friend nsresult(
+      ::NS_NewSVGAElement(nsIContent** aResult,
+                          already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 
  public:

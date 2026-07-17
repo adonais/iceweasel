@@ -11,7 +11,7 @@
   <script type="application/javascript"
           src="../common.js"></script>
   <script type="application/javascript"
-          src="../promisified-events.js"></script>
+          src="../events.js"></script>
 
   <script type="application/javascript">
     function turnCaretBrowsing(aIsOn) {
@@ -85,9 +85,6 @@
         aCheckFunc.call();
       }
     }
-
-    // gA11yEventDumpID = "eventdump"; // debug stuff
-    // gA11yEventDumpToConsole = true;
 
     async function doTests() {
       turnCaretBrowsing(true);

@@ -367,11 +367,10 @@ struct BufferChunk
     : public ChunkBase,
       public SlimLinkedListElement<BufferChunk>,
       public AllocSpace<BufferChunk, ChunkSize, MediumAllocGranularity> {
-#ifdef DEBUG
   MainThreadOrGCTaskData<Zone*> zone;
-#endif
 
   MainThreadOrGCTaskData<bool> allocatedDuringCollection;
+  MainThreadOrGCTaskData<bool> stolenFromSweepList;
   MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocs;
   MainThreadOrGCTaskData<bool> hasNurseryOwnedAllocsAfterSweep;
 
@@ -415,6 +414,9 @@ struct BufferChunk
   bool isSmallBufferRegion(const void* alloc) const;
 
   size_t sizeClassForAvailableLists() const;
+
+  void clearMarkBits();
+  void clearMarkBitsIfStolenChunk();
 
   bool isPointerWithinAllocation(void* ptr) const;
 
@@ -494,6 +496,7 @@ struct BufferAllocator::FreeRegion
 struct LargeBuffer : public SlimLinkedListElement<LargeBuffer> {
   void* alloc;
   size_t bytes;
+  mozilla::Atomic<bool, mozilla::Relaxed> isMarked;
   bool isNurseryOwned;
   bool allocatedDuringCollection = false;
 
@@ -508,10 +511,8 @@ struct LargeBuffer : public SlimLinkedListElement<LargeBuffer> {
 
   void check() const { MOZ_ASSERT(checkValue == LargeBufferCheckValue); }
 
-#ifdef DEBUG
   inline Zone* zone();
   inline Zone* zoneFromAnyThread();
-#endif
 
   void* data() { return alloc; }
   size_t allocBytes() const { return bytes; }

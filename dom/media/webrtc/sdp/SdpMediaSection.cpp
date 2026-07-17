@@ -20,7 +20,7 @@ const SdpFmtpAttributeList::Parameters* SdpMediaSection::FindFmtp(
 }
 
 void SdpMediaSection::SetFmtp(const SdpFmtpAttributeList::Fmtp& fmtpToSet) {
-  UniquePtr<SdpFmtpAttributeList> fmtps(new SdpFmtpAttributeList);
+  auto fmtps = MakeUnique<SdpFmtpAttributeList>();
 
   if (GetAttributeList().HasAttribute(SdpAttribute::kFmtpAttribute)) {
     *fmtps = GetAttributeList().GetFmtp();
@@ -38,11 +38,11 @@ void SdpMediaSection::SetFmtp(const SdpFmtpAttributeList::Fmtp& fmtpToSet) {
     fmtps->mFmtps.push_back(fmtpToSet);
   }
 
-  GetAttributeList().SetAttribute(fmtps.release());
+  GetAttributeList().SetAttribute(std::move(fmtps));
 }
 
 void SdpMediaSection::RemoveFmtp(const std::string& pt) {
-  UniquePtr<SdpFmtpAttributeList> fmtps(new SdpFmtpAttributeList);
+  auto fmtps = MakeUnique<SdpFmtpAttributeList>();
 
   SdpAttributeList& attrList = GetAttributeList();
   if (attrList.HasAttribute(SdpAttribute::kFmtpAttribute)) {
@@ -56,7 +56,7 @@ void SdpMediaSection::RemoveFmtp(const std::string& pt) {
     }
   }
 
-  attrList.SetAttribute(fmtps.release());
+  attrList.SetAttribute(std::move(fmtps));
 }
 
 const SdpRtpmapAttributeList::Rtpmap* SdpMediaSection::FindRtpmap(
@@ -145,7 +145,7 @@ void SdpMediaSection::SetRtcpFbs(const SdpRtcpFbAttributeList& rtcpfbs) {
     return;
   }
 
-  GetAttributeList().SetAttribute(new SdpRtcpFbAttributeList(rtcpfbs));
+  GetAttributeList().SetAttribute(MakeUnique<SdpRtcpFbAttributeList>(rtcpfbs));
 }
 
 void SdpMediaSection::SetSsrcs(const std::vector<uint32_t>& ssrcs,
@@ -155,7 +155,7 @@ void SdpMediaSection::SetSsrcs(const std::vector<uint32_t>& ssrcs,
     return;
   }
 
-  UniquePtr<SdpSsrcAttributeList> ssrcAttr(new SdpSsrcAttributeList);
+  auto ssrcAttr = MakeUnique<SdpSsrcAttributeList>();
   for (auto ssrc : ssrcs) {
     // When using ssrc attributes, we are required to at least have a cname.
     // (See https://tools.ietf.org/html/rfc5576#section-6.1)
@@ -164,17 +164,17 @@ void SdpMediaSection::SetSsrcs(const std::vector<uint32_t>& ssrcs,
     ssrcAttr->PushEntry(ssrc, cnameAttr);
   }
 
-  GetAttributeList().SetAttribute(ssrcAttr.release());
+  GetAttributeList().SetAttribute(std::move(ssrcAttr));
 }
 
 void SdpMediaSection::AddMsid(const std::string& id,
                               const std::string& appdata) {
-  UniquePtr<SdpMsidAttributeList> msids(new SdpMsidAttributeList);
+  auto msids = MakeUnique<SdpMsidAttributeList>();
   if (GetAttributeList().HasAttribute(SdpAttribute::kMsidAttribute)) {
     msids->mMsids = GetAttributeList().GetMsid().mMsids;
   }
   msids->PushEntry(id, appdata);
-  GetAttributeList().SetAttribute(msids.release());
+  GetAttributeList().SetAttribute(std::move(msids));
 }
 
 const SdpRidAttributeList::Rid* SdpMediaSection::FindRid(

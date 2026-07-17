@@ -695,6 +695,10 @@ add_task(async function test_remove_warning_after_sign_out() {
 
   setupService({
     isReady: true,
+    usageInfo: makeUsage(
+      String(maxBytes),
+      String(maxBytes * BANDWIDTH.SECOND_THRESHOLD)
+    ),
   });
 
   IPProtectionService.updateState();
@@ -968,10 +972,15 @@ add_task(async function test_panel_dismissed_state_persists_through_sign_out() {
     set: [["browser.ipProtection.bandwidth.enabled", true]],
   });
 
-  setupService({ isReady: true });
+  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
+  const warningUsage = makeUsage(
+    String(maxBytes),
+    String(maxBytes * BANDWIDTH.SECOND_THRESHOLD)
+  );
+
+  setupService({ isReady: true, usageInfo: warningUsage });
   IPProtectionService.updateState();
 
-  const maxBytes = BANDWIDTH.MAX_IN_GB * BANDWIDTH.BYTES_IN_GB;
   let content = await openPanel({ unauthenticated: false, error: "" });
 
   const messageBarLoadedPromise = BrowserTestUtils.waitForMutationCondition(
@@ -988,7 +997,7 @@ add_task(async function test_panel_dismissed_state_persists_through_sign_out() {
   IPProtectionService.updateState();
   await content.updateComplete;
 
-  setupService({ isReady: true });
+  setupService({ isReady: true, usageInfo: warningUsage });
   IPProtectionService.updateState();
 
   dispatchUsageAtThreshold(maxBytes, BANDWIDTH.SECOND_THRESHOLD);

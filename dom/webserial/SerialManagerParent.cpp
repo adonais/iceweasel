@@ -17,7 +17,9 @@
 #include "mozilla/dom/SerialPortParent.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/ipc/Endpoint.h"
+#include "nsContentUtils.h"
 #include "nsIObserverService.h"
+#include "nsIScriptError.h"
 #include "nsThreadUtils.h"
 
 namespace mozilla::dom {
@@ -241,6 +243,14 @@ SerialManagerParent::CreateAndBindPortActor(const nsAString& aPortId) {
   return childEndpoint;
 }
 
+namespace {
+struct EnumeratePortsResult {
+  SerialPortList mPorts;
+  bool mLikelyAccessDenied = false;
+};
+using EnumeratePortsPromise = MozPromise<EnumeratePortsResult, nsresult, true>;
+}  // namespace
+
 mozilla::ipc::IPCResult SerialManagerParent::RecvRequestPort(
     nsTArray<IPCSerialPortFilter>&& aFilters, bool aAutoselect,
     RequestPortResolver&& aResolver) {
@@ -298,24 +308,22 @@ mozilla::ipc::IPCResult SerialManagerParent::RecvRequestPort(
   // thread-only Element/Principal references).
   nsCOMPtr<nsISerialEventTarget> ioThread = platformService->IOThread();
 
-  InvokeAsync(
-      ioThread, __func__,
-      [service = RefPtr{platformService}] {
-        SerialPortList enumerated;
-        nsresult rv = service->EnumeratePorts(enumerated);
-        if (NS_WARN_IF(NS_FAILED(rv))) {
-          return MozPromise<SerialPortList, nsresult, true>::CreateAndReject(
-              rv, __func__);
-        }
-        return MozPromise<SerialPortList, nsresult, true>::CreateAndResolve(
-            std::move(enumerated), __func__);
-      })
+  InvokeAsync(ioThread, __func__,
+              [service = RefPtr{platformService}] {
+                EnumeratePortsResult enumerated;
+                nsresult rv = service->EnumeratePorts(
+                    enumerated.mPorts, &enumerated.mLikelyAccessDenied);
+                if (NS_WARN_IF(NS_FAILED(rv))) {
+                  return EnumeratePortsPromise::CreateAndReject(rv, __func__);
+                }
+                return EnumeratePortsPromise::CreateAndResolve(
+                    std::move(enumerated), __func__);
+              })
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}, filters = std::move(aFilters), aAutoselect,
            resolver = std::move(aResolver)](
-              MozPromise<SerialPortList, nsresult, true>::ResolveOrRejectValue&&
-                  aValue) mutable {
+              EnumeratePortsPromise::ResolveOrRejectValue&& aValue) mutable {
             if (aValue.IsReject()) {
               self->mChooserRequestInFlight = false;
               IPCRequestPortResult result;
@@ -325,9 +333,22 @@ mozilla::ipc::IPCResult SerialManagerParent::RecvRequestPort(
                                   mozilla::ipc::Endpoint<PSerialPortChild>()));
               return;
             }
-            SerialPortList ports = std::move(aValue.ResolveValue());
-            ApplyPortFilters(ports, filters);
-            self->StartChooserRequest(aAutoselect, std::move(ports),
+            EnumeratePortsResult enumerated = std::move(aValue.ResolveValue());
+            if (enumerated.mLikelyAccessDenied) {
+              uint64_t innerWindowId =
+                  static_cast<WindowGlobalParent*>(self->Manager())
+                      ->InnerWindowId();
+              nsContentUtils::ReportToConsoleByWindowID(
+                  u"WebSerial: No serial ports could be accessed. On "
+                  u"Linux this may mean the current user does not have "
+                  u"permission to access serial devices (for example, "
+                  u"is not in the \"dialout\" group), or the browser is "
+                  u"running in a Snap or Flatpak sandbox without "
+                  u"serial port access."_ns,
+                  nsIScriptError::warningFlag, "WebSerial"_ns, innerWindowId);
+            }
+            ApplyPortFilters(enumerated.mPorts, filters);
+            self->StartChooserRequest(aAutoselect, std::move(enumerated.mPorts),
                                       std::move(resolver));
           });
 

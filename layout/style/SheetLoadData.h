@@ -12,7 +12,6 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/SharedSubResourceCache.h"
 #include "mozilla/css/Loader.h"
-#include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/CacheExpirationTime.h"
 #include "nsProxyRelease.h"
 
@@ -34,11 +33,6 @@ namespace mozilla::css {
 /*********************************************
  * Data needed to properly load a stylesheet *
  *********************************************/
-
-static_assert(eAuthorSheetFeatures == 0 && eUserSheetFeatures == 1 &&
-                  eAgentSheetFeatures == 2,
-              "sheet parsing mode constants won't fit "
-              "in SheetLoadData::mParsingMode");
 
 enum class SyncLoad : bool { No, Yes };
 
@@ -65,14 +59,14 @@ class SheetLoadData final
       nsICSSLoaderObserver* aObserver, nsIPrincipal* aTriggeringPrincipal,
       nsIReferrerInfo*, const nsAString& aNonce,
       dom::FetchPriority aFetchPriority,
-      already_AddRefed<SubResourceNetworkMetadataHolder>&& aNetworkMetadata);
+      already_AddRefed<SubResourceNetworkMetadataHolder> aNetworkMetadata);
 
   // Data for loading a sheet linked from an @import rule
   SheetLoadData(
       css::Loader*, nsIURI*, StyleSheet*, SheetLoadData* aParentData,
       nsICSSLoaderObserver* aObserver, nsIPrincipal* aTriggeringPrincipal,
       nsIReferrerInfo*,
-      already_AddRefed<SubResourceNetworkMetadataHolder>&& aNetworkMetadata);
+      already_AddRefed<SubResourceNetworkMetadataHolder> aNetworkMetadata);
 
   // Data for loading a non-document sheet
   SheetLoadData(
@@ -81,7 +75,7 @@ class SheetLoadData final
       nsICSSLoaderObserver* aObserver, nsIPrincipal* aTriggeringPrincipal,
       nsIReferrerInfo*, const nsAString& aNonce,
       dom::FetchPriority aFetchPriority,
-      already_AddRefed<SubResourceNetworkMetadataHolder>&& aNetworkMetadata);
+      already_AddRefed<SubResourceNetworkMetadataHolder> aNetworkMetadata);
 
   nsIReferrerInfo* ReferrerInfo() const { return mReferrerInfo; }
 

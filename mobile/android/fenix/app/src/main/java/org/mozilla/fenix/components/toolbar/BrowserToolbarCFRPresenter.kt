@@ -41,7 +41,7 @@ import mozilla.telemetry.glean.private.NoExtras
 import org.mozilla.fenix.GleanMetrics.CookieBanners
 import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.utils.Settings
 import mozilla.components.browser.toolbar.R as toolbarR
@@ -226,7 +226,7 @@ class BrowserToolbarCFRPresenter(
                     getColor(context, R.color.fx_mobile_layer_color_gradient_start),
                 ),
                 dismissButtonColor = getColor(context, R.color.fx_mobile_icon_color_oncolor),
-                indicatorDirection = if (context.settings().toolbarPosition == ToolbarPosition.TOP) {
+                indicatorDirection = if (context.components.settings.toolbarPosition == ToolbarPosition.TOP) {
                     CFRPopup.IndicatorDirection.UP
                 } else {
                     CFRPopup.IndicatorDirection.DOWN

@@ -67,14 +67,14 @@ add_task(async function TestPrintableKey() {
 
 add_task(async function TestNonPrintableKey() {
   let tests = [
-    ["KEY_Backspace", false],
     ["KEY_Control", false],
     ["KEY_Shift", false],
     ["KEY_Escape", false],
-    ["KEY_F5", false],
     // Treat as user input
-    ["KEY_Tab", true],
+    ["KEY_Backspace", true],
     ["KEY_Enter", true],
+    ["KEY_F5", true],
+    ["KEY_Tab", true],
     [" ", true],
   ];
 
@@ -85,9 +85,9 @@ add_task(async function TestNonPrintableKey() {
 
 add_task(async function TestModifier() {
   let tests = [
-    ["a", { accelKey: true }, false],
-    ["z", { accelKey: true }, false],
-    ["a", { metaKey: true }, !navigator.platform.includes("Mac")],
+    ["a", { accelKey: true }, true],
+    ["z", { accelKey: true }, true],
+    ["a", { metaKey: true }, true],
     // Treat as user input
     ["a", { altGraphKey: true }, true],
     ["a", { fnKey: true }, true],

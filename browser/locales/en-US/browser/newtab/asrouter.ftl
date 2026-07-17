@@ -271,6 +271,20 @@ launch-on-login-infobar-final-message = <strong>Open { -brand-short-name } every
 launch-on-login-infobar-final-reject-button = No thanks
   .accesskey = N
 
+## Launch on login spotlight
+##
+## Shown as a spotlight message when the user closes the browser, offering to set
+## { -brand-short-name } to launch when the computer starts up.
+
+launch-on-login-spotlight-title = Open { -brand-short-name } next time your computer starts up?
+launch-on-login-spotlight-startup-checkbox = Launch { -brand-short-name } at startup
+launch-on-login-spotlight-pin-taskbar-checkbox = Pin to taskbar
+# This checkbox label intentionally matches “startup-restore-windows-and-tabs”
+# in the Settings (preferences.ftl). Localizers can reuse the existing
+# translation suggested by translation memory.
+launch-on-login-spotlight-restore-checkbox = Open previous windows and tabs
+launch-on-login-spotlight-primary-button = Save and close { -brand-short-name }
+
 ## Tail Fox Set Default Spotlight
 
 # This title is displayed together with the picture of a running fox with a long tail.
@@ -448,3 +462,13 @@ relay-50-masks-announcement-primary-button = Go to { -relay-brand-name }
   .accesskey = G
 relay-50-masks-announcement-secondary-button = Dismiss
   .accesskey = D
+
+## Nova Early Access Infobar
+
+nova-early-access-infobar-title = <strong>{ -brand-product-name } is getting a new look.</strong> You’re previewing an early, unpolished version before the launch later this year.
+
+nova-early-access-share-feedback-link = Share feedback
+  .accesskey = S
+
+nova-early-access-infobar-primary-button = Got it
+  .accesskey = G

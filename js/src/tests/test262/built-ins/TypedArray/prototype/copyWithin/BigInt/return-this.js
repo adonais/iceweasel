@@ -33,6 +33,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   var result2 = sample2.copyWithin(1, 0);
 
   assert.sameValue(result2, sample2);
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

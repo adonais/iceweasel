@@ -67,10 +67,11 @@ void Connection::Update(ConnectionType aType, bool aIsWifi,
 }
 
 /* static */
-Connection* Connection::CreateForWindow(nsPIDOMWindowInner* aWindow,
-                                        bool aShouldResistFingerprinting) {
+already_AddRefed<Connection> Connection::CreateForWindow(
+    nsPIDOMWindowInner* aWindow, bool aShouldResistFingerprinting) {
   MOZ_ASSERT(aWindow);
-  return new ConnectionMainThread(aWindow, aShouldResistFingerprinting);
+  return MakeAndAddRef<ConnectionMainThread>(aWindow,
+                                             aShouldResistFingerprinting);
 }
 
 /* static */

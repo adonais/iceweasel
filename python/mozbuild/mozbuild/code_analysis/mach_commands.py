@@ -127,9 +127,9 @@ class StaticAnalysisMonitor:
             filename = line.split(" ")[-1]
             if os.path.isfile(filename):
                 self._current = build_repo_relative_path(filename, self._srcdir)
+                self._processed = self._processed + 1
             else:
                 self._current = None
-            self._processed = self._processed + 1
             return (warning, False)
         if warning is not None:
 

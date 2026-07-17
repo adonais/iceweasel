@@ -22,7 +22,7 @@ namespace mozilla::dom {
 NS_IMPL_CYCLE_COLLECTION_WRAPPERCACHE(PerformanceTiming, mPerformance)
 
 /* static */
-PerformanceTimingData* PerformanceTimingData::Create(
+UniquePtr<PerformanceTimingData> PerformanceTimingData::Create(
     nsITimedChannel* aTimedChannel, nsIHttpChannel* aChannel,
     DOMHighResTimeStamp aZeroTime, nsAString& aInitiatorType,
     nsAString& aEntryName) {
@@ -68,11 +68,11 @@ PerformanceTimingData* PerformanceTimingData::Create(
   // The last argument is the "zero time" (offset). Since we don't want
   // any offset for the resource timing, this will be set to "0" - the
   // resource timing returns a relative timing (no offset).
-  return new PerformanceTimingData(aTimedChannel, aChannel, 0);
+  return MakeUnique<PerformanceTimingData>(aTimedChannel, aChannel, 0);
 }
 
 /* static */
-PerformanceTimingData* PerformanceTimingData::Create(
+UniquePtr<PerformanceTimingData> PerformanceTimingData::Create(
     const CacheablePerformanceTimingData& aCachedData,
     DOMHighResTimeStamp aZeroTime, TimeStamp aStartTime, TimeStamp aEndTime,
     RenderBlockingStatusType aRenderBlockingStatus) {
@@ -83,8 +83,11 @@ PerformanceTimingData* PerformanceTimingData::Create(
     return nullptr;
   }
 
-  return new PerformanceTimingData(aCachedData, aZeroTime, aStartTime, aEndTime,
-                                   aRenderBlockingStatus);
+  // (Note: we have to use WrapUnique(new...) here instead of MakeUnique,
+  // because the PerformanceTimingData constructor that we're invoking
+  // happens to be private.)
+  return WrapUnique(new PerformanceTimingData(
+      aCachedData, aZeroTime, aStartTime, aEndTime, aRenderBlockingStatus));
 }
 
 PerformanceTiming::PerformanceTiming(Performance* aPerformance,

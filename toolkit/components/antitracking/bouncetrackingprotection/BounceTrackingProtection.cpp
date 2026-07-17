@@ -22,6 +22,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/dom/Promise-inl.h"
 #include "mozilla/dom/PromiseNativeHandler.h"
+#include "nsComponentManagerUtils.h"
 #include "nsDebug.h"
 #include "nsGlobalWindowInner.h"
 #include "nsHashPropertyBag.h"

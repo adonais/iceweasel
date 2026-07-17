@@ -43,6 +43,19 @@ struct ParamTraits;
 namespace mozilla {
 namespace layers {
 
+// clang-format off
+MOZ_DEFINE_ENUM_CLASS_WITH_BASE(
+  ScrollOffsetUpdateType, uint8_t, (
+    None,          // The default; the scroll offset was not updated
+    MainThread,    // The scroll offset was updated by the main thread.
+    Restore        // The scroll offset was updated by the main thread, but
+                   // as a restore from history or after a frame
+                   // reconstruction.  In this case, APZ can ignore the
+                   // offset change if the user has done an APZ scroll
+                   // already.
+));
+// clang-format on
+
 /**
  * Metrics about a scroll frame that are sent to the compositor and used
  * by APZ.
@@ -68,19 +81,6 @@ struct FrameMetrics {
   typedef ScrollableLayerGuid::ViewID ViewID;
 
  public:
-  // clang-format off
-  MOZ_DEFINE_ENUM_WITH_BASE_AT_CLASS_SCOPE(
-    ScrollOffsetUpdateType, uint8_t, (
-      eNone,          // The default; the scroll offset was not updated
-      eMainThread,    // The scroll offset was updated by the main thread.
-      eRestore        // The scroll offset was updated by the main thread, but
-                      // as a restore from history or after a frame
-                      // reconstruction.  In this case, APZ can ignore the
-                      // offset change if the user has done an APZ scroll
-                      // already.
-  ));
-  // clang-format on
-
   FrameMetrics()
       : mScrollId(ScrollableLayerGuid::NULL_SCROLL_ID),
         mPresShellResolution(1),
@@ -94,7 +94,7 @@ struct FrameMetrics {
         mPresShellId(-1),
         mLayoutViewport(0, 0, 0, 0),
         mVisualDestination(0, 0),
-        mVisualScrollUpdateType(eNone),
+        mVisualScrollUpdateType(ScrollOffsetUpdateType::None),
         mInteractiveWidget(
             dom::InteractiveWidgetUtils::DefaultInteractiveWidgetMode()),
         mIsRootContent(false),
@@ -677,7 +677,7 @@ struct FrameMetrics {
 
   // These fields are used when the main thread wants to set a visual viewport
   // offset that's distinct from the layout viewport offset.
-  // In this case, mVisualScrollUpdateType is set to eMainThread, and
+  // In this case, mVisualScrollUpdateType is set to MainThread, and
   // mVisualDestination is set to desired visual destination (relative
   // to the document, like mScrollOffset).
   CSSPoint mVisualDestination;

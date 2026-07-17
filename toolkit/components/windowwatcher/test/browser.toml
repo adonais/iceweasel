@@ -17,6 +17,11 @@ skip-if = [
 ]
 
 ["browser_non_popup_from_popup.js"]
+support-files = [
+  "file_popup_opener.html",
+  "file_non_popup_opener.html",
+  "file_open_page.html",
+]
 skip-if = [
   "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
 ]
@@ -34,3 +39,5 @@ skip-if = [
 skip-if = [
   "os == 'win' && os_version == '11.26200' && asan", # Bug 2019745
 ]
+
+["browser_popup_features_shift_click.js"]

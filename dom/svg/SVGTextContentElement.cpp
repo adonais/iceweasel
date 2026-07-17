@@ -7,6 +7,7 @@
 #include "DOMSVGPoint.h"
 #include "SVGTextFrame.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
+#include "mozilla/dom/DOMPoint.h"
 #include "mozilla/dom/SVGLengthBinding.h"
 #include "mozilla/dom/SVGRect.h"
 #include "mozilla/dom/SVGTextContentElementBinding.h"
@@ -196,7 +197,9 @@ float SVGTextContentElement::GetRotationOfChar(uint32_t charnum,
 int32_t SVGTextContentElement::GetCharNumAtPosition(
     const DOMPointInit& aPoint) {
   SVGTextFrame* textFrame = GetSVGTextFrame();
-  return textFrame ? textFrame->GetCharNumAtPosition(this, aPoint) : -1;
+  return textFrame ? textFrame->GetCharNumAtPosition(
+                         this, DOMPointReadOnly::ToPoint(aPoint))
+                   : -1;
 }
 
 }  // namespace mozilla::dom

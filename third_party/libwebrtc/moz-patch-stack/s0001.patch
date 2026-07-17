@@ -413,7 +413,7 @@ index b6b2f89168..9e5b15fbd0 100644
  
  bool RtpExtension::IsSupportedForVideo(absl::string_view uri) {
 diff --git a/call/BUILD.gn b/call/BUILD.gn
-index a78433233a..9b94dc57e8 100644
+index 9795567e2d..9936c55a9c 100644
 --- a/call/BUILD.gn
 +++ b/call/BUILD.gn
 @@ -20,6 +20,7 @@ rtc_library("call_interfaces") {
@@ -435,10 +435,10 @@ index a78433233a..9b94dc57e8 100644
    deps = [
      ":audio_sender_interface",
 diff --git a/call/video_receive_stream.h b/call/video_receive_stream.h
-index ce19d8525e..322f167934 100644
+index a2278918de..fdeb0904b7 100644
 --- a/call/video_receive_stream.h
 +++ b/call/video_receive_stream.h
-@@ -236,6 +236,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
+@@ -237,6 +237,8 @@ class VideoReceiveStreamInterface : public MediaReceiveStreamInterface {
        // disabled.
        KeyFrameReqMethod keyframe_method = KeyFrameReqMethod::kPliRtcp;
  
@@ -521,7 +521,7 @@ index 72f2716e03..dc96455f99 100644
      x_display_->AddEventHandler(xfixes_event_base_ + XFixesCursorNotify, this);
  
 diff --git a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
-index c12bc76116..847ae1e784 100644
+index fb11c91342..c1a22e4049 100644
 --- a/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
 +++ b/modules/desktop_capture/linux/x11/screen_capturer_x11.cc
 @@ -311,7 +311,7 @@ bool ScreenCapturerX11::GetSourceList(SourceList* sources) {
@@ -534,10 +534,10 @@ index c12bc76116..847ae1e784 100644
    }
  
 diff --git a/modules/desktop_capture/linux/x11/window_capturer_x11.cc b/modules/desktop_capture/linux/x11/window_capturer_x11.cc
-index fcc4113b42..58eb0616b2 100644
+index 1cd97d2158..1f488f1979 100644
 --- a/modules/desktop_capture/linux/x11/window_capturer_x11.cc
 +++ b/modules/desktop_capture/linux/x11/window_capturer_x11.cc
-@@ -66,6 +66,7 @@ bool WindowCapturerX11::GetSourceList(SourceList* sources) {
+@@ -71,6 +71,7 @@ bool WindowCapturerX11::GetSourceList(SourceList* sources) {
    return GetWindowList(&atom_cache_, [this, sources](::Window window) {
      Source w;
      w.id = window;
@@ -545,7 +545,7 @@ index fcc4113b42..58eb0616b2 100644
      if (this->GetWindowTitle(window, &w.title)) {
        sources->push_back(w);
      }
-@@ -246,6 +247,14 @@ bool WindowCapturerX11::GetWindowTitle(::Window window, std::string* title) {
+@@ -255,6 +256,14 @@ bool WindowCapturerX11::GetWindowTitle(::Window window, std::string* title) {
    return result;
  }
  
@@ -561,10 +561,10 @@ index fcc4113b42..58eb0616b2 100644
  std::unique_ptr<DesktopCapturer> WindowCapturerX11::CreateRawWindowCapturer(
      const DesktopCaptureOptions& options) {
 diff --git a/modules/desktop_capture/linux/x11/window_capturer_x11.h b/modules/desktop_capture/linux/x11/window_capturer_x11.h
-index 2605c54650..53aabb46fe 100644
+index 6635b181c8..d7a4643991 100644
 --- a/modules/desktop_capture/linux/x11/window_capturer_x11.h
 +++ b/modules/desktop_capture/linux/x11/window_capturer_x11.h
-@@ -22,6 +22,7 @@
+@@ -26,6 +26,7 @@
  #include "modules/desktop_capture/desktop_capturer.h"
  #include "modules/desktop_capture/desktop_geometry.h"
  #include "modules/desktop_capture/linux/x11/shared_x_display.h"
@@ -572,7 +572,7 @@ index 2605c54650..53aabb46fe 100644
  #include "modules/desktop_capture/linux/x11/window_finder_x11.h"
  #include "modules/desktop_capture/linux/x11/x_atom_cache.h"
  #include "modules/desktop_capture/linux/x11/x_server_pixel_buffer.h"
-@@ -57,6 +58,9 @@ class WindowCapturerX11 : public DesktopCapturer,
+@@ -62,6 +63,9 @@ class WindowCapturerX11 : public DesktopCapturer,
    // Returns window title for the specified X `window`.
    bool GetWindowTitle(::Window window, std::string* title);
  
@@ -809,7 +809,7 @@ index c8d32179ed..86b19cbc22 100644
     * Fills the member variable _captureCapabilities with capabilities for the
     * given device name.
 diff --git a/modules/video_capture/linux/device_info_v4l2.cc b/modules/video_capture/linux/device_info_v4l2.cc
-index 289975b2e1..6452a3c235 100644
+index 6a5d2936e7..2ddda9c289 100644
 --- a/modules/video_capture/linux/device_info_v4l2.cc
 +++ b/modules/video_capture/linux/device_info_v4l2.cc
 @@ -45,15 +45,187 @@
@@ -1286,10 +1286,10 @@ index 3b0a981d98..80d961c84c 100644
  
    int64_t _lastProcessFrameTimeNanos RTC_GUARDED_BY(capture_checker_);
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
-index d757f1aa11..05fa3d875f 100644
+index 4392c0f631..46878860e2 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.cc
-@@ -285,6 +285,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
+@@ -286,6 +286,7 @@ LibvpxVp9Encoder::LibvpxVp9Encoder(const Environment& env,
        force_all_active_layers_(false),
        enable_svc_for_simulcast_(
            !env.field_trials().IsDisabled("WebRTC-VP9-SvcForSimulcast")),
@@ -1297,7 +1297,7 @@ index d757f1aa11..05fa3d875f 100644
        is_flexible_mode_(false),
        variable_framerate_controller_(variable_framerate_screenshare::kMinFps),
        quality_scaler_experiment_(ParseQualityScalerConfig(env.field_trials())),
-@@ -605,6 +606,7 @@ int LibvpxVp9Encoder::InitEncode(const VideoCodec* inst,
+@@ -608,6 +609,7 @@ int LibvpxVp9Encoder::InitEncode(const VideoCodec* inst,
  
    force_key_frame_ = true;
    pics_since_key_ = 0;
@@ -1305,7 +1305,7 @@ index d757f1aa11..05fa3d875f 100644
  
    scalability_mode_ = codec_.GetScalabilityMode();
    if (scalability_mode_.has_value()) {
-@@ -1159,6 +1161,14 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
+@@ -1166,6 +1168,14 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
      config_changed_ = false;
    }
  
@@ -1320,7 +1320,7 @@ index d757f1aa11..05fa3d875f 100644
    // Set input image for use in the callback.
    // This was necessary since you need some information from input_image.
    // You can save only the necessary information (such as timestamp) instead of
-@@ -1306,6 +1316,48 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
+@@ -1313,6 +1323,48 @@ int LibvpxVp9Encoder::Encode(const VideoFrame& input_image,
    return WEBRTC_VIDEO_CODEC_OK;
  }
  
@@ -1370,7 +1370,7 @@ index d757f1aa11..05fa3d875f 100644
                                               std::optional<int>* spatial_idx,
                                               std::optional<int>* temporal_idx,
 diff --git a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
-index 133c229ba3..5017d67c1a 100644
+index c3326509ce..293ccd7089 100644
 --- a/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
 +++ b/modules/video_coding/codecs/vp9/libvpx_vp9_encoder.h
 @@ -84,6 +84,9 @@ class LibvpxVp9Encoder : public VideoEncoder {
@@ -1392,10 +1392,10 @@ index 133c229ba3..5017d67c1a 100644
    const bool enable_svc_for_simulcast_;
    std::optional<SimulcastToSvcConverter> simulcast_to_svc_converter_;
 diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 380090a9f7..cff2967b9b 100644
+index 15a55bdb3a..8a47c4b667 100644
 --- a/rtc_base/BUILD.gn
 +++ b/rtc_base/BUILD.gn
-@@ -480,6 +480,12 @@ rtc_library("logging") {
+@@ -479,6 +479,12 @@ rtc_library("logging") {
      "//third_party/abseil-cpp/absl/strings:string_view",
    ]
  
@@ -1409,18 +1409,18 @@ index 380090a9f7..cff2967b9b 100644
      # Dependency on chromium's logging (in //base).
      deps += [ "//base" ]
 diff --git a/rtc_base/logging.cc b/rtc_base/logging.cc
-index 90e7a515f9..6eddfac330 100644
+index 076167c9bf..8c9b8aae1d 100644
 --- a/rtc_base/logging.cc
 +++ b/rtc_base/logging.cc
-@@ -24,6 +24,7 @@
- #include "absl/base/attributes.h"
+@@ -25,6 +25,7 @@
  #include "absl/strings/string_view.h"
+ #include "api/task_queue/task_queue_base.h"
  #include "api/units/timestamp.h"
 +#include "modules/audio_processing/logging/apm_data_dumper.h"
  #include "rtc_base/checks.h"
  #include "rtc_base/platform_thread_types.h"
  #include "rtc_base/string_encode.h"
-@@ -52,6 +53,24 @@ static const int kMaxLogLineSize = 1024 - 60;
+@@ -53,6 +54,24 @@ static const int kMaxLogLineSize = 1024 - 60;
  #endif  // WEBRTC_MAC && !defined(WEBRTC_IOS) || WEBRTC_ANDROID
  
  namespace webrtc {
@@ -1445,7 +1445,7 @@ index 90e7a515f9..6eddfac330 100644
  namespace {
  
  // By default, release builds don't log, debug builds at info level
-@@ -112,7 +131,7 @@ std::string LogLineRef::DefaultLogLine() const {
+@@ -167,7 +186,7 @@ std::string LogLineRef::DefaultLogLine() const {
  // LogMessage
  /////////////////////////////////////////////////////////////////////////////
  
@@ -1455,10 +1455,10 @@ index 90e7a515f9..6eddfac330 100644
  // The list of logging streams currently configured.
  // Note: we explicitly do not clean this up, because of the uncertain ordering
 diff --git a/rtc_base/logging.h b/rtc_base/logging.h
-index 0023684501..a04fc4b2ed 100644
+index d7521b307c..823c2a2b90 100644
 --- a/rtc_base/logging.h
 +++ b/rtc_base/logging.h
-@@ -554,6 +554,12 @@ class LogMessage {
+@@ -654,6 +654,12 @@ class LogMessage {
    }
  #endif  // RTC_LOG_ENABLED()
  
@@ -1471,7 +1471,7 @@ index 0023684501..a04fc4b2ed 100644
   private:
    friend class LogMessageForTesting;
  
-@@ -609,6 +615,9 @@ class LogMessage {
+@@ -701,6 +707,9 @@ class LogMessage {
  
    // The stringbuilder that buffers the formatted message before output
    StringBuilder print_stream_;
@@ -1510,7 +1510,7 @@ index b7933130bd..428fc9615d 100644
    vcm_ = nullptr;
  }
 diff --git a/webrtc.gni b/webrtc.gni
-index 6eb16cf188..82d3bafaf2 100644
+index 8428c0d632..c10b3e2934 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -106,7 +106,7 @@ declare_args() {

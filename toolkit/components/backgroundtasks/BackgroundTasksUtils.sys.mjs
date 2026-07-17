@@ -336,7 +336,7 @@ export var BackgroundTasksUtils = {
           recipe = recipe.data;
         }
 
-        await lazy.ExperimentAPI.manager.forceEnroll(recipe, branchSlug);
+        lazy.ExperimentAPI.manager.forceEnroll(recipe, branchSlug);
         lazy.log.info(`Forced enrollment into: ${path}, branch: ${branchSlug}`);
       }
     }

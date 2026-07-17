@@ -6,6 +6,7 @@
 
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/dom/HTMLOptGroupElementBinding.h"
+#include "mozilla/dom/HTMLOptionElement.h"
 #include "mozilla/dom/HTMLSelectElement.h"
 #include "nsGkAtoms.h"
 #include "nsIFrame.h"
@@ -19,7 +20,7 @@ namespace mozilla::dom {
  */
 
 HTMLOptGroupElement::HTMLOptGroupElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {
   // We start off enabled
   AddStatesSilently(ElementState::ENABLED);
@@ -57,13 +58,21 @@ void HTMLOptGroupElement::AfterSetAttr(int32_t aNameSpaceID, nsAtom* aName,
     if (!changedStates.IsEmpty()) {
       ToggleStates(changedStates, aNotify);
 
-      // All our children <option> have their :disabled state depending on our
-      // disabled attribute. We should make sure their state is updated.
-      for (nsIContent* child = nsINode::GetFirstChild(); child;
-           child = child->GetNextSibling()) {
-        if (auto optElement = HTMLOptionElement::FromNode(child)) {
-          optElement->OptGroupDisabledChanged(true);
+      // Descendant options have their :disabled state depending on our
+      // disabled attribute. Walk descendants, skipping boundary elements
+      // whose children are not affected by this optgroup's disabled state.
+      for (nsIContent* node = GetFirstChild(); node;) {
+        if (auto* opt = HTMLOptionElement::FromNode(node)) {
+          opt->OptGroupDisabledChanged(true);
+          node = node->GetNextNonChildNode(this);
+          continue;
         }
+        if (HTMLOptionElement::IsOptionListBoundary(*node) ||
+            node->IsHTMLElement(nsGkAtoms::optgroup)) {
+          node = node->GetNextNonChildNode(this);
+          continue;
+        }
+        node = node->GetNextNode(this);
       }
     }
   }

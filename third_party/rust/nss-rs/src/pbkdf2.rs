@@ -73,10 +73,13 @@ pub fn pbkdf2(
 
 #[cfg(test)]
 mod tests {
+    use test_fixture::fixture_init;
+
     use super::*;
 
     #[test]
     fn rfc_7914_vector_1() {
+        fixture_init();
         // RFC 7914 §11 provides PBKDF2-HMAC-SHA256 vectors. Using a common one:
         // password="password", salt="salt", iter=1, dkLen=32.
         let dk = pbkdf2(&HmacAlgorithm::HMAC_SHA2_256, b"password", b"salt", 1, 32).unwrap();
@@ -90,6 +93,7 @@ mod tests {
 
     #[test]
     fn rfc_7914_vector_iter_2() {
+        fixture_init();
         let dk = pbkdf2(&HmacAlgorithm::HMAC_SHA2_256, b"password", b"salt", 2, 32).unwrap();
         let expected = [
             0xae, 0x4d, 0x0c, 0x95, 0xaf, 0x6b, 0x46, 0xd3, 0x2d, 0x0a, 0xdf, 0xf9, 0x28, 0xf0,
@@ -101,6 +105,7 @@ mod tests {
 
     #[test]
     fn pbkdf2_sha384_vector() {
+        fixture_init();
         let dk = pbkdf2(&HmacAlgorithm::HMAC_SHA2_384, b"password", b"salt", 1, 20).unwrap();
         let expected = [
             0xc0, 0xe1, 0x4f, 0x06, 0xe4, 0x9e, 0x32, 0xd7, 0x3f, 0x9f, 0x52, 0xdd, 0xf1, 0xd0,
@@ -111,6 +116,7 @@ mod tests {
 
     #[test]
     fn pbkdf2_sha512_vector() {
+        fixture_init();
         let dk = pbkdf2(&HmacAlgorithm::HMAC_SHA2_512, b"password", b"salt", 1, 20).unwrap();
         let expected = [
             0x86, 0x7f, 0x70, 0xcf, 0x1a, 0xde, 0x02, 0xcf, 0xf3, 0x75, 0x25, 0x99, 0xa3, 0xa5,
@@ -121,6 +127,7 @@ mod tests {
 
     #[test]
     fn deterministic_across_calls() {
+        fixture_init();
         let a = pbkdf2(
             &HmacAlgorithm::HMAC_SHA2_256,
             b"hello",
@@ -142,6 +149,7 @@ mod tests {
 
     #[test]
     fn different_salt_different_key() {
+        fixture_init();
         let a = pbkdf2(
             &HmacAlgorithm::HMAC_SHA2_256,
             b"hello",

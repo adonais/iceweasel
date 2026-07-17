@@ -10,6 +10,7 @@ import signal
 import sys
 import time
 from concurrent.futures import ProcessPoolExecutor
+from concurrent.futures import wait as futures_wait
 from concurrent.futures.process import _python_exit as futures_atexit
 from itertools import chain
 from math import ceil
@@ -27,7 +28,7 @@ from mozversioncontrol import (
 
 from .errors import LintersNotConfigured, NoValidLinter
 from .parser import Parser
-from .pathutils import findobject
+from .pathutils import filterpaths, findobject
 from .result import ResultSummary
 from .types import supported_types
 
@@ -322,6 +323,18 @@ class LintRoller:
                 lpaths = paths.union(vcs_paths)
 
             lpaths = list(lpaths) or __get_current_paths(os.getcwd())
+            if self.lintargs.get("use_filters", True):
+                lpaths, _ = filterpaths(
+                    self.root,
+                    lpaths,
+                    include=linter["include"],
+                    exclude=linter.get("exclude", []),
+                    extensions=linter.get("extensions", []),
+                    exclude_extensions=linter.get("exclude_extensions", []),
+                )
+                if not lpaths:
+                    continue
+
             chunk_size = (
                 min(self.MAX_PATHS_PER_JOB, int(ceil(len(lpaths) / num_procs))) or 1
             )
@@ -430,11 +443,12 @@ class LintRoller:
         # Submit jobs to the worker pool. The _collect_results method will be
         # called when a job is finished. We store the futures so that they can
         # be canceled in the event of a KeyboardInterrupt.
+        #
+        # When fixing, partition jobs into groups where no two jobs in the same
+        # group share a path. Jobs within a group run in parallel safely; a
+        # barrier between groups prevents concurrent writes to the same file by
+        # different linters.
         futures = []
-        for job in jobs:
-            future = executor.submit(_run_worker, *job, **self.lintargs)
-            future.add_done_callback(self._collect_results)
-            futures.append(future)
 
         def _parent_sigint_handler(signum, frame):
             """Sigint handler for the parent process.
@@ -450,6 +464,32 @@ class LintRoller:
             signal.signal(signal.SIGINT, signal.SIG_IGN)
 
         signal.signal(signal.SIGINT, _parent_sigint_handler)
+
+        if self.lintargs.get("fix"):
+            groups = []  # list of (job_list, path_set) pairs
+            for job in jobs:
+                job_paths = set(job[1])
+                for group_jobs, group_paths in groups:
+                    if not job_paths.intersection(group_paths):
+                        group_jobs.append(job)
+                        group_paths.update(job_paths)
+                        break
+                else:
+                    groups.append(([job], job_paths))
+
+            for group_jobs, _ in groups:
+                group_futures = []
+                for job in group_jobs:
+                    future = executor.submit(_run_worker, *job, **self.lintargs)
+                    future.add_done_callback(self._collect_results)
+                    futures.append(future)
+                    group_futures.append(future)
+                futures_wait(group_futures)
+        else:
+            for job in jobs:
+                future = executor.submit(_run_worker, *job, **self.lintargs)
+                future.add_done_callback(self._collect_results)
+                futures.append(future)
         executor.shutdown()
         signal.signal(signal.SIGINT, orig_sigint)
         return self.result

@@ -1541,6 +1541,8 @@
   <string name="add_tab">ٱووردن بلگه</string>
   <!-- Content description (not visible, for screen readers etc.): Add tab button. Adds a news tab when pressed -->
   <string name="add_private_tab">ٱووردن بلگه سیخومی</string>
+  <!-- Content description (not visible, for screen readers etc.): Create tab group button. Opens the create tab group sheet when pressed -->
+  <string name="create_tab_group_content_description">وورکل بونکۊ بلگه</string>
   <!-- Text for the tab search bar placeholder -->
   <string name="tab_manager_search_bar_placeholder">بلگه یل خوتووݩ ن بپیتینین</string>
   <!-- Text shown in the menu to view recently closed tabs -->
@@ -1831,7 +1833,7 @@
   <!-- Text for the button to rename the download file -->
   <string name="download_rename_file">آلشت نوم فایل</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the title. -->
-  <string name="download_delete_multi_select_dialog_confirmation">الن اخۊی مووردا پسند بیڌه پاک بۊن؟</string>
+  <string name="download_delete_multi_select_dialog_confirmation">الن اخۊین مووردا پسند بیڌه ن پاک کۊنین؟</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the positive action. -->
   <string name="download_delete_multi_select_dialog_confirm">پاک کردن</string>
   <!-- Alert dialog confirmation before deleting multiple download items, this is the negative action. -->
@@ -1973,6 +1975,8 @@
   <string name="webcompat_reporter_clear_reason_content_description">دلیل پسند بیڌه ن پاک کۊنین</string>
   <!-- The error message of the description when the user selects "Something else" as the reason, but left the description empty or too short. -->
   <string name="webcompat_reporter_description_error">ٱقلن 10 کاراکتر بزنین</string>
+  <!-- The label/title of a mandatory field in the Web Compat Reporter feature for adding additional information. -->
+  <string name="webcompat_reporter_label_mandatory_description">موشکل ن وا جۊزعیات بۊگۊین تا و ایما من واجۊری وو هل کردنس هیاری بڌه</string>
   <!-- The label/title of a field in the Web Compat Reporter feature for explaining a high-level reason why the site is broken. -->
   <string name="webcompat_reporter_label_whats_broken_2">چ موشکلی پؽش ٱووڌه؟</string>
   <!-- The placeholder text for the dropdown where a user selects a high-level reason why the site is broken. -->
@@ -1982,11 +1986,13 @@
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
   <string name="webcompat_reporter_label_description_2">موشکل ن وا جۊزعیات بۊگۊین تا و ایما من واجۊری وو هل کردنس هیاری بڌه (اختیاری)</string>
   <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
-  <string name="webcompat_reporter_label_description">موشکلتووه بۊگۊین (دل ب خایی)</string>
+  <string name="webcompat_reporter_label_description">موشکلتووه بۊگۊین (اختیاری)</string>
   <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
   <string name="webcompat_reporter_add_more_info">ٱووردن دووسمندیا قلوه</string>
   <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
   <string name="webcompat_reporter_cancel">لقو</string>
+  <!-- The button text for the send button to submit the provided form data. -->
+  <string name="webcompat_reporter_send_report">فشناڌن گوزارش</string>
   <!-- The button text for the send button to submit the provided form data. -->
   <string name="webcompat_reporter_send">فشناڌن</string>
   <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
@@ -2079,7 +2085,7 @@
 
     Confirmation message for a dialog confirming if the user wants to delete multiple items.
   -->
-  <string name="bookmark_delete_folders_confirmation_dialog">الن اخۊی مووردا پسند بیڌه ن پاک کۊنی؟</string>
+  <string name="bookmark_delete_folders_confirmation_dialog">الن اخۊین مووردا پسند بیڌه ن پاک کۊنین؟</string>
   <!-- Text for the cancel button on delete bookmark dialog -->
   <string name="bookmark_delete_negative">لقو</string>
   <!-- Screen title for adding a bookmarks folder -->
@@ -2193,7 +2199,7 @@
   <!-- Text for the button to navigate to sync authentication -->
   <string name="bookmark_empty_list_guest_cta">سی هوم گوم کردن و من بیاین</string>
   <!-- Description for the bookmark list empty state when you're in an empty folder. -->
-  <string name="bookmark_empty_list_folder_description">نشووکا ن مجال گشتن ازاف کۊنین تا ترسته بۊین دیندا تر وبگه ک اخۊینه بجۊرین.</string>
+  <string name="bookmark_empty_list_folder_description">نشووکا ن مجال گشتن ازاف کۊنین تا ترسته بۊین دیندا تر وبگهی ک اخۊین ن بجۊرین.</string>
   <!-- Description for the add new folder button when selecting a folder. -->
   <string name="bookmark_select_folder_new_folder_button_title">دوبلگه نۊ</string>
   <!-- Bookmark snackbar message for moving a single item. %1$s is the title of the item being moved and %2$s is the new parent folder of the bookmark -->
@@ -2605,7 +2611,11 @@
     Link displayed in enhanced tracking protection panel to access tracking protection settings
   -->
   <string name="etp_settings">سامووا زفت کردنی</string>
-  <!-- Preference title for enhanced tracking protection settings -->
+  <!--
+    Enhanced Tracking Protection
+
+    Preference title for enhanced tracking protection settings
+  -->
   <string name="preference_enhanced_tracking_protection">زفت وابیڌن پؽش رئڌه جلاو رڌجۊری</string>
   <!-- Preference summary for enhanced tracking protection settings on/off switch -->
   <string name="preference_enhanced_tracking_protection_summary">سکو زفت وابیڌن کامل ن ری و ری کۊکی داره؛ زۊردار ترین سد ایما زد رڌجۊرا منجا وبگهی.</string>
@@ -3320,7 +3330,7 @@
   <!-- Accessibility description for the form in which details about the custom search engine are entered -->
   <string name="search_add_custom_engine_form_description">جۊزعیات موتور پیتینیڌن سفارشی</string>
   <!-- Label for the TextField in which user enters custom search engine suggestion URL -->
-  <string name="search_add_custom_engine_suggest_url_label">API پؽشنهاڌ پیتینیڌن (دل ب خایی)</string>
+  <string name="search_add_custom_engine_suggest_url_label">API پؽشنهاڌ پیتینیڌن (اختیاری)</string>
   <!-- Placeholder text shown in the Search Suggestion String TextField before a user enters text -->
   <string name="search_add_custom_engine_suggest_string_hint">نشۊوی اینترنتی API پؽشنهاڌی پیتینیڌن</string>
   <!-- Description text for the Search Suggestion String TextField. The %s is part of the string -->
@@ -3350,13 +3360,13 @@
   <!-- Label to clear site data -->
   <string name="clear_site_data">پاک کردن کۊکیا وو داده یل وبگه</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all data for current site. %s is the domain of the site. -->
-  <string name="confirm_clear_site_data"><![CDATA[الن اخۊی پوی کۊکیا وو داده یل وبگه <b>%s</b> ن پاک کۊنی؟]]></string>
+  <string name="confirm_clear_site_data"><![CDATA[الن اخۊین پوی کۊکیا وو داده یل وبگه <b>%s</b> ن پاک کۊنین؟]]></string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for all sites -->
-  <string name="confirm_clear_permissions_on_all_sites">اخۊی ک پوی دسرسیا ن من پوی وبگه یل پاک کۊنی؟</string>
+  <string name="confirm_clear_permissions_on_all_sites">اخۊین ک پوی دسرسیا ن من پوی وبگه یل پاک کۊنین؟</string>
   <!-- Confirmation message for a dialog confirming if the user wants to delete all the permissions for a site -->
-  <string name="confirm_clear_permissions_site">اخۊی ک پوی دسرسیا ن سی ای وبگه یل پاک کۊنی؟</string>
+  <string name="confirm_clear_permissions_site">اخۊین ک پوی دسرسیا ن سی ای وبگه یل پاک کۊنین؟</string>
   <!-- Confirmation message for a dialog confirming if the user wants to set default value a permission for a site -->
-  <string name="confirm_clear_permission_site">اخۊی ک ای دسرسی ن سی ای وبگه پاک کۊنی؟</string>
+  <string name="confirm_clear_permission_site">اخۊین ک ای دسرسی ن سی ای وبگه پاک کۊنین؟</string>
   <!-- label shown when there are not site exceptions to show in the site exception settings -->
   <string name="no_site_exceptions">بؽ استسنا وبگه</string>
   <!-- Browser menu button that adds a shortcut to the home fragment -->
@@ -3369,7 +3379,7 @@
   -->
   <string name="certificate_info_verified_by">تاییڌ وابی و دست: %1$s</string>
   <!-- Message in delete confirmation dialog for password -->
-  <string name="login_deletion_confirmation_2">الن اخۊی ک ای رزم ن پاک کۊنی؟</string>
+  <string name="login_deletion_confirmation_2">الن اخۊین ک ای رزم ن پاک کۊنین؟</string>
   <!-- Positive action of a dialog asking to delete -->
   <string name="dialog_delete_positive">پاک کردن</string>
   <!-- Negative action of a dialog asking to delete login -->
@@ -4085,17 +4095,17 @@
   -->
   <string name="microsurvey_uninstall_survey_title">منشڌ ایسا موهم هڌ. سیچه هونی ای برنومه ن لقو پۊرنیڌن اکۊنین؟</string>
   <!-- Uninstall survey answer option -->
-  <string name="uninstall_survey_option_1">موشکلا بلگه وبگه</string>
+  <string name="uninstall_survey_option_1_v2">کوند یا قیر قابل ائتماڌ هڌ</string>
   <!-- Uninstall survey answer option -->
-  <string name="uninstall_survey_option_2">موشکلا ویدیۉ وو دانلود کزدن</string>
+  <string name="uninstall_survey_option_2_v2">وبگه یل و خۊوی کار نؽکردن</string>
   <!-- Uninstall survey answer option -->
-  <string name="uninstall_survey_option_3">موشکلا عملکرد</string>
+  <string name="uninstall_survey_option_3_v2">ویژیی یلی ک مو اخوم وۊجۊد نڌارن</string>
   <!-- Uninstall survey answer option -->
-  <string name="uninstall_survey_option_4">موشکلا عملکرد وو تراهی</string>
+  <string name="uninstall_survey_option_4_v2">ویدیو یل، دانلودا یا وارسگرا کار نکردن</string>
   <!-- Uninstall survey answer option -->
-  <string name="uninstall_survey_option_5">موشکلا هریم سیخومی</string>
+  <string name="uninstall_survey_option_5_v2">و کار گرؽڌنس سخته یا تراهی زعیفی داره</string>
   <!-- Uninstall survey answer option -->
-  <string name="uninstall_survey_option_6">موشکلا پرداخت وو اشتراک</string>
+  <string name="uninstall_survey_option_6_v2">دل نگروویا سی ٱمنیت یا هریم سیخومی</string>
   <!-- Button label shown at the bottom of the uninstall survey -->
   <string name="uninstall_survey_button_label">فشناڌن منشڌ وو لقو پۊرنیڌن</string>
   <!--
@@ -4689,6 +4699,22 @@
   <string name="context_menu_open_image_with_google_lens">پیتینیڌن وا گۊگل لنز</string>
   <!-- Toast shown when the user denies the camera permission requested by the Lens camera screen -->
   <string name="lens_camera_permission_denied">موجوز رڌ وابی</string>
+  <!--
+    Title shown at the top of the camera screen, next to the close button, telling the
+    user that the photo they capture will be sent to Google Lens for a visual search.
+  -->
+  <string name="lens_camera_title_lens">گۊگل لنز</string>
+  <!--
+    Title shown at the top of the camera screen, next to the close button, telling the
+    user that the camera is being used to scan a QR code.
+  -->
+  <string name="lens_camera_title_qr">QR کود</string>
+  <!-- Title for the Google Lens Search Settings page feature toggle -->
+  <string name="search_settings_google_lens_title">و کار وندن پیتینیڌن گۊگل لنز</string>
+  <!-- Description for the Google Lens Search Settings page feature toggle -->
+  <string name="search_settings_google_lens_description">شؽواتا ن سی پیتینیڌن بسری و گۊگل افشنه.</string>
+  <!-- Caption shown under the Google Lens toggle clarifying when the feature is available -->
+  <string name="preferences_google_lens_availability_caption">تینا مجالی من دسرس هڌ ک گۊگل ای روء و کار ونده بۊ وو موتور پیتینیڌن و کار ونده ایسا مجال گشتن بۊوس.</string>
   <!-- Title for the Google Lens AI feature toggle -->
   <string name="ai_controls_google_lens_title">گۊگل لنز</string>
   <!-- Description for the Google Lens AI feature toggle -->

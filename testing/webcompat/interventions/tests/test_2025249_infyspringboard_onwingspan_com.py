@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-URL = "https://infyspringboard.onwingspan.com/web/en/viewer/video/lex_auth_01384259527732428818276_shared?collectionId=lex_auth_01384259143485030418294_shared&collectionType=Course&pathId=lex_auth_01384258794270720018232_shared"
+URL = "https://infyspringboard.us.onwingspan.com/web/en/viewer/video/lex_auth_01384259527732428818276_shared?collectionId=lex_auth_01384259143485030418294_shared&collectionType=Course&pathId=lex_auth_01384258794270720018232_shared"
 
 UNSUPPORTED_TEXT = "Chromium"
 

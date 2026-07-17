@@ -84,6 +84,7 @@ static bool ReshapeForShadowedProp(JSContext* cx, Handle<NativeObject*> obj,
 
     if (mozilla::Maybe<PropertyInfo> propInfo = nproto->lookup(cx, id)) {
       if (proto->hasObjectFuse()) {
+        MOZ_ASSERT(ObjectFuse::tracksPropertyKey(id));
         if (auto* objFuse = cx->zone()->objectFuses.get(nproto)) {
           objFuse->handleTeleportingShadowedProperty(cx, *propInfo);
         }
@@ -609,7 +610,7 @@ bool Watchtower::watchPropertyRemoveSlow(JSContext* cx,
   if (MOZ_UNLIKELY(obj->hasRealmFuseProperty())) {
     MaybePopRealmFuses(cx, obj, id);
   }
-  if (obj->hasObjectFuse()) {
+  if (obj->hasObjectFuse() && ObjectFuse::tracksPropertyKey(id)) {
     if (auto* objFuse = cx->zone()->objectFuses.get(obj)) {
       objFuse->handlePropertyRemove(cx, propInfo, wasTrackedObjectFuseProp);
     }
@@ -673,11 +674,17 @@ void Watchtower::watchPropertyValueChangeSlow(
   // accessor property or when redefining a data property as an accessor
   // property and vice versa.
 
+  // This is a no-op for indexed properties (sparse elements).
+  if (id.isInt()) {
+    return;
+  }
+
   // Handle object fuses before the check for no-op changes below. We don't
   // attach SetProp stubs for constant properties, so if a constant property is
   // overwritten with the same value, we want to mark it non-constant.
   // See Watchtower::canOptimizeSetSlotSlow.
   if (obj->hasObjectFuse()) {
+    MOZ_ASSERT(ObjectFuse::tracksPropertyKey(id));
     if (auto* objFuse = cx->zone()->objectFuses.get(obj)) {
       objFuse->handlePropertyValueChange(cx, propInfo);
     }
@@ -722,8 +729,10 @@ template void Watchtower::watchPropertyValueChangeSlow<AllowGC::NoGC>(
 // static
 SetSlotOptimizable Watchtower::canOptimizeSetSlotSlow(JSContext* cx,
                                                       NativeObject* obj,
+                                                      PropertyKey key,
                                                       PropertyInfo prop) {
   MOZ_ASSERT(obj->hasObjectFuse());
+  MOZ_ASSERT(ObjectFuse::tracksPropertyKey(key));
 
   ObjectFuse* objFuse = cx->zone()->objectFuses.getOrCreate(cx, obj);
   if (!objFuse) {

@@ -72,8 +72,8 @@ add_task(async function test_list_renders_card_without_expiry() {
   );
   Assert.equal(
     itemWithExpiry.l10nArgs.expDate,
-    `XX/${CARD_WITH_EXPIRY["cc-exp-year"]}`,
-    "Card with expiry renders its masked formatted expiry"
+    `${String(CARD_WITH_EXPIRY["cc-exp-month"]).padStart(2, "0")}/${CARD_WITH_EXPIRY["cc-exp-year"]}`,
+    "Card with expiry renders its formatted expiry"
   );
 
   await formAutofillStorage.creditCards.removeAll();

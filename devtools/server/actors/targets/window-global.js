@@ -1457,7 +1457,10 @@ class WindowGlobalTargetActor extends BaseTargetActor {
       this.isRootActor &&
       typeof options.animationsPlayBackRateMultiplier !== "undefined"
     ) {
-      this.browsingContext.animationsPlayBackRateMultiplier =
+      // animationsPlayBackRateMultiplier can only be set on the top browsing
+      // context (this.browsingContext isn't top when an iframe is selected as
+      // the targeted document in the Browser Toolbox).
+      this.browsingContext.top.animationsPlayBackRateMultiplier =
         options.animationsPlayBackRateMultiplier;
     }
 
@@ -1513,7 +1516,7 @@ class WindowGlobalTargetActor extends BaseTargetActor {
     }
 
     if (this.isRootActor && !this.browsingContext.isDiscarded) {
-      this.browsingContext.animationsPlayBackRateMultiplier = 1;
+      this.browsingContext.top.animationsPlayBackRateMultiplier = 1;
     }
   }
 

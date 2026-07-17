@@ -24,7 +24,6 @@ The current data collection possibilities include:
 * :doc:`Measuring elapsed time <measuring-time>`
 * :doc:`Custom pings <custom-pings>`
 * :doc:`Experiment annotations <experiments>`
-* :doc:`Remote content uptake <uptake>`
 * :doc:`WebExtension API <webextension-api>` can be used in privileged webextensions
 * :doc:`User Interactions <user-interactions>` allow annotating hang report pings with information on what the user was interacting with at the time
 
@@ -40,7 +39,6 @@ The current data collection possibilities include:
    measuring-time
    custom-pings
    experiments
-   uptake
    *
 
 Browser Usage Telemetry

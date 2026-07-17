@@ -140,7 +140,7 @@ bool GMPInfoFileParser::Init(nsIFile* aInfoFile) {
   // by \n (Unix), \r\n (Windows) and \r (old MacOSX).
   SplitAt("\r\n", info, lines);
 
-  for (nsCString line : lines) {
+  for (const nsCString& line : lines) {
     // Field name is the string up to but not including the first ':'
     // character on the line.
     int32_t colon = line.FindChar(':');
@@ -314,7 +314,8 @@ bool AdjustOpenH264NALUSequence(uint8_t* aBuffer, uint32_t aSize,
         break;
       }
       default:
-        GMP_LOG_ERROR("GMP plugin returned type we cannot handle (%d)", aType);
+        GMP_LOG_ERROR("GMP plugin returned type we cannot handle ({})",
+                      static_cast<int>(aType));
         return false;
     }
 
@@ -325,7 +326,7 @@ bool AdjustOpenH264NALUSequence(uint8_t* aBuffer, uint32_t aSize,
       // XXX Should we kill the plugin for returning extra bytes? Probably
       GMP_LOG_ERROR(
           "GMP plugin returned badly formatted encoded data: "
-          "unitOffset=%u, sizeNumBytes=%u, unitSize=%u, size=%u",
+          "unitOffset={}, sizeNumBytes={}, unitSize={}, size={}",
           unitOffset, sizeNumBytes, unitSize, aSize);
       return false;
     }
@@ -335,7 +336,7 @@ bool AdjustOpenH264NALUSequence(uint8_t* aBuffer, uint32_t aSize,
 
   if (unitOffset != aSize) {
     // At most 3 bytes can be left over, depending on buffertype
-    GMP_LOG_DEBUG("GMP plugin returned %u extra bytes", aSize - unitOffset);
+    GMP_LOG_DEBUG("GMP plugin returned {} extra bytes", aSize - unitOffset);
   }
 
   return true;

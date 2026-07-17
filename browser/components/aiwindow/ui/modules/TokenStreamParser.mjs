@@ -10,6 +10,7 @@ const ALLOWED_TOKEN_STARTS = [
   "existing_memory:",
   "followup:",
   "url_token:",
+  "kit:",
 ];
 const MAX_START_LEN = Math.max(
   ...ALLOWED_TOKEN_STARTS.map(string => string.length)

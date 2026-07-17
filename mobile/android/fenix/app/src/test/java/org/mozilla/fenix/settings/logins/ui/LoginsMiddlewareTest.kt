@@ -26,6 +26,7 @@ class LoginsMiddlewareTest {
     private lateinit var loginsStorage: LoginsStorage
     private lateinit var clipboardManager: ClipboardManager
     private lateinit var navController: NavController
+    private lateinit var navigateToImportDialog: () -> Unit
     private lateinit var exitLogins: () -> Unit
     private lateinit var openTab: (String, Boolean) -> Unit
     private lateinit var persistLoginsSortOrder: suspend (LoginsSortOrder) -> Unit
@@ -46,6 +47,7 @@ class LoginsMiddlewareTest {
         loginsStorage = mockk()
         clipboardManager = mockk(relaxed = true)
         navController = mockk(relaxed = true)
+        navigateToImportDialog = { }
         exitLogins = { }
         openTab = { _, _ -> }
         persistLoginsSortOrder = { }
@@ -169,6 +171,7 @@ class LoginsMiddlewareTest {
     private fun buildMiddleware() = LoginsMiddleware(
         loginsStorage = loginsStorage,
         getNavController = { navController },
+        navigateToImportDialog = navigateToImportDialog,
         exitLogins = exitLogins,
         openTab = openTab,
         ioDispatcher = testDispatcher,

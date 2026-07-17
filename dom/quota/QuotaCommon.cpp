@@ -337,6 +337,7 @@ nsDependentCSubstring MakeSourceFileRelativePath(
   static constexpr auto error = "ERROR"_ns;
   static constexpr auto kDistInclude = "dist/include/"_sp;
   static constexpr auto kCheckoutsGecko = "checkouts/gecko/"_sp;
+  static constexpr auto kBuildSrc = "build/src/"_sp;
 
   if (StringBeginsWith(aSourceFilePath, "."_ns)) {
     nsDependentCSubstring stripped = StripRelativeComponents(aSourceFilePath);
@@ -346,6 +347,9 @@ nsDependentCSubstring MakeSourceFileRelativePath(
     }
     if (StringBeginsWith(stripped, kCheckoutsGecko)) {
       return Substring(stripped, kCheckoutsGecko.Length());
+    }
+    if (StringBeginsWith(stripped, kBuildSrc)) {
+      return Substring(stripped, kBuildSrc.Length());
     }
     return stripped;
   }

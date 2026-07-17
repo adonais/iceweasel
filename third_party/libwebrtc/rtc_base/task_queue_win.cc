@@ -37,6 +37,7 @@ static_assert(false, "This file should not be built, see Bug 1797161.");
 #include <memory>
 #include <optional>
 #include <queue>
+#include <string>
 #include <utility>
 
 #include "absl/functional/any_invocable.h"
@@ -171,6 +172,7 @@ class TaskQueueWin : public TaskQueueBase {
   TaskQueueWin(absl::string_view queue_name, ThreadPriority priority);
   ~TaskQueueWin() override = default;
 
+  absl::string_view queue_name() const override { return name_; }
   void Delete() override;
 
  protected:
@@ -204,11 +206,13 @@ class TaskQueueWin : public TaskQueueBase {
   std::queue<absl::AnyInvocable<void() &&>> pending_
       RTC_GUARDED_BY(pending_lock_);
   HANDLE in_queue_;
+  const std::string name_;
 };
 
 TaskQueueWin::TaskQueueWin(absl::string_view queue_name,
                            ThreadPriority priority)
-    : in_queue_(::CreateEvent(nullptr, true, false, nullptr)) {
+    : in_queue_(::CreateEvent(nullptr, true, false, nullptr)),
+      name_(queue_name) {
   RTC_DCHECK(in_queue_);
   thread_ =
       PlatformThread::SpawnJoinable([this] { RunThreadMain(); }, queue_name,

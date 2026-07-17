@@ -19,7 +19,7 @@ namespace webrtc::videocapturemodule {
 webrtc::scoped_refptr<webrtc::VideoCaptureModule> VideoCaptureFake::Create(
     nsISerialEventTarget* aTarget) {
   return webrtc::make_ref_counted<VideoCaptureFake>(
-      Clock::GetRealTimeClockRaw(), aTarget);
+      Clock::GetRealTimeClockOnlyUseForRelativeTime(), aTarget);
 }
 
 VideoCaptureFake::VideoCaptureFake(Clock* clock, nsISerialEventTarget* aTarget)

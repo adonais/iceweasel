@@ -27,7 +27,9 @@ void nsGenConNode::CheckFrameAssertions() {
                    mPseudoFrame->Style()->GetPseudoType() ==
                        mozilla::PseudoStyleType::After ||
                    mPseudoFrame->Style()->GetPseudoType() ==
-                       mozilla::PseudoStyleType::Marker,
+                       mozilla::PseudoStyleType::Marker ||
+                   mPseudoFrame->Style()->GetPseudoType() ==
+                       mozilla::PseudoStyleType::PickerIcon,
                "not CSS generated content and not counter change");
   NS_ASSERTION(mContentIndex < 0 ||
                    mPseudoFrame->HasAnyStateBits(NS_FRAME_GENERATED_CONTENT),

@@ -57,7 +57,7 @@ add_task(async function () {
   );
 
   info("Pressing shift-tab again to focus the property name");
-  const onNameFocused = view.once("ruleview-changed");
+  const onNameFocused = view.once("property-value-updated");
   EventUtils.synthesizeKey("VK_TAB", { shiftKey: true }, view.styleWindow);
   await onNameFocused;
 

@@ -12,7 +12,7 @@ RefPtr<WebGLSampler> WebGL2Context::CreateSampler() {
   const FuncScope funcScope(*this, "createSampler");
   if (IsContextLost()) return nullptr;
 
-  return new WebGLSampler(this);
+  return MakeRefPtr<WebGLSampler>(this);
 }
 
 void WebGL2Context::BindSampler(GLuint unit, WebGLSampler* sampler) {

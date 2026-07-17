@@ -87,6 +87,7 @@ skip-if = [
 ["browser_canvascompare_popups_blob.js"]
 
 ["browser_canvascompare_popups_data.js"]
+disabled = "Top-level data: URI navigations are now always blocked (Bug 1895528)"
 
 ["browser_color_scheme.js"]
 
@@ -137,8 +138,10 @@ skip-if = [
 ]
 
 ["browser_hwconcurrency_popups_data.js"]
+disabled = "Top-level data: URI navigations are now always blocked (Bug 1895528)"
 
 ["browser_hwconcurrency_popups_data_noopener.js"]
+disabled = "Top-level data: URI navigations are now always blocked (Bug 1895528)"
 
 ["browser_hwconcurrency_popups_noopener.js"]
 

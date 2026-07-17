@@ -218,7 +218,7 @@ static void SendPing(void* aClosure, nsIContent* aContent, nsIURI* aURI,
   loadGroup->SetNotificationCallbacks(callbacks);
   chan->SetLoadGroup(loadGroup);
 
-  RefPtr<nsPingListener> pingListener = new nsPingListener();
+  RefPtr pingListener = MakeRefPtr<nsPingListener>();
   chan->AsyncOpen(pingListener);
 
   // Even if AsyncOpen failed, we still count this as a successful ping.  It's

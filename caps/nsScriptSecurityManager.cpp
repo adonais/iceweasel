@@ -38,6 +38,7 @@
 #include "nsDirectoryServiceDefs.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsIDocShell.h"
 #include "nsIConsoleService.h"
 #include "nsIOService.h"
@@ -1850,12 +1851,4 @@ nsScriptSecurityManager::EnsureFileURIAllowlist() {
   }
 
   return mFileURIAllowlist.ref();
-}
-
-NS_IMETHODIMP
-nsScriptSecurityManager::GetFirstUnexpectedJavaScriptLoad(
-    nsACString& aScriptFilename) {
-  aScriptFilename.Truncate();
-  return nsContentSecurityUtils::GetVeryFirstUnexpectedScriptFilename(
-      aScriptFilename);
 }

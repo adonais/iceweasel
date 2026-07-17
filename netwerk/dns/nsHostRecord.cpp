@@ -688,9 +688,14 @@ void TypeHostRecord::ResolveComplete() {
         .AccumulateSingleSample(static_cast<uint32_t>(mTRRSkippedReason));
   }
 
+  // Record the lookup time, keyed by whether it was resolved over DoH/TRR or
+  // natively; failed lookups go to a separate metric.
   if (mTRRSuccess) {
-    glean::dns::by_type_succeeded_lookup_time.AccumulateRawDuration(
+    glean::dns::https_rr_lookup_time.Get("doh"_ns).AccumulateRawDuration(
         mTrrDuration);
+  } else if (mNativeSuccess) {
+    glean::dns::https_rr_lookup_time.Get("native"_ns)
+        .AccumulateRawDuration(mNativeDuration);
   } else {
     glean::dns::by_type_failed_lookup_time.AccumulateRawDuration(mTrrDuration);
   }

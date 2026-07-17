@@ -142,8 +142,8 @@ RefPtr<DtlsIdentity> DtlsIdentity::Deserialize(
     return nullptr;
   }
 
-  return new DtlsIdentity(UniqueSECKEYPrivateKey(privateKey), std::move(cert),
-                          authType);
+  return MakeRefPtr<DtlsIdentity>(UniqueSECKEYPrivateKey(privateKey),
+                                  std::move(cert), authType);
 }
 
 RefPtr<DtlsIdentity> DtlsIdentity::Generate() {
@@ -274,8 +274,8 @@ RefPtr<DtlsIdentity> DtlsIdentity::Generate() {
   UniqueCERTCertificate certificate(CERT_NewTempCertificate(
       CERT_GetDefaultCertDB(), certDer, nullptr, false, true));
 
-  return new DtlsIdentity(std::move(private_key), std::move(certificate),
-                          ssl_kea_ecdh);
+  return MakeRefPtr<DtlsIdentity>(std::move(private_key),
+                                  std::move(certificate), ssl_kea_ecdh);
 }
 
 constexpr nsLiteralCString DtlsIdentity::DEFAULT_HASH_ALGORITHM;

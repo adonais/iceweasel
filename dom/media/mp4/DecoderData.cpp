@@ -16,7 +16,7 @@
 #include "mp4parse.h"
 
 #define LOG(...) \
-  MOZ_LOG(gMP4MetadataLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
+  MOZ_LOG_FMT(gMP4MetadataLog, mozilla::LogLevel::Debug, __VA_ARGS__)
 
 using mozilla::media::TimeUnit;
 
@@ -172,8 +172,8 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* aTrack,
       uint16_t preskip = mozilla::LittleEndian::readUint16(
           mp4ParseSampleCodecSpecific.data + 10);
       opusCodecSpecificData.mContainerCodecDelayFrames = preskip;
-      LOG("Opus stream in MP4 container, %" PRId64
-          " microseconds of encoder delay (%" PRIu16 ").",
+      LOG("Opus stream in MP4 container, {} microseconds of encoder delay "
+          "({}).",
           opusCodecSpecificData.mContainerCodecDelayFrames, preskip);
     } else {
       // This file will error later as it will be rejected by the opus decoder.
@@ -192,7 +192,7 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* aTrack,
       encoderDelayFrameCount = static_cast<uint32_t>(
           std::lround(static_cast<double>(codecDelayTicks) *
                       aAudio->sample_info->sample_rate / aTrack->time_scale));
-      LOG("AAC stream in MP4 container, %" PRIu32 " frames of encoder delay.",
+      LOG("AAC stream in MP4 container, {} frames of encoder delay.",
           encoderDelayFrameCount);
     }
 
@@ -215,8 +215,7 @@ MediaResult MP4AudioInfo::Update(const Mp4parseTrackInfo* aTrack,
         // can be done properly.
         mediaFrameCount =
             lastIndice.end_composition - firstIndice.start_composition;
-        LOG("AAC stream in MP4 container, total media duration is %" PRIu64
-            " frames",
+        LOG("AAC stream in MP4 container, total media duration is {} frames",
             mediaFrameCount);
       } else {
         LOG("AAC stream in MP4 container, couldn't determine total media time");

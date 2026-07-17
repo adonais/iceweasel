@@ -24,7 +24,7 @@ void DetailedPromise::LogRejectionReason(uint32_t aErrorCode,
                                          const nsACString& aReason) {
   nsPrintfCString msg("%s promise rejected 0x%" PRIx32 " '%s'", mName.get(),
                       aErrorCode, PromiseFlatCString(aReason).get());
-  EME_LOG("%s", msg.get());
+  EME_LOG("{}", msg.get());
 
   LogToBrowserConsole(NS_ConvertUTF8toUTF16(msg));
 }

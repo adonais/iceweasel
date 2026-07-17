@@ -223,6 +223,12 @@ interface nsICookieManager : nsISupports
    * and any host or domain cookies for "yahoo.com" and its subdomains would be
    * counted.
    *
+   * NOTE: this counts only cookies stored under the default OriginAttributes
+   * bucket (no userContextId, no partitionKey, etc.). Cookies set inside a
+   * container (non-zero userContextId) or under a partitionKey will NOT be
+   * counted. Callers asking "does this site have any cookies?" across all
+   * origin attributes should use hasCookiesForSite instead.
+   *
    * @param aHost
    *        the host string to search for, e.g. "google.com". this should consist
    *        of only the host portion of a URI. see @add for a description of
@@ -231,6 +237,26 @@ interface nsICookieManager : nsISupports
    * @return the number of cookies found.
    */
   unsigned long countCookiesFromHost(in AUTF8String aHost);
+
+  /**
+   * Greedily check whether any cookie exists for the site (base domain of
+   * 'aHost') whose OriginAttributes match aPattern. Returns as soon as a
+   * matching cookie is found. Unlike countCookiesFromHost, this iterates
+   * across all OriginAttributes buckets within the base domain, so it can
+   * see cookies stored in containers (userContextId), under a partitionKey,
+   * etc.
+   *
+   * @param aHost
+   *        the host string to search for, e.g. "google.com". This is reduced
+   *        to its base domain (eTLD+1) internally.
+   * @param aPattern
+   *        an OriginAttributesPattern in JSON format. Pass
+   *        '{"privateBrowsingId":0}' to exclude private-browsing cookies (the
+   *        common case for non-PB UI); pass '{}' to match any.
+   *
+   * @return true if at least one cookie matches, false otherwise.
+   */
+  boolean hasCookiesForSite(in AUTF8String aHost, in AString aPattern);
 
   /**
    * Returns an array of cookies that exist within the base domain of

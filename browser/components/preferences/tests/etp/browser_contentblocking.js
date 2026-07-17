@@ -89,10 +89,7 @@ add_task(async function testContentBlockingMainCategory() {
     [TP_PBM_PREF, true],
     [STP_PREF, false],
     [NCB_PREF, Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER],
-    [
-      NCBP_PREF,
-      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-    ],
+    [NCBP_PREF, Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN],
     [ISOLATE_UI_PREF, true],
     [FPI_PREF, false],
     [FPP_PREF, false],
@@ -193,7 +190,7 @@ add_task(async function testContentBlockingMainCategory() {
     "menupopup > menuitem[value=trackers]"
   );
   let cookieMenuTrackersPlusIsolate = cookieMenu.querySelector(
-    "menupopup > menuitem[value=trackers-plus-isolate]"
+    "menupopup > menuitem[value=isolate]"
   );
   let cookieMenuUnvisited = cookieMenu.querySelector(
     "menupopup > menuitem[value=unvisited]"
@@ -214,8 +211,8 @@ add_task(async function testContentBlockingMainCategory() {
   );
   is(
     Services.prefs.getIntPref(NCBP_PREF),
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-    `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN}`
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+    `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN}`
   );
   // Select block trackers and isolate
   cookieMenuTrackersPlusIsolate.click();
@@ -225,13 +222,13 @@ add_task(async function testContentBlockingMainCategory() {
   );
   is(
     Services.prefs.getIntPref(NCB_PREF),
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-    `${NCB_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN}`
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+    `${NCB_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN}`
   );
   is(
     Services.prefs.getIntPref(NCBP_PREF),
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-    `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN}`
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+    `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN}`
   );
   // Select block unvisited
   cookieMenuUnvisited.click();
@@ -243,8 +240,8 @@ add_task(async function testContentBlockingMainCategory() {
   );
   is(
     Services.prefs.getIntPref(NCBP_PREF),
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-    `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN}`
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+    `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN}`
   );
   // Select block all third party
   cookieMenuAllThirdParties.click();
@@ -259,8 +256,8 @@ add_task(async function testContentBlockingMainCategory() {
   );
   is(
     Services.prefs.getIntPref(NCBP_PREF),
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-    `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN}`
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+    `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN}`
   );
   // Select block all third party
   cookieMenuAll.click();
@@ -272,18 +269,18 @@ add_task(async function testContentBlockingMainCategory() {
   );
   is(
     Services.prefs.getIntPref(NCBP_PREF),
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-    `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN}`
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+    `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN}`
   );
 
   gBrowser.removeCurrentTab();
 
-  // Ensure the block-trackers-plus-isolate option only shows in the dropdown if the UI pref is set.
+  // Ensure the isolate option only shows in the dropdown if the UI pref is set.
   Services.prefs.setBoolPref(ISOLATE_UI_PREF, false);
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   doc = gBrowser.contentDocument;
   cookieMenuTrackersPlusIsolate = doc.querySelector(
-    "#blockCookiesMenu menupopup > menuitem[value=trackers-plus-isolate]"
+    "#blockCookiesMenu menupopup > menuitem[value=isolate]"
   );
   ok(
     cookieMenuTrackersPlusIsolate.hidden,
@@ -292,10 +289,10 @@ add_task(async function testContentBlockingMainCategory() {
 
   gBrowser.removeCurrentTab();
 
-  // Ensure the block-trackers-plus-isolate option only shows in the dropdown if FPI is disabled.
+  // Ensure the isolate option only shows in the dropdown if FPI is disabled.
   SpecialPowers.setIntPref(
     NCB_PREF,
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN
   );
   SpecialPowers.setBoolPref(FPI_PREF, true);
 
@@ -305,7 +302,7 @@ add_task(async function testContentBlockingMainCategory() {
     "#blockCookiesMenu menupopup > menuitem[value=trackers]"
   );
   cookieMenuTrackersPlusIsolate = doc.querySelector(
-    "#blockCookiesMenu menupopup > menuitem[value=trackers-plus-isolate]"
+    "#blockCookiesMenu menupopup > menuitem[value=isolate]"
   );
   ok(cookieMenuTrackers.selected, "The trackers item should be selected");
   ok(
@@ -790,8 +787,8 @@ add_task(async function testContentBlockingStrictCategory() {
       case "cookieBehavior5":
         is(
           Services.prefs.getIntPref(NCB_PREF),
-          Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-          `${NCB_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN}`
+          Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+          `${NCB_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN}`
         );
         break;
       case "cookieBehaviorPBM0":
@@ -832,8 +829,8 @@ add_task(async function testContentBlockingStrictCategory() {
       case "cookieBehaviorPBM5":
         is(
           Services.prefs.getIntPref(NCBP_PREF),
-          Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-          `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN}`
+          Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+          `${NCBP_PREF} has been set to ${Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN}`
         );
         break;
       case "3pcd":
@@ -976,7 +973,7 @@ add_task(async function testContentBlockingCustomCategory() {
       nonDefaultNCB = Ci.nsICookieService.BEHAVIOR_REJECT;
       break;
     case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
-    case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
+    case Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN:
       nonDefaultNCB = Ci.nsICookieService.BEHAVIOR_ACCEPT;
       break;
     default:
@@ -1009,7 +1006,7 @@ add_task(async function testContentBlockingCustomCategory() {
       nonDefaultNCBP = Ci.nsICookieService.BEHAVIOR_REJECT;
       break;
     case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
-    case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
+    case Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN:
       nonDefaultNCBP = Ci.nsICookieService.BEHAVIOR_ACCEPT;
       break;
     default:

@@ -365,8 +365,6 @@ class FxaWebChannelFeature(
                                     if (fxaCapabilities.contains(FxaCapability.CHOOSE_WHAT_TO_SYNC)) {
                                         capabilities.put("choose_what_to_sync", true)
                                     }
-                                    // we unconditionally handle not getting the sync keys (if sync wasn't requested)
-                                    capabilities.put("keys_optional", true)
                                     // we can check for uid in canLinkAccount
                                     capabilities.put("can_link_account_uid", true)
                                 },

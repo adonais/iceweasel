@@ -33,7 +33,7 @@ class MtransportTestUtils {
   nsresult SyncDispatchToSTS(nsIRunnable* aRunnable) {
     return SyncDispatchToSTS(do_AddRef(aRunnable));
   }
-  nsresult SyncDispatchToSTS(already_AddRefed<nsIRunnable>&& aRunnable) {
+  nsresult SyncDispatchToSTS(already_AddRefed<nsIRunnable> aRunnable) {
     return NS_DispatchAndSpinEventLoopUntilComplete(
         "MtransportTestUtils::SyncDispatchToSts"_ns, sts_target_,
         std::move(aRunnable));

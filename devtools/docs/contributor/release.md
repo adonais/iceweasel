@@ -56,13 +56,13 @@ You can use either desktop or mobile versions of Firefox as the server. Mobile i
 
 ### Tests
 
-#### Basic connection:
+#### Basic connection
 
 - On the Client Firefox Nightly, open about:debugging
 - Connect to the Server (either via network or USB)
 - Open the corresponding Runtime Page
 
-#### Debug targets:
+#### Debug targets
 
 - On the Server Firefox, open a tab to [https://mdn.github.io/dom-examples/service-worker/simple-service-worker/](https://mdn.github.io/dom-examples/service-worker/simple-service-worker/)
 - On the Client Firefox, check in the Runtime Page for the Server Firefox that you can see the new tab as well as the corresponding service worker
@@ -71,7 +71,7 @@ You can use either desktop or mobile versions of Firefox as the server. Mobile i
 - On the Client Firefox, check that the corresponding tab is removed
 - On the Client Firefox, unregister the service worker, check that the corresponding SW is removed from the list
 
-#### Inspect a remote target:
+#### Inspect a remote target
 
 - On the Server Firefox, open a tab to [https://juliandescottes.github.io/webcomponents-playground/debugger-example/](https://juliandescottes.github.io/webcomponents-playground/debugger-example/)
 - On the Client Firefox, click on Inspect for this tab. Check that toolbox opens. Now we will verify that the toolbox is working.
@@ -80,7 +80,7 @@ You can use either desktop or mobile versions of Firefox as the server. Mobile i
 - Open Debugger, check that you can see the script.js source. Open it, put a breakpoint inside the clickMe() method (line 6). On the Server Firefox, click on the button in the page, check that you hit the breakpoint.
 - Open the Network tab. If it is empty and tells you to "perform a request…", reload the page on the Server Firefox. Check that requests are displayed.
 
-#### Inspect a remote extension:
+#### Inspect a remote extension
 
 - On the Server Firefox, install any extension (for instance [https://addons.mozilla.org/en-US/firefox/addon/devtools-highlighter/](https://addons.mozilla.org/en-US/firefox/addon/devtools-highlighter/))
 - On the Client Firefox, check the extension is displayed in the Extensions category

@@ -23,10 +23,10 @@ void SVGPointList::GetValueAsString(nsAString& aValue) const {
   char16_t buf[50];
   uint32_t last = mItems.Length() - 1;
   for (uint32_t i = 0; i < mItems.Length(); ++i) {
-    // Would like to use aValue.AppendPrintf("%f,%f", item.mX, item.mY),
+    // Would like to use aValue.AppendPrintf("%f,%f", item.X(), item.Y()),
     // but it's not possible to always avoid trailing zeros.
     nsTextFormatter::snprintf(buf, std::size(buf), u"%g,%g",
-                              double(mItems[i].mX), double(mItems[i].mY));
+                              double(mItems[i].X()), double(mItems[i].Y()));
     // We ignore OOM, since it's not useful for us to return an error.
     aValue.Append(buf);
     if (i != last) {
@@ -60,7 +60,7 @@ nsresult SVGPointList::SetValueFromString(const nsAString& aValue) {
         if (!SVGContentUtils::ParseNumber(tokenizer.nextToken(), y)) {
           return NS_ERROR_DOM_SYNTAX_ERR;
         }
-        temp.AppendItem(SVGPoint(x, y));
+        temp.AppendItem(Point(x, y));
       } else {
         // Drop the last odd co-ordinate and use the rest.
         oddNumberOfValues = true;
@@ -72,7 +72,7 @@ nsresult SVGPointList::SetValueFromString(const nsAString& aValue) {
       if (leftOver[0] != '-' || !SVGContentUtils::ParseNumber(leftOver, y)) {
         return NS_ERROR_DOM_SYNTAX_ERR;
       }
-      temp.AppendItem(SVGPoint(x, y));
+      temp.AppendItem(Point(x, y));
     }
   }
   if (!oddNumberOfValues && tokenizer.separatorAfterCurrentToken()) {

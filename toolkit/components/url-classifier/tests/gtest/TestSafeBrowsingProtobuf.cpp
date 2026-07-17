@@ -19,11 +19,11 @@ TEST(UrlClassifierProtobuf, Empty)
 
   // Then serialize.
   std::string s;
-  r.SerializeToString(&s);
+  (void)r.SerializeToString(&s);
 
   // De-serialize.
   FetchThreatListUpdatesRequest r2;
-  r2.ParseFromString(s);
+  (void)r2.ParseFromString(s);
 
   ASSERT_EQ(r2.client().client_id(), CLIENT_ID);
 }

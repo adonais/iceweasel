@@ -79,13 +79,13 @@ export function ClocksRow({
       tabIndex={showInlineActions ? 0 : undefined}
     >
       <div className="clocks-meta" aria-hidden="true">
-        {showLabel && !!clock.label && (
-          <span className={chipClassName}>{clock.label}</span>
-        )}
         <div className="clocks-label">
           <span className="clocks-city">{cityDisplay}</span>
           <span className="clocks-timezone">{tzLabel}</span>
         </div>
+        {showLabel && !!clock.label && (
+          <span className={chipClassName}>{clock.label}</span>
+        )}
       </div>
       <time
         className="clocks-time"

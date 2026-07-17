@@ -42,7 +42,7 @@ using namespace mozilla::widget;
 
 class ParamBlock {
  public:
-  ParamBlock() { mBlock = 0; }
+  ParamBlock() { mBlock = nullptr; }
   ~ParamBlock() { NS_IF_RELEASE(mBlock); }
   nsresult Init() {
     return CallCreateInstance(NS_DIALOGPARAMBLOCK_CONTRACTID, &mBlock);

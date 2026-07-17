@@ -38,10 +38,10 @@ interface nsIURIFixupInfo : nsISupports
   attribute nsIURI fixedURI;
 
   /**
-   * The name of the keyword search provider used to provide a keyword search;
+   * The id of the search engine used to provide a keyword search;
    * empty string if no keyword search was done.
    */
-  attribute AString keywordProviderName;
+  attribute AString keywordProviderId;
 
   /**
    * The keyword as used for the search (post trimming etc.)

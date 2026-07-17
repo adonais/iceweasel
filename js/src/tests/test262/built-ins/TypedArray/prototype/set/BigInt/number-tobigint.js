@@ -69,6 +69,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     typedArray.set([NaN]);
   }, "abrupt completion from Number: NaN");
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

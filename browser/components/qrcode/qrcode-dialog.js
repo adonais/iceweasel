@@ -4,6 +4,23 @@
 
 "use strict";
 
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+const lazy = {};
+
+ChromeUtils.defineESModuleGetters(lazy, {
+  PrivateBrowsingUtils: "resource://gre/modules/PrivateBrowsingUtils.sys.mjs",
+});
+
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "IDNService",
+  "@mozilla.org/network/idn-service;1",
+  Ci.nsIIDNService
+);
+
 const QRCodeDialog = {
   _url: null,
   _qrCodeDataURI: null,
@@ -18,15 +35,28 @@ const QRCodeDialog = {
 
     document.mozSubdialogReady = this.setupDialog();
 
-    document
-      .getElementById("copy-button")
-      .addEventListener("click", () => this.copyImage());
+    const copyButton = document.getElementById("copy-button");
+
+    document.subDialogSetDefaultFocus = () => copyButton.focus();
+
+    copyButton.addEventListener("click", () => this.copyImage());
     document
       .getElementById("save-button")
       .addEventListener("click", () => this.saveImage());
     document
       .getElementById("close-button")
       .addEventListener("click", () => window.close());
+
+    document.addEventListener("keydown", event => {
+      if (
+        event.key === "Enter" &&
+        !event.defaultPrevented &&
+        !event.target.closest("moz-button")
+      ) {
+        event.preventDefault();
+        this.copyImage();
+      }
+    });
   },
 
   /**
@@ -108,39 +138,55 @@ const QRCodeDialog = {
     }
   },
 
-  /** Opens a file picker and saves the QR code image as a PNG file. */
+  /** Saves the QR code image as a PNG file via the standard download flow. */
   async saveImage() {
-    const nsIFilePicker = Ci.nsIFilePicker;
-    const fp = Cc["@mozilla.org/filepicker;1"].createInstance(nsIFilePicker);
-
-    const [title, pngFilterTitle, defaultFilename] =
-      await document.l10n.formatValues([
-        "qrcode-save-title",
-        "qrcode-save-filter-png",
-        "qrcode-save-filename",
-      ]);
-    fp.init(window.browsingContext, title, nsIFilePicker.modeSave);
-    fp.appendFilter(pngFilterTitle, "*.png");
-    fp.defaultString = defaultFilename;
-    fp.defaultExtension = "png";
-
-    const result = await new Promise(resolve => fp.open(resolve));
-
-    if (
-      result === nsIFilePicker.returnOK ||
-      result === nsIFilePicker.returnReplace
-    ) {
-      try {
-        const qrCodeBytes = this.decodeDataURI();
-        await IOUtils.write(fp.file.path, qrCodeBytes);
-        this.showFeedback("success", "qrcode-save-success");
-      } catch (error) {
-        console.error("Failed to save QR code:", error);
-        this.showFeedback("error", "qrcode-save-error");
+    let domain = "";
+    let uri;
+    try {
+      uri = Services.io.newURI(this._url);
+      domain = lazy.IDNService.domainToDisplay(
+        Services.eTLD.getSchemelessSite(uri)
+      );
+    } catch (e) {
+      if (uri) {
+        domain = uri.host;
       }
     }
+
+    const filenameMessage = domain
+      ? { id: "qrcode-save-filename-with-domain-base", args: { domain } }
+      : "qrcode-save-filename-base";
+    const [defaultFilename] = await document.l10n.formatValues([
+      filenameMessage,
+    ]);
+    // Append .png so the QR code for "firefox.com" defaults to
+    // "qrcode-firefox.com.png".
+    const filename = `${defaultFilename}.png`;
+
+    const chromeWindow = window.browsingContext.topChromeWindow;
+    chromeWindow.internalSave(
+      this._qrCodeDataURI,
+      null, // originalURL
+      null, // document
+      filename,
+      null, // content disposition
+      "image/png",
+      true, // bypass cache, since it's a data: URI
+      "SaveImageTitle",
+      null, // chosen data
+      null, // referrer info
+      null, // cookie jar settings
+      null, // initiating document
+      false, // don't skip the prompt for where to save
+      null, // cache key
+      lazy.PrivateBrowsingUtils.isWindowPrivate(chromeWindow),
+      Services.scriptSecurityManager.getSystemPrincipal()
+    );
   },
 };
+
+// Exposed on `window` for browser-chrome tests.
+window.QRCodeDialog = QRCodeDialog;
 
 window.addEventListener("DOMContentLoaded", () => {
   QRCodeDialog.init();

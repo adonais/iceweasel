@@ -10,7 +10,6 @@
 #include "mozilla/Encoding.h"
 #include "mozilla/NullPrincipal.h"
 #include "mozilla/Utf8.h"
-#include "mozilla/css/SheetParsingMode.h"
 #include "nsCSSValue.h"
 #include "nsString.h"
 
@@ -40,7 +39,7 @@ static void ServoParsingBench() {
   for (int i = 0; i < PARSING_REPETITIONS; i++) {
     RefPtr<StyleStylesheetContents> stylesheet =
         Servo_StyleSheet_FromUTF8Bytes(
-            nullptr, nullptr, nullptr, &cssStr, eAuthorSheetFeatures, data,
+            nullptr, nullptr, nullptr, &cssStr, StyleOrigin::Author, data,
             eCompatibility_FullStandards, nullptr, StyleAllowImportRules::Yes,
             StyleSanitizationKind::None, nullptr)
             .Consume();

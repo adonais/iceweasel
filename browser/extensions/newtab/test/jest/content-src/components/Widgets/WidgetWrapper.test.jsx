@@ -34,4 +34,33 @@ describe("<WidgetWrapper>", () => {
     fireEvent.click(div);
     expect(onClick).toHaveBeenCalled();
   });
+
+  it("merges dragProps spread onto the wrapper (className + handlers)", () => {
+    const onDragStart = jest.fn();
+    const { container } = render(
+      <WidgetWrapper
+        className="widget-draggable is-dragging"
+        draggable={true}
+        tabIndex={0}
+        data-l10n-id="drag-label-x"
+        onDragStart={onDragStart}
+      />
+    );
+    const div = container.firstChild;
+    expect(div.className).toBe(
+      "widget-wrapper col-4 widget-draggable is-dragging"
+    );
+    expect(div.getAttribute("draggable")).toBe("true");
+    expect(div.getAttribute("tabindex")).toBe("0");
+    expect(div.getAttribute("data-l10n-id")).toBe("drag-label-x");
+    fireEvent.dragStart(div);
+    expect(onDragStart).toHaveBeenCalled();
+  });
+
+  it("renders cleanly with no extra props", () => {
+    const { container } = render(<WidgetWrapper />);
+    const div = container.firstChild;
+    expect(div.className).toBe("widget-wrapper col-4");
+    expect(div.hasAttribute("draggable")).toBe(false);
+  });
 });

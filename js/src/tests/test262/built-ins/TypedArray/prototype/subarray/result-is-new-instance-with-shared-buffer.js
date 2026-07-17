@@ -32,6 +32,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
     compareArray(sample, [40, 100, 111, 43]),
     "changes on the new instance values affect the original sample"
   );
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

@@ -20,6 +20,7 @@
 #include "nsIScriptError.h"
 #include "nsIWebProgressListener.h"
 #include "nsIXULRuntime.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsRFPTargetSetIDL.h"
 #include "nsRefPtrHashtable.h"
 #include "nsContentUtils.h"
@@ -80,9 +81,8 @@ WindowContext::GetOverriddenFingerprintingSettingsWebIDL() const {
     return nullptr;
   }
 
-  nsCOMPtr<nsIRFPTargetSetIDL> protections =
-      new nsRFPTargetSetIDL(overriddenFingerprintingSettings.ref());
-  return protections.forget();
+  return MakeAndAddRef<nsRFPTargetSetIDL>(
+      overriddenFingerprintingSettings.ref());
 }
 
 nsGlobalWindowInner* WindowContext::GetInnerWindow() const {

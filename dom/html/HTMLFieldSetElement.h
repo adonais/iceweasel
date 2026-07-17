@@ -22,7 +22,7 @@ class HTMLFieldSetElement final : public nsGenericHTMLFormControlElement,
   using ConstraintValidation::SetCustomValidity;
 
   explicit HTMLFieldSetElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLFieldSetElement, fieldset)
 

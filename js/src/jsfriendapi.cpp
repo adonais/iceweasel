@@ -178,10 +178,9 @@ JS_PUBLIC_API bool JS_WrapPropertyDescriptor(
   return cx->compartment()->wrap(cx, desc);
 }
 
-JS_PUBLIC_API void JS_TraceShapeCycleCollectorChildren(JS::CallbackTracer* trc,
-                                                       JS::GCCellPtr shape) {
-  MOZ_ASSERT(shape.is<Shape>());
-  TraceCycleCollectorChildren(trc, &shape.as<Shape>());
+JS_PUBLIC_API void JS_TraceShapeCycleCollectorChildren(JSTracer* trc,
+                                                       Shape* shape) {
+  TraceCycleCollectorChildren(trc, shape);
 }
 
 static bool DefineHelpProperty(JSContext* cx, HandleObject obj,
@@ -280,6 +279,10 @@ JS_PUBLIC_API bool JS::GetBuiltinClass(JSContext* cx, HandleObject obj,
   }
 
   return true;
+}
+
+JS_PUBLIC_API bool JS::IsPlainObject(JSObject* obj) {
+  return obj->is<PlainObject>();
 }
 
 JS_PUBLIC_API bool js::IsArgumentsObject(HandleObject obj) {

@@ -169,6 +169,23 @@ static const PLDHashTableOps trivialOps = {
     TrivialHash, PLDHashTable::MatchEntryStub, PLDHashTable::MoveEntryStub,
     PLDHashTable::ClearEntryStub, TrivialInitEntry};
 
+// Ops with a clearEntry that counts how many times it is invoked, standing in
+// for a non-trivially-destructible entry type (which is what makes nsTHashtable
+// install a non-null clearEntry).
+static uint32_t gClearEntryCalls = 0;
+static void CountingClearEntry(PLDHashTable* aTable, PLDHashEntryHdr* aEntry) {
+  ++gClearEntryCalls;
+  PLDHashTable::ClearEntryStub(aTable, aEntry);
+}
+static const PLDHashTableOps countingClearOps = {
+    TrivialHash, PLDHashTable::MatchEntryStub, PLDHashTable::MoveEntryStub,
+    CountingClearEntry, TrivialInitEntry};
+
+// Ops with a null clearEntry, as installed for trivially-destructible entries.
+static const PLDHashTableOps nullClearOps = {
+    TrivialHash, PLDHashTable::MatchEntryStub, PLDHashTable::MoveEntryStub,
+    nullptr, TrivialInitEntry};
+
 TEST(PLDHashTableTest, MoveSemantics)
 {
   PLDHashTable t1(&trivialOps, sizeof(PLDHashEntryStub));
@@ -234,6 +251,142 @@ TEST(PLDHashTableTest, Clear)
 
   t1.ClearAndPrepareForLength(8192);
   ASSERT_EQ(t1.EntryCount(), 0u);
+}
+
+TEST(PLDHashTableTest, ClearAndRetainStorage)
+{
+  PLDHashTable t(&trivialOps, sizeof(PLDHashEntryStub));
+
+  // Clearing a never-allocated table is a no-op.
+  t.ClearAndRetainStorage();
+  ASSERT_EQ(t.EntryCount(), 0u);
+  ASSERT_EQ(t.Capacity(), 0u);
+
+  // Grow the table well past its minimum capacity.
+  for (intptr_t i = 1; i <= 100; i++) {
+    t.Add((const void*)i);
+  }
+  ASSERT_EQ(t.EntryCount(), 100u);
+  const uint32_t grownCapacity = t.Capacity();
+  ASSERT_GT(grownCapacity, uint32_t(PLDHashTable::kMinCapacity));
+
+  // Clearing while retaining storage empties the table but keeps capacity, so
+  // no entry store is freed or reallocated (unlike Clear()).
+  t.ClearAndRetainStorage();
+  ASSERT_EQ(t.EntryCount(), 0u);
+  ASSERT_EQ(t.Capacity(), grownCapacity);
+
+  // All previous entries are really gone.
+  for (intptr_t i = 1; i <= 100; i++) {
+    ASSERT_EQ(t.Search((const void*)i), nullptr);
+  }
+
+  // The table is reusable, and re-filling it to the same size reuses the
+  // retained storage without growing again.
+  for (intptr_t i = 1; i <= 100; i++) {
+    t.Add((const void*)i);
+  }
+  ASSERT_EQ(t.EntryCount(), 100u);
+  ASSERT_EQ(t.Capacity(), grownCapacity);
+  for (intptr_t i = 1; i <= 100; i++) {
+    ASSERT_NE(t.Search((const void*)i), nullptr);
+  }
+}
+
+// ClearAndRetainStorage must honour the same clearEntry contract as Clear():
+// run clearEntry exactly once per live entry for non-trivial entries, and skip
+// the per-slot walk entirely (while still emptying the table) when clearEntry
+// is null.
+TEST(PLDHashTableTest, ClearAndRetainStorageRunsClearEntry)
+{
+  // Non-trivial entry: clearEntry runs once per live entry, and only for live
+  // ones -- a removed slot must not be cleared again.
+  {
+    PLDHashTable t(&countingClearOps, sizeof(PLDHashEntryStub));
+    for (intptr_t i = 1; i <= 50; i++) {
+      t.Add((const void*)i);
+    }
+    t.Remove((const void*)1);
+    ASSERT_EQ(t.EntryCount(), 49u);
+
+    gClearEntryCalls = 0;
+    t.ClearAndRetainStorage();
+    EXPECT_EQ(gClearEntryCalls, 49u);
+    EXPECT_EQ(t.EntryCount(), 0u);
+
+    // The retained, emptied store is reusable and clears again cleanly.
+    for (intptr_t i = 1; i <= 50; i++) {
+      t.Add((const void*)i);
+    }
+    gClearEntryCalls = 0;
+    t.ClearAndRetainStorage();
+    EXPECT_EQ(gClearEntryCalls, 50u);
+    EXPECT_EQ(t.EntryCount(), 0u);
+  }
+
+  // Trivial entry (null clearEntry): no per-slot walk, table still empties.
+  {
+    PLDHashTable t(&nullClearOps, sizeof(PLDHashEntryStub));
+    for (intptr_t i = 1; i <= 50; i++) {
+      t.Add((const void*)i);
+    }
+    t.ClearAndRetainStorage();
+    EXPECT_EQ(t.EntryCount(), 0u);
+    for (intptr_t i = 1; i <= 50; i++) {
+      EXPECT_EQ(t.Search((const void*)i), nullptr);
+    }
+  }
+}
+
+// Verifies the clearEntry contract that the trivially-destructible optimization
+// relies on: when clearEntry is set (non-trivial entry) it is invoked exactly
+// once per live entry on Clear() and on destruction; when clearEntry is null
+// (as nsTHashtable installs for trivially-destructible entries) the table still
+// clears correctly and skips the per-slot walk entirely.
+TEST(PLDHashTableTest, ClearRunsClearEntry)
+{
+  // Non-trivial entry: clearEntry must run once per live entry on Clear().
+  {
+    PLDHashTable t(&countingClearOps, sizeof(PLDHashEntryStub));
+    for (intptr_t i = 1; i <= 50; i++) {
+      t.Add((const void*)i);
+    }
+    ASSERT_EQ(t.EntryCount(), 50u);
+
+    gClearEntryCalls = 0;
+    t.Clear();
+    EXPECT_EQ(gClearEntryCalls, 50u);
+    EXPECT_EQ(t.EntryCount(), 0u);
+  }
+
+  // ... and once per live entry on destruction.
+  {
+    PLDHashTable t(&countingClearOps, sizeof(PLDHashEntryStub));
+    for (intptr_t i = 1; i <= 10; i++) {
+      t.Add((const void*)i);
+    }
+    gClearEntryCalls = 0;
+  }
+  EXPECT_EQ(gClearEntryCalls, 10u);
+
+  // Trivial entry (null clearEntry): no per-slot walk, but the table still
+  // empties correctly and remains reusable.
+  {
+    PLDHashTable t(&nullClearOps, sizeof(PLDHashEntryStub));
+    for (intptr_t i = 1; i <= 50; i++) {
+      t.Add((const void*)i);
+    }
+    ASSERT_EQ(t.EntryCount(), 50u);
+
+    t.Clear();
+    EXPECT_EQ(t.EntryCount(), 0u);
+    for (intptr_t i = 1; i <= 50; i++) {
+      EXPECT_EQ(t.Search((const void*)i), nullptr);
+    }
+
+    t.Add((const void*)123);
+    EXPECT_NE(t.Search((const void*)123), nullptr);
+  }
 }
 
 TEST(PLDHashTableTest, Iterator)

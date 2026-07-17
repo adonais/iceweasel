@@ -19,7 +19,6 @@ from gecko_taskgraph.transforms.job.common import (
     support_vcs_checkout,
 )
 from gecko_taskgraph.transforms.test import TestDescriptionSchema, normpath
-from gecko_taskgraph.util.attributes import is_try
 from gecko_taskgraph.util.chunking import get_test_tags
 from gecko_taskgraph.util.perftest import is_external_browser
 
@@ -177,9 +176,6 @@ def mozharness_test_on_docker(config, job, taskdesc):
 
     if "actions" in mozharness:
         env["MOZHARNESS_ACTIONS"] = " ".join(mozharness["actions"])
-
-    if is_try(config.params):
-        env["TRY_COMMIT_MSG"] = config.params["message"]
 
     # handle some of the mozharness-specific options
     if test["reboot"]:
@@ -462,9 +458,6 @@ def mozharness_test_on_generic_worker(config, job, taskdesc):
 
     if test.get("timeoutfactor"):
         mh_command.append("--timeout-factor={}".format(test["timeoutfactor"]))
-
-    if is_try(config.params):
-        env["TRY_COMMIT_MSG"] = config.params["message"]
 
     worker["mounts"] = [
         {

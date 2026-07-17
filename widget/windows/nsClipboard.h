@@ -42,17 +42,20 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
                                         MightNeedToFlush* = nullptr);
   static mozilla::Result<nsCOMPtr<nsISupports>, nsresult> GetDataFromDataObject(
       IDataObject* aDataObject, UINT anIndex, nsIWidget* aWindow,
-      const nsCString& aFlavor);
+      const nsCString& aFlavor, uint64_t aThreshold = 0);
   static nsresult GetDataFromDataObject(IDataObject* aDataObject, UINT anIndex,
                                         nsIWidget* aWindow,
-                                        nsITransferable* aTransferable);
+                                        nsITransferable* aTransferable,
+                                        uint64_t aThreshold = 0);
   static nsresult GetNativeDataOffClipboard(nsIWidget* aWindow, UINT aIndex,
                                             UINT aFormat, void** aData,
-                                            uint32_t* aLen);
+                                            uint32_t* aLen,
+                                            uint64_t aThreshold = 0);
   static nsresult GetNativeDataOffClipboard(IDataObject* aDataObject,
                                             UINT aIndex, UINT aFormat,
                                             const char* aMIMEImageFormat,
-                                            void** aData, uint32_t* aLen);
+                                            void** aData, uint32_t* aLen,
+                                            uint64_t aThreshold = 0);
   static nsresult GetGlobalData(HGLOBAL aHGBL, void** aData, uint32_t* aLen);
 
   // This function returns the internal Windows clipboard format identifier
@@ -81,7 +84,8 @@ class nsClipboard final : public nsBaseClipboard, public nsIObserver {
   NS_IMETHOD SetNativeClipboardData(nsITransferable* aTransferable,
                                     ClipboardType aWhichClipboard) override;
   mozilla::Result<nsCOMPtr<nsISupports>, nsresult> GetNativeClipboardData(
-      const nsACString& aFlavor, ClipboardType aWhichClipboard) override;
+      const nsACString& aFlavor, ClipboardType aWhichClipboard,
+      uint64_t aThreshold = 0) override;
   nsresult EmptyNativeClipboardData(ClipboardType aWhichClipboard) override;
   mozilla::Result<bool, nsresult> HasNativeClipboardDataMatchingFlavors(
       const nsTArray<nsCString>& aFlavorList,

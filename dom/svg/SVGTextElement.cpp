@@ -19,7 +19,7 @@ JSObject* SVGTextElement::WrapNode(JSContext* aCx,
 // Implementation
 
 SVGTextElement::SVGTextElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGTextElementBase(std::move(aNodeInfo)) {}
 
 SVGElement::EnumAttributesInfo SVGTextElement::GetEnumInfo() {

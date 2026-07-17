@@ -64,6 +64,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     sample.fill("nonsense");
   }, "abrupt completion from string");
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

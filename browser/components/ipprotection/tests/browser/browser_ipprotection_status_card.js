@@ -319,6 +319,75 @@ add_task(async function test_status_card_connecting() {
     "Button in connecting state should be present and disabled"
   );
 
+  const locationButton = statusCard.locationButtonEl;
+  Assert.ok(
+    locationButton?.disabled,
+    "Location button in connecting state should be present and disabled"
+  );
+
+  await closePanel();
+  await cleanupStatusCardTest();
+});
+
+/**
+ * Ensure the action and location buttons stay vertically stable
+ * across the transition through each state (disconnected -> connecting -> connected).
+ */
+add_task(async function test_buttons_stable_across_state_transitions() {
+  await setupStatusCardTest();
+
+  let content = await openPanel({
+    location: mockLocation,
+    isProtectionEnabled: false,
+    bandwidthUsage: mockBandwidthUsage,
+  });
+
+  let statusCard = content.statusCardEl;
+  let disconnectedActionTop = Math.round(
+    statusCard.actionButtonEl.getBoundingClientRect().top
+  );
+  let disconnectedLocationTop = Math.round(
+    statusCard.locationButtonEl.getBoundingClientRect().top
+  );
+
+  await setPanelState({
+    location: mockLocation,
+    isProtectionEnabled: true,
+    bandwidthUsage: mockBandwidthUsage,
+    isActivating: true,
+  });
+  await statusCard.updateComplete;
+
+  Assert.equal(
+    Math.round(statusCard.actionButtonEl.getBoundingClientRect().top),
+    disconnectedActionTop,
+    "Action button should not shift when transitioning to connecting"
+  );
+  Assert.equal(
+    Math.round(statusCard.locationButtonEl.getBoundingClientRect().top),
+    disconnectedLocationTop,
+    "Location button should not shift when transitioning to connecting"
+  );
+
+  await setPanelState({
+    location: mockLocation,
+    isProtectionEnabled: true,
+    bandwidthUsage: mockBandwidthUsage,
+    isActivating: false,
+  });
+  await statusCard.updateComplete;
+
+  Assert.equal(
+    Math.round(statusCard.actionButtonEl.getBoundingClientRect().top),
+    disconnectedActionTop,
+    "Action button should not shift when transitioning to connected"
+  );
+  Assert.equal(
+    Math.round(statusCard.locationButtonEl.getBoundingClientRect().top),
+    disconnectedLocationTop,
+    "Location button should not shift when transitioning to connected"
+  );
+
   await closePanel();
   await cleanupStatusCardTest();
 });

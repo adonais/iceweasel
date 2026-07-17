@@ -434,10 +434,9 @@ nsIInputStream* ReadStream::Inner::EnsureStream() {
     OpenStreamFailed();
     return mSnappyStream;
   }
-
-  mCondVar.Wait();
-  MOZ_DIAGNOSTIC_ASSERT(mSnappyStream);
-
+  while (!mSnappyStream) {
+    mCondVar.Wait();
+  }
   return mSnappyStream;
 }
 

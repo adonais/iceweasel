@@ -296,6 +296,8 @@ support-files = [
   "file_getBoxQuads_convertPointRectQuad_frame2.html",
 ]
 
+["test_hit_test_no_display_list_build.html"]
+
 ["test_interactive_widget.html"]
 run-if = [
   "os == 'android'",
@@ -627,6 +629,11 @@ support-files = [
 ]
 
 ["test_synthmousemove_after_dnd.html"]
+
+["test_synthmousemove_after_navigation.html"]
+support-files = [
+  "file_synthmousemove_after_navigation.html",
+]
 
 ["test_transformed_scrolling_repaints.html"]
 

@@ -759,6 +759,8 @@ describe("<FocusTimer>", () => {
       assert.equal(telemetryEvent.data.widget_source, "context_menu");
       assert.equal(telemetryEvent.data.enabled, false);
       assert.equal(telemetryEvent.data.widget_size, "medium");
+
+      assert.ok(handleUserInteraction.notCalled);
     });
 
     it("should dispatch OPEN_LINK when the Learn More option is clicked", () => {

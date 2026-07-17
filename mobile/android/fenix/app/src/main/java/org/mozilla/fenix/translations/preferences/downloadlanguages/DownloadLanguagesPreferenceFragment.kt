@@ -28,7 +28,6 @@ import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -251,6 +250,6 @@ class DownloadLanguagesPreferenceFragment : Fragment(), SystemInsetsPaddedFragme
         (
             downloadLanguageItemPreference.languageModel.status == ModelState.NOT_DOWNLOADED &&
                 isDataSaverEnabledAndWifiDisabled &&
-                !requireContext().settings().ignoreTranslationsDataSaverWarning
+                !requireComponents.settings.ignoreTranslationsDataSaverWarning
             )
 }

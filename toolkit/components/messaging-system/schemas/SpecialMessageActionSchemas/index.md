@@ -267,6 +267,10 @@ Windows only.
   // Only set Firefox as the default PDF handler if the current PDF handler is a
   // known browser.
   onlyIfKnownBrowser?: boolean;
+  // If the OS hands the stub PDF back to Firefox after the user picks Firefox
+  // in the open-with dialog, open a follow-up PDF in a new tab instead of
+  // suppressing the launch.
+  openInFirefox?: boolean;
 }
 ```
 
@@ -309,6 +313,52 @@ with `messaging-system-action.`, it will be created and prepended with
   pref: {
     name: string;
     value: string | boolean | number;
+  }
+}
+```
+
+#### Special `value` options
+
+**`{ timestamp: true }`** — Instead of setting a literal value, sets the pref to the current time as a Unix millisecond timestamp string (i.e. `Date.now().toString()`).
+
+Example:
+```json
+"action": {
+  "type": "SET_PREF",
+  "data": {
+    "pref": {
+      "name": "messaging-system-action.lastSeen",
+      "value": { "timestamp": true }
+    }
+  }
+}
+```
+
+**`{ copyFromPref: string }`** — Copies the value from another existing preference into the target pref. The source and target prefs must be of the same type, otherwise an error is thrown.
+
+Example:
+```json
+"action": {
+  "type": "SET_PREF",
+  "data": {
+    "pref": {
+      "name": "messaging-system-action.myCopiedPref",
+      "value": { "copyFromPref": "browser.startup.homepage" }
+    }
+  }
+}
+```
+
+**Omitted or `null` value** — Resets the pref to its default value by calling `clearUserPref`.
+
+Example:
+```json
+"action": {
+  "type": "SET_PREF",
+  "data": {
+    "pref": {
+      "name": "browser.startup.homepage"
+    }
   }
 }
 ```
@@ -523,5 +573,17 @@ If the current tab is already in a tab group, this action creates a new tab and 
 ### `IPPROTECTION_ENROLL`
 
 Enrolls the user in IP Protection. Initiates a Firefox Accounts sign-in flow if needed, then enrolls and entitles the user, and opens the IP Protection panel.
+
+- args: (none)
+
+### `CONFIRM_LAUNCH_ON_LOGIN`
+
+Configures Firefox to launch on Windows login.
+
+- args: (none)
+
+### `REMOVE_LAUNCH_ON_LOGIN`
+
+Removes Firefox from Windows login items.
 
 - args: (none)

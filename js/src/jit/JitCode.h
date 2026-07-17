@@ -62,6 +62,8 @@ class JitCode : public gc::TenuredCellWithNonGCPointer<uint8_t> {
                              // This is necessary to prevent GC tracing.
   bool hasBytecodeMap_ : 1;  // Whether the code object has been registered with
                              // native=>bytecode mapping tables.
+  bool profilerInstrumented_ : 1;  // Whether or not profiling instrumentation
+                                   // is on. Used by BaselineScript.
   uint8_t localTracingSlots_;
 
   JitCode() = delete;
@@ -78,6 +80,7 @@ class JitCode : public gc::TenuredCellWithNonGCPointer<uint8_t> {
         kind_(uint8_t(kind)),
         invalidated_(false),
         hasBytecodeMap_(false),
+        profilerInstrumented_(false),
         localTracingSlots_(0) {
     MOZ_ASSERT(CodeKind(kind_) == kind);
     MOZ_ASSERT(headerSize_ == headerSize);
@@ -109,6 +112,9 @@ class JitCode : public gc::TenuredCellWithNonGCPointer<uint8_t> {
   void setLocalTracingSlots(uint8_t localTracingSlots) {
     localTracingSlots_ = localTracingSlots;
   }
+
+  bool isProfilerInstrumented() const { return profilerInstrumented_; }
+  void setProfilerInstrumented(bool enable) { profilerInstrumented_ = enable; }
 
   uint8_t localTracingSlots() { return localTracingSlots_; }
 

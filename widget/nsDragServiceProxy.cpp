@@ -43,7 +43,7 @@ nsDragSessionProxy::~nsDragSessionProxy() {
 }
 
 already_AddRefed<nsIDragSession> nsDragServiceProxy::CreateDragSession() {
-  RefPtr<nsIDragSession> session = new nsDragSessionProxy();
+  auto session = mozilla::MakeRefPtr<nsDragSessionProxy>();
   return session.forget();
 }
 

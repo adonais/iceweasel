@@ -2,65 +2,12 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-/**
- * TODO Bug 2017983: Replace this file with `urlbar.tokens.css`
- */
-
-:root {
-  /* Urlbar */
-  --urlbar-box-background-color: var(--button-background-color-hover);
-  --urlbar-box-background-color-focus: var(--button-background-color);
-  --urlbar-box-background-color-hover: var(--button-background-color-hover);
-  --urlbar-box-background-color-active: var(--button-background-color-active);
-  --urlbar-border-radius: var(--button-border-radius);
-  --urlbar-box-text-color: inherit;
-  --urlbar-box-text-color-hover: var(--urlbar-box-text-color);
-  --urlbar-margin-inline: 5px;
-  --urlbar-padding-block: var(--dimension-4);
-  --urlbar-icon-fill-opacity: 0.9;
-
-  /* Urlbarview */
-  --urlbarview-background-color-hover: var(--panel-background-color-dimmed);
-  --urlbarview-background-color-selected: SelectedItem;
-  --urlbarview-border-radius: calc(var(--button-border-radius) + var(--dimension-2));
-
-  /* TODO Bug 2031910: Finalize the border radius for Nova. */
-  /* stylelint-disable-next-line media-query-no-invalid */
-  @media -moz-pref("browser.nova.enabled") {
-    --urlbarview-border-radius: 1.8462em;
-  }
-
-  --urlbarview-separator-color: color-mix(in srgb, currentColor 14%, transparent);
-  --urlbarview-text-color-action: LinkText;
-  --urlbarview-text-color-selected: SelectedItemText;
-
-  @media (prefers-contrast) {
-    --urlbar-icon-fill-opacity: 1;
-
-    --urlbarview-separator-color: color-mix(in srgb, currentColor 86%, transparent);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    /* Increase the contrast of urlbar boxes in dark mode.
-     * In practice these are bumped-up --button-background-color-hover values.
-     */
-    --urlbar-box-background-color: color-mix(in srgb, currentColor 16%, transparent);
-    --urlbar-box-background-color-focus: color-mix(in srgb, currentColor 16%, transparent);
-    --urlbar-box-background-color-hover: color-mix(in srgb, currentColor 22%, transparent);
-  }
-}
+@import url("chrome://browser/skin/urlbar/urlbar.tokens.css");
+@import url("chrome://browser/skin/urlbar/urlbarview.tokens.css");
 
 @media not ((forced-colors) or (-moz-native-theme)) {
   :root:not([lwtheme]) {
-    --urlbar-box-background-color: light-dark(white, rgb(66, 65, 77));
-    --urlbar-icon-fill-opacity: 0.72;
-
-    --urlbarview-background-color-hover: light-dark(rgb(240, 240, 244), var(--panel-background-color-dimmed));
-    --urlbarview-background-color-selected: light-dark(#e0e0e6, rgb(43, 42, 51));
-    --urlbarview-separator-color: light-dark(rgb(240, 240, 244), rgb(82, 82, 94));
-    --urlbarview-text-color-action: light-dark(rgb(91, 91, 102), rgb(191, 191, 201));
-    --urlbarview-text-color-selected: light-dark(rgb(21, 20, 26), rgb(251, 251, 254));
-
+    /* Our JSON design token system does not have a mechanism for supporting non-color tokens in dark mode. */
     @media (prefers-color-scheme: dark) {
       --urlbar-icon-fill-opacity: 1;
     }

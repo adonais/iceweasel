@@ -81,10 +81,12 @@ class nsCaseTransformTextRunFactory : public nsTransformingTextRunFactory {
   // Takes ownership of aInnerTransformTextRunFactory
   nsCaseTransformTextRunFactory(mozilla::UniquePtr<nsTransformingTextRunFactory>
                                     aInnerTransformingTextRunFactory,
-                                bool aAllUppercase, char16_t aMaskChar)
+                                bool aAllUppercase, bool aUseCapitalEsZet,
+                                char16_t aMaskChar)
       : mInnerTransformingTextRunFactory(
             std::move(aInnerTransformingTextRunFactory)),
         mAllUppercase(aAllUppercase),
+        mUseCapitalEsZet(aUseCapitalEsZet),
         mMaskChar(aMaskChar) {}
 
   virtual void RebuildTextRun(nsTransformedTextRun* aTextRun,
@@ -119,8 +121,9 @@ class nsCaseTransformTextRunFactory : public nsTransformingTextRunFactory {
   static bool TransformString(
       const nsAString& aString, nsString& aConvertedString,
       const mozilla::Maybe<mozilla::StyleTextTransform>& aGlobalTransform,
-      char16_t aMaskChar, bool aCaseTransformsOnly, const nsAtom* aLanguage,
-      nsTArray<bool>& aCharsToMergeArray, nsTArray<bool>& aDeletedCharsArray,
+      char16_t aMaskChar, bool aCaseTransformsOnly, bool aUseCapitalEsZet,
+      const nsAtom* aLanguage, nsTArray<bool>& aCharsToMergeArray,
+      nsTArray<bool>& aDeletedCharsArray,
       const nsTransformedTextRun* aTextRun = nullptr,
       uint32_t aOffsetInTextRun = 0,
       nsTArray<uint8_t>* aCanBreakBeforeArray = nullptr,
@@ -130,6 +133,7 @@ class nsCaseTransformTextRunFactory : public nsTransformingTextRunFactory {
   mozilla::UniquePtr<nsTransformingTextRunFactory>
       mInnerTransformingTextRunFactory;
   bool mAllUppercase;
+  bool mUseCapitalEsZet;
   char16_t mMaskChar;
 };
 

@@ -40,7 +40,7 @@ class InferenceSession final : public nsISupports, public nsWrapperCache {
   virtual ~InferenceSession() { Destroy(); }
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS;
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL;
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(InferenceSession);
 
   static RefPtr<Promise> Create(GlobalObject& aGlobal,

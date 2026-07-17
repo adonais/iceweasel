@@ -147,7 +147,12 @@ static GeckoTextMarkerRange GetTextMarkerRangeFromRange(mozAccessible* aObj,
       GetTextMarkerRangeFromRange(self, selectedTextRange);
 
   if (markerRange.IsValid()) {
-    markerRange.Select();
+    // Set DOM focus in addition to selection. We do
+    // this because we want navigations over focusable controls
+    // like inputs, text areas to automatically drop VO focus
+    // inside the control. This is distinct from the behaviour in
+    // moxSetSelectedTextMarkerRange.
+    markerRange.Select(/* aSetFocus */ true);
   }
 }
 

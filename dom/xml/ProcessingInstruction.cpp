@@ -44,8 +44,7 @@ NS_NewXMLProcessingInstruction(nsNodeInfoManager* aNodeInfoManager,
 namespace mozilla::dom {
 
 ProcessingInstruction::ProcessingInstruction(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    const nsAString& aData)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, const nsAString& aData)
     : CharacterData(std::move(aNodeInfo)) {
   MOZ_ASSERT(mNodeInfo->NodeType() == nsINode::PROCESSING_INSTRUCTION_NODE,
              "Bad NodeType in aNodeInfo");

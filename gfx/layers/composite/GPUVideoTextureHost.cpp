@@ -65,8 +65,7 @@ TextureHost* GPUVideoTextureHost::EnsureWrappedTextureHost() {
     MOZ_ASSERT(mWrappedTextureHost->mExternalImageId.isSome());
     auto wrappedId = mWrappedTextureHost->mExternalImageId.ref();
 
-    RefPtr<wr::RenderTextureHost> texture =
-        new wr::RenderTextureHostWrapper(wrappedId);
+    RefPtr texture = MakeRefPtr<wr::RenderTextureHostWrapper>(wrappedId);
     wr::RenderThread::Get()->RegisterExternalImage(mExternalImageId.ref(),
                                                    texture.forget());
   }
@@ -137,8 +136,7 @@ void GPUVideoTextureHost::CreateRenderTexture(
     MOZ_ASSERT(mWrappedTextureHost->mExternalImageId.isSome());
     auto wrappedId = mWrappedTextureHost->mExternalImageId.ref();
 
-    RefPtr<wr::RenderTextureHost> texture =
-        new wr::RenderTextureHostWrapper(wrappedId);
+    RefPtr texture = MakeRefPtr<wr::RenderTextureHostWrapper>(wrappedId);
     wr::RenderThread::Get()->RegisterExternalImage(mExternalImageId.ref(),
                                                    texture.forget());
     return;

@@ -861,10 +861,12 @@ void nsContainerFrame::ReflowAbsoluteFrames(nsPresContext* aPresContext,
     AbsPosReflowFlags flags{AbsPosReflowFlag::AllowFragmentation,
                             AbsPosReflowFlag::CBWidthChanged,
                             AbsPosReflowFlag::CBHeightChanged};
+    nsReflowStatus absposStatus;
     absoluteContainer->Reflow(
-        this, aPresContext, aReflowInput, aStatus,
+        this, aPresContext, aReflowInput, absposStatus,
         cbRect.GetPhysicalRect(wm, aDesiredSize.PhysicalSize()), flags,
         &aDesiredSize.mOverflowAreas);
+    aStatus.MergeCompletionStatusFrom(absposStatus);
   }
 }
 

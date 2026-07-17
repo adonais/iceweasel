@@ -25,7 +25,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.PhoneFeature.AUTOPLAY
@@ -122,7 +121,7 @@ class SitePermissionsDetailsExceptionsFragment : PreferenceFragmentCompat(), Sys
     internal fun provideContext(): Context = requireContext()
 
     @VisibleForTesting
-    internal fun provideSettings(): Settings = provideContext().settings()
+    internal fun provideSettings(): Settings = provideContext().components.settings
 
     @VisibleForTesting
     internal fun initAutoplayFeature() {

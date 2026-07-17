@@ -66,17 +66,14 @@ class nsFrameManager {
   void RemoveFrame(DestroyContext&, mozilla::FrameChildListID, nsIFrame*);
 
   /*
-   * Capture/restore frame state for the frame subtree rooted at aFrame.
+   * Capture frame state for the frame subtree rooted at aFrame.
    * aState is the document state storage object onto which each frame
    * stores its state.  Callers of CaptureFrameState are responsible for
    * traversing next continuations of special siblings of aFrame as
    * needed; this method will only work with actual frametree descendants
    * of aFrame.
    */
-
   void CaptureFrameState(nsIFrame* aFrame, nsILayoutHistoryState* aState);
-
-  void RestoreFrameState(nsIFrame* aFrame, nsILayoutHistoryState* aState);
 
   /*
    * Add/restore state for one frame

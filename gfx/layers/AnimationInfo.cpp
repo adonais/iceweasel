@@ -4,6 +4,8 @@
 
 #include "AnimationInfo.h"
 #include "mozilla/LayerAnimationInfo.h"
+#include "mozilla/gfx/Matrix.h"
+#include "mozilla/layers/AnimationStorageData.h"
 #include "mozilla/layers/WebRenderLayerManager.h"
 #include "mozilla/layers/AnimationHelper.h"
 #include "mozilla/layers/CompositorThread.h"
@@ -225,7 +227,10 @@ static StyleTranslate ResolveTranslate(const StyleTranslate& aValue,
 }
 
 static StyleTransform ResolveTransformOperations(
-    const StyleTransform& aTransform, TransformReferenceBox& aRefBox) {
+    const StyleTransform& aTransform, TransformReferenceBox& aRefBox,
+    mozilla::StyleZoom aEffectiveZoom) {
+  // Note that we need to manually apply CSS zoom because animation values are
+  // unzoomed (unlike other computed values).
   auto convertMatrix = [](const gfx::Matrix4x4& aM) {
     return StyleTransformOperation::Matrix3D(StyleGenericMatrix3D<StyleNumber>{
         aM._11, aM._12, aM._13, aM._14, aM._21, aM._22, aM._23, aM._24, aM._31,
@@ -237,6 +242,7 @@ static StyleTransform ResolveTransformOperations(
       result.initCapacity(aTransform.Operations().Length()),
       "Allocating vector of transform operations should be successful.");
 
+  // TODO(salipov, bug 2045846): Fix zooming for transforms other than matrix
   for (const StyleTransformOperation& op : aTransform.Operations()) {
     switch (op.tag) {
       case StyleTransformOperation::Tag::TranslateX:
@@ -265,14 +271,35 @@ static StyleTransform ResolveTransformOperations(
       }
       case StyleTransformOperation::Tag::InterpolateMatrix: {
         gfx::Matrix4x4 matrix;
-        nsStyleTransformMatrix::ProcessInterpolateMatrix(matrix, op, aRefBox);
+        nsStyleTransformMatrix::ProcessInterpolateMatrix(matrix, op, aRefBox,
+                                                         aEffectiveZoom);
         result.infallibleAppend(convertMatrix(matrix));
         break;
       }
       case StyleTransformOperation::Tag::AccumulateMatrix: {
         gfx::Matrix4x4 matrix;
-        nsStyleTransformMatrix::ProcessAccumulateMatrix(matrix, op, aRefBox);
+        nsStyleTransformMatrix::ProcessAccumulateMatrix(matrix, op, aRefBox,
+                                                        aEffectiveZoom);
         result.infallibleAppend(convertMatrix(matrix));
+        break;
+      }
+      case StyleTransformOperation::Tag::Matrix: {
+        auto matrix = op.AsMatrix();
+
+        matrix.e = aEffectiveZoom.Zoom(matrix.e);
+        matrix.f = aEffectiveZoom.Zoom(matrix.f);
+
+        result.infallibleAppend(StyleTransformOperation::Matrix(matrix));
+        break;
+      }
+      case StyleTransformOperation::Tag::Matrix3D: {
+        auto matrix3d = op.AsMatrix3D();
+
+        matrix3d.m41 = aEffectiveZoom.Zoom(matrix3d.m41);
+        matrix3d.m42 = aEffectiveZoom.Zoom(matrix3d.m42);
+        matrix3d.m43 = aEffectiveZoom.Zoom(matrix3d.m43);
+
+        result.infallibleAppend(StyleTransformOperation::Matrix3D(matrix3d));
         break;
       }
       case StyleTransformOperation::Tag::RotateX:
@@ -288,8 +315,6 @@ static StyleTransform ResolveTransformOperations(
       case StyleTransformOperation::Tag::SkewX:
       case StyleTransformOperation::Tag::SkewY:
       case StyleTransformOperation::Tag::Skew:
-      case StyleTransformOperation::Tag::Matrix:
-      case StyleTransformOperation::Tag::Matrix3D:
       case StyleTransformOperation::Tag::Perspective:
         result.infallibleAppend(op);
         break;
@@ -360,8 +385,9 @@ static void SetAnimatable(NonCustomCSSPropertyId aProperty,
           ResolveTranslate(aAnimationValue.GetTranslateProperty(), aRefBox);
       break;
     case eCSSProperty_transform:
-      aAnimatable = ResolveTransformOperations(
-          aAnimationValue.GetTransformProperty(), aRefBox);
+      aAnimatable =
+          ResolveTransformOperations(aAnimationValue.GetTransformProperty(),
+                                     aRefBox, aFrame->Style()->EffectiveZoom());
       break;
     case eCSSProperty_offset_path:
       aAnimatable = StyleOffsetPath::None();
@@ -869,7 +895,8 @@ void AnimationInfo::AddNonAnimatingTransformLikePropertiesStyles(
         if (!display->mTransform.IsNone()) {
           TransformReferenceBox refBox(aFrame);
           appendFakeAnimation(
-              id, ResolveTransformOperations(display->mTransform, refBox));
+              id, ResolveTransformOperations(display->mTransform, refBox,
+                                             aFrame->Style()->EffectiveZoom()));
         }
         break;
       case eCSSProperty_translate:

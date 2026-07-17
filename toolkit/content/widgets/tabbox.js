@@ -576,28 +576,6 @@
       this.splitViewSplitter.hidden = !splitViewTabSelected;
       const selectedPanel = this.selectedPanel;
 
-      /**
-       * Check whether `node` follows `a` in DOM order, and optionally
-       * precedes `b`.
-       *
-       * @param {Node} node - The node to test.
-       * @param {Node} a - `node` must follow this element.
-       * @param {Node} [b] - If provided, `node` must also precede this element.
-       * @returns {boolean}
-       */
-      const isBetween = (node, a, b = null) => {
-        const isAfterA = Boolean(
-          node.compareDocumentPosition(a) & Node.DOCUMENT_POSITION_PRECEDING
-        );
-        if (!b) {
-          return isAfterA;
-        }
-        const isBeforeB = Boolean(
-          node.compareDocumentPosition(b) & Node.DOCUMENT_POSITION_FOLLOWING
-        );
-        return isAfterA && isBeforeB;
-      };
-
       if (splitViewTabSelected) {
         // Ensure panels are in the correct DOM order so that focus moves
         // as expected when tabbing across a splitview
@@ -617,7 +595,7 @@
         // Ensure the splitter is in-between the panels
         if (
           firstPanel &&
-          !isBetween(this.#splitViewSplitter, firstPanel, secondPanel)
+          firstPanel.nextElementSibling !== this.#splitViewSplitter
         ) {
           firstPanel.after(this.#splitViewSplitter);
         }

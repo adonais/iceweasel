@@ -34,8 +34,6 @@ support-files = [
 
 ["test_dragndrop.html"]
 
-["test_flush.html"]
-
 ["test_focus_autocomplete.html"]
 
 ["test_focus_autocomplete.xhtml"]

@@ -12,13 +12,15 @@
 #include "mozilla/StaticPrefs_dom.h"
 #include "nsThreadUtils.h"
 
-#ifdef XP_WIN
-#  include "Win32SerialPlatformService.h"
-#elif defined(XP_MACOSX) || (defined(XP_LINUX) && !defined(ANDROID))
-#  include "PosixSerialPlatformService.h"
-#endif
-
 namespace mozilla::dom {
+
+#if !defined(XP_WIN) && !defined(XP_MACOSX) && \
+    !(defined(XP_LINUX) && !defined(ANDROID))
+already_AddRefed<SerialPlatformService>
+SerialPlatformService::GetInstanceImpl() {
+  return MakeAndAddRef<TestSerialPlatformService>();
+}
+#endif
 
 SerialPlatformService::SerialPlatformService() {
   auto ioThread = mIOThread.Lock();
@@ -39,13 +41,7 @@ already_AddRefed<SerialPlatformService> SerialPlatformService::GetInstance() {
       if (useMockService) {
         mPtr = MakeRefPtr<TestSerialPlatformService>();
       } else {
-#ifdef XP_WIN
-        mPtr = MakeRefPtr<Win32SerialPlatformService>();
-#elif defined(XP_MACOSX) || (defined(XP_LINUX) && !defined(ANDROID))
-        mPtr = MakeRefPtr<PosixSerialPlatformService>();
-#else
-        mPtr = MakeRefPtr<TestSerialPlatformService>();
-#endif
+        mPtr = GetInstanceImpl();
       }
 
       nsresult rv = mPtr->Init();
@@ -90,14 +86,18 @@ bool SerialPlatformService::IsShutdown() {
   return observerState->shutdown;
 }
 
-nsresult SerialPlatformService::EnumeratePorts(SerialPortList& aPorts) {
+nsresult SerialPlatformService::EnumeratePorts(SerialPortList& aPorts,
+                                               bool* aLikelyAccessDenied) {
+  if (aLikelyAccessDenied) {
+    *aLikelyAccessDenied = false;
+  }
   {
     auto observerState = mObserverState.Lock();
     if (observerState->shutdown) {
       return NS_ERROR_NOT_AVAILABLE;
     }
   }
-  return EnumeratePortsImpl(aPorts);
+  return EnumeratePortsImpl(aPorts, aLikelyAccessDenied);
 }
 
 nsresult SerialPlatformService::Open(const nsString& aPortId,

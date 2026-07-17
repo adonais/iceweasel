@@ -107,7 +107,16 @@ async function llama_crash() {
   }
 }
 
-async function llama_works() {
+async function llama_works({
+  prompt = [
+    { role: "system", content: "blah" },
+    {
+      role: "user",
+      content: "This is a test that works",
+    },
+  ],
+  expectMultiChunkPrefill = false,
+} = {}) {
   const { cleanup } = await setup();
   try {
     info("Create the engine for a normal run");
@@ -120,14 +129,6 @@ async function llama_works() {
       backend: "llama.cpp",
       logLevel: "Debug",
     });
-
-    const prompt = [
-      { role: "system", content: "blah" },
-      {
-        role: "user",
-        content: "This is a test that works",
-      },
-    ];
 
     const samplers = [
       {
@@ -150,16 +151,66 @@ async function llama_works() {
     ];
 
     info("Calling runWithGenerator for normal run");
-    for await (const val of engine.runWithGenerator({
+    const generator = engine.runWithGenerator({
       prompt,
       samplers,
-    })) {
-      info(val.text);
-    }
+    });
+    let result;
+    do {
+      result = await generator.next();
+      if (!result.done) {
+        info(result.value.text);
+      }
+    } while (!result.done);
 
     info("Normal run worked");
-    // TODO add an assertion
-    Assert.equal(1, 1);
+
+    const { metrics } = result.value;
+    Assert.ok(metrics, "metrics should be present on the run result");
+    Assert.ok(
+      Array.isArray(metrics.runTimestamps),
+      "metrics.runTimestamps should be an array"
+    );
+    const timestampNames = metrics.runTimestamps.map(t => t.name);
+    for (const name of [
+      "initializationStart",
+      "initializationEnd",
+      "runStart",
+      "runEnd",
+    ]) {
+      Assert.ok(
+        timestampNames.includes(name),
+        `metrics.runTimestamps should include ${name}`
+      );
+    }
+    Assert.greater(metrics.inputTokens, 0, "inputTokens should be > 0");
+    Assert.greater(metrics.outputTokens, 0, "outputTokens should be > 0");
+    Assert.greaterOrEqual(
+      metrics.inferenceTime,
+      0,
+      "inferenceTime should be >= 0"
+    );
+    Assert.greaterOrEqual(
+      metrics.decodingTime,
+      0,
+      "decodingTime should be >= 0"
+    );
+    Assert.greaterOrEqual(
+      metrics.timeToFirstToken,
+      0,
+      "timeToFirstToken should be >= 0"
+    );
+
+    if (expectMultiChunkPrefill) {
+      // Default minOutputBufferSize is 20: a prompt above that exercises
+      // the multi-chunk prefill path where the runner flushes prompt chunks
+      // before isPhaseCompleted=true.
+      Assert.greater(
+        metrics.inputTokens,
+        20,
+        "inputTokens should exceed the default minOutputBufferSize"
+      );
+    }
   } finally {
     info("Destroy the engine");
     await EngineProcess.destroyMLEngine();
@@ -320,4 +371,26 @@ add_task(async function test_ml_smoke_test_llama_crash() {
     "Doing a normal call after the crash to verify it's up and running again"
   );
   await llama_works();
+});
+
+/**
+ * Verifies metrics are correct when the prompt exceeds the runner's
+ * default minOutputBufferSize (20), forcing the prefill phase to be
+ * split across multiple chunks before isPhaseCompleted is set.
+ */
+add_task(async function test_ml_smoke_test_llama_long_prompt_metrics() {
+  await llama_works({
+    prompt: [
+      { role: "system", content: "You are a friendly storyteller." },
+      {
+        role: "user",
+        content:
+          "Tell me a short story about a brave little mouse who travels " +
+          "across a great forest, meets many friends along the way, and " +
+          "finally finds a tiny treasure chest hidden behind a waterfall " +
+          "at the top of the tallest hill in the whole valley.",
+      },
+    ],
+    expectMultiChunkPrefill: true,
+  });
 });

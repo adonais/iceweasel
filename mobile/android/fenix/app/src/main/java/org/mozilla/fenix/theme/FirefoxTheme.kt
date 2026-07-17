@@ -9,15 +9,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.ReadOnlyComposable
 import mozilla.components.compose.base.theme.AcornColors
+import mozilla.components.compose.base.theme.AcornGradientScheme
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.compose.base.theme.AcornTypography
 import mozilla.components.compose.base.theme.acornDarkColorScheme
 import mozilla.components.compose.base.theme.acornLightColorScheme
 import mozilla.components.compose.base.theme.acornPrivateColorScheme
+import mozilla.components.compose.base.theme.darkAcornGradientScheme
 import mozilla.components.compose.base.theme.darkColorPalette
 import mozilla.components.compose.base.theme.layout.AcornLayout
 import mozilla.components.compose.base.theme.layout.AcornWindowSize
+import mozilla.components.compose.base.theme.lightAcornGradientScheme
 import mozilla.components.compose.base.theme.lightColorPalette
+import mozilla.components.compose.base.theme.privateAcornGradientScheme
 import mozilla.components.compose.base.theme.privateColorPalette
 
 /**
@@ -43,6 +47,12 @@ fun FirefoxTheme(
         Theme.Private -> acornPrivateColorScheme()
     }
 
+    val gradients: AcornGradientScheme = when (theme) {
+        Theme.Light -> lightAcornGradientScheme
+        Theme.Dark -> darkAcornGradientScheme
+        Theme.Private -> privateAcornGradientScheme
+    }
+
     val tabGroupColors: TabGroupColorPalette = when (theme) {
         Theme.Light -> TabGroupColorPalette.lightPalette
         Theme.Dark -> TabGroupColorPalette.darkPalette
@@ -53,6 +63,7 @@ fun FirefoxTheme(
         AcornTheme(
             colors = colors,
             colorScheme = colorScheme,
+            gradients = gradients,
             content = content,
         )
     }
@@ -90,6 +101,11 @@ object FirefoxTheme {
         @Composable
         @ReadOnlyComposable
         get() = AcornTheme.windowSize
+
+    val gradients: AcornGradientScheme
+        @Composable
+        @ReadOnlyComposable
+        get() = AcornTheme.gradients
 
     val tabGroupColors: TabGroupColorPalette
         @Composable

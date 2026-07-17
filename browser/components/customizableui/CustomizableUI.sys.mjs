@@ -1426,8 +1426,9 @@ var CustomizableUIInternal = {
           }
         } else if (
           provider == CustomizableUI.PROVIDER_XUL &&
+          !this.isWidgetRemovable(node) &&
           node.parentNode != container &&
-          !this.isWidgetRemovable(node)
+          !aAreaNode.overflowable?.isInOverflowList(node)
         ) {
           placementsToRemove.add(id);
           continue;

@@ -113,7 +113,7 @@ int NrTcpSocket::connect(const nr_transport_addr* aAddr) {
     return R_FAILED;
   }
 
-  mWebrtcTCPSocket = new WebrtcTCPSocketWrapper(this);
+  mWebrtcTCPSocket = MakeRefPtr<WebrtcTCPSocketWrapper>(this);
 
   mWebrtcTCPSocket->AsyncOpen(remote_host, remote_port, local_addr, local_port,
                               use_tls, mConfig);

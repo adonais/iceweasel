@@ -145,6 +145,12 @@ Result<nsString, ErrorResult> TextDirectiveUtil::RangeContentAsString(
   if (!aNode.IsElement()) {
     return false;
   }
+  // <br> is inline but creates a line break that should act as a block boundary
+  // for text fragment purposes. Without this, text on both sides of a <br> gets
+  // concatenated (e.g. "test<br>test" -> "testtest").
+  if (aNode.IsHTMLElement(nsGkAtoms::br)) {
+    return true;
+  }
   const Element* nodeAsElement = Element::FromNode(aNode);
   const RefPtr<const ComputedStyle> computedStyle =
       nsComputedDOMStyle::GetComputedStyleNoFlush(nodeAsElement);

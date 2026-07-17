@@ -31,6 +31,7 @@ from mozbuild.frontend.data import (
     HostLibrary,
     HostSources,
     IPDLCollection,
+    JsShellArchive,
     LocalizedFiles,
     LocalizedPreprocessedFiles,
     SandboxedWasmLibrary,
@@ -208,10 +209,19 @@ class CommonBackend(BuildBackend):
                     ])
             return False
 
+        elif isinstance(obj, JsShellArchive):
+            self._process_js_shell_archive(obj)
+
         else:
             return False
 
         return True
+
+    def _process_js_shell_archive(self, obj):
+        manifest_path = mozpath.join(self.environment.topobjdir, "jsshell-archive.list")
+        with self._write_file(manifest_path) as fh:
+            for f in obj.files:
+                fh.write(f.target_basename + "\n")
 
     def consume_finished(self):
         if len(self._idl_manager.modules):

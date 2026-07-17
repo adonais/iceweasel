@@ -67,7 +67,10 @@ class RTC_EXPORT Clock {
   }
 
   // Returns an instance of the real-time system clock implementation.
-  static Clock* absl_nonnull GetRealTimeClockRaw();
+  // (MOZ): We have renamed this from GetRealTimeClock in order to detect new
+  // uses of this API within libwebrtc, so we can determine whether we
+  // can/should inject our own clock.
+  static Clock* absl_nonnull GetRealTimeClockOnlyUseForRelativeTime();
 };
 
 class SimulatedClock : public Clock {

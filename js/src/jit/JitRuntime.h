@@ -19,7 +19,6 @@
 #include "jit/BaselineICList.h"
 #include "jit/BaselineJIT.h"
 #include "jit/CalleeToken.h"
-#include "jit/InterpreterEntryTrampoline.h"
 #include "jit/IonCompileTask.h"
 #include "jit/IonTypes.h"
 #include "jit/JitCode.h"
@@ -194,10 +193,6 @@ class JitRuntime {
 
   // Map that stores Jit Hints for each script.
   MainThreadData<JitHintsMap*> jitHintsMap_{nullptr};
-
-  // Map used to collect entry trampolines for the Interpreters which is used
-  // for external profiling to identify which functions are being interpreted.
-  MainThreadData<EntryTrampolineMap*> interpreterEntryMap_{nullptr};
 
 #ifdef DEBUG
   // The number of possible bailing places encountered before forcefully bailing
@@ -452,15 +447,6 @@ class JitRuntime {
   JitHintsMap* getJitHintsMap() {
     MOZ_ASSERT(hasJitHintsMap());
     return jitHintsMap_;
-  }
-
-  bool hasInterpreterEntryMap() const {
-    return interpreterEntryMap_ != nullptr;
-  }
-
-  EntryTrampolineMap* getInterpreterEntryMap() {
-    MOZ_ASSERT(hasInterpreterEntryMap());
-    return interpreterEntryMap_;
   }
 
   bool isProfilerInstrumentationEnabled(JSRuntime* rt) {

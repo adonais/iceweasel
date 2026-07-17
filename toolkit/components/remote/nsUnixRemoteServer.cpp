@@ -23,7 +23,7 @@ void nsUnixRemoteServer::SetStartupTokenOrTimestamp(
   }
 
   if (!aStartupToken.IsEmpty()) {
-    toolkit->SetStartupToken(aStartupToken);
+    toolkit->SetActivationToken(aStartupToken);
   }
 
   toolkit->SetFocusTimestamp(aTimestamp);

@@ -327,8 +327,6 @@ export class AppliedMemoriesButton extends MozLitElement {
           data-l10n-attrs="aria-label"
         >
           ${visibleMemories.map(memory => {
-            // @todo Bug 2010069
-            // Localize aria-label
             return html`
               <moz-box-item
                 class="memories-list-item"
@@ -341,7 +339,10 @@ export class AppliedMemoriesButton extends MozLitElement {
                   type="ghost"
                   size="small"
                   iconsrc="chrome://global/skin/icons/delete.svg"
-                  aria-label="Delete ${memory.memory_summary}"
+                  data-l10n-id="aiwindow-delete-memory-button"
+                  data-l10n-args=${JSON.stringify({
+                    summary: memory.memory_summary,
+                  })}
                   @click=${event => this._onRemoveMemory(event, memory)}
                   slot="actions"
                 ></moz-button>

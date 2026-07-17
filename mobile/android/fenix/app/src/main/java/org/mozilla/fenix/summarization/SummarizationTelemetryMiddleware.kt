@@ -76,11 +76,11 @@ class SummarizationTelemetryMiddleware(
         when (action) {
             ViewAppeared -> handleViewAppeared(stateBefore)
             is SummarizationRequested -> {
-                sessionTelemetry = sessionTelemetry.copy(model = action.info.nameRes.toString())
+                sessionTelemetry = sessionTelemetry.copy(model = action.info.modelId?.value)
             }
             is ContentExtracted -> handleExtractedContent(action.content)
             is SummarizationCompleted -> recordSummarizationCompleted()
-            is SummarizationFailed -> recordSummarizationCompleted(success = false, action.exception.errorType)
+            is SummarizationFailed -> recordSummarizationCompleted(success = false, action.exception)
             is ViewDismissed -> {
                 AiSummarize.closed.record(
                     AiSummarize.ClosedExtra(
@@ -120,8 +120,6 @@ class SummarizationTelemetryMiddleware(
     }
 
     private fun handleViewAppeared(stateBefore: SummarizationState) {
-        AiSummarize.requested.record()
-        timerId = AiSummarize.duration.start()
         if (stateBefore is SummarizationState.Inert) {
             val trigger = if (stateBefore.initializedWithShake) {
                 SummarizationTrigger.SHAKE
@@ -130,6 +128,10 @@ class SummarizationTelemetryMiddleware(
             }
             sessionTelemetry = sessionTelemetry.copy(trigger = trigger)
         }
+        AiSummarize.requested.record(
+            AiSummarize.RequestedExtra(trigger = sessionTelemetry.trigger?.toString()),
+        )
+        timerId = AiSummarize.duration.start()
     }
 
     private fun handleExtractedContent(content: Content) {
@@ -152,7 +154,20 @@ class SummarizationTelemetryMiddleware(
         )
     }
 
-    private fun recordSummarizationCompleted(success: Boolean = true, errorType: String? = null) {
+    /**
+     * Identifier for the failure in telemetry. For [Llm.Exception] subtypes we log the qualified
+     * class name so provider attribution survives (e.g. MLPA's `RateLimited` vs a hypothetical
+     * second provider's `RateLimited`). Bare [Llm.Exception] instances and raw throwables fall
+     * back to the underlying cause's simple name, which is more diagnostic than the generic
+     * wrapper class.
+     */
+    private fun Throwable.errorType(): String? = when {
+        this::class == Llm.Exception::class -> (cause ?: this)::class.simpleName
+        this is Llm.Exception -> this::class.java.name
+        else -> (cause ?: this)::class.simpleName
+    }
+
+    private fun recordSummarizationCompleted(success: Boolean = true, error: Throwable? = null) {
         timerId?.let {
             AiSummarize.duration.stopAndAccumulate(it)
             timerId = null
@@ -162,7 +177,8 @@ class SummarizationTelemetryMiddleware(
             AiSummarize.CompletedExtra(
                 connectionType = connectionType.toString(),
                 contentType = sessionTelemetry.contentMetrics?.contentType,
-                errorType = errorType,
+                errorType = error?.errorType(),
+                errorCode = error?.let { ErrorCodeLookup.lookup(it).code },
                 language = sessionTelemetry.contentMetrics?.language,
                 lengthChars = sessionTelemetry.contentMetrics?.charCount,
                 lengthWords = sessionTelemetry.contentMetrics?.wordCount,
@@ -173,5 +189,3 @@ class SummarizationTelemetryMiddleware(
         )
     }
 }
-
-private val Llm.Exception.errorType get() = this.errorCode.value.toString()

@@ -124,12 +124,12 @@ class TextAttrsMgr {
     // derived classes). Note, undefined native value means it is inherited
     // from root.
     MOZ_INIT_OUTSIDE_CTOR T mNativeValue;
-    MOZ_INIT_OUTSIDE_CTOR bool mIsDefined;
+    MOZ_INIT_OUTSIDE_CTOR bool mIsDefined = false;
 
     // Native root value and flag indicating if the value is defined
     // (initialized in derived classes).
     MOZ_INIT_OUTSIDE_CTOR T mRootNativeValue;
-    MOZ_INIT_OUTSIDE_CTOR bool mIsRootDefined;
+    MOZ_INIT_OUTSIDE_CTOR bool mIsRootDefined = false;
   };
 
   /**

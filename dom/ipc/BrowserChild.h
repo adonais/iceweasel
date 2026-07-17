@@ -112,7 +112,7 @@ class BrowserChildMessageManager : public ContentFrameMessageManager,
   }
 
   // Dispatch a runnable related to the global.
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const;
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable) const;
 
   RefPtr<BrowserChild> mBrowserChild;
 
@@ -183,7 +183,7 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   }
 
   NS_INLINE_DECL_STATIC_IID(DOM_BROWSERCHILD_IID)
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSIWEBBROWSERCHROME
   NS_DECL_NSIINTERFACEREQUESTOR
   NS_DECL_NSIWINDOWPROVIDER
@@ -584,6 +584,12 @@ class BrowserChild final : public nsMessageManagerScriptExecutor,
   void SetTargetAPZC(
       uint64_t aInputBlockId,
       const nsTArray<layers::ScrollableLayerGuid>& aTargets) const;
+  // Fast-path notification from EventListenerManager that a non-passive
+  // APZ-aware event listener has been registered. |aScrollId| identifies the
+  // nearest scroll container ancestor of the listener target (or the
+  // document's root scroll container for document/window listeners).
+  void NotifyApzAwareListenerAdded(
+      layers::ScrollableLayerGuid::ViewID aScrollId) const;
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvHandleTap(
       const layers::GeckoContentController_TapType& aType,

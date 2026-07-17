@@ -202,6 +202,30 @@ MOZ_RUNINIT /* static */ Vector<AsyncScriptCompileTask*>
 class AsyncScriptCompiler;
 
 class AsyncScriptCompilationCompleteTask : public Task {
+  static Vector<AsyncScriptCompilationCompleteTask*> sPendingTasks;
+
+  static void RegisterTask(AsyncScriptCompilationCompleteTask* aTask) {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    static bool sIsShutdownRegistered = false;
+    if (!sIsShutdownRegistered) {
+      sIsShutdownRegistered = true;
+
+      RunOnShutdown([] {
+        for (auto* task : sPendingTasks) {
+          task->CancelAtShutdown();
+        }
+      });
+    }
+    DebugOnly<bool> ok = sPendingTasks.append(aTask);
+    MOZ_ASSERT(ok, "AsyncScriptCompilationCompleteTask should register");
+  }
+
+  static void UnregisterTask(const AsyncScriptCompilationCompleteTask* aTask) {
+    MOZ_ASSERT(NS_IsMainThread());
+    sPendingTasks.eraseIfEqual(aTask);
+  }
+
  public:
   AsyncScriptCompilationCompleteTask(AsyncScriptCompiler* aCompiler,
                                      AsyncScriptCompileTask* aCompileTask)
@@ -209,6 +233,12 @@ class AsyncScriptCompilationCompleteTask : public Task {
         mCompiler(aCompiler),
         mCompileTask(aCompileTask) {
     MOZ_ASSERT(NS_IsMainThread());
+    RegisterTask(this);
+  }
+
+  ~AsyncScriptCompilationCompleteTask() {
+    MOZ_ASSERT(NS_IsMainThread());  // mCompiler should be freed on main thread.
+    UnregisterTask(this);
   }
 
 #ifdef MOZ_COLLECTING_RUNNABLE_TELEMETRY
@@ -221,6 +251,20 @@ class AsyncScriptCompilationCompleteTask : public Task {
   TaskResult Run() override;
 
  private:
+  void CancelAtShutdown() {
+    MOZ_ASSERT(NS_IsMainThread());
+
+    // Release AsyncScriptCompiler so that it can be destructed earlier while
+    // JS is still alive, instead of at TaskController shutdown (where JS is
+    // gone). This avoids use of values such as AsyncScriptCompiler::mPromise,
+    // see https://bugzilla.mozilla.org/show_bug.cgi?id=1940852#c40
+    //
+    // We don't bother with settling mCompiler::mPromise because we are
+    // shutting down anyway.
+    mCompiler = nullptr;
+    mCompileTask = nullptr;
+  }
+
   // NOTE:
   // This field is main-thread only, and this task shouldn't be freed off
   // main thread.
@@ -234,6 +278,9 @@ class AsyncScriptCompilationCompleteTask : public Task {
 
   RefPtr<AsyncScriptCompileTask> mCompileTask;
 };
+
+MOZ_RUNINIT /* static */ Vector<AsyncScriptCompilationCompleteTask*>
+    AsyncScriptCompilationCompleteTask::sPendingTasks;
 
 class AsyncScriptCompiler final : public nsIIncrementalStreamLoaderObserver {
  public:
@@ -378,7 +425,10 @@ bool AsyncScriptCompiler::StartOffThreadCompile(
 }
 
 Task::TaskResult AsyncScriptCompilationCompleteTask::Run() {
-  mCompiler->OnCompilationComplete(mCompileTask.get());
+  // mCompiler could have been cleared earlier, by CancelAtShutdown.
+  if (mCompiler) {
+    mCompiler->OnCompilationComplete(mCompileTask.get());
+  }
   mCompiler = nullptr;
   mCompileTask = nullptr;
   return TaskResult::Complete;

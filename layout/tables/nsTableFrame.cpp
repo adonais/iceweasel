@@ -6615,7 +6615,7 @@ void BCInlineDirSeg::GetIEndCorner(BCPaintBorderIterator& aIter,
     cornerSubWidth = aIter.mBCData->GetCorner(ownerSide, bevel);
   }
 
-  mIsIEndBevel = (mWidth > 0) ? bevel : 0;
+  mIsIEndBevel = (mWidth > 0) ? bevel : false;
   int32_t relColIndex = aIter.GetRelativeColIndex();
   nscoord verWidth =
       std::max(aIter.mBlockDirInfo[relColIndex].mWidth, aIStartSegISize);

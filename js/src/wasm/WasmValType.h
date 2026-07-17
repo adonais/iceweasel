@@ -458,7 +458,11 @@ class RefType {
   }
 
   bool isRefBottom() const {
+#ifdef ENABLE_WASM_JSPI
+    return isNone() || isNoFunc() || isNoExtern() || isNoExn() || isNoCont();
+#else
     return isNone() || isNoFunc() || isNoExtern() || isNoExn();
+#endif
   }
 
   // These methods are defined in WasmTypeDef.h to avoid a cycle while allowing

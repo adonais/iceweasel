@@ -61,6 +61,8 @@ skip-if = [
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 1937944
 ]
 
+["browser_contextmenu_privateWindow.js"]
+
 ["browser_contextmenu_whereToOpenLink.js"]
 
 ["browser_defaultPrivate_nimbus.js"]

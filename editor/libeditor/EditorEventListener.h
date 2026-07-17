@@ -85,10 +85,10 @@ class EditorEventListener : public nsIDOMEventListener {
   }
   MOZ_CAN_RUN_SCRIPT virtual nsresult PointerClick(
       WidgetMouseEvent* aPointerClick);
-  MOZ_CAN_RUN_SCRIPT nsresult Focus(const InternalFocusEvent& aFocusEvent);
-  MOZ_CAN_RUN_SCRIPT nsresult Blur(const InternalFocusEvent& aBlurEvent);
   MOZ_CAN_RUN_SCRIPT nsresult DragOverOrDrop(dom::DragEvent* aDragEvent);
   nsresult DragLeave(dom::DragEvent* aDragEvent);
+
+  MOZ_CAN_RUN_SCRIPT void DidFocus(const InternalFocusEvent& aFocusEvent);
 
   void RefuseToDropAndHideCaret(dom::DragEvent* aDragEvent);
   bool DragEventHasSupportingData(dom::DragEvent* aDragEvent) const;

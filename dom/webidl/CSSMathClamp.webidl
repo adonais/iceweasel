@@ -11,10 +11,7 @@
 [Exposed=(Window, Worker, PaintWorklet), Pref="layout.css.typed-om.enabled"]
 interface CSSMathClamp : CSSMathValue {
   [Throws] constructor(CSSNumberish lower, CSSNumberish value, CSSNumberish upper);
-  // TODO: Remove [Throws] once the lower attribute is fully implemented
-  [Throws] readonly attribute CSSNumericValue lower;
-  // TODO: Remove [Throws] once the value attribute is fully implemented
-  [Throws] readonly attribute CSSNumericValue value;
-  // TODO: Remove [Throws] once the upper attribute is fully implemented
-  [Throws] readonly attribute CSSNumericValue upper;
+  readonly attribute CSSNumericValue lower;
+  readonly attribute CSSNumericValue value;
+  readonly attribute CSSNumericValue upper;
 };

@@ -17,7 +17,6 @@
   width: 100%;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
   :host {
@@ -74,7 +73,62 @@
   position: absolute;
   pointer-events: none;
   color: var(--text-color-deemphasized);
+  inset-inline-start: var(--space-xxsmall);
   user-select: none;
+}
+
+.multiline-editor .ProseMirror .placeholder-hints {
+  --multiline-editor-placeholder-animation-duration: 3000ms;
+
+  color: var(--text-color-deemphasized);
+  height: 100%;
+  inset-inline-start: 0;
+  list-style: none;
+  margin: 0;
+  overflow: clip;
+  padding: 0;
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  user-select: none;
+  width: 100%;
+
+  li {
+    animation: multiline-editor-placeholder-animation calc(var(--multiline-editor-placeholder-count) * var(--multiline-editor-placeholder-animation-duration))
+      infinite;
+    animation-delay: calc(
+      (var(--multiline-editor-placeholder-index) - var(--multiline-editor-placeholder-count)) * var(--multiline-editor-placeholder-animation-duration)
+    );
+    inset-inline-start: 0;
+    max-width: 100%;
+    opacity: 0;
+    overflow: hidden;
+    position: absolute;
+    text-overflow: ellipsis;
+    top: 0;
+    visibility: hidden;
+    white-space: nowrap;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .multiline-editor .ProseMirror .placeholder-hints li {
+    animation: none;
+
+    &:first-child {
+      opacity: 1;
+      visibility: visible;
+    }
+  }
+}
+
+:host(:not([show-placeholder-animation])) .multiline-editor .ProseMirror .placeholder-hints li {
+  animation: none;
+
+  &:first-child {
+    opacity: 1;
+    visibility: visible;
+  }
 }
 
 :host([data-mention-placeholder]) .ProseMirror .ProseMirror-suggestion {

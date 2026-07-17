@@ -109,8 +109,8 @@ async function testSearchEngine(engineOrRestrict, telemetry, expected) {
   );
 
   let selector;
-  if (Object.keys(UrlbarTokenizer.RESTRICT).includes(engineOrRestrict)) {
-    let restrict = UrlbarTokenizer.RESTRICT[engineOrRestrict];
+  if (Object.keys(UrlbarShared.RESTRICT_TOKENS).includes(engineOrRestrict)) {
+    let restrict = UrlbarShared.RESTRICT_TOKENS[engineOrRestrict];
     selector = `panel-item[data-restrict="${restrict}"]`;
   } else {
     selector = `panel-item[data-engine-name="${engineOrRestrict}"]`;

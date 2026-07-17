@@ -17,11 +17,11 @@
 
 class nsIContent;
 
-nsresult NS_NewSVGSVGElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    mozilla::dom::FromParser aFromParser);
+nsresult NS_NewSVGSVGElement(nsIContent** aResult,
+                             already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                             mozilla::dom::FromParser aFromParser);
 nsresult NS_NewSVGUseElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla {
 class Encoding;
@@ -39,8 +39,8 @@ class SVGUseElement final : public SVGUseElementBase,
  protected:
   friend nsresult(::NS_NewSVGUseElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
-  explicit SVGUseElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
+  explicit SVGUseElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   virtual ~SVGUseElement();
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 

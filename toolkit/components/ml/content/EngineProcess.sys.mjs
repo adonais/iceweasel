@@ -26,6 +26,7 @@ export const BACKENDS = Object.freeze({
   onnxNative: "onnx-native",
   llamaCpp: "llama.cpp",
   bestLlama: "best-llama",
+  bestOnnx: "best-onnx",
   openai: "openai",
   staticEmbeddings: "static-embeddings",
 });
@@ -200,6 +201,9 @@ export const FEATURES = {
   },
   "memories-message-classification-system": {
     engineId: "smart-openai-memories-usage",
+  },
+  "llm-telemetry": {
+    engineId: "llm-telemetry-engine",
   },
 };
 
@@ -1073,9 +1077,38 @@ export class PipelineOptions {
       return keys1.every(key => isEqual(val1[key], val2[key]));
     };
 
-    return Object.keys(options).every(
-      key => skip.has(key) || isEqual(options[key], otherOptions[key])
-    );
+    return Object.keys(options).every(key => {
+      if (skip.has(key)) {
+        return true;
+      }
+      if (key === "backend") {
+        return PipelineOptions.#backendsCompatible(
+          options.backend,
+          otherOptions.backend
+        );
+      }
+      return isEqual(options[key], otherOptions[key]);
+    });
+  }
+
+  /**
+   * Whether two backend identifiers should be considered equivalent for
+   * engine reuse. "best-onnx" is a sentinel that resolves at engine-creation
+   * time to either "onnx" or "onnx-native"; a cached engine using either
+   * concrete backend should still satisfy a new "best-onnx" request.
+   */
+  static #backendsCompatible(a, b) {
+    if (a === b) {
+      return true;
+    }
+    const isOnnxConcrete = v => v === "onnx" || v === "onnx-native";
+    if (a === "best-onnx" && isOnnxConcrete(b)) {
+      return true;
+    }
+    if (b === "best-onnx" && isOnnxConcrete(a)) {
+      return true;
+    }
+    return false;
   }
 }
 

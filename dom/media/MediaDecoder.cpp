@@ -103,7 +103,7 @@ constexpr TimeUnit MediaDecoder::DEFAULT_NEXT_FRAME_AVAILABLE_BUFFERED;
 void MediaDecoder::InitStatics() {
   MOZ_ASSERT(NS_IsMainThread());
   // Eagerly init gMediaDecoderLog to work around bug 1415441.
-  MOZ_LOG(gMediaDecoderLog, LogLevel::Info, ("MediaDecoder::InitStatics"));
+  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Info, "MediaDecoder::InitStatics");
 
   if (XRE_IsParentProcess()) {
     // Lock Utility process preferences so that people cannot opt-out of
@@ -1397,13 +1397,14 @@ void MediaDecoder::SetStreamName(const nsAutoString& aStreamName) {
   mStreamName = aStreamName;
 }
 
-void MediaDecoder::ConnectMirrors(MediaDecoderStateMachineBase* aObject) {
+void MediaDecoder::ConnectMirrors() {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT(aObject);
-  mStateMachineDuration.Connect(aObject->CanonicalDuration());
-  mBuffered.Connect(aObject->CanonicalBuffered());
-  mCurrentPosition.Connect(aObject->CanonicalCurrentPosition());
-  mIsAudioDataAudible.Connect(aObject->CanonicalIsAudioDataAudible());
+  MOZ_ASSERT(mDecoderStateMachine);
+  mStateMachineDuration.Connect(mDecoderStateMachine->CanonicalDuration());
+  mBuffered.Connect(mDecoderStateMachine->CanonicalBuffered());
+  mCurrentPosition.Connect(mDecoderStateMachine->CanonicalCurrentPosition());
+  mIsAudioDataAudible.Connect(
+      mDecoderStateMachine->CanonicalIsAudioDataAudible());
 }
 
 void MediaDecoder::DisconnectMirrors() {
@@ -1415,13 +1416,14 @@ void MediaDecoder::DisconnectMirrors() {
 }
 
 void MediaDecoder::SetStateMachine(
-    MediaDecoderStateMachineBase* aStateMachine) {
+    already_AddRefed<MediaDecoderStateMachineBase> aStateMachine) {
   MOZ_ASSERT(NS_IsMainThread());
-  MOZ_ASSERT_IF(aStateMachine, !mDecoderStateMachine);
-  if (aStateMachine) {
-    mDecoderStateMachine = aStateMachine;
+  RefPtr<MediaDecoderStateMachineBase> stateMachine = aStateMachine;
+  MOZ_ASSERT_IF(stateMachine, !mDecoderStateMachine);
+  if (stateMachine) {
+    mDecoderStateMachine = std::move(stateMachine);
     LOG("set state machine %p", mDecoderStateMachine.get());
-    ConnectMirrors(aStateMachine);
+    ConnectMirrors();
     UpdateVideoDecodeMode();
   } else if (mDecoderStateMachine) {
     LOG("null out state machine %p", mDecoderStateMachine.get());

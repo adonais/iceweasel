@@ -41,6 +41,11 @@ GLOBAL(size_t, gChunkHeaderNumPages,
 GLOBAL(size_t, gMaxLargeClass,
        kChunkSize - gRealPageSize - (gChunkHeaderNumPages << gPageSize2Pow))
 
+// The minimum run size and minimum regions per run control how often run
+// allocation is required and reduce the amount of slow path executions.
+// 
+GLOBAL(size_t, gMinimumRunSize, std::max(gPageSize, 16_KiB))
+
 // Various checks that regard configuration.
 GLOBAL_ASSERT(1ULL << gPageSize2Pow == gPageSize,
               "Page size is not a power of two");

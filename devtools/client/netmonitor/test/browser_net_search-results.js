@@ -44,7 +44,7 @@ add_task(async function () {
   // Wait until there are two resources rendered in the results
   await waitForDOM(document, ".search-panel-content .treeRow.resourceRow", 2);
 
-  const searchMatchContents = document.querySelectorAll(
+  let searchMatchContents = document.querySelectorAll(
     ".search-panel-content .treeRow .treeIcon"
   );
 
@@ -155,6 +155,35 @@ add_task(async function () {
     ".cm-content",
     ".cm-line",
     [SEARCH_STRING]
+  );
+
+  const onRequest = waitForNetworkEvents(monitor, 1);
+  await SpecialPowers.spawn(
+    tab.linkedBrowser,
+    [[HTTPS_CUSTOM_GET_URL]],
+    makeRequests
+  );
+  await onRequest;
+
+  // Focus the Search input
+  const searchInput = document.querySelector(
+    ".search-panel .devtools-searchinput"
+  );
+  searchInput.focus();
+  searchInput.select();
+  typeInNetmonitor("function get(", monitor);
+  EventUtils.synthesizeKey("KEY_Enter");
+
+  // Wait until there's a resource rendered in the results
+  searchMatchContents = await waitForDOM(
+    document,
+    ".search-panel-content .treeRow.resourceRow"
+  );
+
+  is(
+    searchMatchContents.length,
+    1,
+    "Got a result for a search query with an unclosed parenthesis"
   );
 
   await teardown(monitor);

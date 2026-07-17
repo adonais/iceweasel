@@ -237,7 +237,7 @@ class MediaTrackGraphImpl : public MediaTrackGraph,
    * Dispatches a runnable from any thread to the correct main thread for this
    * MediaTrackGraph.
    */
-  void Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
+  void Dispatch(already_AddRefed<nsIRunnable> aRunnable);
 
   /**
    * Make this MediaTrackGraph enter forced-shutdown state. This state

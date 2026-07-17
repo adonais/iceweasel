@@ -82,7 +82,7 @@ class FakeDevice:
         self.pulled_files[destination] = source
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 def test_simpleperf_setup():
     mach_cmd, metadata, env = running_env(
         app="fenix", tests=[str(EXAMPLE_SHELL_TEST)], output=None
@@ -125,7 +125,7 @@ def test_simpleperf_setup():
     assert "MOZPERFTEST_SIMPLEPERF" not in os.environ
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("os.path.exists", return_value=True)
 def test_simpleperf_setup_with_path(mock_exists):
     """Test setup_simpleperf_path when path is provided."""
@@ -145,7 +145,7 @@ def test_simpleperf_setup_with_path(mock_exists):
     )
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("os.path.exists", return_value=True)
 def test_simpleperf_setup_without_path(mock_exists):
     """Test setup_simpleperf_path when no path is provided and NDK needs to be installed."""
@@ -186,7 +186,7 @@ def test_simpleperf_setup_without_path(mock_exists):
     )
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("os.path.exists", return_value=False)
 def test_simpleperf_setup_missing_binary(mock_exists):
     """Test setup_simpleperf_path when the binary doesn't exist."""
@@ -220,7 +220,7 @@ class MockProcess:
         return b"stdout data", b"stderr data"
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("mozperftest.system.simpleperf.subprocess.Popen")
 @mock.patch(
     "mozperftest.system.simpleperf.SimpleperfProfiler.is_enabled", return_value=True
@@ -253,7 +253,7 @@ def test_simpleperf_controller_start_default_options(mock_is_enabled, mock_popen
     assert controller.profiler_process == mock_process
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("mozperftest.system.simpleperf.subprocess.Popen")
 @mock.patch(
     "mozperftest.system.simpleperf.SimpleperfProfiler.is_enabled", return_value=True
@@ -284,7 +284,7 @@ def test_simpleperf_controller_start_custom_options(mock_is_enabled, mock_popen)
     assert controller.profiler_process == mock_process
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("mozperftest.system.simpleperf.Path")
 @mock.patch(
     "mozperftest.system.simpleperf.SimpleperfProfiler.is_enabled", return_value=True
@@ -316,7 +316,7 @@ def test_simpleperf_controller_stop(mock_is_enabled, mock_path):
     assert controller.profiler_process is None
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch(
     "mozperftest.system.simpleperf.SimpleperfProfiler.is_enabled", return_value=True
 )
@@ -331,7 +331,7 @@ def test_simpleperf_controller_start_already_running(mock_is_enabled):
     assert "simpleperf already running" in str(excinfo.value)
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch(
     "mozperftest.system.simpleperf.SimpleperfProfiler.is_enabled", return_value=True
 )
@@ -348,7 +348,7 @@ def test_simpleperf_controller_stop_not_running(mock_is_enabled):
     assert "no profiler process found" in str(excinfo.value)
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("mozperftest.system.simpleperf.subprocess.Popen")
 @mock.patch(
     "mozperftest.system.simpleperf.SimpleperfProfiler.is_enabled", return_value=True
@@ -373,7 +373,7 @@ def test_simpleperf_controller_stop_error(mock_is_enabled, mock_popen):
 # Tests for Simpleperf Symbolication
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 def test_simpleperf_invalid_symbolicate_arguments():
     """Test simpleperf symbolication when empty or invalid arguments are passed"""
     mach_cmd, metadata, env = running_env(
@@ -422,7 +422,7 @@ def test_simpleperf_invalid_symbolicate_arguments():
     assert not hasattr(profiler, "profiler_node_tools_dir")
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("mozperftest.system.simpleperf.SYMBOL_SERVER_TIMEOUT", 0.1)
 def test_local_simpleperf_symbolicate(tmp_path):
 
@@ -548,7 +548,7 @@ def test_local_simpleperf_symbolicate(tmp_path):
         assert output_zip.exists()
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("mozperftest.system.simpleperf.SYMBOL_SERVER_TIMEOUT", 0.1)
 def test_local_simpleperf_symbolicate_timeout(tmp_path):
 
@@ -623,7 +623,7 @@ def test_local_simpleperf_symbolicate_timeout(tmp_path):
         mock_cleanup.assert_called_once()
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("mozperftest.system.simpleperf.SYMBOL_SERVER_TIMEOUT", 0.1)
 def test_ci_simpleperf_symbolicate(tmp_path):
 
@@ -796,7 +796,7 @@ def test_ci_simpleperf_symbolicate(tmp_path):
         assert output_zip.exists()
 
 
-@mock.patch("mozperftest.system.simpleperf.ADBDevice", new=FakeDevice)
+@mock.patch("mozperftest.system.simpleperf.get_adb_device_or_emu", new=FakeDevice)
 @mock.patch("mozperftest.system.simpleperf.SYMBOL_SERVER_TIMEOUT", 0.1)
 def test_ci_simpleperf_symbolicate_timeout(tmp_path):
 

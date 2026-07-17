@@ -254,9 +254,9 @@ bool CrashStatsLogForwarder::UpdateStringsVectorInternal(
   // just out of paranoia, but we know index <= mBuffer.size().
   LoggingRecordEntry newEntry(mIndex, aString, tStamp);
   if (index >= static_cast<int32_t>(mBuffer.size())) {
-    mBuffer.push_back(newEntry);
+    mBuffer.push_back(std::move(newEntry));
   } else {
-    mBuffer[index] = newEntry;
+    mBuffer[index] = std::move(newEntry);
   }
   return true;
 }
@@ -1921,7 +1921,7 @@ bool gfxPlatform::IsKnownIconFontFamily(const nsAtom* aFamilyName) const {
       aFamilyName);
 }
 
-gfxFontEntry* gfxPlatform::LookupLocalFont(
+already_AddRefed<gfxFontEntry> gfxPlatform::LookupLocalFont(
     FontVisibilityProvider* aFontVisibilityProvider,
     const nsACString& aFontName, const WeightRange& aWeightForEntry,
     const StretchRange& aStretchForEntry,
@@ -1931,7 +1931,7 @@ gfxFontEntry* gfxPlatform::LookupLocalFont(
       aStyleForEntry);
 }
 
-gfxFontEntry* gfxPlatform::MakePlatformFont(
+already_AddRefed<gfxFontEntry> gfxPlatform::MakePlatformFont(
     const nsACString& aFontName, const WeightRange& aWeightForEntry,
     const StretchRange& aStretchForEntry, const SlantStyleRange& aStyleForEntry,
     const uint8_t* aFontData, uint32_t aLength) {
@@ -2999,6 +2999,10 @@ void gfxPlatform::InitHardwareVideoConfig() {
     return;
   }
 
+#ifdef XP_MACOSX
+  const bool isXpcshell = !!PR_GetEnv("XPCSHELL_TEST_PROFILE_DIR");
+#endif
+
   // Collect the gfxVar updates into a single message.
   gfxVarsCollectUpdates collect;
 
@@ -3045,6 +3049,13 @@ void gfxPlatform::InitHardwareVideoConfig() {
                             "Force disabled by failed sanity test",
                             "FEATURE_FAILURE_SANITY_TEST_FAILED"_ns);
   }
+#ifdef XP_MACOSX
+  else if (isXpcshell) {
+    featureDec.ForceDisable(FeatureStatus::Unavailable,
+                            "Force disabled in xpcshell due to signing",
+                            "FEATURE_FAILURE_OSX_XPCSHELL_SIGNING"_ns);
+  }
+#endif
 
   FeatureState& featureEnc =
       gfxConfig::GetFeature(Feature::HARDWARE_VIDEO_ENCODING);
@@ -3087,6 +3098,13 @@ void gfxPlatform::InitHardwareVideoConfig() {
                             "Force disabled by failed sanity test",
                             "FEATURE_FAILURE_SANITY_TEST_FAILED"_ns);
   }
+#ifdef XP_MACOSX
+  else if (isXpcshell) {
+    featureEnc.ForceDisable(FeatureStatus::Unavailable,
+                            "Force disabled in xpcshell due to signing",
+                            "FEATURE_FAILURE_OSX_XPCSHELL_SIGNING"_ns);
+  }
+#endif
 
   FeatureState& featureHdr = gfxConfig::GetFeature(Feature::VIDEO_HDR);
   featureHdr.Reset();
@@ -3113,6 +3131,13 @@ void gfxPlatform::InitHardwareVideoConfig() {
         "User disabled via media.hardware-video-decoding-vulkan.enabled pref",
         "FEATURE_HARDWARE_VIDEO_DECODING_VULKAN_PREF_DISABLED"_ns);
   }
+#ifdef XP_MACOSX
+  if (isXpcshell) {
+    featureVulkanDec.ForceDisable(FeatureStatus::Unavailable,
+                                  "Force disabled in xpcshell due to signing",
+                                  "FEATURE_FAILURE_OSX_XPCSHELL_SIGNING"_ns);
+  }
+#endif
 
   bool canUseVulkanDecode = false;
   int32_t vulkanDecStatus = nsIGfxInfo::FEATURE_STATUS_UNKNOWN;

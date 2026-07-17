@@ -35,7 +35,7 @@ class AutoClose {
   void CloseAndRelease() { TakeOverInternal(nullptr); }
 
  private:
-  void TakeOverInternal(already_AddRefed<T>&& aOther) {
+  void TakeOverInternal(already_AddRefed<T> aOther) {
     nsCOMPtr<T> ptr(std::move(aOther));
     {
       MutexAutoLock lock(mMutex);

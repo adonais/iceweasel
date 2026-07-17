@@ -139,12 +139,6 @@ class ScrollAnchorContainer final {
   // scroll anchor
   nsIFrame* mAnchorNode = nullptr;
 
-  // The last offset of the scroll anchor node's scrollable overflow rect start
-  // edge relative to the scroll-port start edge, in the block axis of the
-  // scroll frame. This is used for calculating the distance to scroll to keep
-  // the anchor node in the same relative position
-  nscoord mLastAnchorOffset = 0;
-
   struct DisablingHeuristic {
     // The number of consecutive scroll anchoring adjustments that have happened
     // without a user scroll.
@@ -162,6 +156,12 @@ class ScrollAnchorContainer final {
     bool AdjustmentMade(const ScrollAnchorContainer&, nscoord aAdjustment);
     void Reset();
   } mHeuristic;
+
+  // The last offset of the scroll anchor node's scrollable overflow rect start
+  // edge relative to the scroll-port start edge, in the block axis of the
+  // scroll frame. This is used for calculating the distance to scroll to keep
+  // the anchor node in the same relative position.
+  nscoord mLastAnchorOffset = 0;
 
   // True if we've been disabled by the heuristic controlled by
   // layout.css.scroll-anchoring.max-consecutive-adjustments and

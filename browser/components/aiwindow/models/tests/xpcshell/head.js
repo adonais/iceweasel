@@ -29,11 +29,13 @@ function makeConversation({
   securityProperties.commit();
   return {
     securityProperties,
+    serpUrlsForAnonymousFetch: new Set(),
     addSeenUrls() {},
     async addHistoryResults() {},
     getAllMentionURLs() {
       return new Set();
     },
+    addSerpUrlsForAnonymousFetch() {},
     getLatestUserMentionCount() {
       return 0;
     },

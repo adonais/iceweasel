@@ -646,7 +646,7 @@ HasDeviceTouchScreen:
 InstallTime:
   description: >
     The time when Firefox was installed expressed as seconds since the Epoch
-  type: string # This should be u64 but we currently handle it as a string
+  type: u64
   scope: report
 
 ipc_channel_error:
@@ -1207,6 +1207,14 @@ ShutdownReason:
     "OSSessionEnd" or "OSShutdown".
   type: string
   scope: ping
+
+SignalOrigin:
+  description: >
+    Process name of the source of the signal that caused the crash, if applicable.
+    - On Linux, populated with the name of the process that sent a fatal signal
+    to the crashing process, if it can be determined.
+  type: string
+  scope: report
 
 StackTraces:
   description: >

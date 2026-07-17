@@ -9,7 +9,6 @@
 
 #include "mozilla/NotNull.h"
 #include "mozilla/Result.h"
-#include "mozilla/css/SheetParsingMode.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsICSSLoaderObserver.h"
@@ -18,6 +17,7 @@
 class nsIURI;
 
 namespace mozilla {
+enum class StyleOrigin : uint8_t;
 namespace dom {
 class Promise;
 }
@@ -26,7 +26,7 @@ class StyleSheet;
 
 class PreloadedStyleSheet : public nsIPreloadedStyleSheet {
  public:
-  PreloadedStyleSheet(nsIURI*, css::SheetParsingMode);
+  PreloadedStyleSheet(nsIURI*, StyleOrigin);
 
   NS_DECL_CYCLE_COLLECTING_ISUPPORTS
   NS_DECL_CYCLE_COLLECTION_CLASS(PreloadedStyleSheet)
@@ -60,10 +60,10 @@ class PreloadedStyleSheet : public nsIPreloadedStyleSheet {
   };
 
   RefPtr<StyleSheet> mSheet;
-
-  bool mLoaded;
   nsCOMPtr<nsIURI> mURI;
-  css::SheetParsingMode mParsingMode;
+
+  bool mLoaded = false;
+  const StyleOrigin mOrigin;
 };
 
 }  // namespace mozilla

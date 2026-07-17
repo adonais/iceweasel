@@ -1094,11 +1094,38 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     });
   }
 
+  #removeTabSpecificReportData(webcompatInfo) {
+    for (const [categoryName, categoryItems] of Object.entries(webcompatInfo)) {
+      if (categoryItems.isTabSpecific) {
+        delete webcompatInfo[categoryName];
+        continue;
+      }
+      for (let [name, { isTabSpecific }] of Object.entries(categoryItems)) {
+        if (isTabSpecific) {
+          delete webcompatInfo[categoryName][name];
+        }
+      }
+    }
+  }
+
   async #openWebCompatTab(tabbrowser) {
     const { document } = tabbrowser.selectedBrowser.documentGlobal;
-    const { description, reason, url, currentTabWebcompatDetailsPromise } =
-      ViewState.get(document);
+    const {
+      description,
+      reason,
+      screenshotToggle,
+      url,
+      currentTabWebcompatDetailsPromise,
+      wrongTabInfo,
+    } = ViewState.get(document);
     const webcompatInfo = await currentTabWebcompatDetailsPromise;
+    if (!screenshotToggle.pressed) {
+      webcompatInfo.tabInfo.screenshot.value = undefined;
+    }
+
+    if (wrongTabInfo) {
+      this.#removeTabSpecificReportData(webcompatInfo);
+    }
 
     const endpointUrl =
       Services.prefs.getStringPref(
@@ -1137,6 +1164,7 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
     reason,
     shouldSendBlockedTrackers,
     url,
+    wrongTabInfo,
   }) {
     const gBase = Glean.brokenSiteReport;
 
@@ -1156,6 +1184,10 @@ export var ReportBrokenSite = new (class ReportBrokenSite {
 
     if (!shouldSendBlockedTrackers) {
       delete details.antitracking.blockedOrigins;
+    }
+
+    if (wrongTabInfo) {
+      this.#removeTabSpecificReportData(details);
     }
 
     for (const categoryItems of Object.values(details)) {

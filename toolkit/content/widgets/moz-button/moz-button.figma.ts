@@ -99,16 +99,13 @@ figma.connect(
   }
 );
 
-// Nova Components - Icon button
+// Nova Components - Toolbar button
 figma.connect(
   "https://www.figma.com/design/PqfaOcMGbX5liEXTTUzeYX/Nova-Components--Experimental-?node-id=1-589",
   {
     props: {
       iconSrc: "chrome://example.svg",
-      type: figma.boolean("Ghost", {
-        true: "icon ghost",
-        false: "icon",
-      }),
+      type: "ghost",
       attention: figma.boolean("Show attention dot"),
       disabled: figma.enum("State", {
         Disabled: true,

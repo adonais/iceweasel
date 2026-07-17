@@ -74,9 +74,7 @@ export class ProfilesParent extends JSWindowActorParent {
 
         // Since this profile will be deleted, let's make sure to update any prefs
         // that depended on its existence
-        await lazy.BackupService.removeFromEnabledListPref(
-          SelectableProfileService.currentProfile.id
-        );
+        await lazy.BackupService.maybeRemoveFromEnabledListPref();
 
         try {
           await SelectableProfileService.deleteCurrentProfile();

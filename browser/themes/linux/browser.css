@@ -62,7 +62,6 @@
       dialog::backdrop {
         border-top-left-radius: env(-moz-gtk-csd-titlebar-radius);
         border-top-right-radius: env(-moz-gtk-csd-titlebar-radius);
-        /* stylelint-disable-next-line media-query-no-invalid */
         @media -moz-pref("widget.gtk.rounded-bottom-corners.enabled") {
           /* Use an uniform clip to allow WebRender to optimize it better */
           border-radius: env(-moz-gtk-csd-titlebar-radius);

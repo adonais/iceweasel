@@ -81,6 +81,10 @@ https_first_disabled = true
 
 ["browser_html_detail_permissions.js"]
 
+["browser_html_detail_permissions_file_access.js"]
+
+["browser_html_detail_permissions_policy_blocked.js"]
+
 ["browser_html_detail_permissions_userScripts.js"]
 
 ["browser_html_detail_view.js"]
@@ -95,6 +99,8 @@ skip-if = [
 ["browser_html_discover_view_clientid.js"]
 
 ["browser_html_discover_view_prefs.js"]
+
+["browser_html_embedder_hook.js"]
 
 ["browser_html_forced_colors_notice.js"]
 run-if = [

@@ -31,7 +31,7 @@
 #include "nsWindowsHelpers.h"
 #include "prsystem.h"
 
-#define LOG(...) MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug, (__VA_ARGS__))
+#define LOG(...) MOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug, __VA_ARGS__)
 
 namespace mozilla {
 
@@ -44,7 +44,7 @@ static void MOZ_FORMAT_PRINTF(2, 3)
   const nsVprintfCString markerString(aFormat, ap);
   va_end(ap);
   PROFILER_MARKER_TEXT(aMarkerTag, MEDIA_PLAYBACK, {}, markerString);
-  LOG("%s", markerString.get());
+  LOG("{}", markerString.get());
 }
 
 static const GUID CLSID_CMSAACDecMFT = {
@@ -481,10 +481,9 @@ media::DecodeSupportSet WMFDecoderModule::SupportsMimeType(
     return media::DecodeSupportSet{};
   }
   auto supports = Supports(SupportDecoderParams(*trackInfo), aDiagnostics);
-  MOZ_LOG(sPDMLog, LogLevel::Debug,
-          ("WMF decoder %s requested type '%s'",
-           !supports.isEmpty() ? "supports" : "rejects",
-           PromiseFlatCString(aMimeType).get()));
+  MOZ_LOG_FMT(sPDMLog, LogLevel::Debug, "WMF decoder {} requested type '{}'",
+              !supports.isEmpty() ? "supports" : "rejects",
+              PromiseFlatCString(aMimeType).get());
   return supports;
 }
 

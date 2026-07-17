@@ -1395,7 +1395,7 @@ bool jit::TraceWeakCacheIRStub(JSTracer* trc, T* stub,
 
   // Trace all fields before returning because this stub can be traced again
   // later through TraceBaselineStubFrame.
-  bool isDead = false;
+  bool anyDead = false;
 
   uint32_t field = 0;
   size_t offset = 0;
@@ -1405,42 +1405,46 @@ bool jit::TraceWeakCacheIRStub(JSTracer* trc, T* stub,
       case Type::WeakShape: {
         WeakHeapPtr<Shape*>& shapeField =
             stubInfo->getStubField<T, Type::WeakShape>(stub, offset);
-        auto r = TraceWeakEdge(trc, &shapeField, "cacheir-weak-shape");
-        if (r.isDead()) {
-          isDead = true;
+        bool isLive =
+            TraceOrClearWeakEdge(trc, &shapeField, "cacheir-weak-shape");
+        if (!isLive) {
+          anyDead = true;
         }
         break;
       }
       case Type::WeakObject: {
         WeakHeapPtr<JSObject*>& objectField =
             stubInfo->getStubField<T, Type::WeakObject>(stub, offset);
-        auto r = TraceWeakEdge(trc, &objectField, "cacheir-weak-object");
-        if (r.isDead()) {
-          isDead = true;
+        bool isLive =
+            TraceOrClearWeakEdge(trc, &objectField, "cacheir-weak-object");
+        if (!isLive) {
+          anyDead = true;
         }
         break;
       }
       case Type::WeakBaseScript: {
         WeakHeapPtr<BaseScript*>& scriptField =
             stubInfo->getStubField<T, Type::WeakBaseScript>(stub, offset);
-        auto r = TraceWeakEdge(trc, &scriptField, "cacheir-weak-script");
-        if (r.isDead()) {
-          isDead = true;
+        bool isLive =
+            TraceOrClearWeakEdge(trc, &scriptField, "cacheir-weak-script");
+        if (!isLive) {
+          anyDead = true;
         }
         break;
       }
       case Type::WeakValue: {
         WeakHeapPtr<Value>& valueField =
             stubInfo->getStubField<T, Type::WeakValue>(stub, offset);
-        auto r = TraceWeakEdge(trc, &valueField, "cacheir-weak-value");
-        if (r.isDead()) {
-          isDead = true;
+        bool isLive =
+            TraceOrClearWeakEdge(trc, &valueField, "cacheir-weak-value");
+        if (!isLive) {
+          anyDead = true;
         }
         break;
       }
       case Type::Limit:
         // Done.
-        return !isDead;
+        return !anyDead;
       case Type::RawInt32:
       case Type::RawPointer:
       case Type::ICScript:
@@ -1500,7 +1504,10 @@ bool CacheIRWriter::stubDataEqualsIgnoringShapeAndOffset(
     if (offset == shapeFieldOffset) {
       // Don't compare shapeField.
     } else if (offsetFieldOffset.isSome() && offset == *offsetFieldOffset) {
-      // Skip offsetField, the "FromOffset" variant doesn't have this.
+      // Skip offsetField, the "FromOffset" variant doesn't have this. Assert
+      // the offset field is the last stub field: if that ever changes, we
+      // should make sure we handle trailing fields correctly.
+      MOZ_RELEASE_ASSERT(&field == &stubFields_.back());
       continue;
     } else {
       if (field.sizeIsWord()) {
@@ -1794,6 +1801,25 @@ bool CacheIRCompiler::emitGuardIsUndefined(ValOperandId inputId) {
   }
 
   masm.branchTestUndefined(Assembler::NotEqual, input, failure->label());
+  return true;
+}
+
+bool CacheIRCompiler::emitGuardIsNotObject(ValOperandId inputId) {
+  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
+
+  JSValueType knownType = allocator.knownType(inputId);
+  if (knownType != JSVAL_TYPE_UNKNOWN && knownType != JSVAL_TYPE_OBJECT) {
+    return true;
+  }
+
+  ValueOperand input = allocator.useValueRegister(masm, inputId);
+
+  FailurePath* failure;
+  if (!addFailurePath(&failure)) {
+    return false;
+  }
+
+  masm.branchTestObject(Assembler::Equal, input, failure->label());
   return true;
 }
 
@@ -2744,22 +2770,6 @@ bool CacheIRCompiler::emitGuardIsNotArrayBufferMaybeShared(ObjOperandId objId) {
   }
 
   masm.branchIfIsArrayBufferMaybeShared(obj, scratch, failure->label());
-  return true;
-}
-
-bool CacheIRCompiler::emitGuardIsTypedArray(ObjOperandId objId) {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-
-  Register obj = allocator.useRegister(masm, objId);
-  AutoScratchRegister scratch(allocator, masm);
-
-  FailurePath* failure;
-  if (!addFailurePath(&failure)) {
-    return false;
-  }
-
-  masm.loadObjClassUnsafe(obj, scratch);
-  masm.branchIfClassIsNotTypedArray(scratch, failure->label());
   return true;
 }
 
@@ -12090,6 +12100,8 @@ bool CacheIRCompiler::emitFuzzilliHashResult(ValOperandId valId) {
   return true;
 }
 #endif
+
+bool CacheIRCompiler::emitPblReturn() { MOZ_CRASH("Unsupported pseudo-op"); }
 
 template <typename Fn, Fn fn>
 void CacheIRCompiler::callVM(MacroAssembler& masm) {

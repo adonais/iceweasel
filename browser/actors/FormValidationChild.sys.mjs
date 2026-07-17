@@ -7,8 +7,6 @@
  * the display of the help panel on invalid elements.
  */
 
-import { LayoutUtils } from "resource://gre/modules/LayoutUtils.sys.mjs";
-
 export class FormValidationChild extends JSWindowActorChild {
   constructor() {
     super();
@@ -155,10 +153,12 @@ export class FormValidationChild extends JSWindowActorChild {
   _showPopup(aElement) {
     // Collect positional information and show the popup
     let panelData = {};
+    let win = aElement.documentGlobal;
 
     panelData.message = this._validationMessage;
 
-    panelData.screenRect = LayoutUtils.getElementBoundingScreenRect(aElement);
+    panelData.screenRect =
+      win.windowUtils.getElementBoundingScreenRect(aElement);
 
     // We want to show the popup at the middle of checkbox and radio buttons
     // and where the content begin for the other elements.
@@ -172,7 +172,7 @@ export class FormValidationChild extends JSWindowActorChild {
     }
     this.sendAsyncMessage("FormValidation:ShowPopup", panelData);
 
-    aElement.documentGlobal.addEventListener("pagehide", this, {
+    win.addEventListener("pagehide", this, {
       mozSystemGroup: true,
     });
   }

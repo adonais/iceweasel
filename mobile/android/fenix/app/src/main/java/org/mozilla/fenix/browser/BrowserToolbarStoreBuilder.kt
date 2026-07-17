@@ -32,7 +32,6 @@ import org.mozilla.fenix.ext.isTallWindow
 import org.mozilla.fenix.ext.isWideWindow
 import org.mozilla.fenix.search.BrowserToolbarSearchMiddleware
 import org.mozilla.fenix.search.BrowserToolbarSearchStatusSyncMiddleware
-import org.mozilla.fenix.utils.Settings
 
 /**
  * Delegate for building the [BrowserToolbarStore] used in the browser screen.
@@ -52,7 +51,6 @@ object BrowserToolbarStoreBuilder {
      * @param browsingModeManager [BrowsingModeManager] for querying the current browsing mode.
      * @param thumbnailsFeature [BrowserThumbnails] for requesting screenshots of the current tab.
      * @param readerModeController [ReaderModeController] for managing the reader mode.
-     * @param settings [Settings] object to get the toolbar position and other settings.
      * @param customTabSession [CustomTabSessionState] if the toolbar is shown in a custom tab.
      * @param isSandboxCustomTab Whether the custom tab is sandboxed.
      */
@@ -68,7 +66,6 @@ object BrowserToolbarStoreBuilder {
         browsingModeManager: BrowsingModeManager,
         thumbnailsFeature: () -> BrowserThumbnails?,
         readerModeController: ReaderModeController,
-        settings: Settings,
         customTabSession: CustomTabSessionState? = null,
         isSandboxCustomTab: Boolean = false,
     ) = fragment.fragmentStore(
@@ -103,7 +100,7 @@ object BrowserToolbarStoreBuilder {
                         nimbusComponents = components.nimbus,
                         clipboard = activity.components.clipboardHandler,
                         publicSuffixList = components.publicSuffixList,
-                        settings = settings,
+                        settings = components.settings,
                         shareUseCases = components.useCases.shareUseCases,
                         navController = navController,
                         browsingModeManager = browsingModeManager,
@@ -125,7 +122,7 @@ object BrowserToolbarStoreBuilder {
                         components = components,
                         navController = navController,
                         browsingModeManager = browsingModeManager,
-                        settings = settings,
+                        settings = components.settings,
                         scope = lifecycleScope,
                     ),
                     BrowserToolbarTelemetryMiddleware(),
@@ -146,7 +143,7 @@ object BrowserToolbarStoreBuilder {
                         clipboard = activity.components.clipboardHandler,
                         navController = navController,
                         closeTabDelegate = { activity.finishAndRemoveTask() },
-                        settings = settings,
+                        settings = components.settings,
                         scope = lifecycleScope,
                         isSandboxCustomTab = isSandboxCustomTab,
                     ),

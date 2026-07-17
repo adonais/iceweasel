@@ -11,9 +11,8 @@
 using namespace mozilla;
 using namespace mozilla::dom;
 
-nsresult NS_NewXMLElement(
-    Element** aInstancePtrResult,
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+nsresult NS_NewXMLElement(Element** aInstancePtrResult,
+                          already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(std::move(aNodeInfo));
   auto* nim = nodeInfo->NodeInfoManager();
   RefPtr<nsXMLElement> it = new (nim) nsXMLElement(nodeInfo.forget());
@@ -36,6 +35,12 @@ void nsXMLElement::UnbindFromTree(UnbindContext& aContext) {
       break;
     case PseudoStyleType::Backdrop:
       property = nsGkAtoms::backdropPseudoProperty;
+      break;
+    case PseudoStyleType::Checkmark:
+      property = nsGkAtoms::checkmarkPseudoProperty;
+      break;
+    case PseudoStyleType::PickerIcon:
+      property = nsGkAtoms::pickerIconPseudoProperty;
       break;
     default:
       property = nullptr;

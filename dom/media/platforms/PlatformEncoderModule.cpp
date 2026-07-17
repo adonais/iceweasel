@@ -11,9 +11,9 @@
 namespace mozilla {
 
 extern LazyLogModule sPEMLog;
-#define LOGD(fmt, ...)                       \
-  MOZ_LOG(sPEMLog, mozilla::LogLevel::Debug, \
-          ("PEM: %s: " fmt, __func__, ##__VA_ARGS__))
+#define LOGD(fmt, ...)                                                      \
+  MOZ_LOG_FMT(sPEMLog, mozilla::LogLevel::Debug, "PEM: {}: " fmt, __func__, \
+              ##__VA_ARGS__)
 
 RefPtr<PlatformEncoderModule::CreateEncoderPromise>
 PlatformEncoderModule::AsyncCreateEncoder(const EncoderConfig& aEncoderConfig,
@@ -118,30 +118,31 @@ bool CanLikelyEncode(const EncoderConfig& aConfig) {
     int width = aConfig.mSize.width;
     int height = aConfig.mSize.height;
     if (width % 2 || !width) {
-      LOGD("Invalid width of %d for h264", width);
+      LOGD("Invalid width of {} for h264", width);
       return false;
     }
     if (height % 2 || !height) {
-      LOGD("Invalid height of %d for h264", height);
+      LOGD("Invalid height of {} for h264", height);
       return false;
     }
     if (specific.mProfile != H264_PROFILE_BASE &&
         specific.mProfile != H264_PROFILE_MAIN &&
         specific.mProfile != H264_PROFILE_HIGH) {
-      LOGD("Invalid profile of %x for h264", specific.mProfile);
+      LOGD("Invalid profile of {:x} for h264",
+           static_cast<int>(specific.mProfile));
       return false;
     }
     // x264 (Linux software) and some Windows configuration (e.g. some nvidia
     // hardware) support level 62 which supports 8k
     if ((specific.mLevel >= H264_LEVEL::H264_LEVEL_6) &&
         (width > 2 * 4096 || height > 2 * 4096)) {
-      LOGD("Invalid size of %dx%d for h264", width, height);
+      LOGD("Invalid size of {}x{} for h264", width, height);
       return false;
     }
     // Levels strictly below 6 are limited to 4096x4096px
     if (specific.mLevel < H264_LEVEL::H264_LEVEL_6 &&
         (width > 4096 || height > 4096)) {
-      LOGD("Invalid size of %dx%d for h264", width, height);
+      LOGD("Invalid size of {}x{} for h264", width, height);
       return false;
     }
   }
@@ -149,7 +150,7 @@ bool CanLikelyEncode(const EncoderConfig& aConfig) {
     int width = aConfig.mSize.width;
     int height = aConfig.mSize.height;
     if (width > 2 << 13 || height > 2 << 13) {
-      LOGD("Invalid size of %dx%d for VP8", width, height);
+      LOGD("Invalid size of {}x{} for VP8", width, height);
       return false;
     }
   }
@@ -157,7 +158,7 @@ bool CanLikelyEncode(const EncoderConfig& aConfig) {
     int width = aConfig.mSize.width;
     int height = aConfig.mSize.height;
     if (width > 2 << 15 || height > 2 << 15) {
-      LOGD("Invalid size of %dx%d for VP9", width, height);
+      LOGD("Invalid size of {}x{} for VP9", width, height);
       return false;
     }
   }

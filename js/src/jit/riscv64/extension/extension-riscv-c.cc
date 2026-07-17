@@ -1,10 +1,13 @@
 // Copyright 2022 the V8 project authors. All rights reserved.
 // Use of this source code is governed by a BSD-style license that can be
 // found in the LICENSE file.
+
 #include "jit/riscv64/extension/extension-riscv-c.h"
 #include "jit/riscv64/Assembler-riscv64.h"
+#include "jit/riscv64/base/Integer.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
 #include "jit/riscv64/Architecture-riscv64.h"
+
 namespace js {
 namespace jit {
 // RV64C Standard Extension
@@ -239,24 +242,6 @@ void AssemblerRISCVC::c_srai(Register rs1, int8_t shamt6) {
 void AssemblerRISCVC::c_andi(Register rs1, int8_t imm6) {
   MOZ_ASSERT(((rs1.code() & 0b11000) == 0b01000) && is_int6(imm6));
   GenInstrCBA(0b100, 0b10, C1, rs1, imm6);
-}
-
-bool AssemblerRISCVC::IsCJal(Instr instr) {
-  return (instr & kRvcOpcodeMask) == RO_C_J;
-}
-
-bool AssemblerRISCVC::IsCBranch(Instr instr) {
-  int Op = instr & kRvcOpcodeMask;
-  return Op == RO_C_BNEZ || Op == RO_C_BEQZ;
-}
-
-int AssemblerRISCVC::CJumpOffset(Instr instr) {
-  int32_t imm12 = ((instr & 0x4) << 3) | ((instr & 0x38) >> 2) |
-                  ((instr & 0x40) << 1) | ((instr & 0x80) >> 1) |
-                  ((instr & 0x100) << 2) | ((instr & 0x600) >> 1) |
-                  ((instr & 0x800) >> 7) | ((instr & 0x1000) >> 1);
-  imm12 = imm12 << 20 >> 20;
-  return imm12;
 }
 
 }  // namespace jit

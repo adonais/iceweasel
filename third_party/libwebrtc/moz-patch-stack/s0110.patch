@@ -1,63 +1,26 @@
-From: Jan Grulich <jgrulich@redhat.com>
-Date: Mon, 14 Apr 2025 16:37:00 +0000
-Subject: Bug 1954903 - Update libwebrtc GN configs r=webrtc-reviewers,mjf
+From: Michael Froman <mfroman@mozilla.com>
+Date: Wed, 16 Jul 2025 21:08:00 +0300
+Subject: Bug 1974813 - turn off rust in libwebrtc since we don't use any
+ libwebrtc rust code. r=ng?
 
-Update GN config files for the special handling in gn_processor.py for
-gbm, drm and PipeWire libraries.
+Note: no moz.build changes are caused by this change.
 
-Also remove libwebrtc/third_party/[gbm,drm,pipewire] libs for which we
-now have a special handling in gn_processor.py.
-
-Differential Revision: https://phabricator.services.mozilla.com/D242101
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/506d4efaf2dc29472623beff64cc2bd0d5555afd
+Differential Revision: https://phabricator.services.mozilla.com/D257316
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/14ee98c4832a55bf32116c925540ab0f53e46cd3
 ---
- modules/desktop_capture/BUILD.gn | 4 ++++
- modules/portal/BUILD.gn          | 4 +---
- modules/video_capture/BUILD.gn   | 2 +-
- 3 files changed, 6 insertions(+), 4 deletions(-)
+ .gn | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index 55d58e2e05..6ca070fce7 100644
---- a/modules/desktop_capture/BUILD.gn
-+++ b/modules/desktop_capture/BUILD.gn
-@@ -565,6 +565,10 @@ rtc_library("desktop_capture") {
-       "../../rtc_base:sanitizer",
-       "../portal",
-     ]
-+
-+    if (build_with_mozilla) {
-+      defines += [ "WEBRTC_USE_PIPEWIRE" ]
-+    }
-   }
+diff --git a/.gn b/.gn
+index e03aab02cf..87e2c7af7b 100644
+--- a/.gn
++++ b/.gn
+@@ -89,7 +89,7 @@ default_args = {
+   use_fuzztest_wrapper = false
  
-   if (rtc_enable_win_wgc) {
-diff --git a/modules/portal/BUILD.gn b/modules/portal/BUILD.gn
-index 72972d18e1..70b4739ad0 100644
---- a/modules/portal/BUILD.gn
-+++ b/modules/portal/BUILD.gn
-@@ -139,11 +139,9 @@ if (!build_with_mozilla) {
-       deps -= [ ":pipewire_stubs" ]
-       defines -= [ "WEBRTC_DLOPEN_PIPEWIRE" ]
-       public_deps = [
--        "../../third_party/pipewire",
--        "../../third_party/drm",
--        "../../third_party/gbm",
-         "../../third_party/libepoxy"
-       ]
-+      defines += [ "WEBRTC_USE_PIPEWIRE" ]
-     }
-   }
- }
-diff --git a/modules/video_capture/BUILD.gn b/modules/video_capture/BUILD.gn
-index 8f9c8bb2c9..44c8fbfb6b 100644
---- a/modules/video_capture/BUILD.gn
-+++ b/modules/video_capture/BUILD.gn
-@@ -118,7 +118,7 @@ if (!build_with_chromium || is_linux || is_chromeos) {
-         ]
-         if (build_with_mozilla) {
-           configs -= [ "../portal:pipewire_base" ]
--          public_deps = [ "../../third_party/pipewire" ]
-+          defines = [ "WEBRTC_USE_PIPEWIRE" ]
-         }
-       }
-     }
+   # Enable Rust in WebRTC
+-  enable_rust = true
++  enable_rust = false # Mozilla
+   enable_rust_cxx = true
+   enable_chromium_prelude = true
+ 

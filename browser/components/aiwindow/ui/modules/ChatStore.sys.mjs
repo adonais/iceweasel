@@ -7,6 +7,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   Sqlite: "resource://gre/modules/Sqlite.sys.mjs",
+  UI_TYPES: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "log", function () {
@@ -46,6 +47,14 @@ import {
   getConversationMessagesSql,
   getDeleteMessagesByIdsSql,
   getDeleteEmptyConversationsSql,
+  getUniformSamplingByConvIdsSql,
+  LLM_TELEMETRY_TABLE,
+  GET_LLM_TELEMETRY_BY_CONV_ID,
+  GET_LLM_TELEMETRY_DATA_BY_CONV_ID,
+  UPSERT_LLM_TELEMETRY,
+  MARK_LLM_TELEMETRY_UNPROCESSED,
+  MARK_LLM_TELEMETRY_PROCESSED,
+  GET_CONVERSATIONS_FOR_TELEMETRY,
 } from "./ChatSql.sys.mjs";
 
 import { ChatMinimal } from "./ChatMessage.sys.mjs";
@@ -170,6 +179,9 @@ class ChatStore {
           security_properties: toJSONOrNull(conversation.securityProperties),
           seen_urls: JSON.stringify(Array.from(conversation.seenUrls ?? [])),
           memories_toggled: conversation.memoriesToggled,
+          serp_urls_for_anonymous_fetch: JSON.stringify(
+            Array.from(conversation.serpUrlsForAnonymousFetch ?? [])
+          ),
         });
 
         const messages = conversation.messages.map(m => ({
@@ -878,6 +890,9 @@ class ChatStore {
     parseMessageRows(rows).forEach(message => {
       const conversation = convs[message.convId];
       if (conversation) {
+        if (message.toolUIData?.uiType === lazy.UI_TYPES.WEBSITE_CONFIRMATION) {
+          message.isRestored = true;
+        }
         conversation.messages.push(message);
       }
     });
@@ -1094,7 +1109,306 @@ class ChatStore {
 
     const conversations = rows.map(parseConversationRow);
 
-    return await this.#getMessagesForConversations(conversations);
+    await this.#getMessagesForConversations(conversations);
+    await this.#hydrateTelemetryState(conversations);
+    return conversations;
+  }
+
+  /**
+   * Restores in-memory telemetry sampling state from the llm_telemetry table.
+   * _telemetryUniformSample and _telemetryUniformProbability are set when the
+   * uniform_sample trigger fires on turn 0, but only live in memory; without
+   * this hydration, reloaded conversations lose the flag and dependent
+   * triggers (e.g. uniform_sample_turn2) never fire.
+   *
+   * @param {Array<ChatConversation>} conversations
+   */
+  async #hydrateTelemetryState(conversations) {
+    if (!conversations.length) {
+      return;
+    }
+
+    const rows = await this.#conn
+      .executeCached(
+        getUniformSamplingByConvIdsSql(conversations.length),
+        conversations.map(c => c.id)
+      )
+      .catch(e => {
+        lazy.log.error(
+          "Could not retrieve telemetry state for conversations",
+          e.message,
+          e.stack
+        );
+        return [];
+      });
+
+    const probByConvId = new Map(
+      rows.map(row => [
+        row.getResultByName("conv_id"),
+        row.getResultByName("uniform_sampling_probability"),
+      ])
+    );
+
+    for (const conversation of conversations) {
+      const prob = probByConvId.get(conversation.id);
+      if (prob > 0) {
+        conversation._telemetryUniformSample = true;
+        conversation._telemetryUniformProbability = prob;
+      }
+    }
+  }
+
+  /**
+   * Marks a conversation's LLM telemetry as unprocessed.
+   *
+   * If the record does not exist, it will be created with an empty prompts object.
+   * If it exists, only the processed flag is updated to 0.
+   *
+   * @param {string} conversationId - The ID of the conversation
+   */
+  async markLLMTelemetryUnprocessed(conversationId) {
+    await this.#ensureDatabase().catch(e => {
+      lazy.log.error(
+        "Could not ensure a database connection.",
+        e.message,
+        e.stack
+      );
+      throw e;
+    });
+
+    await this.#conn
+      .executeCached(MARK_LLM_TELEMETRY_UNPROCESSED, {
+        conv_id: conversationId,
+      })
+      .catch(e => {
+        lazy.log.error(
+          `Could not mark LLM telemetry as unprocessed for ${conversationId}`,
+          e.message,
+          e.stack
+        );
+        throw e;
+      });
+
+    this.#recordDatabaseSize();
+  }
+
+  /**
+   * Merges new LLM telemetry prompts/probabilities into the existing mappings and
+   * marks the conversation as processed (optional).
+   *
+   * @param {string} conversationId - The ID of the conversation to update
+   * @param {object} prompts - New telemetry prompt attributes to merge
+   * @param {object} probabilities - New telemetry probability attributes to merge
+   * @param {number} uniform_sampling_probability - Uniform sampling probability if any, or 0
+   * @param {number} processed - Processed flag value, 0 for unprocessed and 1 for processed
+   */
+  async updateLLMTelemetryRecord(
+    conversationId,
+    prompts = {},
+    probabilities = {},
+    uniform_sampling_probability = 0,
+    processed = 0
+  ) {
+    await this.#ensureDatabase().catch(e => {
+      lazy.log.error(
+        "Could not ensure a database connection.",
+        e.message,
+        e.stack
+      );
+      throw e;
+    });
+
+    await this.#conn
+      .executeTransaction(async () => {
+        const rows = await this.#conn.executeCached(
+          GET_LLM_TELEMETRY_DATA_BY_CONV_ID,
+          { conv_id: conversationId }
+        );
+
+        let existingPrompts = {};
+        let existingProbabilities = {};
+
+        if (rows.length) {
+          try {
+            existingPrompts = JSON.parse(
+              rows[0].getResultByName("telemetry_prompts") || "{}"
+            );
+          } catch (e) {
+            lazy.log.warn(
+              `Could not parse LLM telemetry prompts for ${conversationId}`,
+              e.message
+            );
+          }
+
+          try {
+            existingProbabilities = JSON.parse(
+              rows[0].getResultByName("telemetry_probabilities") || "{}"
+            );
+          } catch (e) {
+            lazy.log.warn(
+              `Could not parse LLM telemetry probabilities for ${conversationId}`,
+              e.message
+            );
+          }
+        }
+
+        const mergedPrompts = {
+          ...existingPrompts,
+          ...(prompts ?? {}),
+        };
+
+        const mergedProbabilities = {
+          ...(probabilities ?? {}),
+          ...existingProbabilities,
+        };
+
+        await this.#conn.executeCached(UPSERT_LLM_TELEMETRY, {
+          conv_id: conversationId,
+          telemetry_prompts: JSON.stringify(mergedPrompts),
+          telemetry_probabilities: JSON.stringify(mergedProbabilities),
+          uniform_sampling_probability,
+          processed_time: Date.now(),
+          processed,
+        });
+      })
+      .catch(e => {
+        lazy.log.error(
+          `Could not update LLM telemetry prompts for ${conversationId}`,
+          e.message,
+          e.stack
+        );
+        throw e;
+      });
+
+    this.#recordDatabaseSize();
+  }
+
+  /**
+   * Gets LLM telemetry for a conversation. (Mainly for tests)
+   *
+   * @param {string} conversationId - The ID of the conversation
+   * @returns {object|null} - LLM telemetry row, or null if none exists
+   */
+  async findLLMTelemetryByConversationId(conversationId) {
+    await this.#ensureDatabase().catch(e => {
+      lazy.log.error(
+        "Could not ensure a database connection.",
+        e.message,
+        e.stack
+      );
+      throw e;
+    });
+
+    const rows = await this.#conn
+      .executeCached(GET_LLM_TELEMETRY_BY_CONV_ID, {
+        conv_id: conversationId,
+      })
+      .catch(e => {
+        lazy.log.error(
+          `Could not retrieve LLM telemetry for ${conversationId}`,
+          e.message,
+          e.stack
+        );
+        throw e;
+      });
+
+    if (!rows.length) {
+      return null;
+    }
+
+    return {
+      convId: rows[0].getResultByName("conv_id"),
+      telemetryPrompts: JSON.parse(
+        rows[0].getResultByName("telemetry_prompts") || "{}"
+      ),
+      telemetryProbabilities: JSON.parse(
+        rows[0].getResultByName("telemetry_probabilities") || "{}"
+      ),
+      uniformSamplingProbability: rows[0].getResultByName(
+        "uniform_sampling_probability"
+      ),
+      processedTime: rows[0].getResultByName("processed_time"),
+      processed: rows[0].getResultByName("processed"),
+    };
+  }
+
+  /**
+   * This method updates the llm_telemetry table to track the latest
+   * turn in which each prompt in telemetryPrompts was run
+   *
+   * @param {string} convId
+   * @param {{[key: string]: number}} telemetryPrompts
+   * @param {number} turnIndex
+   */
+  async markLLMTelemetryProcessed(convId, telemetryPrompts, turnIndex) {
+    await this.#ensureDatabase().catch(e => {
+      lazy.log.error(
+        "Could not ensure a database connection.",
+        e.message,
+        e.stack
+      );
+      throw e;
+    });
+
+    await this.#conn
+      .executeTransaction(async () => {
+        const existingRows = await this.#conn.executeCached(
+          GET_LLM_TELEMETRY_BY_CONV_ID,
+          { conv_id: convId }
+        );
+
+        const existingPrompts = existingRows.length
+          ? JSON.parse(
+              existingRows[0].getResultByName("telemetry_prompts") || "{}"
+            )
+          : {};
+
+        const newPrompts = Object.fromEntries(
+          Object.keys(telemetryPrompts).map(name => [name, turnIndex])
+        );
+
+        await this.#conn.executeCached(MARK_LLM_TELEMETRY_PROCESSED, {
+          conv_id: convId,
+          processed_time: Date.now(),
+          telemetry_prompts: JSON.stringify({
+            ...existingPrompts,
+            ...newPrompts,
+          }),
+        });
+      })
+      .catch(e => {
+        lazy.log.error(
+          `Could not mark ${convId} as processed.`,
+          e.message,
+          e.stack
+        );
+        throw e;
+      });
+  }
+
+  async getConversationsForTelemetry() {
+    await this.#ensureDatabase();
+    const rows = await this.#conn
+      .executeCached(GET_CONVERSATIONS_FOR_TELEMETRY)
+      .catch(e => {
+        lazy.log.error(
+          "Failed to fetch conversations for telemetry",
+          e.message,
+          e.stack
+        );
+        throw e;
+      });
+
+    return rows.map(row => ({
+      convId: row.getResultByName("conv_id"),
+      telemetryJobs: JSON.parse(row.getResultByName("telemetryJobs") ?? "{}"),
+      telemetryProbs: JSON.parse(row.getResultByName("telemetryProbs") ?? "{}"),
+      uniformSamplingProbability: row.getResultByName(
+        "uniform_sampling_probability"
+      ),
+      modelId: row.getResultByName("model_id"),
+      turnIndex: row.getResultByName("turn_index"),
+    }));
   }
 
   async #createDatabaseEntities() {
@@ -1105,6 +1419,7 @@ class ChatStore {
     await this.#conn.execute(MESSAGE_URL_INDEX);
     await this.#conn.execute(MESSAGE_CREATED_DATE_INDEX);
     await this.#conn.execute(MESSAGE_CONV_ID_INDEX);
+    await this.#conn.execute(LLM_TELEMETRY_TABLE);
   }
 
   get #removeDatabaseOnStartup() {

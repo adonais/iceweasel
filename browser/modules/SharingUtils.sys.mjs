@@ -110,6 +110,26 @@ class SharingUtilsCls {
   }
 
   async #showQRCodePanel(win, browser, url) {
+    let tab = win.gBrowser.getTabForBrowser(browser);
+    if (tab && win.gBrowser.selectedTab !== tab) {
+      let wait = null;
+      if (!tab.linkedPanel) {
+        wait = this.#waitForTabRestored(tab);
+      }
+      win.gBrowser.selectedTab = tab;
+      if (wait) {
+        if (win.gBrowser.selectedTab === tab) {
+          await wait.promise;
+        } else {
+          wait.cancel();
+        }
+      }
+    }
+
+    if (!tab || !tab.linkedBrowser || tab.closing) {
+      return;
+    }
+
     let qrCodeDataURI = null;
     try {
       qrCodeDataURI = await lazy.QRCodeGenerator.generateQRCode(url);
@@ -129,6 +149,18 @@ class SharingUtilsCls {
         { features: "resizable=no", allowDuplicateDialogs: false },
         params
       );
+  }
+
+  #waitForTabRestored(tab) {
+    let { promise, resolve } = Promise.withResolvers();
+    let cleanup = () => {
+      tab.removeEventListener("SSTabRestored", cleanup);
+      tab.removeEventListener("TabClose", cleanup);
+      resolve();
+    };
+    tab.addEventListener("SSTabRestored", cleanup, { once: true });
+    tab.addEventListener("TabClose", cleanup, { once: true });
+    return { promise, cancel: cleanup };
   }
 
   /**

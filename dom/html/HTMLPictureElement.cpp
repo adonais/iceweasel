@@ -10,7 +10,7 @@
 
 // Expand NS_IMPL_NS_NEW_HTML_ELEMENT(Picture) to add pref check.
 nsGenericHTMLElement* NS_NewHTMLPictureElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();
@@ -20,7 +20,7 @@ nsGenericHTMLElement* NS_NewHTMLPictureElement(
 namespace mozilla::dom {
 
 HTMLPictureElement::HTMLPictureElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
 HTMLPictureElement::~HTMLPictureElement() = default;

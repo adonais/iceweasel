@@ -99,6 +99,10 @@ bool DOMPointReadOnly::ReadStructuredClone(JSStructuredCloneReader* aReader) {
 #undef ReadDouble
 }
 
+gfx::Point DOMPointReadOnly::ToPoint(const DOMPointInit& aPoint) {
+  return gfx::Point(aPoint.mX, aPoint.mY);
+}
+
 already_AddRefed<DOMPoint> DOMPoint::FromPoint(const GlobalObject& aGlobal,
                                                const DOMPointInit& aParams) {
   RefPtr<DOMPoint> obj = new DOMPoint(aGlobal.GetAsSupports(), aParams.mX,

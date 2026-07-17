@@ -842,7 +842,7 @@ class InterpreterStack {
   }
 };
 
-void TraceInterpreterActivations(JSContext* cx, JSTracer* trc);
+void TraceActivations(JSContext* cx, JSTracer* trc);
 
 /*****************************************************************************/
 

@@ -57,7 +57,7 @@ class EncodedAudioChunk final : public EncodedAudioChunkData,
                                 public nsISupports,
                                 public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(EncodedAudioChunk)
 
  public:

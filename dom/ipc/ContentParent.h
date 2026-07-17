@@ -22,6 +22,7 @@
 #include "mozilla/StaticPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/AudioSessionBinding.h"
 #include "mozilla/dom/JSProcessActorParent.h"
 #include "mozilla/dom/MediaSessionBinding.h"
 #include "mozilla/dom/MessageManagerCallback.h"
@@ -63,7 +64,6 @@ class nsITimer;
 class ParentIdleListener;
 class nsIOriginsListLoadCallback;
 class nsIWidget;
-class nsIX509Cert;
 
 namespace CrashReporter {
 class CrashReporterInitArgs;
@@ -105,6 +105,7 @@ class MemoryReport;
 class TabContext;
 class GetFilesHelper;
 class MemoryReportRequestHost;
+class ParentProcessChannelHandle;
 class RemoteWorkerDebuggerManagerParent;
 class RemoteWorkerManager;
 class RemoteWorkerServiceParent;
@@ -365,7 +366,7 @@ class ContentParent final : public PContentParent,
 
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(ContentParent, nsIObserver)
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSIDOMPROCESSPARENT
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIDOMGEOPOSITIONCALLBACK
@@ -462,6 +463,12 @@ class ContentParent final : public PContentParent,
   already_AddRefed<nsDocShellLoadState> TakePendingLoadStateForId(
       uint64_t aLoadIdentifier);
   void StorePendingLoadState(nsDocShellLoadState* aLoadState);
+
+  // Helper methods for managing parent-process channel handles for channels
+  // which are being loaded into this process.
+  nsID AddParentProcessChannelHandle(ParentProcessChannelHandle* aHandle);
+  already_AddRefed<ParentProcessChannelHandle> ReadParentProcessChannelHandle(
+      const nsID& aUuid);
 
   /**
    * Kill our subprocess and make sure it dies.  Should only be used
@@ -564,16 +571,6 @@ class ContentParent final : public PContentParent,
       nsIReferrerInfo* aReferrerInfo, const OriginAttributes& aOriginAttributes,
       bool aUserActivation, bool aTextDirectiveUserActivation,
       CreateWindowResolver&& aResolve);
-
-  mozilla::ipc::IPCResult RecvCreateWindowInDifferentProcess(
-      PBrowserParent* aThisTab, const MaybeDiscarded<BrowsingContext>& aParent,
-      const uint32_t& aChromeFlags, const bool& aCalledFromJS,
-      const bool& aTopLevelCreatedByWebContent, nsIURI* aURIToLoad,
-      const nsACString& aFeatures, const UserActivation::Modifiers& aModifiers,
-      const nsAString& aName, nsIPrincipal* aTriggeringPrincipal,
-      nsIPolicyContainer* aPolicyContainer, nsIReferrerInfo* aReferrerInfo,
-      const OriginAttributes& aOriginAttributes, bool aUserActivation,
-      bool aTextDirectiveUserActivation);
 
   static void BroadcastBlobURLRegistration(
       const nsACString& aURI, BlobImpl* aBlobImpl, nsIPrincipal* aPrincipal,
@@ -781,20 +778,18 @@ class ContentParent final : public PContentParent,
   static mozilla::StaticAutoPtr<std::vector<std::string>> sMacSandboxParams;
 #endif
 
-  // Set aLoadUri to true to load aURIToLoad and to false to only create the
-  // window. aURIToLoad should always be provided, if available, to ensure
-  // compatibility with GeckoView.
+  // aURIToLoad should always be provided, if available, to ensure compatibility
+  // with GeckoView.
   mozilla::ipc::IPCResult CommonCreateWindow(
       PBrowserParent* aThisTab, BrowsingContext& aParent, bool aSetOpener,
       const uint32_t& aChromeFlags, const bool& aCalledFromJS,
       const bool& aForPrinting, const bool& aForWindowDotPrint,
       const bool& aIsTopLevelCreatedByWebContent, nsIURI* aURIToLoad,
       const nsACString& aFeatures, const UserActivation::Modifiers& aModifiers,
-      BrowserParent* aNextRemoteBrowser, const nsAString& aName,
-      nsresult& aResult, nsCOMPtr<nsIRemoteTab>& aNewRemoteTab,
-      bool* aWindowIsNew, int32_t& aOpenLocation,
-      nsIPrincipal* aTriggeringPrincipal, nsIReferrerInfo* aReferrerInfo,
-      bool aLoadUri, nsIPolicyContainer* aPolicyContainer,
+      BrowserParent* aNextRemoteBrowser, nsresult& aResult,
+      nsCOMPtr<nsIRemoteTab>& aNewRemoteTab, bool* aWindowIsNew,
+      int32_t& aOpenLocation, nsIPrincipal* aTriggeringPrincipal,
+      nsIReferrerInfo* aReferrerInfo, nsIPolicyContainer* aPolicyContainer,
       const OriginAttributes& aOriginAttributes, bool aUserActivation,
       bool aTextDirectiveUserActivation);
 
@@ -945,8 +940,8 @@ class ContentParent final : public PContentParent,
       const nsACString& aMimeContentType, const nsACString& aContentDisposition,
       const uint32_t& aContentDispositionHint,
       const nsAString& aContentDispositionFilename, const bool& aForceSave,
-      const int64_t& aContentLength, const bool& aWasFileChannel,
-      nsIURI* aReferrer, const MaybeDiscarded<BrowsingContext>& aContext);
+      const int64_t& aContentLength, nsIURI* aReferrer,
+      const MaybeDiscarded<BrowsingContext>& aContext);
 
   mozilla::ipc::IPCResult RecvPExternalHelperAppConstructor(
       PExternalHelperAppParent* actor, nsIURI* uri,
@@ -954,8 +949,7 @@ class ContentParent final : public PContentParent,
       const nsACString& aContentDisposition,
       const uint32_t& aContentDispositionHint,
       const nsAString& aContentDispositionFilename, const bool& aForceSave,
-      const int64_t& aContentLength, const bool& aWasFileChannel,
-      nsIURI* aReferrer,
+      const int64_t& aContentLength, nsIURI* aReferrer,
       const MaybeDiscarded<BrowsingContext>& aContext) override;
 
   already_AddRefed<PHandlerServiceParent> AllocPHandlerServiceParent();
@@ -981,11 +975,25 @@ class ContentParent final : public PContentParent,
       const nsIClipboard::ClipboardType& aWhichClipboard,
       const MaybeDiscarded<WindowContext>& aRequestingWindowContext);
 
+  template <typename GetClipboardDataFunction>
+  nsresult GetClipboardDataInternal(
+      nsTArray<nsCString>&& aTypes,
+      const nsIClipboard::ClipboardType& aWhichClipboard,
+      const MaybeDiscarded<WindowContext>& aRequestingWindowContext,
+      IPCTransferableDataOrError* aResult,
+      GetClipboardDataFunction&& aFunction);
+
   mozilla::ipc::IPCResult RecvGetClipboard(
       nsTArray<nsCString>&& aTypes,
       const nsIClipboard::ClipboardType& aWhichClipboard,
       const MaybeDiscarded<WindowContext>& aRequestingWindowContext,
       IPCTransferableDataOrError* aTransferableDataOrError);
+
+  mozilla::ipc::IPCResult RecvGetClipboardDataIfSmallerThan(
+      nsTArray<nsCString>&& aTypes, uint64_t aThreshold,
+      const nsIClipboard::ClipboardType& aWhichClipboard,
+      const MaybeDiscarded<WindowContext>& aRequestingWindowContext,
+      GetClipboardDataIfSmallerThanResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvEmptyClipboard(
       const nsIClipboard::ClipboardType& aWhichClipboard);
@@ -1022,7 +1030,7 @@ class ContentParent final : public PContentParent,
   mozilla::ipc::IPCResult RecvSetURITitle(nsIURI* uri, const nsAString& title);
 
   mozilla::ipc::IPCResult RecvLoadURIExternal(
-      nsIURI* uri, nsIPrincipal* triggeringPrincipal,
+      NotNull<nsIURI*> uri, NotNull<nsIPrincipal*> triggeringPrincipal,
       nsIPrincipal* redirectPrincipal,
       const MaybeDiscarded<BrowsingContext>& aContext,
       bool aWasExternallyTriggered, bool aHasValidUserGestureActivation,
@@ -1194,11 +1202,6 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvBHRThreadHang(const HangDetails& aHangDetails);
 
-  mozilla::ipc::IPCResult RecvAddCertException(
-      nsIX509Cert* aCert, const nsACString& aHostName, int32_t aPort,
-      const OriginAttributes& aOriginAttributes, bool aIsTemporary,
-      AddCertExceptionResolver&& aResolver);
-
   mozilla::ipc::IPCResult RecvAutomaticStorageAccessPermissionCanBeGranted(
       nsIPrincipal* aPrincipal,
       AutomaticStorageAccessPermissionCanBeGrantedResolver&& aResolver);
@@ -1235,7 +1238,7 @@ class ContentParent final : public PContentParent,
 
   mozilla::ipc::IPCResult RecvNotifyMediaAudibleChanged(
       const MaybeDiscarded<BrowsingContext>& aContext, MediaAudibleState aState,
-      ControlType aType);
+      ControlType aType, AudioSessionType aSessionType);
 
   mozilla::ipc::IPCResult RecvNotifyPictureInPictureModeChanged(
       const MaybeDiscarded<BrowsingContext>& aContext, bool aEnabled);
@@ -1417,6 +1420,8 @@ class ContentParent final : public PContentParent,
 #ifdef FUZZING
   mozilla::ipc::IPCResult RecvKillGPUProcess();
 #endif
+
+  mozilla::ipc::IPCResult RecvDropParentProcessChannelHandle(const nsID& aUuid);
 
  public:
   void SendGetFilesResponseAndForget(const nsID& aID,
@@ -1627,6 +1632,13 @@ class ContentParent final : public PContentParent,
   // load ID. If the load is then requested from the content process, we can
   // compare the load state and ensure it matches.
   nsTHashMap<uint64_t, RefPtr<nsDocShellLoadState>> mPendingLoadStates;
+
+  // When a content process is given a handle for the channel completing a
+  // document load, that handle is assigned a unique UUID. That UUID is stored
+  // here, and can be used by the content process to name the specific channel
+  // when creating the final document.
+  nsTHashMap<nsID, RefPtr<ParentProcessChannelHandle>>
+      mPendingParentProcessChannelHandles;
 
   // See `BrowsingContext::mEpochs` for an explanation of this field.
   uint64_t mBrowsingContextFieldEpoch = 0;

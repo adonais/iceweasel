@@ -952,8 +952,7 @@ class StorageModule extends RootBiDiModule {
 
     if (
       cookieBehavior === Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN ||
-      cookieBehavior ===
-        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+      cookieBehavior === Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN
     ) {
       return false;
     }
@@ -965,8 +964,7 @@ class StorageModule extends RootBiDiModule {
     const cookieBehavior = Services.prefs.getIntPref(PREF_COOKIE_BEHAVIOR);
 
     return (
-      cookieBehavior ===
-        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN &&
+      cookieBehavior === Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN &&
       lazy.cookieCHIPSEnabled
     );
   }

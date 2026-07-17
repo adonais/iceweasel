@@ -36,6 +36,11 @@ class SharedWorkerChild final : public mozilla::dom::PSharedWorkerChild {
 
   void SendThaw();
 
+  void SendSetLocaleOverride(const nsACString& aLanguageOverride,
+                             const nsTArray<nsString>& aLanguages);
+
+  void SendUpdateTimezoneOverride(const nsAString& aTimezoneOverride);
+
  private:
   ~SharedWorkerChild();
 

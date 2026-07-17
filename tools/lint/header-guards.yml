@@ -37,6 +37,7 @@ header-guards:
     - parser/html/nsHtml5TreeBuilderCppSupplement.h
     - parser/html/nsHtml5TokenizerHSupplement.h
     - parser/html/nsHtml5TokenizerCppSupplement.h
+    - parser/html/nsHtml5PortabilityHSupplement.h
     - security/manager/ssl/StaticHPKPins.h
     - python/mozbuild/mozbuild/test/backend/data/exports-generated/dom1.h
     - python/mozbuild/mozbuild/test/backend/data/exports-generated/foo.h

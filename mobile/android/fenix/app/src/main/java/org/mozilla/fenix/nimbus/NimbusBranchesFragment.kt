@@ -24,7 +24,7 @@ import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.navigateWithBreadcrumb
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.nimbus.controller.NimbusBranchesController
 import org.mozilla.fenix.nimbus.view.NimbusBranchesView
@@ -55,8 +55,8 @@ class NimbusBranchesFragment : Fragment(), SystemInsetsPaddedFragment {
         }.value
 
         controller = NimbusBranchesController(
-            isTelemetryEnabled = { requireContext().settings().isTelemetryEnabled },
-            isExperimentationEnabled = { requireContext().settings().isExperimentationEnabled },
+            isTelemetryEnabled = { requireComponents.settings.isTelemetryEnabled },
+            isExperimentationEnabled = { requireComponents.settings.isExperimentationEnabled },
             nimbusBranchesStore = nimbusBranchesStore,
             experiments = requireContext().components.nimbus.sdk,
             experimentId = args.experimentId,

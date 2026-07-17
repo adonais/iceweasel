@@ -87,23 +87,23 @@ add_task(async function runTests() {
   // Test if the cookie blocking info for state partitioning in PBM is
   // shown in standard mode if the regular cookieBehavior is
   // BEHAVIOR_REJECT_TRACKER and the private cookieBehavior is
-  // BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+  // BEHAVIOR_PARTITION_FOREIGN
   await testCookieBlockingInfoStandard(
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     true
   );
 
   // Test if the cookie blocking info is hidden in standard mode if both
   // cookieBehaviors are the same.
   await testCookieBlockingInfoStandard(
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     false
   );
 
   // Test if the cookie blocking info is hidden for strict mode if
-  // cookieBehaviors both are BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN in
+  // cookieBehaviors both are BEHAVIOR_PARTITION_FOREIGN in
   // the strict feature value.
   await testCookieBlockingInfoStrict(
     "tp,tpPrivate,cookieBehavior5,cookieBehaviorPBM5,cryptoTP,fp,stp,emailTP,emailTPPrivate,-consentmanagerSkip,-consentmanagerSkipPrivate,lvl2,rp,rpTop,ocsp,fpp,fppPrivate,3pcd",
@@ -112,7 +112,7 @@ add_task(async function runTests() {
 
   // Test if the cookie blocking info is shown for strict mode if the regular
   // cookieBehavior is BEHAVIOR_REJECT_TRACKER and the private cookieBehavior is
-  // BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+  // BEHAVIOR_PARTITION_FOREIGN
   await testCookieBlockingInfoStrict(
     "tp,tpPrivate,cookieBehavior4,cookieBehaviorPBM5,cryptoTP,fp,stp,emailTP,emailTPPrivate,-consentmanagerSkip,-consentmanagerSkipPrivate,lvl2,rp,rpTop,ocsp,fpp,fppPrivate,3pcd",
     true

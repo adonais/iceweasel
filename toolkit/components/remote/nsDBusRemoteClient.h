@@ -10,7 +10,6 @@
 #  include "mozilla/GRefPtr.h"
 #endif
 #include "nsRemoteClient.h"
-#include "mozilla/DBusHelpers.h"
 #include "nsString.h"
 #include "nscore.h"
 

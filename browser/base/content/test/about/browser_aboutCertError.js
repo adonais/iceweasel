@@ -919,11 +919,12 @@ async function assertNetErrorPage({
         );
 
         certErrorCodeLink.scrollIntoView(true);
-        await EventUtils.synthesizeMouse(certErrorCodeLink, 2, 2, {}, content);
+        EventUtils.synthesizeMouse(certErrorCodeLink, 2, 2, {}, content);
         Assert.ok(
           netErrorCard.certErrorDebugInfoShowing,
           "The 'certErrorDebugInfoShowing' boolean should be toggled (to true) after Advance button click on assertAdvancedButton."
         );
+        await content.document.l10n.translateRoots();
         Assert.ok(netErrorCard.certErrorText, "Error Code Detail should exist");
 
         // Assert Site Certificate

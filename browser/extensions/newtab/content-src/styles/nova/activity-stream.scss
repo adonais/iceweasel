@@ -46,7 +46,7 @@ body {
   background-image:
     var(--newtab-wallpaper, ''),
     linear-gradient(to right, var(--newtab-wallpaper-color, ''), var(--newtab-wallpaper-color, ''));
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 h1,
@@ -178,6 +178,9 @@ input {
 @import '../../components/Widgets/Lists/Lists';
 @import '../../components/Widgets/FocusTimer/FocusTimer';
 @import '../../components/Widgets/SportsWidget/SportsWidget';
+@import '../../components/Widgets/SportsWidget/SportsMatchRow';
+@import '../../components/Widgets/SportsWidget/WatchLiveModal';
+@import '../../components/Widgets/SportsWidget/LivePagination';
 @import '../../components/Widgets/Weather/Weather';
 @import '../../components/Widgets/Clocks/Clocks';
 
@@ -203,6 +206,8 @@ input {
 @import '../../components/DiscoveryStreamComponents/FeatureHighlight/WallpaperFeatureHighlight';
 @import '../../components/DiscoveryStreamComponents/FeatureHighlight/ShortcutFeatureHighlight';
 @import '../../components/DiscoveryStreamComponents/FeatureHighlight/WidgetsRowFeatureHighlight';
+@import '../../components/DiscoveryStreamComponents/FeatureHighlight/OMCHighlightBody';
+@import '../../components/DiscoveryStreamComponents/FeatureHighlight/OMCHighlightPopover';
 @import '../../components/DiscoveryStreamComponents/TopicSelection/TopicSelection';
 @import '../../components/DiscoveryStreamComponents/AdBanner/AdBanner';
 @import '../../components/DiscoveryStreamComponents/AdBannerContextMenu/AdBannerContextMenu';

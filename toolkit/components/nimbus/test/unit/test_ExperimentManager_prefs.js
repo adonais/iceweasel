@@ -306,6 +306,7 @@ add_task(async function test_enroll_setPref_rolloutsAndExperiments() {
         await NimbusTestUtils.enrollWithFeatureConfig(configs[enrollmentKind], {
           manager,
           isRollout,
+          source: "test",
         });
 
       assertExpectedPrefValues(
@@ -1294,6 +1295,7 @@ add_task(async function test_restorePrefs_experimentAndRollout() {
         await NimbusTestUtils.enrollWithFeatureConfig(config, {
           manager,
           isRollout: enrollmentKind === ROLLOUT,
+          source: "test",
         });
       }
 
@@ -1722,6 +1724,7 @@ add_task(async function test_prefChange() {
         await NimbusTestUtils.enrollWithFeatureConfig(config, {
           manager,
           isRollout,
+          source: "test",
         });
 
       const enrollments = isRollout
@@ -2314,18 +2317,25 @@ add_task(async function test_deleteBranch() {
   cleanupFunctions.push(
     await NimbusTestUtils.enrollWithFeatureConfig(CONFIGS[USER][EXPERIMENT], {
       manager,
+      source: "test",
     }),
     await NimbusTestUtils.enrollWithFeatureConfig(CONFIGS[USER][ROLLOUT], {
       manager,
       isRollout: true,
+      source: "test",
     }),
     await NimbusTestUtils.enrollWithFeatureConfig(
       CONFIGS[DEFAULT][EXPERIMENT],
-      { manager }
+      {
+        manager,
+
+        source: "test",
+      }
     ),
     await NimbusTestUtils.enrollWithFeatureConfig(CONFIGS[DEFAULT][ROLLOUT], {
       manager,
       isRollout: true,
+      source: "test",
     })
   );
 
@@ -2394,6 +2404,7 @@ add_task(async function test_clearUserPref() {
         await NimbusTestUtils.enrollWithFeatureConfig(config, {
           manager,
           isRollout,
+          source: "test",
         })
       );
 
@@ -2647,6 +2658,7 @@ add_task(async function test_prefChanged_noPrefSet() {
               await NimbusTestUtils.enrollWithFeatureConfig(config, {
                 manager,
                 isRollout,
+                source: "test",
               });
 
             PrefUtils.setPref(pref, OVERWRITE_VALUE, { branch });
@@ -2842,6 +2854,7 @@ add_task(async function test_restorePrefs_manifestChanged() {
         await NimbusTestUtils.enrollWithFeatureConfig(config, {
           manager,
           isRollout,
+          source: "test",
         });
 
         const enrollments = isRollout
@@ -3366,7 +3379,11 @@ add_task(async function test_setPref_types() {
         json,
       },
     },
-    { manager }
+    {
+      manager,
+
+      source: "test",
+    }
   );
 
   const defaultBranch = Services.prefs.getDefaultBranch(null);
@@ -3527,7 +3544,11 @@ add_task(
           json,
         },
       },
-      { manager }
+      {
+        manager,
+
+        source: "test",
+      }
     );
 
     let nimbusSetPrefs =
@@ -3583,7 +3604,11 @@ add_task(async function test_setPref_types_restore() {
           json,
         },
       },
-      { manager }
+      {
+        manager,
+
+        source: "test",
+      }
     );
 
     storePath = await NimbusTestUtils.saveStore(manager.store);
@@ -3698,4 +3723,43 @@ add_task(async function testDb() {
   await cleanup();
 
   Services.prefs.deleteBranch("nimbus.qa.pref-1");
+});
+
+add_task(async function testSetPrefDefaultValueChanged() {
+  const { manager, cleanup } = await setupTest();
+
+  const featureId = "test-set-user-pref";
+  const pref = NimbusFeatures[featureId].getSetPref("bar").pref;
+
+  PrefUtils.setPref(pref, DEFAULT_VALUE, { branch: DEFAULT });
+
+  await NimbusTestUtils.enrollWithFeatureConfig(
+    {
+      featureId,
+      value: { bar: "setPref-value" },
+    },
+    { slug: "slug" }
+  );
+
+  PrefUtils.setPref(pref, "changed-default-value", { branch: DEFAULT });
+
+  const enrollment = manager.store.get("slug");
+  Assert.ok(enrollment?.active, "Enrollment is active");
+  Assert.deepEqual(enrollment.prefs, [
+    {
+      featureId,
+      variable: "bar",
+      name: pref,
+      branch: "user",
+      originalValue: null,
+    },
+  ]);
+
+  manager.unenroll("slug", "test");
+  Assert.deepEqual(
+    PrefUtils.getPref(pref, { branch: DEFAULT }),
+    "changed-default-value"
+  );
+
+  await cleanup();
 });

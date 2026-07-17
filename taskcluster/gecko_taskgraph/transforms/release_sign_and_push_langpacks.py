@@ -13,10 +13,7 @@ from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
 from taskgraph.util.treeherder import inherit_treeherder_from_dep
 
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import (
-    copy_attributes_from_dependent_job,
-    release_level,
-)
+from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 
 transforms = TransformSequence()
 
@@ -69,18 +66,6 @@ def resolve_keys(config, jobs):
         dep_job = get_primary_dependency(config, job)
         assert dep_job
 
-        resolve_keyed_by(
-            job,
-            "worker-type",
-            item_name=job["label"],
-            **{"release-level": release_level(config.params)},
-        )
-        resolve_keyed_by(
-            job,
-            "scopes",
-            item_name=job["label"],
-            **{"release-level": release_level(config.params)},
-        )
         resolve_keyed_by(
             job,
             "worker.channel",

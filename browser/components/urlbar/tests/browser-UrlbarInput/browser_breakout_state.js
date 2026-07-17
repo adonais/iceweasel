@@ -129,3 +129,33 @@ add_task(async function some_to_empty() {
   manager.unregisterProvider(emptyProvider);
   await UrlbarTestUtils.promisePopupClose(window);
 });
+
+add_task(async function oneoffs() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.urlbar.scotchBonnet.enableOverride", false]],
+  });
+
+  let manager = ProvidersManager.getInstanceForSap("urlbar");
+  let emptyProvider = new UrlbarTestUtils.TestProvider({
+    results: [],
+    name: "emptyProvider",
+    priority: Infinity,
+  });
+  manager.registerProvider(emptyProvider);
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    value: "empty",
+    window,
+  });
+  Assert.equal(UrlbarTestUtils.getResultCount(window), 0);
+  Assert.ok(gURLBar.hasAttribute("breakout"));
+  Assert.ok(gURLBar.hasAttribute("focused"));
+  Assert.ok(
+    gURLBar.hasAttribute("breakout-extend"),
+    "breakout-extend shuld be set if there is oneoff buttons"
+  );
+
+  manager.unregisterProvider(emptyProvider);
+  await UrlbarTestUtils.promisePopupClose(window);
+  await SpecialPowers.popPrefEnv();
+});

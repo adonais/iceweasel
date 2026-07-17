@@ -9,6 +9,8 @@ prefs = ["sidebar.revamp=false"]
 
 ["browser_destination_change.js"]
 
+["browser_destination_sort.js"]
+
 ["browser_empty_paper_sizes.js"]
 
 ["browser_modal_print.js"]

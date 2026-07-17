@@ -849,8 +849,8 @@ nsThread::BeginShutdown(nsIThreadShutdown** aShutdown) {
 
   // Set mShutdownContext and wake up the thread in case it is waiting for
   // events to process.
-  RefPtr<nsIRunnable> event =
-      new nsThreadShutdownEvent(WrapNotNull(this), WrapNotNull(context));
+  RefPtr<nsIRunnable> event = MakeRefPtr<nsThreadShutdownEvent>(
+      WrapNotNull(this), WrapNotNull(context));
   if (!mEvents->PutEvent(event, EventQueuePriority::Normal)) {
     // We do not expect this to happen. Let's collect some diagnostics.
     nsAutoCString threadName;

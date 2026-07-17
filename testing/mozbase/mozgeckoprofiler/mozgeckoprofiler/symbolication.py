@@ -311,8 +311,6 @@ class ProfileSymbolicator:
                 node_path = Path(moz_fetch, "node", "bin", "node")
 
             # Check if symbolication dependencies are available
-            # Bug 2000026: Temporarily use fallback symbolication for --extra-profiler-run
-            # since those tasks don't have the toolchains for profiler-node-tools symbolication yet.
 
             if not self._validate_symbolication_deps([
                 profiler_edit_path,

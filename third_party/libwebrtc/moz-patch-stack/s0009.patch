@@ -10,11 +10,11 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/a636ecdcb91afb1c5
  modules/video_capture/linux/device_info_v4l2.cc | 8 +++++++-
  rtc_base/byte_order.h                           | 2 ++
  rtc_base/cpu_info.cc                            | 2 +-
- rtc_base/physical_socket_server.cc              | 7 +++++--
- 4 files changed, 15 insertions(+), 4 deletions(-)
+ rtc_base/physical_socket_server.cc              | 2 +-
+ 4 files changed, 11 insertions(+), 3 deletions(-)
 
 diff --git a/modules/video_capture/linux/device_info_v4l2.cc b/modules/video_capture/linux/device_info_v4l2.cc
-index 6452a3c235..9f7f3ea508 100644
+index 2ddda9c289..2c4a9a365a 100644
 --- a/modules/video_capture/linux/device_info_v4l2.cc
 +++ b/modules/video_capture/linux/device_info_v4l2.cc
 @@ -11,7 +11,13 @@
@@ -68,22 +68,10 @@ index f79edd3bea..0c6a76fcad 100644
    if (number_of_cores <= 0) {
      RTC_LOG(LS_ERROR) << "Failed to get number of cores";
 diff --git a/rtc_base/physical_socket_server.cc b/rtc_base/physical_socket_server.cc
-index fb916fb50e..3ed3ec6c20 100644
+index 9d9927e85b..2f4e7fe55c 100644
 --- a/rtc_base/physical_socket_server.cc
 +++ b/rtc_base/physical_socket_server.cc
-@@ -82,7 +82,10 @@
- typedef void* SockOptArg;
- #endif  // WEBRTC_POSIX
- 
--#if defined(WEBRTC_POSIX) && !defined(WEBRTC_MAC)
-+#if defined(WEBRTC_POSIX) && !defined(WEBRTC_MAC) && !defined(WEBRTC_BSD)
-+#if defined(WEBRTC_LINUX)
-+#include <linux/sockios.h>
-+#endif
- int64_t GetSocketRecvTimestamp(int socket) {
-   struct timeval tv_ioctl;
-   int ret = ioctl(socket, SIOCGSTAMP, &tv_ioctl);
-@@ -706,7 +709,7 @@ int PhysicalSocket::TranslateOption(Option opt, int* slevel, int* sopt) {
+@@ -756,7 +756,7 @@ int PhysicalSocket::TranslateOption(Option opt, int* slevel, int* sopt) {
        *slevel = IPPROTO_IP;
        *sopt = IP_DONTFRAGMENT;
        break;

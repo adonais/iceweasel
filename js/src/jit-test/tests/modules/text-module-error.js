@@ -1,4 +1,4 @@
-// |jit-test| skip-if: getBuildConfiguration("release_or_beta"); --enable-import-text
+// |jit-test| --enable-import-text
 
 try {
     parseModule(42, "text-module-error.js", "text");

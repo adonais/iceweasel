@@ -14,6 +14,7 @@ interface nsIInputStream;
 interface nsIPrincipal;
 
 %{ C++
+#include "mozilla/OriginAttributes.h"
 #include "nsTArrayForwardDeclare.h"
 namespace mozilla {
 namespace net {
@@ -24,6 +25,7 @@ union NetAddr;
 native NetAddr(mozilla::net::NetAddr);
 [ptr] native NetAddrPtr(mozilla::net::NetAddr);
 [ref] native Uint8TArrayRef(FallibleTArray<uint8_t>);
+[ref] native const_OriginAttributesRef(const mozilla::OriginAttributes);
 
 /**
  * nsIUDPSocket
@@ -310,6 +312,9 @@ interface nsIUDPSocket : nsISupports
      * This affects prioritization of socket events.
      */
     [noscript, notxpcom] void markAsTRRServiceChannel();
+
+    [noscript, notxpcom] void setOriginAttributes(
+        in const_OriginAttributesRef aOriginAttributes);
 
     /**
      * isTRRServiceChannel

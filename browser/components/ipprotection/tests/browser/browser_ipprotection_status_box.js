@@ -27,7 +27,6 @@ add_task(async function test_paused_content() {
       pass: makePass(),
     },
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let { promise, resolve } = Promise.withResolvers();
   let refreshStub = sinon

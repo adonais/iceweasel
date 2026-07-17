@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "ChannelClassifierService.h"
 #include "Classifier.h"
 #include "ContentClassifierService.h"
 #include "HttpBaseChannel.h"
@@ -9,6 +10,7 @@
 #include "mozilla/ErrorNames.h"
 #include "mozilla/FlowMarkers.h"
 #include "mozilla/Maybe.h"
+#include "mozilla/PerfStats.h"
 #include "mozilla/ProfilerMarkers.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/glean/UrlClassifierMetrics.h"
@@ -1009,7 +1011,10 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
   PROFILER_MARKER("AntiTrackingChannelClassifier::CheckChannelHelper", NETWORK,
                   MarkerTiming::IntervalStart(), FlowMarker,
                   Flow::FromPointer(aChannel));
-  TimeStamp outerStartTime = TimeStamp::Now();
+  TimeStamp outerStartTime;
+  if (aPerformBlocking) {
+    outerStartTime = TimeStamp::Now();
+  }
 
   nsCOMPtr<nsIRunnable> r = NS_NewRunnableFunction(
       "AntiTrackingChannelClassifierUtils::CheckChannelHelper",
@@ -1024,34 +1029,34 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
             "AntiTrackingChannelClassifier::CheckChannelHelper lookup", NETWORK,
             MarkerTiming::IntervalStart(), FlowMarker,
             Flow::FromPointer(channel.get()));
-        TimeStamp workerStartTime = TimeStamp::Now();
+        TimeStamp workerStartTime;
+        if (aPerformBlocking) {
+          workerStartTime = TimeStamp::Now();
+        }
 
-        bool shouldCancel = false;
-        bool shouldAnnotate = false;
+        ContentClassifierResult cancelResult;
+        ContentClassifierResult annotateResult;
 
         if (contentClassifier && contentClassifier->IsInitialized() &&
             contentClassifierRequest.isSome()) {
           if (aPerformBlocking) {
-            ContentClassifierResult cancelResult =
+            cancelResult =
                 contentClassifier->ClassifyForCancel(*contentClassifierRequest);
-            shouldCancel = cancelResult.Hit();
           }
           if (aPerformAnnotations) {
-            ContentClassifierResult annotateResult =
-                contentClassifier->ClassifyForAnnotate(
-                    *contentClassifierRequest);
-            shouldAnnotate = annotateResult.Hit();
+            annotateResult = contentClassifier->ClassifyForAnnotate(
+                *contentClassifierRequest);
           }
         }
 
-        // If this is going to get cancelled anyway, then don't do all of the
-        // work of the url-classifier
-        if (task && !shouldCancel) {
+        if (task) {
           task->DoLookup(workerClassifier);
         }
 
-        glean::urlclassifier::check_channel_helper_worker_time
-            .AccumulateRawDuration(TimeStamp::Now() - workerStartTime);
+        if (aPerformBlocking) {
+          glean::urlclassifier::check_channel_helper_worker_time
+              .AccumulateRawDuration(TimeStamp::Now() - workerStartTime);
+        }
         PROFILER_MARKER(
             "AntiTrackingChannelClassifier::CheckChannelHelper lookup", NETWORK,
             MarkerTiming::IntervalEnd(), FlowMarker,
@@ -1061,28 +1066,42 @@ nsresult AntiTrackingChannelClassifierUtils::CheckChannelHelper(
             NS_NewRunnableFunction(
                 "AntiTrackingChannelClassifierUtils::CheckChannelHelper - "
                 "return",
-                [task, channel, shouldCancel, shouldAnnotate, outerStartTime,
+                [aPerformBlocking, task, channel, outerStartTime,
+                 cancelResult = std::move(cancelResult),
+                 annotateResult = std::move(annotateResult),
                  callbackFromFeature = std::move(callbackFromFeature),
                  contentClassifier]() -> void {
-                  if (shouldAnnotate) {
-                    contentClassifier->AnnotateChannel(channel);
+                  if (contentClassifier) {
+                    ChannelBlockDecision cancelAction =
+                        contentClassifier->MaybeCancelChannel(channel,
+                                                              cancelResult);
+                    // Only provide annotations if we didn't block the channel.
+                    if (cancelAction != ChannelBlockDecision::Blocked) {
+                      contentClassifier->MaybeAnnotateChannel(channel,
+                                                              annotateResult);
+                    }
                   }
-                  if (shouldCancel) {
-                    contentClassifier->CancelChannel(channel);
-                    callbackFromFeature();
-                  } else if (task) {
-                    task->CompleteClassification();
-                    // This calls the callbackFromFeature
-                  } else {
-                    callbackFromFeature();
+                  if (aPerformBlocking) {
+                    TimeDuration checkChannelHelperDuration =
+                        TimeStamp::Now() - outerStartTime;
+                    glean::urlclassifier::check_channel_helper_time
+                        .AccumulateRawDuration(checkChannelHelperDuration);
+                    PerfStats::RecordMeasurement(
+                        PerfStats::Metric::UrlClassifierCheckChannel,
+                        checkChannelHelperDuration);
                   }
-
-                  glean::urlclassifier::check_channel_helper_time
-                      .AccumulateRawDuration(TimeStamp::Now() - outerStartTime);
                   PROFILER_MARKER(
                       "AntiTrackingChannelClassifier::CheckChannelHelper",
                       NETWORK, MarkerTiming::IntervalEnd(), FlowMarker,
                       Flow::FromPointer(channel.get()));
+
+                  // We must always call the callback. Either via the task or
+                  // explicitly.
+                  if (task) {
+                    task->CompleteClassification();
+                  } else {
+                    callbackFromFeature();
+                  }
                 }),
             eventPriority);
       });

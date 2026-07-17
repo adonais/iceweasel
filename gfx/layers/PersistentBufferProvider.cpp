@@ -92,8 +92,7 @@ PersistentBufferProviderBasic::Create(gfx::IntSize aSize,
     return nullptr;
   }
 
-  RefPtr<PersistentBufferProviderBasic> provider =
-      new PersistentBufferProviderBasic(dt);
+  RefPtr provider = MakeRefPtr<PersistentBufferProviderBasic>(dt);
 
   return provider.forget();
 }

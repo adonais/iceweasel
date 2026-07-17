@@ -114,7 +114,9 @@ import org.mozilla.focus.open.OpenWithFragment
 import org.mozilla.focus.session.ui.TabsPopup
 import org.mozilla.focus.settings.permissions.permissionoptions.SitePermissionOptionsStorage
 import org.mozilla.focus.settings.privacy.ConnectionDetailsPanel
+import org.mozilla.focus.settings.privacy.SiteSecurityInfo
 import org.mozilla.focus.settings.privacy.TrackingProtectionPanel
+import org.mozilla.focus.settings.privacy.TrackingProtectionPanelInteractor
 import org.mozilla.focus.shortcut.HomeScreen
 import org.mozilla.focus.state.AppAction
 import org.mozilla.focus.topsites.DefaultTopSitesStorage.Companion.TOP_SITES_MAX_LIMIT
@@ -1091,23 +1093,31 @@ class BrowserFragment :
             context = requireContext(),
             lifecycleOwner = this,
             cookieBannerReducerStore = cookieBannerReducerStore,
-            tabUrl = tab.content.url,
-            isTrackingProtectionOn = tab.trackingProtection.ignoredOnTrackingProtection.not(),
-            isConnectionSecure = tab.content.securityInfo.isSecure,
-            blockedTrackersCount = requireContext().settings
-                .getTotalBlockedTrackersCount(),
-            toggleTrackingProtection = ::toggleTrackingProtection,
-            updateTrackingProtectionPolicy = { tracker, isEnabled ->
-                EngineSharedPreferencesListener(requireContext())
-                    .updateTrackingProtectionPolicy(
-                        source = EngineSharedPreferencesListener.ChangeSource.PANEL.source,
-                        tracker = tracker,
-                        isEnabled = isEnabled,
-                    )
-                reloadCurrentTab()
+            siteInfo = SiteSecurityInfo(
+                tabUrl = tab.content.url,
+                isTrackingProtectionOn = tab.trackingProtection.ignoredOnTrackingProtection.not(),
+                isConnectionSecure = tab.content.securityInfo.isSecure,
+                blockedTrackersCount = requireContext().settings.getTotalBlockedTrackersCount(),
+            ),
+            interactor = object : TrackingProtectionPanelInteractor {
+                override fun toggleTrackingProtection(enabled: Boolean) =
+                    this@BrowserFragment.toggleTrackingProtection(enabled)
+
+                override fun updateTrackingProtectionPolicy(tracker: String?, enabled: Boolean) {
+                    EngineSharedPreferencesListener(requireContext())
+                        .updateTrackingProtectionPolicy(
+                            source = EngineSharedPreferencesListener.ChangeSource.PANEL.source,
+                            tracker = tracker,
+                            isEnabled = enabled,
+                        )
+                    reloadCurrentTab()
+                }
+
+                override fun showConnectionInfo() = this@BrowserFragment.showConnectionInfo()
+
+                override fun showCookieBannerExceptionsDetailsPanel() =
+                    this@BrowserFragment.showCookieBannerExceptionsDetailsPanel()
             },
-            showConnectionInfo = ::showConnectionInfo,
-            showCookieBannerExceptionsDetailsPanel = ::showCookieBannerExceptionDetailsPanel,
         ).also { currentEtp -> context?.let { currentEtp.show() } }
     }
 
@@ -1115,7 +1125,7 @@ class BrowserFragment :
         requireComponents.sessionUseCases.reload(tab.id)
     }
 
-    private fun showCookieBannerExceptionDetailsPanel() {
+    private fun showCookieBannerExceptionsDetailsPanel() {
         val cookieBannerExceptionDetailsPanel = CookieBannerReducerDetailsPanel(
             context = requireContext(),
             cookieBannerReducerStore = cookieBannerReducerStore,

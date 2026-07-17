@@ -25,12 +25,12 @@ class nsMimeTypeArray final : public nsISupports, public nsWrapperCache {
   nsMimeTypeArray(nsPIDOMWindowInner* aWindow,
                   const mozilla::Array<RefPtr<nsMimeType>, 2>& aMimeTypes);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(nsMimeTypeArray)
 
   nsPIDOMWindowInner* GetParentObject() const;
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   // MimeTypeArray WebIDL methods
   uint32_t Length() { return ForceNoPlugins() ? 0 : std::size(mMimeTypes); }
@@ -52,7 +52,7 @@ class nsMimeTypeArray final : public nsISupports, public nsWrapperCache {
   void GetSupportedNames(nsTArray<nsString>& retval);
 
  protected:
-  virtual ~nsMimeTypeArray();
+  ~nsMimeTypeArray();
 
   bool ForceNoPlugins();
 
@@ -73,8 +73,8 @@ class nsMimeType final : public nsWrapperCache {
 
   nsPluginElement* GetParentObject() const { return mPluginElement; }
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   // MimeType WebIDL methods
   void GetDescription(mozilla::dom::DOMString& retval) const {
@@ -91,7 +91,7 @@ class nsMimeType final : public nsWrapperCache {
   const nsString& Name() const { return mName; }
 
  protected:
-  virtual ~nsMimeType();
+  ~nsMimeType();
 
   // Note that this creates an explicit reference cycle:
   //

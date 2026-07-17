@@ -7,6 +7,7 @@
 
 #include <list>
 #include <map>
+#include <memory>
 #include <set>
 #include <stack>
 #include <unordered_map>
@@ -49,6 +50,18 @@ class MOZ_STACK_CLASS Zone {
       oomUnsafe.crash("Irregexp Zone::New");
     }
     return static_cast<T*>(memory);
+  }
+
+  // Allocates a copy of 'v' in this zone and returns a view over it.
+  template <typename T>
+  base::Vector<T> CloneVector(base::Vector<const T> v) {
+    size_t length = v.size();
+    if (length == 0) {
+      return {};
+    }
+    T* new_array = AllocateArray<T>(length);
+    std::uninitialized_copy(v.begin(), v.end(), new_array);
+    return base::Vector<T>(new_array, length);
   }
 
   void DeleteAll() { inner().freeAll(); }

@@ -170,6 +170,8 @@ class HTMLEditor final : public EditorBase,
 
   bool IsEmpty() const final;
 
+  dom::EditContext* GetEditContext() const final;
+
   bool CanPaste(nsIClipboard::ClipboardType aClipboardType) const final;
   using EditorBase::CanPaste;
 
@@ -206,8 +208,30 @@ class HTMLEditor final : public EditorBase,
       const final;
   MOZ_CAN_RUN_SCRIPT nsresult
   OnFocus(const nsINode& aOriginalEventTargetNode) final;
+  MOZ_CAN_RUN_SCRIPT void PostHandleFocusEvent(
+      const nsINode& aFocusEventTargetNode) final;
   MOZ_CAN_RUN_SCRIPT nsresult
   OnBlur(const dom::EventTarget* aEventTarget) final;
+
+  /**
+   * Called when eFocus event of aNode will be dispatched to the DOM.
+   * Note that aNode is the original target of eFocus (i.e., may be the target
+   * in a shadow). However, aNode may not be editable. E.g., <a href> element
+   * outside contenteditable. Therefore, even when this method is called,
+   * HTMLEditor won't get focus.
+   */
+  MOZ_CAN_RUN_SCRIPT static void WillFocusNode(PresShell& aPresShell,
+                                               nsINode* aNode);
+
+  /**
+   * Called when eFocus event of aNode will be dispatched to the DOM.
+   * Note that aNode is the original target of eBlur (i.e., may be the target
+   * in a shadow). However, aNode may not be editable. E.g., <a href> element
+   * outside contenteditable. Therefore, even when this method is called,
+   * HTMLEditor may not have focus.
+   */
+  MOZ_CAN_RUN_SCRIPT static void WillBlurNode(PresShell& aPresShell,
+                                              nsINode* aNode);
 
   /**
    * Called when aDocument or aElement becomes editable without focus change.
@@ -739,8 +763,8 @@ class HTMLEditor final : public EditorBase,
    * @parem aNodeInserted  Return the node which was inserted.
    */
   MOZ_CAN_RUN_SCRIPT  // USED_BY_COMM_CENTRAL
-      nsresult
-      InsertAsQuotation(const nsAString& aQuotedText, nsINode** aNodeInserted);
+      nsresult InsertAsQuotation(const nsAString& aQuotedText,
+                                 nsINode** aNodeInserted);
 
   MOZ_CAN_RUN_SCRIPT nsresult InsertHTMLAsAction(
       const nsAString& aInString, nsIPrincipal* aPrincipal = nullptr);

@@ -139,8 +139,7 @@ size_t GetAllocSize(JS::Zone* zone, const void* alloc);
 
 void* AllocBufferInGC(JS::Zone* zone, size_t bytes, bool nurseryOwned);
 bool IsBufferAllocMarkedBlack(JS::Zone* zone, void* alloc);
-void TraceBufferEdgeInternal(JSTracer* trc, JS::Zone* zone, Cell* maybeOwner,
-                             void** bufferp, const char* name);
+void* TraceBufferEdgeInternal(JSTracer* trc, void** bufferp, const char* name);
 void MarkTenuredBuffer(JS::Zone* zone, void* alloc);
 
 }  // namespace gc

@@ -36,7 +36,7 @@ already_AddRefed<nsDragService> nsDragService::GetInstance() {
 }
 
 already_AddRefed<nsIDragSession> nsDragService::CreateDragSession() {
-  RefPtr<nsDragSession> session = new nsDragSession();
+  auto session = MakeRefPtr<nsDragSession>();
   return session.forget();
 }
 

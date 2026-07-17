@@ -54,7 +54,7 @@ using namespace mozilla::widget;
 nsDragSession::~nsDragSession() { NS_IF_RELEASE(mDataObject); }
 
 already_AddRefed<nsIDragSession> nsDragService::CreateDragSession() {
-  RefPtr<nsIDragSession> session = new nsDragSession();
+  auto session = MakeRefPtr<nsDragSession>();
   return session.forget();
 }
 
@@ -262,8 +262,7 @@ nsresult nsDragSession::StartInvokingDragSession(nsIWidget* aWidget,
 
   // To do the drag we need to create an object that
   // implements the IDataObject interface (for OLE)
-  RefPtr<nsNativeDragSource> nativeDragSrc =
-      new nsNativeDragSource(mDataTransfer);
+  auto nativeDragSrc = MakeRefPtr<nsNativeDragSource>(mDataTransfer);
 
   // Now figure out what the native drag effect should be
   DWORD winDropRes;

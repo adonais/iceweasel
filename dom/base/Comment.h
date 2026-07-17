@@ -19,7 +19,7 @@ class Comment final : public CharacterData {
   virtual ~Comment();
 
  public:
-  explicit Comment(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit Comment(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : CharacterData(std::move(aNodeInfo)) {
     Init();
   }

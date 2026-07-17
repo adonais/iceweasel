@@ -175,8 +175,14 @@ tabbrowser-customizemode-tab-title = Customize { -brand-short-name }
 tabbrowser-context-mute-tab =
     .label = Mute Tab
     .accesskey = M
+tabbrowser-context-mute-tab2 =
+    .label = Mute
+    .accesskey = M
 tabbrowser-context-unmute-tab =
     .label = Unmute Tab
+    .accesskey = m
+tabbrowser-context-unmute-tab2 =
+    .label = Unmute
     .accesskey = m
 # The accesskey should match the accesskey for tabbrowser-context-mute-tab
 tabbrowser-context-mute-selected-tabs =
@@ -371,6 +377,17 @@ tab-context-ungroup-tab =
            *[other] Remove from Groups
         }
     .accesskey = R
+
+## The tab groups list provides a list of all open tab groups and saved tab
+## groups in one place. When the user has no tab groups, the list instead
+## recommends that the user create a tab group.
+
+# Text for a button that, when clicked, creates a new tab group
+tab-groups-list-create-group-button = New Group
+
+tab-groups-list-empty-header = Tidy up your tabs
+tab-groups-list-empty-description = Drag one tab onto another or right-click a tab to start organizing. We’ll save your groups here so they’re easy to find later.
+tab-groups-list-empty-button = Create a tab group
 
 ## Open/saved tab group context menu
 

@@ -2186,7 +2186,7 @@ static bool ComputeNudgeWindow(JSContext* cx, const InternalDuration& duration,
 
   // Steps 7-8.
   EpochNanoseconds startEpochNs;
-  if (r1 == 0) {
+  if (DateDurationSign(startDuration) == 0) {
     // Step 7.a.
     startEpochNs = originEpochNs;
   } else {

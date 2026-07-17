@@ -50,11 +50,7 @@ function checkForPrompt(prefVal) {
     checkbox.scrollIntoView();
 
     // Toggle the state.
-    await EventUtils.synthesizeMouseAtCenter(
-      checkbox,
-      {},
-      checkbox.documentGlobal
-    );
+    EventUtils.synthesizeMouseAtCenter(checkbox, {}, checkbox.documentGlobal);
 
     // Now the prompt should have shown.
     ok(

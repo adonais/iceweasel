@@ -279,6 +279,36 @@ add_task(async function test_addMarkerWithObject() {
   Assert.ok(customSchema, "Custom schema found in profile");
 });
 
+add_task(async function test_addMarkerWithCrossRealmPlainObject() {
+  // A plain object coming from a different realm reaches AddProfilerMarker as
+  // a cross-compartment wrapper. JS::GetBuiltinClass unwraps proxies, but
+  // JS::ToJSONMaybeSafely's assertion checks the wrapper directly, so we need
+  // to unwrap before calling it.
+  await ProfilerTestUtils.startProfilerForMarkerTests();
+
+  const sandbox = Cu.Sandbox(Cu.getGlobalForObject(Services), {
+    wantGlobalProperties: ["ChromeUtils"],
+  });
+  const wrappedObject = Cu.evalInSandbox(
+    "({ type: 'CustomMarker', field1: 'crossrealm', field2: 7 })",
+    sandbox
+  );
+
+  ChromeUtils.addProfilerMarker("CrossRealmMarker", {}, wrappedObject);
+
+  const profile = await ProfilerTestUtils.stopNowAndGetProfile();
+  const mainThread = profile.threads.find(({ name }) => name === "GeckoMain");
+  const markers = ProfilerTestUtils.getInflatedMarkerData(mainThread);
+
+  const marker = markers.find(m => m.name === "CrossRealmMarker");
+  Assert.ok(marker, "Marker with cross-realm object data was recorded");
+  Assert.deepEqual(
+    marker.data,
+    { type: "CustomMarker", field1: "crossrealm", field2: 7 },
+    "Marker data should match the cross-realm plain object"
+  );
+});
+
 add_task(async function test_addMarkerWithNonPlainObject() {
   // Non-plain objects (e.g. Error, Array) passed as the data argument should
   // be recorded as text markers using the object's string form.

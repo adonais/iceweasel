@@ -13,6 +13,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   AppInfo: "chrome://remote/content/shared/AppInfo.sys.mjs",
   assert: "chrome://remote/content/shared/webdriver/Assert.sys.mjs",
   AsyncQueue: "chrome://remote/content/shared/AsyncQueue.sys.mjs",
+  dom: "chrome://remote/content/shared/DOM.sys.mjs",
   error: "chrome://remote/content/shared/webdriver/Errors.sys.mjs",
   event: "chrome://remote/content/shared/webdriver/Event.sys.mjs",
   keyData: "chrome://remote/content/shared/webdriver/KeyData.sys.mjs",
@@ -820,7 +821,14 @@ class ElementOrigin extends Origin {
       );
     }
 
-    return getInViewCentrePoint(clientRects[0], context);
+    /*
+     * Note: This diverges from the Webdriver spec. See more information in
+     * https://github.com/w3c/webdriver/issues/1961
+     * */
+    return getInViewCentrePoint(
+      lazy.dom.getFirstNonZeroRect(clientRects),
+      context
+    );
   }
 }
 

@@ -22,7 +22,6 @@
     font-size: 15px;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.revamp") {
     display: none;
   }

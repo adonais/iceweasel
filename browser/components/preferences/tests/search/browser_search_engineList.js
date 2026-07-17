@@ -176,7 +176,12 @@ async function test_change_keyword(engineList) {
   let promiseSubDialogLoaded = promiseLoadSubDialog(
     "chrome://browser/content/search/addEngine.xhtml"
   );
-  extensionEditBtn.click();
+  extensionEditBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(
+    extensionEditBtn,
+    {},
+    gBrowser.selectedBrowser.contentWindow
+  );
   await promiseSubDialogLoaded;
 
   let prefsWin = gBrowser.selectedBrowser.contentWindow;
@@ -189,13 +194,19 @@ async function test_change_keyword(engineList) {
   let keywordBefore = "keyword";
   inputElem.value = keywordBefore;
   inputElem.dispatchEvent(new Event("input", { bubbles: true }));
-  acceptBtn.click();
+  acceptBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(acceptBtn, {}, dialogDoc.defaultView);
 
   // Open new subdialog and add "Keyword" as the keyword (note capitalization).
   promiseSubDialogLoaded = promiseLoadSubDialog(
     "chrome://browser/content/search/addEngine.xhtml"
   );
-  extensionEditBtn.click();
+  extensionEditBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(
+    extensionEditBtn,
+    {},
+    gBrowser.selectedBrowser.contentWindow
+  );
   await promiseSubDialogLoaded;
 
   // Need to re-access things, as this is a new subdialog.
@@ -205,7 +216,8 @@ async function test_change_keyword(engineList) {
 
   inputElem.value = "Keyword";
   inputElem.dispatchEvent(new Event("input", { bubbles: true }));
-  acceptBtn.click();
+  acceptBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(acceptBtn, {}, dialogDoc.defaultView);
   await BrowserTestUtils.waitForCondition(
     () =>
       inputElem.parentElement.querySelector(".error-label").textContent !=
@@ -228,7 +240,12 @@ async function test_change_keyword(engineList) {
   promiseSubDialogLoaded = promiseLoadSubDialog(
     "chrome://browser/content/search/addEngine.xhtml"
   );
-  extensionEditBtn.click();
+  extensionEditBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(
+    extensionEditBtn,
+    {},
+    gBrowser.selectedBrowser.contentWindow
+  );
   await promiseSubDialogLoaded;
 
   // Need to re-access things, as this is a new subdialog.
@@ -390,6 +407,7 @@ engine_list_test(async function test_remove_button_disabled_state(tree, doc) {
 async function test_remove_button_legacy(tree, doc) {
   let win = tree.documentGlobal;
   let alertSpy = sinon.stub(win, "alert");
+  let removeBtn = doc.querySelector("#removeEngineButton");
 
   info("Removing user engine.");
   let userEngineIndex = installedEngines.findIndex(e => e.id == userEngine.id);
@@ -405,7 +423,8 @@ async function test_remove_button_legacy(tree, doc) {
     SearchUtils.TOPIC_ENGINE_MODIFIED
   );
 
-  doc.querySelector("#removeEngineButton").click();
+  removeBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(removeBtn, {}, win);
   await promptPromise;
   let removedEngine = await removedPromise;
   Assert.equal(
@@ -423,7 +442,8 @@ async function test_remove_button_legacy(tree, doc) {
   );
   await selectEngine(tree, extensionEngineIndex);
 
-  doc.querySelector("#removeEngineButton").click();
+  removeBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(removeBtn, {}, win);
   await TestUtils.waitForCondition(() => alertSpy.calledOnce);
   Assert.ok(true, "Alert is shown when attempting to remove extension engine.");
 
@@ -443,7 +463,8 @@ async function test_remove_button_legacy(tree, doc) {
     SearchUtils.MODIFIED_TYPE.REMOVED,
     SearchUtils.TOPIC_ENGINE_MODIFIED
   );
-  doc.querySelector("#removeEngineButton").click();
+  removeBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(removeBtn, {}, win);
   await promptPromise;
   removedEngine = await removedPromise;
   Assert.equal(
@@ -469,12 +490,9 @@ async function test_remove_button_legacy(tree, doc) {
     "Last app-provided engine is included in the default engine dropdown."
   );
 
-  let dropdownChanged = BrowserTestUtils.waitForMutationCondition(
-    defaultEngineDropdown,
-    { childList: true, subtree: true, attributes: true },
-    () => !includesLastAppEngine()
-  );
-  doc.querySelector("#removeEngineButton").click();
+  let dropdownChanged = waitForSettingControlChange(defaultEngineDropdown);
+  removeBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(removeBtn, {}, win);
   removedEngine = await SearchTestUtils.promiseSearchNotification(
     SearchUtils.MODIFIED_TYPE.REMOVED,
     SearchUtils.TOPIC_ENGINE_MODIFIED
@@ -498,13 +516,15 @@ async function test_remove_button_legacy(tree, doc) {
     SearchUtils.MODIFIED_TYPE.CHANGED,
     SearchUtils.TOPIC_ENGINE_MODIFIED
   );
-  doc.getElementById("restoreDefaultSearchEngines").click();
+  let restoreBtn = doc.getElementById("restoreDefaultSearchEngines");
+  restoreBtn.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(restoreBtn, {}, win);
   await updatedPromise;
   // The user engine is purposefully not re-added.
   // The extension engine is removed automatically on cleanup.
 }
 
-async function test_toggle_engine_off(engineList, doc) {
+async function test_toggle_engine(engineList, doc) {
   let appProvidedEngines = await SearchService.getAppProvidedEngines();
   let defaultEngineId = SearchService.defaultEngine.id;
   let defaultPrivateEngineId = SearchService.defaultPrivateEngine?.id;
@@ -519,6 +539,9 @@ async function test_toggle_engine_off(engineList, doc) {
     engineToHide,
     "Found a non-default app-provided engine to hide via toggle."
   );
+  registerCleanupFunction(() => {
+    engineToHide.hidden = false;
+  });
   // Validate that the engine is included in the dropdown before we toggle it off.
   Assert.ok(
     includesHiddenEngine(),
@@ -527,18 +550,23 @@ async function test_toggle_engine_off(engineList, doc) {
 
   info(`Hiding app-provided engine "${engineToHide.name}".`);
   let toggle = doc.getElementById(`toggleEngine-${engineToHide.id}`);
+  let editButton = doc.getElementById(`editEngine-${engineToHide.id}`);
   Assert.ok(toggle.pressed, "Toggle is initially pressed (engine visible).");
-
-  let dropdownChanged = BrowserTestUtils.waitForMutationCondition(
-    defaultEngineDropdown,
-    { childList: true, subtree: true, attributes: true },
-    () => !includesHiddenEngine()
+  Assert.ok(
+    !editButton.disabled,
+    "Edit button is initially enabled (engine visible)."
   );
+
+  let dropdownChanged = waitForSettingControlChange(defaultEngineDropdown);
   let changedPromise = SearchTestUtils.promiseSearchNotification(
     SearchUtils.MODIFIED_TYPE.CHANGED,
     SearchUtils.TOPIC_ENGINE_MODIFIED
   );
-  toggle.click();
+  let editChanged = waitForSettingControlChange(editButton);
+
+  toggle.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(toggle, {}, doc.defaultView);
+
   await changedPromise;
   Assert.ok(engineToHide.hidden, "Engine should be hidden after toggling off.");
   await dropdownChanged;
@@ -548,16 +576,68 @@ async function test_toggle_engine_off(engineList, doc) {
     !includesHiddenEngine(),
     "Hidden engine is not displayed in the default engine dropdown."
   );
+  await editChanged;
+  Assert.ok(
+    editButton.disabled,
+    "Edit button is disabled when engine is hidden."
+  );
 
-  // Cleanup.
+  info(
+    `Re-show app-provided engine "${engineToHide.name}" when toggled back on.`
+  );
+  let dropdownRestored = waitForSettingControlChange(defaultEngineDropdown);
   let restoredPromise = SearchTestUtils.promiseSearchNotification(
     SearchUtils.MODIFIED_TYPE.CHANGED,
     SearchUtils.TOPIC_ENGINE_MODIFIED
   );
-  engineToHide.hidden = false;
+  toggle.scrollIntoView();
+  EventUtils.synthesizeMouseAtCenter(toggle, {}, doc.defaultView);
   await restoredPromise;
+  Assert.ok(
+    !engineToHide.hidden,
+    "Engine should be visible again after toggling on."
+  );
+  await dropdownRestored;
+  Assert.ok(
+    includesHiddenEngine(),
+    "Re-shown engine is included in the default engine dropdown again."
+  );
+  Assert.ok(
+    !editButton.disabled,
+    "Edit button becomes enabled again when engine is visible."
+  );
 }
 
 engine_list_test(
-  SRD_PREF_VALUE ? test_toggle_engine_off : test_remove_button_legacy
+  SRD_PREF_VALUE ? test_toggle_engine : test_remove_button_legacy
+);
+
+engine_list_test(
+  async function test_no_toggle_for_non_config_engines(engineList, doc) {
+    if (!SRD_PREF_VALUE) {
+      Assert.ok(true, "Legacy settings UI has no per-engine toggle.");
+      return;
+    }
+
+    Assert.equal(
+      doc.getElementById(`toggleEngine-${userEngine.id}`),
+      null,
+      "User engine has no toggle."
+    );
+    Assert.ok(
+      doc.getElementById(`deleteEngine-${userEngine.id}`),
+      "User engine has a delete button instead."
+    );
+
+    Assert.equal(
+      doc.getElementById(`toggleEngine-${extensionEngine.id}`),
+      null,
+      "Extension (addon) engine has no toggle."
+    );
+    Assert.equal(
+      doc.getElementById(`deleteEngine-${extensionEngine.id}`),
+      null,
+      "Extension (addon) engine has no delete button."
+    );
+  }
 );

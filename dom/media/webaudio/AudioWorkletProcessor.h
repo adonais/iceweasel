@@ -5,10 +5,9 @@
 #ifndef AudioWorkletProcessor_h_
 #define AudioWorkletProcessor_h_
 
+#include "mozilla/dom/AudioWorkletGlobalScope.h"
 #include "nsCOMPtr.h"
 #include "nsWrapperCache.h"
-
-class nsIGlobalObject;
 
 namespace mozilla {
 
@@ -36,9 +35,10 @@ class AudioWorkletProcessor final : public nsWrapperCache {
   MessagePort* Port() const { return mPort; };
 
  private:
-  explicit AudioWorkletProcessor(nsIGlobalObject* aParent, MessagePort* aPort);
+  explicit AudioWorkletProcessor(RefPtr<AudioWorkletGlobalScope>&& aParent,
+                                 RefPtr<MessagePort>&& aPort);
   ~AudioWorkletProcessor();
-  nsCOMPtr<nsIGlobalObject> mParent;
+  RefPtr<AudioWorkletGlobalScope> mParent;
   RefPtr<MessagePort> mPort;
 };
 

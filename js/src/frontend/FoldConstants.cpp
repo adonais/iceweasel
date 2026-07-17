@@ -158,9 +158,7 @@ restart:
     case ParseNodeKind::BreakStmt:
     case ParseNodeKind::ContinueStmt:
     case ParseNodeKind::ImportDecl:
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::ImportSourceDecl:
-#endif
     case ParseNodeKind::ImportSpecList:
     case ParseNodeKind::ImportSpec:
     case ParseNodeKind::ImportNamespaceSpec:
@@ -172,9 +170,7 @@ restart:
     case ParseNodeKind::ExportStmt:
     case ParseNodeKind::ExportBatchSpecStmt:
     case ParseNodeKind::CallImportExpr:
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::CallImportSourceExpr:
-#endif
     case ParseNodeKind::CallImportSpec:
     case ParseNodeKind::ImportAttributeList:
     case ParseNodeKind::ImportAttribute:

@@ -77,10 +77,10 @@ media::DecodeSupportSet RemoteDecoderModule::Supports(
     supports = false;
   }
 #endif
-  MOZ_LOG(
-      sPDMLog, LogLevel::Debug,
-      ("Sandbox %s decoder %s requested type %s", RemoteMediaInToStr(mLocation),
-       supports ? "supports" : "rejects", aParams.MimeType().get()));
+  MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
+              "Sandbox {} decoder {} requested type {}",
+              RemoteMediaInToStr(mLocation), supports ? "supports" : "rejects",
+              aParams.MimeType().get());
   if (supports) {
     // TODO: Note that we do not yet distinguish between SW/HW decode support.
     //       Will be done in bug 1754239.

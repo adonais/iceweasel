@@ -271,23 +271,6 @@ const URL_ROOT_MOCHI_8888 = CHROME_URL_ROOT.replace(
   "http://mochi.test:8888/"
 );
 
-try {
-  if (isMochitest) {
-    Services.scriptloader.loadSubScript(
-      "chrome://mochitests/content/browser/devtools/client/shared/test/telemetry-test-helpers.js",
-      this
-    );
-  }
-} catch (e) {
-  ok(
-    false,
-    "MISSING DEPENDENCY ON telemetry-test-helpers.js\n" +
-      "Please add the following line in browser.toml:\n" +
-      "  !/devtools/client/shared/test/telemetry-test-helpers.js\n"
-  );
-  throw e;
-}
-
 // Force devtools to be initialized so menu items and keyboard shortcuts get installed
 require("resource://devtools/client/framework/devtools-browser.js");
 

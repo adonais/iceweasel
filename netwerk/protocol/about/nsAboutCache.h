@@ -111,7 +111,17 @@
   }                                                                            \
   NS_IMETHOD GetCanceled(bool* aCanceled) override {                           \
     return !(_to) ? NS_ERROR_NULL_POINTER : (_to)->GetCanceled(aCanceled);     \
-  };
+  }                                                                            \
+  NS_IMETHOD GetParentProcessChannelHandle(                                    \
+      mozilla::dom::ParentProcessChannelHandle** aValue) override {            \
+    return !(_to) ? NS_ERROR_NULL_POINTER                                      \
+                  : (_to)->GetParentProcessChannelHandle(aValue);              \
+  }                                                                            \
+  NS_IMETHOD SetParentProcessChannelHandle(                                    \
+      mozilla::dom::ParentProcessChannelHandle* aValue) override {             \
+    return !(_to) ? NS_ERROR_NULL_POINTER                                      \
+                  : (_to)->SetParentProcessChannelHandle(aValue);              \
+  }
 
 class nsAboutCache final : public nsIAboutModule {
  public:

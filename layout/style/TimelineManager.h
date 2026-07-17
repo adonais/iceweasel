@@ -90,11 +90,10 @@ class TimelineManager {
   // a hashmap.
   using TimelineScopes = nsTArray<TimelineScopeEntry>;
 
-  template <typename StyleType, typename TimelineType>
+  template <typename TimelineType>
   nsTArray<RefPtr<const nsAtom>> DoUpdateTimelines(
       nsPresContext* aPresContext, dom::Element* aElement,
-      const PseudoStyleRequest& aPseudoRequest,
-      const nsStyleAutoArray<StyleType>& aStyleTimelines, size_t aTimelineCount,
+      const PseudoStyleRequest& aPseudoRequest, const nsStyleUIReset* aUIReset,
       TimelineNameMap<TimelineType>& aTimelineNameMap);
 
   template <typename T>

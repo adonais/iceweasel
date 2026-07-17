@@ -5543,7 +5543,7 @@ void InitialStencilAndDelazifications::dumpFields(js::JSONPrinter& json) const {
 
 JSString* CompilationAtomCache::getExistingStringAt(
     ParserAtomIndex index) const {
-  MOZ_RELEASE_ASSERT(atoms_.length() >= index);
+  MOZ_RELEASE_ASSERT(index < atoms_.length());
   return atoms_[index];
 }
 

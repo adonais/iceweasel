@@ -150,7 +150,8 @@ class nsHttpRequestHead {
   mutable RecursiveMutex mRecursiveMutex{"nsHttpRequestHead.mRecursiveMutex"};
 
   // During VisitHeader we sould not allow call to SetHeader.
-  bool mInVisitHeaders MOZ_GUARDED_BY(mRecursiveMutex){false};
+  // Depth counter so nested visits cannot disarm the outer guard.
+  uint32_t mInVisitHeaders MOZ_GUARDED_BY(mRecursiveMutex){0};
 
   friend struct IPC::ParamTraits<nsHttpRequestHead>;
 };

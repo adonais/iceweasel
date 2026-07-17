@@ -60,7 +60,7 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED(SVGFEImageElement,
 // Implementation
 
 SVGFEImageElement::SVGFEImageElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGFEImageElementBase(std::move(aNodeInfo)) {
   // We start out broken
   AddStatesSilently(ElementState::BROKEN);
@@ -246,12 +246,9 @@ FilterPrimitiveDescription SVGFEImageElement::GetPrimitiveDescription(
   RefPtr<SourceSurface> image;
   nsIntSize nativeSize;
   if (imageContainer) {
-    if (NS_FAILED(imageContainer->GetWidth(&nativeSize.width))) {
-      nativeSize.width = kFallbackIntrinsicWidthInPixels;
-    }
-    if (NS_FAILED(imageContainer->GetHeight(&nativeSize.height))) {
-      nativeSize.height = kFallbackIntrinsicHeightInPixels;
-    }
+    CSSIntSize size = NaturalSize(DoDensityCorrection::No);
+    nativeSize.width = size.width;
+    nativeSize.height = size.height;
     uint32_t flags =
         imgIContainer::FLAG_SYNC_DECODE | imgIContainer::FLAG_ASYNC_NOTIFY;
     image = imageContainer->GetFrameAtSize(nativeSize,

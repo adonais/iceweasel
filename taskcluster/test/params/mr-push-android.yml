@@ -2135,7 +2135,6 @@ head_rev: c3bba5162c988aa7e1791df8827c1a1575eddcc1
 head_tag: ''
 hg_branch: default
 level: '3'
-message: ''
 moz_build_date: '20250421163656'
 next_version: 138.0.1
 optimize_strategies: null

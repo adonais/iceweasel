@@ -937,16 +937,29 @@ var gEditItemOverlay = {
     }
 
     if (aEvent.target.id == "editBMPanel_chooseFolderMenuItem") {
-      // reset the selection back to where it was and expand the tree
-      // (this menu-item is hidden when the tree is already visible
+      // Restore the current parent-folder selection before opening the tree.
+      // "Choose Folder" is only visible while the tree is collapsed.
       let item = this._getFolderMenuItem(
         this._bookmarkState._originalState.parentGuid,
         this._bookmarkState._originalState.title
       );
       this._folderMenuList.selectedItem = item;
-      // XXXmano HACK: setTimeout 100, otherwise focus goes back to the
-      // menulist right away
-      setTimeout(() => this.toggleFolderTreeVisibility(), 100);
+      // Only activate "Choose Folder" for explicit user interaction (click or
+      // Enter from the open popup), not arrow-key cycling. On non-native
+      // menus the popup is "hiding" only for explicit selection; on native
+      // menus (macOS) arrow keys never trigger this command path at all.
+      const menupopup = this._folderMenuList.menupopup;
+      if (menupopup.state == "hiding" || menupopup.isNativeMenu) {
+        if (menupopup.state == "closed") {
+          this.toggleFolderTreeVisibility();
+        } else {
+          menupopup.addEventListener(
+            "popuphidden",
+            () => this.toggleFolderTreeVisibility(),
+            { once: true }
+          );
+        }
+      }
       return;
     }
 

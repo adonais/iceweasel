@@ -155,6 +155,38 @@ void RestyleManager::ContentAppended(nsIContent* aFirstNewContent) {
       }
     }
   }
+
+  if (selectorFlags & NodeSelectorFlags::MayHaveTreeCountingFunction) {
+    RecascadeForTreeCountingFunctions(container);
+  }
+}
+
+/**
+ * Runs the given function on the provided element, its generated content
+ * pseudo elements, and any UA widget pseudo elements.
+ */
+template <typename Func>
+static void ForEachElementAndPseudo(Element* aElement, Func&& aFunc) {
+  // TODO(Bug 2037724): this method covers a limited number of
+  // pseudos (i.e. ::selection is not handled).
+  aFunc(aElement);
+
+  AutoTArray<nsIContent*, 4> pseudos;
+  nsLayoutUtils::AppendGeneratedContentPseudos(aElement, pseudos);
+  for (nsIContent* pseudo : pseudos) {
+    aFunc(Element::FromNode(pseudo));
+  }
+
+  auto* shadow = aElement->GetShadowRoot();
+  if (shadow && shadow->IsUAWidget()) {
+    for (nsIContent* node = shadow->GetFirstChild(); node;
+         node = node->GetNextNode(shadow)) {
+      if (node->IsElement() && node->AsElement()->GetPseudoElementType() !=
+                                   PseudoStyleType::NotPseudo) {
+        aFunc(node->AsElement());
+      }
+    }
+  }
 }
 
 void RestyleManager::RestylePreviousSiblings(nsIContent* aStartingSibling) {
@@ -172,6 +204,26 @@ void RestyleManager::RestyleSiblingsStartingWith(nsIContent* aStartingSibling) {
     if (auto* element = Element::FromNode(sibling)) {
       PostRestyleEvent(element, RestyleHint::RestyleSubtree(), nsChangeHint(0));
     }
+  }
+}
+
+void RestyleManager::RecascadeForTreeCountingFunctions(nsINode* aContainer) {
+  MOZ_ASSERT(aContainer->GetSelectorFlags() &
+             NodeSelectorFlags::MayHaveTreeCountingFunction);
+
+  for (nsIContent* child = aContainer->GetFirstChild(); child;
+       child = child->GetNextSibling()) {
+    auto* element = Element::FromNode(child);
+    if (!element) {
+      continue;
+    }
+
+    ForEachElementAndPseudo(element, [&](Element* aTargetElement) {
+      if (Servo_Element_UsesTreeCountingFunction(aTargetElement)) {
+        PostRestyleEvent(aTargetElement, RestyleHint::RECASCADE_SELF,
+                         nsChangeHint(0));
+      }
+    });
   }
 }
 
@@ -425,6 +477,10 @@ void RestyleManager::RestyleForInsertOrChange(nsIContent* aChild) {
   if (selectorFlags & NodeSelectorFlags::HasEdgeChildSelector) {
     MaybeRestyleForEdgeChildChange(container, aChild);
   }
+
+  if (selectorFlags & NodeSelectorFlags::MayHaveTreeCountingFunction) {
+    RecascadeForTreeCountingFunctions(container);
+  }
 }
 
 void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild) {
@@ -482,7 +538,7 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild) {
         break;
       }
     }
-    if (isEmpty && containerIsElement) {
+    if (isEmpty) {
       RestyleForEmptyChange(container->AsElement());
       return;
     }
@@ -564,6 +620,10 @@ void RestyleManager::ContentWillBeRemoved(nsIContent* aOldChild) {
         reachedFollowingSibling = true;
       }
     }
+  }
+
+  if (selectorFlags & NodeSelectorFlags::MayHaveTreeCountingFunction) {
+    RecascadeForTreeCountingFunctions(container);
   }
 }
 
@@ -2744,6 +2804,24 @@ static bool NeedsToReframeForConditionallyCreatedPseudoElement(
       return true;
     }
   }
+  if (aElement->IsHTMLElement(nsGkAtoms::option) && !aStyleFrame->IsLeaf() &&
+      !nsLayoutUtils::GetCheckmarkPseudo(aElement)) {
+    RefPtr<ComputedStyle> pseudoStyle =
+        aRestyleState.StyleSet().ProbePseudoElementStyle(
+            *aElement, PseudoStyleType::Checkmark, nullptr, aNewStyle);
+    if (pseudoStyle) {
+      return true;
+    }
+  }
+  if (aElement->IsHTMLElement(nsGkAtoms::select) && !aStyleFrame->IsLeaf() &&
+      !nsLayoutUtils::GetPickerIconPseudo(aElement)) {
+    RefPtr<ComputedStyle> pseudoStyle =
+        aRestyleState.StyleSet().ProbePseudoElementStyle(
+            *aElement, PseudoStyleType::PickerIcon, nullptr, aNewStyle);
+    if (pseudoStyle) {
+      return true;
+    }
+  }
   return false;
 }
 
@@ -3530,36 +3608,12 @@ static inline bool NeedToRecordAttrChange(
 
 void RestyleManager::MaybeRecascadeForAttrFunction(Element* aElement,
                                                    nsAtom* aAttribute) {
-  // TODO(Bug 2037724): this method covers a limited number of
-  // pseudos (i.e. ::selection is not handled).
-  if (Servo_Element_ReferencesAttribute(aElement, aAttribute)) {
-    PostRestyleEvent(aElement, RestyleHint::RECASCADE_SELF, nsChangeHint(0));
-  }
-
-  AutoTArray<nsIContent*, 4> pseudos;
-  nsLayoutUtils::AppendGeneratedContentPseudos(aElement, pseudos);
-  for (nsIContent* pseudo : pseudos) {
-    Element* pseudoElement = Element::FromNode(pseudo);
-    if (Servo_Element_ReferencesAttribute(pseudoElement, aAttribute)) {
-      PostRestyleEvent(pseudoElement, RestyleHint::RECASCADE_SELF,
+  ForEachElementAndPseudo(aElement, [&](Element* aTargetElement) {
+    if (Servo_Element_ReferencesAttribute(aTargetElement, aAttribute)) {
+      PostRestyleEvent(aTargetElement, RestyleHint::RECASCADE_SELF,
                        nsChangeHint(0));
     }
-  }
-
-  auto* shadow = aElement->GetShadowRoot();
-  if (shadow && shadow->IsUAWidget()) {
-    for (nsIContent* node = shadow->GetFirstChild(); node;
-         node = node->GetNextNode(shadow)) {
-      if (!node->IsElement() || node->AsElement()->GetPseudoElementType() ==
-                                    PseudoStyleType::NotPseudo) {
-        continue;
-      }
-      if (Servo_Element_ReferencesAttribute(node->AsElement(), aAttribute)) {
-        PostRestyleEvent(node->AsElement(), RestyleHint::RECASCADE_SELF,
-                         nsChangeHint(0));
-      }
-    }
-  }
+  });
 }
 
 void RestyleManager::AttributeWillChange(Element* aElement,

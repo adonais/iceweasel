@@ -54,6 +54,7 @@ class Watchtower {
   static bool watchProtoChangeSlow(JSContext* cx, HandleObject obj);
   static SetSlotOptimizable canOptimizeSetSlotSlow(JSContext* cx,
                                                    NativeObject* obj,
+                                                   PropertyKey key,
                                                    PropertyInfo prop);
 
  public:
@@ -86,6 +87,7 @@ class Watchtower {
         {ObjectFlag::IsUsedAsPrototype, ObjectFlag::UseWatchtowerTestingLog});
   }
   static SetSlotOptimizable canOptimizeSetSlot(JSContext* cx, NativeObject* obj,
+                                               PropertyKey key,
                                                PropertyInfo prop) {
     if (obj->hasAnyFlag({ObjectFlag::HasRealmFuseProperty,
                          ObjectFlag::UseWatchtowerTestingLog})) {
@@ -94,7 +96,7 @@ class Watchtower {
     if (!obj->hasObjectFuse()) {
       return SetSlotOptimizable::Yes;
     }
-    return canOptimizeSetSlotSlow(cx, obj, prop);
+    return canOptimizeSetSlotSlow(cx, obj, key, prop);
   }
 
   static bool watchPropertyAdd(JSContext* cx, Handle<NativeObject*> obj,

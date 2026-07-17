@@ -22,6 +22,7 @@
 #include "nsRedirectHistoryEntry.h"
 #include "mozilla/AntiTrackingUtils.h"
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/dom/ParentProcessChannelHandle.h"
 
 using namespace mozilla;
 
@@ -704,6 +705,26 @@ nsBaseChannel::AsyncOpen(nsIStreamListener* aListener) {
 
   ClassifyURI();
 
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsBaseChannel::GetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle** aValue) {
+  *aValue = do_AddRef(mParentProcessChannelHandle).take();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsBaseChannel::SetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle* aValue) {
+  if (XRE_IsParentProcess()) {
+    MOZ_ASSERT_UNREACHABLE(
+        "SetParentProcessChannelHandle in the parent process would leak");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  mParentProcessChannelHandle = aValue;
   return NS_OK;
 }
 

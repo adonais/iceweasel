@@ -15,6 +15,7 @@
 
 class ProxiedConnection;
 
+typedef void (*ThreadCallback)();
 typedef void (*CompositorUnavailableHandler)();
 // Called from the proxy thread when the compositor closes a connection without
 // a Wayland protocol error while the compositor process is still alive.
@@ -50,6 +51,8 @@ class WaylandProxy {
   void RestoreWaylandDisplay();
 
   static void SetVerbose(bool aVerbose);
+  static void SetThreadStartCallback(ThreadCallback aCallback);
+  static void SetThreadStopCallback(ThreadCallback aCallback);
   static void SetCompositorUnavailableHandler(
       CompositorUnavailableHandler aHandler);
   static void CompositorUnavailable();
@@ -99,6 +102,8 @@ class WaylandProxy {
   // Name of Wayland display provided by us
   char mWaylandProxy[sMaxDisplayNameLen];
 
+  static ThreadCallback sThreadStartCallback;
+  static ThreadCallback sThreadStopCallback;
   static CompositorUnavailableHandler sCompositorUnavailableHandler;
   static CompositorSilentDisconnectHandler sCompositorSilentDisconnectHandler;
   // Set when the compositor display socket has disappeared (compositor crashed

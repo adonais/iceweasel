@@ -8,6 +8,8 @@
 #include "mozilla/DOMEventTargetHelper.h"
 #include "mozilla/dom/EditContextBinding.h"
 
+class nsTextNode;
+
 namespace mozilla::dom {
 
 class EditContext final : public DOMEventTargetHelper {
@@ -23,19 +25,7 @@ class EditContext final : public DOMEventTargetHelper {
                                                    ErrorResult& aRv);
 
   void UpdateText(uint32_t aRangeStart, uint32_t aRangeEnd,
-                  const nsAString& aText) {
-    auto newLength = CheckedUint32(mText.Length()) + aText.Length();
-    if (NS_WARN_IF(!newLength.isValid())) {
-      // don't allow text length to overflow uint32_t
-      return;
-    }
-    size_t start = std::min(aRangeStart, aRangeEnd);
-    start = std::min(start, mText.Length());
-    size_t end = std::max(aRangeStart, aRangeEnd);
-    end = std::min(end, mText.Length());
-
-    mText.Replace(start, end - start, aText);
-  }
+                  const nsAString& aText, ErrorResult& aRv);
   void UpdateSelection(uint32_t aStart, uint32_t aEnd) {
     mSelectionStart = aStart;
     mSelectionEnd = aEnd;
@@ -51,7 +41,8 @@ class EditContext final : public DOMEventTargetHelper {
     }
   }
 
-  void GetText(nsAString& aText) const { aText = mText; }
+  void GetText(nsAString& aText) const;
+  uint32_t TextLength() const;
   uint32_t SelectionStart() const { return mSelectionStart; }
   uint32_t SelectionEnd() const { return mSelectionEnd; }
   uint32_t CharacterBoundsRangeStart() const {
@@ -65,6 +56,10 @@ class EditContext final : public DOMEventTargetHelper {
   void SetAssociatedElement(nsGenericHTMLElement* aElement) {
     mAssociatedElement = aElement;
   }
+
+  // Anonymous <div> element that holds the text being edited.
+  nsGenericHTMLElement& TextContainer() { return *mTextContainer; }
+  nsTextNode& TextNode() { return *mText; }
 
   // https://w3c.github.io/edit-context/#dfn-deactivate-an-editcontext
   MOZ_CAN_RUN_SCRIPT void Deactivate();
@@ -83,9 +78,15 @@ class EditContext final : public DOMEventTargetHelper {
    */
   static bool IsAnyAttached();
 
+  MOZ_CAN_RUN_SCRIPT void UpdateTextAndFireEvent(uint32_t aStart, uint32_t aEnd,
+                                                 const nsAString& aString);
+  MOZ_CAN_RUN_SCRIPT void StartComposition(
+      const WidgetCompositionEvent& aEvent);
+  MOZ_CAN_RUN_SCRIPT void EndComposition(const WidgetCompositionEvent& aEvent);
+
  private:
-  explicit EditContext(nsIGlobalObject* aGlobalObject,
-                       const EditContextInit& aInit);
+  EditContext(nsIGlobalObject* aGlobalObject, const EditContextInit& aInit,
+              ErrorResult& aRv);
   ~EditContext() = default;
 
   using Rect = gfx::RectTyped<CSSPixel, double>;
@@ -94,10 +95,11 @@ class EditContext final : public DOMEventTargetHelper {
   Rect ToRect(const DOMRect& rect) const;
 
   RefPtr<nsGenericHTMLElement> mAssociatedElement;
+  RefPtr<nsGenericHTMLElement> mTextContainer;
   nsTArray<Rect> mCodepointRects;
   Rect mControlBounds;
   Rect mSelectionBounds;
-  nsString mText;
+  RefPtr<nsTextNode> mText;
   uint32_t mSelectionStart = 0;
   uint32_t mSelectionEnd = 0;
   uint32_t mCodepointRectsStartIndex = 0;

@@ -25,14 +25,14 @@ includes: [testTypedArray.js]
 features: [TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA) {
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   var called = 0;
 
-  new TA().every(function() {
+  new TA(makeCtorArg(0)).every(function() {
     called++;
   });
 
   assert.sameValue(called, 0);
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

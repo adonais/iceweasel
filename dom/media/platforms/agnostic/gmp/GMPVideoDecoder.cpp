@@ -69,9 +69,9 @@ void GMPVideoDecoder::Decoded(GMPVideoi420Frame* aDecodedFrame) {
     entryHandle.Remove();
   } else {
     GMP_LOG_DEBUG(
-        "GMPVideoDecoder::Decoded(this=%p) missing sample metadata for "
-        "time %" PRIu64,
-        this, decodedFrame->Timestamp());
+        "GMPVideoDecoder::Decoded(this={}) missing sample metadata for "
+        "time {}",
+        fmt::ptr(this), decodedFrame->Timestamp());
     if (mSamples.IsEmpty()) {
       // If we have no remaining samples in the table, then we have processed
       // all outstanding decode requests.

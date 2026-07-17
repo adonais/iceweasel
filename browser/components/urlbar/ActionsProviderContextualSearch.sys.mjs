@@ -104,6 +104,9 @@ class ProviderContextualSearch extends ActionsProvider {
     if (type == INSTALLED_ENGINE) {
       result.engine = engine.name;
       result.dataset = { providesSearchMode: true };
+      if (key != "matched-contextual-search") {
+        result.dataset.immediateSearch = true;
+      }
     }
 
     return new ActionsResult(result);
@@ -201,6 +204,9 @@ class ProviderContextualSearch extends ActionsProvider {
    *   Load flags. See nsIWebProgressListener.idl for possible values.
    */
   async onLocationChange(window, uri, _webProgress, _flags) {
+    if (!uri.scheme.startsWith("http")) {
+      return;
+    }
     try {
       if (this.#visitedEngineDomains.has(uri.host)) {
         this.#visitedEngineDomains.set(uri.host, true);
@@ -337,7 +343,7 @@ class ProviderContextualSearch extends ActionsProvider {
       engine,
       queryContext.searchString,
       controller,
-      type == INSTALLED_ENGINE
+      this.#resultEngine.key == "matched-contextual-search"
     );
 
     if (

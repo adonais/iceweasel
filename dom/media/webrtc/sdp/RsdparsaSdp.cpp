@@ -38,7 +38,9 @@ RsdparsaSdp::RsdparsaSdp(const RsdparsaSdp& aOrig)
     : RsdparsaSdp(RsdparsaSessionHandle(create_sdp_clone(aOrig.mSession.get())),
                   aOrig.mOrigin) {}
 
-Sdp* RsdparsaSdp::Clone() const { return new RsdparsaSdp(*this); }
+UniquePtr<Sdp> RsdparsaSdp::Clone() const {
+  return WrapUnique(new RsdparsaSdp(*this));
+}
 
 const SdpOrigin& RsdparsaSdp::GetOrigin() const { return mOrigin; }
 

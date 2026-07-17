@@ -1041,7 +1041,7 @@ nsresult nsPipe::CloneInputStream(nsPipeInputStream* aOriginal,
                                   nsIInputStream** aCloneOut) {
   ReentrantMonitorAutoEnter mon(mReentrantMonitor);
   MOZ_RELEASE_ASSERT(!aOriginal->ReadState().mActiveRead);
-  RefPtr<nsPipeInputStream> ref = new nsPipeInputStream(*aOriginal);
+  RefPtr ref = MakeRefPtr<nsPipeInputStream>(*aOriginal);
   // don't add clones of closed pipes to mInputList.
   ref->Monitor().AssertCurrentThreadIn();
   if (NS_SUCCEEDED(ref->InputStatus(mon))) {
@@ -1798,7 +1798,7 @@ void NS_NewPipe2(nsIAsyncInputStream** aPipeIn, nsIAsyncOutputStream** aPipeOut,
       new nsPipe(aSegmentSize ? aSegmentSize : DEFAULT_SEGMENT_SIZE,
                  aSegmentCount ? aSegmentCount : DEFAULT_SEGMENT_COUNT);
 
-  RefPtr<nsPipeInputStream> pipeIn = new nsPipeInputStream(pipe);
+  RefPtr pipeIn = MakeRefPtr<nsPipeInputStream>(pipe);
   pipe->mInputList.AppendElement(pipeIn);
   RefPtr<nsPipeOutputStream> pipeOut = &pipe->mOutput;
 
@@ -1858,7 +1858,7 @@ nsPipeHolder::GetOutputStream(nsIAsyncOutputStream** aOutputStream) {
 }
 
 nsresult nsPipeConstructor(REFNSIID aIID, void** aResult) {
-  RefPtr<nsPipeHolder> pipe = new nsPipeHolder();
+  RefPtr pipe = MakeRefPtr<nsPipeHolder>();
   nsresult rv = pipe->QueryInterface(aIID, aResult);
   return rv;
 }

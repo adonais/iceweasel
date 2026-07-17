@@ -478,7 +478,7 @@ async function navigateExternalProtoFromIframe(
                 () => link,
                 "wait for link to be present"
               );
-              await EventUtils.synthesizeMouseAtCenter(link, {}, content);
+              EventUtils.synthesizeMouseAtCenter(link, {}, content);
             }
           }
         );

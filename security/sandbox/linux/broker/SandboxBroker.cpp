@@ -649,9 +649,9 @@ int SandboxBroker::SymlinkPermissions(const char* aPath,
   int perms = 0;
   // Resolve relative paths, propagate permissions and
   // fail if a symlink is in a writable path. The output is in perms.
-  char* result =
-      SandboxBroker::SymlinkPath(mPolicy.get(), pathBufSymlink, NULL, &perms);
-  if (result != NULL) {
+  char* result = SandboxBroker::SymlinkPath(mPolicy.get(), pathBufSymlink,
+                                            nullptr, &perms);
+  if (result != nullptr) {
     free(result);
     // We finished the translation, so we have a usable return in "perms".
     return perms;

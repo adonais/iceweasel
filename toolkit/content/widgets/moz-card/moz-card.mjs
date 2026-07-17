@@ -30,6 +30,7 @@ import { MozLitElement } from "chrome://global/content/lit-utils.mjs";
  * @property {boolean} expanded - A flag to indicate whether the card is
  *  expanded or not. Can be used to expand the content section of the
  *  accordion card on initial render.
+ * @property {string} role - (optional) Role of the article element in the card.
  * @slot content - The content to show inside of the card.
  */
 export default class MozCard extends MozLitElement {
@@ -47,6 +48,7 @@ export default class MozCard extends MozLitElement {
     iconSrc: { type: String },
     type: { type: String, reflect: true },
     expanded: { type: Boolean },
+    role: { type: String, mapped: true },
   };
 
   constructor() {
@@ -140,6 +142,7 @@ export default class MozCard extends MozLitElement {
         href="chrome://global/content/elements/moz-card.css"
       />
       <article
+        role=${ifDefined(this.role)}
         class="moz-card"
         aria-labelledby=${ifDefined(this.heading ? "heading" : undefined)}
       >

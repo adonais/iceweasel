@@ -27,14 +27,14 @@ class Document;
 #ifndef EME_LOG
 LogModule* GetEMELog();
 #  define EME_LOG(...) \
-    MOZ_LOG(GetEMELog(), mozilla::LogLevel::Debug, (__VA_ARGS__))
+    MOZ_LOG_FMT(GetEMELog(), mozilla::LogLevel::Debug, __VA_ARGS__)
 #  define EME_LOG_ENABLED() MOZ_LOG_TEST(GetEMELog(), mozilla::LogLevel::Debug)
 #endif
 
 #ifndef EME_VERBOSE_LOG
 LogModule* GetEMEVerboseLog();
 #  define EME_VERBOSE_LOG(...) \
-    MOZ_LOG(GetEMEVerboseLog(), mozilla::LogLevel::Debug, (__VA_ARGS__))
+    MOZ_LOG_FMT(GetEMEVerboseLog(), mozilla::LogLevel::Debug, __VA_ARGS__)
 #else
 #  ifndef EME_LOG
 #    define EME_LOG(...)

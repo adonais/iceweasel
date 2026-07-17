@@ -14,10 +14,16 @@ import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 const weatherEntry = WIDGET_REGISTRY.find(w => w.id === "weather");
 const clocksEntry = WIDGET_REGISTRY.find(w => w.id === "clocks");
 
-function WeatherRowWidget({ dispatch }) {
+function WeatherRowWidget({ dispatch, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const weatherSize = resolveWidgetSize(weatherEntry, prefs);
-  return <WeatherWidget dispatch={dispatch} size={weatherSize} />;
+  return (
+    <WeatherWidget
+      dispatch={dispatch}
+      size={weatherSize}
+      widgetEnabledMap={widgetEnabledMap}
+    />
+  );
 }
 
 function WeatherSidebarWidget({ dispatch }) {
@@ -28,10 +34,16 @@ function WeatherSidebarWidget({ dispatch }) {
   return <WeatherWidget dispatch={dispatch} size="small" />;
 }
 
-function ClocksRowWidget({ dispatch }) {
+function ClocksRowWidget({ dispatch, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const clocksSize = resolveWidgetSize(clocksEntry, prefs);
-  return <Clocks dispatch={dispatch} size={clocksSize} />;
+  return (
+    <Clocks
+      dispatch={dispatch}
+      size={clocksSize}
+      widgetEnabledMap={widgetEnabledMap}
+    />
+  );
 }
 
 export const WIDGET_ROW_COMPONENTS = {

@@ -6,8 +6,10 @@
         "brand": {
           "default": "{color.accent.primary.@base}"
         },
+        "nativeTheme": "LinkText",
         "platform": {
-          "default": "LinkText"
+          "light": "{color.blue.60}",
+          "dark": "{color.cyan.30}"
         }
       }
     },
@@ -36,12 +38,7 @@
     "visited": {
       "value": {
         "forcedColors": "VisitedText",
-        "brand": {
-          "default": "{link.color.@base}"
-        },
-        "platform": {
-          "default": "{link.color.@base}"
-        }
+        "default": "{link.color.@base}"
       }
     }
   },

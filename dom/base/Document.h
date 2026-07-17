@@ -198,7 +198,6 @@ struct LangGroupFontPrefs;
 class PendingFullscreenEvent;
 class PermissionDelegateHandler;
 class PresShell;
-class ScrollTimelineAnimationTracker;
 class ServoStyleSet;
 enum class StyleOrigin : uint8_t;
 class SMILAnimationController;
@@ -713,6 +712,8 @@ class Document : public nsINode,
   virtual void SetSuppressParserErrorConsoleMessages(bool aSuppress) {}
   virtual bool SuppressParserErrorConsoleMessages() { return false; }
 
+  NS_IMPL_FROMNODE_HELPER(Document, IsDocument())
+
   // nsINode
   void InsertChildBefore(
       nsIContent* aKid, nsIContent* aBeforeThis, bool aNotify, ErrorResult& aRv,
@@ -1101,7 +1102,11 @@ class Document : public nsINode,
     //   are completing the initial about:blank load
     // - and Document::EndLoad was already called, so the method is almost done
     //   (we're likely called from there right now).
-    return InitialAboutBlankLoadCompleting() && !IsExpectingEndLoad();
+    // - and we are the initial document that should load sync. Specifically,
+    //   we are not IsInitialButExplicitlyOpened (bug 2041104).
+    bool ret = InitialAboutBlankLoadCompleting() && !IsExpectingEndLoad() &&
+               IsInitialDocument();
+    return ret;
   }
 
   void SetLoadedAsData(bool aLoadedAsData, bool aConsiderForMemoryReporting);
@@ -2940,19 +2945,6 @@ class Document : public nsINode,
   // If HasAnimationController is true, this is guaranteed to return non-null.
   SMILAnimationController* GetAnimationController();
 
-  // Gets the tracker for scroll-driven animations that are waiting to start.
-  // Returns nullptr if there is no scroll-driven animation tracker for this
-  // document which will be the case if there have never been any scroll-driven
-  // animations in the document.
-  ScrollTimelineAnimationTracker* GetScrollTimelineAnimationTracker() {
-    return mScrollTimelineAnimationTracker;
-  }
-
-  // Gets the tracker for scroll-driven animations that are waiting to start and
-  // creates it if it doesn't already exist. As a result, the return value
-  // will never be nullptr.
-  ScrollTimelineAnimationTracker* GetOrCreateScrollTimelineAnimationTracker();
-
   /**
    * Prevents user initiated events from being dispatched to the document and
    * subdocuments.
@@ -3656,28 +3648,27 @@ class Document : public nsINode,
     return !GetFullscreenError(aCallerType);
   }
 
+  // Picture-in-Picture API
+  bool PictureInPictureEnabled();
+  Element* GetPictureInPictureElementInternal() const;
+  void SetPictureInPictureElement(Element* aElement);
+  already_AddRefed<Promise> ExitPictureInPicture(ErrorResult& aRv);
+
   void GetWireframeWithoutFlushing(bool aIncludeNodes, Nullable<Wireframe>&);
 
   MOZ_CAN_RUN_SCRIPT void GetWireframe(bool aIncludeNodes,
                                        Nullable<Wireframe>&);
 
-  // https://html.spec.whatwg.org/#close-entire-popover-list
-  MOZ_CAN_RUN_SCRIPT void CloseEntirePopoverList(PopoverAttributeState aMode,
-                                                 bool aFocusPreviousElement,
-                                                 bool aFireEvents);
-
-  // Hides all popovers until the given end point, see
-  // https://html.spec.whatwg.org/multipage/popover.html#hide-all-popovers-until
-  MOZ_CAN_RUN_SCRIPT void HideAllPopoversUntil(nsINode& aEndpoint,
-                                               bool aFocusPreviousElement,
-                                               bool aFireEvents);
-
-  // Hides all popovers, until the given end point, see
   // https://html.spec.whatwg.org/#hide-popover-stack-until
-  MOZ_CAN_RUN_SCRIPT void HidePopoverStackUntil(PopoverAttributeState aMode,
-                                                nsINode& aEndpoint,
-                                                bool aFocusPreviousElement,
-                                                bool aFireEvents);
+  MOZ_CAN_RUN_SCRIPT void HidePopoverStackUntil(
+      Element* aEndpoint, PopoverAttributeState aStackType,
+      bool aFocusPreviousElement, bool aFireEvents);
+
+  // Hides hint then auto popover stacks until the given endpoint.
+  // https://html.spec.whatwg.org/#hide-popovers-until
+  MOZ_CAN_RUN_SCRIPT void HidePopoversUntil(Element* aEndpoint,
+                                            bool aFocusPreviousElement,
+                                            bool aFireEvents);
 
   // Hides the given popover element, see
   // https://html.spec.whatwg.org/multipage/popover.html#hide-popover-algorithm
@@ -3690,7 +3681,9 @@ class Document : public nsINode,
   // popover opened in mode is in the given state.
   // See https://html.spec.whatwg.org/multipage/popover.html#auto-popover-list
   // See https://html.spec.whatwg.org/#showing-hint-popover-list
-  nsTArray<Element*> PopoverListOf(PopoverAttributeState aMode) const;
+  nsTArray<RefPtr<Element>> PopoverListOf(PopoverAttributeState aMode) const;
+  bool IsInPopoverListOf(const Element& aElement,
+                         PopoverAttributeState aMode) const;
 
   // Return document's popover list's last element of a particular mode.
   // See
@@ -3699,6 +3692,21 @@ class Document : public nsINode,
 
   void AddPopoverToTopLayer(Element&);
   void RemovePopoverFromTopLayer(Element&);
+
+  Element* PopoverHintStackParent() const;
+  void SetPopoverHintStackParent(Element* aParent);
+
+  bool IsShowingPopover() const { return mShowingPopover; }
+  void SetShowingPopover(bool aShowing) { mShowingPopover = aShowing; }
+
+  uint32_t HidingPopoverNestingCount() const {
+    return mHidingPopoverNestingCount;
+  }
+  void IncrementHidingPopoverNestingCount() { ++mHidingPopoverNestingCount; }
+  void DecrementHidingPopoverNestingCount() {
+    MOZ_ASSERT(mHidingPopoverNestingCount > 0);
+    --mHidingPopoverNestingCount;
+  }
 
   Element* GetTopLayerTop();
   // Return the fullscreen element in the top layer
@@ -3772,7 +3780,11 @@ class Document : public nsINode,
    */
   already_AddRefed<nsRange> CaretRangeFromPoint(int32_t aX, int32_t aY);
 
-  Element* GetScrollingElement();
+  MOZ_CAN_RUN_SCRIPT Element* GetScrollingElement();
+  // Like GetScrollingElement, but does not flush pending layout. Callers get
+  // an answer based on the current (possibly stale) frame state; if accuracy
+  // matters, callers should just call GetScrollingElement.
+  Element* GetScrollingElementNoFlush();
   // A way to check whether a given element is what would get returned from
   // GetScrollingElement.  It can be faster than comparing to the return value
   // of GetScrollingElement() due to being able to avoid flushes in various
@@ -4098,7 +4110,7 @@ class Document : public nsINode,
   void UpdateLastRememberedSizes();
 
   // Dispatch a runnable related to the document.
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const;
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable) const;
 
   // The URLs passed to this function should match what
   // JS::DescribeScriptedCaller() returns, since this API is used to
@@ -4543,6 +4555,9 @@ class Document : public nsINode,
   static void GetAllInProcessDocuments(
       nsTArray<RefPtr<Document>>& aAllDocuments);
 
+  // Returns true if the document's principals's scheme is "about".
+  bool IsAboutPage() const;
+
  protected:
   // Returns the WindowContext for the document that we will contribute
   // page use counters to.
@@ -4556,9 +4571,6 @@ class Document : public nsINode,
   void EnsureOnloadBlocker();
 
   void SendToConsole(nsCOMArray<nsISecurityConsoleMessage>& aMessages);
-
-  // Returns true if the scheme for the url for this document is "about".
-  bool IsAboutPage() const;
 
   bool ContainsEMEContent();
   bool ContainsMSEContent();
@@ -4836,6 +4848,12 @@ class Document : public nsINode,
   // Helper for GetScrollingElement/IsScrollingElement.
   bool IsPotentiallyScrollable(HTMLBodyElement* aBody);
 
+  // Whether GetScrollingElementImpl / IsPotentiallyScrollableImpl should flush
+  // pending style and frame construction before answering.
+  enum class Flush : bool { No, Yes };
+  Element* GetScrollingElementImpl(Flush);
+  bool IsPotentiallyScrollableImpl(HTMLBodyElement* aBody, Flush);
+
   void MaybeAllowStorageForOpenerAfterUserInteraction();
 
   void MaybeStoreUserInteractionAsPermission();
@@ -4984,7 +5002,8 @@ class Document : public nsINode,
 
   RefPtr<Promise> mReadyForIdle;
 
-  RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
+  // Lazily created in FeaturePolicy().
+  mutable RefPtr<mozilla::dom::FeaturePolicy> mFeaturePolicy;
 
   // Permission Delegate Handler, lazily-initialized in
   // GetPermissionDelegateHandler
@@ -5513,6 +5532,9 @@ class Document : public nsINode,
   // mAnonymousContents roots. It's a NAC root, child of the root element.
   RefPtr<Element> mCustomContentContainer;
 
+  // Picture-in-Picture API: tracks the current PiP element
+  RefPtr<Element> mPictureInPictureElement;
+
   uint32_t mBlockDOMContentLoaded;
 
   // Our live MediaQueryLists
@@ -5637,6 +5659,15 @@ class Document : public nsINode,
   // Stack of top layer elements.
   nsTArray<nsWeakPtr> mTopLayer;
 
+  // https://html.spec.whatwg.org/#hint-stack-parent
+  RefPtr<Element> mPopoverHintStackParent;
+
+  // https://html.spec.whatwg.org/#showing-popover
+  bool mShowingPopover = false;
+
+  // https://html.spec.whatwg.org/#hiding-popover-nesting-count
+  uint32_t mHidingPopoverNestingCount = 0;
+
   // Stack of open dialogs
   // https://html.spec.whatwg.org/#open-dialogs-list
   nsTArray<HTMLDialogElement*> mOpenDialogs;
@@ -5667,10 +5698,6 @@ class Document : public nsINode,
   AnimationTimelinesController mTimelinesController;
 
   RefPtr<dom::ScriptLoader> mScriptLoader;
-
-  // Tracker for scroll-driven animations that are waiting to start.
-  // nullptr until GetOrCreateScrollTimelineAnimationTracker is called.
-  RefPtr<ScrollTimelineAnimationTracker> mScrollTimelineAnimationTracker;
 
   // A document "without a browsing context" that owns the content of
   // HTMLTemplateElement.
@@ -5839,8 +5866,8 @@ class Document : public nsINode,
   // Collection of data used by the pageload event.
   PageloadEventData mPageloadEventData;
 
-  // Record page load telemetry
-  void RecordPageLoadEventTelemetry();
+  // Submit the page load event at the end of the document's lifetime.
+  void ReportPageLoadEvent();
 
   // Accumulate JS telemetry collected
   void AccumulateJSTelemetry();

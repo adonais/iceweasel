@@ -130,6 +130,19 @@ class IAPZCTreeManager {
   virtual void SetLongTapEnabled(bool aTapGestureEnabled) = 0;
 
   /**
+   * Notify APZ that the content process has just registered a non-passive
+   * APZ-aware event listener (touchstart/touchmove/touchend/wheel/...).
+   * |aGuid| identifies the nearest scroll container ancestor of the
+   * listener target (root scroll container for document/window listeners).
+   * APZ uses this signal to flag subsequent hit-test results whose target
+   * matches |aGuid| or any of its APZC-tree descendants with
+   * eApzAwareListeners, without waiting for a full paint and WebRender
+   * transaction.
+   */
+  virtual void NotifyApzAwareListenerAdded(
+      const ScrollableLayerGuid& aGuid) = 0;
+
+  /**
    * Returns an APZInputBridge interface that can be used to send input
    * events to APZ in a synchronous manner. This will always be non-null, and
    * the returned object's lifetime will match the lifetime of this

@@ -34,12 +34,12 @@ FEATURE_CHECK_NEEDED = {
     "immutable-arraybuffer": "!ArrayBuffer.prototype.sliceToImmutable",  # Bug 1952253
     "await-dictionary": "!Promise.allKeyed",
     "source-phase-imports": "!(this.hasOwnProperty('getBuildConfiguration')&&getBuildConfiguration('source-phase-imports'))",
+    "source-phase-imports-module-source": "!(this.hasOwnProperty('wasmIsSupported')&&wasmIsSupported())",
     "Intl.Locale-info": "!this.hasOwnProperty('Intl')||!this.Intl.Locale.prototype.hasOwnProperty('firstDayOfWeek')",
 }
 RELEASE_OR_BETA = set([
     "legacy-regexp",
     "import-bytes",
-    "import-text",
 ])
 SHELL_OPTIONS = {
     "symbols-as-weakmap-keys": "--enable-symbols-as-weakmap-keys",
@@ -50,7 +50,6 @@ SHELL_OPTIONS = {
     "Atomics.waitAsync": "--setpref=atomics_wait_async",
     "immutable-arraybuffer": "--enable-arraybuffer-immutable",
     "import-bytes": "--enable-import-bytes",
-    "import-text": "--enable-import-text",
     "await-dictionary": "--enable-promise-allkeyed",
     "source-phase-imports": "--enable-source-phase-imports",
     "source-phase-imports-module-source": "--enable-source-phase-imports-test262-module-source",

@@ -94,7 +94,7 @@ void nsDocShellEditorData::EnsureEditingSession() {
   NS_ASSERTION(!mIsDetached, "This will stomp editing session!");
 
   if (!mEditingSession) {
-    mEditingSession = new nsEditingSession();
+    mEditingSession = MakeRefPtr<nsEditingSession>();
   }
 }
 

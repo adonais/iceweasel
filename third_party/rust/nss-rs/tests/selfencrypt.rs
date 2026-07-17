@@ -10,13 +10,13 @@
 use nss_rs::{
     Error,
     constants::{TLS_AES_128_GCM_SHA256, TLS_VERSION_1_3},
-    init,
     selfencrypt::SelfEncrypt,
 };
+use test_fixture::fixture_init;
 
 #[test]
 fn se_create() {
-    init().unwrap();
+    fixture_init();
     SelfEncrypt::new(TLS_VERSION_1_3, TLS_AES_128_GCM_SHA256).expect("constructor works");
 }
 
@@ -24,7 +24,7 @@ const PLAINTEXT: &[u8] = b"PLAINTEXT";
 const AAD: &[u8] = b"AAD";
 
 fn sealed() -> (SelfEncrypt, Vec<u8>) {
-    init().unwrap();
+    fixture_init();
     let se = SelfEncrypt::new(TLS_VERSION_1_3, TLS_AES_128_GCM_SHA256).unwrap();
     let sealed = se.seal(AAD, PLAINTEXT).expect("sealing works");
     (se, sealed)

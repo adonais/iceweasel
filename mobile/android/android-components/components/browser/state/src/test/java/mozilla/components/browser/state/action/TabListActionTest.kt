@@ -387,6 +387,40 @@ class TabListActionTest {
     }
 
     @Test
+    fun `RemoveTabAction - Exclude excluded tab from selection`() {
+        var state = BrowserState(
+            tabs = listOf(
+                createTab(id = "a", url = "https://www.mozilla.org", private = false),
+                createTab(id = "b", url = "https://www.firefox.com", private = false),
+                createTab(id = "c", url = "https://www.example.org", private = false),
+                createTab(id = "d", url = "https://getpocket.com", private = false),
+                createTab(id = "e", url = "https://developer.mozilla.org/", private = false),
+            ),
+            selectedTabId = "d",
+        )
+
+        state = BrowserStateReducer.reduce(state, TabListAction.RemoveTabAction(excludedTabIds = setOf("e"), tabId = "d"))
+        assertEquals("c", state.selectedTabId)
+    }
+
+    @Test
+    fun `RemoveTabsAction - Exclude excluded tabs from selection`() {
+        var state = BrowserState(
+            tabs = listOf(
+                createTab(id = "a", url = "https://www.mozilla.org", private = false),
+                createTab(id = "b", url = "https://www.firefox.com", private = false),
+                createTab(id = "c", url = "https://www.example.org", private = false),
+                createTab(id = "d", url = "https://getpocket.com", private = false),
+                createTab(id = "e", url = "https://developer.mozilla.org/", private = false),
+            ),
+            selectedTabId = "d",
+        )
+
+        state = BrowserStateReducer.reduce(state, TabListAction.RemoveTabsAction(excludedTabIds = setOf("c", "e"), tabIds = listOf("d", "b")))
+        assertEquals("a", state.selectedTabId)
+    }
+
+    @Test
     fun `GIVEN last normal tab WHEN removed THEN no new tab is selected`() {
         val normalTab = createTab("normal", private = false)
         val privateTab = createTab("private", private = true)

@@ -68,10 +68,7 @@ class NavigationInfoImpl {
     }
 
     if (!this.#embeddingsGenerator) {
-      this.#embeddingsGenerator = new lazy.EmbeddingsGenerator({
-        backend: "onnx-native",
-        embeddingSize: 384,
-      });
+      this.#embeddingsGenerator = lazy.EmbeddingsGenerator.forGeneral();
     }
 
     if (!this.#navEmbeddings) {

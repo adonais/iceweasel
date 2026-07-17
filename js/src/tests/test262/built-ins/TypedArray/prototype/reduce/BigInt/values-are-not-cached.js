@@ -38,6 +38,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
       v, 42n, "method does not cache values before callbackfn calls"
     );
   }, 0);
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

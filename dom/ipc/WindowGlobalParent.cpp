@@ -44,6 +44,7 @@
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/NavigatorLogin.h"
 #include "mozilla/dom/PBackgroundSessionStorageCache.h"
+#include "mozilla/dom/ParentProcessChannelHandle.h"
 #include "mozilla/dom/SerialManagerParent.h"
 #include "mozilla/dom/UseCounterMetrics.h"
 #include "mozilla/dom/WebAuthnTransactionParent.h"
@@ -68,6 +69,7 @@
 #include "nsFrameLoader.h"
 #include "nsFrameLoaderOwner.h"
 #include "nsIBrowser.h"
+#include "nsICertOverrideService.h"
 #include "nsICookieManager.h"
 #include "nsICookieService.h"
 #include "nsIEffectiveTLDService.h"
@@ -78,9 +80,9 @@
 #include "nsISharePicker.h"
 #include "nsISiteIntegrityService.h"
 #include "nsITimer.h"
-#include "nsITransportSecurityInfo.h"
 #include "nsIURIMutator.h"
 #include "nsIWebProgressListener.h"
+#include "nsIX509Cert.h"
 #include "nsIXPConnect.h"
 #include "nsIXULRuntime.h"
 #include "nsImportModule.h"
@@ -127,12 +129,14 @@ WindowGlobalParent::WindowGlobalParent(
 }
 
 already_AddRefed<WindowGlobalParent> WindowGlobalParent::CreateDisconnected(
-    const WindowGlobalInit& aInit) {
+    const WindowGlobalInit& aInit, ContentParent* aForProcess) {
   RefPtr<CanonicalBrowsingContext> browsingContext =
       CanonicalBrowsingContext::Get(aInit.context().mBrowsingContextId);
   if (NS_WARN_IF(!browsingContext)) {
     return nullptr;
   }
+
+  MOZ_RELEASE_ASSERT(!aInit.staticCloneOf().IsDiscarded());
 
   RefPtr<WindowGlobalParent> wgp =
       GetByInnerWindowId(aInit.context().mInnerWindowId);
@@ -144,20 +148,46 @@ already_AddRefed<WindowGlobalParent> WindowGlobalParent::CreateDisconnected(
                              aInit.context().mOuterWindowId, std::move(fields));
   wgp->mDocumentPrincipal = aInit.principal();
   wgp->mDocumentURI = aInit.documentURI();
+  wgp->mStaticCloneOf = aInit.staticCloneOf().get_canonical();
   wgp->mIsInitialDocument = Some(aInit.isInitialDocument());
   wgp->mIsUncommittedInitialDocument = aInit.isUncommittedInitialDocument();
   wgp->mBlockAllMixedContent = aInit.blockAllMixedContent();
   wgp->mUpgradeInsecureRequests = aInit.upgradeInsecureRequests();
   wgp->mSandboxFlags = aInit.sandboxFlags();
   wgp->mHttpsOnlyStatus = aInit.httpsOnlyStatus();
-  wgp->mSecurityInfo = aInit.securityInfo();
   net::CookieJarSettings::Deserialize(aInit.cookieJarSettings(),
                                       getter_AddRefs(wgp->mCookieJarSettings));
   MOZ_RELEASE_ASSERT(wgp->mDocumentPrincipal, "Must have a valid principal");
+  MOZ_RELEASE_ASSERT(
+      !aForProcess || !wgp->mStaticCloneOf ||
+          wgp->mStaticCloneOf->GetContentParent() == aForProcess,
+      "Cannot static clone from a document in a different process!");
 
   nsresult rv = wgp->SetDocumentStoragePrincipal(aInit.storagePrincipal());
   MOZ_RELEASE_ASSERT(NS_SUCCEEDED(rv),
                      "Must succeed in setting storage principal");
+
+  if (aInit.documentChannelHandle()) {
+    auto result = aInit.documentChannelHandle()->GetChannel(
+        browsingContext, wgp->mStaticCloneOf);
+    if (result.isOk()) {
+      wgp->mDocumentChannel = result.unwrap();
+    } else {
+      MOZ_CRASH_UNSAFE_PRINTF("Invalid documentChannelHandle: %s",
+                              result.unwrapErr().get());
+    }
+  }
+
+  if (aInit.failedChannelHandle()) {
+    auto result = aInit.failedChannelHandle()->GetChannel(browsingContext,
+                                                          wgp->mStaticCloneOf);
+    if (result.isOk()) {
+      wgp->mFailedChannel = result.unwrap();
+    } else {
+      MOZ_CRASH_UNSAFE_PRINTF("Invalid failedChannelHandle: %s",
+                              result.unwrapErr().get());
+    }
+  }
 
   return wgp.forget();
 }
@@ -216,6 +246,15 @@ void WindowGlobalParent::Init() {
           mDocumentPrincipal,
           getter_AddRefs(mDocContentBlockingAllowListPrincipal));
     }
+  }
+
+  // A fresh document on a reused BC id must not inherit the previous
+  // document's AudioSession override. BFCache restore reuses the WGP so
+  // Init() does not run on restore — only new document loads trigger this
+  // path.
+  if (auto* top = BrowsingContext()->Top();
+      top && top->HasCreatedMediaController()) {
+    top->GetMediaController()->ClearAudioSessionFor(BrowsingContext()->Id());
   }
 
   nsCOMPtr<nsIObserverService> obs = services::GetObserverService();
@@ -746,10 +785,68 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdateCookieJarSettings(
   return IPC_OK();
 }
 
-mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdateDocumentSecurityInfo(
-    nsITransportSecurityInfo* aSecurityInfo) {
-  mSecurityInfo = aSecurityInfo;
+mozilla::ipc::IPCResult WindowGlobalParent::RecvUpdateChannels(
+    ParentProcessChannelHandle* aDocumentHandle,
+    ParentProcessChannelHandle* aFailedHandle) {
+  nsCOMPtr<nsIChannel> documentChannel;
+  if (aDocumentHandle) {
+    auto result = aDocumentHandle->GetChannel(BrowsingContext());
+    if (result.isOk()) {
+      documentChannel = result.unwrap();
+    } else {
+      MOZ_CRASH_UNSAFE_PRINTF("Invalid aDocumentHandle: %s",
+                              result.unwrapErr().get());
+    }
+  }
+
+  nsCOMPtr<nsIChannel> failedChannel;
+  if (aFailedHandle) {
+    auto result = aFailedHandle->GetChannel(BrowsingContext());
+    if (result.isOk()) {
+      failedChannel = result.unwrap();
+    } else {
+      MOZ_CRASH_UNSAFE_PRINTF("Invalid aFailedHandle: %s",
+                              result.unwrapErr().get());
+    }
+  }
+
+  // NOTE: In the case where XSLT has performed a transformation on our
+  // document, it is possible for this method to be called multiple times. In
+  // that case, the channel should be identical to the channel which was
+  // previously loaded. Once XSLT is removed, we should be able to remove that
+  // part of this check.
+  if ((mDocumentChannel || mFailedChannel) &&
+      (mDocumentChannel != documentChannel ||
+       mFailedChannel != failedChannel)) {
+    return IPC_FAIL(this,
+                    "Conflicting attempts to set ParentProcessChannelHandle on "
+                    "WindowGlobalParent");
+  }
+
+  mDocumentChannel = documentChannel;
+  mFailedChannel = failedChannel;
+
   return IPC_OK();
+}
+
+already_AddRefed<nsIChannel> WindowGlobalParent::GetDocumentChannel() {
+  if (mDocumentChannel) {
+    return do_AddRef(mDocumentChannel);
+  }
+  if (Document* doc = GetExtantDoc()) {
+    return do_AddRef(doc->GetChannel());
+  }
+  return nullptr;
+}
+
+already_AddRefed<nsIChannel> WindowGlobalParent::GetFailedChannel() {
+  if (mFailedChannel) {
+    return do_AddRef(mFailedChannel);
+  }
+  if (Document* doc = GetExtantDoc()) {
+    return do_AddRef(doc->GetFailedChannel());
+  }
+  return nullptr;
 }
 
 mozilla::ipc::IPCResult WindowGlobalParent::RecvShare(
@@ -810,9 +907,9 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
   // will _only_ run `DispatchBeforeUnloadToSubtree` for the content process of
   // the top level window. See further comments below in `Run` and in
   // `DispatchBeforeUnloadToSubtree`.
-  void RunTraversable(const SessionHistoryInfo& aInfo) {
+  void RunTraversable(nsDocShellLoadState* aDocShellLoadState) {
     MOZ_DIAGNOSTIC_ASSERT(mWGP->BrowsingContext()->IsTop());
-    Run(nullptr, 0, Some(aInfo));
+    Run(nullptr, 0, aDocShellLoadState);
   }
 
   // The complementing special case for `RunTraversable`, which is short hand
@@ -825,7 +922,7 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
   }
 
   void Run(ContentParent* aIgnoreProcess = nullptr, uint32_t aTimeout = 0,
-           const Maybe<SessionHistoryInfo>& aInfo = Nothing()) {
+           nsDocShellLoadState* aDocShellLoadState = nullptr) {
     MOZ_ASSERT(mState == State::UNINITIALIZED);
     mState = State::WAITING;
 
@@ -846,17 +943,20 @@ class CheckPermitUnloadRequest final : public PromiseNativeHandler,
     auto reject = [self](auto) { self->ResolveRequest(); };
     // If `aInfo` is passed, only dispatch to the content process of the top
     // level window.
-    if (aInfo) {
+    if (aDocShellLoadState) {
       MOZ_DIAGNOSTIC_ASSERT(Navigation::IsAPIEnabled());
       ContentParent* cp = mWGP->GetContentParent();
       mPendingRequests++;
       // Here eDontPromptAndUnload means that we ignore beforeunload handlers,
       // but we still need to handle the traversable navigate handler.
+      mozilla::NotNull<RefPtr<nsDocShellLoadState>> loadState =
+          WrapNotNull(aDocShellLoadState);
       if (mAction ==
           nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload) {
-        cp->SendDispatchNavigateToTraversable(bc, aInfo, resolve, reject);
+        cp->SendDispatchNavigateToTraversable(bc, loadState, resolve, reject);
       } else {
-        cp->SendDispatchBeforeUnloadToSubtree(bc, aInfo, resolve, reject);
+        cp->SendDispatchBeforeUnloadToSubtree(bc, Some(loadState), resolve,
+                                              reject);
       }
     } else {
       bc->PreOrderWalk([&](dom::BrowsingContext* aBC) {
@@ -1076,8 +1176,12 @@ void WindowGlobalParent::PermitUnload(
   request->Run();
 }
 
-void WindowGlobalParent::PermitUnloadTraversable(
-    const SessionHistoryInfo& aInfo,
+// https://html.spec.whatwg.org/#checking-if-unloading-is-canceled
+// Implements the traversable-specific portion (step 4): fires beforeunload on
+// the traversable's active document (if needed) and fires the traverse
+// `navigate` event, which may intercept the load via `aDocShellLoadState`.
+void WindowGlobalParent::CheckIfUnloadingIsCanceledForTraversable(
+    nsDocShellLoadState* aDocShellLoadState,
     nsIDocumentViewer::PermitUnloadAction aAction,
     std::function<void(nsIDocumentViewer::PermitUnloadResult)>&& aResolver) {
   MOZ_DIAGNOSTIC_ASSERT(BrowsingContext()->IsTop());
@@ -1085,7 +1189,7 @@ void WindowGlobalParent::PermitUnloadTraversable(
       MakeRefPtr<CheckPermitUnloadRequest>(this,
                                            /* aHasInProcessBlocker */ false,
                                            aAction, std::move(aResolver));
-  request->RunTraversable(aInfo);
+  request->RunTraversable(aDocShellLoadState);
 }
 
 void WindowGlobalParent::PermitUnloadChildNavigables(
@@ -1490,6 +1594,50 @@ mozilla::ipc::IPCResult WindowGlobalParent::RecvSetSiteIntegrityProtected(
 
   (void)service->SetProtected(aSourceURI, originAttributes, aMaxAge);
 
+  return IPC_OK();
+}
+
+nsresult WindowGlobalParent::DoAddCertException(bool aTemporary) {
+  nsCOMPtr<nsIChannel> failedChannel(GetFailedChannel());
+  NS_ENSURE_TRUE(failedChannel, NS_ERROR_NOT_AVAILABLE);
+
+  nsCOMPtr<nsIURI> failedChannelURI;
+  nsresult rv =
+      NS_GetFinalChannelURI(failedChannel, getter_AddRefs(failedChannelURI));
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsIURI> innerURI(NS_GetInnermostURI(failedChannelURI));
+  NS_ENSURE_TRUE(innerURI, NS_ERROR_DOM_INVALID_STATE_ERR);
+
+  nsAutoCString host;
+  rv = innerURI->GetAsciiHost(host);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  int32_t port;
+  rv = innerURI->GetPort(&port);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsCOMPtr<nsITransportSecurityInfo> failedSecurityInfo;
+  rv = failedChannel->GetSecurityInfo(getter_AddRefs(failedSecurityInfo));
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(failedSecurityInfo, NS_ERROR_NOT_AVAILABLE);
+
+  nsCOMPtr<nsIX509Cert> cert;
+  rv = failedSecurityInfo->GetServerCert(getter_AddRefs(cert));
+  NS_ENSURE_SUCCESS(rv, rv);
+  NS_ENSURE_TRUE(cert, NS_ERROR_NOT_AVAILABLE);
+
+  nsCOMPtr<nsICertOverrideService> overrideService(
+      do_GetService(NS_CERTOVERRIDE_CONTRACTID));
+  NS_ENSURE_TRUE(overrideService, NS_ERROR_FAILURE);
+
+  return overrideService->RememberValidityOverride(
+      host, port, mDocumentPrincipal->OriginAttributesRef(), cert, aTemporary);
+}
+
+IPCResult WindowGlobalParent::RecvAddCertException(
+    bool aTemporary, AddCertExceptionResolver&& aResolver) {
+  aResolver(DoAddCertException(aTemporary));
   return IPC_OK();
 }
 
@@ -1929,6 +2077,20 @@ IPCResult WindowGlobalParent::RecvRecordUserInteractionForPermissions() {
   return IPC_OK();
 }
 
+IPCResult WindowGlobalParent::RecvNotifyAudioSessionTypeOverride(
+    const dom::AudioSessionType& aType) {
+  // The MediaController lives on the top-level BC, but the override is
+  // keyed by the sender's BC id (which may be an iframe). The setter must
+  // be honoured even before any controllable media has started, so call
+  // GetMediaController() which creates the controller on demand.
+  if (auto* top = BrowsingContext()->Top()) {
+    if (RefPtr<MediaController> controller = top->GetMediaController()) {
+      controller->SetAudioSessionTypeOverride(BrowsingContext()->Id(), aType);
+    }
+  }
+  return IPC_OK();
+}
+
 already_AddRefed<PSerialManagerParent>
 WindowGlobalParent::AllocPSerialManagerParent() {
   return MakeAndAddRef<SerialManagerParent>();
@@ -1961,12 +2123,14 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(WindowGlobalParent)
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(WindowGlobalParent,
                                                 WindowContext)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mPageUseCountersWindow)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mStaticCloneOf)
   tmp->UnlinkManager();
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN_INHERITED(WindowGlobalParent,
                                                   WindowContext)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mPageUseCountersWindow)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mStaticCloneOf)
   if (!tmp->IsInProcess()) {
     CycleCollectionNoteChild(cb, static_cast<BrowserParent*>(tmp->Manager()),
                              "Manager()");

@@ -17,10 +17,7 @@ const { ValueSummaryReader } = ChromeUtils.importESModule(
  * JSObjectsTestUtils.
  */
 add_task(async function test_profile_feature_jstracing_objtestutils() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   const { CONTEXTS, AllObjects } = ChromeUtils.importESModule(
     "resource://testing-common/AllJavascriptTypes.mjs"

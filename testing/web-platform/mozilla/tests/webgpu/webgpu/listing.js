@@ -729,6 +729,15 @@ export const listing = [
       "validation",
       "capability_checks",
       "features",
+      "subgroup_size_control"
+    ]
+  },
+  {
+    "file": [
+      "api",
+      "validation",
+      "capability_checks",
+      "features",
       "texture_component_swizzle"
     ]
   },
@@ -5708,6 +5717,14 @@ export const listing = [
       "validation",
       "extension",
       "readonly_and_readwrite_storage_textures"
+    ]
+  },
+  {
+    "file": [
+      "shader",
+      "validation",
+      "extension",
+      "subgroup_size_control"
     ]
   },
   {

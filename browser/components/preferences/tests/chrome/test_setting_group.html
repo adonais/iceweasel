@@ -437,8 +437,9 @@
           BrowserTestUtils.isVisible(group),
           "Group should still be visible when only hiddenFromSearch is true"
         );
-        ok(
-          group.hasAttribute("data-hidden-from-search"),
+        is(
+          group.getAttribute("data-hidden-from-search"),
+          "true",
           "Group should be hidden from search when config.hiddenFromSearch is true"
         );
 

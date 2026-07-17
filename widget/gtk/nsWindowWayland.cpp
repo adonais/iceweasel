@@ -157,6 +157,15 @@ void nsWindowWayland::MoveToWorkspace(const nsAString& workspaceIDStr) {
 // https://bugzilla.mozilla.org/show_bug.cgi?id=1622107
 // We try to detect when Wayland compositor / gtk fails to deliver
 // info about finished D&D operations and cancel it on our own.
+//
+// The sequence is:
+// 1) D&D is started on both Wayland & Firefox side
+// 2) D&D is finished on Wayland side, Wayland doesn't deliver drag finish to
+//    Firefox, Firefox D&D is still active.
+// 4) Firefox UI is blocked by the D&D from 1)
+// 5) We use mouse button to get mouse clicks and cancel the Firefox D&D
+//    session.
+//
 void nsWindowWayland::WaylandDragWorkaround(GdkEventButton* aEvent) {
   // We track only left button state as Firefox performs D&D on left
   // button only.

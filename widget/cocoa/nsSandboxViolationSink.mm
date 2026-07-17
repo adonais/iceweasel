@@ -55,7 +55,7 @@ void nsSandboxViolationSink::ViolationHandler() {
 
   // Only get reports that were generated very recently.
   char query_time[30] = {0};
-  SprintfLiteral(query_time, "%li", time(NULL) - 2);
+  SprintfLiteral(query_time, "%li", time(nullptr) - 2);
   asl_set_query(query, ASL_KEY_TIME, query_time,
                 ASL_QUERY_OP_NUMERIC | ASL_QUERY_OP_GREATER_EQUAL);
 

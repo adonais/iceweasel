@@ -6,6 +6,8 @@ package org.mozilla.fenix.ui.efficiency.selectors
 
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.TABS_COUNTER
+import org.mozilla.fenix.R
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
@@ -39,6 +41,13 @@ object ToolbarSelectors {
         groups = listOf(),
     )
 
+    val TAB_COUNTER_UIAUTOMATOR = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_COMPOSE_TAG,
+        value = TABS_COUNTER,
+        description = "Tab counter button",
+        groups = listOf(),
+    )
+
     val NEW_TAB_BUTTON = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_DESCRIPTION_CONTAINS,
         value = "New tab",
@@ -46,11 +55,29 @@ object ToolbarSelectors {
         groups = listOf(),
     )
 
+    @Suppress("ktlint:standard:function-naming", "FunctionName")
+    fun SEARCH_ENGINE_SELECTOR_ICON(searchEngineName: String = "") = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = getStringResource(R.string.search_engine_selector_content_description, searchEngineName),
+        description = "Search engine selector icon",
+        groups = listOf("homeScreenToolbar"),
+    )
+
+    val SITE_INFORMATION_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_CONTENT_DESCRIPTION,
+        value = "Site information",
+        description = "Site information button",
+        groups = listOf("browserViewToolbarItems"),
+    )
+
     val all = listOf(
         TOOLBAR,
         TAB_COUNTER,
+        TAB_COUNTER_UIAUTOMATOR,
         TOOLBAR_URL_BOX,
         TOOLBAR_URL_BOX_UIAUTOMATOR,
         NEW_TAB_BUTTON,
+        SEARCH_ENGINE_SELECTOR_ICON(),
+        SITE_INFORMATION_BUTTON,
     )
 }

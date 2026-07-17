@@ -764,6 +764,11 @@ PK11_ImportPrivateKeyInfoAndReturnKey(PK11SlotInfo *slot,
     algTag = SECOID_GetAlgorithmTag(&pki->algorithm);
     switch (algTag) {
         case SEC_OID_PKCS1_RSA_ENCRYPTION:
+        case SEC_OID_PKCS1_RSA_PSS_SIGNATURE:
+            /* An id-RSASSA-PSS PrivateKeyInfo wraps an ordinary RSAPrivateKey,
+             * identical to rsaEncryption; only the algorithm OID (and optional
+             * PSS parameters, which don't affect the raw key) differ. NSS
+             * represents RSA-PSS keys as rsaKey/CKK_RSA, so decode it as RSA. */
             prepare_rsa_priv_key_export_for_asn1(lpk);
             keyTemplate = SECKEY_RSAPrivateKeyExportTemplate;
             paramTemplate = NULL;

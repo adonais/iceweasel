@@ -23,7 +23,7 @@ class DetailedPromise : public Promise {
 
   template <typename T>
   void MaybeResolve(T&& aArg) {
-    EME_LOG("%s promise resolved", mName.get());
+    EME_LOG("{} promise resolved", mName.get());
     Promise::MaybeResolve(std::forward<T>(aArg));
   }
 

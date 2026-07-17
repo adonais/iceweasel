@@ -56,7 +56,7 @@ RefPtr<WebGLQuery> WebGLContext::CreateQuery() {
   const FuncScope funcScope(*this, "createQuery");
   if (IsContextLost()) return nullptr;
 
-  return new WebGLQuery(this);
+  return MakeRefPtr<WebGLQuery>(this);
 }
 
 void WebGLContext::BeginQuery(GLenum target, WebGLQuery& query) {

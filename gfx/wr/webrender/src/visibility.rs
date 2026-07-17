@@ -27,14 +27,13 @@ use crate::prim_store::{PrimitiveStore, PrimitiveInstance, PrimitiveInstanceInde
 use crate::prim_store::backdrop::BackdropRenderScratch;
 use crate::prim_store::borders::{ImageBorderScratch, NormalBorderScratch};
 use crate::prim_store::image::ImageScratch;
-use crate::prim_store::line_dec::LineDecorationScratch;
 use crate::prim_store::storage;
 use crate::prim_store::text_run::TextRunScratch;
 use crate::render_backend::{DataStores, ScratchBuffer};
 use crate::render_task_graph::RenderTaskGraphBuilder;
 use crate::resource_cache::ResourceCache;
 use crate::scene::SceneProperties;
-use crate::space::SpaceMapper;
+use crate::space::{SpaceMapper, SpaceSnapper};
 use crate::util::MaxRect;
 
 pub struct FrameVisibilityContext<'a> {
@@ -124,7 +123,6 @@ pub enum DrawState {
 #[cfg_attr(feature = "capture", derive(Serialize))]
 pub enum KindScratchHandle {
     None,
-    LineDecoration(storage::Index<LineDecorationScratch>),
     NormalBorder(storage::Index<NormalBorderScratch>),
     ImageBorder(storage::Index<ImageBorderScratch>),
     Image(storage::Index<ImageScratch>),
@@ -134,16 +132,10 @@ pub enum KindScratchHandle {
 }
 
 impl KindScratchHandle {
-    /// Extract the LineDecoration scratch index. Panics if the variant
-    /// doesn't match — readers in the LineDecoration arm of the
+    /// Extract the specific scratch index. Panics if the variant
+    /// doesn't match — readers in the specific arm of the
     /// PrimitiveKind match know the variant by construction.
-    pub fn unwrap_line_decoration(&self) -> storage::Index<LineDecorationScratch> {
-        match *self {
-            KindScratchHandle::LineDecoration(h) => h,
-            _ => panic!("kind_scratch mismatch: expected LineDecoration, got {:?}", self),
-        }
-    }
-    pub fn unwrap_normal_border(&self) -> storage::Index<NormalBorderScratch> {
+   pub fn unwrap_normal_border(&self) -> storage::Index<NormalBorderScratch> {
         match *self {
             KindScratchHandle::NormalBorder(h) => h,
             _ => panic!("kind_scratch mismatch: expected NormalBorder, got {:?}", self),
@@ -227,9 +219,17 @@ pub struct PrimitiveDrawHeader {
     /// `Blit` for kinds that aren't candidates for compositor surfaces
     /// or for draws that didn't get promoted this frame.
     pub compositor_surface_kind: CompositorSurfaceKind,
+
+    /// Local-space rect of the primitive after device-pixel snapping has
+    /// been applied. Populated for every prim each frame by the visibility
+    /// pass (snapping `PrimitiveInstance.unsnapped_prim_rect` against the
+    /// surface raster node) before any visibility / prepare consumer reads it.
+    pub snapped_local_rect: LayoutRect,
 }
 
 impl PrimitiveDrawHeader {
+    /// Allocate a fresh draw header. `snapped_local_rect` is left at zero
+    /// here; the per-frame snap pass overwrites it before any consumer runs.
     pub fn new() -> Self {
         PrimitiveDrawHeader {
             prim_instance_index: PrimitiveInstanceIndex::INVALID,
@@ -239,6 +239,7 @@ impl PrimitiveDrawHeader {
             kind_scratch: KindScratchHandle::None,
             segment_instance_index: SegmentInstanceIndex::UNUSED,
             compositor_surface_kind: CompositorSurfaceKind::Blit,
+            snapped_local_rect: LayoutRect::zero(),
         }
     }
 
@@ -327,6 +328,15 @@ pub fn update_prim_visibility(
     );
     let visibility_spatial_node_index = surface.visibility_spatial_node_index;
 
+    // Snappers into this surface's raster space (the space its content is
+    // rasterized in), reused across all clusters/prims in this surface (and a
+    // no-op for surfaces that don't snap). `snapper` is re-targeted once per
+    // cluster and snaps prim/clip-leaf rects (all prims in a cluster share its
+    // spatial node, so it stays a cache hit); `clip_snapper` snaps the per-prim
+    // clip chain.
+    let mut snapper = SpaceSnapper::new(surface, frame_context.spatial_tree);
+    let mut clip_snapper = snapper.clone();
+
     for cluster in &pic.prim_list.clusters {
         profile_scope!("cluster");
 
@@ -358,7 +368,29 @@ pub fn update_prim_visibility(
             frame_context.spatial_tree,
         );
 
+        // Snap each prim's rect and clip-leaf rect from this cluster's
+        // spatial-node space into the surface's raster space, before any
+        // visibility / prepare / batch consumer reads them.
+        snapper.set_target_spatial_node(cluster.spatial_node_index, frame_context.spatial_tree);
+
         for prim_instance_index in cluster.prim_range() {
+            let snapped_local_rect = snapper.snap_rect(
+                &frame_state.prim_instances[prim_instance_index].unsnapped_prim_rect,
+            );
+            frame_state.scratch.primitive.frame.draws[prim_instance_index].snapped_local_rect =
+                snapped_local_rect;
+
+            // Picture / tile-cache leaves carry `max_rect`; snapping `max_rect`
+            // would overflow through the snap transform, so pass those through.
+            let leaf_id = frame_state.prim_instances[prim_instance_index].clip_leaf_id;
+            let leaf = frame_state.clip_tree.get_leaf_mut(leaf_id);
+            if leaf.unsnapped_local_clip_rect == LayoutRect::max_rect() {
+                leaf.snapped_local_clip_rect = leaf.unsnapped_local_clip_rect;
+            } else {
+                let unsnapped = leaf.unsnapped_local_clip_rect;
+                leaf.snapped_local_clip_rect = snapper.snap_rect(&unsnapped);
+            }
+
             if let PrimitiveKind::Picture { pic_index, .. } = frame_state.prim_instances[prim_instance_index].kind {
                 if !store.pictures[pic_index.0].is_visible(frame_context.spatial_tree) {
                     continue;
@@ -409,6 +441,7 @@ pub fn update_prim_visibility(
 
             let local_coverage_rect = frame_state.data_stores.get_local_prim_coverage_rect(
                 prim_instance,
+                frame_state.scratch.primitive.frame.draws[prim_instance_index].snapped_local_rect,
                 &store.pictures,
                 frame_state.surfaces,
             );
@@ -417,6 +450,7 @@ pub fn update_prim_visibility(
                 cluster.spatial_node_index,
                 map_local_to_picture.ref_spatial_node_index,
                 visibility_spatial_node_index,
+                &mut clip_snapper,
                 prim_instance.clip_leaf_id,
                 &frame_context.spatial_tree,
                 &frame_state.data_stores.clip,

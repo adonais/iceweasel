@@ -194,7 +194,8 @@ const av1_codec_arg_definitions_t g_av1_codec_arg_defs = {
               "Display warnings, but do not prompt user to continue"),
   .bitdeptharg =
       ARG_DEF_ENUM("b", "bit-depth", 1, "Bit depth for codec", bitdepth_enum),
-  .inbitdeptharg = ARG_DEF(NULL, "input-bit-depth", 1, "Bit depth of input"),
+  .inbitdeptharg =
+      ARG_DEF(NULL, "input-bit-depth", 1, "Actual bit depth of input source"),
 
   .input_chroma_subsampling_x = ARG_DEF(NULL, "input-chroma-subsampling-x", 1,
                                         "Chroma subsampling x value"),
@@ -713,13 +714,18 @@ const av1_codec_arg_definitions_t g_av1_codec_arg_defs = {
               "given lambda to minimize the rdcost."),
   .enable_low_complexity_decode = ARG_DEF(
       NULL, "enable-low-complexity-decode", 1,
-      "Enable low complexity decode (0: false (default), 1: true). As of now, "
-      "this only supports good-quality encoding (speed 1 to 3) for vertical "
-      "videos between 608p and 720p."),
+      "Enable low complexity decode (0: false (default), 1: true). This "
+      "supports good-quality encoding (speed 1 to 3) for vertical videos "
+      "(608p to 1080p) and horizontal videos (720p to 1080p)."),
   .screen_detection_mode = ARG_DEF(
       NULL, "screen-detection-mode", 1,
       "Screen content detection mode (1: standard (default in good quality and "
       "realtime modes), 2: anti-aliased text and graphics aware (default in "
       "all intra mode))"),
+  .validate_hbd_input =
+      ARG_DEF(NULL, "validate-hbd-input", 1,
+              "Check that input samples are within the valid range "
+              "for the chosen bit depth with high bit depth encoding (0: "
+              "disabled, 1: enabled (default))"),
 #endif  // CONFIG_AV1_ENCODER
 };

@@ -9,6 +9,10 @@
  * liability, trademark and document use rules apply.
  */
 
+// Unlike the other SVGAnimated* interfaces, this is a mixin (used by
+// SVGPolylineElement and SVGPolygonElement), and the spec names its
+// attributes "points" / "animatedPoints" rather than "baseVal" / "animVal"
+// for historical reasons predating the SVGAnimated* convention.
 interface mixin SVGAnimatedPoints {
   [Constant]
   readonly attribute SVGPointList points;

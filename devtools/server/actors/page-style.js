@@ -957,6 +957,12 @@ class PageStyleActor extends Actor {
         // FIXME: Bug 1909173. Need to handle view transitions peudo-elements
         // for DevTools. For now we skip them.
         return false;
+      case "::picker-icon":
+      case "::picker":
+        // FIXME: Bug 2042839. Need to handle in DevTools.
+        return !isInherited && node.nodeName == "SELECT";
+      case "::checkmark":
+        return !isInherited && node.nodeName == "OPTION";
       case "::-webkit-scrollbar":
         return false;
       default:
@@ -1129,7 +1135,7 @@ class PageStyleActor extends Actor {
    * apply to the given node and associated rules
    *
    * @param {NodeActor} node
-   * @param {Array} entries
+   * @param {Array<appliedstyle>} entries
    *   List of appliedstyle objects that lists the rules that apply to the
    *   node. If adding a new rule to the stylesheet, only the new rule entry
    *   is provided and only the style properties that apply to the new
@@ -1153,103 +1159,135 @@ class PageStyleActor extends Actor {
     }
 
     if (options.matchedSelectors) {
-      for (const entry of entries) {
-        if (entry.rule.type === ELEMENT_STYLE) {
-          continue;
-        }
-        entry.matchedSelectorIndexes = [];
-
-        const domRule = entry.rule.rawRule;
-        const element = entry.inherited
-          ? entry.inherited.rawNode
-          : node.rawNode;
-
-        const pseudos = [];
-        const { bindingElement, pseudo } =
-          CssLogic.getBindingElementAndPseudo(element);
-
-        // if we couldn't find a binding element, we can't call domRule.selectorMatchesElement,
-        // so bail out
-        if (!bindingElement) {
-          continue;
-        }
-
-        if (pseudo) {
-          pseudos.push(pseudo);
-        } else if (entry.rule.pseudoElements.size) {
-          // if `node` is not a pseudo element but the rule applies to some pseudo elements,
-          // we need to pass those to CSSStyleRule#selectorMatchesElement
-          pseudos.push(...entry.rule.pseudoElements);
-        } else {
-          // If the rule doesn't apply to any pseudo, set a null item so we'll still do
-          // the proper check below
-          pseudos.push(null);
-        }
-
-        const relevantLinkVisited = CssLogic.hasVisitedState(bindingElement);
-        const len = domRule.selectorCount;
-        for (let i = 0; i < len; i++) {
-          for (const pseudoElementName of pseudos) {
-            if (
-              domRule.selectorMatchesElement(
-                i,
-                bindingElement,
-                pseudoElementName,
-                relevantLinkVisited
-              )
-            ) {
-              entry.matchedSelectorIndexes.push(i);
-              // if we matched the selector for one pseudo, no need to check the other ones
-              break;
-            }
-          }
-        }
-      }
+      this.#computeSelectorIndexes(entries, node);
     }
 
     const computedStyle = this.cssLogic.computedStyle;
     if (computedStyle) {
-      // Add all the keyframes rule associated with the element
-      let animationNames = computedStyle.animationName.split(",");
-      animationNames = animationNames.map(name => name.trim());
-
-      if (animationNames) {
-        // Traverse through all the available keyframes rule and add
-        // the keyframes rule that matches the computed animation name
-        for (const keyframesRule of this.cssLogic.keyframesRules) {
-          if (!animationNames.includes(keyframesRule.name)) {
-            continue;
-          }
-
-          for (const rule of keyframesRule.cssRules) {
-            entries.push(
-              this.#getRuleItem(this.styleRef(rule), null, {
-                keyframes: this.styleRef(keyframesRule),
-              })
-            );
-          }
-        }
-      }
-
-      // Add all the @position-try associated with the element
-      const positionTryIdents = new Set();
-      for (const part of computedStyle.positionTryFallbacks.split(",")) {
-        const name = part.trim();
-        if (name.startsWith("--")) {
-          positionTryIdents.add(name);
-        }
-      }
-
-      for (const positionTryRule of this.cssLogic.positionTryRules) {
-        if (!positionTryIdents.has(positionTryRule.name)) {
-          continue;
-        }
-
-        entries.push(this.#getRuleItem(this.styleRef(positionTryRule)));
-      }
+      this.#getKeyFrameRules(entries, computedStyle);
+      this.#getPositionTryRules(entries, computedStyle);
     }
 
     return entries;
+  }
+
+  /**
+   * If requested by the client, populate the `matchedSelectorIndex` array in all `entries`.
+   * This array contains the indexes of all selectors that are matching the selected DOM element.
+   *
+   * @param {Array<appliedstyle>} entries
+   * @param {NodeActor} node
+   */
+  #computeSelectorIndexes(entries, node) {
+    for (const entry of entries) {
+      if (entry.rule.type === ELEMENT_STYLE) {
+        continue;
+      }
+      entry.matchedSelectorIndexes = [];
+
+      const domRule = entry.rule.rawRule;
+      const element = entry.inherited ? entry.inherited.rawNode : node.rawNode;
+
+      const pseudos = [];
+      const { bindingElement, pseudo } =
+        CssLogic.getBindingElementAndPseudo(element);
+
+      // if we couldn't find a binding element, we can't call domRule.selectorMatchesElement,
+      // so bail out
+      if (!bindingElement) {
+        continue;
+      }
+
+      if (pseudo) {
+        pseudos.push(pseudo);
+      } else if (entry.rule.pseudoElements.size) {
+        // if `node` is not a pseudo element but the rule applies to some pseudo elements,
+        // we need to pass those to CSSStyleRule#selectorMatchesElement
+        pseudos.push(...entry.rule.pseudoElements);
+      } else {
+        // If the rule doesn't apply to any pseudo, set a null item so we'll still do
+        // the proper check below
+        pseudos.push(null);
+      }
+
+      const relevantLinkVisited = CssLogic.hasVisitedState(bindingElement);
+      const len = domRule.selectorCount;
+      for (let i = 0; i < len; i++) {
+        for (const pseudoElementName of pseudos) {
+          if (
+            domRule.selectorMatchesElement(
+              i,
+              bindingElement,
+              pseudoElementName,
+              relevantLinkVisited
+            )
+          ) {
+            entry.matchedSelectorIndexes.push(i);
+            // if we matched the selector for one pseudo, no need to check the other ones
+            break;
+          }
+        }
+      }
+    }
+  }
+
+  /**
+   * Add all the keyframes rules associated with the element into `entries`
+   * based on the applied declarations defined in `computedStyle`.
+   *
+   * @param {Array<appliedstyle>} entries
+   * @param {CSSStyleDeclaration} computedStyle
+   */
+  #getKeyFrameRules(entries, computedStyle) {
+    let animationNames = computedStyle.animationName.split(",");
+    if (!animationNames.length) {
+      return;
+    }
+    animationNames = animationNames.map(name => name.trim());
+
+    // Traverse through all the available keyframes rule and add
+    // the keyframes rule that matches the computed animation name
+    for (const keyframesRule of this.cssLogic.keyframesRules) {
+      if (!animationNames.includes(keyframesRule.name)) {
+        continue;
+      }
+
+      for (const rule of keyframesRule.cssRules) {
+        entries.push(
+          this.#getRuleItem(this.styleRef(rule), null, {
+            keyframes: this.styleRef(keyframesRule),
+          })
+        );
+      }
+    }
+  }
+
+  /**
+   * Add all the @position-try associated with the element into `entries`
+   * based on the applied declarations defined in `computedStyle`.
+   *
+   * @param {Array<appliedstyle>} entries
+   * @param {CSSStyleDeclaration} computedStyle
+   */
+  #getPositionTryRules(entries, computedStyle) {
+    const positionTryIdents = new Set();
+    for (const part of computedStyle.positionTryFallbacks.split(",")) {
+      const name = part.trim();
+      if (name.startsWith("--")) {
+        positionTryIdents.add(name);
+      }
+    }
+
+    if (!positionTryIdents.size) {
+      return;
+    }
+
+    for (const positionTryRule of this.cssLogic.positionTryRules) {
+      if (!positionTryIdents.has(positionTryRule.name)) {
+        continue;
+      }
+      entries.push(this.#getRuleItem(this.styleRef(positionTryRule)));
+    }
   }
 
   /**

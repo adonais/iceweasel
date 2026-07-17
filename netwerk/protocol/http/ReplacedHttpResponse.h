@@ -26,7 +26,8 @@ class ReplacedHttpResponse : nsIReplacedHttpResponse {
   nsCString mResponseStatusText;
   nsCString mResponseBody;
   nsHttpHeaderArray mResponseHeaders;
-  Atomic<bool> mInVisitHeaders{false};
+  // Depth counter so nested visits cannot disarm the outer guard.
+  Atomic<uint32_t> mInVisitHeaders{0};
 };
 
 }  // namespace mozilla::net

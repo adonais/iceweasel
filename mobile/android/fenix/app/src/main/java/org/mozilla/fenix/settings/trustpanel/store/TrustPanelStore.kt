@@ -39,6 +39,7 @@ class TrustPanelStore(
     ) : this(
         initialState = TrustPanelState(
             isTrackingProtectionEnabled = isTrackingProtectionEnabled,
+            numberOfTrackersBlocked = sessionState?.trackingProtection?.blockedTrackers?.size ?: 0,
             sessionState = sessionState,
             sitePermissions = sitePermissions,
             websiteInfoState = websiteInfoState,

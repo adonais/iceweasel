@@ -682,8 +682,9 @@ class BaseBootstrapper:
 
     CARGO_TOOLS = (
         "searchfox-cli",
-        "treeherder-cli",
         "socorro-cli",
+        "stmo-cli",
+        "treeherder-cli",
         "webspec-index",
     )
 

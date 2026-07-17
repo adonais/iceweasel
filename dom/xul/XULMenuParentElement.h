@@ -15,7 +15,7 @@ class KeyboardEvent;
 class XULButtonElement;
 
 nsXULElement* NS_NewXULMenuParentElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 class XULMenuParentElement : public nsXULElement {
  public:
@@ -23,7 +23,7 @@ class XULMenuParentElement : public nsXULElement {
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(XULMenuParentElement, nsXULElement)
 
   explicit XULMenuParentElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   bool IsMenuBar() const { return NodeInfo()->Equals(nsGkAtoms::menubar); }
   bool IsMenu() const { return !IsMenuBar(); }

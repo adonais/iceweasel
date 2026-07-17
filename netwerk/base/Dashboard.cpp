@@ -567,6 +567,8 @@ nsresult Dashboard::GetSockets(SocketData* aSocketData) {
     CopyASCIItoUTF16(socketData->mData[i].type, mSocket.mType);
     mSocket.mSent = (double)socketData->mData[i].sent;
     mSocket.mReceived = (double)socketData->mData[i].received;
+    CopyASCIItoUTF16(socketData->mData[i].originAttributesSuffix,
+                     mSocket.mOriginAttributesSuffix);
     dict.mSent += socketData->mData[i].sent;
     dict.mReceived += socketData->mData[i].received;
   }
@@ -658,6 +660,8 @@ nsresult Dashboard::GetHttpConnections(HttpData* aHttpData) {
     connection.mPort = httpData->mData[i].port;
     CopyASCIItoUTF16(httpData->mData[i].httpVersion, connection.mHttpVersion);
     connection.mSsl = httpData->mData[i].ssl;
+    CopyASCIItoUTF16(httpData->mData[i].originAttributesSuffix,
+                     connection.mOriginAttributesSuffix);
 
     connection.mActive.Construct();
     connection.mIdle.Construct();

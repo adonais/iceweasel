@@ -90,9 +90,24 @@ async function takeFocusWithRetry(acc, retries = 5, timeoutMs = 3000) {
   for (let i = 0; i < retries; i++) {
     const focused = waitForEvent(EVENT_FOCUS, acc);
     acc.takeFocus();
-    // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
-    const timeout = new Promise(r => setTimeout(() => r("timeout"), timeoutMs));
-    if ((await Promise.race([focused, timeout])) !== "timeout") {
+    let timeoutId;
+    let resolveTimeout;
+    const timeout = new Promise(r => {
+      resolveTimeout = r;
+      // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+      timeoutId = setTimeout(() => r("timeout"), timeoutMs);
+    });
+    const result = await Promise.race([focused, timeout]);
+    if (result !== "timeout") {
+      // In the ideal case, we'll recieve a focus event here before the
+      // timeout comes back. When that happens, we should resolve the timeout
+      // so the Promise can release both the timeout and the captured focus event.
+      // Without this, browser shutdown can happen before the timeout timer fires (particularly
+      // in --verify mode). This causes the reference to the focus event to leak
+      // because the race wrapper is still active.
+      // Leaking the focus event also leaks its associated window :(
+      clearTimeout(timeoutId);
+      resolveTimeout();
       return;
     }
     info(`takeFocus attempt ${i + 1} timed out, retrying...`);

@@ -25,7 +25,6 @@ class IPProtectionInfoPrompterTest {
     private val testDispatcher = StandardTestDispatcher()
     private lateinit var appStore: AppStore
     private val errorMessages = ErrorMessages(
-        connectionError = "Connection error",
         dataLimitReached = "Data limit reached",
     )
 
@@ -33,29 +32,6 @@ class IPProtectionInfoPrompterTest {
     fun setup() {
         appStore = AppStore()
     }
-
-    @Test
-    fun `GIVEN eligible user with ConnectionError proxy WHEN eligibility updates THEN shows connection error snackbar`() =
-        runTest(testDispatcher) {
-            val ipProtectionStore = IPProtectionStore(
-                initialState = IPProtectionState(
-                    proxyStatus = Authorized.ConnectionError,
-                ),
-            )
-            val prompter = IPProtectionInfoPrompter(ipProtectionStore, appStore, errorMessages, testDispatcher)
-
-            prompter.start()
-            testDispatcher.scheduler.advanceUntilIdle()
-
-            ipProtectionStore.dispatch(
-                IPProtectionAction.EligibilityChanged(EligibilityStatus.Eligible),
-            )
-            testDispatcher.scheduler.advanceUntilIdle()
-
-            val snackbarState = appStore.state.snackbarState
-            assertIs<SnackbarState.ShowSnackbar>(snackbarState)
-            assertEquals(errorMessages.connectionError, snackbarState.title)
-        }
 
     @Test
     fun `GIVEN eligible user with DataLimitReached proxy WHEN eligibility updates THEN shows data limit reached snackbar`() =
@@ -76,7 +52,7 @@ class IPProtectionInfoPrompterTest {
             testDispatcher.scheduler.advanceUntilIdle()
 
             val snackbarState = appStore.state.snackbarState
-            assertIs<SnackbarState.ShowSnackbar>(snackbarState)
+            assertIs<SnackbarState.IPProtectionDataLimitReached>(snackbarState)
             assertEquals(errorMessages.dataLimitReached, snackbarState.title)
         }
 

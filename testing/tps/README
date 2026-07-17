@@ -1,6 +1,26 @@
 TPS is a test automation framework for Firefox Sync. See
 https://developer.mozilla.org/en/TPS for documentation.
 
+FxA Stage WAF Bypass Token (Required)
+======================================
+
+TPS hits the FxA staging server, which has a WAF that blocks automated
+traffic. To run TPS you need a bypass token, exposed via the
+TPS_FXA_CI_TOKEN environment variable.
+
+Where to get the most current token:
+  https://mozilla-hub.atlassian.net/wiki/spaces/CLOUDSERVICES/pages/5276635/SACI+Triage+Rotation#Run-desktop-Sync-TPS-tests
+
+Set it in your shell profile (.bashrc / .zshrc / etc.) so it persists across worktrees and sessions:
+
+  export TPS_FXA_CI_TOKEN=<token>
+
+or just simply invoke it as part of the CLI:
+
+  TPS_FXA_CI_TOKEN=xx ./mach tps-test --auto-account...
+
+If it's not set, `./mach tps-test` against staging will fail.
+
 Quick Start (Recommended)
 ==========================
 

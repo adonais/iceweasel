@@ -546,12 +546,14 @@ void CodeGenerator::visitOutOfLineCallVM(
   LInstruction* lir = ool->lir();
 
 #ifdef JS_JITSPEW
-  JitSpewStart(JitSpew_Codegen, "                                # LIR=%s",
-               lir->opName());
-  if (const char* extra = lir->getExtraName()) {
-    JitSpewCont(JitSpew_Codegen, ":%s", extra);
+  {
+    AutoJitSpewMessage msg(JitSpew_Codegen,
+                           "                                # LIR=%s",
+                           lir->opName());
+    if (const char* extra = lir->getExtraName()) {
+      msg.append(":%s", extra);
+    }
   }
-  JitSpewFin(JitSpew_Codegen);
 #endif
   perfSpewer().recordInstruction(masm, lir);
   if (!lir->isCall()) {
@@ -3803,23 +3805,15 @@ void CodeGenerator::visitModuleMetadata(LModuleMetadata* lir) {
 }
 
 void CodeGenerator::visitDynamicImport(LDynamicImport* lir) {
+  pushArg(Imm32(uint8_t(lir->mir()->phase())));
   pushArg(ToValue(lir->options()));
   pushArg(ToValue(lir->specifier()));
   pushArg(ImmGCPtr(current->mir()->info().script()));
 
-  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue, HandleValue);
+  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue, HandleValue,
+                           ImportPhase);
   callVM<Fn, js::StartDynamicModuleImport>(lir);
 }
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-void CodeGenerator::visitDynamicImportSource(LDynamicImportSource* lir) {
-  pushArg(ToValue(lir->specifier()));
-  pushArg(ImmGCPtr(current->mir()->info().script()));
-
-  using Fn = JSObject* (*)(JSContext*, HandleScript, HandleValue);
-  callVM<Fn, js::StartDynamicModuleImportSource>(lir);
-}
-#endif
 
 void CodeGenerator::visitLambda(LLambda* lir) {
   Register envChain = ToRegister(lir->environmentChain());
@@ -5178,16 +5172,6 @@ void CodeGenerator::visitGuardIsNotArrayBufferMaybeShared(
 
   Label bail;
   masm.branchIfIsArrayBufferMaybeShared(obj, temp, &bail);
-  bailoutFrom(&bail, guard->snapshot());
-}
-
-void CodeGenerator::visitGuardIsTypedArray(LGuardIsTypedArray* guard) {
-  Register obj = ToRegister(guard->object());
-  Register temp = ToRegister(guard->temp0());
-
-  Label bail;
-  masm.loadObjClassUnsafe(obj, temp);
-  masm.branchIfClassIsNotTypedArray(temp, &bail);
   bailoutFrom(&bail, guard->snapshot());
 }
 
@@ -8555,7 +8539,7 @@ void CodeGenerator::emitDebugForceBailing(LInstruction* lir) {
 #endif  // DEBUG
 
 bool CodeGenerator::generateBody() {
-  JitSpewCont(JitSpew_Codegen, "\n");
+  JitSpew(JitSpew_Codegen, "\n");
   AutoCreatedBy acb(masm, "CodeGenerator::generateBody");
 
   JitSpew(JitSpew_Codegen, "==== BEGIN CodeGenerator::generateBody ====");
@@ -8637,12 +8621,14 @@ bool CodeGenerator::generateBlock(LBlock* current, size_t blockNumber,
 
     perfSpewer().recordInstruction(masm, *iter);
 #ifdef JS_JITSPEW
-    JitSpewStart(JitSpew_Codegen, "                                # LIR=%s",
-                 iter->opName());
-    if (const char* extra = iter->getExtraName()) {
-      JitSpewCont(JitSpew_Codegen, ":%s", extra);
+    {
+      AutoJitSpewMessage msg(JitSpew_Codegen,
+                             "                                # LIR=%s",
+                             iter->opName());
+      if (const char* extra = iter->getExtraName()) {
+        msg.append(":%s", extra);
+      }
     }
-    JitSpewFin(JitSpew_Codegen);
 #endif
 
     if (counts) {
@@ -10427,11 +10413,13 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       reloadPinnedRegs = true;
       switchRealm = false;
       break;
-    case wasm::CalleeDesc::BuiltinInstanceMethod:
-      retOffset = masm.wasmCallBuiltinInstanceMethod(
-          desc, callBase->instanceArg(), callee.builtin(),
-          callBase->builtinMethodFailureMode(),
-          callBase->builtinMethodFailureTrap());
+    case wasm::CalleeDesc::BuiltinInstanceMethod: {
+      CodeOffset unused_trapStackMapKey;
+      masm.wasmCallBuiltinInstanceMethod(desc, callBase->instanceArg(),
+                                         callee.builtin(),
+                                         callBase->builtinMethodFailureMode(),
+                                         callBase->builtinMethodFailureTrap(),
+                                         &retOffset, &unused_trapStackMapKey);
       // The builtin ABI preserves the instance and pinned registers. However,
       // builtins may grow the memory which requires us to reload the pinned
       // registers.
@@ -10439,6 +10427,7 @@ void CodeGenerator::visitWasmCall(LWasmCall* lir) {
       reloadPinnedRegs = true;
       switchRealm = false;
       break;
+    }
     case wasm::CalleeDesc::FuncRef:
       if (isReturnCall) {
         ReturnCallAdjustmentInfo retCallInfo(
@@ -17511,13 +17500,6 @@ void CodeGenerator::visitUnboxFloatingPoint(LUnboxFloatingPoint* lir) {
   masm.bind(ool->rejoin());
 }
 
-void CodeGenerator::visitCallBindVar(LCallBindVar* lir) {
-  pushArg(ToRegister(lir->environmentChain()));
-
-  using Fn = JSObject* (*)(JSContext*, JSObject*);
-  callVM<Fn, BindVarOperation>(lir);
-}
-
 void CodeGenerator::visitMegamorphicSetElement(LMegamorphicSetElement* lir) {
   Register obj = ToRegister(lir->object());
   ValueOperand idVal = ToValue(lir->index());
@@ -20861,10 +20843,6 @@ void CodeGenerator::visitWasmRefCastConcrete(LWasmRefCastConcrete* ins) {
   }
 }
 
-void CodeGenerator::visitWasmRefCastInfallible(LWasmRefCastInfallible* ins) {
-  MOZ_ASSERT(gen->compilingWasm());
-}
-
 void CodeGenerator::callWasmStructAllocFun(
     LInstruction* lir, wasm::SymbolicAddress fun, Register typeDefIndex,
     Register allocSite, Register output,
@@ -21491,20 +21469,6 @@ void CodeGenerator::visitAsyncResolve(LAsyncResolve* lir) {
   using Fn = JSObject* (*)(JSContext*, Handle<AsyncFunctionGeneratorObject*>,
                            HandleValue);
   callVM<Fn, js::AsyncFunctionResolve>(lir);
-}
-
-void CodeGenerator::visitAsyncReject(LAsyncReject* lir) {
-  Register generator = ToRegister(lir->generator());
-  ValueOperand reason = ToValue(lir->reason());
-  ValueOperand stack = ToValue(lir->stack());
-
-  pushArg(stack);
-  pushArg(reason);
-  pushArg(generator);
-
-  using Fn = JSObject* (*)(JSContext*, Handle<AsyncFunctionGeneratorObject*>,
-                           HandleValue, HandleValue);
-  callVM<Fn, js::AsyncFunctionReject>(lir);
 }
 
 void CodeGenerator::visitAsyncAwait(LAsyncAwait* lir) {
@@ -22722,40 +22686,61 @@ void CodeGenerator::visitLocalTimeToUTC(LLocalTimeToUTC* ins) {
 void CodeGenerator::visitYearFromTime(LYearFromTime* ins) {
   FloatRegister utcTime = ToFloatRegister(ins->utcTime());
   Register temp0 = ToRegister(ins->temp0());
-  MOZ_ASSERT(ToFloatRegister(ins->output()) == ReturnDoubleReg);
+  Register temp1 = ToRegister(ins->temp1());
+  ValueOperand output = ToOutValue(ins);
 
-  using Fn = double (*)(JSContext*, double);
+  masm.reserveStack(sizeof(JS::Value));
+  masm.moveStackPtrTo(temp1);
+
+  using Fn = void (*)(JSContext*, double, JS::Value*);
   masm.setupAlignedABICall();
   masm.loadJSContext(temp0);
   masm.passABIArg(temp0);
   masm.passABIArg(utcTime, ABIType::Float64);
-  masm.callWithABI<Fn, jit::DateYearFromTime>(ABIType::Float64);
+  masm.passABIArg(temp1);
+  masm.callWithABI<Fn, jit::DateYearFromTime>();
+
+  masm.Pop(output);
 }
 
 void CodeGenerator::visitMonthFromTime(LMonthFromTime* ins) {
   FloatRegister utcTime = ToFloatRegister(ins->utcTime());
   Register temp0 = ToRegister(ins->temp0());
-  MOZ_ASSERT(ToFloatRegister(ins->output()) == ReturnDoubleReg);
+  Register temp1 = ToRegister(ins->temp1());
+  ValueOperand output = ToOutValue(ins);
 
-  using Fn = double (*)(JSContext*, double);
+  masm.reserveStack(sizeof(JS::Value));
+  masm.moveStackPtrTo(temp1);
+
+  using Fn = void (*)(JSContext*, double, JS::Value*);
   masm.setupAlignedABICall();
   masm.loadJSContext(temp0);
   masm.passABIArg(temp0);
   masm.passABIArg(utcTime, ABIType::Float64);
-  masm.callWithABI<Fn, jit::DateMonthFromTime>(ABIType::Float64);
+  masm.passABIArg(temp1);
+  masm.callWithABI<Fn, jit::DateMonthFromTime>();
+
+  masm.Pop(output);
 }
 
 void CodeGenerator::visitDateFromTime(LDateFromTime* ins) {
   FloatRegister utcTime = ToFloatRegister(ins->utcTime());
   Register temp0 = ToRegister(ins->temp0());
-  MOZ_ASSERT(ToFloatRegister(ins->output()) == ReturnDoubleReg);
+  Register temp1 = ToRegister(ins->temp1());
+  ValueOperand output = ToOutValue(ins);
 
-  using Fn = double (*)(JSContext*, double);
+  masm.reserveStack(sizeof(JS::Value));
+  masm.moveStackPtrTo(temp1);
+
+  using Fn = void (*)(JSContext*, double, JS::Value*);
   masm.setupAlignedABICall();
   masm.loadJSContext(temp0);
   masm.passABIArg(temp0);
   masm.passABIArg(utcTime, ABIType::Float64);
-  masm.callWithABI<Fn, jit::DateDateFromTime>(ABIType::Float64);
+  masm.passABIArg(temp1);
+  masm.callWithABI<Fn, jit::DateDateFromTime>();
+
+  masm.Pop(output);
 }
 
 void CodeGenerator::visitNewDateObject(LNewDateObject* lir) {

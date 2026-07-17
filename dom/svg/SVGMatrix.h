@@ -101,7 +101,7 @@ class SVGMatrix final : public nsWrapperCache {
   ~SVGMatrix() = default;
 
   const gfxMatrix& GetMatrix() const {
-    return mTransform ? mTransform->Matrixgfx() : mMatrix;
+    return mTransform ? mTransform->Transform().GetMatrix() : mMatrix;
   }
 
   void SetMatrix(const gfxMatrix& aMatrix) {

@@ -750,6 +750,11 @@ struct MOZ_STACK_CLASS BytecodeEmitter {
   [[nodiscard]] bool emitPropLHS(PropertyAccess* prop);
   [[nodiscard]] bool emitPropIncDec(UnaryNode* incDec, ValueUsage valueUsage);
 
+  // Emit an ArgumentsLength node, leaving the value of |arguments.length| on
+  // the stack. Uses the JSOp::ArgumentsLength fast path when the optimization
+  // is still eligible, otherwise falls back to reading the |arguments| binding.
+  [[nodiscard]] bool emitArgumentsLength();
+
   [[nodiscard]] bool emitComputedPropertyName(UnaryNode* computedPropName);
 
   // Emit bytecode to put operands for a JSOp::GetElem/CallElem/SetElem/DelElem

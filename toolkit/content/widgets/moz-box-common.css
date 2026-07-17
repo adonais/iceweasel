@@ -58,11 +58,14 @@
 
   .icon {
     grid-area: icon;
+    box-sizing: border-box;
     width: var(--icon-size);
     height: var(--icon-size);
+    padding: var(--box-icon-padding, 0);
     -moz-context-properties: fill, stroke;
     fill: var(--box-icon-fill);
     stroke: var(--box-icon-stroke);
+    background-color: var(--box-icon-background, transparent);
     border-radius: var(--box-icon-border-radius, 0);
 
     &:not(.nav-icon) {

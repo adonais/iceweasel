@@ -779,7 +779,7 @@ static nsresult ReadDir(nsDir* aDir, PRDirFlags aFlags, nsString& aName) {
       rv = ::FindNextFileW(aDir->handle, &(aDir->data));
     }
 
-    if (rv == 0) {
+    if (!rv) {
       break;
     }
 
@@ -2161,7 +2161,7 @@ nsresult nsLocalFile::CopyMove(nsIFile* aParentDir, const nsAString& aNewName,
       }
     }
 
-    RefPtr<nsDirEnumerator> dirEnum = new nsDirEnumerator();
+    RefPtr dirEnum = MakeRefPtr<nsDirEnumerator>();
 
     rv = dirEnum->Init(this);
     if (NS_FAILED(rv)) {
@@ -2410,7 +2410,7 @@ nsLocalFile::Remove(bool aRecursive, uint32_t* aRemoveCount) {
       // with `\\?\` or longer than 260 characters on Windows 10+ system with
       // long paths enabled.
 
-      RefPtr<nsDirEnumerator> dirEnum = new nsDirEnumerator();
+      RefPtr dirEnum = MakeRefPtr<nsDirEnumerator>();
 
       rv = dirEnum->Init(this);
       if (NS_FAILED(rv)) {
@@ -3262,8 +3262,7 @@ nsLocalFile::GetDirectoryEntriesImpl(nsIDirectoryEnumerator** aEntries) {
 
   *aEntries = nullptr;
   if (mWorkingPath.EqualsLiteral("\\\\.")) {
-    RefPtr<nsDriveEnumerator> drives =
-        new nsDriveEnumerator(mUseDOSDevicePathSyntax);
+    RefPtr drives = MakeRefPtr<nsDriveEnumerator>(mUseDOSDevicePathSyntax);
     rv = drives->Init();
     if (NS_FAILED(rv)) {
       return rv;
@@ -3272,7 +3271,7 @@ nsLocalFile::GetDirectoryEntriesImpl(nsIDirectoryEnumerator** aEntries) {
     return NS_OK;
   }
 
-  RefPtr<nsDirEnumerator> dirEnum = new nsDirEnumerator();
+  RefPtr dirEnum = MakeRefPtr<nsDirEnumerator>();
   rv = dirEnum->Init(this);
   if (NS_FAILED(rv)) {
     return rv;

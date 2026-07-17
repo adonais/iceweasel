@@ -80,6 +80,14 @@ interface nsILayoutHistoryState : nsISupports
   [noscript, notxpcom, nostdcall] void RemoveState(in nsCString aKey);
 
   /**
+   * Remove the state object for |aKey| from the table and transfer
+   * ownership of it to the caller. Use this instead of GetState() when
+   * the state is consumed by code that may run script, so that a
+   * re-entrant RemoveState()/Reset() cannot free it while in use.
+   */
+  [noscript, notxpcom, nostdcall] PresStateUnique TakeState(in nsCString aKey);
+
+  /**
    * Check whether this history has any states in it
    */
   [noscript, notxpcom, nostdcall] boolean HasStates();

@@ -51,8 +51,6 @@ void RemoteDecoderChild::DestroyIPDL() {
   }
 }
 
-void RemoteDecoderChild::IPDLActorDestroyed() { mIPDLSelfRef = nullptr; }
-
 // MediaDataDecoder methods
 
 RefPtr<MediaDataDecoder::InitPromise> RemoteDecoderChild::Init() {

@@ -19,5 +19,7 @@ enum RTCDtlsTransportState {
 interface RTCDtlsTransport : EventTarget {
   [SameObject] readonly attribute RTCIceTransport iceTransport;
   readonly attribute RTCDtlsTransportState state;
+  [Throws]
+  sequence<ArrayBuffer> getRemoteCertificates();
   attribute EventHandler onstatechange;
 };

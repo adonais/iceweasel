@@ -26,6 +26,12 @@ See https://github.com/adobe-type-tools/cmap-resources
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1" />
     <title>PDF.js viewer</title>
 
+  <link rel="icon" type="image/svg+xml" href="chrome://global/skin/icons/pdf.svg" />
+  <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'none'; script-src resource: 'wasm-unsafe-eval'; worker-src resource:; style-src resource:; img-src resource: blob: data:; font-src resource:; connect-src resource:; base-uri 'none'; form-action 'none';"
+    />
+
 <!-- This snippet is used in the Firefox extension (included from viewer.html) -->
 <script src="resource://pdf.js/build/pdf.mjs" type="module"></script>
 
@@ -104,7 +110,7 @@ See https://github.com/adobe-type-tools/cmap-resources
                         hidden="true"
                       >
                         <span data-l10n-id="pdfjs-views-manager-add-file-button-label"></span>
-                        <input id="viewsManagerAddFilePicker" type="file" accept="application/pdf" />
+                        <input id="viewsManagerAddFilePicker" type="file" accept="application/pdf,image/*" multiple />
                       </button>
                       <button
                         id="viewsManagerCurrentOutlineButton"

@@ -13,6 +13,7 @@ import mozilla.components.support.utils.DefaultDownloadFileUtils
 import mozilla.components.support.utils.DownloadFileUtils
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.downloads.DownloadLocationManager
 
 /**
@@ -26,7 +27,10 @@ class DownloadUIShareMiddleware(
     private val downloadFileUtils: DownloadFileUtils = DefaultDownloadFileUtils(
         context = applicationContext,
         downloadLocation = {
-            DownloadLocationManager(applicationContext).defaultLocation
+            DownloadLocationManager(
+                applicationContext.components.settings,
+                applicationContext.contentResolver,
+            ).defaultLocation
         },
     ),
 ) : Middleware<DownloadUIState, DownloadUIAction> {

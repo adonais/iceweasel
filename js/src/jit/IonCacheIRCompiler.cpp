@@ -610,7 +610,11 @@ JitCode* IonCacheIRCompiler::compile(IonICStub* stub) {
     allocator.nextOp();
   } while (reader.more());
 
-  masm.assumeUnreachable("Should have returned from IC");
+  if (!savedLiveRegs_) {
+    allocator.restoreInputState(masm);
+  }
+  uint8_t* rejoinAddr = ic_->rejoinAddr(ionScript_);
+  masm.jump(ImmPtr(rejoinAddr));
 
   // Done emitting the main IC code. Now emit the failure paths.
   perfSpewer_.recordOffset(masm, "FailurePath");
@@ -1940,17 +1944,6 @@ bool IonCacheIRCompiler::emitMegamorphicSetElement(ObjOperandId objId,
 
   using Fn = bool (*)(JSContext*, HandleObject, HandleValue, HandleValue, bool);
   callVM<Fn, SetElementMegamorphic<false>>(masm);
-  return true;
-}
-
-bool IonCacheIRCompiler::emitReturnFromIC() {
-  JitSpew(JitSpew_Codegen, "%s", __FUNCTION__);
-  if (!savedLiveRegs_) {
-    allocator.restoreInputState(masm);
-  }
-
-  uint8_t* rejoinAddr = ic_->rejoinAddr(ionScript_);
-  masm.jump(ImmPtr(rejoinAddr));
   return true;
 }
 

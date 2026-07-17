@@ -58,6 +58,7 @@
 #include "jit/WarpOracle.h"
 #include "jit/WasmBCE.h"
 #include "jit/WasmRefTypeAnalysis.h"
+#include "js/friend/UsageStatistics.h"  // JSUseCounter
 #include "js/Printf.h"
 #include "js/UniquePtr.h"
 #include "util/Memory.h"
@@ -99,10 +100,6 @@ JitRuntime::~JitRuntime() {
   MOZ_ASSERT_IF(jitcodeGlobalTable_, jitcodeGlobalTable_->empty());
   js_delete(jitcodeGlobalTable_.ref());
 
-  // interpreterEntryMap should be cleared out during finishRoots()
-  MOZ_ASSERT_IF(interpreterEntryMap_, interpreterEntryMap_->empty());
-  js_delete(interpreterEntryMap_.ref());
-
   js_delete(jitHintsMap_.ref());
 }
 
@@ -138,13 +135,6 @@ bool JitRuntime::initialize(JSContext* cx) {
   if (!JitOptions.disableJitHints) {
     jitHintsMap_ = cx->new_<JitHintsMap>();
     if (!jitHintsMap_) {
-      return false;
-    }
-  }
-
-  if (JitOptions.emitInterpreterEntryTrampoline) {
-    interpreterEntryMap_ = cx->new_<EntryTrampolineMap>();
-    if (!interpreterEntryMap_) {
       return false;
     }
   }
@@ -519,16 +509,32 @@ void JitZone::traceWeak(JSTracer* trc, Zone* zone) {
   MOZ_ASSERT(this == zone->jitZone());
 
   for (WeakHeapPtr<JitCode*>& stub : stubs_) {
-    TraceWeakEdge(trc, &stub, "JitZone::stubs_");
+    TraceOrClearWeakEdge(trc, &stub, "JitZone::stubs_");
   }
 
   baselineCacheIRStubCodes_.traceWeak(trc);
   inlinedCompilations_.traceWeak(trc);
 
-  TraceWeakEdge(trc, &lastStubFoldingBailoutInner_,
-                "JitZone::lastStubFoldingBailoutInner_");
-  TraceWeakEdge(trc, &lastStubFoldingBailoutOuter_,
-                "JitZone::lastStubFoldingBailoutOuter_");
+  TraceOrClearWeakEdge(trc, &lastStubFoldingBailoutInner_,
+                       "JitZone::lastStubFoldingBailoutInner_");
+  TraceOrClearWeakEdge(trc, &lastStubFoldingBailoutOuter_,
+                       "JitZone::lastStubFoldingBailoutOuter_");
+}
+
+void JitZone::traceScriptTableRoots(JSTracer* trc) {
+  // Trace the table used to hold interpreter entry code generated with
+  // --emit-interpreter-entry.
+  if (interpreterEntryMap) {
+    interpreterEntryMap->trace(trc);
+  }
+}
+
+void JitZone::finishScriptTableRoots() {
+  // Clear out the interpreter entry map before the final gc.
+  if (interpreterEntryMap) {
+    interpreterEntryMap->clear();
+    interpreterEntryMap.reset();
+  }
 }
 
 void JitZone::addSizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf,
@@ -839,7 +845,7 @@ void IonScript::copyICEntries(const uint32_t* icEntries) {
 }
 
 const SafepointIndex* IonScript::getSafepointIndex(uint32_t disp) const {
-  MOZ_ASSERT(numSafepointIndices() > 0);
+  MOZ_RELEASE_ASSERT(numSafepointIndices() > 0);
 
   const SafepointIndex* table = safepointIndices();
   if (numSafepointIndices() == 1) {
@@ -853,7 +859,7 @@ const SafepointIndex* IonScript::getSafepointIndex(uint32_t disp) const {
   uint32_t max = table[maxEntry].displacement();
 
   // Raise if the element is not in the list.
-  MOZ_ASSERT(min <= disp && disp <= max);
+  MOZ_RELEASE_ASSERT(min <= disp && disp <= max);
 
   // Approximate the location of the FrameInfo.
   size_t guess = (disp - min) * (maxEntry - minEntry) / (max - min) + minEntry;
@@ -958,13 +964,14 @@ bool OptimizeMIR(MIRGenerator* mir) {
   AssertBasicGraphCoherency(graph);
 
   if (JitSpewEnabled(JitSpew_MIRExpressions)) {
-    JitSpewCont(JitSpew_MIRExpressions, "\n");
-    DumpMIRExpressions(JitSpewPrinter(), graph, mir->outerInfo(),
+    JitSpew(JitSpew_MIRExpressions, "\n");
+    AutoJitSpewMessage msg(JitSpew_MIRExpressions);
+    DumpMIRExpressions(msg.printer(), graph, mir->outerInfo(),
                        "BuildSSA (== input to OptimizeMIR)");
   }
 
   if (!JitOptions.disablePruning && !mir->compilingWasm()) {
-    JitSpewCont(JitSpew_Prune, "\n");
+    JitSpew(JitSpew_Prune, "\n");
     if (!PruneUnusedBranches(mir, graph)) {
       return false;
     }
@@ -1080,7 +1087,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   if (!JitOptions.disableRecoverIns &&
       mir->optimizationInfo().scalarReplacementEnabled() &&
       !JitOptions.disableObjectKeysScalarReplacement) {
-    JitSpewCont(JitSpew_Escape, "\n");
+    JitSpew(JitSpew_Escape, "\n");
     if (!ReplaceObjectKeys(mir, graph)) {
       return false;
     }
@@ -1106,7 +1113,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
 
   if (!JitOptions.disableRecoverIns &&
       mir->optimizationInfo().scalarReplacementEnabled()) {
-    JitSpewCont(JitSpew_Escape, "\n");
+    JitSpew(JitSpew_Escape, "\n");
     if (!ScalarReplacement(mir, graph)) {
       return false;
     }
@@ -1165,7 +1172,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
       mir->optimizationInfo().eliminateRedundantShapeGuardsEnabled()) {
     {
       AliasAnalysis analysis(mir, graph);
-      JitSpewCont(JitSpew_Alias, "\n");
+      JitSpew(JitSpew_Alias, "\n");
       if (!analysis.analyze()) {
         return false;
       }
@@ -1208,7 +1215,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   }
 
   if (mir->optimizationInfo().gvnEnabled()) {
-    JitSpewCont(JitSpew_GVN, "\n");
+    JitSpew(JitSpew_GVN, "\n");
     if (!gvn.run(ValueNumberer::UpdateAliasAnalysis)) {
       return false;
     }
@@ -1221,7 +1228,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   }
 
   if (mir->branchHintingEnabled()) {
-    JitSpewCont(JitSpew_BranchHint, "\n");
+    JitSpew(JitSpew_BranchHint, "\n");
     if (!BranchHinting(mir, graph)) {
       return false;
     }
@@ -1237,7 +1244,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   // trigger bailouts. Disable it if bailing out of a hoisted
   // instruction has previously invalidated this script.
   if (mir->licmEnabled()) {
-    JitSpewCont(JitSpew_LICM, "\n");
+    JitSpew(JitSpew_LICM, "\n");
     if (!LICM(mir, graph)) {
       return false;
     }
@@ -1251,7 +1258,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
 
   RangeAnalysis r(mir, graph);
   if (mir->optimizationInfo().rangeAnalysisEnabled()) {
-    JitSpewCont(JitSpew_Range, "\n");
+    JitSpew(JitSpew_Range, "\n");
     if (!r.addBetaNodes()) {
       return false;
     }
@@ -1321,7 +1328,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   }
 
   if (!JitOptions.disableRecoverIns) {
-    JitSpewCont(JitSpew_Sink, "\n");
+    JitSpew(JitSpew_Sink, "\n");
     if (!Sink(mir, graph)) {
       return false;
     }
@@ -1335,7 +1342,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
 
   if (!JitOptions.disableRecoverIns &&
       mir->optimizationInfo().rangeAnalysisEnabled()) {
-    JitSpewCont(JitSpew_Range, "\n");
+    JitSpew(JitSpew_Range, "\n");
     if (!r.removeUnnecessaryBitops()) {
       return false;
     }
@@ -1348,7 +1355,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   }
 
   {
-    JitSpewCont(JitSpew_FLAC, "\n");
+    JitSpew(JitSpew_FLAC, "\n");
     if (!FoldLinearArithConstants(mir, graph)) {
       return false;
     }
@@ -1363,7 +1370,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   // EAA, but only for wasm; it appears to be of minimal benefit for JS inputs.
   if (mir->compilingWasm() && mir->optimizationInfo().eaaEnabled()) {
     EffectiveAddressAnalysis eaa(mir, graph);
-    JitSpewCont(JitSpew_EAA, "\n");
+    JitSpew(JitSpew_EAA, "\n");
     if (!eaa.analyze()) {
       return false;
     }
@@ -1377,7 +1384,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
 
   // BCE marks bounds checks as dead, so do BCE before DCE.
   if (mir->compilingWasm()) {
-    JitSpewCont(JitSpew_WasmBCE, "\n");
+    JitSpew(JitSpew_WasmBCE, "\n");
     if (!EliminateBoundsChecks(mir, graph)) {
       return false;
     }
@@ -1402,7 +1409,7 @@ bool OptimizeMIR(MIRGenerator* mir) {
   }
 
   if (!JitOptions.disableMarkLoadsUsedAsPropertyKeys && !mir->compilingWasm()) {
-    JitSpewCont(JitSpew_MarkLoadsUsedAsPropertyKeys, "\n");
+    JitSpew(JitSpew_MarkLoadsUsedAsPropertyKeys, "\n");
     if (!MarkLoadsUsedAsPropertyKeys(graph)) {
       return false;
     }
@@ -1462,6 +1469,13 @@ bool OptimizeMIR(MIRGenerator* mir) {
       if (!gvn.run(ValueNumberer::DontUpdateAliasAnalysis)) {
         return false;
       }
+
+      if (!EliminatePhis(mir, graph, ConservativeObservability)) {
+        return false;
+      }
+
+      AssertExtendedGraphCoherency(graph);
+
       // And tidy up any empty blocks.
       bool blocksFolded;
       if (!FoldEmptyBlocks(graph, &blocksFolded)) {
@@ -1583,8 +1597,9 @@ bool OptimizeMIR(MIRGenerator* mir) {
   AssertGraphCoherency(graph, /* force = */ true);
 
   if (JitSpewEnabled(JitSpew_MIRExpressions)) {
-    JitSpewCont(JitSpew_MIRExpressions, "\n");
-    DumpMIRExpressions(JitSpewPrinter(), graph, mir->outerInfo(),
+    JitSpew(JitSpew_MIRExpressions, "\n");
+    AutoJitSpewMessage msg(JitSpew_MIRExpressions);
+    DumpMIRExpressions(msg.printer(), graph, mir->outerInfo(),
                        "BeforeLIR (== result of OptimizeMIR)");
   }
 
@@ -1993,6 +2008,17 @@ static MethodStatus Compile(JSContext* cx, HandleScript script,
             script->filename(), script->lineno(),
             script->column().oneOriginValue());
     return Method_CantCompile;
+  }
+
+  // TODO(Bug 2039389): Remove generator use counters
+  if (script->isGenerator()) {
+    if (script->isAsync()) {
+      cx->runtime()->setUseCounter(
+          cx->global(), JSUseCounter::ASYNC_GENERATOR_FUNCTION_ION_ELIGIBLE);
+    } else {
+      cx->runtime()->setUseCounter(
+          cx->global(), JSUseCounter::GENERATOR_FUNCTION_ION_ELIGIBLE);
+    }
   }
 
   OptimizationLevel optimizationLevel =

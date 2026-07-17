@@ -38,7 +38,7 @@ win32-mingwclang/opt:
         mozconfig-variant: mingwclang
     run-on-projects:
         - 'mozilla-central'
-        - 'mozilla-esr140'
+        - 'mozilla-esr153'
     use-sccache: true
     fetches:
         toolchain:
@@ -79,7 +79,7 @@ win32-mingwclang/debug:
         mozconfig-variant: mingwclang-debug
     run-on-projects:
         - 'mozilla-central'
-        - 'mozilla-esr140'
+        - 'mozilla-esr153'
     use-sccache: true
     fetches:
         toolchain:
@@ -120,7 +120,7 @@ win64-mingwclang/opt:
         mozconfig-variant: mingwclang
     run-on-projects:
         - 'mozilla-central'
-        - 'mozilla-esr140'
+        - 'mozilla-esr153'
     use-sccache: true
     fetches:
         toolchain:
@@ -161,7 +161,7 @@ win64-mingwclang/debug:
         mozconfig-variant: mingwclang-debug
     run-on-projects:
         - 'mozilla-central'
-        - 'mozilla-esr140'
+        - 'mozilla-esr153'
     use-sccache: true
     fetches:
         toolchain:

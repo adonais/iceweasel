@@ -9,7 +9,7 @@
       "value": "{panel-menuitem.margin.block} {panel-menuitem.margin.inline}"
     },
     "block": {
-      "value": "0px"
+      "value": "0"
     },
     "inline": {
       "value": "8px"

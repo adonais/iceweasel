@@ -46,6 +46,7 @@ using nsILoadInfo::SchemelessInputType from "nsILoadInfo.h";
 using mozilla::dom::UserNavigationInvolvement from "mozilla/dom/UserNavigationInvolvement.h";
 using mozilla::RFPTargetSet from "nsRFPService.h";
 using PropertiesFile from "nsContentUtils.h";
+[RefCounted] using mozilla::dom::ParentProcessChannelHandle from "mozilla/dom/ParentProcessChannelHandle.h";
 
 namespace mozilla {
 namespace net {
@@ -577,6 +578,7 @@ struct RedirectToRealChannelArgs {
   EarlyHintConnectArgs[] earlyHints;
   uint32_t earlyHintLinkType;
   nullable nsIReferrerInfo referrerInfo;
+  nullable ParentProcessChannelHandle channelHandle;
 };
 
 struct TimingStructArgs {

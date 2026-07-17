@@ -256,7 +256,7 @@ backup-file-how-to-restore-header = How to restore:
 # The ☰ character is intended as a visual icon representing the Firefox
 # application menu.
 backup-file-moz-browser-restore-step-1 = Open the application menu ☰ and go to Settings > Sync
-backup-file-moz-browser-restore-step-2 = Click “Choose backup file” and select this file
+backup-file-moz-browser-restore-step-2-1 = Click “Restore your data” and select this file
 backup-file-moz-browser-restore-step-3 = Restart { -brand-short-name } when asked
 
 backup-file-other-browser-restore-step-1 = Download and install { -brand-short-name }
@@ -264,7 +264,7 @@ backup-file-download-moz-browser-button = Download
 # The ☰ character is intended as a visual icon representing the Firefox
 # application menu.
 backup-file-other-browser-restore-step-2 = Start { -brand-short-name }, open the application menu ☰ and go to Settings > Sync
-backup-file-other-browser-restore-step-3 = Click “Choose backup file” and select this file
+backup-file-other-browser-restore-step-3-1 = Click “Restore your data” and select this file
 backup-file-other-browser-restore-step-4 = Restart { -brand-short-name } when asked
 
 ## These strings are used in the about:restore and about:welcome pages

@@ -470,7 +470,7 @@ static bool InSharedRegion(mach_vm_address_t aAddr, cpu_type_t aType) {
 
   cpu_type_t cpu_type;
   size_t len = sizeof(cpu_type);
-  if (sysctlbyname("sysctl.proc_cputype", &cpu_type, &len, NULL, 0) != 0) {
+  if (sysctlbyname("sysctl.proc_cputype", &cpu_type, &len, nullptr, 0) != 0) {
     return NS_ERROR_FAILURE;
   }
 
@@ -2798,8 +2798,7 @@ class MinimizeMemoryUsageRunnable : public Runnable {
 
 NS_IMETHODIMP
 nsMemoryReporterManager::MinimizeMemoryUsage(nsIRunnable* aCallback) {
-  RefPtr<MinimizeMemoryUsageRunnable> runnable =
-      new MinimizeMemoryUsageRunnable(aCallback);
+  RefPtr runnable = MakeRefPtr<MinimizeMemoryUsageRunnable>(aCallback);
 
   return NS_DispatchToMainThread(runnable);
 }

@@ -89,8 +89,8 @@ add_task(async function run_test() {
   );
   ok(!testToken.isInternalKeyToken, "This token is not the internal key token");
 
-  testToken.login(true);
-  ok(testToken.isLoggedIn(), "Should have 'logged in' successfully");
+  testToken.login();
+  ok(testToken.isLoggedIn, "Should have 'logged in' successfully");
 
   testSlot = findSlotByName(testModule, "Empty PKCS11 Slot");
   notEqual(testSlot, null, "should be able to find 'Empty PKCS11 Slot'");

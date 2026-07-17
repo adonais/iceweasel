@@ -65,6 +65,6 @@ add_task(async function test_browser_translations_full_page_multiple_windows() {
     window2
   );
 
-  await testPage.cleanup();
+  await testPage.cleanup({ browser: window2.gBrowser.selectedBrowser });
   await BrowserTestUtils.closeWindow(window2);
 });

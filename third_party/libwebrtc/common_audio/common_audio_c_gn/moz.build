@@ -56,7 +56,6 @@ UNIFIED_SOURCES += [
     "/third_party/libwebrtc/common_audio/signal_processing/lpc_to_refl_coef.c",
     "/third_party/libwebrtc/common_audio/signal_processing/min_max_operations.c",
     "/third_party/libwebrtc/common_audio/signal_processing/randomization_functions.c",
-    "/third_party/libwebrtc/common_audio/signal_processing/real_fft.c",
     "/third_party/libwebrtc/common_audio/signal_processing/refl_coef_to_lpc.c",
     "/third_party/libwebrtc/common_audio/signal_processing/resample.c",
     "/third_party/libwebrtc/common_audio/signal_processing/resample_48khz.c",

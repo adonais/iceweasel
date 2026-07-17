@@ -21,19 +21,96 @@ struct ArenaAvailTreeTrait {
   }
 };
 
-// Wrap a doubly linked list.
 class ArenaAvailRunsSize {
  private:
-  mozilla::DoublyLinkedList<arena_chunk_map_t, ArenaAvailTreeTrait> mRuns;
+  using RunList =
+      mozilla::DoublyLinkedList<arena_chunk_map_t, ArenaAvailTreeTrait>;
+  // The list is ordered by memory availability, runs with with dirty
+  // pages are at the front, then runs with fresh pages and finally runs
+  // with decommitted/madvised pages.  Pages without flags are considered
+  // "fresh".
+  //
+  // This order is maintained with constant time insertions using
+  // "bookmarks" into the list.  We could use 3 separate lists but that
+  // would require removals to know which list to remove an item from.
+  RunList mRuns;
+  arena_chunk_map_t* mFirstFreshRun = nullptr;
+
+  // Try to categorise a run.  This is fast but inaccurate.
+  //
+  // Free runs are always merged and so a run may contain pages with
+  // different availability, a run with dirty pages and decommitted pages
+  // can't be clearly defined.
+  //
+  // Return the first set of page bits for any page with "interesting"
+  // bits, within the first 4 pages.  This means that in a run with both
+  // dirty and decommitted pages, whichever occurs first in the run
+  // categorises the run.
+  //
+  // This is limited to 4 pages to keep it fast and makes sense because
+  // SplitRun() always uses the first pages of a run and roughly half of all
+  // requests are for a single page.  4 pages will also ensure that if the
+  // run isn't aligned with the system's real page (where decommitted memory
+  // must be aligned) that the decommitted status will still be observed
+  // (when gRealPageSize / gPageSize <= 4).
+  static unsigned CategoriseRun(arena_chunk_map_t* aMapElm) {
+    arena_chunk_t* chunk = mozilla::GetChunkForPtr(aMapElm);
+    size_t pageind = (uintptr_t(aMapElm) - uintptr_t(chunk->mPageMap)) /
+                     sizeof(arena_chunk_map_t);
+    size_t num_pages =
+        (aMapElm->bits & ~mozilla::gPageSizeMask) >> mozilla::gPageSize2Pow;
+    // TODO I will check if the loop gets unrolled.
+    for (unsigned i = pageind; i < pageind + std::min(num_pages, size_t(4));
+         i++) {
+      unsigned bits = chunk->mPageMap[i].bits & mozilla::gPageSizeMask;
+      if (bits & (CHUNK_MAP_DIRTY | CHUNK_MAP_MADVISED | CHUNK_MAP_DECOMMITTED |
+                  CHUNK_MAP_FRESH)) {
+        return bits;
+      }
+    }
+
+    return 0;
+  }
 
  public:
   arena_chunk_map_t* Search() { return &(*mRuns.begin()); }
 
   bool IsEmpty() const { return mRuns.isEmpty(); }
 
-  void Insert(arena_chunk_map_t* aElem) { mRuns.pushFront(aElem); }
+  void Insert(arena_chunk_map_t* aElem) {
+    unsigned bits = CategoriseRun(aElem);
+    if (bits & CHUNK_MAP_DIRTY) {
+      mRuns.pushFront(aElem);
+#ifndef XP_LINUX
+    } else if (bits & CHUNK_MAP_MADVISED_OR_DECOMMITTED) {
+      mRuns.pushBack(aElem);
+      if (!mFirstFreshRun) {
+        // The run isn't fresh but this is the correct insertion point.
+        mFirstFreshRun = aElem;
+      }
+    } else {
+      // When the list is empty this will insert at the end,  This tested
+      // well on MacOS and Windows, but not on Linux, hence the ifdef above.
+      mRuns.insertBefore(RunList::Iterator(mFirstFreshRun), aElem);
+      mFirstFreshRun = aElem;
+    }
+#else
+    } else {
+      mRuns.pushBack(aElem);
+    }
+#endif
+  }
 
-  void Remove(arena_chunk_map_t* aElem) { mRuns.remove(aElem); }
+  void Remove(arena_chunk_map_t* aElem) {
+    MOZ_ASSERT(aElem);
+    if (aElem == mFirstFreshRun) {
+      // Move mFirstFreshRun to the next run, or clear it if this is the
+      // last run.  We can't get mNext directly because it's private,
+      // instead construct then advance an iterator.
+      mFirstFreshRun = &(*(++RunList::Iterator(aElem)));
+    }
+    mRuns.remove(aElem);
+  }
 };
 
 class ArenaAvailRuns {

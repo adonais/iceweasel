@@ -28,7 +28,6 @@
 #include "SharedFontList.h"
 #include "nsRect.h"
 #include "nsRegion.h"
-#include "mozilla/Array.h"
 #include "mozilla/ipc/FileDescriptor.h"
 #include "mozilla/ipc/ProtocolMessageUtils.h"
 #include "mozilla/ipc/ProtocolUtils.h"
@@ -773,25 +772,6 @@ DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::CompositeAttributes, mOperator,
                                   mCoefficients);
 
 DEFINE_IPC_SERIALIZER_WITH_FIELDS(mozilla::gfx::Glyph, mIndex, mPosition);
-
-template <typename T, size_t Length>
-struct ParamTraits<mozilla::Array<T, Length>> {
-  typedef mozilla::Array<T, Length> paramType;
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    for (size_t i = 0; i < Length; i++) {
-      WriteParam(aWriter, aParam[i]);
-    }
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    for (size_t i = 0; i < Length; i++) {
-      if (!ReadParam<T>(aReader, &aResult->operator[](i))) {
-        return false;
-      }
-    }
-    return true;
-  }
-};
 
 template <>
 struct ParamTraits<mozilla::SideBits>

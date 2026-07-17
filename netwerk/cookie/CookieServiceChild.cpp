@@ -306,8 +306,7 @@ IPCResult CookieServiceChild::RecvTrackCookiesLoad(
   return cookieBehavior == nsICookieService::BEHAVIOR_REJECT_FOREIGN ||
          cookieBehavior == nsICookieService::BEHAVIOR_LIMIT_FOREIGN ||
          cookieBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
-         cookieBehavior ==
-             nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+         cookieBehavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN;
 }
 
 CookieServiceChild::CookieNotificationAction
@@ -420,7 +419,7 @@ bool CookieServiceChild::HasExistingCookies(
   CookieKey key(aBaseDomain, aOriginAttributes);
   mCookiesMap.Get(key, &cookiesList);
 
-  return cookiesList ? cookiesList->Length() : 0;
+  return cookiesList ? cookiesList->Length() : false;
 }
 
 void CookieServiceChild::AddCookieFromDocument(

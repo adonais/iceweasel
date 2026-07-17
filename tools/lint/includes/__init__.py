@@ -28,17 +28,6 @@ def generate_diff(path, raw_content, line_to_delete):
     return diff
 
 
-def fix_includes(path, raw_content, line_to_delete):
-    prev_content = raw_content.split("\n")
-    new_content = [
-        raw_line
-        for lineno, raw_line in enumerate(prev_content, start=1)
-        if lineno != line_to_delete
-    ]
-    with open(path, "w") as outfd:
-        outfd.write("\n".join(new_content))
-
-
 symbol_pattern = r"\b{}\b"
 literal_pattern = r'[0-9."\']{}\b'
 
@@ -51,8 +40,10 @@ categories_pattern = {
 }
 
 
-def lint_mfbt_headers(results, path, raw_content, config, fix):
+def check_mfbt_headers(path, raw_content, config):
+    """Return list of (lineno, msg) for unused mfbt headers."""
     supported_keys = "variables", "functions", "macros", "types", "literals"
+    unused = []
 
     for header, categories in description.items():
         assert set(categories.keys()).issubset(supported_keys)
@@ -76,23 +67,9 @@ def lint_mfbt_headers(results, path, raw_content, config, fix):
         else:
             msg = f"{path} includes {header} but does not reference any of its API"
             lineno = 1 + raw_content.count("\n", 0, match.start())
+            unused.append((lineno, msg))
 
-            if fix:
-                fix_includes(path, raw_content, lineno)
-                results["fixed"] += 1
-            else:
-                diff = generate_diff(path, raw_content, lineno)
-
-                results["results"].append(
-                    result.from_config(
-                        config,
-                        path=path,
-                        message=msg,
-                        level="error",
-                        lineno=lineno,
-                        diff=diff,
-                    )
-                )
+    return unused
 
 
 def lint(paths, config, **lintargs):
@@ -109,14 +86,18 @@ def lint(paths, config, **lintargs):
         except UnicodeDecodeError:
             continue
 
-        lint_mfbt_headers(results, path, raw_content, config, fix)
+        mfbt_results = check_mfbt_headers(path, raw_content, config)
         diskarzhan_results = diskarzhan.diskarzhan.lint_std_headers(path, raw_content)
         diskarzhan_results += diskarzhan.diskarzhan.lint_cstd_headers(path, raw_content)
-        if diskarzhan_results and fix:
-            diskarzhan.diskarzhan.fix_includes(path, raw_content, diskarzhan_results)
-            results["fixed"] += len(diskarzhan_results)
+
+        all_results = mfbt_results + diskarzhan_results
+
+        if fix:
+            if all_results:
+                diskarzhan.diskarzhan.fix_includes(path, raw_content, all_results)
+                results["fixed"] += len(all_results)
         else:
-            for lineno, msg in diskarzhan_results:
+            for lineno, msg in all_results:
                 results["results"].append(
                     result.from_config(
                         config,

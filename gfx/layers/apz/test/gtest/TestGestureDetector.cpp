@@ -281,12 +281,12 @@ class APZCFlingStopTester : public APZCGestureDetectorTester {
     EXPECT_CALL(*mcc,
                 HandleTap(TapType::eSingleTap, _, 0, apzc->GetGuid(), _, _))
         .Times(tapCallsExpected);
-    Tap(apzc, ScreenIntPoint(10, 10), 0);
+    Tap(apzc, ScreenIntPoint(10, 10), nullptr);
     while (mcc->RunThroughDelayedTasks());
 
     // Deliver another tap, to make sure that taps are flowing properly once
     // the fling is aborted.
-    Tap(apzc, ScreenIntPoint(100, 100), 0);
+    Tap(apzc, ScreenIntPoint(100, 100), nullptr);
     while (mcc->RunThroughDelayedTasks());
 
     // Verify that we didn't advance any further after the fling was aborted, in

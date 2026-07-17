@@ -213,6 +213,10 @@ void HttpChannelParent::TryInvokeAsyncOpen(nsresult aRv) {
   InvokeAsyncOpen(aRv);
 }
 
+dom::ContentParentId HttpChannelParent::GetContentParentId() const {
+  return static_cast<ContentParent*>(Manager()->Manager())->ChildID();
+}
+
 void HttpChannelParent::OnBackgroundParentReady(
     HttpBackgroundChannelParent* aBgParent) {
   LOG(("HttpChannelParent::OnBackgroundParentReady [this=%p bgParent=%p]\n",
@@ -704,7 +708,8 @@ bool HttpChannelParent::ConnectChannel(const uint32_t& registrarId) {
        "[this=%p, id=%" PRIu32 "]\n",
        this, registrarId));
   nsCOMPtr<nsIChannel> channel;
-  rv = NS_LinkRedirectChannels(registrarId, this, getter_AddRefs(channel));
+  rv = NS_LinkRedirectChannels(registrarId, GetContentParentId(), this,
+                               getter_AddRefs(channel));
   if (NS_FAILED(rv)) {
     NS_WARNING("Could not find the http channel to connect its IPC parent");
     // This makes the channel delete itself safely.  It's the only thing
@@ -1289,6 +1294,8 @@ HttpChannelParent::OnStartRequest(nsIRequest* aRequest) {
 
   chan->GetIsResolvedByTRR(&args.isResolvedByTRR());
   chan->GetAllRedirectsSameOrigin(&args.allRedirectsSameOrigin());
+  chan->GetAllRedirectsSameOriginIgnoringInternal(
+      &args.allRedirectsSameOriginIgnoringInternal());
   chan->GetCrossOriginOpenerPolicy(&args.openerPolicy());
   args.selfAddr() = chan->GetSelfAddr();
   args.peerAddr() = chan->GetPeerAddr();
@@ -1798,7 +1805,8 @@ HttpChannelParent::StartRedirect(nsIChannel* newChannel, uint32_t redirectFlags,
   }
 
   mRedirectChannelId = nsContentUtils::GenerateLoadIdentifier();
-  rv = registrar->RegisterChannel(newChannel, mRedirectChannelId);
+  rv = registrar->RegisterChannel(newChannel, mRedirectChannelId,
+                                  GetContentParentId());
   NS_ENSURE_SUCCESS(rv, rv);
 
   LOG(("Registered %p channel under id=%" PRIx64, newChannel,
@@ -1860,8 +1868,8 @@ HttpChannelParent::StartRedirect(nsIChannel* newChannel, uint32_t redirectFlags,
 
       // Re-link the HttpChannelParent to the new channel.
       nsCOMPtr<nsIChannel> linkedChannel;
-      rv = NS_LinkRedirectChannels(mRedirectChannelId, this,
-                                   getter_AddRefs(linkedChannel));
+      rv = NS_LinkRedirectChannels(mRedirectChannelId, GetContentParentId(),
+                                   this, getter_AddRefs(linkedChannel));
       NS_ENSURE_SUCCESS(rv, rv);
       MOZ_ASSERT(linkedChannel == newChannel);
 

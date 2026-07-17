@@ -14,7 +14,6 @@ transforms:
 kind-dependencies:
     - toolchain
     - repackage
-    - repackage-l10n
 
 only-for-attributes:
     - nightly

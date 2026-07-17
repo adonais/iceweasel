@@ -1589,22 +1589,22 @@ void nsXULPopupManager::PaintPopups(nsRefreshDriver* aRefreshDriver) {
     return;
   }
 
-  AutoTArray<std::pair<RefPtr<nsIWidget>, WeakFrame>, 32> visiblePopups;
+  AutoTArray<std::pair<RefPtr<nsIWidget>, WeakFrame>, 32> popupsToPaint;
   for (nsMenuChainItem* item = mPopups.get(); item; item = item->GetParent()) {
     nsMenuPopupFrame* frame = item->Frame();
-    if (!frame->IsVisible() ||
+    if (!frame->IsVisibleOrHiding() ||
         frame->PresContext()->GetRootPresContext()->RefreshDriver() !=
             aRefreshDriver) {
       continue;
     }
     if (nsIWidget* widget = frame->GetWidget()) {
-      visiblePopups.AppendElement(std::make_pair(widget, frame));
+      popupsToPaint.AppendElement(std::make_pair(widget, frame));
     }
   }
 
-  for (const auto& visiblePopup : Reversed(visiblePopups)) {
-    nsIWidget* widget = visiblePopup.first;
-    nsMenuPopupFrame* frame = do_QueryFrame(visiblePopup.second.GetFrame());
+  for (const auto& popupToPaint : Reversed(popupsToPaint)) {
+    nsIWidget* widget = popupToPaint.first;
+    nsMenuPopupFrame* frame = do_QueryFrame(popupToPaint.second.GetFrame());
     if (!frame) {
       continue;
     }
@@ -1634,7 +1634,7 @@ void nsXULPopupManager::PaintPopups(nsRefreshDriver* aRefreshDriver) {
     if (!widget->IsVisible()) {
       widget->Show(true);
     }
-    if (!visiblePopup.second.IsAlive() || !widget->NeedsPaint()) {
+    if (!popupToPaint.second.IsAlive() || !widget->NeedsPaint()) {
       continue;
     }
     nsAutoScriptBlocker scriptBlocker;

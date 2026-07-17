@@ -300,6 +300,11 @@ Preferences.addSetting({
 
 // Mozilla accounts section
 
+// Account settings are unavailable
+Preferences.addSetting({
+  id: "fxaAccountDisabled",
+});
+
 // Logged out of Mozilla account
 Preferences.addSetting({
   id: "noFxaAccountGroup",
@@ -812,6 +817,22 @@ SettingGroupManager.registerGroups({
     inProgress: true,
     hiddenFromSearch: true,
   }),
+  accountDisabled: {
+    inProgress: true,
+    hidden: accountsEnabled,
+    items: [
+      {
+        id: "fxaAccountDisabled",
+        control: "moz-fieldset",
+        l10nId: "account-disabled-group",
+        iconSrc: "chrome://browser/skin/preferences/mozilla-logo.svg",
+        supportPage: "managed-browser-firefox",
+        controlAttrs: {
+          headinglevel: 2,
+        },
+      },
+    ],
+  },
   account: {
     inProgress: true,
     l10nId: "account-group-label2",

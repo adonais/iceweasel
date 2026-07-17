@@ -98,8 +98,8 @@ class SettingsPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRul
         return SettingsSelectors.all.filter { it.groups.contains(group) }
     }
 
-    override fun navigateToPage(url: String): SettingsPage {
-        super.navigateToPage(url)
+    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsPage {
+        super.navigateToPage(url, forceNavigation)
         return this
     }
 

@@ -11,7 +11,7 @@ import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.GleanMetrics.SentFromFirefox
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.showToolbar
 
 /**
@@ -23,8 +23,7 @@ class LinkSharingFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragme
         setPreferencesFromResource(R.xml.link_sharing_preferences, rootKey)
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_link_sharing).apply {
-            isChecked = context.settings().whatsappLinkSharingEnabled
-            onPreferenceChangeListener = SharedPreferenceUpdater()
+            isChecked = context.components.settings.whatsappLinkSharingEnabled
 
             onPreferenceChangeListener = object : SharedPreferenceUpdater() {
                 override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {

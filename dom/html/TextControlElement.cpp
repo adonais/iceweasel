@@ -390,8 +390,9 @@ bool TextControlElement::NeedToInitializeEditorForEvent(
   }
 }
 
-void TextControlElement::OnFocus(const WidgetEvent& aFocusEvent) {
+void TextControlElement::WillFocus(const WidgetEvent& aFocusEvent) {
   MOZ_ASSERT(aFocusEvent.mMessage == eFocus);
+  MOZ_ASSERT(aFocusEvent.IsTrusted());
 
   if (!IsInComposedDoc()) {
     return;
@@ -406,7 +407,7 @@ void TextControlElement::OnFocus(const WidgetEvent& aFocusEvent) {
   //
   // While it'd usually make sense, we don't do this for JS callers
   // because it causes some compat issues, see bug 1712724 for example.
-  nsFocusManager* fm = nsFocusManager::GetFocusManager();
+  const RefPtr<nsFocusManager> fm = nsFocusManager::GetFocusManager();
   if (!IsTextArea() && !aFocusEvent.AsFocusEvent()->mFromRaise &&
       SelectTextFieldOnFocus()) {
     uint32_t lastFocusMethod = fm->GetLastFocusMethod(OwnerDoc()->GetWindow());
@@ -421,6 +422,28 @@ void TextControlElement::OnFocus(const WidgetEvent& aFocusEvent) {
     }();
     if (shouldSelectAllOnFocus) {
       SelectAll();
+    }
+  }
+  if (fm && fm->GetFocusedElement() == this && aFocusEvent.IsTrusted())
+      [[likely]] {
+    const RefPtr<TextEditor> textEditor = GetExtantTextEditor();
+    if (textEditor) [[likely]] {
+      DebugOnly<nsresult> rv = textEditor->OnFocus(*this);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "EditorBase::OnFocus() failed, but ignored");
+    }
+  }
+}
+
+void TextControlElement::WillBlur(const WidgetEvent& aBlurEvent) {
+  MOZ_ASSERT(aBlurEvent.mMessage == eBlur);
+
+  if (aBlurEvent.IsTrusted()) {
+    const RefPtr<TextEditor> textEditor = GetExtantTextEditor();
+    if (textEditor) [[likely]] {
+      DebugOnly<nsresult> rv = textEditor->OnBlur(this);
+      NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
+                           "EditorBase::OnBlur() failed, but ignored");
     }
   }
 }

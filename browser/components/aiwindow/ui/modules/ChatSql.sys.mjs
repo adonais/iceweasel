@@ -35,7 +35,8 @@ CREATE TABLE conversation (
   active_branch_tip_message_id TEXT, -- no foreign here, as we insert messages later.
   security_properties_jsonb BLOB,
   seen_urls_jsonb BLOB,
-  memories_toggled BOOLEAN
+  memories_toggled BOOLEAN,
+  serp_urls_for_anonymous_fetch_jsonb BLOB
 ) WITHOUT ROWID;
 `;
 
@@ -90,11 +91,13 @@ export const CONVERSATION_INSERT = `
 INSERT INTO conversation (
   conv_id, title, description, page_url, page_meta_jsonb,
   created_date, updated_date, status, active_branch_tip_message_id,
-  security_properties_jsonb, seen_urls_jsonb, memories_toggled
+  security_properties_jsonb, seen_urls_jsonb, memories_toggled,
+  serp_urls_for_anonymous_fetch_jsonb
 ) VALUES (
   :conv_id, :title, :description, :page_url, jsonb(:page_meta),
   :created_date, :updated_date, :status, :active_branch_tip_message_id,
-  jsonb(:security_properties), jsonb(:seen_urls), :memories_toggled
+  jsonb(:security_properties), jsonb(:seen_urls), :memories_toggled,
+  jsonb(:serp_urls_for_anonymous_fetch)
 )
 ON CONFLICT(conv_id) DO UPDATE
   SET title = :title,
@@ -103,7 +106,8 @@ ON CONFLICT(conv_id) DO UPDATE
       active_branch_tip_message_id = :active_branch_tip_message_id,
       security_properties_jsonb = jsonb(:security_properties),
       seen_urls_jsonb = jsonb(:seen_urls),
-      memories_toggled = :memories_toggled;
+      memories_toggled = :memories_toggled,
+      serp_urls_for_anonymous_fetch_jsonb = jsonb(:serp_urls_for_anonymous_fetch);
 `;
 
 export const MESSAGE_INSERT = `
@@ -149,7 +153,8 @@ SELECT conv_id, title, description, page_url,
   json(page_meta_jsonb) AS page_meta, created_date, updated_date,
   status, active_branch_tip_message_id,
   json(security_properties_jsonb) AS security_properties,
-  json(seen_urls_jsonb) AS seen_urls, memories_toggled
+  json(seen_urls_jsonb) AS seen_urls, memories_toggled,
+  json(serp_urls_for_anonymous_fetch_jsonb) AS serp_urls_for_anonymous_fetch
 FROM conversation WHERE conv_id = :conv_id;
 `;
 
@@ -158,7 +163,8 @@ SELECT conv_id, title, description, page_url,
   json(page_meta_jsonb) AS page_meta, created_date, updated_date,
   status, active_branch_tip_message_id,
   json(security_properties_jsonb) AS security_properties,
-  json(seen_urls_jsonb) AS seen_urls, memories_toggled
+  json(seen_urls_jsonb) AS seen_urls, memories_toggled,
+  json(serp_urls_for_anonymous_fetch_jsonb) AS serp_urls_for_anonymous_fetch
 FROM conversation
 WHERE updated_date >= :start_date AND updated_date <= :end_date
 ORDER BY updated_date DESC;
@@ -169,7 +175,8 @@ SELECT c.conv_id, c.title, c.description, c.page_url,
   json(c.page_meta_jsonb) AS page_meta, c.created_date, c.updated_date,
   c.status, c.active_branch_tip_message_id,
   json(c.security_properties_jsonb) AS security_properties,
-  json(c.seen_urls_jsonb) AS seen_urls, c.memories_toggled
+  json(c.seen_urls_jsonb) AS seen_urls, c.memories_toggled,
+  json(c.serp_urls_for_anonymous_fetch_jsonb) AS serp_urls_for_anonymous_fetch
 FROM conversation c
 WHERE EXISTS (
   SELECT 1
@@ -286,7 +293,8 @@ SELECT c.conv_id, c.title, c.description, c.page_url,
   json(c.page_meta_jsonb) AS page_meta, c.created_date, c.updated_date,
   c.status, c.active_branch_tip_message_id,
   json(c.security_properties_jsonb) AS security_properties,
-  json(c.seen_urls_jsonb) AS seen_urls, c.memories_toggled
+  json(c.seen_urls_jsonb) AS seen_urls, c.memories_toggled,
+  json(c.serp_urls_for_anonymous_fetch_jsonb) AS serp_urls_for_anonymous_fetch
 FROM conversation c
 JOIN message m ON m.conv_id = c.conv_id
 WHERE json_type(m.content_jsonb, :path) IS NOT NULL;
@@ -297,7 +305,8 @@ SELECT c.conv_id, c.title, c.description, c.page_url,
   json(c.page_meta_jsonb) AS page_meta, c.created_date, c.updated_date,
   c.status, c.active_branch_tip_message_id,
   json(c.security_properties_jsonb) AS security_properties,
-  json(c.seen_urls_jsonb) AS seen_urls, c.memories_toggled
+  json(c.seen_urls_jsonb) AS seen_urls, c.memories_toggled,
+  json(c.serp_urls_for_anonymous_fetch_jsonb) AS serp_urls_for_anonymous_fetch
 FROM conversation c
 JOIN message m ON m.conv_id = c.conv_id
 WHERE m.role = :role
@@ -318,6 +327,7 @@ SELECT
   json(c.security_properties_jsonb) AS security_properties,
   json(c.seen_urls_jsonb) AS seen_urls,
   c.memories_toggled,
+  json(c.serp_urls_for_anonymous_fetch_jsonb) AS serp_urls_for_anonymous_fetch,
   json_extract(m.content_jsonb, :path) AS matching_snippet
 FROM conversation AS c
 LEFT JOIN message AS m
@@ -382,7 +392,7 @@ DELETE FROM conversation WHERE conv_id = :conv_id;
 
 export const CONVERSATION_HISTORY = `
 SELECT c.conv_id, c.title, c.created_date, c.updated_date, (
-  SELECT group_concat(t.page_url)
+  SELECT json_group_array(t.page_url)
   FROM (
     SELECT
       m.page_url
@@ -401,4 +411,110 @@ WHERE EXISTS (
 )
 ORDER BY c.updated_date {sort}
 LIMIT :limit OFFSET :offset;
+`;
+
+export const LLM_TELEMETRY_TABLE = `
+CREATE TABLE IF NOT EXISTS llm_telemetry (
+  conv_id TEXT PRIMARY KEY,
+  telemetry_prompts BLOB,
+  telemetry_probabilities BLOB,
+  uniform_sampling_probability REAL DEFAULT 0.0,
+  processed_time TIMESTAMP,
+  processed INTEGER DEFAULT 0
+)
+`;
+
+export const GET_LLM_TELEMETRY_DATA_BY_CONV_ID = `
+SELECT
+  telemetry_prompts,
+  telemetry_probabilities
+FROM llm_telemetry
+WHERE conv_id = :conv_id
+`;
+
+export const UPSERT_LLM_TELEMETRY = `
+INSERT INTO llm_telemetry (
+  conv_id,
+  telemetry_prompts,
+  telemetry_probabilities,
+  uniform_sampling_probability,
+  processed_time,
+  processed
+)
+VALUES (
+  :conv_id,
+  :telemetry_prompts,
+  :telemetry_probabilities,
+  :uniform_sampling_probability,
+  :processed_time,
+  :processed
+)
+ON CONFLICT(conv_id) DO UPDATE SET
+  telemetry_prompts = excluded.telemetry_prompts,
+  telemetry_probabilities = excluded.telemetry_probabilities,
+  processed_time = excluded.processed_time,
+  processed = excluded.processed
+`;
+
+export const MARK_LLM_TELEMETRY_UNPROCESSED = `
+  UPDATE llm_telemetry SET processed = 0 WHERE conv_id = :conv_id
+`;
+
+export const MARK_LLM_TELEMETRY_PROCESSED = `
+UPDATE llm_telemetry
+SET
+  processed = 1,
+  processed_time = :processed_time,
+  telemetry_prompts = :telemetry_prompts
+WHERE conv_id = :conv_id
+`;
+
+export const GET_LLM_TELEMETRY_BY_CONV_ID = `
+SELECT
+  conv_id,
+  telemetry_prompts,
+  telemetry_probabilities,
+  uniform_sampling_probability,
+  processed_time,
+  processed
+FROM llm_telemetry
+WHERE conv_id = :conv_id
+`;
+
+/**
+ * Get uniform_sampling_probability for multiple conversations. Used on
+ * conversation reload to rehydrate the in-memory telemetry sampling state
+ * (_telemetryUniformSample / _telemetryUniformProbability).
+ *
+ * @param {number} amount - The number of conversation IDs to look up
+ */
+export function getUniformSamplingByConvIdsSql(amount) {
+  return `
+    SELECT conv_id, uniform_sampling_probability
+    FROM llm_telemetry
+    WHERE conv_id IN(${new Array(amount).fill("?").join(",")});
+  `;
+}
+
+export const GET_CONVERSATIONS_FOR_TELEMETRY = `
+SELECT
+  m.conv_id,
+  t.telemetry_prompts AS telemetryJobs,
+  t.telemetry_probabilities AS telemetryProbs,
+  t.uniform_sampling_probability,
+  m.model_id,
+  m.turn_index
+FROM llm_telemetry t
+JOIN (
+  SELECT conv_id, MAX(created_date) AS last_message_time
+  FROM message
+  WHERE role = 1 -- assistant
+  GROUP BY conv_id
+) lm
+  ON t.conv_id = lm.conv_id
+JOIN message m
+  ON m.conv_id = lm.conv_id
+ AND m.created_date = lm.last_message_time
+WHERE t.processed = 0
+  AND lm.last_message_time < strftime('%s', 'now', '-5 hours') * 1000;
 `;

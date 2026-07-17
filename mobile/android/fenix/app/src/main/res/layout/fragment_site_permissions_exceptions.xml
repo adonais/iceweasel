@@ -24,7 +24,6 @@
     <com.google.android.material.button.MaterialButton
         android:id="@+id/delete_all_site_permissions_button"
         style="@style/DestructiveButton"
-        android:background="@drawable/button_background"
         android:text="@string/clear_permissions_on_all_sites"
         android:visibility="gone"
         android:layout_marginHorizontal="16dp"

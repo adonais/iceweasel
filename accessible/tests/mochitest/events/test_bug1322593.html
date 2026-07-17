@@ -12,7 +12,7 @@
   <script type="application/javascript"
           src="../common.js"></script>
   <script type="application/javascript"
-          src="../promisified-events.js"></script>
+          src="../events.js"></script>
 
   <script type="application/javascript">
     function textChangeMatcher(aID, aText, aIsInserted) {
@@ -30,7 +30,6 @@
 
     // //////////////////////////////////////////////////////////////////////////
     // Do tests
-//    gA11yEventDumpToConsole = true; // debugging
 
     async function doTests() {
       let removed1 = waitForEvent(EVENT_TEXT_REMOVED,

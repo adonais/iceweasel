@@ -11,6 +11,9 @@
 
 [Exposed=Window]
 interface SVGAnimatedEnumeration {
+  // Unlike the other SVGAnimated* primitive interfaces, the spec requires
+  // baseVal's setter to throw TypeError when assigned a value outside the
+  // enumeration's defined range, hence [SetterThrows].
   [SetterThrows]
            attribute unsigned short baseVal;
   readonly attribute unsigned short animVal;

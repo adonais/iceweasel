@@ -26,7 +26,7 @@ class GLLibraryEGL;
 
 class SharedSurface_EGLImage final : public SharedSurface {
   mutable Mutex mMutex MOZ_UNANNOTATED;
-  EGLSync mSync = 0;
+  EGLSync mSync = nullptr;
   const std::weak_ptr<EglDisplay> mEglDisplay;
 
  public:

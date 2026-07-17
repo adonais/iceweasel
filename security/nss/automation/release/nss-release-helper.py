@@ -517,7 +517,7 @@ def make_release_branch(args):
         print()
         print("NEXT STEPS:")
         print(
-            f"1. Wait for the changes to sync to Github: https://github.com/nss-dev/nss/tree/{branch_name}"
+            f"1. Wait for the changes to sync to Github: https://github.com/mozilla/nss/tree/{branch_name}"
         )
         print("2. In your mozilla-unified repository, run:")
         print(f"   ./mach nss-uplift {tag_name}")

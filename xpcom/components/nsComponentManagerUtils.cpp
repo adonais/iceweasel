@@ -154,7 +154,7 @@ nsresult nsCreateInstanceByCID::operator()(const nsIID& aIID,
                                            void** aInstancePtr) const {
   nsresult status = CallCreateInstance(mCID, aIID, aInstancePtr);
   if (NS_FAILED(status)) {
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
   if (mErrorPtr) {
     *mErrorPtr = status;
@@ -166,7 +166,7 @@ nsresult nsCreateInstanceByContractID::operator()(const nsIID& aIID,
                                                   void** aInstancePtr) const {
   nsresult status = CallCreateInstance(mContractID, aIID, aInstancePtr);
   if (NS_FAILED(status)) {
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
   if (mErrorPtr) {
     *mErrorPtr = status;
@@ -178,7 +178,7 @@ nsresult nsCreateInstanceFromFactory::operator()(const nsIID& aIID,
                                                  void** aInstancePtr) const {
   nsresult status = mFactory->CreateInstance(aIID, aInstancePtr);
   if (NS_FAILED(status)) {
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
   if (mErrorPtr) {
     *mErrorPtr = status;
@@ -190,7 +190,7 @@ nsresult nsGetClassObjectByCID::operator()(const nsIID& aIID,
                                            void** aInstancePtr) const {
   nsresult status = CallGetClassObject(mCID, aIID, aInstancePtr);
   if (NS_FAILED(status)) {
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
   if (mErrorPtr) {
     *mErrorPtr = status;
@@ -202,7 +202,7 @@ nsresult nsGetClassObjectByContractID::operator()(const nsIID& aIID,
                                                   void** aInstancePtr) const {
   nsresult status = CallGetClassObject(mContractID, aIID, aInstancePtr);
   if (NS_FAILED(status)) {
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
   if (mErrorPtr) {
     *mErrorPtr = status;
@@ -214,7 +214,7 @@ nsresult nsGetServiceByCID::operator()(const nsIID& aIID,
                                        void** aInstancePtr) const {
   nsresult status = CallGetService(mCID, aIID, aInstancePtr);
   if (NS_FAILED(status)) {
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
 
   return status;
@@ -224,7 +224,7 @@ nsresult nsGetServiceByCIDWithError::operator()(const nsIID& aIID,
                                                 void** aInstancePtr) const {
   nsresult status = CallGetService(mCID, aIID, aInstancePtr);
   if (NS_FAILED(status)) {
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
 
   if (mErrorPtr) {
@@ -237,7 +237,7 @@ nsresult nsGetServiceByContractID::operator()(const nsIID& aIID,
                                               void** aInstancePtr) const {
   nsresult status = CallGetService(mContractID, aIID, aInstancePtr);
   if (NS_FAILED(status)) {
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
 
   return status;
@@ -247,7 +247,7 @@ nsresult nsGetServiceByContractIDWithError::operator()(
     const nsIID& aIID, void** aInstancePtr) const {
   nsresult status = CallGetService(mContractID, aIID, aInstancePtr);
   if (NS_FAILED(status)) {
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
 
   if (mErrorPtr) {

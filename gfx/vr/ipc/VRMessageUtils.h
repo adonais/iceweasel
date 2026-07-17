@@ -9,7 +9,6 @@
 #include "ipc/IPCMessageUtils.h"
 #include "mozilla/GfxMessageUtils.h"
 #include "mozilla/dom/GamepadMessageUtils.h"
-#include "mozilla/ParamTraits_STL.h"
 #include "mozilla/ParamTraits_TiedFields.h"
 
 #include "gfxVR.h"

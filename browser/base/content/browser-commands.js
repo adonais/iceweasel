@@ -82,6 +82,28 @@ var BrowserCommands = {
     return true;
   },
 
+  addTabSplitView() {
+    if (
+      !gBrowser.selectedTab ||
+      gBrowser.selectedTab.hidden ||
+      gBrowser.selectedTab.pinned ||
+      gBrowser.selectedTab.splitview
+    ) {
+      return;
+    }
+
+    let newTab = gBrowser.addTrustedTab("about:opentabs");
+    gBrowser.addTabSplitView([gBrowser.selectedTab, newTab], {
+      insertBefore: gBrowser.selectedTab,
+      trigger: "keyboard_shortcut",
+    });
+    gBrowser.selectedTab = newTab;
+  },
+
+  separateTabSplitView() {
+    gBrowser.selectedTab?.splitview?.unsplitTabs("keyboard_shortcut");
+  },
+
   duplicateTab() {
     duplicateTabIn(gBrowser.selectedTab, "tab");
   },
@@ -439,15 +461,9 @@ var BrowserCommands = {
       // source in tab expects the new view source browser's remoteness to match
       // that of the original URL, so disable remoteness if necessary for this
       // URL.
-      const oa = E10SUtils.predictOriginAttributes({ window });
-      preferredRemoteType = E10SUtils.getRemoteTypeForURI(
-        args.URL,
-        gMultiProcessBrowser,
-        gFissionBrowser,
-        E10SUtils.DEFAULT_REMOTE_TYPE,
-        null,
-        oa
-      );
+      preferredRemoteType = ChromeUtils.predictRemoteTypeForURI(args.URL, {
+        window,
+      });
     }
 
     // In the case of popups, we need to find a non-popup browser window.

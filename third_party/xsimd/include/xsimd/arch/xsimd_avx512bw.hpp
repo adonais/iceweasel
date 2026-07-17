@@ -12,10 +12,10 @@
 #ifndef XSIMD_AVX512BW_HPP
 #define XSIMD_AVX512BW_HPP
 
+#include "../types/xsimd_avx512bw_register.hpp"
+
 #include <array>
 #include <type_traits>
-
-#include "../types/xsimd_avx512bw_register.hpp"
 
 namespace xsimd
 {
@@ -468,6 +468,43 @@ namespace xsimd
             {
                 return mul(self, other, avx512dq {});
             }
+        }
+
+        // mul_hi
+        template <class A>
+        XSIMD_INLINE batch<int8_t, A> mul_hi(batch<int8_t, A> const& self, batch<int8_t, A> const& other, requires_arch<avx512bw>) noexcept
+        {
+            // Per-128-bit-lane unpack/pack pair preserves byte ordering across
+            // the four 128-bit lanes of a ZMM, so no inter-lane permute needed.
+            __m512i a_lo = _mm512_srai_epi16(_mm512_unpacklo_epi8(self, self), 8);
+            __m512i a_hi = _mm512_srai_epi16(_mm512_unpackhi_epi8(self, self), 8);
+            __m512i b_lo = _mm512_srai_epi16(_mm512_unpacklo_epi8(other, other), 8);
+            __m512i b_hi = _mm512_srai_epi16(_mm512_unpackhi_epi8(other, other), 8);
+            __m512i p_lo = _mm512_srai_epi16(_mm512_mullo_epi16(a_lo, b_lo), 8);
+            __m512i p_hi = _mm512_srai_epi16(_mm512_mullo_epi16(a_hi, b_hi), 8);
+            return _mm512_packs_epi16(p_lo, p_hi);
+        }
+        template <class A>
+        XSIMD_INLINE batch<uint8_t, A> mul_hi(batch<uint8_t, A> const& self, batch<uint8_t, A> const& other, requires_arch<avx512bw>) noexcept
+        {
+            __m512i zero = _mm512_setzero_si512();
+            __m512i a_lo = _mm512_unpacklo_epi8(self, zero);
+            __m512i a_hi = _mm512_unpackhi_epi8(self, zero);
+            __m512i b_lo = _mm512_unpacklo_epi8(other, zero);
+            __m512i b_hi = _mm512_unpackhi_epi8(other, zero);
+            __m512i p_lo = _mm512_srli_epi16(_mm512_mullo_epi16(a_lo, b_lo), 8);
+            __m512i p_hi = _mm512_srli_epi16(_mm512_mullo_epi16(a_hi, b_hi), 8);
+            return _mm512_packus_epi16(p_lo, p_hi);
+        }
+        template <class A>
+        XSIMD_INLINE batch<int16_t, A> mul_hi(batch<int16_t, A> const& self, batch<int16_t, A> const& other, requires_arch<avx512bw>) noexcept
+        {
+            return _mm512_mulhi_epi16(self, other);
+        }
+        template <class A>
+        XSIMD_INLINE batch<uint16_t, A> mul_hi(batch<uint16_t, A> const& self, batch<uint16_t, A> const& other, requires_arch<avx512bw>) noexcept
+        {
+            return _mm512_mulhi_epu16(self, other);
         }
 
         // neq

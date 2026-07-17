@@ -47,6 +47,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     typedArray.set(["definately not a number"]);
   }, "StringToBigInt(prim) == NaN");
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

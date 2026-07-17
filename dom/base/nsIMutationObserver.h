@@ -359,13 +359,6 @@ class nsIMutationObserver
 
   virtual void ParentChainChanged(nsIContent* aContent) = 0;
 
-  virtual void ARIAAttributeDefaultWillChange(mozilla::dom::Element* aElement,
-                                              nsAtom* aAttribute,
-                                              AttrModType aModType) = 0;
-  virtual void ARIAAttributeDefaultChanged(mozilla::dom::Element* aElement,
-                                           nsAtom* aAttribute,
-                                           AttrModType aModType) = 0;
-
   enum : uint32_t {
     kNone = 0,
     kCharacterDataWillChange = 1 << 0,
@@ -378,8 +371,6 @@ class nsIMutationObserver
     kContentWillBeRemoved = 1 << 7,
     kNodeWillBeDestroyed = 1 << 8,
     kParentChainChanged = 1 << 9,
-    kARIAAttributeDefaultWillChange = 1 << 10,
-    kARIAAttributeDefaultChanged = 1 << 11,
 
     kBeginUpdate = 1 << 12,
     kEndUpdate = 1 << 13,
@@ -443,28 +434,16 @@ class nsIMutationObserver
 #define NS_DECL_NSIMUTATIONOBSERVER_PARENTCHAINCHANGED \
   virtual void ParentChainChanged(nsIContent* aContent) override;
 
-#define NS_DECL_NSIMUTATIONOBSERVER_ARIAATTRIBUTEDEFAULTWILLCHANGE             \
-  virtual void ARIAAttributeDefaultWillChange(mozilla::dom::Element* aElement, \
-                                              nsAtom* aAttribute,              \
-                                              AttrModType aModType) override;
-
-#define NS_DECL_NSIMUTATIONOBSERVER_ARIAATTRIBUTEDEFAULTCHANGED             \
-  virtual void ARIAAttributeDefaultChanged(mozilla::dom::Element* aElement, \
-                                           nsAtom* aAttribute,              \
-                                           AttrModType aModType) override;
-
-#define NS_DECL_NSIMUTATIONOBSERVER                          \
-  NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATAWILLCHANGE        \
-  NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED           \
-  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTEWILLCHANGE            \
-  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED               \
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED                \
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED                \
-  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED                 \
-  NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED            \
-  NS_DECL_NSIMUTATIONOBSERVER_PARENTCHAINCHANGED             \
-  NS_DECL_NSIMUTATIONOBSERVER_ARIAATTRIBUTEDEFAULTWILLCHANGE \
-  NS_DECL_NSIMUTATIONOBSERVER_ARIAATTRIBUTEDEFAULTCHANGED
+#define NS_DECL_NSIMUTATIONOBSERVER                   \
+  NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATAWILLCHANGE \
+  NS_DECL_NSIMUTATIONOBSERVER_CHARACTERDATACHANGED    \
+  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTEWILLCHANGE     \
+  NS_DECL_NSIMUTATIONOBSERVER_ATTRIBUTECHANGED        \
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTAPPENDED         \
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTINSERTED         \
+  NS_DECL_NSIMUTATIONOBSERVER_CONTENTREMOVED          \
+  NS_DECL_NSIMUTATIONOBSERVER_NODEWILLBEDESTROYED     \
+  NS_DECL_NSIMUTATIONOBSERVER_PARENTCHAINCHANGED
 
 #define NS_IMPL_NSIMUTATIONOBSERVER_CORE_STUB(_class) \
   void _class::NodeWillBeDestroyed(nsINode* aNode) {}
@@ -487,12 +466,6 @@ class nsIMutationObserver
   }                                                                            \
   void _class::ContentWillBeRemoved(nsIContent* aChild,                        \
                                     const ContentRemoveInfo&) {}               \
-  void _class::ParentChainChanged(nsIContent* aContent) {}                     \
-  void _class::ARIAAttributeDefaultWillChange(mozilla::dom::Element* aElement, \
-                                              nsAtom* aAttribute,              \
-                                              AttrModType aModType) {}         \
-  void _class::ARIAAttributeDefaultChanged(mozilla::dom::Element* aElement,    \
-                                           nsAtom* aAttribute,                 \
-                                           AttrModType aModType) {}
+  void _class::ParentChainChanged(nsIContent* aContent) {}
 
 #endif /* nsIMutationObserver_h */

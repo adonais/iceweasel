@@ -33,7 +33,7 @@ add_task(async function test_fill_creditCard_but_cancel_login() {
         browser.autoCompletePopup,
         "hidden"
       );
-      await EventUtils.synthesizeMouseAtCenter(ccItem, {});
+      EventUtils.synthesizeMouseAtCenter(ccItem, {});
       await Promise.all([osKeyStoreLoginShown, popupClosePromise]);
 
       await SpecialPowers.spawn(browser, [], async function () {

@@ -1020,7 +1020,7 @@ add_task(async function testFirefoxLabs() {
     requiresRestart: false,
   });
 
-  ExperimentAPI.manager.optInRecipes.push(optin);
+  ExperimentAPI.manager.optIns.push({ source: "rs-loader", recipe: optin });
 
   const labs = await FirefoxLabs.create();
   await labs.enroll("optin", "control");
@@ -1050,7 +1050,9 @@ add_task(async function testFirefoxLabs() {
 
   await labs.unenroll("optin", "control");
   await ExperimentAPI.manager.unenroll("study");
-  ExperimentAPI.manager.optInRecipes.pop();
+  ExperimentAPI.manager.optIns.pop();
+
+  Assert.deepEqual(ExperimentAPI.manager.optIns, []);
 
   await NimbusTestUtils.assert.storeIsEmpty(ExperimentAPI.manager.store);
 });

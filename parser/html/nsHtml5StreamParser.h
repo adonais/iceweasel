@@ -479,7 +479,7 @@ class nsHtml5StreamParser final : public nsISupports {
    * Dispatch an event to a Quantum DOM main thread-ish thread.
    * (Not the parser thread.)
    */
-  nsresult DispatchToMain(already_AddRefed<nsIRunnable>&& aRunnable);
+  nsresult DispatchToMain(already_AddRefed<nsIRunnable> aRunnable);
 
   /**
    * Notify any devtools listeners about content newly received for parsing.

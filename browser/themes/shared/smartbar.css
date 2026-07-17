@@ -9,11 +9,12 @@
 :host,
 :root {
   --smartbar-background-color: light-dark(white, var(--color-violet-110));
+  --smartbar-inactive-background-color: color-mix(in srgb, var(--smartbar-background-color) 95%, var(--color-white));
+  /* If this changes, you must also update the tokens referenced in the render in smartbar-glow.mjs */
+  --smartbar-border-color-gradient: linear-gradient(95deg, var(--color-violet-50) 1.22%, var(--color-pink-40) 49.98%, var(--color-yellow-30) 99.68%);
   --smartbar-border-style-gradient: var(--border-width) solid;
-  --smartbar-border-color-gradient: var(--smartwindow-border-color-gradient, linear-gradient(172deg, #321bfd -18%, #cf30e2 53%, #ff9900 89%, #f5c451 109%));
-  --smartbar-border-color-gradient-dark: linear-gradient(270deg, var(--color-orange-40) 0%, var(--color-violet-50) 105.15%);
   --smartbar-box-shadow: var(--smartwindow-shadow, var(--box-shadow-level-2));
-  --smartbar-glow-color: color-mix(in srgb, var(--color-violet-40) 30%, transparent);
+  --smartbar-glow-color: color-mix(in srgb, var(--color-violet-40) 50%, transparent);
   --smartbar-max-height: 50vh;
   --smartbar-max-visible-rows: 7;
   --smartbar-max-width: calc(var(--size-item-xlarge) * 12);
@@ -21,7 +22,9 @@
   --smartbar-outline-color: light-dark(var(--color-violet-30), var(--color-violet-50));
   --smartbar-cta-icon-fill: var(--icon-color);
   --smartbar-scroll-mask-height: calc(var(--urlbarView-row-min-height) * 1.5);
-  --text-color-deemphasized: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), color-mix(in srgb, var(--color-gray-05) 69%, transparent));
+  --text-color-deemphasized: light-dark(color-mix(in srgb, var(--color-gray-100) 69%, transparent), color-mix(in srgb, var(--color-gray-0) 69%, transparent));
+
+  --toolbar-field-border-color: transparent;
 }
 
 .smartbar {
@@ -57,12 +60,6 @@
       outline: var(--smartbar-outline);
       outline-offset: var(--focus-outline-offset);
     }
-
-    /* HOVER and FOCUSED states: Show gradient glow */
-    &:is(:hover, :focus-within) > .urlbar-background::before {
-      opacity: var(--opacity-deemphasized);
-      transition: opacity 0.2s ease-in;
-    }
   }
 
   display: flex;
@@ -70,6 +67,7 @@
   max-height: var(--smartbar-max-height);
   max-width: var(--smartbar-max-width);
   width: 100%;
+
   &[hidden] {
     display: none;
   }
@@ -78,17 +76,35 @@
     display: block;
   }
 
+  &[open] > .urlbar-background::before {
+    background-color: transparent;
+    background-image: var(--smartbar-border-color-gradient);
+  }
+
+  &[open] > .smartbar-glow {
+    display: none;
+  }
+
   /* Sidebar mode styles */
   &[suggestions-position="top"] > .urlbarView {
     order: -1;
     z-index: 1;
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     border-bottom: var(--border-width) solid var(--urlbarView-separator-color);
+    /* Match the frame's rounded corners so the scrollbar is clipped inside it. */
+    border-start-start-radius: var(--border-radius-large);
+    border-start-end-radius: var(--border-radius-large);
+  }
+
+  &[suggestions-position="bottom"] > .urlbarView {
+    /* Match the frame's rounded corners so the scrollbar is clipped inside it. */
+    border-end-start-radius: var(--border-radius-large);
+    border-end-end-radius: var(--border-radius-large);
   }
 
   > .urlbarView {
     overflow-y: auto;
-    margin-inline: 0;
+    margin: 0;
     width: 100%;
     /*
      * Limit to `--smartbar-max-visible-rows` non-rich results. Fewer results
@@ -180,11 +196,11 @@
   border-radius: var(--border-radius-large);
 
   @media not (forced-colors) {
-    background: color-mix(in srgb, var(--smartbar-background-color) 60%, transparent);
+    background-color: var(--smartbar-inactive-background-color);
     border: var(--smartbar-border-style-gradient) transparent;
     outline: none;
     transition: background-color 0.2s ease-in;
-    /* TODO Upgrade to use background-clip instead of mask when bug 1880365 is fixed */
+    /* TODO Bug 1880365: Upgrade to use background-clip instead of mask */
     /* Gradient border via mask to keep fill semi-transparent */
     &::after {
       content: "";
@@ -209,20 +225,14 @@
       content: "";
       inset: 0;
       position: absolute;
-      filter: blur(30px);
+      filter: blur(10px);
       background-color: var(--smartbar-glow-color);
-      opacity: 0;
-      transition: opacity 0.2s ease-out;
+      opacity: 1;
+      transition:
+        background-color 0.25s ease,
+        opacity 0.2s ease-out;
       z-index: -1;
-
-      @media (prefers-color-scheme: dark) {
-        background-image: var(--smartbar-border-color-gradient-dark);
-      }
     }
-  }
-
-  @media (forced-colors) {
-    border: var(--border-width) solid var(--button-border-color);
   }
 }
 
@@ -256,13 +266,16 @@
 }
 
 .smartbar moz-multiline-editor {
-  --multiline-editor-border: none;
-  --multiline-editor-focus-outline: none;
   --multiline-editor-max-height: 8lh;
   --multiline-editor-scrollbar-width: thin;
-  --multiline-editor-selection-color: light-dark(var(--color-violet-0), var(--color-violet-60));
+  --multiline-editor-border: none;
+  --multiline-editor-focus-outline: none;
   font-size: var(--font-size-large);
   padding: var(--space-xsmall);
+
+  @media not (forced-colors) {
+    --multiline-editor-selection-color: light-dark(var(--color-violet-0), var(--color-violet-60));
+  }
 }
 
 .smartbar .urlbar-go-button,
@@ -283,8 +296,12 @@
   display: flex;
 }
 
-.smartbar-button-container input-cta {
+.smartbar-button-container input-model-select {
   margin-inline-start: auto;
+}
+
+.smartbar-button-container input-cta {
+  margin-inline-start: var(--space-xsmall);
 }
 
 /* Context chips */
@@ -292,7 +309,6 @@
   position: relative;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   .smartbar {
     @media not (forced-colors) {
@@ -306,6 +322,10 @@
       );
       --link-color: var(--color-accent-primary);
     }
+  }
+
+  .smartbar .urlbarView-results {
+    padding-block: calc(var(--space-medium) - var(--urlbarView-row-gutter));
   }
 
   .urlbarView-row {

@@ -122,6 +122,8 @@ class StructuredOutputParser(OutputParser):
             SystemResourceMonitor.lsan_leak(data)
         elif action == "lsan_summary":
             SystemResourceMonitor.lsan_summary(data)
+        elif action == "tsan_error":
+            SystemResourceMonitor.tsan_error(data)
         elif action == "mozleak_object":
             SystemResourceMonitor.mozleak_object(data)
         elif action == "mozleak_total":

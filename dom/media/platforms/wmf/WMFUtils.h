@@ -26,11 +26,12 @@ enum class ColorDepth : uint8_t;
 }
 extern LazyLogModule sPDMLog;
 
-#define LOG_AND_WARNING_PDM(msg, ...)                            \
-  do {                                                           \
-    NS_WARNING(nsPrintfCString(msg, rv).get());                  \
-    MOZ_LOG(sPDMLog, LogLevel::Debug,                            \
-            ("%s:%d, " msg, __FILE__, __LINE__, ##__VA_ARGS__)); \
+#define LOG_AND_WARNING_PDM(msg, ...)                                      \
+  do {                                                                     \
+    nsPrintfCString _logStr(msg, ##__VA_ARGS__);                           \
+    NS_WARNING(_logStr.get());                                             \
+    MOZ_LOG_FMT(sPDMLog, LogLevel::Debug, "{}:{}, {}", __FILE__, __LINE__, \
+                _logStr.get());                                            \
   } while (false)
 
 #ifndef RETURN_IF_FAILED

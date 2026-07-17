@@ -107,6 +107,9 @@ hr {
   padding-block-end: var(--space-small);
   padding-inline-start: var(--space-large);
   padding-inline-end: var(--space-large);
+  @media not -moz-pref("browser.nova.enabled") {
+    color: var(--text-color);
+  }
 }
 
 #unauthenticated-vpn-img {
@@ -136,7 +139,12 @@ hr {
 
 #unauthenticated-get-started {
   --button-padding: var(--space-medium);
-  width: 100%;
+  margin: 0 auto;
+  width: var(--size-layout-small);
+
+  @media not -moz-pref("browser.nova.enabled") {
+    width: 100%;
+  }
 }
 
 #unauthenticated-footer {

@@ -1153,7 +1153,9 @@ nsPoint nsMenuPopupFrame::AdjustPositionForAnchorAlign(
     if (popupAnchor <= POPUPALIGNMENT_LEFTCENTER) {
       popupAnchor = -popupAnchor;
     }
-    popupAlign = -popupAlign;
+    if (popupAlign <= POPUPALIGNMENT_LEFTCENTER) {
+      popupAlign = -popupAlign;
+    }
   }
 
   nsRect originalAnchorRect(anchorRect);

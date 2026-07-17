@@ -76,11 +76,15 @@ Networking and routing
 ``browser.ipProtection.mode`` (integer, default: ``0``)
   Selects which requests are proxied by ``IPPChannelFilter``:
   ``0`` routes all traffic (``MODE_FULL``), ``1`` only private browsing windows
-  (``MODE_PB``), ``2`` only requests classified as tracking (``MODE_TRACKER``).
+  (``MODE_PB``), ``2`` only requests classified as tracking (``MODE_TRACKER``),
+  (``MODE_INCLUSION``), ``3`` routes no traffic unless matching ``browser.ipProtection.inclusion.match_patterns``.
 
 ``browser.ipProtection.inclusion.match_patterns`` (string, default: ``""``)
   JSON array of URL match patterns restricting which requests are proxied.
   When empty, all traffic is proxied according to ``mode``.
+
+  .. seealso::
+     `Match Patterns Documentation <https://developer.mozilla.org/en-US/docs/Mozilla/Add-ons/WebExtensions/Match_patterns>`_
 
 ``browser.ipProtection.override.serverlist`` (string)
   A JSON payload that overrides the server list. Follows the Remote Settings schema.

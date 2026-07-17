@@ -24,7 +24,7 @@ class GeneratedImageContent final : public nsGenericHTMLElement {
   static already_AddRefed<GeneratedImageContent> CreateForListStyleImage(
       Document&);
 
-  explicit GeneratedImageContent(already_AddRefed<dom::NodeInfo>&& aNodeInfo)
+  explicit GeneratedImageContent(already_AddRefed<dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {
     MOZ_ASSERT(IsInNamespace(kNameSpaceID_XHTML),
                "Someone messed up our nodeinfo");

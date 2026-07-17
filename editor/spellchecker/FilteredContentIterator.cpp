@@ -279,7 +279,7 @@ void FilteredContentIterator::CheckAdvNode(nsINode* aNode, bool& aDidSkip,
 
   if (aNode && mFilter) {
     nsCOMPtr<nsINode> currentNode = aNode;
-    while (1) {
+    while (true) {
       if (mFilter->Skip(aNode)) {
         aDidSkip = true;
         // Get the next/prev node and then

@@ -21,6 +21,53 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Jaunas cilnes
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [zero] { $num } rindu
+            [one] { $num } rinda
+           *[other] { $num } rindas
+        }
+home-restore-defaults-srd =
+    .label = Atjaunot noklusējumus
+    .accesskey = n
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (noklusējuma)
+home-mode-choice-custom-srd =
+    .label = Pielāgotas adreses...
+home-mode-choice-blank-srd =
+    .label = Tukša lapa
+home-prefs-shortcuts-header-srd =
+    .label = Saīsnes
+home-prefs-shortcuts-select =
+    .aria-label = Saīsnes
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Sponsorētās saīsnes
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Sponsorētie stāsti
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Apmeklētās lapas
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Grāmatzīmes
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Nesenās lejupielādes
+home-prefs-recent-activity-header-srd =
+    .label = Nesenās aktivitātes
+home-prefs-recent-activity-select =
+    .aria-label = Nesenās aktivitātes
+home-prefs-weather-header-srd =
+    .label = Laikapstākļi
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -123,6 +170,8 @@ newtab-menu-about-fakespot = Par { -fakespot-brand-name }
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Bloķēt
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Uzzināt vairāk
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Pārtraukt sekot tēmai

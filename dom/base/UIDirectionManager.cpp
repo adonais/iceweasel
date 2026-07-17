@@ -11,6 +11,7 @@
 #include "nsDocShell.h"
 #include "nsIObserverService.h"
 #include "nsIWindowMediator.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsServiceManagerUtils.h"
 
 namespace mozilla::dom {

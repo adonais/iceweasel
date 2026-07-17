@@ -749,6 +749,7 @@ class ClassificationProvider:
                     ],
                 },
                 "tasks": [],
+                "try-config-defaults": {"per-task-rebuild": {"speedometer3": 10}},
                 "description": (
                     "Our most important set of tests for android performance."
                 ),
@@ -767,7 +768,7 @@ class ClassificationProvider:
                 ],
                 "app-restrictions": {},
                 "tasks": [],
-                "try-config-defaults": {"rebuild": 20},
+                "try-config-defaults": {"per-task-rebuild": {"speedometer3": 20}},
                 "description": (
                     "Our most important set of tests for desktop performance."
                 ),

@@ -52,7 +52,7 @@ class ApplicationAccessible : public AccessibleWrap {
   virtual KeyBinding AccessKey() const override;
 
   // ApplicationAccessible
-  void Init();
+  void CreateInitialDocs();
 
   void AppName(nsAString& aName) const {
     MOZ_ASSERT(mAppInfo, "no application info");

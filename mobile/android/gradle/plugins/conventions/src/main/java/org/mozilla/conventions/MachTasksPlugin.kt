@@ -4,6 +4,7 @@
 
 package org.mozilla.conventions
 
+import org.gradle.api.GradleException
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.file.RegularFile
@@ -305,6 +306,25 @@ class MachTasksPlugin : Plugin<Project> {
             args("${topsrcdir}/mach")
             args("build")
             args("stage-package")
+
+            val distBin = "${topobjdir}/dist/bin"
+            val dllPrefix = substs["DLL_PREFIX"] as String
+            val dllSuffix = substs["DLL_SUFFIX"] as String
+            val requiredGeckoLibs = listOf("xul", "mozglue").map {
+                "${distBin}/${dllPrefix}${it}${dllSuffix}"
+            }
+
+            doFirst {
+                val missing = requiredGeckoLibs.filter { !File(it).exists() }
+                if (missing.isNotEmpty()) {
+                    throw GradleException(
+                        "Required Gecko binaries are missing from the object directory:\n" +
+                            missing.joinToString("\n") { "  - $it" } +
+                            "\n\nThese native libraries are produced by a full build, not by Gradle.\n" +
+                            "Run `./mach build` from the source directory first, then retry your Gradle build."
+                    )
+                }
+            }
 
             inputs.files(project.tasks.named("machBuildFaster"))
 

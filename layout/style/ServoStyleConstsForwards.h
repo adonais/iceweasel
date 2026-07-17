@@ -133,7 +133,6 @@ class Loader;
 class LoaderReusableStyleSheets;
 class SheetLoadData;
 using SheetLoadDataHolder = nsMainThreadPtrHolder<SheetLoadData>;
-enum SheetParsingMode : uint8_t;
 }  // namespace css
 
 namespace dom {
@@ -205,7 +204,6 @@ struct StyleBox {
 using StyleLoader = css::Loader;
 using StyleLoaderReusableStyleSheets = css::LoaderReusableStyleSheets;
 using StyleCallerType = dom::CallerType;
-using StyleSheetParsingMode = css::SheetParsingMode;
 using StyleSheetLoadData = css::SheetLoadData;
 using StyleSheetLoadDataHolder = css::SheetLoadDataHolder;
 using StyleGeckoMallocSizeOf = MallocSizeOf;

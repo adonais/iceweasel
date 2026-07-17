@@ -138,7 +138,7 @@ mozilla::ipc::IPCResult UtilityProcessParent::RecvInitCompleted() {
 }
 
 void UtilityProcessParent::ActorDestroy(ActorDestroyReason aWhy) {
-  RefPtr<nsHashPropertyBag> props = new nsHashPropertyBag();
+  RefPtr props = MakeRefPtr<nsHashPropertyBag>();
 
   if (aWhy == AbnormalShutdown) {
     nsAutoString dumpID;

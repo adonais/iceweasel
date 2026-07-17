@@ -29,7 +29,7 @@ NS_IMPL_CYCLE_COLLECTION_INHERITED(XULMenuParentElement, nsXULElement,
                                    mActiveItem)
 
 XULMenuParentElement::XULMenuParentElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsXULElement(std::move(aNodeInfo)) {}
 
 XULMenuParentElement::~XULMenuParentElement() = default;

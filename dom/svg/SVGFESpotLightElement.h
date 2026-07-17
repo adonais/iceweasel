@@ -9,7 +9,7 @@
 #include "mozilla/dom/SVGFilters.h"
 
 nsresult NS_NewSVGFESpotLightElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -18,12 +18,12 @@ using SVGFESpotLightElementBase = SVGFELightElement;
 class SVGFESpotLightElement final : public SVGFESpotLightElementBase {
   friend nsresult(::NS_NewSVGFESpotLightElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
   friend class SVGFELightingElement;
 
  protected:
   explicit SVGFESpotLightElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFESpotLightElementBase(std::move(aNodeInfo)) {}
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;

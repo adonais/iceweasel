@@ -252,7 +252,7 @@ with only_when(host_is_osx | target_is_osx):
     )
 
     def mac_sdk_min_version():
-        return "26.4"
+        return "26.5"
 
     @depends(
         "--with-macos-sdk",
@@ -1491,9 +1491,9 @@ def compiler(
         # This version can be no higher than the version used in
         # src/bootstrap/src/core/build_steps/llvm.rs's check_llvm_version in the source
         # code of the minimum supported Rust version.
-        if info.type in ("clang", "clang-cl") and info.version < "17.0":
+        if info.type in ("clang", "clang-cl") and info.version < "19.0":
             raise FatalCheckError(
-                "Only %s 17.0 or newer is supported (found version %s)."
+                "Only %s 19.0 or newer is supported (found version %s)."
                 % (("clang/llvm" if info.type == "clang" else "clang-cl"), info.version)
             )
 
@@ -2260,9 +2260,6 @@ def check_thread(target, c_compiler):
         return False
     if target.os == "Android":
         # The custom dynamic linker doesn't support TLS variables
-        return False
-    if target.kernel == "OpenBSD":
-        # OpenBSD doesn't have TLS support, and the test succeeds with clang++
         return False
     return c_compiler.type != "clang-cl"
 

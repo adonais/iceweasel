@@ -94,14 +94,15 @@ class PRFileDescStream final : public mozilla::gfx::EventStream {
     }
   }
 
-  void read(char* aOut, size_t aSize) override {
+  [[nodiscard]] bool read(char* aOut, size_t aSize) override {
     if (!good()) {
-      return;
+      return false;
     }
 
     Flush();
     PRInt32 res = PR_Read(mFd, static_cast<void*>(aOut), aSize);
     mGood = res >= 0 && (static_cast<size_t>(res) == aSize);
+    return true;
   }
 
   bool good() final { return mGood; }

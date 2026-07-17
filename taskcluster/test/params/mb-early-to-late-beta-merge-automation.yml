@@ -25,7 +25,6 @@ level: '3'
 merge_config:
   behavior: early-to-late-beta
   force-dry-run: false
-message: ''
 moz_build_date: '20250509135106'
 next_version: null
 optimize_strategies: null

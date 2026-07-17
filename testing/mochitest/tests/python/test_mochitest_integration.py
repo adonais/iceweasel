@@ -5,6 +5,7 @@
 import os
 from functools import partial
 
+import mozinfo
 import mozunit
 import pytest
 from conftest import setup_args
@@ -214,6 +215,18 @@ def test_output_crash(flavor, runFailures, runtests, test_name):
         if flavor == "browser-chrome":
             results["tbpl_status"] = TBPL_SUCCESS
             results["log_level"] = (INFO, WARNING)
+    elif flavor == "browser-chrome" and not mozinfo.info["debug"]:
+        # A browser-chrome crash isn't matched by mozharness's error regexes
+        # (see the MOZ_CRASHREPORTER_SHUTDOWN note above), so it only registers
+        # as the unexpected CRASH status, which is scored as a warning rather
+        # than a failure.
+        #
+        # This does not apply to debug builds: there the crash also trips the
+        # leak-detection checks (ShutdownLeaks and the DOCSHELL/DOMWINDOW
+        # logging), which emit TEST-UNEXPECTED-FAIL error lines and make the run
+        # a failure, as expected by the default above.
+        results["tbpl_status"] = TBPL_WARNING
+        results["log_level"] = WARNING
 
     status, lines = runtests(
         test_name("crash"), environment=["MOZ_CRASHREPORTER_SHUTDOWN=1"], **extra_opts

@@ -1944,6 +1944,8 @@ class AsyncPanZoomController {
  private:
   // The timestamp of the latest touch start event.
   TimeStamp mTouchStartTime;
+  // The start time of the latest autoscroll animation.
+  TimeStamp mAutoscrollStartTime;
   // Used for interpolating touch events that cross the touch-start
   // tolerance threshold.
   struct TouchSample {

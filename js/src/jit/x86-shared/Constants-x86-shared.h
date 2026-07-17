@@ -86,7 +86,7 @@ inline const char* XMMRegName(XMMRegisterID reg) {
                                       "%xmm15"
 #endif
   };
-  MOZ_ASSERT(size_t(reg) < std::size(names));
+  MOZ_ASSERT(size_t(reg) < std::ranges::size(names));
   return names[reg];
 }
 
@@ -112,7 +112,7 @@ inline const char* GPReg64Name(RegisterID reg) {
                                       "%r15"
 #  endif
   };
-  MOZ_ASSERT(size_t(reg) < std::size(names));
+  MOZ_ASSERT(size_t(reg) < std::ranges::size(names));
   return names[reg];
 }
 #endif
@@ -138,7 +138,7 @@ inline const char* GPReg32Name(RegisterID reg) {
                                       "%r15d"
 #endif
   };
-  MOZ_ASSERT(size_t(reg) < std::size(names));
+  MOZ_ASSERT(size_t(reg) < std::ranges::size(names));
   return names[reg];
 }
 
@@ -163,7 +163,7 @@ inline const char* GPReg16Name(RegisterID reg) {
                                       "%r15w"
 #endif
   };
-  MOZ_ASSERT(size_t(reg) < std::size(names));
+  MOZ_ASSERT(size_t(reg) < std::ranges::size(names));
   return names[reg];
 }
 
@@ -188,7 +188,7 @@ inline const char* GPReg8Name(RegisterID reg) {
                                       "%r15b"
 #endif
   };
-  MOZ_ASSERT(size_t(reg) < std::size(names));
+  MOZ_ASSERT(size_t(reg) < std::ranges::size(names));
   return names[reg];
 }
 
@@ -226,7 +226,7 @@ inline HRegisterID GetSubregH(RegisterID reg) {
 inline const char* HRegName8(HRegisterID reg) {
   static const char* const names[] = {"%ah", "%ch", "%dh", "%bh"};
   size_t index = reg - GetSubregH(rax);
-  MOZ_ASSERT(index < std::size(names));
+  MOZ_ASSERT(index < std::ranges::size(names));
   return names[index];
 }
 
@@ -256,7 +256,7 @@ inline const char* CCName(Condition cc) {
   static const char* const names[] = {"o ", "no", "b ", "ae", "e ", "ne",
                                       "be", "a ", "s ", "ns", "p ", "np",
                                       "l ", "ge", "le", "g "};
-  MOZ_ASSERT(size_t(cc) < std::size(names));
+  MOZ_ASSERT(size_t(cc) < std::ranges::size(names));
   return names[cc];
 }
 

@@ -15,8 +15,8 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.annotation.RequiresApi
 import mozilla.components.support.utils.DateTimeProvider
 import org.mozilla.fenix.HomeActivity
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.openSetDefaultBrowserOption
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.utils.Settings
 import java.lang.ref.WeakReference
 
@@ -94,7 +94,7 @@ fun maybeRequestDefaultBrowserPrompt(
 ) {
     val activity = activityRef.get() ?: return
 
-    activity.settings().setToDefaultPromptRequested = System.currentTimeMillis()
+    activity.components.settings.setToDefaultPromptRequested = System.currentTimeMillis()
 
     if (Build.VERSION.SDK_INT < Build.VERSION_CODES.Q) {
         activity.openSetDefaultBrowserOption()

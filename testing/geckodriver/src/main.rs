@@ -5,7 +5,7 @@ extern crate chrono;
 extern crate clap;
 #[macro_use]
 extern crate lazy_static;
-extern crate hyper;
+extern crate http;
 extern crate marionette as marionette_rs;
 extern crate mozdevice;
 extern crate mozprofile;

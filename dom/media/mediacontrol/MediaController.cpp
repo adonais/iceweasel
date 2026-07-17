@@ -4,6 +4,7 @@
 
 #include "MediaController.h"
 
+#include "AudioSessionManager.h"
 #include "MediaControlKeySource.h"
 #include "MediaControlService.h"
 #include "MediaControlUtils.h"
@@ -16,10 +17,10 @@
 
 // avoid redefined macro in unified build
 #undef LOG
-#define LOG(msg, ...)                                                    \
-  MOZ_LOG(gMediaControlLog, LogLevel::Debug,                             \
-          ("MediaController=%p, Id=%" PRId64 ", " msg, this, this->Id(), \
-           ##__VA_ARGS__))
+#define LOG(msg, ...)                                                        \
+  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug,                             \
+              "MediaController={}, Id={}, " msg, fmt::ptr(this), this->Id(), \
+              ##__VA_ARGS__)
 
 namespace mozilla::dom {
 
@@ -87,10 +88,10 @@ static void GetDefaultSupportedKeys(nsTArray<MediaControlKey>& aKeys) {
 }
 
 MediaController::MediaController(uint64_t aBrowsingContextId)
-    : MediaStatusManager(aBrowsingContextId) {
+    : MediaStatusManager(aBrowsingContextId), mAudioSessionManager(this) {
   MOZ_DIAGNOSTIC_ASSERT(XRE_IsParentProcess(),
                         "MediaController only runs on Chrome process!");
-  LOG("Create controller %" PRId64, Id());
+  LOG("Create controller {}", Id());
   GetDefaultSupportedKeys(mSupportedKeys);
   mSupportedActionsChangedListener = SupportedActionsChangedEvent().Connect(
       AbstractThread::MainThread(), this,
@@ -107,7 +108,7 @@ MediaController::MediaController(uint64_t aBrowsingContextId)
 }
 
 MediaController::~MediaController() {
-  LOG("Destroy controller %" PRId64, Id());
+  LOG("Destroy controller {}", Id());
   if (!mShutdown) {
     Shutdown();
   }
@@ -176,7 +177,7 @@ void MediaController::Stop() {
 
 void MediaController::SetVolume(double aVolume) {
   double volume = std::clamp(aVolume, 0.0, 1.0);
-  LOG("SetVolume: %f, ClampedVolume: %f", aVolume, volume);
+  LOG("SetVolume: {}, ClampedVolume: {}", aVolume, volume);
   UpdateMediaControlActionToContentMediaIfNeeded(
       MediaControlAction(MediaControlKey::Setvolume,
                          MediaControlActionParams::FromVolume(volume)));
@@ -196,9 +197,7 @@ void MediaController::Unmute() {
 
 uint64_t MediaController::Id() const { return mTopLevelBrowsingContextId; }
 
-bool MediaController::IsAudible() const {
-  return IsMediaAudible() || !mUncontrollableAudibleMap.IsEmpty();
-}
+bool MediaController::IsAudible() const { return IsMediaAudible(); }
 
 bool MediaController::IsPlaying() const { return IsMediaPlaying(); }
 
@@ -356,32 +355,26 @@ NS_IMETHODIMP MediaController::GetName(nsACString& aName) {
 
 void MediaController::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
                                                 MediaAudibleState aState,
-                                                ControlType aType) {
+                                                ControlType aType,
+                                                AudioSessionType aSessionType) {
   if (mShutdown) {
     return;
   }
 
-  bool oldAudible = IsAudible();
-  if (aType == ControlType::eControllable) {
-    MediaStatusManager::NotifyMediaAudibleChanged(aBrowsingContextId, aState);
-  } else {
-    // Uncontrollable source: track audible-source counts per browsing context
-    // directly here so that activation logic stays untouched.
-    if (aState == MediaAudibleState::eAudible) {
-      ++mUncontrollableAudibleMap.LookupOrInsert(aBrowsingContextId, 0u);
-    } else if (auto entry =
-                   mUncontrollableAudibleMap.Lookup(aBrowsingContextId)) {
-      if (--entry.Data() == 0) {
-        entry.Remove();
-      }
-    }
+  const bool oldAudible = IsAudible();
+  MediaStatusManager::NotifyMediaAudibleChanged(aBrowsingContextId, aState,
+                                                aType, aSessionType);
+  const bool audibleChanged = (IsAudible() != oldAudible);
+  if (audibleChanged) {
+    UpdateActivatedStateIfNeeded();
+    DispatchAsyncEvent(u"audiblechange"_ns);
   }
-  if (IsAudible() == oldAudible) {
+
+  mAudioSessionManager.NotifyAudibilityChanged(aBrowsingContextId);
+
+  if (!audibleChanged) {
     return;
   }
-  UpdateActivatedStateIfNeeded();
-  DispatchAsyncEvent(u"audiblechange"_ns);
-
   // Request the audio focus amongs different controllers that could cause
   // pausing other audible controllers if we enable the audio focus management.
   RefPtr<MediaControlService> service = MediaControlService::GetService();
@@ -451,7 +444,7 @@ void MediaController::SetIsInPictureInPictureMode(
   if (mIsInPictureInPictureMode == aIsInPictureInPictureMode) {
     return;
   }
-  LOG("Set IsInPictureInPictureMode to %s",
+  LOG("Set IsInPictureInPictureMode to {}",
       aIsInPictureInPictureMode ? "true" : "false");
   mIsInPictureInPictureMode = aIsInPictureInPictureMode;
   ForceToBecomeMainControllerIfNeeded();
@@ -464,7 +457,7 @@ void MediaController::NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
   if (mIsInFullScreenMode == aIsInFullScreen) {
     return;
   }
-  LOG("%s fullscreen", aIsInFullScreen ? "Entered" : "Left");
+  LOG("{} fullscreen", aIsInFullScreen ? "Entered" : "Left");
   mIsInFullScreenMode = aIsInFullScreen;
   ForceToBecomeMainControllerIfNeeded();
   mFullScreenChangedEvent.Notify(mIsInFullScreenMode);
@@ -589,17 +582,25 @@ void MediaController::DispatchAsyncEvent(already_AddRefed<Event> aEvent) {
   MOZ_ASSERT(event);
   nsAutoString eventType;
   event->GetType(eventType);
-  // 'audiblechange' must fire even on inactive controllers because
-  // uncontrollable sources never activate the controller, but their
-  // audibility still matters to listeners.
-  if (!mIsActive && !eventType.EqualsLiteral("deactivated") &&
-      !eventType.EqualsLiteral("audiblechange")) {
-    LOG("Only 'deactivated' can be dispatched on a deactivated controller, not "
-        "'%s'",
-        NS_ConvertUTF16toUTF8(eventType).get());
-    return;
+  // A small set of events is allowed to fire even on inactive controllers.
+  static constexpr nsLiteralString kAllowedWhileInactive[] = {
+      u"deactivated"_ns, u"audiblechange"_ns,
+      u"effectiveaudiosessiontypechange"_ns};
+  if (!mIsActive) {
+    bool allowed = false;
+    for (const auto& allowedType : kAllowedWhileInactive) {
+      if (eventType.Equals(allowedType)) {
+        allowed = true;
+        break;
+      }
+    }
+    if (!allowed) {
+      LOG("Dropping event '{}' on a deactivated controller",
+          NS_ConvertUTF16toUTF8(eventType).get());
+      return;
+    }
   }
-  LOG("Dispatch event %s", NS_ConvertUTF16toUTF8(eventType).get());
+  LOG("Dispatch event {}", NS_ConvertUTF16toUTF8(eventType).get());
   RefPtr<AsyncEventDispatcher> asyncDispatcher =
       new AsyncEventDispatcher(this, event.forget());
   asyncDispatcher->PostDOMEvent();
@@ -619,6 +620,35 @@ void MediaController::Unselect() const {
   if (RefPtr<BrowsingContext> bc = BrowsingContext::Get(Id())) {
     bc->Canonical()->RemovePageAwakeRequest();
   }
+}
+
+void MediaController::SetAudioSessionTypeOverride(uint64_t aBrowsingContextId,
+                                                  AudioSessionType aType) {
+  if (mShutdown) {
+    return;
+  }
+  mAudioSessionManager.SetTypeOverride(aBrowsingContextId, aType);
+}
+
+void MediaController::ClearAudioSessionFor(uint64_t aBrowsingContextId) {
+  if (mShutdown) {
+    return;
+  }
+  mAudioSessionManager.NotifyBcDiscarded(aBrowsingContextId);
+}
+
+AudioSessionType MediaController::GetEffectiveAudioSessionType() const {
+  return mAudioSessionManager.GetEffectiveType();
+}
+
+const AudioSessionRecord* MediaController::GetAudioSessionRecordForTesting(
+    uint64_t aBrowsingContextId) const {
+  return mAudioSessionManager.GetRecordForTesting(aBrowsingContextId);
+}
+
+const AudioSessionManager* MediaController::GetAudioSessionManagerForTesting()
+    const {
+  return &mAudioSessionManager;
 }
 
 }  // namespace mozilla::dom

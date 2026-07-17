@@ -58,8 +58,6 @@
   --widget-celebration-panel-delay: var(--widget-celebration-headline-delay);
   --widget-celebration-illustration-delay: 180ms;
   --widget-celebration-subhead-delay: 280ms;
-  --lists-size-transition-duration: 180ms;
-  --lists-size-transition-easing: ease;
 
   border-radius: var(--border-radius-large);
   padding-block-start: var(--space-medium);
@@ -67,17 +65,7 @@
   box-shadow: var(--card-box-shadow, var(--box-shadow-card));
 
   .nova-enabled & {
-    height: var(--newtab-card-height);
-    padding: var(--space-medium);
-    transition:
-      height var(--lists-size-transition-duration) var(--lists-size-transition-easing),
-      padding var(--lists-size-transition-duration) var(--lists-size-transition-easing);
-
-    &:hover,
-    &:focus-within {
-      outline: 1px solid var(--border-color-deemphasized);
-      box-shadow: var(--card-box-shadow-hover);
-    }
+    @include widget-base-style;
   }
 
   // Classic layout (when Nova is disabled)
@@ -184,6 +172,23 @@
     }
   }
 
+  .edit-list-wrapper {
+    position: relative;
+    width: 100%;
+
+    .edit-list {
+      padding-inline-end: var(--space-xxlarge);
+    }
+
+    moz-button.edit-list-clear {
+      position: absolute;
+      inset-block-start: 50%;
+      transform: translateY(-50%);
+      inset-inline-end: var(--space-xxsmall);
+      --focus-outline-offset: var(--focus-outline-inset);
+    }
+  }
+
   .edit-list {
     background: none;
     border: none;
@@ -270,7 +275,6 @@
     min-height: 32px;
     padding-block: var(--space-xsmall);
     padding-inline: var(--space-large);
-    transition: background-color 150ms ease, color 150ms ease;
 
     .icon.icon-add {
       color: inherit;
@@ -706,12 +710,6 @@
     .empty-list-illustration {
       width: 48px;
     }
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .nova-enabled .lists {
-    transition: none;
   }
 }
 

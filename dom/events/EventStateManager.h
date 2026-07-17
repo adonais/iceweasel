@@ -62,7 +62,7 @@ class OverOutElementsWrapper final : public nsISupports {
   enum class BoundaryEventType : bool { Mouse, Pointer };
   explicit OverOutElementsWrapper(BoundaryEventType aType) : mType(aType) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(OverOutElementsWrapper)
 
   already_AddRefed<nsIWidget> GetLastOverWidget() const;
@@ -273,7 +273,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   void ClearFrameRefs(nsIFrame* aFrame);
 
   nsIFrame* GetEventTarget();
-  already_AddRefed<nsIContent> GetEventTargetContent(WidgetEvent* aEvent);
+  nsIContent* GetExplicitEventTargetContent(const WidgetEvent* = nullptr);
+  nsIContent* GetEventTargetContent(const WidgetEvent* = nullptr);
 
   // We manage 4 states here: ACTIVE, HOVER, DRAGOVER, URLTARGET
   static bool ManagesState(ElementState aState) {
@@ -602,7 +603,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void NotifyMouseOut(WidgetMouseEvent* aMouseEvent,
                                                   nsIContent* aMovingInto);
   MOZ_CAN_RUN_SCRIPT void GenerateDragDropEnterExit(
-      nsPresContext* aPresContext, WidgetDragEvent* aDragEvent);
+      nsPresContext* aPresContext, WidgetDragEvent& aDragEvent);
 
   /**
    * Return mMouseEnterLeaveHelper or relevant mPointersEnterLeaveHelper
@@ -620,7 +621,7 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
    * @param aTargetFrame target frame for the event
    */
   MOZ_CAN_RUN_SCRIPT void FireDragEnterOrExit(nsPresContext* aPresContext,
-                                              WidgetDragEvent* aDragEvent,
+                                              const WidgetDragEvent& aDragEvent,
                                               EventMessage aMessage,
                                               nsIContent* aRelatedTarget,
                                               nsIContent* aTargetContent,
@@ -1174,22 +1175,34 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   void DecideGestureEvent(WidgetGestureNotifyEvent* aEvent,
                           nsIFrame* targetFrame);
 
-  // routines for the d&d gesture tracking state machine
+  /**
+   * Called when starting to track a mouse button press.
+   *
+   * @param aMouseDownOrTouchDragEvent eMouseDown or eMouseTouchDrag event.
+   */
   void BeginTrackingDragGesture(nsPresContext* aPresContext,
-                                WidgetMouseEvent* aDownEvent,
-                                nsIFrame* aDownFrame);
+                                WidgetMouseEvent& aMouseDownOrTouchDragEvent,
+                                nsIFrame* aMouseDownOrTouchDragFrame);
 
-  void SetGestureDownPoint(WidgetGUIEvent* aEvent);
+  void SetGestureDownPoint(const WidgetGUIEvent& aEvent);
 
-  LayoutDeviceIntPoint GetEventRefPoint(WidgetEvent* aEvent) const;
+  [[nodiscard]] LayoutDeviceIntPoint GetEventRefPoint(
+      const WidgetEvent& aEvent) const;
 
   friend class mozilla::dom::BrowserParent;
   void BeginTrackingRemoteDragGesture(nsIContent* aContent,
                                       dom::RemoteDragStartData* aDragStartData);
 
-  MOZ_CAN_RUN_SCRIPT
-  void GenerateDragGesture(nsPresContext* aPresContext,
-                           WidgetInputEvent* aEvent);
+  /**
+   * Called when a move event is going to be dispatched to the DOM.
+   *
+   * @param aMouseOrTouchOrPointerEvent eMouseMove, eTouchMove, ePointerMove or
+   * ePointerDown event. StopPropagation() will be called if new drag session
+   * starts by this call.
+   */
+  MOZ_CAN_RUN_SCRIPT void GenerateDragGesture(
+      nsPresContext* aPresContext,
+      WidgetInputEvent& aMouseOrTouchOrPointerEvent);
 
   /**
    * Try to dispatch ePointerCancel for aSourceEvent to aTargetContent.
@@ -1300,7 +1313,8 @@ class EventStateManager : public nsSupportsWeakReference, public nsIObserver {
   void RemoveNodeFromChainIfNeeded(ElementState aState,
                                    nsIContent* aContentRemoved, bool aNotify);
 
-  bool IsEventOutsideDragThreshold(WidgetInputEvent* aEvent) const;
+  [[nodiscard]] bool IsEventOutsideDragThreshold(
+      const WidgetInputEvent& aEvent) const;
 
   static inline void DoStateChange(dom::Element* aElement, ElementState aState,
                                    bool aAddState);

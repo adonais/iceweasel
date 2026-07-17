@@ -73,6 +73,14 @@
       margin-bottom: var(--space-large);
       padding: 0 var(--space-small) var(--space-large);
 
+      .share-icon {
+        -moz-context-properties: fill, stroke;
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        fill: var(--text-color-deemphasized);
+        width: var(--icon-size-xsmall);
+        height: var(--icon-size-xsmall);
+      }
+
       .share-title {
         font-size: var(--font-size-heading-medium);
         font-weight: var(--font-weight-heading);
@@ -84,14 +92,6 @@
         align-items: center;
         white-space: nowrap;
         color: var(--text-color-deemphasized);
-
-        .share-icon {
-          -moz-context-properties: fill, stroke;
-          /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-          fill: var(--text-color-deemphasized);
-          width: var(--icon-size-xsmall);
-          height: var(--icon-size-xsmall);
-        }
       }
     }
 

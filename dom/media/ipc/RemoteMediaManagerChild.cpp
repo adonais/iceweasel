@@ -46,9 +46,9 @@
 namespace mozilla {
 
 #define LOG(msg, ...) \
-  MOZ_LOG(gRemoteDecodeLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(gRemoteDecodeLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 #define LOGE(msg, ...) \
-  MOZ_LOG(gRemoteDecodeLog, LogLevel::Error, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(gRemoteDecodeLog, LogLevel::Error, msg, ##__VA_ARGS__)
 
 using namespace layers;
 using namespace gfx;
@@ -356,7 +356,7 @@ RemoteMediaManagerChild::CreateAudioDecoder(const CreateDecoderParams& aParams,
                 .get()),
         __func__);
   }
-  LOG("Create audio decoder in %s", RemoteMediaInToStr(aLocation));
+  LOG("Create audio decoder in {}", RemoteMediaInToStr(aLocation));
 
   return launchPromise->Then(
       managerThread, __func__,
@@ -430,7 +430,7 @@ RemoteMediaManagerChild::CreateVideoDecoder(const CreateDecoderParams& aParams,
   } else {
     p = LaunchRDDProcessIfNeeded();
   }
-  LOG("Create video decoder in %s", RemoteMediaInToStr(aLocation));
+  LOG("Create video decoder in {}", RemoteMediaInToStr(aLocation));
 
   return p->Then(
       managerThread, __func__,
@@ -480,7 +480,7 @@ RefPtr<RemoteCDMProxy> RemoteMediaManagerChild::CreateCDM(
   }
 
   RefPtr<GenericNonExclusivePromise> p = LaunchRDDProcessIfNeeded();
-  LOG("Create CDM in %s", RemoteMediaInToStr(aLocation));
+  LOG("Create CDM in {}", RemoteMediaInToStr(aLocation));
 
   return MakeRefPtr<RemoteCDMProxy>(
       std::move(managerThread), std::move(p), aLocation, aKeys, aKeySystem,
@@ -660,7 +660,7 @@ RemoteMediaManagerChild::InitializeEncoder(
     p = GenericNonExclusivePromise::CreateAndReject(
         NS_ERROR_DOM_MEDIA_DENIED_IN_NON_UTILITY, __func__);
   }
-  LOG("Creating %s encoder type %d in %s",
+  LOG("Creating {} encoder type {} in {}",
       aConfig.IsAudio() ? "audio" : "video", static_cast<int>(aConfig.mCodec),
       RemoteMediaInToStr(location));
 
@@ -669,7 +669,7 @@ RemoteMediaManagerChild::InitializeEncoder(
       [encoder = std::move(aEncoder), aConfig](bool) {
         auto* manager = GetSingleton(encoder->GetLocation());
         if (!manager) {
-          LOG("Create encoder in %s failed, shutdown",
+          LOG("Create encoder in {} failed, shutdown",
               RemoteMediaInToStr(encoder->GetLocation()));
           // We got shutdown.
           return PlatformEncoderModule::CreateEncoderPromise::CreateAndReject(
@@ -679,7 +679,7 @@ RemoteMediaManagerChild::InitializeEncoder(
         }
         if (!manager->SendPRemoteEncoderConstructor(encoder->GetChild(),
                                                     aConfig)) {
-          LOG("Create encoder in %s failed, send failed",
+          LOG("Create encoder in {} failed, send failed",
               RemoteMediaInToStr(encoder->GetLocation()));
           return PlatformEncoderModule::CreateEncoderPromise::CreateAndReject(
               MediaResult(NS_ERROR_NOT_AVAILABLE,
@@ -689,7 +689,7 @@ RemoteMediaManagerChild::InitializeEncoder(
         return encoder->Construct();
       },
       [location](nsresult aResult) {
-        LOG("Create encoder in %s failed, cannot start process",
+        LOG("Create encoder in {} failed, cannot start process",
             RemoteMediaInToStr(location));
         return PlatformEncoderModule::CreateEncoderPromise::CreateAndReject(
             MediaResult(aResult, "Couldn't start encode process"), __func__);
@@ -938,56 +938,6 @@ TrackSupportSet RemoteMediaManagerChild::GetTrackSupport(
       break;
   }
   return s;
-}
-
-PRemoteDecoderChild* RemoteMediaManagerChild::AllocPRemoteDecoderChild(
-    const RemoteDecoderInfoIPDL& /* not used */,
-    const CreateDecoderParams::OptionSet& aOptions,
-    const Maybe<layers::TextureFactoryIdentifier>& aIdentifier,
-    const Maybe<uint64_t>& aMediaEngineId, const Maybe<TrackingId>& aTrackingId,
-    PRemoteCDMChild* aCDM) {
-  // RemoteDecoderModule is responsible for creating RemoteDecoderChild
-  // classes.
-  MOZ_ASSERT(false,
-             "RemoteMediaManagerChild cannot create "
-             "RemoteDecoderChild classes");
-  return nullptr;
-}
-
-bool RemoteMediaManagerChild::DeallocPRemoteDecoderChild(
-    PRemoteDecoderChild* actor) {
-  RemoteDecoderChild* child = static_cast<RemoteDecoderChild*>(actor);
-  child->IPDLActorDestroyed();
-  return true;
-}
-
-PMFMediaEngineChild* RemoteMediaManagerChild::AllocPMFMediaEngineChild() {
-  MOZ_ASSERT_UNREACHABLE(
-      "RemoteMediaManagerChild cannot create MFMediaEngineChild classes");
-  return nullptr;
-}
-
-bool RemoteMediaManagerChild::DeallocPMFMediaEngineChild(
-    PMFMediaEngineChild* actor) {
-#ifdef MOZ_WMF_MEDIA_ENGINE
-  MFMediaEngineChild* child = static_cast<MFMediaEngineChild*>(actor);
-  child->IPDLActorDestroyed();
-#endif
-  return true;
-}
-
-PMFCDMChild* RemoteMediaManagerChild::AllocPMFCDMChild(const nsAString&) {
-  MOZ_ASSERT_UNREACHABLE(
-      "RemoteMediaManagerChild cannot create PMFContentDecryptionModuleChild "
-      "classes");
-  return nullptr;
-}
-
-bool RemoteMediaManagerChild::DeallocPMFCDMChild(PMFCDMChild* actor) {
-#ifdef MOZ_WMF_CDM
-  static_cast<MFCDMChild*>(actor)->IPDLActorDestroyed();
-#endif
-  return true;
 }
 
 RemoteMediaManagerChild::RemoteMediaManagerChild(RemoteMediaIn aLocation)

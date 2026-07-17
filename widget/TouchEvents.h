@@ -165,7 +165,7 @@ class WidgetTouchEvent final : public WidgetInputEvent {
     if (static_cast<bool>(aCloneTouches)) {
       mTouches.SetCapacity(aOther.mTouches.Length());
       for (const RefPtr<dom::Touch>& touch : aOther.mTouches) {
-        RefPtr<dom::Touch> clonedTouch = new dom::Touch(*touch);
+        auto clonedTouch = MakeRefPtr<dom::Touch>(*touch);
         mTouches.AppendElement(std::move(clonedTouch));
       }
     } else {

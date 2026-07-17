@@ -34,7 +34,7 @@ NS_INTERFACE_MAP_END_INHERITING(SVGGraphicsElementBase)
 // Implementation
 
 SVGGraphicsElement::SVGGraphicsElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGGraphicsElementBase(std::move(aNodeInfo)) {}
 
 static already_AddRefed<SVGRect> ZeroBBox(SVGGraphicsElement& aOwner) {

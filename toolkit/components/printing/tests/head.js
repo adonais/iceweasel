@@ -258,6 +258,7 @@ class PrintHelper {
       printerInfoPromise = Promise.resolve(),
       paperSizeUnit = Ci.nsIPrintSettings.kPaperSizeInches,
       paperId,
+      sortAfterLocal = false,
     } = opts;
     let PSSVC = Cc["@mozilla.org/gfx/printsettings-service;1"].getService(
       Ci.nsIPrintSettingsService
@@ -297,6 +298,7 @@ class PrintHelper {
 
     let printer = {
       name,
+      sortAfterLocal,
       supportsColor: Promise.resolve(true),
       supportsMonochrome: Promise.resolve(true),
       printerInfo: printerInfoPromise.then(() => ({

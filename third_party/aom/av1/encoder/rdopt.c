@@ -2689,10 +2689,9 @@ static inline int prune_modes_based_on_tpl_stats(
  *                                  to skip the transform search if the computed
  *                                  skip RD for the current mode is not better
  *                                  than the best skip_rd so far.
- * \param[in,out] skip_build_pred   Indicates whether or not to build the inter
- *                                  predictor. If this is 0, the inter predictor
- *                                  has already been built and thus we can avoid
- *                                  repeating computation.
+ * \param[out] skip_build_pred      Indicates whether or not to build the inter
+ *                                  predictor during/after interpolation
+ *                                  filter search.
  * \return Returns 1 if this mode is worse than one already seen and 0 if it is
  * a viable candidate.
  */
@@ -2746,7 +2745,7 @@ static int process_compound_inter_mode(
       av1_enc_build_inter_predictor(cm, xd, mi_row, mi_col, orig_dst, bsize,
                                     AOM_PLANE_U, num_planes - 1);
     }
-    *skip_build_pred = 1;
+    *skip_build_pred = INTERP_SKIP_LUMA_SKIP_CHROMA;
   }
   return 0;
 }
@@ -3274,7 +3273,9 @@ static int64_t handle_inter_mode(
       }
     }
 
-    int skip_build_pred = 0;
+    // Flag to indicate whether to skip av1_enc_build_inter_predictor() after
+    // interpolation filter search
+    int skip_build_pred = INTERP_EVAL_LUMA_EVAL_CHROMA;
     const int mi_row = xd->mi_row;
     const int mi_col = xd->mi_col;
 
@@ -3334,12 +3335,19 @@ static int64_t handle_inter_mode(
     }
 
     rd_stats->rate += compmode_interinter_cost;
-    if (skip_build_pred != 1) {
+    if (skip_build_pred != INTERP_SKIP_LUMA_SKIP_CHROMA) {
+      // Chroma plane of COMPOUND_DIFFWTD mode shares the segment mask of luma
+      // which is stored in xd->seg_mask. Hence, the predictor is populated for
+      // all planes. This should avoid usage of incorrect segment mask when the
+      // call is made only for chroma.
+      const int skip_luma_plane =
+          skip_build_pred == INTERP_SKIP_LUMA_EVAL_CHROMA &&
+          mbmi->interinter_comp.type != COMPOUND_DIFFWTD;
+      const int start_plane = skip_luma_plane ? AOM_PLANE_U : AOM_PLANE_Y;
       // Build this inter predictor if it has not been previously built
-      av1_enc_build_inter_predictor(cm, xd, mi_row, mi_col, &orig_dst, bsize, 0,
-                                    av1_num_planes(cm) - 1);
+      av1_enc_build_inter_predictor(cm, xd, mi_row, mi_col, &orig_dst, bsize,
+                                    start_plane, num_planes - 1);
     }
-
 #if CONFIG_COLLECT_COMPONENT_TIMING
     start_timing(cpi, motion_mode_rd_time);
 #endif

@@ -1,4 +1,5 @@
 [DEFAULT]
+tags = "urlbar"
 support-files = [
   "../browser/head-common.js",
   "head.js",
@@ -28,6 +29,8 @@ skip-if = [
 ["browser_overflow_resize.js"]
 
 ["browser_privateFeature.js"]
+
+["browser_registrableDomainInView.js"]
 
 ["browser_searchTerms.js"]
 tags = "persisted-search"

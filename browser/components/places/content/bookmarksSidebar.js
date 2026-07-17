@@ -175,6 +175,10 @@ function clearCumulativeCounter() {
 window.addEventListener("unload", () => {
   clearCumulativeCounter();
   PlacesUIUtils.setMouseoverURL("", window);
+  if (window === PlacesUIUtils.lastContextMenuTriggerNode?.documentGlobal) {
+    PlacesUIUtils.lastContextMenuTriggerNode = null;
+    PlacesUIUtils.lastContextMenuCommand = null;
+  }
 });
 
 function closeSidebarPanel(e) {

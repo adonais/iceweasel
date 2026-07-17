@@ -16,7 +16,10 @@ support-files = [
 ["browser_webserial_chooser.js"]
 
 ["browser_webserial_permission_gated.js"]
-support-files = ["blank.html"]
+support-files = [
+  "blank.html",
+  "../../../../toolkit/mozapps/extensions/test/xpinstall/helpers_addons_install_dialogs.js",
+]
 
 ["browser_webserial_permission_revoke.js"]
 

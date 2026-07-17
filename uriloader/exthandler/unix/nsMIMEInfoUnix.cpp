@@ -10,10 +10,6 @@
 #include "nsIIOService.h"
 #include "nsLocalFile.h"
 
-#ifdef MOZ_ENABLE_DBUS
-#  include "nsDBusHandlerApp.h"
-#endif
-
 nsresult nsMIMEInfoUnix::LoadUriInternal(nsIURI* aURI) {
   return nsGNOMERegistry::LoadURL(aURI);
 }

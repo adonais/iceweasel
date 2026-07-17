@@ -5,23 +5,17 @@
 package mozilla.components.lib.llm.mlpa
 
 import kotlinx.coroutines.flow.catch
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.test.runTest
-import mozilla.components.concept.llm.CloudLlmProvider
-import mozilla.components.concept.llm.Llm
+import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.concept.llm.Prompt
-import mozilla.components.lib.llm.mlpa.fakes.FakeMlpaService
 import mozilla.components.lib.llm.mlpa.fakes.failureChatService
-import mozilla.components.lib.llm.mlpa.fakes.failureTokenProvider
 import mozilla.components.lib.llm.mlpa.fakes.successChatService
-import mozilla.components.lib.llm.mlpa.fakes.successTokenProvider
 import mozilla.components.lib.llm.mlpa.service.AuthorizationToken
 import mozilla.components.lib.llm.mlpa.service.ChatService
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
 import org.junit.Test
-import kotlin.math.exp
 
 class MlpaLlmTest {
     @Test
@@ -33,6 +27,7 @@ class MlpaLlmTest {
                 successChatService.completion(token, request)
             },
             authorizationToken = AuthorizationToken.Integrity("my-test-token"),
+            modelID = LlmProvider.ModelID.mozSummarization,
         )
 
         val actual = llm.prompt(Prompt("This is my prompt")).toList()
@@ -49,6 +44,7 @@ class MlpaLlmTest {
         val llm = MlpaLlm(
             chatService = failureChatService,
             authorizationToken = AuthorizationToken.Integrity("my-test-token"),
+            modelID = LlmProvider.ModelID.mozSummarization,
         )
 
         llm.prompt(Prompt("This is my prompt"))
@@ -67,6 +63,7 @@ class MlpaLlmTest {
                 successChatService.completion(token, request)
             },
             authorizationToken = AuthorizationToken.Integrity("my-test-token"),
+            modelID = LlmProvider.ModelID.mozSummarization,
         )
 
         llm.prompt(Prompt("user prompt", "system prompt")).toList()
@@ -88,6 +85,7 @@ class MlpaLlmTest {
                 successChatService.completion(token, request)
             },
             authorizationToken = AuthorizationToken.Integrity("my-test-token"),
+            modelID = LlmProvider.ModelID.mozSummarization,
         )
 
         llm.prompt(Prompt("user prompt", null)).toList()

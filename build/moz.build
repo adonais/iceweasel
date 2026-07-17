@@ -101,6 +101,11 @@ if CONFIG["MOZ_APP_BASENAME"]:
         script="../python/mozbuild/mozbuild/action/preprocessor.py",
         entry_point="generate",
         inputs=["application.ini.in"],
+        # `application.ini.in` does `#include @TOPOBJDIR@/source-repo.h`
+        # and `#include @TOPOBJDIR@/buildid.h`. The preprocessor opens
+        # those files at runtime. Declare them as extra_deps so backends
+        # wire the order without passing them as preprocessor inputs.
+        extra_deps=["!/source-repo.h", "!/buildid.h"],
         flags=[
             "-D%s=%s" % (k, "1" if v is True else v)
             for k, v in sorted(appini_defines.items(), key=lambda t: t[0])

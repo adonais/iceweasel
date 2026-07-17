@@ -246,20 +246,20 @@ gfxFont* FT2FontEntry::CreateFontInstance(const gfxFontStyle* aStyle) {
 }
 
 /* static */
-FT2FontEntry* FT2FontEntry::CreateFontEntry(
+already_AddRefed<FT2FontEntry> FT2FontEntry::CreateFontEntry(
     const nsACString& aFontName, WeightRange aWeight, StretchRange aStretch,
     SlantStyleRange aStyle, const uint8_t* aFontData, uint32_t aLength) {
   // Ownership of aFontData is passed in here; the fontEntry must
   // retain it as long as the FT_Face needs it, and ensure it is
   // eventually deleted.
-  RefPtr<FTUserFontData> ufd = new FTUserFontData(aFontData, aLength);
+  RefPtr<FTUserFontData> ufd = MakeRefPtr<FTUserFontData>(aFontData, aLength);
   RefPtr<SharedFTFace> face = ufd->CloneFace();
   if (!face) {
     return nullptr;
   }
   // Create our FT2FontEntry, which inherits the name of the userfont entry
   // as it's not guaranteed that the face has valid names (bug 737315)
-  FT2FontEntry* fe =
+  RefPtr<FT2FontEntry> fe =
       FT2FontEntry::CreateFontEntry(aFontName, nullptr, 0, nullptr);
   if (fe) {
     fe->mFTFace = face.forget().take();  // mFTFace takes ownership.
@@ -268,7 +268,7 @@ FT2FontEntry* FT2FontEntry::CreateFontEntry(
     fe->mStretchRange = aStretch;
     fe->mIsDataUserFont = true;
   }
-  return fe;
+  return fe.forget();
 }
 
 /* static */
@@ -1832,21 +1832,21 @@ void gfxFT2FontList::InitSharedFontListForPlatform() {
   mFaceInitData.Clear();
 }
 
-gfxFontEntry* gfxFT2FontList::CreateFontEntry(fontlist::Face* aFace,
-                                              const fontlist::Family* aFamily) {
+already_AddRefed<gfxFontEntry> gfxFT2FontList::CreateFontEntry(
+    fontlist::Face* aFace, const fontlist::Family* aFamily) {
   fontlist::FontList* list = SharedFontList();
   nsAutoCString desc(aFace->mDescriptor.AsString(list));
-  FT2FontEntry* fe =
+  RefPtr<FT2FontEntry> fe =
       FT2FontEntry::CreateFontEntry(desc, desc.get(), aFace->mIndex, nullptr);
   fe->InitializeFrom(aFace, aFamily);
   fe->CheckForBrokenFont(aFamily->Key().AsString(list));
-  return fe;
+  return fe.forget();
 }
 
 // called for each family name, based on the assumption that the
 // first part of the full name is the family name
 
-gfxFontEntry* gfxFT2FontList::LookupLocalFont(
+already_AddRefed<gfxFontEntry> gfxFT2FontList::LookupLocalFont(
     FontVisibilityProvider* aFontVisibilityProvider,
     const nsACString& aFontName, WeightRange aWeightForEntry,
     StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry) {
@@ -1903,7 +1903,7 @@ searchDone:
     return nullptr;
   }
 
-  FT2FontEntry* fe = FT2FontEntry::CreateFontEntry(
+  RefPtr<gfxFontEntry> fe = FT2FontEntry::CreateFontEntry(
       fontEntry->Name(), fontEntry->mFilename.get(), fontEntry->mFTFontIndex,
       nullptr);
   if (fe) {
@@ -1913,7 +1913,7 @@ searchDone:
     fe->mIsLocalUserFont = true;
   }
 
-  return fe;
+  return fe.forget();
 }
 
 FontFamily gfxFT2FontList::GetDefaultFontForPlatform(
@@ -1930,12 +1930,10 @@ FontFamily gfxFT2FontList::GetDefaultFontForPlatform(
   return ff;
 }
 
-gfxFontEntry* gfxFT2FontList::MakePlatformFont(const nsACString& aFontName,
-                                               WeightRange aWeightForEntry,
-                                               StretchRange aStretchForEntry,
-                                               SlantStyleRange aStyleForEntry,
-                                               const uint8_t* aFontData,
-                                               uint32_t aLength) {
+already_AddRefed<gfxFontEntry> gfxFT2FontList::MakePlatformFont(
+    const nsACString& aFontName, WeightRange aWeightForEntry,
+    StretchRange aStretchForEntry, SlantStyleRange aStyleForEntry,
+    const uint8_t* aFontData, uint32_t aLength) {
   // The FT2 font needs the font data to persist, so we do NOT free it here
   // but instead pass ownership to the font entry.
   // Deallocation will happen later, when the font face is destroyed.
@@ -1944,9 +1942,9 @@ gfxFontEntry* gfxFT2FontList::MakePlatformFont(const nsACString& aFontName,
                                        aFontData, aLength);
 }
 
-gfxFontFamily* gfxFT2FontList::CreateFontFamily(
+already_AddRefed<gfxFontFamily> gfxFT2FontList::CreateFontFamily(
     const nsACString& aName, FontVisibility aVisibility) const {
-  return new FT2FontFamily(aName, aVisibility);
+  return MakeAndAddRef<FT2FontFamily>(aName, aVisibility);
 }
 
 void gfxFT2FontList::WillShutdown() {

@@ -31,7 +31,6 @@ tasks:
             - taskType: signing
               paths:
                   - public/build/target.tar.gz
-                  - public/build/target.pkg
               formats: ["apple_notarization_stacked"]
               taskId:
                   task-reference: <build-mac-signing>

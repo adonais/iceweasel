@@ -312,6 +312,8 @@ bool jit::CallTrampolineNativeJitCode(JSContext* cx, TrampolineNative native,
     return false;
   }
 
+  MOZ_ASSERT(!TooManyActualArguments(args.length()));
+
   MOZ_ASSERT(!args.isConstructing());
   CalleeToken calleeToken = CalleeToToken(&args.callee().as<JSFunction>(),
                                           /* constructing = */ false);

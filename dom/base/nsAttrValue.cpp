@@ -413,12 +413,23 @@ void nsAttrValue::SetTo(const nsAString& aValue) {
   }
 }
 
+void nsAttrValue::SetToAssumeUnset(
+    already_AddRefed<mozilla::StringBuffer> aValue) {
+  MOZ_ASSERT(!mBits);
+  SetPtrValueAndType(aValue.take(), eStringBase);
+}
+
 void nsAttrValue::SetTo(nsAtom* aValue) {
   ResetIfSet();
   if (aValue) {
     NS_ADDREF(aValue);
     SetPtrValueAndType(aValue, eAtomBase);
   }
+}
+
+void nsAttrValue::SetToAssumeUnset(already_AddRefed<nsAtom> aValue) {
+  MOZ_ASSERT(!mBits);
+  SetPtrValueAndType(aValue.take(), eAtomBase);
 }
 
 void nsAttrValue::SetTo(int16_t aInt) {

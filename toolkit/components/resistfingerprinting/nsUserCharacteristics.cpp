@@ -56,6 +56,8 @@
 #include "gfxConfig.h"
 
 #include "gfxPlatformFontList.h"
+#include "gfxTextRun.h"
+#include "nsGkAtoms.h"
 #include "prsystem.h"
 #if defined(XP_WIN)
 #  include "WinUtils.h"
@@ -322,6 +324,44 @@ void PopulateMissingFonts() {
   gfxPlatformFontList::PlatformFontList()->GetMissingFonts(aMissingFonts);
 
   glean::characteristics::missing_fonts.Set(aMissingFonts);
+}
+
+// Record the family name of the first font in the math-generic font group
+// that exposes an OpenType MATH table. getComputedStyle on a <math>
+// element cannot expose this: mathml.css applies `math { font-family: math }`
+// so the CSS-author value is always the literal "math" generic, hiding the
+// actual MATH-table font the layout engine picked. Build the same kind of
+// font group the layout engine constructs for a default-styled <math>
+// element (math-generic family, x-math language) and ask
+// gfxFontGroup::GetFirstMathFont() — the same selector layout/mathml/
+// itself uses to find the active MATH font. Returns "Cambria Math" on
+// Windows, "STIX Two Math" on macOS Ventura+, one of "Latin Modern Math"
+// / "STIX Two Math" / "TeX Gyre Pagella Math" / etc. on Linux depending
+// on installed packages, and the literal sentinel "(no MATH font)" on
+// platforms where no MATH-table font is available (Android, pre-Ventura
+// macOS). Distinguishing the no-MATH cohort from a collection failure
+// requires a sentinel rather than an empty string.
+void PopulateMathFontFamily() {
+  AutoTArray<StyleSingleFontFamily, 1> names;
+  names.AppendElement(
+      StyleSingleFontFamily::Generic(StyleGenericFontFamily::Math));
+  StyleFontFamilyList familyList =
+      StyleFontFamilyList::WithNames(std::move(names));
+
+  gfxFontStyle style;
+  RefPtr<gfxFontGroup> fontGroup = new gfxFontGroup(
+      /* aFontVisibilityProvider */ nullptr, familyList, &style,
+      nsGkAtoms::x_math, /* aExplicitLanguage */ false,
+      /* aTextPerf */ nullptr, /* aUserFontSet */ nullptr,
+      /* aDevToCssSize */ 1.0, StyleFontVariantEmoji::Normal);
+
+  RefPtr<gfxFont> mathFont = fontGroup->GetFirstMathFont();
+  if (mathFont) {
+    glean::characteristics::mathml_diag_font_family.Set(
+        mathFont->GetFontEntry()->FamilyName());
+  } else {
+    glean::characteristics::mathml_diag_font_family.Set("(no MATH font)"_ns);
+  }
 }
 
 static void DigestToHex(const nsACString& aDigest, nsCString& aOutHex) {
@@ -1167,7 +1207,7 @@ const RefPtr<PopulatePromise>& TimoutPromise(
 // metric is set, this variable should be incremented. It'll be a lot. It's
 // okay. We're going to need it to know (including during development) what is
 // the source of the data we are looking at.
-const int kSubmissionSchema = 39;
+const int kSubmissionSchema = 43;
 
 const auto* const kUUIDPref =
     "toolkit.telemetry.user_characteristics_ping.uuid";
@@ -1367,6 +1407,12 @@ void nsUserCharacteristics::PopulateDataAndEventuallySubmit(
     PopulateProcessorCount();
     PopulateModelName();
     PopulateMisc(false);
+  }
+
+  // Needs the platform font list; skip when it has not been initialized
+  // (e.g. in gtest), but otherwise run in both production and mochitest.
+  if (gfxPlatformFontList::PlatformFontList(/* aMustInitialize */ false)) {
+    PopulateMathFontFamily();
   }
 
   promises.AppendElement(ContentPageStuff());

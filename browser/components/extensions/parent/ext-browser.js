@@ -30,8 +30,8 @@ function isPrivateTab(nativeTab) {
 /* eslint-disable mozilla/balanced-listeners */
 extensions.on("uninstalling", (msg, extension) => {
   if (extension.uninstallURL) {
-    let browser = windowTracker.topWindow.gBrowser;
-    browser.addTab(extension.uninstallURL, {
+    let gBrowser = windowTracker.topWindow.gBrowser;
+    gBrowser.addTab(extension.uninstallURL, {
       relatedToCurrent: true,
       triggeringPrincipal: Services.scriptSecurityManager.createNullPrincipal(
         {}
@@ -41,19 +41,25 @@ extensions.on("uninstalling", (msg, extension) => {
 });
 
 extensions.on("page-shutdown", (type, context) => {
+  // The logic here aims to close extension tabs when an extension unloads, but
+  // due to lazy context creation, this does not always happen (bug 1399655).
   if (context.viewType == "tab") {
+    // Extension pages default to viewType "tab" unless specified otherwise,
+    // including the context for embedded options pages in about:addons.
     if (context.extension.id !== context.xulBrowser.contentPrincipal.addonId) {
       // Only close extension tabs.
-      // This check prevents about:addons from closing when it contains a
-      // WebExtension as an embedded inline options page.
+      // This check prevents us from closing a web page that embeds a
+      // privileged extension page, if we ever implement that (bug 1443253).
+      // See also: https://bugzilla.mozilla.org/show_bug.cgi?id=1443253#c17
       return;
     }
     let { gBrowser } = context.xulBrowser.documentGlobal;
-    if (gBrowser && gBrowser.getTabForBrowser) {
-      let nativeTab = gBrowser.getTabForBrowser(context.xulBrowser);
-      if (nativeTab) {
-        gBrowser.removeTab(nativeTab);
-      }
+    // gBrowser is sometimes null, e.g. with <browser> of embedded options
+    // pages inside about:addons. We do not want to close the about:addons tab,
+    // even if it contains a WebExtension as an embedded inline options page.
+    let nativeTab = gBrowser?.getTabForBrowser(context.xulBrowser);
+    if (nativeTab) {
+      gBrowser.removeTab(nativeTab);
     }
   }
 });
@@ -70,9 +76,14 @@ global.openOptionsPage = extension => {
     return Promise.reject({ message: "No options page" });
   }
   if (optionsPageProperties.open_in_tab) {
-    window.switchToTabHavingURI(optionsPageProperties.page, true, {
-      triggeringPrincipal: extension.principal,
-    });
+    window.switchToTabHavingURI(
+      optionsPageProperties.page,
+      true,
+      {
+        triggeringPrincipal: extension.principal,
+      },
+      0
+    );
     return Promise.resolve();
   }
 
@@ -317,7 +328,6 @@ class TabTracker extends TabTrackerBase {
     super();
 
     this._tabs = new WeakMap();
-    this._browsers = new WeakMap();
     this._tabIds = new Map();
     this._nextId = 1;
     this._deferredTabOpenEvents = new WeakMap();
@@ -364,19 +374,18 @@ class TabTracker extends TabTrackerBase {
     return id;
   }
 
-  getBrowserTabId(browser) {
-    let id = this._browsers.get(browser);
-    if (id) {
-      return id;
+  getTabForBrowser(browser) {
+    let { gBrowser } = browser.documentGlobal;
+    if (!gBrowser) {
+      if (browser.id === "addon-inline-options") {
+        // When we're loaded into a <browser> inside about:addons, we need to
+        // go up one more level.
+        browser = browser.documentGlobal.docShell.chromeEventHandler;
+        return browser.documentGlobal.gBrowser.getTabForBrowser(browser);
+      }
+      return null;
     }
-
-    let tab = browser.documentGlobal.gBrowser.getTabForBrowser(browser);
-    if (tab) {
-      id = this.getId(tab);
-      this._browsers.set(browser, id);
-      return id;
-    }
-    return -1;
+    return gBrowser.getTabForBrowser(browser);
   }
 
   setId(nativeTab, id) {
@@ -388,9 +397,6 @@ class TabTracker extends TabTrackerBase {
     }
 
     this._tabs.set(nativeTab, id);
-    if (nativeTab.linkedBrowser) {
-      this._browsers.set(nativeTab.linkedBrowser, id);
-    }
     this._tabIds.set(id, nativeTab);
   }
 
@@ -746,44 +752,24 @@ class TabTracker extends TabTrackerBase {
         windowId: -1,
       };
     }
-    let { gBrowser } = window;
-    // Some non-browser windows have gBrowser but not getTabForBrowser!
-    if (!gBrowser || !gBrowser.getTabForBrowser) {
-      if (window.top.document.documentURI === "about:addons") {
-        // When we're loaded into a <browser> inside about:addons, we need to go up
-        // one more level.
-        browser = window.docShell.chromeEventHandler;
 
-        ({ gBrowser } = browser.documentGlobal);
-      } else {
-        return {
-          tabId: -1,
-          windowId: -1,
-        };
+    const nativeTab = this.getTabForBrowser(browser);
+    if (nativeTab) {
+      // If window was about:addons, use the browser window instead.
+      window = nativeTab.documentGlobal;
+    } else {
+      // Even without a tab we may have a windowId, e.g. with extension popups
+      // and sidebars. For sidebars in webext-panels.xhtml, look up the parent:
+      window = window.browsingContext.topChromeWindow;
+      if (!windowTracker.isBrowserWindow(window)) {
+        // E.g. an extension background page.
+        return { tabId: -1, windowId: -1 };
       }
     }
-
     return {
-      tabId: this.getBrowserTabId(browser),
-      windowId: windowTracker.getId(browser.documentGlobal),
+      tabId: nativeTab ? this.getId(nativeTab) : -1,
+      windowId: windowTracker.getId(window),
     };
-  }
-
-  getBrowserDataForContext(context) {
-    if (["tab", "background"].includes(context.viewType)) {
-      return this.getBrowserData(context.xulBrowser);
-    } else if (["popup", "sidebar"].includes(context.viewType)) {
-      // popups and sidebars are nested inside a browser element
-      // (with url "chrome://browser/content/webext-panels.xhtml")
-      // and so we look for the corresponding topChromeWindow to
-      // determine the windowId the panel belongs to.
-      const chromeWindow =
-        context.xulBrowser?.documentGlobal?.browsingContext?.topChromeWindow;
-      const windowId = chromeWindow ? windowTracker.getId(chromeWindow) : -1;
-      return { tabId: -1, windowId };
-    }
-
-    return { tabId: -1, windowId: -1 };
   }
 
   get activeTab() {

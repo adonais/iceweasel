@@ -372,7 +372,7 @@ already_AddRefed<nsMIMEInfoWin> nsOSHelperAppService::GetByExtension(
     return nullptr;
   }
 
-  RefPtr<nsMIMEInfoWin> mimeInfo = new nsMIMEInfoWin(typeToUse);
+  RefPtr mimeInfo = mozilla::MakeRefPtr<nsMIMEInfoWin>(typeToUse);
 
   // Our extension APIs expect extensions without the '.', so normalize:
   uint32_t dotlessIndex = aFileExt.First() != char16_t('.') ? 0 : 1;

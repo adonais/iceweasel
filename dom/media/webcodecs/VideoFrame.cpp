@@ -50,7 +50,7 @@ namespace mozilla::dom {
 #  undef LOG_INTERNAL
 #endif  // LOG_INTERNAL
 #define LOG_INTERNAL(level, msg, ...) \
-  MOZ_LOG(gWebCodecsLog, LogLevel::level, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::level, msg, ##__VA_ARGS__)
 
 #ifdef LOG
 #  undef LOG
@@ -1368,7 +1368,7 @@ VideoFrame::VideoFrame(nsIGlobalObject* aParent,
       mTimestamp(aTimestamp),
       mColorSpace(aColorSpace) {
   MOZ_ASSERT(mParent);
-  LOG("VideoFrame %p ctor", this);
+  LOG("VideoFrame {} ctor", fmt::ptr(this));
   mResource.emplace(
       Resource(aImage, aFormat.map([](const VideoPixelFormat& aPixelFormat) {
         return VideoFrame::Format(aPixelFormat);
@@ -1389,7 +1389,7 @@ VideoFrame::VideoFrame(nsIGlobalObject* aParent,
       mTimestamp(aData.mTimestamp),
       mColorSpace(aData.mColorSpace) {
   MOZ_ASSERT(mParent);
-  LOG("VideoFrame %p ctor (from serialized data)", this);
+  LOG("VideoFrame {} ctor (from serialized data)", fmt::ptr(this));
   mResource.emplace(Resource(
       aData.mImage, aData.mFormat.map([](const VideoPixelFormat& aPixelFormat) {
         return VideoFrame::Format(aPixelFormat);
@@ -1410,13 +1410,13 @@ VideoFrame::VideoFrame(const VideoFrame& aOther)
       mTimestamp(aOther.mTimestamp),
       mColorSpace(aOther.mColorSpace) {
   MOZ_ASSERT(mParent);
-  LOG("VideoFrame %p copy ctor", this);
+  LOG("VideoFrame {} copy ctor", fmt::ptr(this));
   StartAutoClose();
 }
 
 VideoFrame::~VideoFrame() {
   MOZ_ASSERT(IsClosed());
-  LOG("VideoFrame %p dtor", this);
+  LOG("VideoFrame {} dtor", fmt::ptr(this));
 }
 
 nsIGlobalObject* VideoFrame::GetParentObject() const {
@@ -2056,7 +2056,7 @@ already_AddRefed<VideoFrame> VideoFrame::Clone(ErrorResult& aRv) const {
 // https://w3c.github.io/webcodecs/#close-videoframe
 void VideoFrame::Close() {
   AssertIsOnOwningThread();
-  LOG("VideoFrame %p is closed", this);
+  LOG("VideoFrame {} is closed", fmt::ptr(this));
 
   mResource.reset();
   mCodedSize = gfx::IntSize();
@@ -2192,8 +2192,9 @@ already_AddRefed<VideoFrame> VideoFrame::ConvertToRGBFrame(
   auto r = ConvertToRGBAImage(mResource->mImage, aFormat, aColorSpace);
   if (r.isErr()) {
     MediaResult err = r.unwrapErr();
-    LOGE("VideoFrame %p, failed to convert image into %s format: %s", this,
-         dom::GetEnumString(aFormat).get(), err.Description().get());
+    LOGE("VideoFrame {}, failed to convert image into {} format: {}",
+         fmt::ptr(this), dom::GetEnumString(aFormat).get(),
+         err.Description().get());
     return nullptr;
   }
   const RefPtr<layers::Image> img = r.unwrap();
@@ -2213,21 +2214,21 @@ void VideoFrame::StartAutoClose() {
 
   mShutdownWatcher = media::ShutdownWatcher::Create(this);
   if (NS_WARN_IF(!mShutdownWatcher)) {
-    LOG("VideoFrame %p, cannot monitor resource release", this);
+    LOG("VideoFrame {}, cannot monitor resource release", fmt::ptr(this));
     Close();
     return;
   }
 
-  LOG("VideoFrame %p, start monitoring resource release, watcher %p", this,
-      mShutdownWatcher.get());
+  LOG("VideoFrame {}, start monitoring resource release, watcher {}",
+      fmt::ptr(this), fmt::ptr(mShutdownWatcher.get()));
 }
 
 void VideoFrame::StopAutoClose() {
   AssertIsOnOwningThread();
 
   if (mShutdownWatcher) {
-    LOG("VideoFrame %p, stop monitoring resource release, watcher %p", this,
-        mShutdownWatcher.get());
+    LOG("VideoFrame {}, stop monitoring resource release, watcher {}",
+        fmt::ptr(this), fmt::ptr(mShutdownWatcher.get()));
     mShutdownWatcher->Destroy();
     mShutdownWatcher = nullptr;
   }
@@ -2236,10 +2237,10 @@ void VideoFrame::StopAutoClose() {
 void VideoFrame::CloseIfNeeded() {
   AssertIsOnOwningThread();
 
-  LOG("VideoFrame %p, needs to close itself? %s", this,
+  LOG("VideoFrame {}, needs to close itself? {}", fmt::ptr(this),
       IsClosed() ? "no" : "yes");
   if (!IsClosed()) {
-    LOG("Close VideoFrame %p obligatorily", this);
+    LOG("Close VideoFrame {} obligatorily", fmt::ptr(this));
     Close();
   }
 }
@@ -2911,6 +2912,14 @@ bool VideoFrame::Resource::CopyTo(const Format::Plane& aPlane,
        format != gfx::SurfaceFormat::B8G8R8A8 &&
        format != gfx::SurfaceFormat::B8G8R8X8)) {
     LOGE("The conversion between RGB and non-RGB is unsupported");
+    return false;
+  }
+
+  const gfx::IntSize surfaceSize = dataSurface->GetSize();
+  if (NS_WARN_IF(aRect.X() < 0 || aRect.Y() < 0 ||
+                 aRect.XMost() > surfaceSize.Width() ||
+                 aRect.YMost() > surfaceSize.Height())) {
+    LOGE("Source surface is smaller than the requested copy rectangle");
     return false;
   }
 

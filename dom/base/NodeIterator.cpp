@@ -93,7 +93,7 @@ void NodeIterator::NodePointer::AdjustForRemoval(nsINode* aRoot,
 }
 
 bool NodeIterator::NodePointer::MoveForward(nsINode* aRoot, nsINode* aNode) {
-  while (1) {
+  while (true) {
     if (aNode == aRoot) break;
 
     nsINode* sibling = aNode->GetNextSibling();

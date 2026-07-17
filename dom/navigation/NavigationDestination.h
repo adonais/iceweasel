@@ -24,7 +24,7 @@ class NavigationHistoryEntry;
 // https://html.spec.whatwg.org/#the-navigationdestination-interface
 class NavigationDestination final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(NavigationDestination)
 
   NavigationDestination(nsIGlobalObject* aGlobal, nsIURI* aURI,

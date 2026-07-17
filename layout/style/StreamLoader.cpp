@@ -6,9 +6,10 @@
 
 #include "mozilla/Encoding.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/StyleSheet.h"
 #include "mozilla/TaskQueue.h"
 #include "mozilla/dom/CacheExpirationTime.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "nsContentUtils.h"
 #include "nsIAsyncVerifyRedirectCallback.h"
 #include "nsIChannel.h"
@@ -115,8 +116,7 @@ StreamLoader::OnStopRequest(nsIRequest* aRequest, nsresult aStatus) {
   auto HandleErrorInMainThread = [&] {
     MOZ_ASSERT(mStatus != NS_OK_PARSE_SHEET);
     MOZ_ASSERT(NS_IsMainThread());
-    if (net::UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
-            mStatus)) {
+    if (net::ChannelClassifierUtils::IsClassifierBlockingErrorCode(mStatus)) {
       // Handle sheet not loading error because source was a tracking URL (or
       // fingerprinting, cryptomining, etc). We make a note of this sheet node
       // by including it in a dedicated array of blocked tracking nodes under

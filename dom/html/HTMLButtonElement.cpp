@@ -75,8 +75,7 @@ static constexpr const nsAttrValue::EnumTableEntry* kButtonSubmitType =
 
 // Construction, destruction
 HTMLButtonElement::HTMLButtonElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    FromParser aFromParser)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLFormControlElementWithState(
           std::move(aNodeInfo), aFromParser,
           FormControlType(kButtonSubmitType->value)),

@@ -987,7 +987,7 @@ void nsCSPContext::logToConsole(const char* aName,
     nsAutoString msg;
     CSP_GetLocalizedStr(aName, aParams, msg);
     ConsoleMsgQueueElem& elem = *mConsoleMsgQueue.AppendElement();
-    elem.mMsg = msg;
+    elem.mMsg = std::move(msg);
     elem.mSourceName = sourceName;
     elem.mSourceLine = PromiseFlatString(aSourceLine);
     elem.mLineNumber = aLineNumber;
@@ -1125,7 +1125,7 @@ nsresult nsCSPContext::GatherSecurityPolicyViolationEventData(
   rv = this->GetPolicyString(aCSPViolationData.mViolatedPolicyIndex,
                              originalPolicy);
   NS_ENSURE_SUCCESS(rv, rv);
-  aViolationEventInit.mOriginalPolicy = originalPolicy;
+  aViolationEventInit.mOriginalPolicy = std::move(originalPolicy);
 
   // source-file
   if (!aCSPViolationData.mSourceFile.IsEmpty()) {
@@ -1467,12 +1467,22 @@ void nsCSPContext::HandleInternalPageViolation(
     const CSPViolationData& aCSPViolationData,
     const SecurityPolicyViolationEventInit& aInit,
     const nsAString& aViolatedDirectiveNameAndValue) {
-  if (!mSelfURI || !mSelfURI->SchemeIs("chrome")) {
+  nsCOMPtr<nsIURI> selfURI = mSelfURI;
+  if (!selfURI) {
+    return;
+  }
+  if (nsContentUtils::IsPDFJS(mLoadingPrincipal)) {
+    // The pdf.js viewer is loaded via a stream converter that keeps the PDF
+    // URL as the document URI, so mSelfURI is not the internal-page URL.
+    // Use the loading principal's URI (resource://pdf.js/web/viewer.html)
+    // instead.
+    selfURI = mLoadingPrincipal->GetURI();
+  } else if (!selfURI->SchemeIs("chrome")) {
     return;
   }
 
   nsAutoCString selfURISpec;
-  mSelfURI->GetSpec(selfURISpec);
+  selfURI->GetSpec(selfURISpec);
 
   glean::security::CspViolationInternalPageExtra extra;
   extra.directive = Some(NS_ConvertUTF16toUTF8(aInit.mEffectiveDirective));
@@ -1508,6 +1518,10 @@ void nsCSPContext::HandleInternalPageViolation(
     extra.blockeduritype = Some(blocked.first);
     extra.blockeduridetails = blocked.second;
   }
+
+  extra.baseline =
+      Some(aCSPViolationData.mViolatedPolicyIndex == 0 &&
+           aInit.mOriginalPolicy == nsContentSecurityUtils::kBaselineChromeCSP);
 
   glean::security::csp_violation_internal_page.Record(Some(extra));
 
@@ -1807,7 +1821,8 @@ class CSPReportSenderRunnable final : public Runnable {
         }
 
         AutoTArray<nsString, 3> params = {mViolatedDirectiveNameAndValue,
-                                          source, effectiveDirective};
+                                          std::move(source),
+                                          effectiveDirective};
         mCSPContext->logToConsole(
             errorName, params, mCSPViolationData.mSourceFile,
             mCSPViolationData.mSample, mCSPViolationData.mLineNumber,
@@ -2048,7 +2063,7 @@ nsCSPContext::GetCSPSandboxFlags(uint32_t* aOutSandboxFlags) {
            "sandbox in: %s",
            NS_ConvertUTF16toUTF8(policy).get()));
 
-      AutoTArray<nsString, 1> params = {policy};
+      AutoTArray<nsString, 1> params = {std::move(policy)};
       logToConsole("ignoringReportOnlyDirective", params, ""_ns, u""_ns, 0, 1,
                    nsIScriptError::warningFlag);
     }

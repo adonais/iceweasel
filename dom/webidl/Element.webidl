@@ -282,6 +282,9 @@ dictionary ShadowRootInit {
   // https://github.com/whatwg/dom/pull/1353
   [Pref="dom.shadowdom.referenceTarget.enabled"]
   DOMString? referenceTarget;
+
+  [Pref="dom.scoped-custom-element-registries.enabled"]
+  CustomElementRegistry? customElementRegistry;
 };
 
 // https://dom.spec.whatwg.org/#element

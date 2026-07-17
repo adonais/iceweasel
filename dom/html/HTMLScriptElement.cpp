@@ -40,8 +40,7 @@ JSObject* HTMLScriptElement::WrapNode(JSContext* aCx,
 }
 
 HTMLScriptElement::HTMLScriptElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    FromParser aFromParser)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLElement(std::move(aNodeInfo)), ScriptElement(aFromParser) {
   AddMutationObserver(this);
 }

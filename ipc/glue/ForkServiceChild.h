@@ -119,7 +119,7 @@ class ForkServerLauncher final : public nsIObserver {
 
  private:
   friend class ForkServiceChild;
-  ~ForkServerLauncher();
+  ~ForkServerLauncher() = default;
 
   static void RestartForkServer();
 

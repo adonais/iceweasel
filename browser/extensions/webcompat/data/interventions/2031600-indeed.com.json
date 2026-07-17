@@ -1,7 +1,7 @@
 {
   "label": "indeed.com",
   "bugs": {
-    "2003728": {
+    "2031600": {
       "issue": "broken-login",
       "matches": ["*://*.indeed.com/*"]
     }

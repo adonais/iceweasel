@@ -383,12 +383,11 @@ class BufferAllocPolicy : public AllocPolicyBase {
   }
 
   template <typename T>
-  inline void traceOwnedAlloc(JSTracer* trc, gc::Cell* maybeOwner, T** bufferp,
-                              const char* name) {
+  inline void traceOwnedAlloc(JSTracer* trc, T** bufferp, const char* name) {
     MOZ_ASSERT(bufferp);
     MOZ_ASSERT(*bufferp);
     void** ptrp = reinterpret_cast<void**>(bufferp);
-    gc::TraceBufferEdgeInternal(trc, zone, maybeOwner, ptrp, name);
+    gc::TraceBufferEdgeInternal(trc, ptrp, name);
   }
 
   size_t getAllocSize(void* ptr, mozilla::MallocSizeOf mallocSizeOf) {

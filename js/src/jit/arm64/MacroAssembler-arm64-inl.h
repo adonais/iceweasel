@@ -3597,10 +3597,9 @@ void MacroAssembler::popcntInt8x16(FloatRegister src, FloatRegister dest) {
 
 void MacroAssembler::anyTrueSimd128(FloatRegister src, Register dest_) {
   ScratchSimd128Scope scratch_(*this);
-  ARMFPRegister scratch(Simd1D(scratch_));
   ARMRegister dest(dest_, 64);
-  Addp(scratch, Simd2D(src));
-  Umov(dest, scratch, 0);
+  Umaxv(SimdReg(scratch_).S(), Simd4S(src));
+  Umov(ARMRegister(dest_, 32), SimdReg(scratch_).S(), 0);
   Cmp(dest, Operand(0));
   Cset(dest, Assembler::NonZero);
 }

@@ -371,7 +371,10 @@ PK11_GetWrapKey(PK11SlotInfo *slot, int wrap, CK_MECHANISM_TYPE type,
     CK_OBJECT_HANDLE keyHandle;
 
     PK11_EnterSlotMonitor(slot);
-    if (slot->series != series ||
+    /* refKeys is a fixed-size array; bounds-check wrap to match
+     * PK11_SetWrapKey. */
+    if (wrap < 0 || (size_t)wrap >= PR_ARRAY_SIZE(slot->refKeys) ||
+        slot->series != series ||
         slot->refKeys[wrap] == CK_INVALID_HANDLE) {
         PK11_ExitSlotMonitor(slot);
         return NULL;

@@ -32,6 +32,7 @@
 #include "nsIPromptService.h"
 #include "nsIScriptError.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsServiceManagerUtils.h"
 #include "nsThreadUtils.h"
 #include "nsXULAppAPI.h"

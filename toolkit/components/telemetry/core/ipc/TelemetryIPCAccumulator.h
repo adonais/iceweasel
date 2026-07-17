@@ -47,7 +47,7 @@ void IPCTimerFired(nsITimer* aTimer, void* aClosure);
 
 void DeInitializeGlobalState();
 
-void DispatchToMainThread(already_AddRefed<nsIRunnable>&& aEvent);
+void DispatchToMainThread(already_AddRefed<nsIRunnable> aEvent);
 
 }  // namespace TelemetryIPCAccumulator
 }  // namespace mozilla

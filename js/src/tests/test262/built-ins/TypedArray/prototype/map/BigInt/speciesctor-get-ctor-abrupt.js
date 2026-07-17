@@ -42,6 +42,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     });
   });
   assert.sameValue(callCount, 0, "callback should not be called");
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

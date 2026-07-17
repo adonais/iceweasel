@@ -31,7 +31,7 @@ NS_IMPL_CYCLE_COLLECTION_CLASS(ScriptLoadContext)
 
 NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN_INHERITED(ScriptLoadContext,
                                                 JS::loader::LoadContextBase)
-  MOZ_ASSERT(!tmp->mCompileOrDecodeTask);
+  tmp->MaybeCancelOffThreadScript();
   tmp->MaybeUnblockOnload();
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mScriptElement);
 NS_IMPL_CYCLE_COLLECTION_UNLINK_END
@@ -69,7 +69,9 @@ ScriptLoadContext::ScriptLoadContext(
 ScriptLoadContext::~ScriptLoadContext() {
   MOZ_ASSERT(NS_IsMainThread());
 
-  // Off-thread parsing must have completed or cancelled by this point.
+  // A request can be abandoned after off-thread compilation completes but
+  // before execution steals the result.
+  MaybeCancelOffThreadScript();
   MOZ_DIAGNOSTIC_ASSERT(!mCompileOrDecodeTask);
 
   mRequest = nullptr;

@@ -21,7 +21,7 @@ nsresult nsGetInterface::operator()(const nsIID& aIID,
   }
 
   if (NS_FAILED(status)) {
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
   if (mErrorPtr) {
     *mErrorPtr = status;

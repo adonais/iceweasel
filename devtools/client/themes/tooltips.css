@@ -308,6 +308,51 @@ strong {
   }
 }
 
+/* Tooltip: CSS explainers */
+.tooltip-container:has(.devtools-tooltip-css-explainers) {
+  /* By default, in dark mode, the tooltip background color is lighter than the background
+     color of the Rules view. Since we're using the same color than in the Rules view
+     for CSS values, this can lead to poor contrast.
+     To prevent this, we apply the same background color than in the Rules view */
+  --theme-arrowpanel-background: var(--theme-body-background);
+}
+
+.tooltip-container[type="doorhanger"] > .tooltip-panel:has(.devtools-tooltip-css-explainers) {
+  --max-tooltip-width: 600px;
+  max-width: var(--max-tooltip-width);
+}
+
+.devtools-tooltip-css-explainers {
+  color: var(--theme-body-color);
+  width: max-content;
+  max-width: min(var(--max-tooltip-width), 100vw);
+  box-sizing: border-box;
+  padding: 5px 10px;
+  user-select: text;
+  -moz-user-focus: normal;
+
+  ol {
+    margin: 0;
+    padding: 0;
+    font-family: var(--monospace-font-family);
+
+    li {
+      padding-inline-start: 1ch;
+      color: var(--theme-highlight-red);
+    }
+
+    li:not(:first-of-type)::marker {
+      content: "↪";
+      color: var(--theme-body-color);
+    }
+
+    /* Add a top margin for the last item unless there are less that 2 steps displayed */
+    li:last-of-type:not(:nth-of-type(1), :nth-of-type(2)) {
+      margin-block-start: 8px;
+    }
+  }
+}
+
 /* Tooltip: Tiles */
 
 .devtools-tooltip-tiles {

@@ -648,8 +648,8 @@ D3D11TextureData* D3D11TextureData::Create(IntSize aSize, SurfaceFormat aFormat,
       sD3D11TextureUsage,
       new TextureMemoryMeasurer(newDesc.Width * newDesc.Height * 4));
 
-  RefPtr<gfx::FileHandleWrapper> handle =
-      new gfx::FileHandleWrapper(UniqueFileHandle(sharedHandle));
+  RefPtr handle =
+      MakeRefPtr<gfx::FileHandleWrapper>(UniqueFileHandle(sharedHandle));
 
   if (useFence) {
     auto* fencesHolderMap = CompositeProcessD3D11FencesHolderMap::Get();
@@ -743,8 +743,8 @@ DXGIYCbCrTextureData* DXGIYCbCrTextureData::Create(
   if (FAILED(hr)) {
     return nullptr;
   }
-  const RefPtr<gfx::FileHandleWrapper> sharedHandleY =
-      new gfx::FileHandleWrapper(UniqueFileHandle(handleY));
+  const RefPtr sharedHandleY =
+      MakeRefPtr<gfx::FileHandleWrapper>(UniqueFileHandle(handleY));
 
   aTextureCb->QueryInterface((IDXGIResource1**)getter_AddRefs(resource));
 
@@ -755,8 +755,8 @@ DXGIYCbCrTextureData* DXGIYCbCrTextureData::Create(
   if (FAILED(hr)) {
     return nullptr;
   }
-  const RefPtr<gfx::FileHandleWrapper> sharedHandleCb =
-      new gfx::FileHandleWrapper(UniqueFileHandle(handleCb));
+  const RefPtr sharedHandleCb =
+      MakeRefPtr<gfx::FileHandleWrapper>(UniqueFileHandle(handleCb));
 
   aTextureCr->QueryInterface((IDXGIResource1**)getter_AddRefs(resource));
   HANDLE handleCr;
@@ -766,8 +766,8 @@ DXGIYCbCrTextureData* DXGIYCbCrTextureData::Create(
   if (FAILED(hr)) {
     return nullptr;
   }
-  const RefPtr<gfx::FileHandleWrapper> sharedHandleCr =
-      new gfx::FileHandleWrapper(UniqueFileHandle(handleCr));
+  const RefPtr sharedHandleCr =
+      MakeRefPtr<gfx::FileHandleWrapper>(UniqueFileHandle(handleCr));
 
   auto* fenceHolderMap = CompositeProcessD3D11FencesHolderMap::Get();
   if (!fenceHolderMap) {
@@ -1104,7 +1104,7 @@ void DXGITextureHostD3D11::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
   MOZ_ASSERT(mExternalImageId.isSome());
 
-  RefPtr<wr::RenderDXGITextureHost> texture = new wr::RenderDXGITextureHost(
+  RefPtr texture = MakeRefPtr<wr::RenderDXGITextureHost>(
       mHandle, mGpuProcessTextureId, mArrayIndex, mFormat, mColorSpace,
       mColorRange, mTransferFunction, mHDRMetadata, mSize, mHasKeyedMutex,
       mFencesHolderId);
@@ -1166,7 +1166,12 @@ void DXGITextureHostD3D11::PushResourceUpdates(
         return;
       }
 
-      wr::ImageDescriptor descriptor(mSize, GetFormat());
+      auto format = wr::SurfaceFormatToImageFormat(GetFormat());
+      if (NS_WARN_IF(!format)) {
+        return;
+      }
+      wr::ImageDescriptor descriptor(mSize, *format,
+                                     wr::ToOpacityType(GetFormat()));
       // Prefer TextureExternal unless the backend requires TextureRect.
       TextureHost::NativeTexturePolicy policy =
           TextureHost::BackendNativeTexturePolicy(aResources.GetBackendType(),
@@ -1191,13 +1196,13 @@ void DXGITextureHostD3D11::PushResourceUpdates(
       MOZ_ASSERT(mSize.width % 2 == 0);
       MOZ_ASSERT(mSize.height % 2 == 0);
 
-      wr::ImageDescriptor descriptor0(mSize, mFormat == gfx::SurfaceFormat::NV12
-                                                 ? gfx::SurfaceFormat::A8
-                                                 : gfx::SurfaceFormat::A16);
-      wr::ImageDescriptor descriptor1(mSize / 2,
-                                      mFormat == gfx::SurfaceFormat::NV12
-                                          ? gfx::SurfaceFormat::R8G8
-                                          : gfx::SurfaceFormat::R16G16);
+      const bool isNV12 = mFormat == gfx::SurfaceFormat::NV12;
+      wr::ImageDescriptor descriptor0(
+          mSize, isNV12 ? wr::ImageFormat::R8 : wr::ImageFormat::R16,
+          wr::OpacityType::HasAlphaChannel);
+      wr::ImageDescriptor descriptor1(
+          mSize / 2, isNV12 ? wr::ImageFormat::RG8 : wr::ImageFormat::RG16,
+          isNV12 ? wr::OpacityType::Opaque : wr::OpacityType::HasAlphaChannel);
       // Prefer TextureExternal unless the backend requires TextureRect.
       TextureHost::NativeTexturePolicy policy =
           TextureHost::BackendNativeTexturePolicy(aResources.GetBackendType(),
@@ -1412,7 +1417,7 @@ void DXGIYCbCrTextureHostD3D11::CreateRenderTexture(
     const wr::ExternalImageId& aExternalImageId) {
   MOZ_ASSERT(mExternalImageId.isSome());
 
-  RefPtr<wr::RenderTextureHost> texture = new wr::RenderDXGIYCbCrTextureHost(
+  RefPtr texture = MakeRefPtr<wr::RenderDXGIYCbCrTextureHost>(
       mHandles, mYUVColorSpace, mColorDepth, mColorRange, mTransferFunction,
       mSizeY, mSizeCbCr, mFencesHolderId);
 
@@ -1463,9 +1468,11 @@ void DXGIYCbCrTextureHostD3D11::PushResourceUpdates(
                              wr::ImageBufferKind::TextureExternal);
 
   // y
-  wr::ImageDescriptor descriptor0(mSizeY, gfx::SurfaceFormat::A8);
+  wr::ImageDescriptor descriptor0(mSizeY, wr::ImageFormat::R8,
+                                  wr::OpacityType::HasAlphaChannel);
   // cb and cr
-  wr::ImageDescriptor descriptor1(mSizeCbCr, gfx::SurfaceFormat::A8);
+  wr::ImageDescriptor descriptor1(mSizeCbCr, wr::ImageFormat::R8,
+                                  wr::OpacityType::HasAlphaChannel);
   (aResources.*method)(aImageKeys[0], descriptor0, aExtID, imageType, 0,
                        /* aNormalizedUvs */ false);
   (aResources.*method)(aImageKeys[1], descriptor1, aExtID, imageType, 1,

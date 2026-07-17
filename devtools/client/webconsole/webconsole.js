@@ -378,7 +378,7 @@ class WebConsole extends EventEmitter {
     if (!this.toolbox) {
       return;
     }
-    await this.toolbox.viewSourceInStyleEditorByURL(url, line, column);
+    await this.toolbox.viewStyleSourceByURL(url, line, column);
     this.recordEvent("jump_to_source");
   }
 

@@ -70,17 +70,6 @@ enum class TabGroupTheme {
             @Composable get() = stringResource(id = R.string.tab_group_color_purple)
     },
 
-    Violet {
-        override val primary: Color
-            @ReadOnlyComposable @Composable get() = FirefoxTheme.tabGroupColors.violet.primary
-
-        override val onPrimary: Color
-            @ReadOnlyComposable @Composable get() = FirefoxTheme.tabGroupColors.violet.onPrimary
-
-        override val contentLabel: String
-            @ReadOnlyComposable @Composable get() = stringResource(id = R.string.tab_group_color_violet)
-    },
-
     Blue {
         override val primary: Color
             @ReadOnlyComposable @Composable get() = FirefoxTheme.tabGroupColors.blue.primary

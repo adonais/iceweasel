@@ -21,7 +21,7 @@
 #include "nsJSUtils.h"
 
 nsGenericHTMLElement* NS_NewHTMLAudioElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();
@@ -48,7 +48,7 @@ nsresult HTMLAudioElement::Clone(mozilla::dom::NodeInfo* aNodeInfo,
   return rv;
 }
 
-HTMLAudioElement::HTMLAudioElement(already_AddRefed<NodeInfo>&& aNodeInfo)
+HTMLAudioElement::HTMLAudioElement(already_AddRefed<NodeInfo> aNodeInfo)
     : HTMLMediaElement(std::move(aNodeInfo)) {
   DecoderDoctorLogger::LogConstruction(this);
 }

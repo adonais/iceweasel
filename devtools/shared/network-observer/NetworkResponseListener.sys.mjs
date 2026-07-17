@@ -647,6 +647,7 @@ export class NetworkResponseListener {
       extension,
       discardResponseBody: this.#httpActivity.discardResponseBody,
       truncated: this.#truncated,
+      channel: this.#httpActivity.channel,
     });
 
     // Make sure all the security and response content info are sent

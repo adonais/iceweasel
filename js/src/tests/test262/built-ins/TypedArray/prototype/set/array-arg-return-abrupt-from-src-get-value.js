@@ -45,6 +45,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
     compareArray(sample, [42, 43, 3, 4]),
     "values are set until exception"
   );
-}, null, ["passthrough"]);
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

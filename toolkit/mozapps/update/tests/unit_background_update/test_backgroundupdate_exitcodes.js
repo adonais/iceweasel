@@ -29,6 +29,26 @@ add_task(async function test_default_profile_does_not_exist() {
       MOZ_BACKGROUNDTASKS_NO_DEFAULT_PROFILE: "1",
     },
   });
+
+  // Useful diagnostics for the test failure case in bug 1760099.
+  if (exitCode == EXIT_CODE.OTHER_INSTANCE && AppConstants.platform === "win") {
+    let lockPath = syncManager.getUpdateLockFilePath();
+    try {
+      let windowsTestDebug = Cc["@mozilla.org/win-test-debug;1"].getService(
+        Ci.nsIWindowsTestDebug
+      );
+      let processes = windowsTestDebug.processesThatOpenedFile(lockPath);
+      info(`Number of processes holding lock: ${processes.length}`);
+      for (let proc of processes) {
+        info(
+          `Lock held by ${proc.name} (PID ${proc.pid}): ${proc.executablePath}`
+        );
+      }
+    } catch (e) {
+      info(`Could not enumerate lock holder processes: ${e}`);
+    }
+  }
+
   Assert.equal(EXIT_CODE.DEFAULT_PROFILE_DOES_NOT_EXIST, exitCode);
   Assert.equal(11, exitCode);
 });

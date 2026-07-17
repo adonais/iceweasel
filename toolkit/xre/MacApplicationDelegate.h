@@ -12,6 +12,7 @@ void EnsureUseCocoaDockAPI(void);
 void SetupMacApplicationDelegate(bool* gRestartedByOS);
 void InitializeMacApp(void);
 nsTArray<nsCString> TakeStartupURLs();
+void StartupURLCollectionComplete(void);
 void DisableAppNap(void);
 
 #endif

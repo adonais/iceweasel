@@ -4,6 +4,7 @@
 
 MOCHITEST_MANIFESTS += [
     "tests/browserscope/mochitest.toml",
+    "tests/edit-context/mochitest.toml",
     "tests/mochitest.toml",
 ]
 

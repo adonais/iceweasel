@@ -5,9 +5,9 @@
 task-defaults:
     worker-type:
         by-test-platform:
-            windows.*-(32|64).*-asan/.*: win11-64-25h2-large
-            windows.*aarch64.*/.*: win11-a64-25h2
-            windows.*/.*: win11-64-25h2
+            windows11.*-(32|64).*-asan/.*: win11-64-25h2-large
+            windows11.*aarch64.*/.*: win11-a64-25h2
+            windows11.*/.*: win11-64-25h2
             default: default
     suite:
         category: xpcshell

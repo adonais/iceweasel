@@ -46,7 +46,8 @@ class TestSerialPlatformService final : public SerialPlatformService {
  private:
   ~TestSerialPlatformService() override = default;
 
-  nsresult EnumeratePortsImpl(SerialPortList& aPorts) override;
+  nsresult EnumeratePortsImpl(SerialPortList& aPorts,
+                              bool* aLikelyAccessDenied) override;
   nsresult OpenImpl(const nsString& aPortId,
                     const IPCSerialOptions& aOptions) override;
   nsresult CloseImpl(const nsString& aPortId) override;

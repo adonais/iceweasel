@@ -148,7 +148,7 @@ add_task(async function test_list_ordering() {
       document,
       "visibilitychange"
     );
-    await EventUtils.synthesizeMouseAtCenter(firstHistoryLink, {}, content);
+    EventUtils.synthesizeMouseAtCenter(firstHistoryLink, {}, content);
     Assert.equal(
       1,
       Glean.firefoxviewNext.historyVisits.testGetValue().length,
@@ -160,7 +160,7 @@ add_task(async function test_list_ordering() {
     // Test number of cards when sorted by site/domain
     Services.fog.testResetFOG();
     // Select sort by site option
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       historyComponent.sortInputs[1],
       {},
       content
@@ -187,7 +187,7 @@ add_task(async function test_list_ordering() {
 
     Services.fog.testResetFOG();
     // Select sort by date option
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       historyComponent.sortInputs[0],
       {},
       content
@@ -383,7 +383,7 @@ add_task(async function test_show_all_history_telemetry() {
     Services.fog.testResetFOG();
     let showAllHistoryBtn = historyComponent.showAllHistoryBtn;
     showAllHistoryBtn.scrollIntoView();
-    await EventUtils.synthesizeMouseAtCenter(showAllHistoryBtn, {}, content);
+    EventUtils.synthesizeMouseAtCenter(showAllHistoryBtn, {}, content);
     Assert.equal(
       1,
       Glean.firefoxviewNext.showAllHistoryTabs.testGetValue().length,

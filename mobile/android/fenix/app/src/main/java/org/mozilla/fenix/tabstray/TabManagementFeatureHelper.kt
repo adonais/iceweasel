@@ -32,6 +32,11 @@ interface TabManagementFeatureHelper {
      * Determines whether the "Share" button is displayed for tab groups in the tabs tray.
      */
     val shareTabGroupEnabled: Boolean
+
+    /**
+     * Whether onboarding is enabled for the Tab Groups feature.
+     */
+    val tabGroupsOnboardingEnabled: Boolean
 }
 
 /**
@@ -50,6 +55,9 @@ data object DefaultTabManagementFeatureHelper : TabManagementFeatureHelper {
 
     override val shareTabGroupEnabled: Boolean
         get() = false
+
+    override val tabGroupsOnboardingEnabled: Boolean
+        get() = Config.channel.isDebug || FxNimbus.features.tabGroupsOnboarding.value().enabled
 }
 
 val LocalTabManagementFeatureHelper = staticCompositionLocalOf<TabManagementFeatureHelper> {

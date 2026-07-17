@@ -657,6 +657,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   void jump(Label* label) { B(label); }
   void jump(JitCode* code) { branch(code); }
   void jump(ImmPtr ptr) {
+    // CodeFromJump doesn't support nop sequences.
+    AutoForbidNops afn(this);
+
     // It is unclear why this sync is necessary:
     // * PSP and SP have been observed to be different in testcase
     //   tests/asm.js/testBug1046688.js.
@@ -1309,6 +1312,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
 
   void branch(Condition cond, Label* label) { B(label, cond); }
   void branch(JitCode* target) {
+    // CodeFromJump doesn't support nop sequences.
+    AutoForbidNops afn(this);
+
     // It is unclear why this sync is necessary:
     // * PSP and SP have been observed to be different in testcase
     //   tests/async/debugger-reject-after-fulfill.js
@@ -2016,6 +2022,9 @@ class MacroAssemblerCompat : public vixl::MacroAssembler {
   // Emit a BLR or NOP instruction. ToggleCall can be used to patch
   // this instruction.
   CodeOffset toggledCall(JitCode* target, bool enabled) {
+    // CodeFromJump doesn't support nop sequences.
+    AutoForbidNops afn(this);
+
     // The returned offset must be to the first instruction generated,
     // for the debugger to match offset with Baseline's pcMappingEntries_.
     BufferOffset offset = nextOffset();

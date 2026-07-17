@@ -7,6 +7,7 @@ import {
   openAIEngine,
   MODEL_FEATURES,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { loadCallContext } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
 
 import {
   basicQualityEvalPrompt,
@@ -55,7 +56,14 @@ export async function runChatEvalForModel(
 
   const origGetFxAccountToken = openAIEngine.getFxAccountToken;
   openAIEngine.getFxAccountToken = async () => token;
-  const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+  const callContext = await loadCallContext(MODEL_FEATURES.CHAT);
+  const engineInstance = await openAIEngine.build({
+    model: callContext.model,
+    serviceType: callContext.serviceType,
+    purpose: callContext.purpose,
+    flowId: null,
+    feature: MODEL_FEATURES.CHAT,
+  });
   for (const [userQuery, currentUrl, page] of TEST_CASES) {
     const { cleanup } = await setupEvaluation({
       url: page,

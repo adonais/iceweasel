@@ -9,7 +9,7 @@ use serde::Serialize;
 use serde_json::ser::to_writer;
 use std::convert::TryInto;
 use std::ffi::{c_void, OsString};
-use std::fs::{read_to_string, DirBuilder, File, OpenOptions};
+use std::fs::{DirBuilder, File};
 use std::io::{BufRead, BufReader, Write};
 use std::mem::{size_of, zeroed};
 use std::os::windows::ffi::{OsStrExt, OsStringExt};
@@ -20,12 +20,12 @@ use std::path::{Path, PathBuf};
 use std::ptr::{null, null_mut};
 use std::slice::from_raw_parts;
 use uuid::Uuid;
-use windows_sys::core::{HRESULT, PWSTR};
+use windows_sys::core::{BOOL, HRESULT, PWSTR};
 use windows_sys::Wdk::System::Threading::{NtQueryInformationProcess, ProcessBasicInformation};
 use windows_sys::Win32::Foundation::WIN32_ERROR;
 use windows_sys::Win32::{
     Foundation::{
-        CloseHandle, GetLastError, SetLastError, BOOL, ERROR_INSUFFICIENT_BUFFER, ERROR_SUCCESS,
+        CloseHandle, GetLastError, SetLastError, ERROR_INSUFFICIENT_BUFFER, ERROR_SUCCESS,
         EXCEPTION_BREAKPOINT, E_UNEXPECTED, FALSE, FILETIME, HANDLE, HWND, LPARAM, MAX_PATH,
         STATUS_SUCCESS, S_OK, TRUE,
     },
@@ -166,7 +166,7 @@ fn out_of_process_exception_event_callback(
                     let thread_handle = unsafe { OpenThread(THREAD_GET_CONTEXT, FALSE, thread_id) };
                     // SAFETY: `thread_handle` is guaranteed to be valid and the
                     // `context` parameter points to an object on the stack.
-                    if thread_handle != 0
+                    if !thread_handle.is_null()
                         && unsafe {
                             GetThreadContext(thread_handle, &mut exception_information.context)
                         }
@@ -334,7 +334,7 @@ fn get_process_id(process: BorrowedHandle) -> Result<DWORD> {
 fn get_process_handle(pid: DWORD) -> Result<OwnedHandle> {
     // SAFETY: This is always safe to call.
     let handle = unsafe { OpenProcess(PROCESS_ALL_ACCESS, FALSE, pid) };
-    if handle != 0 {
+    if !handle.is_null() {
         // SAFETY: `handle` is guaranteed to contain a valid handle here
         Ok(unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) })
     } else {
@@ -416,8 +416,6 @@ impl ApplicationData {
             .ok_or(())?
             .to_owned();
 
-        // InstallTime<build_id>
-
         Ok(ApplicationData {
             vendor,
             name,
@@ -457,7 +455,7 @@ impl Annotations {
     fn from_application_data(
         application_data: &ApplicationData,
         release_channel: String,
-        install_time: String,
+        install_time: u64,
         crash_time: u64,
         startup_time: u64,
         ui_hang: bool,
@@ -465,7 +463,7 @@ impl Annotations {
         Annotations {
             BuildID: application_data.build_id.clone(),
             CrashTime: crash_time.to_string(),
-            InstallTime: install_time,
+            InstallTime: install_time.to_string(),
             Hang: ui_hang.then(|| "ui".to_string()),
             ProductID: application_data.product_id.clone(),
             ProductName: application_data.name.clone(),
@@ -486,20 +484,18 @@ struct ApplicationInformation {
     application_data: ApplicationData,
     release_channel: String,
     crash_reports_dir: PathBuf,
-    install_time: String,
+    install_time: u64,
 }
 
 impl ApplicationInformation {
     fn from_process(process: BorrowedHandle) -> Result<ApplicationInformation> {
-        let mut install_path = ApplicationInformation::get_application_path(process)?;
-        install_path.pop();
+        let exe_path = ApplicationInformation::get_application_path(process)?;
+        let install_path = exe_path.parent().ok_or(())?.to_path_buf();
         let application_data = ApplicationData::load_from_disk(install_path.as_ref())?;
         let release_channel = ApplicationInformation::get_release_channel(install_path.as_ref())?;
         let crash_reports_dir = ApplicationInformation::get_crash_reports_dir(&application_data)?;
-        let install_time = ApplicationInformation::get_install_time(
-            &crash_reports_dir,
-            &application_data.build_id,
-        );
+        let install_time =
+            crash_helper_common::ApplicationInfo::get_install_time(Some(exe_path)).unwrap_or(0);
 
         Ok(ApplicationInformation {
             install_path,
@@ -517,7 +513,7 @@ impl ApplicationInformation {
         unsafe {
             let res = K32GetModuleFileNameExW(
                 process.as_raw_handle() as HANDLE,
-                0,
+                std::ptr::null_mut(),
                 path.as_mut_ptr(),
                 (MAX_PATH + 1) as DWORD,
             );
@@ -549,7 +545,7 @@ impl ApplicationInformation {
             let res = SHGetKnownFolderPath(
                 &FOLDERID_RoamingAppData as *const _,
                 0,
-                0,
+                std::ptr::null_mut(),
                 &mut psz_path as *mut _,
             );
 
@@ -571,31 +567,6 @@ impl ApplicationInformation {
                 Err(())
             }
         }
-    }
-
-    fn get_install_time(crash_reports_path: &Path, build_id: &str) -> String {
-        let file_name = "InstallTime".to_owned() + build_id;
-        let file_path = crash_reports_path.join(file_name);
-
-        // If the file isn't present we'll attempt to atomically create it and
-        // populate it. This code essentially matches the corresponding code in
-        // nsExceptionHandler.cpp SetupExtraData().
-        if let Ok(mut file) = OpenOptions::new()
-            .create_new(true)
-            .write(true)
-            .open(&file_path)
-        {
-            // SAFETY: No risks in calling `time()` with a null pointer.
-            let _ = write!(&mut file, "{}", unsafe { time(null_mut()) });
-        }
-
-        // As a last resort, if we can't read the file we fall back to the
-        // current time. This might cause us to overstate the number of users
-        // affected by a crash, but given it's very unlikely to hit this particular
-        // path it won't be a problem.
-        //
-        // SAFETY: No risks in calling `time()` with a null pointer.
-        read_to_string(&file_path).unwrap_or(unsafe { time(null_mut()) }.to_string())
     }
 }
 
@@ -623,7 +594,7 @@ impl CrashReport {
         let annotations = Annotations::from_application_data(
             &application_information.application_data,
             application_information.release_channel.clone(),
-            application_information.install_time.clone(),
+            application_information.install_time,
             crash_time,
             startup_time,
             ui_hang,
@@ -818,7 +789,7 @@ fn get_process_basic_information(process: BorrowedHandle) -> Result<PROCESS_BASI
 }
 
 fn is_sandboxed_process(process: BorrowedHandle) -> Result<bool> {
-    let mut token: HANDLE = 0;
+    let mut token: HANDLE = null_mut();
     // SAFETY: All the pointers going into this call point to stack-allocated
     // variables and `process` is guaranteed to be a valid handle.
     let res = unsafe {

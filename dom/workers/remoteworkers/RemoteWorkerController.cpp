@@ -287,6 +287,21 @@ void RemoteWorkerController::Thaw() {
   MaybeStartSharedWorkerOp(PendingSharedWorkerOp::eThaw);
 }
 
+void RemoteWorkerController::SetLocaleOverride(
+    const nsACString& aLanguageOverride, const nsTArray<nsString>& aLanguages) {
+  AssertIsOnBackgroundThread();
+
+  MaybeStartSharedWorkerOp(aLanguageOverride, aLanguages);
+}
+
+void RemoteWorkerController::UpdateTimezoneOverride(
+    const nsAString& aTimezoneOverride) {
+  AssertIsOnBackgroundThread();
+
+  MaybeStartSharedWorkerOp(PendingSharedWorkerOp::eUpdateTimezoneOverride,
+                           aTimezoneOverride);
+}
+
 RefPtr<ServiceWorkerOpPromise> RemoteWorkerController::ExecServiceWorkerOp(
     ServiceWorkerOpArgs&& aArgs) {
   AssertIsOnBackgroundThread();
@@ -360,6 +375,21 @@ RemoteWorkerController::PendingSharedWorkerOp::PendingSharedWorkerOp(
   AssertIsOnBackgroundThread();
 }
 
+RemoteWorkerController::PendingSharedWorkerOp::PendingSharedWorkerOp(
+    const nsACString& aLanguageOverride, const nsTArray<nsString>& aLanguages)
+    : mType(eSetLocaleOverride),
+      mLanguageOverride(aLanguageOverride),
+      mLanguages(aLanguages) {
+  AssertIsOnBackgroundThread();
+}
+
+RemoteWorkerController::PendingSharedWorkerOp::PendingSharedWorkerOp(
+    Type aType, const nsAString& aTimezoneOverride)
+    : mType(aType), mTimezoneOverride(aTimezoneOverride) {
+  AssertIsOnBackgroundThread();
+  MOZ_ASSERT(aType == eUpdateTimezoneOverride);
+}
+
 RemoteWorkerController::PendingSharedWorkerOp::~PendingSharedWorkerOp() {
   AssertIsOnBackgroundThread();
   MOZ_DIAGNOSTIC_ASSERT(mCompleted);
@@ -419,6 +449,14 @@ bool RemoteWorkerController::PendingSharedWorkerOp::MaybeStart(
     case eRemoveWindowID:
       (void)aOwner->mActor->SendExecOp(
           SharedWorkerRemoveWindowIDOpArgs(mWindowID));
+      break;
+    case eSetLocaleOverride:
+      (void)aOwner->mActor->SendExecOp(
+          SharedWorkerSetLocaleOverrideOpArgs(mLanguageOverride, mLanguages));
+      break;
+    case eUpdateTimezoneOverride:
+      (void)aOwner->mActor->SendExecOp(
+          SharedWorkerUpdateTimezoneOverrideOpArgs(mTimezoneOverride));
       break;
     default:
       MOZ_CRASH("Unknown op.");

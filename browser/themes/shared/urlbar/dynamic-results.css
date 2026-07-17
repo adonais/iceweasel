@@ -169,7 +169,6 @@
     content: "•";
     margin: 0 0.6em;
     opacity: 0.6;
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       content: "\2014";
     }

@@ -9,7 +9,7 @@
 extern mozilla::LazyLogModule gMediaElementLog;
 
 #define PLAY_PROMISE_LOG(msg, ...) \
-  MOZ_LOG(gMediaElementLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(gMediaElementLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 
 namespace mozilla::dom {
 
@@ -50,7 +50,7 @@ void PlayPromise::MaybeResolveWithUndefined() {
     return;
   }
   mFulfilled = true;
-  PLAY_PROMISE_LOG("PlayPromise %p resolved with undefined", this);
+  PLAY_PROMISE_LOG("PlayPromise {} resolved with undefined", fmt::ptr(this));
   Promise::MaybeResolveWithUndefined();
 }
 
@@ -74,7 +74,7 @@ void PlayPromise::MaybeReject(nsresult aReason) {
     return;
   }
   mFulfilled = true;
-  PLAY_PROMISE_LOG("PlayPromise %p rejected with 0x%x (%s)", this,
+  PLAY_PROMISE_LOG("PlayPromise {} rejected with 0x{:x} ({})", fmt::ptr(this),
                    static_cast<uint32_t>(aReason), ToPlayResultStr(aReason));
   Promise::MaybeReject(aReason);
 }

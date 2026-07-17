@@ -402,14 +402,11 @@ class AndroidEmulatorTest(
         if c.get("enable_xorigin_tests"):
             cmd.extend(["--enable-xorigin-tests"])
 
-        try_options, try_tests = self.try_args(self.test_suite)
-        cmd.extend(try_options)
         if not self.verify_enabled and not self.per_test_coverage and not user_paths:
             cmd.extend(
                 self.query_tests_args(
                     self.config["suite_definitions"][self.test_suite].get("tests"),
                     None,
-                    try_tests,
                 )
             )
 

@@ -10,6 +10,7 @@ DevToolsModules(
     "ChannelMap.sys.mjs",
     "NetworkAuthListener.sys.mjs",
     "NetworkHelper.sys.mjs",
+    "NetworkLocalMode.sys.mjs",
     "NetworkObserver.sys.mjs",
     "NetworkOverride.sys.mjs",
     "NetworkResponseListener.sys.mjs",

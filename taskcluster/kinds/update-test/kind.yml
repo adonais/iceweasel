@@ -22,7 +22,7 @@ transforms:
 task-defaults:
     run-on-repo-type: [hg]
     shipping-product: firefox
-    run-on-releases: [release, beta, esr140]
+    run-on-releases: [release, beta, esr153]
     treeherder:
         kind: other
         tier: 2
@@ -135,14 +135,14 @@ tasks:
             - linux2404-64-shippable
 
     update-test-push-locale-fx:
-        run-on-releases: [release, esr140]
+        run-on-releases: [release, esr153]
         shipping-phase: push
         test-platforms:
             - windows11-64-25h2-shippable
             - macosx1500-aarch64-shippable
 
     update-test-linux-docker-push-locale-fx:
-        run-on-releases: [release, esr140]
+        run-on-releases: [release, esr153]
         shipping-phase: push
         worker-type: t-linux-docker-amd
         worker:

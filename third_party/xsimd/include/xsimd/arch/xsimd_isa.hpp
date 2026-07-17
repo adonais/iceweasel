@@ -13,7 +13,6 @@
 #define XSIMD_ISA_HPP
 
 #include "../config/xsimd_arch.hpp"
-
 #include "./xsimd_common_fwd.hpp"
 
 #if XSIMD_WITH_EMULATED
@@ -50,6 +49,7 @@
 
 #if XSIMD_WITH_AVX
 #include "./xsimd_avx.hpp"
+#include "./xsimd_avx_128.hpp"
 #endif
 
 #if XSIMD_WITH_FMA3_AVX
@@ -62,6 +62,7 @@
 
 #if XSIMD_WITH_AVX2
 #include "./xsimd_avx2.hpp"
+#include "./xsimd_avx2_128.hpp"
 #endif
 
 #if XSIMD_WITH_FMA3_AVX2
@@ -70,6 +71,10 @@
 
 #if XSIMD_WITH_AVX512F
 #include "./xsimd_avx512f.hpp"
+#endif
+
+#if XSIMD_WITH_AVX512VL
+#include "./xsimd_avx512vl.hpp"
 #endif
 
 #if XSIMD_WITH_AVX512DQ
@@ -85,6 +90,10 @@
 #endif
 
 #if XSIMD_WITH_AVX512PF
+#include "./xsimd_avx512pf.hpp"
+#endif
+
+#if XSIMD_WITH_AVX512VL
 #include "./xsimd_avx512pf.hpp"
 #endif
 
@@ -134,6 +143,10 @@
 
 #if XSIMD_WITH_VSX
 #include "./xsimd_vsx.hpp"
+#endif
+
+#if XSIMD_WITH_VXE
+#include "./xsimd_vxe.hpp"
 #endif
 
 // Must come last to have access to all conversion specializations.

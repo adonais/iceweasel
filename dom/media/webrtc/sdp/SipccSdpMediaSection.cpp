@@ -28,7 +28,7 @@ SipccSdpMediaSection::SipccSdpMediaSection(
       mPortCount(aOrig.mPortCount),
       mProtocol(aOrig.mProtocol),
       mFormats(aOrig.mFormats),
-      mConnection(new SdpConnection(*aOrig.mConnection)),
+      mConnection(MakeUnique<SdpConnection>(*aOrig.mConnection)),
       mBandwidths(aOrig.mBandwidths),
       mAttributeList(aOrig.mAttributeList, sessionLevel) {}
 
@@ -309,7 +309,7 @@ void SipccSdpMediaSection::AddCodec(const std::string& pt,
                                     const uint16_t channels) {
   mFormats.push_back(pt);
 
-  SdpRtpmapAttributeList* rtpmap = new SdpRtpmapAttributeList();
+  auto rtpmap = MakeUnique<SdpRtpmapAttributeList>();
   if (mAttributeList.HasAttribute(SdpAttribute::kRtpmapAttribute)) {
     const SdpRtpmapAttributeList& old = mAttributeList.GetRtpmap();
     for (auto it = old.mRtpmaps.begin(); it != old.mRtpmaps.end(); ++it) {
@@ -334,7 +334,7 @@ void SipccSdpMediaSection::AddCodec(const std::string& pt,
   }
 
   rtpmap->PushEntry(pt, codec, name, clockrate, channels);
-  mAttributeList.SetAttribute(rtpmap);
+  mAttributeList.SetAttribute(std::move(rtpmap));
 }
 
 void SipccSdpMediaSection::ClearCodecs() {
@@ -356,21 +356,21 @@ void SipccSdpMediaSection::AddDataChannel(const std::string& name,
     // new data channel format according to draft 21
     mFormats.push_back(name);
     mAttributeList.SetAttribute(
-        new SdpNumberAttribute(SdpAttribute::kSctpPortAttribute, port));
+        MakeUnique<SdpNumberAttribute>(SdpAttribute::kSctpPortAttribute, port));
     if (message_size) {
-      mAttributeList.SetAttribute(new SdpNumberAttribute(
+      mAttributeList.SetAttribute(MakeUnique<SdpNumberAttribute>(
           SdpAttribute::kMaxMessageSizeAttribute, message_size));
     }
   } else {
     // old data channels format according to draft 05
     std::string port_str = std::to_string(port);
     mFormats.push_back(port_str);
-    SdpSctpmapAttributeList* sctpmap = new SdpSctpmapAttributeList();
+    auto sctpmap = MakeUnique<SdpSctpmapAttributeList>();
     sctpmap->PushEntry(port_str, name, streams);
-    mAttributeList.SetAttribute(sctpmap);
+    mAttributeList.SetAttribute(std::move(sctpmap));
     if (message_size) {
       // This is a workaround to allow detecting Firefox's w/o EOR support
-      mAttributeList.SetAttribute(new SdpNumberAttribute(
+      mAttributeList.SetAttribute(MakeUnique<SdpNumberAttribute>(
           SdpAttribute::kMaxMessageSizeAttribute, message_size));
     }
   }

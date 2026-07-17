@@ -63,6 +63,7 @@ import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.TranslationI
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.UserAccountAuthenticated
 import org.mozilla.fenix.components.appstate.snackbar.SnackbarState.WebCompatReportSent
 import org.mozilla.fenix.components.metrics.MetricsUtils.BookmarkAction.Source
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.tabClosedUndoMessage
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.getSnackbarTimeout
@@ -624,7 +625,7 @@ class SnackbarBindingTest {
                 text = eq(testContext.getString(R.string.download_completed_snackbar)),
                 subText = eq("fileName"),
                 subTextOverflow = eq(TextOverflow.MiddleEllipsis),
-                duration = eq(testContext.getSnackbarTimeout(hasAction = true).value.toInt()),
+                duration = eq(testContext.components.settings.getSnackbarTimeout(hasAction = true).value.toInt()),
                 isError = eq(false),
                 action = eq(testContext.getString(R.string.download_completed_snackbar_action_open)),
                 withDismissAction = eq(false),
@@ -657,7 +658,7 @@ class SnackbarBindingTest {
         verify {
             snackbarDelegate.show(
                 text = "No app found to open  files",
-                duration = testContext.getSnackbarTimeout(hasAction = false).value.toInt(),
+                duration = testContext.components.settings.getSnackbarTimeout(hasAction = false).value.toInt(),
                 isError = false,
             )
         }
@@ -686,7 +687,7 @@ class SnackbarBindingTest {
                 text = eq(testContext.getString(R.string.download_in_progress_snackbar)),
                 subText = isNull(),
                 subTextOverflow = isNull(),
-                duration = eq(testContext.getSnackbarTimeout(hasAction = true).value.toInt()),
+                duration = eq(testContext.components.settings.getSnackbarTimeout(hasAction = true).value.toInt()),
                 isError = eq(false),
                 action = eq(testContext.getString(R.string.download_in_progress_snackbar_action_details)),
                 withDismissAction = eq(false),
@@ -714,7 +715,7 @@ class SnackbarBindingTest {
                 text = eq(testContext.getString(R.string.webcompat_reporter_success_snackbar_text_2)),
                 subText = isNull(),
                 subTextOverflow = isNull(),
-                duration = eq(testContext.getSnackbarTimeout().value.toInt()),
+                duration = eq(testContext.components.settings.getSnackbarTimeout().value.toInt()),
                 isError = eq(false),
                 action = isNull(),
                 withDismissAction = eq(false),

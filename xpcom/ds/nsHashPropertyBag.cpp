@@ -267,7 +267,7 @@ nsresult nsGetProperty::operator()(const nsIID& aIID,
     rv = mPropBag->GetPropertyAsInterface(mPropName, aIID, aInstancePtr);
   } else {
     rv = NS_ERROR_NULL_POINTER;
-    *aInstancePtr = 0;
+    *aInstancePtr = nullptr;
   }
 
   if (mErrorPtr) {
@@ -315,8 +315,8 @@ class ProxyHashtableDestructor final : public mozilla::Runnable {
 
 nsHashPropertyBag::~nsHashPropertyBag() {
   if (!NS_IsMainThread()) {
-    RefPtr<ProxyHashtableDestructor> runnable =
-        new ProxyHashtableDestructor(std::move(mPropertyHash));
+    RefPtr runnable =
+        MakeRefPtr<ProxyHashtableDestructor>(std::move(mPropertyHash));
     MOZ_ALWAYS_SUCCEEDS(NS_DispatchToMainThread(runnable));
   }
 }

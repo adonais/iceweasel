@@ -21,7 +21,7 @@ HTMLDetailsElement::~HTMLDetailsElement() = default;
 
 NS_IMPL_ELEMENT_CLONE(HTMLDetailsElement)
 
-HTMLDetailsElement::HTMLDetailsElement(already_AddRefed<NodeInfo>&& aNodeInfo)
+HTMLDetailsElement::HTMLDetailsElement(already_AddRefed<NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {
   SetupShadowTree();
 }

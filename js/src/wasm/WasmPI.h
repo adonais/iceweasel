@@ -58,7 +58,7 @@ class Context;
 #ifdef ENABLE_WASM_JSPI
 
 JSFunction* WasmSuspendingFunctionCreate(JSContext* cx, HandleObject func,
-                                         const FuncType& type,
+                                         uint32_t funcTypeIndex,
                                          const SharedTypeContext& typeContext);
 
 JSFunction* WasmPromisingFunctionCreate(JSContext* cx, HandleObject func);

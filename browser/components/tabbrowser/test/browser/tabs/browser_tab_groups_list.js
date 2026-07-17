@@ -48,6 +48,55 @@ async function closeAppMenu(win = window) {
   await new CustomizableUITestUtils(win).hideMainMenu();
 }
 
+/**
+ * Given a button `buttonToClick` that will create a new tab group containing
+ * a new tab, click the button and resolve to the newly opened tab group.
+ *
+ * @param {Element} buttonToClick
+ * @returns {Promise<MozTabbrowserTabGroup>}
+ */
+async function waitForNewTabGroup(buttonToClick) {
+  let initialTabCount = gBrowser.tabs.length;
+  let selectedTab = gBrowser.selectedTab;
+
+  let panel = buttonToClick.closest("panel");
+  let panelHidden = BrowserTestUtils.waitForPopupEvent(panel, "hidden");
+  let groupCreated = BrowserTestUtils.waitForEvent(
+    window,
+    "TabGroupCreateByUser"
+  );
+  // Tab group menu needs to initialize before safely removing the tab group
+  let tabGroupMenuShown = BrowserTestUtils.waitForPopupEvent(
+    gBrowser.tabGroupMenu.panel,
+    "shown"
+  );
+  buttonToClick.click();
+  let [tabGroupCreatedEvent] = await Promise.all([
+    groupCreated,
+    panelHidden,
+    tabGroupMenuShown,
+  ]);
+  let tabGroup = tabGroupCreatedEvent.target;
+
+  Assert.equal(
+    gBrowser.tabs.length,
+    initialTabCount + 1,
+    "A new tab was opened"
+  );
+  Assert.equal(tabGroup.tagName, "tab-group", "tab group was created");
+  Assert.equal(tabGroup.tabs.length, 1, "tab group has 1 tab");
+  Assert.equal(
+    tabGroup.tabs[0].linkedBrowser.currentURI.spec,
+    window.BROWSER_NEW_TAB_URL,
+    "new tab in the group uses the new tab URL"
+  );
+  Assert.ok(
+    !selectedTab.group,
+    "The previously selected tab was not added to a group"
+  );
+  return tabGroup;
+}
+
 add_task(async function test_prefChangeControlsVisibility() {
   info("Test that button is visible when pref is true");
   const button = PanelMultiView.getViewNode(
@@ -118,18 +167,61 @@ add_task(async function test_rendersSavedGroups() {
   TabGroupTestUtils.forgetSavedTabGroups();
 });
 
+// Ensures that the "New Group" button in the list's populated state
+// appears and correctly creates a new group containing a new tab.
+add_task(async function test_newGroupButton() {
+  let group1 = await createTestGroup({ label: "Group 1" });
+  let subView = await openTabGroupsSubView();
+  let button = subView.querySelector("#tab-groups-list-create-group");
+  Assert.ok(
+    button,
+    "New Group button exists when the tab groups list is populated"
+  );
+
+  let group2 = await waitForNewTabGroup(button);
+
+  Assert.notEqual(
+    group1,
+    group2,
+    "newly created group should be different from existing group"
+  );
+  await removeTabGroup(group1);
+  await removeTabGroup(group2);
+  TabGroupTestUtils.forgetSavedTabGroups();
+});
+
 add_task(async function test_emptyState() {
   let subView = await openTabGroupsSubView();
-  Assert.ok(
-    subView.querySelector(".tab-groups-list-empty-state"),
-    "Empty state element is rendered"
-  );
+  let emptyState = subView.querySelector(".tab-groups-list-empty-state");
+  Assert.ok(emptyState, "Empty state element is rendered");
   Assert.equal(
     subView.querySelectorAll(".tab-group-row").length,
     0,
     "No group rows rendered in empty state"
   );
+  Assert.ok(
+    emptyState.querySelector(".tab-groups-list-empty-state-header"),
+    "Empty state header is rendered"
+  );
+  Assert.ok(
+    emptyState.querySelector(".tab-groups-list-empty-state-description"),
+    "Empty state description is rendered"
+  );
+  Assert.ok(
+    emptyState.querySelector("moz-button"),
+    "Empty state button is rendered"
+  );
   await closeAppMenu();
+});
+
+add_task(async function test_emptyStateButtonCreatesTabGroup() {
+  let subView = await openTabGroupsSubView();
+  let button = subView.querySelector(".tab-groups-list-empty-state moz-button");
+
+  let tabGroup = await waitForNewTabGroup(button);
+
+  await removeTabGroup(tabGroup);
+  TabGroupTestUtils.forgetSavedTabGroups();
 });
 
 add_task(async function test_clickOpenGroupActivatesGroup() {

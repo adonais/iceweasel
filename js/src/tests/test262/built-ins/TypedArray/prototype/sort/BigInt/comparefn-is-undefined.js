@@ -20,6 +20,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
 
   assert.compareArray(explicit, [42n, 43n, 44n, 45n, 46n], 'The value of `explicit` is [42n, 43n, 44n, 45n, 46n]');
   assert.compareArray(implicit, [42n, 43n, 44n, 45n, 46n], 'The value of `implicit` is [42n, 43n, 44n, 45n, 46n]');
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

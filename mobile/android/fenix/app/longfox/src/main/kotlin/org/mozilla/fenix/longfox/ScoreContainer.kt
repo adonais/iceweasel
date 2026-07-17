@@ -34,6 +34,7 @@ fun ScoreContainer(score: Int) {
     ) {
         Text(
             text = stringResource(R.string.score, score),
+            fontFamily = LongFoxText.zx,
             color = Color.White,
             fontWeight = FontWeight.Bold,
             fontSize = 24.sp,

@@ -320,70 +320,58 @@ void TimerEventAllocator::Free(void* aPtr) {
 
 }  // namespace
 
-struct TimerMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("Timer");
+struct TimerMarker : public BaseMarkerType<TimerMarker> {
+  static constexpr const char* Name = "Timer";
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"delay", MS::InputType::TimeDuration, "Delay", MS::Format::Milliseconds},
+      {"ttype", MS::InputType::CString, "Timer Type", MS::Format::UniqueString},
+      {"canceled", MS::InputType::Boolean, "Canceled"},
+      {"threadId", MS::InputType::Int64, nullptr, MS::Format::String,
+       MS::PayloadFlags::Hidden},
+  };
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr const char* ChartLabel =
+      "{marker.data.canceled ? '❌ ' : ''}{marker.data.delay}";
+  static constexpr const char* TableLabel = ChartLabel;
+  // The string property for the timer type is not written when the type is
+  // one shot, as that's the type used almost all the time, and that would
+  // consume space in the profiler buffer and then in the profile JSON,
+  // getting in the way of capturing long power profiles.
+  // Bug 1815677 might make this cheap to capture.
+  static const char* TimerTypeString(uint8_t aType) {
+    switch (aType) {
+      case nsITimer::TYPE_REPEATING_SLACK:
+        return "repeating slack";
+      case nsITimer::TYPE_REPEATING_PRECISE:
+        return "repeating precise";
+      case nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP:
+        return "repeating precise can skip";
+      case nsITimer::TYPE_REPEATING_SLACK_LOW_PRIORITY:
+        return "repeating slack low priority";
+      case nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY:
+        return "low priority";
+      default:
+        return "";
+    }
   }
   static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   uint32_t aDelay, uint8_t aType,
+                                   TimeDuration aDelay, uint8_t aType,
                                    MarkerThreadId aThreadId, bool aCanceled) {
-    aWriter.IntProperty("delay", aDelay);
-    if (!aThreadId.IsUnspecified()) {
-      // Tech note: If `ToNumber()` returns a uint64_t, the conversion to
-      // int64_t is "implementation-defined" before C++20. This is
-      // acceptable here, because this is a one-way conversion to a unique
-      // identifier that's used to visually separate data by thread on the
-      // front-end.
-      aWriter.IntProperty(
-          "threadId", static_cast<int64_t>(aThreadId.ThreadId().ToNumber()));
+    StreamJSONMarkerDataImpl(aWriter, aDelay);
+
+    const auto ttype = MakeStringSpan(TimerTypeString(aType));
+    if (ttype.Length()) {
+      aWriter.UniqueStringProperty("ttype", ttype);
     }
+
     if (aCanceled) {
       aWriter.BoolProperty("canceled", true);
     }
 
-    // The string property for the timer type is not written when the type is
-    // one shot, as that's the type used almost all the time, and that would
-    // consume space in the profiler buffer and then in the profile JSON,
-    // getting in the way of capturing long power profiles.
-    // Bug 1815677 might make this cheap to capture.
-    if (aType != nsITimer::TYPE_ONE_SHOT) {
-      if (aType == nsITimer::TYPE_REPEATING_SLACK) {
-        aWriter.StringProperty("ttype", "repeating slack");
-      } else if (aType == nsITimer::TYPE_REPEATING_PRECISE) {
-        aWriter.StringProperty("ttype", "repeating precise");
-      } else if (aType == nsITimer::TYPE_REPEATING_PRECISE_CAN_SKIP) {
-        aWriter.StringProperty("ttype", "repeating precise can skip");
-      } else if (aType == nsITimer::TYPE_REPEATING_SLACK_LOW_PRIORITY) {
-        aWriter.StringProperty("ttype", "repeating slack low priority");
-      } else if (aType == nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY) {
-        aWriter.StringProperty("ttype", "low priority");
-      }
-    }
-  }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("delay", "Delay", MS::Format::Milliseconds);
-    schema.AddKeyLabelFormat("ttype", "Timer Type", MS::Format::String);
-    schema.AddKeyLabelFormat("canceled", "Canceled", MS::Format::String);
-    // Show a red 'X' as a prefix on the marker chart for canceled timers.
-    schema.SetChartLabel(
-        "{marker.data.canceled ? '❌ ' : ''}{marker.data.delay}");
-    schema.SetTableLabel(
-        "{marker.data.canceled ? '❌ ' : ''}{marker.data.delay}");
-    return schema;
-  }
-};
-
-struct AddRemoveTimerMarker {
-  static constexpr Span<const char> MarkerTypeName() {
-    return MakeStringSpan("AddRemoveTimer");
-  }
-  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
-                                   const ProfilerString8View& aTimerName,
-                                   uint32_t aDelay, MarkerThreadId aThreadId) {
-    aWriter.StringProperty("name", aTimerName);
-    aWriter.IntProperty("delay", aDelay);
     if (!aThreadId.IsUnspecified()) {
       // Tech note: If `ToNumber()` returns a uint64_t, the conversion to
       // int64_t is "implementation-defined" before C++20. This is
@@ -394,13 +382,55 @@ struct AddRemoveTimerMarker {
           "threadId", static_cast<int64_t>(aThreadId.ThreadId().ToNumber()));
     }
   }
-  static MarkerSchema MarkerTypeDisplay() {
-    using MS = MarkerSchema;
-    MS schema{MS::Location::MarkerChart, MS::Location::MarkerTable};
-    schema.AddKeyLabelFormat("name", "Name", MS::Format::String);
-    schema.AddKeyLabelFormat("delay", "Delay", MS::Format::Milliseconds);
-    schema.SetTableLabel("{marker.data.name} - {marker.data.delay}");
-    return schema;
+  static void TranslateMarkerInputToSchema(void* aContext, TimeDuration aDelay,
+                                           uint8_t aType,
+                                           MarkerThreadId aThreadId,
+                                           bool aCanceled) {
+    ETW::OutputMarkerSchema(
+        aContext, TimerMarker{}, aDelay,
+        mozilla::ProfilerString8View::WrapNullTerminatedString(
+            TimerTypeString(aType)),
+        aCanceled, static_cast<int64_t>(aThreadId.ThreadId().ToNumber()));
+  }
+};
+
+struct AddRemoveTimerMarker : public BaseMarkerType<AddRemoveTimerMarker> {
+  static constexpr const char* Name = "AddRemoveTimer";
+  using MS = MarkerSchema;
+  static constexpr MS::PayloadField PayloadFields[] = {
+      {"name", MS::InputType::CString, "Name", MS::Format::String},
+      {"delay", MS::InputType::TimeDuration, "Delay", MS::Format::Milliseconds},
+      {"threadId", MS::InputType::Int64, nullptr, MS::Format::String,
+       MS::PayloadFlags::Hidden},
+  };
+  static constexpr MS::Location Locations[] = {
+      MS::Location::MarkerChart,
+      MS::Location::MarkerTable,
+  };
+  static constexpr const char* TableLabel =
+      "{marker.data.name} - {marker.data.delay}";
+
+  static void TranslateMarkerInputToSchema(
+      void* aContext, const ProfilerString8View& aTimerName,
+      TimeDuration aDelay, MarkerThreadId aThreadId) {
+    ETW::OutputMarkerSchema(
+        aContext, AddRemoveTimerMarker{}, aTimerName, aDelay,
+        static_cast<int64_t>(aThreadId.ThreadId().ToNumber()));
+  }
+  static void StreamJSONMarkerData(baseprofiler::SpliceableJSONWriter& aWriter,
+                                   const ProfilerString8View& aTimerName,
+                                   TimeDuration aDelay,
+                                   MarkerThreadId aThreadId) {
+    StreamJSONMarkerDataImpl(aWriter, aTimerName, aDelay);
+    if (!aThreadId.IsUnspecified()) {
+      // Tech note: If `ToNumber()` returns a uint64_t, the conversion to
+      // int64_t is "implementation-defined" before C++20. This is
+      // acceptable here, because this is a one-way conversion to a unique
+      // identifier that's used to visually separate data by thread on the
+      // front-end.
+      aWriter.IntProperty(
+          "threadId", static_cast<int64_t>(aThreadId.ThreadId().ToNumber()));
+    }
   }
 };
 
@@ -448,7 +478,7 @@ nsTimerEvent::Run() {
                           : MarkerTiming::IntervalUntilNowFrom(
                                 mTimer->mTimeout - mTimer->mDelay),
                       MarkerThreadId(mTimerThreadId)),
-        TimerMarker{}, mTimer->mDelay.ToMilliseconds(), mTimer->mType,
+        TimerMarker{}, mTimer->mDelay, mTimer->mType,
         MarkerThreadId::CurrentThread(), false);
     // This marker is meant to help understand the behavior of the timer thread.
     profiler_add_marker(
@@ -457,7 +487,7 @@ nsTimerEvent::Run() {
                           ? MarkerTiming::IntervalUntilNowFrom(mInitTime)
                           : MarkerTiming::InstantNow(),
                       MarkerThreadId(mTimerThreadId)),
-        AddRemoveTimerMarker{}, mTimer->mName, mTimer->mDelay.ToMilliseconds(),
+        AddRemoveTimerMarker{}, mTimer->mName, mTimer->mDelay,
         MarkerThreadId::CurrentThread());
   }
 
@@ -482,7 +512,7 @@ nsresult TimerThread::Init() {
     if (NS_FAILED(rv)) {
       mThread = nullptr;
     } else {
-      RefPtr<TimerObserverRunnable> r = new TimerObserverRunnable(this);
+      RefPtr r = MakeRefPtr<TimerObserverRunnable>(this);
       if (NS_IsMainThread()) {
         r->Run();
       } else {
@@ -909,7 +939,7 @@ nsresult TimerThread::AddTimer(nsTimerImpl* aTimer,
             MarkerStack::MaybeCapture(
                 aTimer->mName.Equals("nonfunction:JS") ||
                 StringHead(aTimer->mName, prefix.Length()) == prefix)),
-        AddRemoveTimerMarker{}, aTimer->mName, aTimer->mDelay.ToMilliseconds(),
+        AddRemoveTimerMarker{}, aTimer->mName, aTimer->mDelay,
         MarkerThreadId::CurrentThread());
   }
 
@@ -953,7 +983,7 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
             MarkerStack::MaybeCapture(
                 aTimer->mName.Equals("nonfunction:JS") ||
                 StringHead(aTimer->mName, prefix.Length()) == prefix)),
-        AddRemoveTimerMarker{}, aTimer->mName, aTimer->mDelay.ToMilliseconds(),
+        AddRemoveTimerMarker{}, aTimer->mName, aTimer->mDelay,
         MarkerThreadId::CurrentThread());
     // This adds a marker with the timer name as the marker name, to make it
     // obvious which timers are being used. This marker will be useful to
@@ -962,8 +992,8 @@ nsresult TimerThread::RemoveTimer(nsTimerImpl* aTimer,
                         MarkerOptions(MarkerTiming::IntervalUntilNowFrom(
                                           aTimer->mTimeout - aTimer->mDelay),
                                       MarkerThreadId(mProfilerThreadId)),
-                        TimerMarker{}, aTimer->mDelay.ToMilliseconds(),
-                        aTimer->mType, MarkerThreadId::CurrentThread(), true);
+                        TimerMarker{}, aTimer->mDelay, aTimer->mType,
+                        MarkerThreadId::CurrentThread(), true);
   }
 
   return NS_OK;

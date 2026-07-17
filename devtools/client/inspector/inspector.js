@@ -437,7 +437,37 @@ class Inspector extends EventEmitter {
       this.#setupToolbar();
     } catch (e) {
       this.#handleRejectionIfNotDestroyed(e);
+      // Only if this isn't a toolbox closing exception,
+      // and if the markup view failed rendering,
+      // show the AppErrorBoundary for that exception.
+      if (!this.#destroyed && !this.#markupFrame) {
+        this.#showErrorBoundary(e);
+      }
     }
+  }
+
+  /**
+   * Show detailed information about a crash if the inspector
+   * failed enough to be blank and not render the markup view
+   */
+  #showErrorBoundary(exception) {
+    const STARTUP_L10N = new LocalizationHelper(
+      "devtools/client/locales/startup.properties"
+    );
+    const element = this.React.createElement(
+      this.browserRequire(
+        "resource://devtools/client/shared/components/AppErrorBoundary.js"
+      ),
+      {
+        componentName: "General",
+        panel: STARTUP_L10N.getStr("inspector.panelLabel"),
+      },
+      // Pass en empty list of children to please React
+      []
+    );
+    this.#markupBox = this.panelDoc.getElementById("markup-box");
+    const appErrorBoundary = this.ReactDOM.render(element, this.#markupBox);
+    appErrorBoundary.handleException(exception, this.#toolbox);
   }
 
   async #initMarkupView() {
@@ -462,7 +492,7 @@ class Inspector extends EventEmitter {
         })
       );
 
-      this.#markupFrame.setAttribute("src", "markup/markup.xhtml");
+      this.#markupFrame.setAttribute("src", "markup/markup.html");
 
       await onMarkupFrameLoaded;
     }
@@ -2121,6 +2151,22 @@ class Inspector extends EventEmitter {
       this.markup.eventDetailsTooltip.hide();
       return true;
     }
+
+    // We only want to see if the RuleView was created, as the tooltips might be displayed
+    // even if the RuleView is not the active tab.
+    if (this.#panels.has("ruleview")) {
+      const ruleView = this.getPanel("ruleview").view;
+      for (const tooltip of ruleView.tooltips.instances.values()) {
+        // If we have a tooltip displayed in the Rules view, hide it and bail.
+        // We can't have multiple tooltips visible at the same time, so it's fine to
+        // hide the first visible one for now.
+        if (tooltip.isVisible()) {
+          tooltip.hide();
+          return true;
+        }
+      }
+    }
+
     return false;
   }
 

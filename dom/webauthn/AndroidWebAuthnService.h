@@ -77,12 +77,6 @@ class AndroidWebAuthnService final : public nsIWebAuthnService {
 
  private:
   ~AndroidWebAuthnService() = default;
-
-  // The Android FIDO2 API doesn't accept the credProps extension. However, the
-  // appropriate value for CredentialPropertiesOutput.rk can be determined
-  // entirely from the input, so we cache it here until mRegisterPromise
-  // resolves.
-  Maybe<bool> mRegisterCredPropsRk;
 };
 
 }  // namespace dom

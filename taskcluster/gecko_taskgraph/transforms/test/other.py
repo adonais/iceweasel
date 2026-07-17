@@ -746,6 +746,33 @@ def apply_raptor_tier_optimization(config, tasks):
 
 
 @transforms.add
+def apply_bug2043540_optimization(config, tasks):
+    """Bug 2043540 - reduce mochitest-browser-chrome cadence on macosx1015-64
+    (Catalina) to relieve the backed-up 10.15 ESR pool.
+
+    Applied as a transform (rather than YAML `optimization:`) because the test
+    schema declares `optimization` and `schedules-component` as mutually
+    exclusive; mochitest-browser-chrome has schedules-component set. The
+    transform runs after schema validation, so setting task["optimization"]
+    here is safe.
+
+    skip-unless-backstop preserves coverage on m-c, beta, release, and ESR
+    branches (params["backstop"] is True for non-integration projects) and
+    only skips on regular autoland pushes (~95% of Catalina mbc cycles).
+    Applied to both opt and debug builds; the standalone debug variants
+    already carry skip-unless-backstop, so re-applying it is idempotent.
+    """
+    for task in tasks:
+        test_platform = task.get("test-platform", "")
+        if (
+            task.get("test-name") == "mochitest-browser-chrome"
+            and "macosx1015-64" in test_platform
+        ):
+            task["optimization"] = {"test-backstop": None}
+        yield task
+
+
+@transforms.add
 def disable_try_only_platforms(config, tasks):
     """Turns off platforms that should only run on try."""
     try_only_platforms = ()

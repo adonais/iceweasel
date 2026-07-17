@@ -13,9 +13,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   QuickSuggest: "moz-src:///browser/components/urlbar/QuickSuggest.sys.mjs",
   Region: "resource://gre/modules/Region.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
-  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
 });
 
 const MERINO_TIMEOUT_MS = 5000; // 5s
@@ -141,11 +140,6 @@ const WEATHER_VIEW_TEMPLATE = {
 export class WeatherSuggestions extends SuggestProvider {
   constructor() {
     super();
-    lazy.UrlbarResult.addDynamicResultType(WEATHER_DYNAMIC_TYPE);
-    lazy.UrlbarView.addDynamicViewTemplate(
-      WEATHER_DYNAMIC_TYPE,
-      WEATHER_VIEW_TEMPLATE
-    );
   }
 
   get enablingPreferences() {
@@ -284,6 +278,10 @@ export class WeatherSuggestions extends SuggestProvider {
         helpUrl: lazy.QuickSuggest.HELP_URL,
       },
     });
+  }
+
+  getViewTemplate(_result) {
+    return WEATHER_VIEW_TEMPLATE;
   }
 
   getViewUpdate(result) {

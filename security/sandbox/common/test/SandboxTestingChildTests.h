@@ -903,7 +903,7 @@ void RunTestsRDD(SandboxTestingChild* child) {
   });
 
 #  elif XP_MACOSX
-  RunMacTestLaunchProcess(child);
+  RunMacTestLaunchProcess(child, EPERM);
   RunMacTestWindowServer(child);
   RunMacTestAudioAPI(child, true);
 #  endif

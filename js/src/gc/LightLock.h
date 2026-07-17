@@ -120,8 +120,6 @@ class LightLock {
     TSANMemoryReleaseFence(runtime);
 #endif
   }
-
-  static void pause();
 };
 
 class LightLockRuntime {

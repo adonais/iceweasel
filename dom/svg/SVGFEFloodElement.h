@@ -8,7 +8,7 @@
 #include "mozilla/dom/SVGFilters.h"
 
 nsresult NS_NewSVGFEFloodElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -17,11 +17,10 @@ using SVGFEFloodElementBase = SVGFilterPrimitiveElement;
 class SVGFEFloodElement final : public SVGFEFloodElementBase {
   friend nsresult(::NS_NewSVGFEFloodElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  protected:
-  explicit SVGFEFloodElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit SVGFEFloodElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFEFloodElementBase(std::move(aNodeInfo)) {}
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 

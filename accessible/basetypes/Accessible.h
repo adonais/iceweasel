@@ -501,6 +501,11 @@ class Accessible {
    */
   virtual void DOMNodeClass(nsString& aClass) const = 0;
 
+  /**
+   * Return the Heading Level this accessible represents.
+   */
+  virtual int32_t HeadingLevel() const = 0;
+
   //////////////////////////////////////////////////////////////////////////////
   // ActionAccessible
 

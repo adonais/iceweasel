@@ -64,6 +64,12 @@ class TenuringTracer final : public JSTracer {
   // collection when out of memory to insert new entries.
   mozilla::Maybe<StringDeDupSet> stringDeDupSet;
 
+  // Heap location of the source of edges traced via the object trace hook so
+  // the buffer allocator can to update its heap location for any attached
+  // buffers.
+  mozilla::Maybe<bool> sourceIsInNursery;
+  friend class BufferAllocator;
+
   bool tenureEverything;
 
   // A flag set when a GC thing is promoted to the next nursery generation (as
@@ -76,6 +82,8 @@ class TenuringTracer final : public JSTracer {
 #endif
 
  public:
+  static TenuringTracer* From(JSTracer* trc);
+
   TenuringTracer(JSRuntime* rt, Nursery* nursery, bool tenureEverything);
   ~TenuringTracer();
 
@@ -119,10 +127,11 @@ class TenuringTracer final : public JSTracer {
   void traceBufferedCells(Arena* arena, ArenaCellSet* cells);
 
   class AutoPromotedAnyToNursery;
+  class AutoSetSourceHeap;
 
  private:
 #define DEFINE_ON_EDGE_METHOD(name, type, _1, _2) \
-  void on##name##Edge(type** thingp, const char* name) override;
+  bool on##name##Edge(type** thingp, const char* name) override;
   JS_FOR_EACH_TRACEKIND(DEFINE_ON_EDGE_METHOD)
 #undef DEFINE_ON_EDGE_METHOD
 

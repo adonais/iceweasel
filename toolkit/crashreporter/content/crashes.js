@@ -31,8 +31,6 @@ document.addEventListener("DOMContentLoaded", () => {
     });
 });
 
-const buildID = Services.appinfo.appBuildID;
-
 /**
  * Adds the crash reports with submission buttons and links
  * to the unsubmitted and submitted crash report lists.
@@ -192,7 +190,7 @@ function submitPendingReport(reportId, row, button, buttonText, dateFormatter) {
 }
 
 /**
- * Deletes unsubmitted and old crash reports from the user's device.
+ * Deletes unsubmitted crash reports from the user's device.
  * Then, hides the list of unsubmitted crash reports.
  */
 async function clearUnsubmittedReports() {
@@ -205,7 +203,6 @@ async function clearUnsubmittedReports() {
   }
 
   await enqueueCleanup(() => cleanupFolder(CrashReports.pendingDir.path));
-  await enqueueCleanup(clearOldReports);
   document.getElementById("reportListUnsubmitted").classList.add("hidden");
 }
 
@@ -226,7 +223,7 @@ async function submitAllUnsubmittedReports() {
 }
 
 /**
- * Deletes submitted and old crash reports from the user's device.
+ * Deletes submitted crash reports from the user's device.
  * Then, hides the list of submitted crash reports.
  */
 async function clearSubmittedReports() {
@@ -244,27 +241,8 @@ async function clearSubmittedReports() {
       async entry => entry.name.startsWith("bp-") && entry.name.endsWith(".txt")
     )
   );
-  await enqueueCleanup(clearOldReports);
   document.getElementById("reportListSubmitted").classList.add("hidden");
   document.getElementById("noSubmittedReports").classList.remove("hidden");
-}
-
-/**
- * Deletes old crash reports from the user's device.
- */
-async function clearOldReports() {
-  const oneYearAgo = Date.now() - 31586000000;
-  await cleanupFolder(CrashReports.reportsDir.path, async entry => {
-    if (
-      !entry.name.startsWith("InstallTime") ||
-      entry.name == "InstallTime" + buildID
-    ) {
-      return false;
-    }
-
-    const stat = await IOUtils.stat(entry.path);
-    return stat.lastModified < oneYearAgo;
-  });
 }
 
 /**
@@ -286,9 +264,10 @@ async function cleanupFolder(path, filter) {
   try {
     children = await IOUtils.getChildren(path);
   } catch (e) {
-    if (DOMException.isInstance(e) || e.name !== "NotFoundError") {
+    if (!DOMException.isInstance(e) || e.name !== "NotFoundError") {
       throw e;
     }
+    return;
   }
 
   for (const childPath of children) {

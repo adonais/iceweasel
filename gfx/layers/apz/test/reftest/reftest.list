@@ -16,7 +16,7 @@ skip-if(useDrawSnapshot) fuzzy(0-15,0-24) pref(apz.allow_zooming,true) == async-
 skip-if(Android) fuzzy(0-107,0-72) pref(apz.allow_zooming,true) pref(apz.scrollthumb.recalc,true) == root-scrollbar-async-zoomed-in.html root-scrollbar-async-zoomed-in-ref.html
 skip-if(Android) fuzzy(0-107,0-167) pref(apz.allow_zooming,true) pref(apz.scrollthumb.recalc,true) == root-scrollbar-async-zoomed-out.html root-scrollbar-async-zoomed-out-ref.html
 skip-if(!Android) fuzzy(0-54,0-33) pref(apz.allow_zooming,true) == root-scrollbar-async-zoomed-in.html root-scrollbar-async-zoomed-in-ref.html
-skip-if(!Android) fuzzy(0-53,0-30) pref(apz.allow_zooming,true) == root-scrollbar-async-zoomed-out.html root-scrollbar-async-zoomed-out-ref.html
+skip-if(!Android) fuzzy(0-54,0-30) pref(apz.allow_zooming,true) == root-scrollbar-async-zoomed-out.html root-scrollbar-async-zoomed-out-ref.html
 
 # Test that the compositor thumb sizing calculations handle a non-default device scale correctly
 fuzzy-if(Android,0-31,0-29) fuzzy-if(gtkWidget,0-18,0-49) fuzzy-if(cocoaWidget,0-21,0-53) == async-scrollbar-1-v-fullzoom.html async-scrollbar-1-v-fullzoom-ref.html

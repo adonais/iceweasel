@@ -1111,23 +1111,6 @@ static int64_t masked_compound_type_rd(
                                          diff10, strides);
     *calc_pred_masked_compound = 0;
   }
-  if (compound_type == COMPOUND_WEDGE) {
-    unsigned int sse;
-    if (is_cur_buf_hbd(xd))
-      (void)cpi->ppi->fn_ptr[bsize].vf(CONVERT_TO_BYTEPTR(*preds0), *strides,
-                                       CONVERT_TO_BYTEPTR(*preds1), *strides,
-                                       &sse);
-    else
-      (void)cpi->ppi->fn_ptr[bsize].vf(*preds0, *strides, *preds1, *strides,
-                                       &sse);
-    const unsigned int mse =
-        ROUND_POWER_OF_TWO(sse, num_pels_log2_lookup[bsize]);
-    // If two predictors are very similar, skip wedge compound mode search
-    if (mse < 8 || (!have_newmv_in_inter_mode(this_mode) && mse < 64)) {
-      *comp_model_rd_cur = INT64_MAX;
-      return INT64_MAX;
-    }
-  }
   // Function pointer to pick the appropriate mask
   // compound_type == COMPOUND_WEDGE, calls pick_interinter_wedge()
   // compound_type == COMPOUND_DIFFWTD, calls pick_interinter_seg()
@@ -1461,12 +1444,29 @@ int av1_compound_type_rd(const AV1_COMP *const cpi, MACROBLOCK *x,
           have_newmv_in_inter_mode(this_mode) &&
           !cpi->sf.inter_sf.disable_interinter_wedge_newmv_search;
 
-      if (need_mask_search && !wedge_newmv_search) {
+      if ((need_mask_search && !wedge_newmv_search) ||
+          cpi->sf.inter_sf.skip_interinter_wedge_search_based_on_mse) {
         // short cut repeated single reference block build
         av1_build_inter_predictors_for_planes_single_buf(xd, bsize, 0, 0, 0,
                                                          preds0, strides);
         av1_build_inter_predictors_for_planes_single_buf(xd, bsize, 0, 0, 1,
                                                          preds1, strides);
+
+        if (cpi->sf.inter_sf.skip_interinter_wedge_search_based_on_mse) {
+          unsigned int sse;
+          if (is_cur_buf_hbd(xd))
+            (void)cpi->ppi->fn_ptr[bsize].vf(
+                CONVERT_TO_BYTEPTR(*preds0), *strides,
+                CONVERT_TO_BYTEPTR(*preds1), *strides, &sse);
+          else
+            (void)cpi->ppi->fn_ptr[bsize].vf(*preds0, *strides, *preds1,
+                                             *strides, &sse);
+          const unsigned int mse =
+              ROUND_POWER_OF_TWO(sse, num_pels_log2_lookup[bsize]);
+          // If two predictors are very similar, skip wedge compound mode
+          // search.
+          if (mse < 512) continue;
+        }
       }
 
       for (int wedge_mask = 0; wedge_mask < wedge_mask_size && need_mask_search;

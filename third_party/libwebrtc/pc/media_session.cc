@@ -575,6 +575,13 @@ bool SetCodecsInAnswer(const MediaContentDescription* offer,
   return true;
 }
 
+// Negotiates Sframe support between the offer and the local answerer options.
+bool NegotiateSframeUsage(
+    const MediaContentDescription* offer,
+    const MediaDescriptionOptions& media_description_options) {
+  return offer->sframe_enabled() && media_description_options.sframe_enabled;
+}
+
 // Create a media content to be answered for the given `sender_options`
 // according to the given session_options.rtcp_mux, session_options.streams,
 // codecs, crypto, and current_streams.  If we don't currently have crypto (in
@@ -632,6 +639,8 @@ bool CreateMediaContentAnswer(
 
   answer->set_direction(NegotiateRtpTransceiverDirection(
       offer->direction(), media_description_options.direction));
+  answer->set_sframe_enabled(
+      NegotiateSframeUsage(offer, media_description_options));
 
   return true;
 }
@@ -745,6 +754,7 @@ RTCErrorOr<std::unique_ptr<SessionDescription>>
 MediaSessionDescriptionFactory::CreateOfferOrError(
     const MediaSessionOptions& session_options,
     const SessionDescription* current_description) const {
+  RTC_DCHECK_DISALLOW_THREAD_BLOCKING_CALLS();
   // Must have options for each existing section.
   if (current_description) {
     RTC_DCHECK_LE(current_description->contents().size(),
@@ -1245,6 +1255,8 @@ RTCError MediaSessionDescriptionFactory::AddRtpContentForOffer(
   SetMediaProtocol(secure_transport, content_description.get());
 
   content_description->set_direction(media_description_options.direction);
+  content_description->set_sframe_enabled(
+      media_description_options.sframe_enabled);
   bool has_codecs = !content_description->codecs().empty();
 
   session_description->AddContent(
@@ -1271,7 +1283,7 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForOffer(
 
   std::vector<std::string> crypto_suites;
   // Unlike SetMediaProtocol below, we need to set the protocol
-  // before we call CreateMediaContentOffer.  Otherwise,
+  // before we call CreateMediaContentOffer. Otherwise,
   // CreateMediaContentOffer won't know this is SCTP and will
   // generate SSRCs rather than SIDs.
   data->set_protocol(secure_transport ? kMediaProtocolUdpDtlsSctp
@@ -1284,10 +1296,7 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForOffer(
           current_content->media_description()->as_sctp();
       RTC_DCHECK(current_data_description);
       data->set_sctp_init(current_data_description->sctp_init());
-    }
-    if (!data->sctp_init().has_value()) {
-      // Create a sctp-init on subsequent offers even if the remote side
-      // has not negotiated one previously.
+    } else {
       data->set_sctp_init(sctp_factory_->GenerateConnectionToken(env_));
     }
   }
@@ -1535,8 +1544,7 @@ RTCError MediaSessionDescriptionFactory::AddDataContentForAnswer(
           RTC_DCHECK(current_data_description);
           data_answer->as_sctp()->set_sctp_init(
               current_data_description->sctp_init());
-        }
-        if (!data_answer->as_sctp()->sctp_init().has_value()) {
+        } else {
           data_answer->as_sctp()->set_sctp_init(
               sctp_factory_->GenerateConnectionToken(env_));
         }

@@ -1,7 +1,7 @@
 {
   "label": "musicstore.auone.jp",
   "bugs": {
-    "1385206": {
+    "1902403": {
       "issue": "firefox-blocked-completely",
       "matches": ["*://musicstore.auone.jp/*"]
     }

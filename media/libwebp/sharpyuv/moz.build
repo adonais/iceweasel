@@ -13,6 +13,8 @@ LOCAL_INCLUDES += [
     '/media/libwebp',
 ]
 
+include('/media/libwebp/libwebp-config.mozbuild')
+
 # Note the defines in this file for cpu instruction sets are mostly overridden
 # and enabled by what src/dsp/cpu.h does. So just removing the defines here may do
 # nothing.

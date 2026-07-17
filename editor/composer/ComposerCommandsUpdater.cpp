@@ -17,6 +17,7 @@
 #include "nsIInterfaceRequestorUtils.h"  // for do_GetInterface
 #include "nsLiteralString.h"             // for NS_LITERAL_STRING
 #include "nsPIDOMWindow.h"               // for nsPIDOMWindow
+#include "nsPIDOMWindowInlines.h"        // for nsPIDOMWindowOuter::GetDocShell
 
 class nsITransaction;
 

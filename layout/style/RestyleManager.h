@@ -498,7 +498,7 @@ class RestyleManager {
   void RestyleWholeContainer(nsINode* aContainer, NodeSelectorFlags);
   void RestylePreviousSiblings(nsIContent* aStartingSibling);
   void RestyleSiblingsStartingWith(nsIContent* aStartingSibling);
-
+  void RecascadeForTreeCountingFunctions(nsINode* aContainer);
   void RestyleForEmptyChange(Element* aContainer);
   void MaybeRestyleForEdgeChildChange(nsINode* aContainer,
                                       nsIContent* aChangedChild);

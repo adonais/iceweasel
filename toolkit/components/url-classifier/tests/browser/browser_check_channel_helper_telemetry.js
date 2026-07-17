@@ -74,11 +74,17 @@ add_task(async function test_check_channel_helper_telemetry() {
   await BrowserTestUtils.removeTab(tab);
 });
 
+function countOf(metric) {
+  let value = metric.testGetValue();
+  return value ? value.count : 0;
+}
+
 add_task(async function test_check_channel_helper_telemetry_defer_pref_on() {
-  // With the defer pref on, classification runs in two phases for any channel
-  // that has at least one annotation feature applicable (TrackingAnnotation
-  // applies on third-party tracker subresources). Load a tracker image to
-  // guarantee both phases record samples.
+  // With the defer pref on, a tracker subresource is classified in two phases:
+  // a blocking phase before connect, and an annotation-only phase before
+  // processing the response. The probe is intentionally scoped to the
+  // blocking phase only, so the annotation-only second phase must not add
+  // samples.
   Services.fog.testResetFOG();
 
   await SpecialPowers.pushPrefEnv({
@@ -90,6 +96,10 @@ add_task(async function test_check_channel_helper_telemetry_defer_pref_on() {
   });
 
   const tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, TEST_PAGE);
+
+  let outerBefore = countOf(Glean.urlclassifier.checkChannelHelperTime);
+  let workerBefore = countOf(Glean.urlclassifier.checkChannelHelperWorkerTime);
+
   await loadImage(
     tab.linkedBrowser,
     "https://tracking.example.org/" + TEST_PATH + "raptor.jpg"
@@ -97,22 +107,22 @@ add_task(async function test_check_channel_helper_telemetry_defer_pref_on() {
 
   let outer = await waitForTimingDistribution(
     Glean.urlclassifier.checkChannelHelperTime,
-    2
+    outerBefore + 1
   );
   let worker = await waitForTimingDistribution(
     Glean.urlclassifier.checkChannelHelperWorkerTime,
-    2
+    workerBefore + 1
   );
 
-  Assert.greaterOrEqual(
-    outer.count,
-    2,
-    "checkChannelHelperTime records >= 2 samples (blocking + annotation phase) under pref ON"
+  Assert.equal(
+    outer.count - outerBefore,
+    1,
+    "tracker image adds exactly one checkChannelHelperTime sample (blocking phase only; annotation-only phase must not record)"
   );
-  Assert.greaterOrEqual(
-    worker.count,
-    2,
-    "checkChannelHelperWorkerTime records >= 2 samples under pref ON"
+  Assert.equal(
+    worker.count - workerBefore,
+    1,
+    "tracker image adds exactly one checkChannelHelperWorkerTime sample under pref ON"
   );
   Assert.lessOrEqual(
     worker.sum,

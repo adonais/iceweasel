@@ -85,6 +85,13 @@ XPCOMUtils.defineLazyServiceGetter(
   Ci.nsPIExternalAppLauncher
 );
 
+XPCOMUtils.defineLazyServiceGetter(
+  lazy,
+  "powerManager",
+  "@mozilla.org/power/powermanagerservice;1",
+  Ci.nsIPowerManagerService
+);
+
 const Timer = Components.Constructor(
   "@mozilla.org/timer;1",
   "nsITimer",
@@ -1186,6 +1193,10 @@ export var DownloadIntegration = {
     }
     return Promise.resolve();
   },
+
+  get _testGetDownloadObserver() {
+    return DownloadObserver;
+  },
 };
 
 var DownloadObserver = {
@@ -1199,6 +1210,11 @@ var DownloadObserver = {
    * online.
    */
   _wakeTimer: null,
+
+  /**
+   * WakeLock used to request OS to refrain from sleeping during a download.
+   */
+  _downloadWakeLock: null,
 
   /**
    * Set that contains the in progress publics downloads.
@@ -1233,9 +1249,46 @@ var DownloadObserver = {
   _canceledOfflineDownloads: new Set(),
 
   /**
+   * Whether any public or private downloads are currently in progress.
+   * Used to decide when to hold the download wake lock.
+   *
+   * Note: _contentAnalysisWarnInProgressDownloads is intentionally not
+   * accounted for here. Those downloads have already finished transferring
+   * data and are waiting on a user decision for a content analysis
+   * warning.
+   */
+  get _hasInProgressDownloads() {
+    return (
+      this._publicInProgressDownloads.size > 0 ||
+      this._privateInProgressDownloads.size > 0
+    );
+  },
+
+  _acquireDownloadWakeLock() {
+    if (!this._downloadWakeLock) {
+      this._downloadWakeLock = lazy.powerManager.newWakeLock(
+        "download-in-progress",
+        null
+      );
+    }
+  },
+
+  _releaseDownloadWakeLock() {
+    if (this._downloadWakeLock) {
+      try {
+        this._downloadWakeLock.unlock();
+      } catch (e) {
+        // Ignore error since wakelock is already unlocked
+      }
+      this._downloadWakeLock = null;
+    }
+  },
+
+  /**
    * Registers a view that updates the corresponding downloads state set, based
    * on the aIsPrivate argument. The set is updated when a download is added,
-   * removed or changes its properties.
+   * removed or changes its properties. A wakelock is used to keep OS from
+   * sleeping during active downloads.
    *
    * @param aList
    *        The public or private downloads list.
@@ -1250,6 +1303,9 @@ var DownloadObserver = {
       onDownloadAdded: aDownload => {
         if (!aDownload.stopped) {
           downloadsSet.add(aDownload);
+          if (this._hasInProgressDownloads) {
+            this._acquireDownloadWakeLock();
+          }
         }
       },
       onDownloadChanged: aDownload => {
@@ -1268,8 +1324,14 @@ var DownloadObserver = {
             this._contentAnalysisInProgressDownloads.delete(aDownload);
           }
           downloadsSet.delete(aDownload);
+          if (!this._hasInProgressDownloads) {
+            this._releaseDownloadWakeLock();
+          }
         } else {
           downloadsSet.add(aDownload);
+          if (this._hasInProgressDownloads) {
+            this._acquireDownloadWakeLock();
+          }
         }
       },
       onDownloadRemoved: aDownload => {
@@ -1278,6 +1340,9 @@ var DownloadObserver = {
         this._contentAnalysisInProgressDownloads.delete(aDownload);
         // The download must also be removed from the canceled when offline set.
         this._canceledOfflineDownloads.delete(aDownload);
+        if (!this._hasInProgressDownloads) {
+          this._releaseDownloadWakeLock();
+        }
       },
     };
 
@@ -1443,6 +1508,12 @@ var DownloadObserver = {
         }
         break;
       }
+      // While downloads are in progress we hold a wakelock asking the OS
+      // not to enter automatic sleep. The wakelock is advisory: the OS may
+      // still sleep on explicit user request (e.g. sleep menu, lid close)
+      // or for other reasons (low battery, thermal). In the cases where the
+      // sleep notification still fires, we cancel the active downloads so they
+      // can be resumed on wake.
       case "sleep_notification":
       case "suspend_process_notification":
       case "network:offline-about-to-go-offline":

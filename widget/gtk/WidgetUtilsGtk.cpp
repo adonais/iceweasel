@@ -421,8 +421,7 @@ RefPtr<FocusRequestPromise> RequestWaylandFocusPromise() {
     return nullptr;
   }
 
-  RefPtr<FocusRequestPromise::Private> transferPromise =
-      new FocusRequestPromise::Private(__func__);
+  auto transferPromise = MakeRefPtr<FocusRequestPromise::Private>(__func__);
 
   xdg_activation_token_v1* aXdgToken =
       xdg_activation_v1_get_activation_token(xdg_activation);

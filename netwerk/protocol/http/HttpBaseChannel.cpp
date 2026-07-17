@@ -37,6 +37,7 @@
 #include "mozilla/dom/BrowsingContext.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/ParentProcessChannelHandle.h"
 #include "mozilla/dom/FetchPriority.h"
 #include "mozilla/dom/LoadURIOptionsBinding.h"
 #include "mozilla/dom/nsHTTPSOnlyUtils.h"
@@ -48,8 +49,7 @@
 #include "mozilla/dom/RequestBinding.h"
 #include "mozilla/dom/WindowGlobalParent.h"
 #include "mozilla/net/OpaqueResponseUtils.h"
-#include "mozilla/net/UrlClassifierCommon.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/StaticPrefs_javascript.h"
 #include "nsBufferedStreams.h"
 #include "nsCOMPtr.h"
@@ -227,6 +227,7 @@ HttpBaseChannel::HttpBaseChannel()
   StoreAllowAltSvc(true);
   StoreResponseTimeoutEnabled(true);
   StoreAllRedirectsSameOrigin(true);
+  StoreAllRedirectsSameOriginIgnoringInternal(true);
   StoreAllRedirectsPassTimingAllowCheck(true);
   StoreUpgradableToSecure(true);
   StoreIsUserAgentHeaderModified(false);
@@ -836,6 +837,26 @@ HttpBaseChannel::Open(nsIInputStream** aStream) {
   }
 
   return NS_ImplementChannelOpen(this, aStream);
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::GetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle** aValue) {
+  *aValue = do_AddRef(mParentProcessChannelHandle).take();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::SetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle* aValue) {
+  if (XRE_IsParentProcess()) {
+    MOZ_ASSERT_UNREACHABLE(
+        "SetParentProcessChannelHandle in the parent process would leak");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  mParentProcessChannelHandle = aValue;
+  return NS_OK;
 }
 
 //-----------------------------------------------------------------------------
@@ -1846,7 +1867,7 @@ NS_IMETHODIMP
 HttpBaseChannel::IsThirdPartyTrackingResource(bool* aIsTrackingResource) {
   MOZ_ASSERT(
       !(mFirstPartyClassificationFlags && mThirdPartyClassificationFlags));
-  *aIsTrackingResource = UrlClassifierCommon::IsTrackingClassificationFlag(
+  *aIsTrackingResource = ChannelClassifierUtils::IsTrackingClassificationFlag(
       mThirdPartyClassificationFlags,
       mLoadInfo->GetOriginAttributes().IsPrivateBrowsing());
   return NS_OK;
@@ -1858,7 +1879,7 @@ HttpBaseChannel::IsThirdPartySocialTrackingResource(
   MOZ_ASSERT(!mFirstPartyClassificationFlags ||
              !mThirdPartyClassificationFlags);
   *aIsThirdPartySocialTrackingResource =
-      UrlClassifierCommon::IsSocialTrackingClassificationFlag(
+      ChannelClassifierUtils::IsSocialTrackingClassificationFlag(
           mThirdPartyClassificationFlags);
   return NS_OK;
 }
@@ -4932,6 +4953,8 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
     config.timedChannelInfo->initiatorType() = mInitiatorType;
     config.timedChannelInfo->allRedirectsSameOrigin() =
         LoadAllRedirectsSameOrigin();
+    config.timedChannelInfo->allRedirectsSameOriginIgnoringInternal() =
+        LoadAllRedirectsSameOriginIgnoringInternal();
     config.timedChannelInfo->allRedirectsPassTimingAllowCheck() =
         LoadAllRedirectsPassTimingAllowCheck();
     // Execute the timing allow check to determine whether
@@ -5081,6 +5104,8 @@ HttpBaseChannel::CloneReplacementChannelConfig(bool aPreserveMethod,
 
     newTimedChannel->SetAllRedirectsSameOrigin(
         config.timedChannelInfo->allRedirectsSameOrigin());
+    newTimedChannel->SetAllRedirectsSameOriginIgnoringInternal(
+        config.timedChannelInfo->allRedirectsSameOriginIgnoringInternal());
 
     if (config.timedChannelInfo->timingAllowCheckForPrincipal()) {
       newTimedChannel->SetAllRedirectsPassTimingAllowCheck(
@@ -5239,6 +5264,13 @@ nsresult HttpBaseChannel::SetupReplacementChannel(nsIURI* newURI,
     newTimedChannel->SetAllRedirectsSameOrigin(
         config.timedChannelInfo->allRedirectsSameOrigin() &&
         sameOriginWithOriginalUri);
+    // Internal redirects (e.g. a service worker serving a response from a
+    // different URL) are not real cross-origin network hops, so they must not
+    // count as cross-origin for canvas/CSS/media tainting.
+    newTimedChannel->SetAllRedirectsSameOriginIgnoringInternal(
+        config.timedChannelInfo->allRedirectsSameOriginIgnoringInternal() &&
+        (redirectType == ReplacementReason::InternalRedirect ||
+         sameOriginWithOriginalUri));
   }
 
   newChannel->SetLoadGroup(mLoadGroup);
@@ -5677,6 +5709,22 @@ HttpBaseChannel::GetAllRedirectsSameOrigin(bool* aAllRedirectsSameOrigin) {
 NS_IMETHODIMP
 HttpBaseChannel::SetAllRedirectsSameOrigin(bool aAllRedirectsSameOrigin) {
   StoreAllRedirectsSameOrigin(aAllRedirectsSameOrigin);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::GetAllRedirectsSameOriginIgnoringInternal(
+    bool* aAllRedirectsSameOriginIgnoringInternal) {
+  *aAllRedirectsSameOriginIgnoringInternal =
+      LoadAllRedirectsSameOriginIgnoringInternal();
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+HttpBaseChannel::SetAllRedirectsSameOriginIgnoringInternal(
+    bool aAllRedirectsSameOriginIgnoringInternal) {
+  StoreAllRedirectsSameOriginIgnoringInternal(
+      aAllRedirectsSameOriginIgnoringInternal);
   return NS_OK;
 }
 
@@ -6483,8 +6531,7 @@ HttpBaseChannel::GetNativeServerTiming(
 
 NS_IMETHODIMP
 HttpBaseChannel::CancelByURLClassifier(nsresult aErrorCode) {
-  MOZ_ASSERT(
-      UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aErrorCode));
+  MOZ_ASSERT(ChannelClassifierUtils::IsClassifierBlockingErrorCode(aErrorCode));
   return Cancel(aErrorCode);
 }
 

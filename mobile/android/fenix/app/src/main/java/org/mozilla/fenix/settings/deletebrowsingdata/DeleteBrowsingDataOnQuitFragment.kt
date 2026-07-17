@@ -11,7 +11,7 @@ import androidx.preference.PreferenceFragmentCompat
 import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SharedPreferenceUpdater
 import org.mozilla.fenix.settings.requirePreference
@@ -53,13 +53,13 @@ class DeleteBrowsingDataOnQuitFragment : PreferenceFragmentCompat(), SystemInset
                     return super.onPreferenceChange(preference, newValue)
                 }
             }
-            isChecked = context.settings().shouldDeleteBrowsingDataOnQuit
+            isChecked = context.components.settings.shouldDeleteBrowsingDataOnQuit
         }
 
         val checkboxUpdater = object : SharedPreferenceUpdater() {
             override fun onPreferenceChange(preference: Preference, newValue: Any?): Boolean {
                 super.onPreferenceChange(preference, newValue)
-                val settings = preference.context.settings()
+                val settings = preference.context.components.settings
 
                 if (!settings.shouldDeleteAnyDataOnQuit()) {
                     deleteOnQuitPref.isChecked = false
@@ -77,7 +77,7 @@ class DeleteBrowsingDataOnQuitFragment : PreferenceFragmentCompat(), SystemInset
     private fun setAllCheckboxes(newValue: Boolean) {
         checkboxes.forEach { (type, pref) ->
             pref.isChecked = newValue
-            pref.context.settings().setDeleteDataOnQuit(type, newValue)
+            pref.context.components.settings.setDeleteDataOnQuit(type, newValue)
         }
     }
 }

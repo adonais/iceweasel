@@ -151,7 +151,7 @@ class nsIFormControl : public nsISupports {
    * Reset this form control (as it should be when the user clicks the Reset
    * button)
    */
-  NS_IMETHOD Reset() = 0;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD Reset() = 0;
 
   /**
    * Tells the form control to submit its names and values to the form data

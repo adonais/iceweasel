@@ -569,6 +569,7 @@ function CardSection({
         title={title}
         type={type}
         sectionPosition={sectionPosition}
+        learnMoreUrl={prefs["sectionsLearnMore.url"]}
       />
     </div>
   );
@@ -606,6 +607,7 @@ function CardSection({
               type={type}
               sectionPosition={sectionPosition}
               buttonType="ghost"
+              learnMoreUrl={prefs["sectionsLearnMore.url"]}
             />
           ) : (
             sectionContextWrapper

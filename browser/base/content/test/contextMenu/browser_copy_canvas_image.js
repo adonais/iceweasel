@@ -35,7 +35,6 @@ async function getPNGFromClipboard(clipboard) {
   let data = new ArrayBuffer(size);
   stream.readArrayBuffer(size, data);
 
-  // eslint-disable-next-line no-undef
   let decoder = new ImageDecoder({ type: "image/png", data });
   let { image } = await decoder.decode();
   return image;

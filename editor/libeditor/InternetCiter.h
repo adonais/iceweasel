@@ -20,6 +20,33 @@ class InternetCiter final {
   static void Rewrap(const nsAString& aInString, uint32_t aWrapCol,
                      uint32_t aFirstLineOffset, bool aRespectNewlines,
                      nsAString& aOutString);
+
+ private:
+  struct BodyRange;
+  struct PhysicalLine;
+  struct QuotedParagraph;
+
+  static uint32_t QuotePrefixLength(uint32_t aQuoteLevel);
+  static void AppendQuoteMarkers(nsAString& aOutString, uint32_t aQuoteLevel);
+  static bool IsSpace(char16_t aChar);
+  static bool IsBodyBoundarySpace(char16_t aChar);
+  static void EnsureEndsWithLineBreak(nsAString& aOutString);
+  static void StartOutputLine(nsAString& aOutString, uint32_t aQuoteLevel);
+  static uint32_t ShortestUsefulQuotedBodyColumn(uint32_t aWrapCol);
+  static uint32_t BodyWrapColumn(uint32_t aQuoteLevel, uint32_t aWrapCol);
+  static uint32_t FindBodyLineBreak(const nsPromiseFlatString& aString,
+                                    const BodyRange& aRange,
+                                    uint32_t aBodyWrapColumn);
+  static uint32_t AppendBodySlice(nsAString& aOutString,
+                                  const nsPromiseFlatString& aString,
+                                  uint32_t aBodyStart, uint32_t aLength);
+  static void EmitBlankQuotedLine(nsAString& aOutString, uint32_t aQuoteLevel,
+                                  bool aEndedWithNewLine,
+                                  QuotedParagraph& aParagraph);
+  static void EmitUnquotedLine(nsAString& aOutString,
+                               const nsPromiseFlatString& aString,
+                               const PhysicalLine& aLine,
+                               QuotedParagraph& aParagraph);
 };
 
 }  // namespace mozilla

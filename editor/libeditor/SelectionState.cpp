@@ -64,7 +64,7 @@ SelectionState::SelectionState(const AutoClonedSelectionRangeArray& aRanges)
     : mDirection(aRanges.GetDirection()) {
   mArray.SetCapacity(aRanges.Ranges().Length());
   for (const OwningNonNull<nsRange>& range : aRanges.Ranges()) {
-    RefPtr<RangeItem> rangeItem = new RangeItem();
+    RefPtr rangeItem = MakeRefPtr<RangeItem>();
     rangeItem->StoreRange(range);
     mArray.AppendElement(std::move(rangeItem));
   }

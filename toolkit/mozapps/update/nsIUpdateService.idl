@@ -825,6 +825,12 @@ interface nsIUpdateSyncManager : nsISupports
    * if a test is forcing it).
    */
   void resetLock([optional] in nsIFile anAppFile);
+
+  /**
+   * Returns the path to the lock file used for update synchronization.
+   * @returns the file system path as a string
+   */
+  AString getUpdateLockFilePath();
 };
 
 /**

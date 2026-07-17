@@ -43,6 +43,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   sample.slice();
 
   assert.sameValue(calls, 1);
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

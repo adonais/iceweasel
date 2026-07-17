@@ -19,6 +19,7 @@ EXTRA_JS_MODULES += [
     "ExtensionDNR.sys.mjs",
     "ExtensionDNRLimits.sys.mjs",
     "ExtensionDNRStore.sys.mjs",
+    "ExtensionDocumentId.sys.mjs",
     "ExtensionMenus.sys.mjs",
     "ExtensionPageChild.sys.mjs",
     "ExtensionParent.sys.mjs",
@@ -49,14 +50,9 @@ EXTRA_JS_MODULES += [
     "Schemas.sys.mjs",
     "WebNavigation.sys.mjs",
     "WebNavigationFrames.sys.mjs",
+    "WPTEventsChild.sys.mjs",
+    "WPTEventsParent.sys.mjs",
 ]
-
-if CONFIG["NIGHTLY_BUILD"]:
-    # Web Platform Test prototype is limited to Nightly for now.
-    EXTRA_JS_MODULES += [
-        "WPTEventsChild.sys.mjs",
-        "WPTEventsParent.sys.mjs",
-    ]
 
 EXTRA_COMPONENTS += [
     "extensions-toolkit.manifest",

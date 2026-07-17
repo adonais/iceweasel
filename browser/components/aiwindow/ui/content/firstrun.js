@@ -19,8 +19,11 @@ const MEMORIES_FROM_CONVERSATION_PREF =
 const MEMORIES_FROM_HISTORY_PREF =
   "browser.smartwindow.memories.generateFromHistory";
 const IS_DEFAULT_WINDOW_PREF = "browser.smartwindow.isDefaultWindow";
+const MEMORIES_CHATS_CHECKBOX_ID = "memories-chats";
+const MEMORIES_BROWSING_CHECKBOX_ID = "memories-browsing";
+const SET_DEFAULT_CHECKBOX_ID = "set-default-window";
 const { getAllModelsData } = ChromeUtils.importESModule(
-  "moz-src:///browser/components/aiwindow/ui/modules/AIWindowConstants.sys.mjs"
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
 const autoAdvanceMS = Services.prefs.getIntPref(AUTO_ADVANCE_PREF);
@@ -310,7 +313,7 @@ function createAIWindowConfig(modelData) {
               },
               data: [
                 {
-                  id: "memories-chats",
+                  id: MEMORIES_CHATS_CHECKBOX_ID,
                   defaultValue: true,
                   label: {
                     string_id: "aiwindow-firstrun-memories-checkbox-chats",
@@ -335,7 +338,7 @@ function createAIWindowConfig(modelData) {
                   },
                 },
                 {
-                  id: "memories-browsing",
+                  id: MEMORIES_BROWSING_CHECKBOX_ID,
                   defaultValue: true,
                   label: {
                     string_id: "aiwindow-firstrun-memories-checkbox-browsing",
@@ -421,7 +424,7 @@ function createAIWindowConfig(modelData) {
             type: "multiselect",
             data: [
               {
-                id: "set-default-window",
+                id: SET_DEFAULT_CHECKBOX_ID,
                 defaultValue: true,
                 label: {
                   string_id: "aiwindow-firstrun-default-checkbox-label",
@@ -474,6 +477,7 @@ async function renderFirstRun() {
   window.AWGetSelectedTheme = () => ({});
   window.AWGetInstalledAddons = () => [];
   window.AWSendToParent = (name, data) => receive(name)(data);
+
   window.AWSendEventTelemetry = ({
     event,
     message_id,
@@ -500,16 +504,6 @@ async function renderFirstRun() {
             model: prefValue || "",
           });
         } else if (
-          source === "additional_button" &&
-          message_id.includes("AI_WINDOW_MEMORIES")
-        ) {
-          Glean.smartWindow.onboardingMemoriesNavigate.record();
-        } else if (
-          source === "additional_button" &&
-          message_id.includes("AI_WINDOW_SET_DEFAULT")
-        ) {
-          Glean.smartWindow.onboardingSetdefaultNavigate.record();
-        } else if (
           source === "primary_button" &&
           (message_id.includes("AI_WINDOW_MEMORIES") ||
             message_id.includes("AI_WINDOW_SET_DEFAULT"))
@@ -520,20 +514,30 @@ async function renderFirstRun() {
         }
         break;
 
+      // SELECT_CHECKBOX is emitted when the user clicks the screen's next
+      // button, carrying the live checkbox selection. The navigate event is
+      // recorded here (rather than on CLICK_BUTTON) because that telemetry
+      // fires before the selection is collected and would report stale data.
       case "SELECT_CHECKBOX":
         if (
           message_id.includes("AI_WINDOW_MEMORIES") &&
           Array.isArray(source)
         ) {
           Glean.smartWindow.onboardingMemoriesSettings.record({
-            source: source.length ? source.join(",") : "",
+            source: source.join(","),
+          });
+          Glean.smartWindow.onboardingMemoriesNavigate.record({
+            source: source.join(","),
           });
         } else if (
           message_id.includes("AI_WINDOW_SET_DEFAULT") &&
           Array.isArray(source)
         ) {
           Glean.smartWindow.onboardingSetdefaultSettings.record({
-            source: source.length ? source.join(",") : "",
+            source: source.join(","),
+          });
+          Glean.smartWindow.onboardingSetdefaultNavigate.record({
+            source: source.join(","),
           });
         }
         break;
@@ -551,7 +555,28 @@ async function renderFirstRun() {
         where: "tab",
       },
     });
-    Glean.smartWindow.onboardingComplete.record();
+    // The checkbox SET_PREF actions have committed by the time onboarding
+    // finishes, so the final selections are derived from the backing prefs.
+    const memories = [];
+    if (Services.prefs.getBoolPref(MEMORIES_FROM_CONVERSATION_PREF, false)) {
+      memories.push(MEMORIES_CHATS_CHECKBOX_ID);
+    }
+    if (Services.prefs.getBoolPref(MEMORIES_FROM_HISTORY_PREF, false)) {
+      memories.push(MEMORIES_BROWSING_CHECKBOX_ID);
+    }
+    const memorySource = memories.join(",");
+    const setdefaultSource = Services.prefs.getBoolPref(
+      IS_DEFAULT_WINDOW_PREF,
+      false
+    )
+      ? SET_DEFAULT_CHECKBOX_ID
+      : "";
+
+    Glean.smartWindow.onboardingComplete.record({
+      model: Services.prefs.getStringPref(MODEL_PREF, ""),
+      memory_source: memorySource,
+      setdefault_source: setdefaultSource,
+    });
     window.location.href = lazy.AIWindow.newTabURL;
   };
 

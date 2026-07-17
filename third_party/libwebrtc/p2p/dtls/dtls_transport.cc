@@ -271,7 +271,7 @@ DtlsTransportInternalImpl::DtlsTransportInternalImpl(
           [this](bool success) { CompleteDtlsInStun(success); }) {
   RTC_DCHECK(ice_transport_);
   ConnectToIceTransport();
-  dtls_in_stun_ = env_.field_trials().IsEnabled("WebRTC-IceHandshakeDtls");
+  dtls_in_stun_ = ice_transport_->internal()->config().dtls_handshake_in_stun;
 }
 
 DtlsTransportInternalImpl::DtlsTransportInternalImpl(
@@ -362,7 +362,10 @@ bool DtlsTransportInternalImpl::SetDtlsRole(SSLRole role) {
     return true;
   }
 
-  dtls_role_ = role;
+  if (!dtls_role_ || *dtls_role_ != role) {
+    dtls_role_ = role;
+    SendDtlsRoleChange(this, role);
+  }
   return true;
 }
 
@@ -402,7 +405,10 @@ RTCError DtlsTransportInternalImpl::SetRemoteParameters(
   // initiates DTLS setup.
   if (role) {
     if (is_dtls_restart) {
-      dtls_role_ = *role;
+      if (!dtls_role_ || *dtls_role_ != *role) {
+        dtls_role_ = *role;
+        SendDtlsRoleChange(this, *role);
+      }
     } else {
       if (!SetDtlsRole(*role)) {
         return RTCError(RTCErrorType::INVALID_PARAMETER,
@@ -535,14 +541,12 @@ bool DtlsTransportInternalImpl::SetupDtls() {
     }
     if (ssl_stream_factory_) {
       dtls_ = ssl_stream_factory_(
-          std::move(downward),
-          [this](SSLHandshakeError error) { OnDtlsHandshakeError(error); },
-          &env_.field_trials());
+          env_, std::move(downward),
+          [this](SSLHandshakeError error) { OnDtlsHandshakeError(error); });
     } else {
       dtls_ = SSLStreamAdapter::Create(
-          std::move(downward),
-          [this](SSLHandshakeError error) { OnDtlsHandshakeError(error); },
-          &env_.field_trials());
+          env_, std::move(downward),
+          [this](SSLHandshakeError error) { OnDtlsHandshakeError(error); });
     }
     if (!dtls_) {
       RTC_LOG(LS_ERROR) << ToString() << ": Failed to create DTLS adapter.";

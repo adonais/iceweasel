@@ -110,6 +110,7 @@
 #include "wasm/WasmInstance.h"    // for Instance
 #include "wasm/WasmJS.h"          // for WasmInstanceObject
 #include "wasm/WasmRealm.h"       // for Realm
+#include "wasm/WasmStacks.h"      // for ContStack
 #include "wasm/WasmTypeDecls.h"   // for WasmInstanceObjectVector
 
 #include "debugger/DebugAPI-inl.h"
@@ -131,6 +132,7 @@
 #include "vm/ObjectOperations-inl.h"  // for GetProperty, HasProperty
 #include "vm/Realm-inl.h"             // for AutoRealm::AutoRealm
 #include "vm/Stack-inl.h"             // for AbstractFramePtr::script
+#include "wasm/WasmInstance-inl.h"    // for Instance::codeMeta()
 
 namespace js {
 
@@ -2557,35 +2559,55 @@ void DebugAPI::onNewScript(JSContext* cx, HandleScript script) {
       });
 }
 
-/* static */
-void DebugAPI::onSuspendWasmFrame(JSContext* cx, wasm::DebugFrame* debugFrame) {
-  AbstractFramePtr frame = AbstractFramePtr(debugFrame);
-  JS::AutoAssertNoGC nogc;
-  for (Realm::DebuggerVectorEntry& entry : frame.global()->getDebuggers(nogc)) {
-    Debugger* dbg = entry.dbg;
-    if (Debugger::FrameMap::Ptr p = dbg->frames.lookup(frame)) {
-      DebuggerFrame* frameObj = p->value();
-      frameObj->suspendWasmFrame(cx->gcContext());
-    }
+#ifdef ENABLE_WASM_JSPI
+// Returns true if `addr` falls within `resumeBase` or any child stack in the
+// chain that will be freed by ContStack::freeSuspended(resumeBase).
+static bool ContStackChainHasAddress(wasm::ContStack* resumeBase,
+                                     uintptr_t addr) {
+  if (resumeBase->hasStackAddress(addr)) {
+    return true;
   }
-}
-
-/* static */
-void DebugAPI::onResumeWasmFrame(JSContext* cx, const FrameIter& iter) {
-  AbstractFramePtr frame = iter.abstractFramePtr();
-  MOZ_RELEASE_ASSERT(frame.isWasmDebugFrame());
-  JS::AutoAssertNoGC nogc;
-  for (Realm::DebuggerVectorEntry& entry : frame.global()->getDebuggers(nogc)) {
-    Debugger* dbg = entry.dbg;
-    if (Debugger::FrameMap::Ptr p = dbg->frames.lookup(frame)) {
-      DebuggerFrame* frameObj = p->value();
-      AutoEnterOOMUnsafeRegion oomUnsafe;
-      if (!frameObj->resume(iter)) {
-        oomUnsafe.crash("DebugAPI::onResumeWasmFrame");
+  // For nested continuations the intermediate and innermost stacks are still
+  // active (handlers_ set). Starting from the resume target's handlers_ we
+  // traverse the same chain that freeSuspended() walks.
+  wasm::ContStack* resumeTargetStack = resumeBase->resumeTargetStack();
+  if (resumeTargetStack) {
+    for (wasm::Handlers* h = resumeTargetStack->handlers(); h;
+         h = h->self->handlers()) {
+      if (h->child && h->child->hasStackAddress(addr)) {
+        return true;
       }
     }
   }
+  return false;
 }
+
+/* static */
+void DebugAPI::onLeaveWasmCont(JSContext* cx, wasm::ContStack* resumeBase) {
+  JS::GCContext* gcx = cx->gcContext();
+  JSRuntime* rt = cx->runtime();
+  for (Debugger* dbg = rt->debuggerList().getFirst(); dbg;
+       dbg = dbg->getNext()) {
+    for (auto iter = dbg->frames.modIter(); !iter.done(); iter.next()) {
+      DebuggerFrame* frameObj = iter.get().value();
+      JS::Value slot =
+          frameObj->getReservedSlot(DebuggerFrame::WASM_CONT_FRAME_PTR_SLOT);
+      if (slot.isUndefined()) {
+        continue;
+      }
+      AbstractFramePtr fp = AbstractFramePtr::fromRaw(slot.toPrivate());
+      if (!fp.isWasmDebugFrame()) {
+        continue;
+      }
+      uintptr_t addr = reinterpret_cast<uintptr_t>(fp.asWasmDebugFrame());
+      if (!ContStackChainHasAddress(resumeBase, addr)) {
+        continue;
+      }
+      Debugger::terminateDebuggerFrame(gcx, dbg, frameObj, fp, &iter, nullptr);
+    }
+  }
+}
+#endif  // ENABLE_WASM_JSPI
 
 void DebugAPI::slowPathOnNewWasmInstance(
     JSContext* cx, Handle<WasmInstanceObject*> wasmInstance) {
@@ -5624,6 +5646,9 @@ class MOZ_STACK_CLASS Debugger::ScriptQuery : public Debugger::QueryBase {
     // unconditionally consider all wasm toplevel instance scripts.
     for (auto iter = debugger->allDebuggees(); !iter.done(); iter.next()) {
       for (wasm::Instance* instance : iter.get()->realm()->wasm.instances()) {
+        if (instance->codeMeta().isSelfHostedModule()) {
+          continue;
+        }
         consider(instance->object());
         if (oom) {
           ReportOutOfMemory(cx);
@@ -6066,6 +6091,9 @@ class MOZ_STACK_CLASS Debugger::SourceQuery : public Debugger::QueryBase {
     // unconditionally consider all wasm toplevel instance scripts.
     for (auto iter = debugger->allDebuggees(); !iter.done(); iter.next()) {
       for (wasm::Instance* instance : iter.get()->realm()->wasm.instances()) {
+        if (instance->codeMeta().isSelfHostedModule()) {
+          continue;
+        }
         consider(instance->object());
         if (oom) {
           ReportOutOfMemory(cx);

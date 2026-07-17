@@ -909,8 +909,8 @@ nsresult nsURILoader::OpenChannel(nsIChannel* channel, uint32_t aFlags,
 
   // we need to create a DocumentOpenInfo object which will go ahead and open
   // the url and discover the content type....
-  RefPtr<nsDocumentOpenInfo> loader =
-      new nsDocumentOpenInfo(aWindowContext, aFlags, this);
+  RefPtr loader =
+      mozilla::MakeRefPtr<nsDocumentOpenInfo>(aWindowContext, aFlags, this);
 
   // Set the correct loadgroup on the channel
   nsCOMPtr<nsILoadGroup> loadGroup(do_GetInterface(aWindowContext));
@@ -924,7 +924,7 @@ nsresult nsURILoader::OpenChannel(nsIChannel* channel, uint32_t aFlags,
       nsCOMPtr<nsISupports> cookie;
       listener->GetLoadCookie(getter_AddRefs(cookie));
       if (!cookie) {
-        RefPtr<nsDocLoader> newDocLoader = new nsDocLoader();
+        RefPtr newDocLoader = mozilla::MakeRefPtr<nsDocLoader>();
         nsresult rv = newDocLoader->Init();
         if (NS_FAILED(rv)) return rv;
         rv = nsDocLoader::AddDocLoaderAsChildOfRoot(newDocLoader);

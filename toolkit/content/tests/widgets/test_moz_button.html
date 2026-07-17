@@ -64,6 +64,10 @@
       });
 
       function normalizeColor(val, computedStyles) {
+        // inherit computes to empty string, need to check the resolved color
+        if (val === "") {
+          val = computedStyles.color;
+        }
         if (val.includes("currentColor")) {
           val = val.replaceAll("currentColor", computedStyles.color);
         }
@@ -119,6 +123,8 @@
       add_task(async function testButtonTypes() {
         let [...buttons] = document.querySelectorAll("moz-button");
         let [one, two, three, four, five, six, seven] = buttons;
+        let toolbar = document.querySelector(".toolbar");
+        let menuitem = document.querySelector(".menuitem");
 
         await Promise.all(buttons.map(btn => btn.updateComplete));
 
@@ -126,6 +132,7 @@
         is(two.buttonEl.textContent.trim(), "Test button", "Text is set");
         is(three.textContent, "Test button", "Text is set");
         is(seven.buttonEl.textContent.trim(), "Test button", "Text is set");
+        is(menuitem.buttonEl.textContent.trim(), "Test button", "Text is set");
 
         assertButtonPropertiesMatch(one, {
           backgroundColor: "--button-background-color",
@@ -165,6 +172,18 @@
           color: "--button-text-color",
           minHeight: "--button-min-height",
         });
+        assertButtonPropertiesMatch(toolbar, {
+          backgroundColor: "--button-background-color-ghost",
+          color: "--button-text-color-ghost",
+          minHeight: "--button-min-height",
+        });
+        assertButtonPropertiesMatch(menuitem, {
+          backgroundColor: "--button-background-color-menu",
+          color: "--button-text-color-menu",
+          paddingBlock: "--panel-menuitem-padding-block",
+          paddingInline: "--panel-menuitem-padding-inline",
+          marginInline: "--panel-menuitem-margin-inline",
+        });
 
         buttons.forEach(btn => (btn.size = "small"));
 
@@ -192,6 +211,9 @@
           height: "--button-size-icon-small",
         });
         assertButtonPropertiesMatch(seven, {
+          minHeight: "--button-min-height-small",
+        });
+        assertButtonPropertiesMatch(toolbar, {
           minHeight: "--button-min-height-small",
         });
       });
@@ -741,6 +763,16 @@
         <!-- Used to verify that click events work as expected in the padding around
            toolbar buttons -->
         <moz-button class="eleven" label="toolbar"> </moz-button>
+        <moz-button
+          class="toolbar"
+          type="toolbar"
+          label="Test button"
+        ></moz-button>
+        <moz-button
+          class="menuitem"
+          type="menuitem"
+          label="Test button"
+        ></moz-button>
       </div>
       <button id="mouse-trap">Mouse goes here</button>
       <panel-list id="panel-list">

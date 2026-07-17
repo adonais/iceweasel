@@ -188,6 +188,14 @@ class FetchBody : public FetchBodyBase, public AbortFollower {
                                   nsIInputStream** aInputStream,
                                   ErrorResult& aRv);
 
+  // After clone() clones the underlying nsIInputStream, an unread native
+  // ReadableStream reflector may still point at the original stream, which
+  // clone() can have replaced (for non-cloneable bodies it is now consumed by
+  // the cloning copy). Repoint such a reflector at the current body stream so
+  // the original stream is not read from two places. No-op when there is no
+  // reflector or it is not a native unread stream.
+  void MaybeRebindReadableStreamBody();
+
   // Utility public methods accessed by various runnables.
 
   // This method _must_ be called in order to set the body as used. If the body

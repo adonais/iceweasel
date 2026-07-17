@@ -434,6 +434,9 @@ skip-if = [
 
 ["test_caret_move_in_vertical_content.html"]
 
+["test_caret_visibility_when_moving_focus_in_shadow.html"]
+support-files = ["window_caret_visibility_when_moving_focus_in_shadow.html"]
+
 ["test_cmd_absPos.html"]
 
 ["test_cmd_backgroundColor.html"]

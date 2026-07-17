@@ -210,7 +210,7 @@ async function createBackupAndRecover(
     !recoveryIsLegacy && !profilesDisabled
   );
 
-  await bs.getBackupFileInfo(archivePath);
+  await bs.loadBackupFileInfo(archivePath);
   const restoreID = bs.state.restoreID;
 
   let restoreStartedEvents;
@@ -547,9 +547,14 @@ add_task(
       1,
       "Should have a single restore started event"
     );
-    Assert.deepEqual(
-      restoreStartedEvents[0].extra,
-      { restore_id: restoreID, replace: "true" },
+    Assert.equal(
+      restoreStartedEvents[0].extra.restore_id,
+      restoreID,
+      "Restore started event should have correct restore_id"
+    );
+    Assert.equal(
+      restoreStartedEvents[0].extra.replace,
+      "true",
       "Restore started event should have replace=true"
     );
 
@@ -580,9 +585,14 @@ add_task(
       1,
       "Should have a single restore started event"
     );
-    Assert.deepEqual(
-      restoreStartedEvents[0].extra,
-      { restore_id: restoreID, replace: "false" },
+    Assert.equal(
+      restoreStartedEvents[0].extra.restore_id,
+      restoreID,
+      "Restore started event should have correct restore_id"
+    );
+    Assert.equal(
+      restoreStartedEvents[0].extra.replace,
+      "false",
       "Restore started event should have replace=false"
     );
 

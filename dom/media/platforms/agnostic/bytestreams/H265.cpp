@@ -19,8 +19,8 @@
 
 mozilla::LazyLogModule gH265("H265");
 
-#define LOG(msg, ...) MOZ_LOG(gH265, LogLevel::Debug, (msg, ##__VA_ARGS__))
-#define LOGV(msg, ...) MOZ_LOG(gH265, LogLevel::Verbose, (msg, ##__VA_ARGS__))
+#define LOG(msg, ...) MOZ_LOG_FMT(gH265, LogLevel::Debug, msg, ##__VA_ARGS__)
+#define LOGV(msg, ...) MOZ_LOG_FMT(gH265, LogLevel::Verbose, msg, ##__VA_ARGS__)
 
 #define TRUE_OR_RETURN(condition)            \
   do {                                       \
@@ -65,7 +65,7 @@ H265NALU::H265NALU(const uint8_t* aData, uint32_t aByteSize)
   mNalUnitType = reader.ReadBits(6);
   mNuhLayerId = reader.ReadBits(6);
   mNuhTemporalIdPlus1 = reader.ReadBits(3);
-  LOGV("Created H265NALU, type=%hhu, size=%u", mNalUnitType, aByteSize);
+  LOGV("Created H265NALU, type={}, size={}", mNalUnitType, aByteSize);
 }
 
 /* static */ Result<HVCCConfig, nsresult> HVCCConfig::Parse(
@@ -75,12 +75,12 @@ H265NALU::H265NALU(const uint8_t* aData, uint32_t aByteSize)
     return mozilla::Err(NS_ERROR_FAILURE);
   }
   if (aSample->Size() < 3) {
-    LOG("Incorrect sample size %zu", aSample->Size());
+    LOG("Incorrect sample size {}", aSample->Size());
     return mozilla::Err(NS_ERROR_FAILURE);
   }
   if (aSample->mTrackInfo &&
       !aSample->mTrackInfo->mMimeType.EqualsLiteral("video/hevc")) {
-    LOG("Only allow 'video/hevc' (mimeType=%s)",
+    LOG("Only allow 'video/hevc' (mimeType={})",
         aSample->mTrackInfo->mMimeType.get());
     return mozilla::Err(NS_ERROR_FAILURE);
   }
@@ -96,7 +96,7 @@ Result<HVCCConfig, nsresult> HVCCConfig::Parse(
     return mozilla::Err(NS_ERROR_FAILURE);
   }
   if (aExtraData->Length() < 23) {
-    LOG("Incorrect extra-data size %zu", aExtraData->Length());
+    LOG("Incorrect extra-data size {}", aExtraData->Length());
     return mozilla::Err(NS_ERROR_FAILURE);
   }
   const auto& byteBuffer = *aExtraData;
@@ -139,12 +139,12 @@ Result<HVCCConfig, nsresult> HVCCConfig::Parse(
     (void)reader.ReadBits(2);  // array_completeness + reserved
     const uint8_t nalUnitType = reader.ReadBits(6);
     const uint16_t numNalus = reader.ReadBits(16);
-    LOGV("nalu-type=%u, nalu-num=%u", nalUnitType, numNalus);
+    LOGV("nalu-type={}, nalu-num={}", nalUnitType, numNalus);
     for (uint16_t nIdx = 0; nIdx < numNalus; nIdx++) {
       const uint16_t nalUnitLength = reader.ReadBits(16);
       if (reader.BitsLeft() < nalUnitLength * 8) {
-        LOG("Aborting parsing, NALU size (%u bits) is larger than remaining "
-            "(%zu bits)!",
+        LOG("Aborting parsing, NALU size ({} bits) is larger than remaining "
+            "({} bits)!",
             nalUnitLength * 8u, reader.BitsLeft());
         // We return what we've parsed so far and ignore the rest.
         hvcc.mByteBuffer = aExtraData;
@@ -160,7 +160,7 @@ Result<HVCCConfig, nsresult> HVCCConfig::Parse(
       if (nalu.IsSPS() || nalu.IsPPS() || nalu.IsVPS() || nalu.IsSEI()) {
         hvcc.mNALUs.AppendElement(nalu);
       } else {
-        LOG("Ignore NALU (%u) which is not SPS/PPS/VPS or SEI",
+        LOG("Ignore NALU ({}) which is not SPS/PPS/VPS or SEI",
             nalu.mNalUnitType);
       }
     }
@@ -1511,7 +1511,7 @@ already_AddRefed<mozilla::MediaByteBuffer> H265::ExtractHVCCExtraData(
       break;
     }
     const H265NALU nalu(p, nalLen);
-    LOGV("Found NALU, type=%u", nalu.mNalUnitType);
+    LOGV("Found NALU, type={}", nalu.mNalUnitType);
     if (nalu.IsSPS()) {
       auto rv = H265::DecodeSPSFromSPSNALU(nalu);
       if (rv.isErr()) {
@@ -1552,7 +1552,7 @@ already_AddRefed<mozilla::MediaByteBuffer> H265::ExtractHVCCExtraData(
   auto vpsEntry = nalusMap.Lookup(H265NALU::VPS_NUT);
   auto ppsEntry = nalusMap.Lookup(H265NALU::PPS_NUT);
 
-  LOGV("Found %zu SPS NALU, %zu VPS NALU, %zu PPS NALU",
+  LOGV("Found {} SPS NALU, {} VPS NALU, {} PPS NALU",
        spsEntry ? spsEntry.Data().Length() : 0,
        vpsEntry ? vpsEntry.Data().Length() : 0,
        ppsEntry ? ppsEntry.Data().Length() : 0);
@@ -1642,7 +1642,7 @@ bool H265::CompareExtraData(const mozilla::MediaByteBuffer* aExtraData1,
   const auto config1 = rv1.unwrap();
   const auto config2 = rv2.unwrap();
   uint8_t numSPS = config1.NumSPS();
-  if (numSPS == 0 || numSPS != config2.NumSPS()) {
+  if (numSPS != config2.NumSPS()) {
     return false;
   }
 

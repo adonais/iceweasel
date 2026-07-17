@@ -2930,12 +2930,6 @@ nsSocketTransport::SetConnectionFlags(uint32_t value) {
 }
 
 NS_IMETHODIMP
-nsSocketTransport::SetIsPrivate(bool aIsPrivate) {
-  mIsPrivate = aIsPrivate;
-  return NS_OK;
-}
-
-NS_IMETHODIMP
 nsSocketTransport::SetIsTRRConnection(bool aIsTRRConnection) {
   mIsTRRConnection = aIsTRRConnection;
   return NS_OK;

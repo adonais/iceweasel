@@ -4,8 +4,7 @@
 
 package mozilla.components.feature.summarize.content
 
-import mozilla.components.concept.llm.ErrorCode
-import mozilla.components.concept.llm.Llm
+import kotlinx.coroutines.CancellationException
 import mozilla.components.feature.summarize.ext.shouldUseReaderModeContent
 
 /**
@@ -32,12 +31,6 @@ fun interface ContentProvider {
      */
     suspend fun getContent(): Result<Content>
 
-    /**
-     * An exception that occurs while providing content.
-     */
-    data class Exception(val originalCause: Throwable) :
-        Llm.Exception("Could not extract content: ${originalCause::javaClass.name}", errorCode)
-
     companion object {
         /**
          * Creates a [ContentProvider] that derives [Content] from the given extractors.
@@ -48,12 +41,13 @@ fun interface ContentProvider {
          * @param pageContentExtractor Extracts the main textual content of the page.
          * @param pageMetadataExtractor Extracts metadata such as the page title and author.
          */
+        @Suppress("TooGenericExceptionCaught")
         fun fromPage(
             pageTitle: String,
             pageContentExtractor: PageContentExtractor,
             pageMetadataExtractor: PageMetadataExtractor,
         ) = ContentProvider {
-            runCatching {
+            try {
                 val metadata = pageMetadataExtractor
                     .getPageMetadata()
                     .getOrDefault(PageMetadata())
@@ -62,14 +56,14 @@ fun interface ContentProvider {
                     options = PageContentExtractor.Options(
                         shouldUseReaderModeContent = metadata.shouldUseReaderModeContent,
                     ),
-                ).getOrElse {
-                    throw it as? Llm.Exception ?: Exception(it)
-                }
+                ).getOrThrow()
 
-                Content(metadata, content)
+                Result.success(Content(metadata, content))
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Throwable) {
+                Result.failure(e)
             }
         }
     }
 }
-
-private val errorCode = ErrorCode(3001)

@@ -92,6 +92,7 @@ class IdleTaskRunner {
   ~IdleTaskRunner();
   void CancelTimer();
   void SetTimerInternal(TimeDuration aDelay);
+  static void TimedOut(nsITimer* aTimer, void* aClosure);
 
   nsCOMPtr<nsITimer> mTimer;
   nsCOMPtr<nsITimer> mScheduleTimer;

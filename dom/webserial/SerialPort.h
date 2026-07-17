@@ -63,9 +63,16 @@ class SerialPort final : public DOMEventTargetHelper {
   // Returns this.[[connected]]: whether the device is physically connected.
   bool Connected() const { return mPhysicallyPresent; }
 
-  bool IsForgotten() const {
-    return mForgottenState == ForgottenState::Forgotten;
-  }
+  enum class State : uint8_t {
+    Closed,
+    Opening,
+    Opened,
+    Closing,
+    Forgetting,
+    Forgotten,
+  };
+
+  bool IsForgotten() const { return mState == State::Forgotten; }
 
   // Returns whether the device is physically connected to the system.
   // This does not indicate whether the port is open or being used.
@@ -129,14 +136,10 @@ class SerialPort final : public DOMEventTargetHelper {
 
   RefPtr<Serial> mSerial;
   IPCSerialPortInfo mInfo;
-  // Whether the port is currently open (between Open() and Close())
-  bool mIsOpen = false;
+  State mState = State::Closed;
   // Whether the hardware device is physically connected to the system
   bool mPhysicallyPresent = true;
   bool mHasShutdown = false;
-  // Whether the user has called forget() on this port
-  enum class ForgottenState { NotForgotten, Forgetting, Forgotten };
-  ForgottenState mForgottenState = ForgottenState::NotForgotten;
   uint32_t mBufferSize = 0;
   uint32_t mPipeCapacity = 0;
 

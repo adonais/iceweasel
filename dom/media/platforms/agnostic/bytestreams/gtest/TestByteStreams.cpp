@@ -1658,4 +1658,26 @@ TEST(H265, ParseSEIHDRMetadata_WrongCLLPayloadSize)
   EXPECT_TRUE(result.isNothing());
 }
 
+TEST(H265, CompareSPSLessConfigs)
+{
+  auto base = MakeRefPtr<MediaByteBuffer>();
+  base->AppendElements(sHvccBytesBuffer, std::size(sHvccBytesBuffer));
+  auto baseRv = HVCCConfig::Parse(base);
+  ASSERT_TRUE(baseRv.isOk());
+  const HVCCConfig hvcc = baseRv.unwrap();
+
+  RefPtr<MediaByteBuffer> extraData1 = H265::CreateNewExtraData(hvcc, {});
+  RefPtr<MediaByteBuffer> extraData2 = H265::CreateNewExtraData(hvcc, {});
+  ASSERT_NE(extraData1.get(), extraData2.get());
+
+  auto config1 = HVCCConfig::Parse(extraData1);
+  auto config2 = HVCCConfig::Parse(extraData2);
+  ASSERT_TRUE(config1.isOk());
+  ASSERT_TRUE(config2.isOk());
+  EXPECT_EQ(config1.unwrap().NumSPS(), 0u);
+  EXPECT_EQ(config2.unwrap().NumSPS(), 0u);
+
+  EXPECT_TRUE(H265::CompareExtraData(extraData1, extraData2));
+}
+
 }  // namespace mozilla

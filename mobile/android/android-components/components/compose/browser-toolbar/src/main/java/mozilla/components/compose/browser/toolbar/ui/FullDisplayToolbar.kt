@@ -9,7 +9,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -107,8 +107,8 @@ internal fun FullDisplayToolbar(
                         )
                         .height(48.dp)
                         .background(
-                            color = MaterialTheme.colorScheme.surfaceDim,
-                            shape = RoundedCornerShape(90.dp),
+                            color = MaterialTheme.colorScheme.surfaceContainerHighest,
+                            shape = CircleShape,
                         )
                         .padding(
                             start = when (pageActionsStart.isEmpty()) {

@@ -33,7 +33,8 @@ void TestSerialPlatformService::AddDefaultMockPorts() {
   AddMockDevice(u"test-device-3"_ns, u"/dev/ttyACM0"_ns, 0x1a86, 0x7523);
 }
 
-nsresult TestSerialPlatformService::EnumeratePortsImpl(SerialPortList& aPorts) {
+nsresult TestSerialPlatformService::EnumeratePortsImpl(
+    SerialPortList& aPorts, bool* aLikelyAccessDenied) {
   aPorts.Clear();
 
   for (const auto& port : mMockPorts) {

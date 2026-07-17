@@ -14,6 +14,14 @@ import "chrome://global/content/elements/moz-button.mjs";
 const DEFAULT_CSS =
   "chrome://newtab/content/data/content/external-components/asrouter-newtab-message/asrouter-newtab-message.css";
 
+// Action types that, when present on a button's `action`, are dispatched
+// directly into New Tab's Redux store via the injected `dispatch` instead
+// of being forwarded to SpecialMessageActions in the parent process. This
+// is a deliberate, narrow boundary crossing — only the types listed here
+// are allowed to reach into HNT internals. Long-term, these should migrate
+// to a stable train-hop-compatible SpecialMessageActions API.
+const NEWTAB_DISPATCH_ACTION_TYPES = new Set(["WIDGETS_OPT_IN"]);
+
 export default class ASRouterNewTabMessage extends MozLitElement {
   static properties = {
     messageData: { type: Object },
@@ -29,6 +37,13 @@ export default class ASRouterNewTabMessage extends MozLitElement {
     handleBlock: { type: Function },
     handleClose: { type: Function },
     isIntersecting: { type: Boolean },
+
+    /**
+     * Injected by New Tab's MessageWrapper. When a button's action type is
+     * in `NEWTAB_DISPATCH_ACTION_TYPES`, the action is forwarded to this
+     * dispatch instead of going through SpecialMessageActions.
+     */
+    dispatch: { type: Function },
   };
 
   /**
@@ -47,6 +62,14 @@ export default class ASRouterNewTabMessage extends MozLitElement {
    * });
    */
   specialMessageAction(action) {
+    // Actions whose type is in the allowlist are dispatched directly into
+    // New Tab's Redux store via the injected `dispatch`. Everything else
+    // flows through the JSWindowActor pair to SpecialMessageActions in the
+    // parent process.
+    if (NEWTAB_DISPATCH_ACTION_TYPES.has(action?.type) && this.dispatch) {
+      this.dispatch(action);
+      return;
+    }
     this.dispatchEvent(
       new CustomEvent("ASRouterNewTabMessage:SpecialMessageAction", {
         bubbles: true,

@@ -61,12 +61,19 @@ let JSPROCESSACTORS = {
   },
 
   ProcessConduits: {
+    // "parent" remoteTypes is currently needed to support MV3 background service workers
+    // also when extensions.webextensions.remote is set to false.
+    remoteTypes: ["parent", "extension"],
     parent: {
       esModuleURI: "resource://gre/modules/ConduitsParent.sys.mjs",
     },
     child: {
       esModuleURI: "resource://gre/modules/ConduitsChild.sys.mjs",
     },
+    // This actor is only meant to be used when MV3 background service worker
+    // implementation is enabled (which is currently only allowed in Nightly
+    // and gated by this about:config preference).
+    enablePreference: "extensions.backgroundServiceWorker.enabled",
   },
 
   // A single process (shared with MLEngine) that controls all of the translations.
@@ -537,13 +544,6 @@ let JSWINDOWACTORS = {
     allFrames: true,
   },
 
-  PurgeSessionHistory: {
-    child: {
-      esModuleURI: "resource://gre/actors/PurgeSessionHistoryChild.sys.mjs",
-    },
-    allFrames: true,
-  },
-
   ReportBrokenSite: {
     parent: {
       esModuleURI: "resource://gre/actors/ReportBrokenSiteParent.sys.mjs",
@@ -775,6 +775,20 @@ if (AppConstants.platform != "android") {
     },
     messageManagerGroups: ["browsers"],
     allFrames: true,
+  };
+
+  JSWINDOWACTORS.AboutPDF = {
+    parent: {
+      esModuleURI: "resource://gre/actors/AboutPDFParent.sys.mjs",
+    },
+    child: {
+      esModuleURI: "resource://gre/actors/AboutPDFChild.sys.mjs",
+      events: {
+        DOMDocElementInserted: {},
+      },
+    },
+    matches: ["about:pdf", "about:pdf?*", "about:pdf#*"],
+    remoteTypes: ["privilegedabout"],
   };
 
   JSWINDOWACTORS.AboutTranslations = {

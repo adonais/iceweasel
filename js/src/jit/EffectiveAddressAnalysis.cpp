@@ -161,9 +161,9 @@ static void TryMatchShiftAdd(TempAllocator& alloc, MAdd* root) {
   root->block()->insertAfter(root, replacement);
 
   if (JitSpewEnabled(JitSpew_EAA)) {
-    JitSpewCont(JitSpew_EAA, "  create: '");
-    DumpMIRDefinition(JitSpewPrinter(), replacement, /*showDetails=*/false);
-    JitSpewCont(JitSpew_EAA, "'\n");
+    AutoJitSpewMessage msg(JitSpew_EAA, "  create: '");
+    DumpMIRDefinition(msg.printer(), replacement, /*showDetails=*/false);
+    msg.append("'");
   }
 }
 

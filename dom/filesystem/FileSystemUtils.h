@@ -35,7 +35,7 @@ class FileSystemUtils {
    * used.
    */
   static nsresult DispatchRunnable(nsIGlobalObject* aGlobal,
-                                   already_AddRefed<nsIRunnable>&& aRunnable);
+                                   already_AddRefed<nsIRunnable> aRunnable);
 };
 
 }  // namespace mozilla::dom

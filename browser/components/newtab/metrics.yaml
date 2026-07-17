@@ -741,6 +741,26 @@ newtab:
     send_in_pings:
       - newtab
 
+  sections_learn_more:
+    type: event
+    description: >
+      Recorded when the "Learn more" option in the sections context menu
+      is clicked.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2034869
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2034869
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - ini@mozilla.com
+      - sdowne@mozilla.com
+    expires: never
+    extra_keys:
+      newtab_visit_id: *newtab_visit_id
+    send_in_pings:
+      - newtab
+
   inline_selection_impression:
     type: event
     description: >
@@ -1192,7 +1212,7 @@ newtab:
         type: string
       widget_size: &widget_size
         description: >
-          Size of widget (e.g., mini, small, medium).
+          Size of widget (e.g., small, medium, large).
         type: string
     send_in_pings:
       - newtab
@@ -1303,7 +1323,8 @@ newtab:
       widget_size: *widget_size
       action_type:
         description: >
-          Type of container action. (hide_all, toggle_maximize)
+          Type of container action. (hide_all, change_size_all,
+          change_row_visibility, feedback)
         type: string
       action_value:
         description: >

@@ -1,4 +1,4 @@
-// |jit-test| skip-if: getBuildConfiguration("release_or_beta"); --enable-import-text
+// |jit-test| --enable-import-text
 
 let text = "hello\n";
 

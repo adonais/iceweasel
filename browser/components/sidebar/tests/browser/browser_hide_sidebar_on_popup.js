@@ -15,7 +15,7 @@ async function test_sidebar_hidden_on_popup() {
   const win = await BrowserTestUtils.openNewBrowserWindow();
   const { document } = win;
 
-  const sidebar = document.getElementById("sidebar-main");
+  const sidebar = document.getElementById("sidebar-container");
   info("Waiting for sidebar to be visible");
   await BrowserTestUtils.waitForMutationCondition(
     sidebar,
@@ -39,7 +39,7 @@ async function test_sidebar_hidden_on_popup() {
   // Give popup window a chance to display the sidebar (which it shouldn't).
   await new Promise(resolve => ChromeUtils.idleDispatch(resolve));
 
-  const popupSidebar = popup.document.getElementById("sidebar-main");
+  const popupSidebar = popup.document.getElementById("sidebar-container");
   ok(popupSidebar.hidden, "Sidebar is hidden on popup window");
 
   const menubar = popup.document.getElementById("viewSidebarMenu");

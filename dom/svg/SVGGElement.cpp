@@ -18,7 +18,7 @@ JSObject* SVGGElement::WrapNode(JSContext* aCx,
 //----------------------------------------------------------------------
 // Implementation
 
-SVGGElement::SVGGElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+SVGGElement::SVGGElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGGraphicsElement(std::move(aNodeInfo)) {}
 
 //----------------------------------------------------------------------

@@ -14,6 +14,57 @@ newtab-personalize-icon-label =
 newtab-personalize-dialog-label =
     .aria-label = Gnàthaich
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Tabaichean ùra
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } ràgh
+            [two] { $num } ràgh
+            [few] { $num } ràghan
+           *[other] { $num } ràgh
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Extension ({ $extension })
+home-restore-defaults-srd =
+    .label = Aisig na bun-roghainnean
+    .accesskey = r
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (bun-roghainn)
+home-mode-choice-custom-srd =
+    .label = URLaichean gnàthaichte...
+home-mode-choice-blank-srd =
+    .label = Duilleag bhàn
+home-prefs-shortcuts-header-srd =
+    .label = Ath-ghoiridean
+home-prefs-shortcuts-select =
+    .aria-label = Ath-ghoiridean
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Ath-ghoiridean sponsairichte
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Sgeulachdan sponsairichte
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Duilleagan air an do thadhail thu
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Comharran-lìn
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Air a luchdadh a-nuas o chionn goirid
+home-prefs-recent-activity-header-srd =
+    .label = Gnìomhachd o chionn goirid
+home-prefs-recent-activity-select =
+    .aria-label = Gnìomhachd o chionn goirid
+
 ## Search box component.
 
 # "Search" is a verb/action

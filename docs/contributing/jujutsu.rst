@@ -5,6 +5,12 @@ Jujutsu (``jj`` on the command-line) is a modern DVCS, that uses ``git``
 repositorie as its storage backend. It borrows extensively from Mercurial,
 but has many more features.
 
+.. note::
+
+   Jujutsu is an optional alternative to plain Git for managing your
+   patch stack. If you prefer Git, see :ref:`Working with stack of
+   patches Quick Reference`.
+
 .. contents:: Table of Contents
 
 Links and Resources

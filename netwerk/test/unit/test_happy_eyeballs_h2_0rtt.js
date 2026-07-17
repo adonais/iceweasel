@@ -35,6 +35,7 @@ const { NodeHTTPServer } = ChromeUtils.importESModule(
 );
 
 let callbackServer;
+let gServerStarted = false;
 let earlyCount = 0;
 let stdCount = 0;
 
@@ -65,10 +66,14 @@ add_setup(
       callbackServer.identity.primaryPort
     );
     Services.env.set("MOZ_TLS_SERVER_0RTT", "1");
-    await asyncStartTLSTestServer(
+    const started = await asyncStartTLSTestServer(
       "ZeroRttAcceptServer",
       "../../../security/manager/ssl/tests/unit/test_faulty_server"
     );
+    if (!started) {
+      return;
+    }
+    gServerStarted = true;
     let nssComponent = Cc["@mozilla.org/psm;1"].getService(Ci.nsINSSComponent);
     await nssComponent.asyncClearSSLExternalAndInternalSessionCache();
 
@@ -160,7 +165,7 @@ async function runHandshakeThenResume(host) {
 
 add_task(
   {
-    skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
+    skip_if: () => AppConstants.MOZ_SYSTEM_NSS || !gServerStarted,
   },
   async function test_he_h2_0rtt_accepted_no_duplicate_on_the_wire() {
     await runHandshakeThenResume("0rtt-accept-h2.example.com");
@@ -171,7 +176,7 @@ add_task(
 
 add_task(
   {
-    skip_if: () => AppConstants.MOZ_SYSTEM_NSS,
+    skip_if: () => AppConstants.MOZ_SYSTEM_NSS || !gServerStarted,
   },
   async function test_he_h2_0rtt_rejected_restarts_cleanly() {
     // Server refuses 0-RTT on resumption (no anti-replay context). NSS
@@ -326,6 +331,7 @@ add_task(
   {
     skip_if: () =>
       AppConstants.MOZ_SYSTEM_NSS ||
+      !gServerStarted ||
       mozinfo.os == "android" ||
       mozinfo.socketprocess_networking,
   },
@@ -343,6 +349,7 @@ add_task(
   {
     skip_if: () =>
       AppConstants.MOZ_SYSTEM_NSS ||
+      !gServerStarted ||
       mozinfo.os == "android" ||
       mozinfo.socketprocess_networking,
   },

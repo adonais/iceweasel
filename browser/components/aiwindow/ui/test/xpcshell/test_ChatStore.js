@@ -1158,6 +1158,38 @@ add_atomic_task(async function test_seenUrls_roundTrip() {
   );
 });
 
+add_atomic_task(async function test_serpUrlsForAnonymousFetch_roundTrip() {
+  const conversation = new ChatConversation({});
+  conversation.title = "conversation with search result url ledger";
+  conversation.addUserMessage("test content", "https://www.firefox.com");
+  conversation.addSerpUrlsForAnonymousFetch([
+    "https://search-result.example.com/a",
+    "https://search-result.example.com/b",
+  ]);
+  await gChatStore.updateConversation(conversation);
+
+  const restored = await gChatStore.findConversationById(conversation.id);
+
+  Assert.ok(restored, "conversation should restore from DB");
+  Assert.ok(
+    restored.serpUrlsForAnonymousFetch.has(
+      "https://search-result.example.com/a"
+    ),
+    "first ledger URL should be restored"
+  );
+  Assert.ok(
+    restored.serpUrlsForAnonymousFetch.has(
+      "https://search-result.example.com/b"
+    ),
+    "second ledger URL should be restored"
+  );
+  Assert.equal(
+    restored.serpUrlsForAnonymousFetch.size,
+    2,
+    "serpUrlsForAnonymousFetch should have exactly 2 entries"
+  );
+});
+
 add_atomic_task(async function test_securityProperties_upsert_updatesFlags() {
   const conversation = new ChatConversation({});
   conversation.title = "conversation that becomes tainted";
@@ -1390,5 +1422,376 @@ add_atomic_task(async function test_toolUIData_undoDismissed_roundTrip() {
     reloadedAssistant.toolUIData.properties.undoDismissed,
     true,
     "undoDismissed:true survives the ChatStore roundTrip"
+  );
+});
+add_atomic_task(
+  async function test_updateLLMTelemetryRecord_creates_unprocessed_row() {
+    const conversation = new ChatConversation({});
+    conversation.title = "conversation with llm telemetry";
+    conversation.addUserMessage("test content", "https://www.firefox.com");
+    await gChatStore.updateConversation(conversation);
+
+    await gChatStore.updateLLMTelemetryRecord(conversation.id);
+
+    const telemetry = await gChatStore.findLLMTelemetryByConversationId(
+      conversation.id
+    );
+
+    Assert.ok(telemetry, "LLM telemetry row should exist");
+    Assert.withSoftAssertions(function (soft) {
+      soft.equal(telemetry.convId, conversation.id);
+      soft.equal(telemetry.processed, 0);
+      soft.deepEqual(telemetry.telemetryPrompts, {});
+      soft.deepEqual(telemetry.telemetryProbabilities, {});
+      soft.ok(telemetry.processedTime, "processedTime should be set");
+    });
+  }
+);
+
+add_atomic_task(
+  async function test_updateLLMTelemetryRecord_creates_processed_row() {
+    const conversation = new ChatConversation({});
+    conversation.title = "processed llm telemetry conversation";
+    conversation.addUserMessage("test content", "https://www.firefox.com");
+    await gChatStore.updateConversation(conversation);
+
+    await gChatStore.updateLLMTelemetryRecord(
+      conversation.id,
+      {
+        "wasSuccessful-v1": 2,
+        "isLongConvo-v1": 2,
+      },
+      {
+        "wasSuccessful-v1": 0.9,
+        "isLongConvo-v1": 0.84,
+      },
+      0,
+      1
+    );
+
+    const telemetry = await gChatStore.findLLMTelemetryByConversationId(
+      conversation.id
+    );
+
+    Assert.ok(telemetry, "LLM telemetry row should exist");
+    Assert.withSoftAssertions(function (soft) {
+      soft.equal(telemetry.convId, conversation.id);
+      soft.equal(telemetry.processed, 1);
+      soft.deepEqual(telemetry.telemetryPrompts, {
+        "wasSuccessful-v1": 2,
+        "isLongConvo-v1": 2,
+      });
+      soft.deepEqual(telemetry.telemetryProbabilities, {
+        "wasSuccessful-v1": 0.9,
+        "isLongConvo-v1": 0.84,
+      });
+      soft.ok(telemetry.processedTime, "processedTime should be set");
+    });
+  }
+);
+
+add_atomic_task(
+  async function test_updateLLMTelemetryRecord_merges_prompts_and_probabilities() {
+    const conversation = new ChatConversation({});
+    conversation.title = "merged llm telemetry conversation";
+    conversation.addUserMessage("test content", "https://www.firefox.com");
+    await gChatStore.updateConversation(conversation);
+
+    await gChatStore.updateLLMTelemetryRecord(
+      conversation.id,
+      {
+        "wasSuccessful-v1": 2,
+        "isLongConvo-v1": 2,
+      },
+      {
+        "wasSuccessful-v1": 0.9,
+        "isLongConvo-v1": 0.84,
+      },
+      0,
+      0
+    );
+
+    await gChatStore.updateLLMTelemetryRecord(
+      conversation.id,
+      {
+        "isLongConvo-v1": 8,
+      },
+      {
+        "isLongConvo-v1": 0.95,
+      },
+      0,
+      1
+    );
+
+    const telemetry = await gChatStore.findLLMTelemetryByConversationId(
+      conversation.id
+    );
+
+    Assert.ok(telemetry, "LLM telemetry row should exist");
+    Assert.withSoftAssertions(function (soft) {
+      soft.equal(telemetry.convId, conversation.id);
+      soft.equal(telemetry.processed, 1);
+      soft.deepEqual(telemetry.telemetryPrompts, {
+        "wasSuccessful-v1": 2,
+        "isLongConvo-v1": 8,
+      });
+      soft.deepEqual(telemetry.telemetryProbabilities, {
+        "wasSuccessful-v1": 0.9,
+        "isLongConvo-v1": 0.84,
+      });
+      soft.ok(telemetry.processedTime, "processedTime should be set");
+    });
+  }
+);
+
+add_atomic_task(
+  async function test_updateLLMTelemetryRecord_preserves_existing_data_when_marking_unprocessed() {
+    const conversation = new ChatConversation({});
+    conversation.title = "unprocessed preserves telemetry";
+    conversation.addUserMessage("test content", "https://www.firefox.com");
+    await gChatStore.updateConversation(conversation);
+
+    await gChatStore.updateLLMTelemetryRecord(
+      conversation.id,
+      {
+        "wasSuccessful-v1": 2,
+        "isLongConvo-v1": 8,
+      },
+      {
+        "wasSuccessful-v1": 0.9,
+        "isLongConvo-v1": 0.95,
+      },
+      0,
+      1
+    );
+
+    await gChatStore.updateLLMTelemetryRecord(conversation.id, {}, {}, 0);
+
+    const telemetry = await gChatStore.findLLMTelemetryByConversationId(
+      conversation.id
+    );
+
+    Assert.ok(telemetry, "LLM telemetry row should exist");
+    Assert.withSoftAssertions(function (soft) {
+      soft.equal(telemetry.convId, conversation.id);
+      soft.equal(telemetry.processed, 0);
+      soft.deepEqual(telemetry.telemetryPrompts, {
+        "wasSuccessful-v1": 2,
+        "isLongConvo-v1": 8,
+      });
+      soft.deepEqual(telemetry.telemetryProbabilities, {
+        "wasSuccessful-v1": 0.9,
+        "isLongConvo-v1": 0.95,
+      });
+      soft.ok(telemetry.processedTime, "processedTime should be set");
+    });
+  }
+);
+
+add_atomic_task(
+  async function test_findLLMTelemetryByConversationId_returns_null_for_missing_row() {
+    const telemetry =
+      await gChatStore.findLLMTelemetryByConversationId("missing-conv-id");
+
+    Assert.equal(
+      telemetry,
+      null,
+      "Should return null when no LLM telemetry row exists"
+    );
+  }
+);
+
+add_atomic_task(
+  async function test_updateLLMTelemetryRecord_sets_uniform_sampling_probability() {
+    const conversation = new ChatConversation({});
+    conversation.title = "uniform sampling probability conversation";
+    conversation.addUserMessage("test content", "https://www.firefox.com");
+    await gChatStore.updateConversation(conversation);
+
+    await gChatStore.updateLLMTelemetryRecord(conversation.id, {}, {}, 750, 0);
+
+    const telemetry = await gChatStore.findLLMTelemetryByConversationId(
+      conversation.id
+    );
+
+    Assert.ok(telemetry, "LLM telemetry row should exist");
+    Assert.equal(telemetry.uniformSamplingProbability, 750);
+  }
+);
+
+add_atomic_task(
+  async function test_updateLLMTelemetryRecord_preserves_uniform_sampling_probability() {
+    const conversation = new ChatConversation({});
+    conversation.title = "uniform sampling probability preserved conversation";
+    conversation.addUserMessage("test content", "https://www.firefox.com");
+    await gChatStore.updateConversation(conversation);
+
+    await gChatStore.updateLLMTelemetryRecord(conversation.id, {}, {}, 750, 0);
+
+    await gChatStore.updateLLMTelemetryRecord(conversation.id, {}, {}, 999, 1);
+
+    const telemetry = await gChatStore.findLLMTelemetryByConversationId(
+      conversation.id
+    );
+
+    Assert.ok(telemetry, "LLM telemetry row should exist");
+    Assert.equal(
+      telemetry.uniformSamplingProbability,
+      750,
+      "uniform_sampling_probability should not be overwritten on update"
+    );
+  }
+);
+
+add_atomic_task(
+  async function test_findConversationById_hydratesUniformSamplingState() {
+    const conversation = new ChatConversation({});
+    conversation.title = "hydration conversation";
+    conversation.addUserMessage("test content", "https://www.firefox.com");
+    await gChatStore.updateConversation(conversation);
+    await gChatStore.updateLLMTelemetryRecord(conversation.id, {}, {}, 0.25, 0);
+
+    const reloaded = await gChatStore.findConversationById(conversation.id);
+
+    Assert.equal(
+      reloaded._telemetryUniformSample,
+      true,
+      "_telemetryUniformSample is rehydrated from llm_telemetry on reload"
+    );
+    Assert.equal(
+      reloaded._telemetryUniformProbability,
+      0.25,
+      "_telemetryUniformProbability is rehydrated from llm_telemetry on reload"
+    );
+  }
+);
+
+add_atomic_task(
+  async function test_findConversationById_skipsHydrationWhenNotSampled() {
+    const conversation = new ChatConversation({});
+    conversation.title = "no-hydration conversation";
+    conversation.addUserMessage("test content", "https://www.firefox.com");
+    await gChatStore.updateConversation(conversation);
+    await gChatStore.updateLLMTelemetryRecord(conversation.id, {}, {}, 0, 0);
+
+    const reloaded = await gChatStore.findConversationById(conversation.id);
+
+    Assert.notStrictEqual(
+      reloaded._telemetryUniformSample,
+      true,
+      "_telemetryUniformSample stays unset when uniform_sampling_probability is 0"
+    );
+  }
+);
+
+add_atomic_task(
+  async function test_findConversationById_skipsHydrationWhenNoTelemetryRow() {
+    const conversation = new ChatConversation({});
+    conversation.title = "no-telemetry-row conversation";
+    conversation.addUserMessage("test content", "https://www.firefox.com");
+    await gChatStore.updateConversation(conversation);
+
+    const reloaded = await gChatStore.findConversationById(conversation.id);
+
+    Assert.notStrictEqual(
+      reloaded._telemetryUniformSample,
+      true,
+      "_telemetryUniformSample stays unset when no llm_telemetry row exists"
+    );
+  }
+);
+
+/**
+ * Test that messages with website-confirmation toolUIData get isRestored flag
+ * when loaded from the database
+ */
+add_atomic_task(async function test_website_confirmation_isRestored_flag() {
+  const conversation = new ChatConversation({});
+  conversation.title = "Test isRestored flag";
+  conversation.addUserMessage("Close some tabs", "https://example.com/", 0);
+  conversation.addAssistantMessage("text", "I'll help close those tabs");
+
+  const assistant = conversation.messages.at(-1);
+
+  // Add website-confirmation toolUIData
+  const toolUIData = makeToolUIData({
+    uiType: "website-confirmation",
+    tabs: [
+      { id: "tab-1", url: "https://example.com", title: "Example" },
+      { id: "tab-2", url: "https://test.com", title: "Test" },
+    ],
+  });
+
+  // Add originalUserPrompt to properties
+  toolUIData.properties.originalUserPrompt = "Close some tabs";
+  assistant.toolUIData = toolUIData;
+
+  // Save the conversation
+  await gChatStore.updateConversation(conversation);
+
+  // Load it back from the database
+  const reloaded = await gChatStore.findConversationById(conversation.id);
+  const reloadedAssistant = reloaded.messages.find(m => m.id === assistant.id);
+
+  // Verify the isRestored flag was set
+  Assert.ok(
+    reloadedAssistant.isRestored,
+    "Messages with website-confirmation toolUIData should have isRestored flag set when loaded from DB"
+  );
+
+  // Verify the toolUIData is preserved
+  Assert.equal(
+    reloadedAssistant.toolUIData.uiType,
+    "website-confirmation",
+    "uiType should be preserved"
+  );
+
+  Assert.equal(
+    reloadedAssistant.toolUIData.properties.originalUserPrompt,
+    "Close some tabs",
+    "originalUserPrompt should be preserved"
+  );
+
+  Assert.equal(
+    reloadedAssistant.toolUIData.properties.tabs.length,
+    2,
+    "tabs array should be preserved"
+  );
+});
+
+/**
+ * Test that messages with other UI types don't get isRestored flag
+ */
+add_atomic_task(async function test_other_ui_types_no_isRestored_flag() {
+  const conversation = new ChatConversation({});
+  conversation.title = "Test no isRestored flag";
+  conversation.addUserMessage("Do something", "https://example.com/", 0);
+  conversation.addAssistantMessage("text", "Task completed");
+
+  const assistant = conversation.messages.at(-1);
+
+  // Add ai-action-result toolUIData (not website-confirmation)
+  assistant.toolUIData = makeToolUIData({
+    uiType: "ai-action-result",
+  });
+
+  // Save the conversation
+  await gChatStore.updateConversation(conversation);
+
+  // Load it back from the database
+  const reloaded = await gChatStore.findConversationById(conversation.id);
+  const reloadedAssistant = reloaded.messages.find(m => m.id === assistant.id);
+
+  // Verify the isRestored flag was NOT set
+  Assert.ok(
+    !reloadedAssistant.isRestored,
+    "Messages with non-website-confirmation toolUIData should NOT have isRestored flag"
+  );
+
+  // Verify the toolUIData is still preserved
+  Assert.equal(
+    reloadedAssistant.toolUIData.uiType,
+    "ai-action-result",
+    "uiType should be preserved"
   );
 });

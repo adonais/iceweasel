@@ -14,6 +14,14 @@ newtab-personalize-icon-label =
 newtab-personalize-dialog-label =
     .aria-label = ব্যক্তিগতকৰণ কৰক
 
+## Firefox Home content
+
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = এক্সটেনশ্যন ({ $extension })
+
 ## Search box component.
 
 # "Search" is a verb/action

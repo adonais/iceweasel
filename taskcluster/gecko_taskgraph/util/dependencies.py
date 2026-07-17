@@ -115,9 +115,18 @@ def chunk_locale_grouping(config, tasks):
         product = task.attributes.get(
             "shipping_product", task.task.get("shipping-product")
         )
-        chunk_locales = tuple(sorted(task.attributes.get("chunk_locales", [])))
+        chunk_locales = task.attributes.get("chunk_locales", [])
+        if chunk_locales:
+            chunk_key = tuple(sorted(chunk_locales))
+        else:
+            # Some tasks (e.g. repackage-l10n) are per-locale but still carry
+            # the original l10n_chunk number from their chunked upstream. Use
+            # that (a string, e.g. "1") to re-group them back into their
+            # original chunks. The type differs from the tuple above, but
+            # that's fine for dict-key grouping since they never collide.
+            chunk_key = task.attributes.get("l10n_chunk", ())
 
-        chunk_locale_key = (platform, build_type, product, chunk_locales)
+        chunk_locale_key = (platform, build_type, product, chunk_key)
         groups.setdefault(chunk_locale_key, [])
         if task not in groups[chunk_locale_key]:
             groups[chunk_locale_key].append(task)

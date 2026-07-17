@@ -66,9 +66,8 @@
 static_assert(sizeof(void*) == sizeof(nullptr),
               "nullptr should be the correct size");
 
-nsresult NS_NewSVGElement(
-    mozilla::dom::Element** aResult,
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+nsresult NS_NewSVGElement(mozilla::dom::Element** aResult,
+                          already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();
   RefPtr<mozilla::dom::SVGElement> it =
@@ -98,7 +97,7 @@ SVGEnumMapping SVGElement::sSVGUnitTypesMap[] = {
     {nsGkAtoms::objectBoundingBox, SVG_UNIT_TYPE_OBJECTBOUNDINGBOX},
     {nullptr, 0}};
 
-SVGElement::SVGElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+SVGElement::SVGElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGElementBase(std::move(aNodeInfo)) {}
 
 SVGElement::~SVGElement() = default;

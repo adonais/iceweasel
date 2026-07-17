@@ -46,7 +46,7 @@ class HttpTransactionParent final : public PHttpTransactionParent,
       const nsresult& aStatus, Maybe<nsHttpResponseHead>&& aResponseHead,
       nsITransportSecurityInfo* aSecurityInfo, const bool& aProxyConnectFailed,
       const TimingStructArgs& aTimings,
-      const int32_t& aProxyConnectResponseCode,
+      Maybe<nsHttpResponseHead>&& aProxyConnectResponseHead,
       nsTArray<uint8_t>&& aDataForSniffer, const Maybe<nsCString>& aAltSvcUsed,
       const bool& aDataToChildProcess, const bool& aRestarted,
       const uint32_t& aHTTPSSVCReceivedStage, const bool& aSupportsHttp3,
@@ -105,7 +105,7 @@ class HttpTransactionParent final : public PHttpTransactionParent,
       const nsresult& aStatus, Maybe<nsHttpResponseHead>&& aResponseHead,
       nsITransportSecurityInfo* aSecurityInfo, const bool& aProxyConnectFailed,
       const TimingStructArgs& aTimings,
-      const int32_t& aProxyConnectResponseCode,
+      Maybe<nsHttpResponseHead>&& aProxyConnectResponseHead,
       nsTArray<uint8_t>&& aDataForSniffer, const Maybe<nsCString>& aAltSvcUsed,
       const bool& aDataToChildProcess, const bool& aRestarted,
       const uint32_t& aHTTPSSVCReceivedStage, const bool& aSupportsHttp3,
@@ -155,7 +155,7 @@ class HttpTransactionParent final : public PHttpTransactionParent,
   nsIRequest::TRRMode mEffectiveTRRMode{nsIRequest::TRR_DEFAULT_MODE};
   TRRSkippedReason mTRRSkipReason{nsITRRSkipReason::TRR_UNSET};
   bool mEchConfigUsed = false;
-  int32_t mProxyConnectResponseCode{0};
+  RefPtr<ProxyConnectResponseHead> mProxyConnectResponseHead;
   uint64_t mChannelId{0};
   bool mDataSentToChildProcess{false};
   bool mIsDocumentLoad;

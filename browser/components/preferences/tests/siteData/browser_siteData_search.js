@@ -3,6 +3,11 @@
 
 "use strict";
 
+// Driving the prefs search bar with EventUtils.sendString dispatches one event
+// per character through the debounced search pipeline, which scans the full
+// prefs UI each time. For --verify this needs more time.
+requestLongerTimeout(2);
+
 // Regression test for bug 2041077: opening the "Manage Cookies and Site Data"
 // dialog from the search-results pane (without first visiting the privacy
 // pane) must populate the site list. Before the fix, SiteDataManager.updateSites

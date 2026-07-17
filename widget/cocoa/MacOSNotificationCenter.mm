@@ -457,6 +457,12 @@ MacOSNotificationCenter::GetHistory(nsTArray<nsString>& aResult) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+NS_IMETHODIMP
+MacOSNotificationCenter::IsFullscreen(bool* aRetVal) {
+  *aRetVal = false;
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 // nsIAlertsDoNotDisturb
 NS_IMETHODIMP
 MacOSNotificationCenter::GetManualDoNotDisturb(bool* aRetVal) {

@@ -16,7 +16,10 @@ DIRS += [
 
 EXPORTS.mozilla += [
     "/mozglue/misc/IntegerPrintfMacros.h",
+    "/mozglue/misc/Now.h",
     "/mozglue/misc/Sprintf.h",
+    "/mozglue/misc/TimeStamp.h",
+    "/mozglue/misc/Uptime.h",
 ]
 
 if CONFIG["OS_ARCH"] == "WINNT":

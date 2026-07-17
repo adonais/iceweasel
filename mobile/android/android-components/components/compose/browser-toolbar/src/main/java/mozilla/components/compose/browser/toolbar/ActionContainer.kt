@@ -216,9 +216,17 @@ private fun ActionContainerPreview() {
                     showPrivacyMask = false,
                     onClick = object : BrowserToolbarEvent {},
                 ),
+                AnimatedPillActionRes(
+                    iconResId = iconsR.drawable.mozac_ic_shield_checkmark_24,
+                    overlayResId = iconsR.drawable.mozac_ic_globe_24,
+                    textResId = R.string.mozac_clear_button_description,
+                    contentDescriptionResId = R.string.mozac_clear_button_description,
+                    highlighted = true,
+                    onClick = object : BrowserToolbarEvent {},
+                ),
             ),
             onInteraction = {},
-            modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceDim),
+            modifier = Modifier.background(color = MaterialTheme.colorScheme.surfaceContainerHighest),
         )
     }
 }

@@ -28,6 +28,7 @@ import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithTag
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performTextInput
 import androidx.core.net.toUri
 import androidx.test.espresso.Espresso.closeSoftKeyboard
@@ -72,7 +73,6 @@ import org.mozilla.fenix.helpers.SessionLoadedIdlingResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
-import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeVeryShort
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.mDevice
@@ -85,6 +85,7 @@ import org.mozilla.fenix.helpers.ext.waitNotNull
 import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
+import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON
 import org.mozilla.fenix.webcompat.BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_SEND_BUTTON
 import java.time.LocalDate
@@ -971,13 +972,8 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         assertUIObjectExists(
             itemContainingText(
                 getStringResource(
-                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name,
+                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2,
                     appName,
-                ),
-            ),
-            itemContainingText(
-                getStringResource(
-                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_message,
                 ),
             ),
             waitingTime = waitingTimeLong,
@@ -988,13 +984,8 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         assertUIObjectIsGone(
             itemContainingText(
                 getStringResource(
-                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name,
+                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2,
                     appName,
-                ),
-            ),
-            itemContainingText(
-                getStringResource(
-                    applinksR.string.mozac_feature_applinks_normal_confirm_dialog_message,
                 ),
             ),
         )
@@ -1016,7 +1007,7 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
                 assertUIObjectExists(
                     itemContainingText(
                         getStringResource(
-                            applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name,
+                            applinksR.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2,
                             appName,
                         ),
                     ),
@@ -1246,7 +1237,7 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
                 appName,
                 getStringResource(R.string.webcompat_reporter_learn_more),
             ) + " " + getStringResource(composeBaseR.string.mozac_compose_base_link_text_links_available),
-        ).assertIsDisplayed()
+        ).performScrollTo().assertIsDisplayed()
         Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the report broken site description is displayed")
         Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"URL\" header is displayed")
         this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_url)).assertIsDisplayed()
@@ -1263,9 +1254,9 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Please choose a reason\" error message is displayed")
         this@BrowserRobot.composeTestRule.onNodeWithTag(BROKEN_SITE_REPORTER_CHOOSE_REASON_BUTTON).assertIsDisplayed()
         Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Please choose a reason\" error message is displayed")
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Describe the problem (optional)\" field is displayed")
-        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_description)).assertIsDisplayed()
-        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Describe the problem (optional)\" field is displayed")
+        Log.i(TAG, "verifyWebCompatReporterViewItems: Trying to verify that the \"Describe the problem in detail to help us investigate the issue (optional)\" field is displayed")
+        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_description_2)).assertIsDisplayed()
+        Log.i(TAG, "verifyWebCompatReporterViewItems: Verified that the \"Describe the problem in detail to help us investigate the issue (optional)\" field is displayed")
         if (appContext.components.core.engine.version.releaseChannel !== EngineReleaseChannel.RELEASE) {
             Log.i(
                 TAG,
@@ -1340,12 +1331,17 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun describeBrokenSiteProblem(problemDescription: String) {
-        Log.i(TAG, "describeBrokenSiteProblem: Trying to click the \"Describe the problem (optional)\" field")
-        this@BrowserRobot.composeTestRule.onNodeWithText(getStringResource(R.string.webcompat_reporter_label_description)).performClick()
-        Log.i(TAG, "describeBrokenSiteProblem: Clicked the \"Describe the problem (optional)\" field")
-        Log.i(TAG, "describeBrokenSiteProblem: Trying to set the text of the \"Describe the problem (optional)\" field to $problemDescription")
-        this@BrowserRobot.composeTestRule.onNode(hasText(getStringResource(R.string.webcompat_reporter_label_description))).performTextInput(problemDescription)
-        Log.i(TAG, "describeBrokenSiteProblem: Set the text of the \"Describe the problem (optional)\" field to $problemDescription")
+        Log.i(TAG, "describeBrokenSiteProblem: Trying to click the description field")
+        this@BrowserRobot.composeTestRule
+            .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT)
+            .performClick()
+        Log.i(TAG, "describeBrokenSiteProblem: Clicked the description field")
+
+        Log.i(TAG, "describeBrokenSiteProblem: Trying to set the text to $problemDescription")
+        this@BrowserRobot.composeTestRule
+            .onNodeWithTag(BrokenSiteReporterTestTags.BROKEN_SITE_REPORTER_DESCRIPTION_INPUT)
+            .performTextInput(problemDescription)
+        Log.i(TAG, "describeBrokenSiteProblem: Set the text to $problemDescription")
     }
 
     fun verifyBrokenSiteProblem(problemDescription: String, isDisplayed: Boolean) {
@@ -1406,6 +1402,31 @@ class BrowserRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyETPShieldIconIsDisplayed: Trying to verify that the \"Shield icon\" is displayed")
         composeTestRule.onNodeWithContentDescription(getStringResource(toolbarR.string.mozac_browser_toolbar_content_description_site_info)).assertIsDisplayed()
         Log.i(TAG, "verifyETPShieldIconIsDisplayed: Verified that the \"Shield icon\" was displayed")
+    }
+
+    fun verifyTheSummarizeCFR(shouldBeDisplayed: Boolean = true) {
+        if (shouldBeDisplayed) {
+            Log.i(TAG, "verifyTheSummarizeCFR: Trying to verify the \"Shake your device to summarize this page in seconds\" CFR message is displayed.")
+            composeTestRule.summarizeCFRMessage().assertIsDisplayed()
+            Log.i(TAG, "verifyTheSummarizeCFR: Verified the \"Shake your device to summarize this page in seconds\" CFR message is displayed.")
+            Log.i(TAG, "verifyTheSummarizeCFR: Trying to verify the \"Shake your device to summarize this page in seconds\" CFR dismiss button is displayed.")
+            composeTestRule.summarizeCFRButton().assertIsDisplayed()
+            Log.i(TAG, "verifyTheSummarizeCFR: Verified the \"Shake your device to summarize this page in seconds\" CFR dismiss button is displayed.")
+        } else {
+            Log.i(TAG, "verifyTheSummarizeCFR: Trying to verify the \"Shake your device to summarize this page in seconds\" CFR message is NOT displayed.")
+            composeTestRule.summarizeCFRMessage().assertDoesNotExist()
+            Log.i(TAG, "verifyTheSummarizeCFR: Verified the \"Shake your device to summarize this page in seconds\" CFR message is NOT displayed.")
+        }
+    }
+
+    @OptIn(ExperimentalTestApi::class)
+    fun clickTheDismissButtonOnSummarizeCFR() {
+        Log.i(TAG, "clickTheDismissButtonOnSummarizeCFR: Waiting for the summarize CFR dismiss button to exist")
+        composeTestRule.waitUntilAtLeastOneExists(hasTestTag("cfr.dismiss"), waitingTime)
+        Log.i(TAG, "clickTheDismissButtonOnSummarizeCFR: Waited for the summarize CFR dismiss button to exist")
+        Log.i(TAG, "clickTheDismissButtonOnSummarizeCFR: Trying to click the \"X\" button on the summarize CFR")
+        composeTestRule.summarizeCFRButton().performClick()
+        Log.i(TAG, "clickTheDismissButtonOnSummarizeCFR: Clicked the \"X\" button on the summarize CFR")
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
@@ -1871,3 +1892,7 @@ private fun contextMenuShareLink() =
 // Open in external app option
 private fun contextMenuOpenInExternalApp() =
     itemContainingText(getStringResource(contextmenuR.string.mozac_feature_contextmenu_open_link_in_external_app))
+
+private fun ComposeTestRule.summarizeCFRMessage() = onNodeWithText(getStringResource(R.string.browser_toolbar_summarize_cfr_description))
+
+private fun ComposeTestRule.summarizeCFRButton() = onNodeWithTag("cfr.dismiss")

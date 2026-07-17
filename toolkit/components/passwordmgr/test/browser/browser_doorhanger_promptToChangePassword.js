@@ -153,7 +153,7 @@ async function promptToChangePasswordTest(testData) {
       }
 
       info("Clicking mainActionButton");
-      mainActionButton.doCommand();
+      mainActionButton.click();
       info("Waiting for promiseHidden");
       await promiseHidden;
       info("Waiting for storagePromise");

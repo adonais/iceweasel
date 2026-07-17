@@ -6,36 +6,26 @@
 #ifdef MOZ_WEBRTC
 #  include "MediaMIMETypes.h"
 #  include "jsapi/DefaultCodecPreferences.h"
+#  include "jsep/JsepCodecDescription.h"
 #  include "libwebrtcglue/WebrtcVideoCodecFactory.h"
 #  include "media/base/media_constants.h"
+#  include "mozilla/Maybe.h"
+#  include "mozilla/media/webrtc/H264FmtpParser.h"
 #endif
 
 namespace mozilla {
 
 #ifdef MOZ_WEBRTC
-static nsDependentCSubstring MimeTypeToPayloadString(
-    const MediaExtendedMIMEType& aMime) {
-  const nsCString& norm = aMime.Type().AsString();
-  const int32_t slash = norm.FindChar('/');
-  if (slash < 0) {
-    return {};
-  }
-  return Substring(norm, slash + 1);
-}
-
 // Query the webrtc encoder factory whether aMime is supported in SW and/or HW.
-media::EncodeSupportSet SupportsVideoMimeEncodeForWebrtc(
-    const MediaExtendedMIMEType& aMime) {
-  return WebrtcVideoEncoderFactory::SupportsCodec(webrtc::SdpVideoFormat(
-      std::string(MimeTypeToPayloadString(aMime).View())));
+media::EncodeSupportSet SupportsVideoEncodeForWebrtc(
+    const EncoderConfig& aConfig) {
+  return WebrtcVideoEncoderFactory::SupportsCodec(aConfig);
 }
 
 // Query the webrtc decoder factory whether aMime is supported in SW and/or HW.
-media::DecodeSupportSet SupportsVideoMimeDecodeForWebrtc(
-    const MediaExtendedMIMEType& aMime) {
-  return WebrtcVideoDecoderFactory::SupportsCodec(
-      webrtc::PayloadStringToCodecType(
-          std::string(MimeTypeToPayloadString(aMime).View())));
+media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
+    const MediaExtendedMIMEType& aMime, const SupportDecoderParams& aParams) {
+  return WebrtcVideoDecoderFactory::SupportsCodec(aMime, aParams);
 }
 
 // Implementation class that samples codec preferences once at construction.
@@ -79,7 +69,7 @@ class CodecInfoImpl final : public WebrtcCodecInfo {
       return {};
     }
 
-    auto payloadString = MimeTypeToPayloadString(aMime);
+    auto payloadString = aMime.Subtype();
 
     // Codecs that are not standalone media codecs and not supported by WebRTC
     if (payloadString.EqualsIgnoreCase(webrtc::kRtxCodecName) ||
@@ -90,13 +80,36 @@ class CodecInfoImpl final : public WebrtcCodecInfo {
       return {};
     }
 
+    const bool isH264 =
+        isVideo && payloadString.EqualsIgnoreCase(webrtc::kH264CodecName);
+    Maybe<uint32_t> requestedPacketizationMode;
+    if (isH264) {
+      const auto fmtp = ParseH264Fmtp(aMime.OriginalString());
+      // Present-but-invalid packetization-mode (out of [0..2]) is unsupported.
+      if (fmtp.mPacketizationMode.isErr() &&
+          fmtp.mPacketizationMode.inspectErr() == H264FmtpParseError::Invalid) {
+        return false;
+      }
+      if (fmtp.mPacketizationMode.isOk()) {
+        requestedPacketizationMode = Some(fmtp.mPacketizationMode.inspect());
+      }
+    }
+
     const auto& codecs = isAudio ? mAudioCodecs : mVideoCodecs;
     for (const auto& c : codecs) {
-      // TODO(Bug 2024767): Handle fmtp parameters
-      if (payloadString.EqualsIgnoreCase(c->mName) && c->mEnabled &&
-          c->DirectionSupported(kDirection)) {
-        return true;
+      if (!payloadString.EqualsIgnoreCase(c->mName) || !c->mEnabled ||
+          !c->DirectionSupported(kDirection)) {
+        continue;
       }
+      if (isH264 && requestedPacketizationMode) {
+        MOZ_ASSERT(c->Type() == SdpMediaSection::kVideo);
+        const auto* h264 =
+            static_cast<const JsepVideoCodecDescription*>(c.get());
+        if (h264->mPacketizationMode != *requestedPacketizationMode) {
+          continue;
+        }
+      }
+      return true;
     }
     return false;
   }
@@ -111,12 +124,11 @@ std::unique_ptr<WebrtcCodecInfo> WebrtcCodecInfo::Create() {
   return std::make_unique<CodecInfoImpl>();
 }
 #else
-media::EncodeSupportSet SupportsVideoMimeEncodeForWebrtc(
-    const MediaExtendedMIMEType& aMime) {
+media::EncodeSupportSet SupportsVideoEncodeForWebrtc(const EncoderConfig&) {
   return {};
 }
-media::DecodeSupportSet SupportsVideoMimeDecodeForWebrtc(
-    const MediaExtendedMIMEType& aMime) {
+media::DecodeSupportSet SupportsVideoDecodeForWebrtc(
+    const MediaExtendedMIMEType&, const SupportDecoderParams&) {
   return {};
 }
 

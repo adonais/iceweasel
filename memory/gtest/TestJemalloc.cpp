@@ -233,7 +233,25 @@ TEST(Jemalloc, PtrInfo)
 
   // Run header.
   size_t page_sizeMask = stats.page_size - 1;
-  char* run = (char*)(uintptr_t(p.get()) & ~page_sizeMask);
+  char* run;
+  // The run header could be at the page boundary of this or any of the
+  // preceeding 3 pages.
+  for (unsigned i = 0; i < 100; i++) {
+    run = (char*)((uintptr_t(p.get()) & ~page_sizeMask) - stats.page_size * i);
+
+    // The run header was not found before finding the chunk header.
+    ASSERT_NE(run, (char*)((uintptr_t)chunk + chunkHeaderSize -
+                           stats.real_page_size));
+
+    jemalloc_ptr_info(run, &info);
+    if (InfoEq(info, TagUnknown, nullptr, 0U, 0U)) {
+      break;
+    }
+
+    // If the loop doesn't break because the run isn't found then the
+    // assertion in the next loop will catch it.
+  }
+
   for (size_t i = 0; i < 4 * sizeof(void*); i++) {
     jemalloc_ptr_info(&run[i], &info);
     ASSERT_TRUE(InfoEq(info, TagUnknown, nullptr, 0U, 0U));

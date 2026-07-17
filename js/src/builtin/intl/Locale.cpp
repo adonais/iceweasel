@@ -280,7 +280,6 @@ static JSLinearString* ToUnicodeValue(JSContext* cx,
   MOZ_CRASH("invalid locale case first");
 }
 
-#ifdef NIGHTLY_BUILD
 /**
  * WeekdayToUValue ( fw )
  */
@@ -298,7 +297,6 @@ static JSLinearString* WeekdayToUValue(JSContext* cx, JSLinearString* fw) {
   }
   return fw;
 }
-#endif
 
 /**
  * ApplyOptionsToTag ( tag, options )
@@ -646,7 +644,6 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
       }
     }
 
-#ifdef NIGHTLY_BUILD
     if (JS::Prefs::experimental_intl_locale_info()) {
       Rooted<JSLinearString*> firstDayOfWeek(cx);
 
@@ -677,7 +674,6 @@ static bool Locale(JSContext* cx, unsigned argc, Value* vp) {
         }
       }
     }
-#endif
 
     // Step 25.
     static constexpr auto hourCycles = MapOptions<LocaleHourCycleToString>(
@@ -864,7 +860,6 @@ static bool GetUnicodeExtension(JSContext* cx, LocaleObject* locale,
   return true;
 }
 
-#ifdef NIGHTLY_BUILD
 struct UnicodeValue {
   // Length of a single `uvalue` subtag.
   static constexpr size_t UValueLength = 8;
@@ -942,7 +937,6 @@ static mozilla::Maybe<UnicodeValue> GetUnicodeExtension(LocaleObject* locale,
   auto uext = mozilla::Span{unicodeExtension->twoByteRange(nogc)};
   return UnicodeValue::from(uext.subspan(index, length));
 }
-#endif
 
 struct BaseNamePartsResult {
   IndexAndLength language;
@@ -1126,7 +1120,6 @@ static mozilla::Maybe<IndexAndLength> GetLocaleVariants(
   return mozilla::Some(IndexAndLength{index, length});
 }
 
-#ifdef NIGHTLY_BUILD
 /**
  * Create an array which holds a single item.
  */
@@ -1794,7 +1787,6 @@ static bool WeekInfoOfLocale(JSContext* cx, Handle<LocaleObject*> locale,
   *result = info;
   return true;
 }
-#endif
 
 // Intl.Locale.prototype.maximize ()
 static bool Locale_maximize(JSContext* cx, const CallArgs& args) {
@@ -1946,7 +1938,6 @@ static bool Locale_collation(JSContext* cx, unsigned argc, Value* vp) {
   return CallNonGenericMethod<IsLocale, Locale_collation>(cx, args);
 }
 
-#ifdef NIGHTLY_BUILD
 // get Intl.Locale.prototype.firstDayOfWeek
 static bool Locale_firstDayOfWeek(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsLocale(args.thisv()));
@@ -1962,7 +1953,6 @@ static bool Locale_firstDayOfWeek(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsLocale, Locale_firstDayOfWeek>(cx, args);
 }
-#endif
 
 // get Intl.Locale.prototype.hourCycle
 static bool Locale_hourCycle(JSContext* cx, const CallArgs& args) {
@@ -2158,7 +2148,6 @@ static bool Locale_toSource(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#ifdef NIGHTLY_BUILD
 // Intl.Locale.prototype.getCalendars ( )
 static bool Locale_getCalendars(JSContext* cx, const CallArgs& args) {
   MOZ_ASSERT(IsLocale(args.thisv()));
@@ -2356,14 +2345,12 @@ static bool Locale_getWeekInfo(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   return CallNonGenericMethod<IsLocale, Locale_getWeekInfo>(cx, args);
 }
-#endif
 
 static const JSFunctionSpec locale_methods[] = {
     JS_FN("maximize", Locale_maximize, 0, 0),
     JS_FN("minimize", Locale_minimize, 0, 0),
     JS_FN("toString", Locale_toString, 0, 0),
     JS_FN("toSource", Locale_toSource, 0, 0),
-#ifdef NIGHTLY_BUILD
     JS_FN("getCalendars", Locale_getCalendars, 0, 0),
     JS_FN("getCollations", Locale_getCollations, 0, 0),
     JS_FN("getHourCycles", Locale_getHourCycles, 0, 0),
@@ -2371,7 +2358,6 @@ static const JSFunctionSpec locale_methods[] = {
     JS_FN("getTextInfo", Locale_getTextInfo, 0, 0),
     JS_FN("getTimeZones", Locale_getTimeZones, 0, 0),
     JS_FN("getWeekInfo", Locale_getWeekInfo, 0, 0),
-#endif
     JS_FS_END,
 };
 
@@ -2380,9 +2366,7 @@ static const JSPropertySpec locale_properties[] = {
     JS_PSG("calendar", Locale_calendar, 0),
     JS_PSG("caseFirst", Locale_caseFirst, 0),
     JS_PSG("collation", Locale_collation, 0),
-#ifdef NIGHTLY_BUILD
     JS_PSG("firstDayOfWeek", Locale_firstDayOfWeek, 0),
-#endif
     JS_PSG("hourCycle", Locale_hourCycle, 0),
     JS_PSG("numeric", Locale_numeric, 0),
     JS_PSG("numberingSystem", Locale_numberingSystem, 0),

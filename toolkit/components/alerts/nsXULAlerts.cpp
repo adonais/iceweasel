@@ -369,3 +369,8 @@ NS_IMETHODIMP nsXULAlerts::PbmTeardown() {
   // closure.
   return NS_ERROR_NOT_IMPLEMENTED;
 }
+
+NS_IMETHODIMP nsXULAlerts::IsFullscreen(bool* aRetVal) {
+  *aRetVal = false;
+  return NS_ERROR_NOT_IMPLEMENTED;
+}

@@ -29,4 +29,9 @@ interface mixin HyperlinkElementUtils {
            attribute UTF8String search;
   [CEReactions]
            attribute UTF8String hash;
+
+  [CEReactions, SetterThrows]
+  attribute DOMString hreflang;
+  [CEReactions, SetterThrows]
+  attribute DOMString type;
 };

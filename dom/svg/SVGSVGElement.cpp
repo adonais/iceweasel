@@ -15,6 +15,7 @@
 #include "mozilla/PresShell.h"
 #include "mozilla/SMILAnimationController.h"
 #include "mozilla/SMILTimeContainer.h"
+#include "mozilla/SVGOuterSVGFrame.h"
 #include "mozilla/SVGUtils.h"
 #include "mozilla/dom/BindContext.h"
 #include "mozilla/dom/DOMMatrix.h"
@@ -82,9 +83,8 @@ SVGView::SVGView() {
 //----------------------------------------------------------------------
 // Implementation
 
-SVGSVGElement::SVGSVGElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    FromParser aFromParser)
+SVGSVGElement::SVGSVGElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                             FromParser aFromParser)
     : SVGSVGElementBase(std::move(aNodeInfo)),
       mStartAnimationOnBindToTree(aFromParser == NOT_FROM_PARSER ||
                                   aFromParser == FROM_PARSER_FRAGMENT ||
@@ -433,6 +433,68 @@ LengthPercentage SVGSVGElement::GetIntrinsicWidthOrHeight(int aAttr) {
   return LengthPercentage::FromPixels(rawSize);
 }
 
+AspectRatio SVGSVGElement::GetIntrinsicRatio() {
+  if (SVGOuterSVGFrame* osf = do_QueryFrame(GetPrimaryFrame())) {
+    if (osf->ContainSizeAxesIfApplicable().IsAny()) {
+      return AspectRatio();
+    }
+  }
+  // We only have an intrinsic size/ratio if our width and height attributes
+  // are both specified and set to non-percentage values, or we have a viewBox
+  // rect: https://svgwg.org/svg2-draft/coords.html#SizingSVGInCSS
+
+  const SVGAnimatedLength& width = mLengthAttributes[SVGSVGElement::ATTR_WIDTH];
+  const SVGAnimatedLength& height =
+      mLengthAttributes[SVGSVGElement::ATTR_HEIGHT];
+  if (!width.IsPercentage() && !height.IsPercentage()) {
+    SVGElementMetrics metrics(this);
+    // Use width/height ratio only if
+    // 1. it's not a degenerate ratio, and
+    // 2. width and height are non-negative numbers.
+    // Otherwise, we use the viewbox rect.
+    // https://github.com/w3c/csswg-drafts/issues/6286
+    // Note width/height may have different units and therefore be
+    // affected by zoom in different ways.
+    const float w = width.GetAnimValueWithZoom(metrics);
+    const float h = height.GetAnimValueWithZoom(metrics);
+    if (w > 0.0f && h > 0.0f) {
+      return AspectRatio::FromSize(w, h);
+    }
+  }
+
+  if (const auto& viewBox = GetViewBoxInternal(); viewBox.HasRect()) {
+    float zoom = UserSpaceMetrics::GetZoom(this);
+    const auto& anim = viewBox.GetAnimValue() * zoom;
+    return AspectRatio::FromSize(anim.width, anim.height);
+  }
+
+  return AspectRatio();
+}
+
+gfx::Size SVGSVGElement::GetIntrinsicSizeWithFallback() {
+  auto intrinsicWidth = GetIntrinsicWidth();
+  auto intrinsicHeight = GetIntrinsicHeight();
+  gfx::Size size(
+      intrinsicWidth.IsLength() ? intrinsicWidth.AsLength().ToCSSPixels()
+                                : kFallbackIntrinsicWidthInPixels,
+      intrinsicHeight.IsLength() ? intrinsicHeight.AsLength().ToCSSPixels()
+                                 : kFallbackIntrinsicHeightInPixels);
+  if (intrinsicWidth.IsLength() && intrinsicHeight.IsLength()) {
+    return size;
+  }
+  if (AspectRatio ratio = GetIntrinsicRatio()) {
+    if (!intrinsicHeight.IsLength()) {
+      // Compute the height from the width & ratio.  (Note that the width we
+      // use here might be kFallbackIntrinsicWidthInPixels, and that's fine.)
+      size.height = ratio.Inverted().ApplyTo(size.width);
+    } else if (!intrinsicWidth.IsLength()) {
+      // Compute the width from the height & ratio.
+      size.width = ratio.ApplyTo(size.height);
+    }
+  }
+  return size;
+}
+
 //----------------------------------------------------------------------
 // public helpers:
 
@@ -474,14 +536,42 @@ bool SVGSVGElement::WillBeOutermostSVG(nsINode& aParent) const {
   return true;
 }
 
-void SVGSVGElement::DidChangeSVGView() {
-  InvalidateTransformNotifyFrame();
+void SVGSVGElement::SetCurrentView(const nsAString& aCurrentViewID) {
+  if (mCurrentViewID == aCurrentViewID) {
+    return;
+  }
+
+  if (mSVGView) {
+    // We map the SVGView transform as the transform css property, so need to
+    // schedule attribute mapping now it's being unset.
+    if (!IsPendingMappedAttributeEvaluation() &&
+        mAttrs.MarkAsPendingPresAttributeEvaluation()) {
+      OwnerDoc()->ScheduleForPresAttrEvaluation(this);
+    }
+
+    InvalidateTransformNotifyFrame();
+  }
+
+  mCurrentViewID = aCurrentViewID;
+  mSVGView = nullptr;
+}
+
+void SVGSVGElement::SetViewSpec(std::unique_ptr<SVGView> aSVGView) {
+  if (!mSVGView && !aSVGView) {
+    return;
+  }
+
   // We map the SVGView transform as the transform css property, so need to
   // schedule attribute mapping.
   if (!IsPendingMappedAttributeEvaluation() &&
       mAttrs.MarkAsPendingPresAttributeEvaluation()) {
     OwnerDoc()->ScheduleForPresAttrEvaluation(this);
   }
+
+  mSVGView = std::move(aSVGView);
+  mCurrentViewID = VoidString();
+
+  InvalidateTransformNotifyFrame();
 }
 
 void SVGSVGElement::InvalidateTransformNotifyFrame() {

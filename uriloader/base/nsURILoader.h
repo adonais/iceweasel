@@ -137,8 +137,9 @@ class nsDocumentOpenInfo : public nsIThreadRetargetableStreamListener {
    * them together when we use a stream converter and don't know what the
    * converted content type is until the converter outputs OnStartRequest.
    */
-  virtual nsDocumentOpenInfo* Clone() {
-    return new nsDocumentOpenInfo(m_originalContext, mFlags, mURILoader);
+  virtual already_AddRefed<nsDocumentOpenInfo> Clone() {
+    return mozilla::MakeAndAddRef<nsDocumentOpenInfo>(m_originalContext, mFlags,
+                                                      mURILoader);
   }
 
   // nsIRequestObserver methods:

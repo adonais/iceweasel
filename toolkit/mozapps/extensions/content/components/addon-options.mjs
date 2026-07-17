@@ -53,6 +53,20 @@ export class AddonOptions extends AboutAddonsHTMLElement {
     return this.querySelector("panel-list");
   }
 
+  get panelListId() {
+    if (!this.id) {
+      // Fail loudly if the element is missing an id to derive the panel-list id
+      // from (the addon-card element is expected to be deriving one from the
+      // corresponding addon id to ensure the id is unique in the about:addons page).
+      const err = new Error(
+        `${this.localName} element is missing an id attribute`
+      );
+      console.error(err, this);
+      throw err;
+    }
+    return `${this.id}-panel-list`;
+  }
+
   updateSeparatorsVisibility() {
     let lastSeparator;
     let elWasVisible = false;
@@ -78,6 +92,7 @@ export class AddonOptions extends AboutAddonsHTMLElement {
 
   render() {
     this.appendChild(this.constructor.fragment);
+    this.querySelector("panel-list").id = this.panelListId;
   }
 
   setElementState(el, card, addon, updateInstall) {

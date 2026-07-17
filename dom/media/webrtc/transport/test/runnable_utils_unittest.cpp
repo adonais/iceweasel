@@ -232,7 +232,7 @@ TEST_F(DispatchTest, TestNonMethodRet) {
 TEST_F(DispatchTest, TestDestructorRef) {
   bool destroyed = false;
   {
-    RefPtr<Destructor> destructor = new Destructor(&destroyed);
+    RefPtr destructor = MakeRefPtr<Destructor>(&destroyed);
     NS_DispatchAndSpinEventLoopUntilComplete(
         "DispatchTest::TestDestructorRef"_ns, target_,
         do_AddRef(WrapRunnable(&cl_, &TargetClass::destructor_target_ref,
@@ -244,7 +244,7 @@ TEST_F(DispatchTest, TestDestructorRef) {
   // Now try with a move.
   destroyed = false;
   {
-    RefPtr<Destructor> destructor = new Destructor(&destroyed);
+    RefPtr destructor = MakeRefPtr<Destructor>(&destroyed);
     NS_DispatchAndSpinEventLoopUntilComplete(
         "DispatchTest::TestDestructorRef"_ns, target_,
         do_AddRef(WrapRunnable(&cl_, &TargetClass::destructor_target_ref,

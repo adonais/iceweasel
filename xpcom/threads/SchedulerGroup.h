@@ -13,7 +13,7 @@ namespace mozilla {
 class SchedulerGroup {
  public:
   static nsresult Dispatch(
-      already_AddRefed<nsIRunnable>&& aRunnable,
+      already_AddRefed<nsIRunnable> aRunnable,
       nsIEventTarget::DispatchFlags aFlags = NS_DISPATCH_NORMAL);
 };
 

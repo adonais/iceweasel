@@ -198,7 +198,7 @@ fun Fragment.breadcrumb(
  * When user preference allowScreenCaptureInSecureScreens is true, this function is a no-op
  */
 fun Fragment.secure() {
-    if (context?.settings()?.allowScreenCaptureInSecureScreens != true) {
+    if (!requireComponents.settings.allowScreenCaptureInSecureScreens) {
         this.activity?.window?.addFlags(
             WindowManager.LayoutParams.FLAG_SECURE,
         )
@@ -358,6 +358,7 @@ fun Fragment.updateMicrosurveyPromptForConfigurationChange(
  * @param resId Resource ID of the dimension.
  * @return The pixel size corresponding to the given dimension resource.
  */
+@Suppress("Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor")
 fun Fragment.pixelSizeFor(
     @DimenRes resId: Int,
 ) = resources.getDimensionPixelSize(resId)

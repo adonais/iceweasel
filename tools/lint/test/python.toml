@@ -62,6 +62,8 @@ skip-if = ["os == 'win'"]
 
 ["test_ruff_format.py"]
 
+["test_rumdl.py"]
+
 ["test_rustfmt.py"]
 
 ["test_shellcheck.py"]

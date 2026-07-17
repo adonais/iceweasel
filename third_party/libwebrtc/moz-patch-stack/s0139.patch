@@ -1,28 +1,33 @@
-From: Landry Breuil <landry@openbsd.org>
-Date: Wed, 15 Apr 2026 13:31:00 +0000
-Subject: Bug 2030612 - define AOM_EFLAG_FREEZE_INTERNAL_STATE if not defined
- r=mjf
+From: Byron Campen <docfaraday@gmail.com>
+Date: Tue, 26 May 2026 14:02:00 -0500
+Subject: Bug 2040478 - (fix-d1ae1e9ad4) Explicitly convert these to a
+ std::string r?mjf
 
-fixes build with system-av1/aom after bug 2029247
-
-Differential Revision: https://phabricator.services.mozilla.com/D293051
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/70d2379819582d44092dee15e1e45ddbc9cd3f22
+Our toolchain does not yet support implicit conversion from string_view to string
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/1eae5aad7a7622115d156dea2dc974416046cd42
 ---
- modules/video_coding/codecs/av1/libaom_av1_encoder.cc | 4 ++++
- 1 file changed, 4 insertions(+)
+ call/payload_type_picker.cc | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
 
-diff --git a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
-index 7607daf886..ffc336b083 100644
---- a/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
-+++ b/modules/video_coding/codecs/av1/libaom_av1_encoder.cc
-@@ -67,6 +67,10 @@
- #define AOM_EFLAG_CALCULATE_PSNR (1 << 3)
- #endif
+diff --git a/call/payload_type_picker.cc b/call/payload_type_picker.cc
+index 3fcbc6a5ae..dfaf7b6aa5 100644
+--- a/call/payload_type_picker.cc
++++ b/call/payload_type_picker.cc
+@@ -338,7 +338,7 @@ void PayloadTypeRecorder::Rollback() {
+ RTCError RtpHeaderExtensionRecorder::AddMapping(int id,
+                                                 absl::string_view uri,
+                                                 bool encrypt) {
+-  auto it = uri_to_id_.find(std::pair{uri, encrypt});
++  auto it = uri_to_id_.find(std::pair{std::string(uri), encrypt});
+   if (it != uri_to_id_.end()) {
+     if (it->second != id) {
+       // TODO: https://issues.webrtc.org/41480892 - This will return an error in
+@@ -354,7 +354,7 @@ RTCError RtpHeaderExtensionRecorder::AddMapping(int id,
  
-+#ifndef AOM_EFLAG_FREEZE_INTERNAL_STATE
-+#define AOM_EFLAG_FREEZE_INTERNAL_STATE (1 << 2)
-+#endif
-+
- #if defined(WEBRTC_ENCODER_PSNR_STATS)
- constexpr bool kEnablePsnrStats = true;
- #else
+ RTCErrorOr<int> RtpHeaderExtensionRecorder::LookupId(absl::string_view uri,
+                                                      bool encrypt) const {
+-  auto it = uri_to_id_.find(std::pair{uri, encrypt});
++  auto it = uri_to_id_.find(std::pair{std::string(uri), encrypt});
+   if (it == uri_to_id_.end()) {
+     return RTCError(RTCErrorType::INVALID_PARAMETER,
+                     "No ID found for extension");

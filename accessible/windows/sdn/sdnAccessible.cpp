@@ -5,6 +5,7 @@
 #include "sdnAccessible.h"
 
 #include "ISimpleDOM_i.c"
+#include "mozilla/a11y/DocAccessibleParent.h"
 #include "mozilla/a11y/RemoteAccessible.h"
 #include "mozilla/dom/Element.h"
 
@@ -149,7 +150,8 @@ sdnAccessible::get_innerHTML(BSTR __RPC_FAR* aInnerHTML) {
 
   nsAutoString innerHTML;
   if (RemoteAccessible* remoteAcc = acc->AsRemote()) {
-    if (RequestDomainsIfInactive(CacheDomain::InnerHTML)) {
+    if (remoteAcc->Document()->RequestDomainsIfInactive(
+            CacheDomain::InnerHTML)) {
       return S_FALSE;
     }
     if (!remoteAcc->mCachedFields) {

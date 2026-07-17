@@ -204,13 +204,16 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
     return nullptr;
   }
 
+  arrayObj->initShape(typeDefData->shape);
+  arrayObj->superTypeVector_ = typeDefData->superTypeVector;
+
   uint8_t* oolAlloc = AllocateCellBuffer<uint8_t>(
       cx, arrayObj, sizeof(OOLDataHeader) + arrayDataBytes,
       MaxNurseryTrailerSize);
   if (MOZ_UNLIKELY(!oolAlloc)) {
+    // AllocateCellBuffer will have called ReportOutOfMemory(cx) itself.
     arrayObj->numElements_ = 0;
     arrayObj->data_ = nullptr;
-    ReportOutOfMemory(cx);
     return nullptr;
   }
 
@@ -218,8 +221,6 @@ MOZ_ALWAYS_INLINE WasmArrayObject* WasmArrayObject::createArrayOOL(
   new (oolHeader) OOLDataHeader();
   uint8_t* oolData = WasmArrayObject::oolDataHeaderToDataPointer(oolHeader);
 
-  arrayObj->initShape(typeDefData->shape);
-  arrayObj->superTypeVector_ = typeDefData->superTypeVector;
   arrayObj->numElements_ = numElements;
   arrayObj->data_ = oolData;
   if constexpr (ZeroFields) {

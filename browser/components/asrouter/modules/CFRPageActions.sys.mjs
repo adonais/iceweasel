@@ -893,6 +893,18 @@ export const CFRPageActions = {
   PageActionMap,
 
   /**
+   * Dispatch entry point used by the `browser-window-location-change`
+   * category.
+   */
+  onLocationChange(_window, _locationURI, webProgress, _flags) {
+    const browser = webProgress.browsingContext.embedderElement;
+    if (!browser) {
+      return;
+    }
+    this.updatePageActions(browser);
+  },
+
+  /**
    * To be called from browser.js on a location change, passing in the browser
    * that's been updated
    */

@@ -7,6 +7,8 @@
 #include "mozilla/SpinEventLoopUntil.h"
 #include "nsIFile.h"
 #include "nsIFileURL.h"
+#include "nsAppDirectoryServiceDefs.h"
+#include "nsDirectoryServiceUtils.h"
 #include "mozStorageService.h"
 #include "mozStorageConnection.h"
 #include "nsComponentManagerUtils.h"
@@ -22,9 +24,11 @@
 #include "mozilla/LateWriteChecks.h"
 #include "mozIStorageCompletionCallback.h"
 #include "mozIStoragePendingStatement.h"
+#include "mozilla/StaticPrefs_security.h"
 #include "mozilla/StaticPrefs_storage.h"
 #include "mozilla/intl/Collator.h"
 #include "mozilla/intl/LocaleService.h"
+#include "mozilla/storage/SQLiteEncryption.h"
 
 #include "sqlite3.h"
 #include "mozilla/AutoSQLiteLifetime.h"
@@ -180,11 +184,12 @@ already_AddRefed<Service> Service::getSingleton() {
   return nullptr;
 }
 
-int Service::AutoVFSRegistration::Init(UniquePtr<sqlite3_vfs> aVFS) {
+int Service::AutoVFSRegistration::Init(UniquePtr<sqlite3_vfs> aVFS,
+                                       bool aMakeDefault) {
   MOZ_ASSERT(!mVFS);
   if (aVFS) {
     mVFS = std::move(aVFS);
-    return sqlite3_vfs_register(mVFS.get(), 0);
+    return sqlite3_vfs_register(mVFS.get(), aMakeDefault ? 1 : 0);
   }
   NS_WARNING("Failed to register VFS");
   return SQLITE_OK;
@@ -351,8 +356,21 @@ nsresult Service::initialize() {
     return convertResultCode(rc);
   }
 
-  rc =
-      mObfuscatingSqliteVFS.Init(obfsvfs::ConstructVFS(quotavfs::GetVFSName()));
+  // obfsvfs registers as the SQLite default VFS *only* when at-rest
+  // encryption is enabled, so that every keyless sqlite3_open_v2 (e.g.
+  // rusqlite callers like app-services, skv) flows through it and gets
+  // path-aware at-rest encryption applied by xOpen. When the pref is off
+  // we register it non-default (exactly as before this feature): keyless
+  // opens keep using the OS default VFS and never enter obfsOpen's policy
+  // path, so the pref-off build is a true no-op. mozStorage callers that
+  // explicitly name `obfsvfs::GetVFSName()` keep using it by name in
+  // either case; callers that name `basevfs` / `quotavfs` / the
+  // read-only-no-lock VFS keep their named choice (sqlite3_open_v2 with
+  // an explicit zVfs argument bypasses the default).
+  rc = mObfuscatingSqliteVFS.Init(
+      obfsvfs::ConstructVFS(quotavfs::GetVFSName()),
+      /* aMakeDefault = */
+      StaticPrefs::security_storage_encryption_sqlite_enabled());
   if (rc != SQLITE_OK) {
     return convertResultCode(rc);
   }
@@ -375,6 +393,19 @@ nsresult Service::initialize() {
   mozilla::RegisterWeakMemoryReporter(this);
   mozilla::RegisterStorageSQLiteDistinguishedAmount(
       StorageSQLiteDistinguishedAmount);
+
+  // Eagerly cache the profile path and register the keystore observers.
+  // Off-main-thread database opens (Cookie, IndexedDB/QuotaManager, etc.)
+  // that race ahead of this still get their key: GetEncryptionKey resolves
+  // and caches the profile path on first use from any thread.
+  // Registers the profile observer that, when SQLite encryption is on,
+  // initializes NSS on the main thread at profile-do-change -- before any
+  // in-profile database is opened on a worker. That makes the worker-thread
+  // EnsureNSSInitializedChromeOrContent() a no-op, so it never has to
+  // SyncRunnable-dispatch NSS init back to a main thread that may be blocked
+  // awaiting the storage operation (which would deadlock). See
+  // storage/SQLiteEncryption.cpp.
+  InitEncryptionKeystore();
 
   return NS_OK;
 }

@@ -48,8 +48,8 @@ class FakeUuidGenerator : public mozilla::JsepUuidGenerator {
     return true;
   }
 
-  mozilla::JsepUuidGenerator* Clone() const {
-    return new FakeUuidGenerator(*this);
+  mozilla::UniquePtr<mozilla::JsepUuidGenerator> Clone() const {
+    return mozilla::MakeUnique<FakeUuidGenerator>(*this);
   }
 
  private:
@@ -3938,10 +3938,10 @@ static void GetCodec(JsepSession& session, size_t transceiverIndex,
                             ->GetEncoding(encodingIndex)
                             .GetCodecs()
                             .size());
-  codecOut->reset(track.GetNegotiatedDetails()
-                      ->GetEncoding(encodingIndex)
-                      .GetCodecs()[codecIndex]
-                      ->Clone());
+  *codecOut = track.GetNegotiatedDetails()
+                  ->GetEncoding(encodingIndex)
+                  .GetCodecs()[codecIndex]
+                  ->Clone();
 }
 
 static void ForceH264(JsepSession& session, uint32_t profileLevelId) {
@@ -4318,7 +4318,7 @@ TEST_F(JsepSessionTest, TestIceLite) {
 
   UniquePtr<Sdp> parsedOffer(Parse(offer));
   parsedOffer->GetAttributeList().SetAttribute(
-      new SdpFlagAttribute(SdpAttribute::kIceLiteAttribute));
+      MakeUnique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
 
   std::ostringstream os;
   parsedOffer->Serialize(os);
@@ -4481,7 +4481,7 @@ TEST_F(JsepSessionTest, TestAnswererIsControllingWhenRemoteIsIceLite) {
 
   UniquePtr<Sdp> parsedOffer(Parse(offer));
   parsedOffer->GetAttributeList().SetAttribute(
-      new SdpFlagAttribute(SdpAttribute::kIceLiteAttribute));
+      MakeUnique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
   std::ostringstream os;
   parsedOffer->Serialize(os);
   std::string iceLiteOffer = os.str();
@@ -4517,7 +4517,7 @@ TEST_F(JsepSessionTest, TestIceRoleUpdatedWhenRemoteSwitchesToIceLite) {
 
   UniquePtr<Sdp> parsedReoffer(Parse(reoffer));
   parsedReoffer->GetAttributeList().SetAttribute(
-      new SdpFlagAttribute(SdpAttribute::kIceLiteAttribute));
+      MakeUnique<SdpFlagAttribute>(SdpAttribute::kIceLiteAttribute));
   std::ostringstream os;
   parsedReoffer->Serialize(os);
   std::string iceLiteReoffer = os.str();
@@ -5160,9 +5160,10 @@ TEST_F(JsepSessionTest, TestRtcpFbStar) {
   std::string offer = CreateOffer();
 
   UniquePtr<Sdp> parsedOffer(Parse(offer));
-  auto* rtcpfbs = new SdpRtcpFbAttributeList;
+  auto rtcpfbs = MakeUnique<SdpRtcpFbAttributeList>();
   rtcpfbs->PushEntry("*", SdpRtcpFbAttributeList::kNack);
-  parsedOffer->GetMediaSection(0).GetAttributeList().SetAttribute(rtcpfbs);
+  parsedOffer->GetMediaSection(0).GetAttributeList().SetAttribute(
+      std::move(rtcpfbs));
   offer = parsedOffer->ToString();
 
   SetLocalOffer(offer, CHECK_SUCCESS);
@@ -7962,7 +7963,7 @@ TEST_F(JsepSessionTest, TestTransportAttributeValidation) {
   {
     UniquePtr<Sdp> parsed = Parse(sdpTemplate);
     parsed->GetMediaSection(0).GetAttributeList().SetAttribute(
-        new SdpSetupAttribute(SdpSetupAttribute::kHoldconn));
+        MakeUnique<SdpSetupAttribute>(SdpSetupAttribute::kHoldconn));
     auto sdp = parsed->ToString();
     auto result = mSessionOff->SetRemoteDescription(kJsepSdpOffer, sdp);
     ASSERT_TRUE(result.mError.isSome());
@@ -8024,7 +8025,7 @@ TEST_F(JsepSessionTest, TestTransportAttributeValidation) {
     parsed->GetMediaSection(1).GetAttributeList().RemoveAttribute(
         SdpAttribute::kIceUfragAttribute);
     parsed->GetMediaSection(1).GetAttributeList().SetAttribute(
-        new SdpFlagAttribute(SdpAttribute::kBundleOnlyAttribute));
+        MakeUnique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
     auto sdp = parsed->ToString();
     auto result = mSessionOff->SetRemoteDescription(kJsepSdpOffer, sdp);
     ASSERT_FALSE(result.mError.isSome());
@@ -8036,7 +8037,7 @@ TEST_F(JsepSessionTest, TestTransportAttributeValidation) {
     parsed->GetMediaSection(1).GetAttributeList().RemoveAttribute(
         SdpAttribute::kIcePwdAttribute);
     parsed->GetMediaSection(1).GetAttributeList().SetAttribute(
-        new SdpFlagAttribute(SdpAttribute::kBundleOnlyAttribute));
+        MakeUnique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
     auto sdp = parsed->ToString();
     auto result = mSessionOff->SetRemoteDescription(kJsepSdpOffer, sdp);
     ASSERT_FALSE(result.mError.isSome());
@@ -8048,7 +8049,7 @@ TEST_F(JsepSessionTest, TestTransportAttributeValidation) {
     parsed->GetMediaSection(1).GetAttributeList().RemoveAttribute(
         SdpAttribute::kFingerprintAttribute);
     parsed->GetMediaSection(1).GetAttributeList().SetAttribute(
-        new SdpFlagAttribute(SdpAttribute::kBundleOnlyAttribute));
+        MakeUnique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
     auto sdp = parsed->ToString();
     auto result = mSessionOff->SetRemoteDescription(kJsepSdpOffer, sdp);
     ASSERT_FALSE(result.mError.isSome());
@@ -8080,7 +8081,7 @@ TEST_F(JsepSessionTest, TestBundleSupportWithZeroPort) {
     if (!attrs.HasAttribute(SdpAttribute::kBundleOnlyAttribute) &&
         i < num_m_sections - 1) {
       sdp->GetMediaSection(i).GetAttributeList().SetAttribute(
-          new SdpFlagAttribute(SdpAttribute::kBundleOnlyAttribute));
+          MakeUnique<SdpFlagAttribute>(SdpAttribute::kBundleOnlyAttribute));
       sdp->GetMediaSection(i).SetPort(0);
     } else {
       // For the last msection setting port to non 0 and removing bundle only if

@@ -33,9 +33,9 @@ JitCode* Linker::newCode(JSContext* cx, CodeKind kind) {
   // ExecutableAllocator requires bytesNeeded to be aligned.
   bytesNeeded = AlignBytes(bytesNeeded, ExecutableAllocatorAlignment);
 
-  JitZone* jitZone = cx->zone()->getJitZone(cx);
+  JitZone* jitZone = cx->zone()->getOrCreateJitZone(cx);
   if (!jitZone) {
-    // Note: don't call fail(cx) here, getJitZone reports OOM.
+    // Note: don't call fail(cx) here, getOrCreateJitZone reports OOM.
     return nullptr;
   }
 

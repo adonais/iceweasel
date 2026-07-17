@@ -369,7 +369,11 @@ class InstalledAddonDetailsFragment : Fragment(), SystemInsetsPaddedFragment {
                     InstalledAddonDetailsFragmentDirections.actionGlobalBrowser(null)
                 } else {
                     InstalledAddonDetailsFragmentDirections
-                        .actionInstalledAddonFragmentToAddonInternalSettingsFragment(addon)
+                        .actionInstalledAddonFragmentToAddonInternalSettingsFragment(
+                            webExtensionName = addon.translateName(requireContext()),
+                            optionsPageUrl = settingUrl,
+                            webExtensionId = addon.id,
+                        )
                 }
                 this.findNavController().navigate(directions)
             }

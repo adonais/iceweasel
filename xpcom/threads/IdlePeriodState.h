@@ -30,7 +30,7 @@ class IdleSchedulerChild;
 
 class IdlePeriodState {
  public:
-  explicit IdlePeriodState(already_AddRefed<nsIIdlePeriod>&& aIdlePeriod);
+  explicit IdlePeriodState(already_AddRefed<nsIIdlePeriod> aIdlePeriod);
 
   ~IdlePeriodState();
 

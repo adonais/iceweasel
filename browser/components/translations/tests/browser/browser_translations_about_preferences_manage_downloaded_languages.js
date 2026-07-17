@@ -29,6 +29,10 @@ add_task(async function test_about_preferences_manage_languages() {
       ukrainianDelete,
     },
   } = await setupAboutPreferences(LANGUAGE_PAIRS, {
+    downloadWaitOptions: {
+      interval: 100,
+      maxTries: 50,
+    },
     prefs: [["browser.settings-redesign.enabled", false]],
   });
 
@@ -89,18 +93,21 @@ add_task(async function test_about_preferences_manage_languages() {
     hidden: { deleteAll, frenchDelete, spanishDelete, ukrainianDelete },
   });
 
+  const allModels = languageModelNames(LANGUAGE_PAIRS);
+  const allModelDownloads =
+    remoteClients.translationModels.resolvePendingDownloads(allModels.length);
+  const wasmDownload =
+    remoteClients.translationsWasm.resolvePendingDownloads(1);
+
   click(downloadAll, "Downloading all languages.");
 
-  const allModels = languageModelNames(LANGUAGE_PAIRS);
   Assert.deepEqual(
-    await remoteClients.translationModels.resolvePendingDownloads(
-      allModels.length
-    ),
+    await allModelDownloads,
     allModels,
     "All models were downloaded."
   );
   Assert.deepEqual(
-    await remoteClients.translationsWasm.resolvePendingDownloads(1),
+    await wasmDownload,
     ["bergamot-translator"],
     "Wasm was downloaded."
   );
@@ -141,7 +148,7 @@ add_task(async function test_about_preferences_manage_languages() {
     "All models were downloaded again."
   );
 
-  remoteClients.translationsWasm.assertNoNewDownloads();
+  await remoteClients.translationsWasm.assertNoNewDownloads();
 
   await ensureVisibility({
     message: "Everything is downloaded again.",

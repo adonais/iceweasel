@@ -7,7 +7,7 @@
 
 @import url("chrome://global/skin/design-system/tokens-shared.css");
 
-@layer tokens-foundation {
+@layer tokens-foundation-brand {
   :root,
   :host(.anonymous-content-host) {
     /** background-color **/
@@ -25,15 +25,8 @@
     --button-background-color: color-mix(in srgb, currentColor 7%, transparent);
     --button-background-color-hover: color-mix(in srgb, currentColor 14%, transparent);
     --button-background-color-active: color-mix(in srgb, currentColor 21%, transparent);
-    --button-text-color: light-dark(var(--color-gray-100), var(--color-gray-05));
+    --button-text-color: light-dark(var(--color-gray-100), var(--color-gray-0));
     --button-text-color-primary: light-dark(var(--color-white), var(--color-gray-100));
-
-    /** color **/
-    --color-accent-attention: light-dark(#2ac3a2, #54ffbd);
-    --color-accent-primary: light-dark(var(--color-blue-60), var(--color-cyan-30));
-    --color-accent-primary-hover: light-dark(var(--color-blue-70), var(--color-cyan-20));
-    --color-accent-primary-active: light-dark(var(--color-blue-80), var(--color-cyan-10));
-    --color-accent-primary-selected: light-dark(var(--color-blue-60), var(--color-cyan-30));
 
     /** font-size **/
     --font-size-root: 15px;
@@ -54,7 +47,6 @@
     --link-color: var(--color-accent-primary);
     --link-color-hover: var(--color-accent-primary-hover);
     --link-color-active: var(--color-accent-primary-active);
-    --link-color-visited: var(--link-color);
 
     /** page **/
     --page-main-content-width: 664px;
@@ -66,7 +58,7 @@
     --table-row-background-color-alternate: light-dark(#f0f0f4, var(--color-gray-80));
 
     /** text-color **/
-    --text-color: light-dark(var(--color-gray-100), var(--color-gray-05));
+    --text-color: light-dark(var(--color-gray-100), var(--color-gray-0));
     --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-100));
   }
 }
@@ -80,6 +72,8 @@
       /** button **/
       --button-text-color-ghost: var(--button-text-color);
       --button-text-color-ghost-disabled: var(--button-text-color-disabled);
+      --button-text-color-toolbar: var(--button-text-color);
+      --button-text-color-toolbar-disabled: var(--button-text-color-disabled);
     }
   }
 }
@@ -93,8 +87,12 @@
       /** button **/
       --button-background-color-ghost: var(--button-background-color);
       --button-background-color-ghost-disabled: var(--button-background-color-disabled);
+      --button-background-color-toolbar: var(--button-background-color);
+      --button-background-color-toolbar-disabled: var(--button-background-color-disabled);
       --button-text-color-ghost: var(--button-text-color);
       --button-text-color-ghost-disabled: var(--button-text-color-disabled);
+      --button-text-color-toolbar: var(--button-text-color);
+      --button-text-color-toolbar-disabled: var(--button-text-color-disabled);
     }
   }
 }

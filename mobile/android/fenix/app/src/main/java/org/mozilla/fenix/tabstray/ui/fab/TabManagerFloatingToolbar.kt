@@ -47,14 +47,12 @@ import mozilla.components.compose.base.menu.DropdownMenu
 import mozilla.components.compose.base.menu.MenuItem
 import mozilla.components.compose.base.modifier.animateRotation
 import mozilla.components.compose.base.text.Text
-import mozilla.components.compose.base.theme.surfaceDimVariant
 import org.mozilla.fenix.R
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.redux.action.TabsTrayAction
 import org.mozilla.fenix.tabstray.redux.state.Page
 import org.mozilla.fenix.tabstray.redux.state.TabsTrayState
-import org.mozilla.fenix.tabstray.redux.state.TabsTrayState.Mode
 import org.mozilla.fenix.tabstray.redux.store.TabsTrayStore
 import org.mozilla.fenix.tabstray.syncedtabs.SyncedTabsListItem
 import org.mozilla.fenix.theme.FirefoxTheme
@@ -67,7 +65,6 @@ import mozilla.components.ui.icons.R as iconsR
  * @param tabsTrayStore [TabsTrayStore] used to listen for changes to [TabsTrayState].
  * @param isSignedIn Whether the user is signed into their Firefox account.
  * @param modifier The [Modifier] to be applied to this FAB.
- * @param pbmLocked Whether the private browsing mode is currently locked.
  * @param onOpenNewNormalTabClicked Invoked when the fab is clicked in [Page.NormalTabs].
  * @param onOpenNewPrivateTabClicked Invoked when the fab is clicked in [Page.PrivateTabs].
  * @param onSyncedTabsFabClicked Invoked when the fab is clicked in [Page.SyncedTabs].
@@ -82,7 +79,6 @@ internal fun TabManagerFloatingToolbar(
     tabsTrayStore: TabsTrayStore,
     isSignedIn: Boolean,
     modifier: Modifier = Modifier,
-    pbmLocked: Boolean = false,
     onOpenNewNormalTabClicked: () -> Unit,
     onOpenNewPrivateTabClicked: () -> Unit,
     onSyncedTabsFabClicked: () -> Unit,
@@ -92,11 +88,9 @@ internal fun TabManagerFloatingToolbar(
     onDeleteAllTabsClick: () -> Unit,
 ) {
     val state by tabsTrayStore.stateFlow.collectAsState()
-    val privateTabsLocked = pbmLocked && state.selectedPage == Page.PrivateTabs
-    val tabGroupsPageSelected = state.config.tabGroupsEnabled && state.selectedPage == Page.TabGroups
 
     AnimatedVisibility(
-        visible = state.mode is Mode.Normal && !privateTabsLocked && !tabGroupsPageSelected,
+        visible = state.isFloatingToolbarVisible,
         modifier = modifier,
         enter = fadeIn(),
         exit = fadeOut(),
@@ -116,6 +110,9 @@ internal fun TabManagerFloatingToolbar(
                     },
                     onEnterMultiselectModeClick = {
                         tabsTrayStore.dispatch(TabsTrayAction.EnterSelectMode)
+                    },
+                    onSelectAllTabsClick = {
+                        tabsTrayStore.dispatch(TabsTrayAction.SelectAllNormalTabs)
                     },
                     onTabSettingsClick = onTabSettingsClick,
                     onRecentlyClosedClick = onRecentlyClosedClick,
@@ -151,6 +148,7 @@ private fun FloatingToolbarActions(
     state: TabsTrayState,
     onMenuShown: () -> Unit,
     onEnterMultiselectModeClick: () -> Unit,
+    onSelectAllTabsClick: () -> Unit,
     onTabSettingsClick: () -> Unit,
     onRecentlyClosedClick: () -> Unit,
     onAccountSettingsClick: () -> Unit,
@@ -168,6 +166,7 @@ private fun FloatingToolbarActions(
         onTabSettingsClick = onTabSettingsClick,
         onRecentlyClosedClick = onRecentlyClosedClick,
         onEnterMultiselectModeClick = onEnterMultiselectModeClick,
+        onSelectAllTabsClick = onSelectAllTabsClick,
         onDeleteAllTabsClick = { showCloseAllTabsDialog = true },
     )
 
@@ -175,7 +174,7 @@ private fun FloatingToolbarActions(
         modifier = Modifier.height(56.dp),
         shape = CircleShape,
         colors = CardDefaults.cardColors(
-            containerColor = MaterialTheme.colorScheme.surfaceDimVariant,
+            containerColor = MaterialTheme.colorScheme.surfaceContainerHighest,
             contentColor = MaterialTheme.colorScheme.onSurface,
         ),
         elevation = CardDefaults.elevatedCardElevation(defaultElevation = 6.dp),
@@ -350,6 +349,7 @@ private fun generateMenuItems(
     onTabSettingsClick: () -> Unit,
     onRecentlyClosedClick: () -> Unit,
     onEnterMultiselectModeClick: () -> Unit,
+    onSelectAllTabsClick: () -> Unit,
     onDeleteAllTabsClick: () -> Unit,
     onAccountSettingsClick: () -> Unit,
 ): List<MenuItem> {
@@ -358,6 +358,12 @@ private fun generateMenuItems(
         drawableRes = iconsR.drawable.mozac_ic_checkmark_24,
         testTag = TabsTrayTestTag.SELECT_TABS,
         onClick = onEnterMultiselectModeClick,
+    )
+    val selectAllTabsItem = MenuItem.IconItem(
+        text = Text.Resource(R.string.tab_tray_menu_select_all_tabs),
+        drawableRes = iconsR.drawable.ic_select_all_24,
+        testTag = TabsTrayTestTag.SELECT_ALL_TABS,
+        onClick = onSelectAllTabsClick,
     )
     val recentlyClosedTabsItem = MenuItem.IconItem(
         text = Text.Resource(R.string.tab_tray_menu_recently_closed),
@@ -393,6 +399,7 @@ private fun generateMenuItems(
 
         selectedPage == Page.NormalTabs -> listOf(
             enterSelectModeItem,
+            selectAllTabsItem,
             recentlyClosedTabsItem,
             tabSettingsItem,
             deleteAllTabsItem,
@@ -480,7 +487,6 @@ private fun TabManagerFloatingToolbarPreview(
             TabManagerFloatingToolbar(
                 tabsTrayStore = remember { TabsTrayStore(initialState = previewDataModel.state) },
                 isSignedIn = previewDataModel.isSignedIn,
-                pbmLocked = false,
                 modifier = Modifier.padding(all = 16.dp),
                 onOpenNewNormalTabClicked = {},
                 onOpenNewPrivateTabClicked = {},

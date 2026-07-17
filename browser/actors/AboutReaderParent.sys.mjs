@@ -146,6 +146,14 @@ export class AboutReaderParent extends JSWindowActorParent {
     return undefined;
   }
 
+  static onLocationChange(_window, _locationURI, webProgress, _flags) {
+    const browser = webProgress.browsingContext.embedderElement;
+    if (!browser) {
+      return;
+    }
+    AboutReaderParent.updateReaderButton(browser);
+  }
+
   static updateReaderButton(browser) {
     let windowGlobal = browser.browsingContext.currentWindowGlobal;
     let actor = windowGlobal.getActor("AboutReader");

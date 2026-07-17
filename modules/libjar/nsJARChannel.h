@@ -83,6 +83,7 @@ class nsJARChannel final : public nsIJARChannel,
   nsCOMPtr<nsIProgressEventSink> mProgressSink;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
   nsCOMPtr<nsIStreamListener> mListener;
+  RefPtr<mozilla::dom::ParentProcessChannelHandle> mParentProcessChannelHandle;
   nsCString mContentType;
   nsCString mContentCharset;
   int64_t mContentLength = -1;

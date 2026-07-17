@@ -48,6 +48,26 @@ const hasQuickActions = win =>
 const onboardingLabelShown = win =>
   !!win.document.querySelector(".urlbarView-press-tab-label");
 
+async function enterActionsMode() {
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "@act",
+  });
+  EventUtils.synthesizeKey("KEY_Tab");
+  await UrlbarTestUtils.assertSearchMode(window, {
+    source: UrlbarUtils.RESULT_SOURCE.ACTIONS,
+    entry: "keywordoffer",
+    restrictType: "keyword",
+  });
+}
+
+async function exitActionsMode() {
+  await UrlbarTestUtils.promisePopupClose(window, () => {
+    window.gURLBar.searchMode = null;
+    EventUtils.synthesizeKey("KEY_Escape");
+  });
+}
+
 add_setup(async function setup() {
   await SpecialPowers.pushPrefEnv({
     set: [
@@ -278,6 +298,53 @@ add_task(async function test_update() {
     );
   } finally {
     sandbox.restore();
+  }
+});
+
+add_task(async function test_update_in_actions_mode() {
+  if (!AppConstants.MOZ_UPDATER) {
+    return;
+  }
+
+  const sandbox = sinon.createSandbox();
+  let currentState = Ci.nsIApplicationUpdateService.STATE_IDLE;
+  sandbox.stub(UpdateService.prototype, "currentState").get(() => currentState);
+
+  try {
+    await enterActionsMode();
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "update",
+    });
+    let updateButton = await BrowserTestUtils.waitForCondition(() =>
+      window.document.querySelector(
+        `.urlbarView-action-btn[data-action=update]`
+      )
+    );
+    Assert.ok(
+      updateButton.hasAttribute("disabled"),
+      "Update action is shown as disabled in actions mode when no update is pending"
+    );
+    await exitActionsMode();
+
+    currentState = Ci.nsIApplicationUpdateService.STATE_PENDING;
+    await enterActionsMode();
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      window,
+      value: "update",
+    });
+    updateButton = await BrowserTestUtils.waitForCondition(() =>
+      window.document.querySelector(
+        `.urlbarView-action-btn[data-action=update]`
+      )
+    );
+    Assert.ok(
+      !updateButton.hasAttribute("disabled"),
+      "Update action is shown as enabled in actions mode when update is pending"
+    );
+  } finally {
+    sandbox.restore();
+    await exitActionsMode();
   }
 });
 

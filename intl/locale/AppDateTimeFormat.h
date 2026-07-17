@@ -13,6 +13,10 @@
 #include "prtime.h"
 #include "mozilla/intl/DateTimeFormat.h"
 
+namespace mozilla::dom {
+class Document;
+}
+
 namespace mozilla::intl {
 
 /**
@@ -47,6 +51,15 @@ class AppDateTimeFormat {
   static nsresult Format(const DateTimeFormat::ComponentsBag& aComponents,
                          const PRExplodedTime* aExplodedTime,
                          nsAString& aStringOut);
+
+  /**
+   * Format a DateTime for a document, respecting the privacy.spoof_english
+   * preference.
+   */
+  static nsresult FormatForDocument(const DateTimeFormat::ComponentsBag& aStyle,
+                                    const PRExplodedTime* aExplodedTime,
+                                    const dom::Document* aForDocument,
+                                    nsAString& aStringOut);
 
   /**
    * If the app locale changes, the cached locale needs to be reset.

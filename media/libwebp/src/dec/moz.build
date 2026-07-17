@@ -19,6 +19,8 @@ LOCAL_INCLUDES += [
     '/media/libwebp',
 ]
 
+include('/media/libwebp/libwebp-config.mozbuild')
+
 # Add libFuzzer configuration directives
 include('/tools/fuzzing/libfuzzer-config.mozbuild')
 

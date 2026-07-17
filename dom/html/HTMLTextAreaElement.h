@@ -40,7 +40,7 @@ class HTMLTextAreaElement final : public TextControlElement,
   using ValueSetterOptions = TextControlState::ValueSetterOptions;
 
   explicit HTMLTextAreaElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
       FromParser aFromParser = NOT_FROM_PARSER);
 
   // nsISupports
@@ -111,7 +111,7 @@ class HTMLTextAreaElement final : public TextControlElement,
   NS_IMETHOD_(bool) IsAttributeMapped(const nsAtom* aAttribute) const override;
 
   void GetEventTargetParent(EventChainPreVisitor&) override;
-  nsresult PreHandleEvent(EventChainVisitor&) override;
+  MOZ_CAN_RUN_SCRIPT nsresult PreHandleEvent(EventChainVisitor&) override;
   MOZ_CAN_RUN_SCRIPT nsresult PostHandleEvent(EventChainPostVisitor&) override;
 
   bool IsHTMLFocusable(IsFocusableFlags, bool* aIsFocusable,

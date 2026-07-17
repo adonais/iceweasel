@@ -45,7 +45,7 @@ parent:
                        nullable nsITransportSecurityInfo   securityInfo,
                        bool                                proxyConnectFailed,
                        TimingStructArgs                    timings,
-                       int32_t                             proxyConnectResponseCode,
+                       nsHttpResponseHead?                 proxyConnectResponseHead,
                        uint8_t[]                           dataForSniffer,
                        nsCString?                          altSvcUsed,
                        bool                                dataToChildProcess,

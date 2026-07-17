@@ -767,18 +767,13 @@ void LIRGenerator::visitWasmLoad(MWasmLoad* ins) {
 
   LAllocation ptr = useRegisterAtStart(base);
 
-  LDefinition ptrCopy = LDefinition::BogusTemp();
-  if (ins->access().offset32()) {
-    ptrCopy = tempCopy(base, 0);
-  }
-
   if (ins->type() == MIRType::Int64) {
-    auto* lir = new (alloc()) LWasmLoadI64(ptr, memoryBase, ptrCopy);
+    auto* lir = new (alloc()) LWasmLoadI64(ptr, memoryBase);
     defineInt64(lir, ins);
     return;
   }
 
-  auto* lir = new (alloc()) LWasmLoad(ptr, memoryBase, ptrCopy);
+  auto* lir = new (alloc()) LWasmLoad(ptr, memoryBase);
   define(lir, ins);
 }
 
@@ -795,22 +790,16 @@ void LIRGenerator::visitWasmStore(MWasmStore* ins) {
 
   LAllocation baseAlloc = useRegisterAtStart(base);
 
-  LDefinition ptrCopy = LDefinition::BogusTemp();
-  if (ins->access().offset32()) {
-    ptrCopy = tempCopy(base, 0);
-  }
-
   if (ins->access().type() == Scalar::Int64) {
     LInt64Allocation valueAlloc = useInt64RegisterAtStart(value);
-    auto* lir =
-        new (alloc()) LWasmStoreI64(baseAlloc, valueAlloc, memoryBase, ptrCopy);
+    auto* lir = new (alloc()) LWasmStoreI64(baseAlloc, valueAlloc, memoryBase);
     add(lir, ins);
     return;
   }
 
+  // TODO: improve zero stores like ARM64.
   LAllocation valueAlloc = useRegisterAtStart(value);
-  auto* lir =
-      new (alloc()) LWasmStore(baseAlloc, valueAlloc, memoryBase, ptrCopy);
+  auto* lir = new (alloc()) LWasmStore(baseAlloc, valueAlloc, memoryBase);
   add(lir, ins);
 }
 

@@ -40,7 +40,7 @@ class DocumentFragment : public FragmentOrElement {
   NS_DECL_ISUPPORTS_INHERITED
   NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(DocumentFragment, FragmentOrElement)
 
-  explicit DocumentFragment(already_AddRefed<dom::NodeInfo>&& aNodeInfo)
+  explicit DocumentFragment(already_AddRefed<dom::NodeInfo> aNodeInfo)
       : FragmentOrElement(std::move(aNodeInfo)), mHost(nullptr) {
     Init();
   }

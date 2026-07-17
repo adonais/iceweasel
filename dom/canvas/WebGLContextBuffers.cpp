@@ -282,7 +282,7 @@ RefPtr<WebGLBuffer> WebGLContext::CreateBuffer() {
   GLuint buf = 0;
   gl->fGenBuffers(1, &buf);
 
-  return new WebGLBuffer(this, buf);
+  return MakeRefPtr<WebGLBuffer>(this, buf);
 }
 
 }  // namespace mozilla

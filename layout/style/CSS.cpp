@@ -27,9 +27,18 @@ bool CSS::Supports(const GlobalObject&, const nsACString& aProperty,
 }
 
 /* static */
-bool CSS::Supports(const GlobalObject&, const nsACString& aCondition) {
-  return Servo_CSSSupports(&aCondition, /* ua = */ false, /* chrome = */ false,
-                           /* quirks = */ false);
+bool CSS::Supports(const GlobalObject& aGlobal, const nsACString& aCondition) {
+  StyleCssSupportsParams params{
+      .origin = StyleOrigin::Author,
+      .url_context = StyleCssSupportsUrlContext::Default,
+      .quirks = nsCompatibility::eCompatibility_FullStandards,
+  };
+  URLExtraData* urlData = nullptr;
+  if (Document* doc = nsContentUtils::TryGetDocumentFromWindowGlobal(
+          aGlobal.GetAsSupports())) {
+    urlData = doc->DefaultStyleAttrURLData();
+  }
+  return Servo_CSSSupports(&aCondition, &params, urlData);
 }
 
 /* static */

@@ -33,7 +33,7 @@ class MenuItemTest {
     fun testIconListItemIconUntintedArgumentRespected() {
         with(composeTestRule) {
             setContent {
-                Column(Modifier.background(color = MaterialTheme.colorScheme.surfaceDimVariant).padding(16.dp)) {
+                Column(Modifier.background(color = MaterialTheme.colorScheme.surfaceBright).padding(16.dp)) {
                     IconListItem(
                         label = "Test Label",
                         beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_shield_slash_critical_24),

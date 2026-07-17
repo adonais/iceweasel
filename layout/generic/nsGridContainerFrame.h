@@ -76,15 +76,6 @@ struct ComputedGridTrackInfo {
 };
 
 struct ComputedGridLineInfo {
-  explicit ComputedGridLineInfo(
-      nsTArray<nsTArray<RefPtr<nsAtom>>>&& aNames,
-      const nsTArray<RefPtr<nsAtom>>& aNamesBefore,
-      const nsTArray<RefPtr<nsAtom>>& aNamesAfter,
-      nsTArray<RefPtr<nsAtom>>&& aNamesFollowingRepeat)
-      : mNames(std::move(aNames)),
-        mNamesBefore(aNamesBefore.Clone()),
-        mNamesAfter(aNamesAfter.Clone()),
-        mNamesFollowingRepeat(std::move(aNamesFollowingRepeat)) {}
   nsTArray<nsTArray<RefPtr<nsAtom>>> mNames;
   nsTArray<RefPtr<nsAtom>> mNamesBefore;
   nsTArray<RefPtr<nsAtom>> mNamesAfter;

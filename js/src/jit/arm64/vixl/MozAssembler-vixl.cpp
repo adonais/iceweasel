@@ -24,6 +24,7 @@
 // OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+#include "jit/arm64/Assembler-arm64.h"
 #include "jit/arm64/vixl/Assembler-vixl.h"
 #include "jit/Label.h"
 
@@ -217,6 +218,9 @@ void Assembler::b(Instruction* at, int imm19, Condition cond) {
 
 
 BufferOffset Assembler::b(Label* label) {
+  // Prevent nop sequences in branch instructions.
+  js::jit::AutoForbidNops afn(this);
+
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(UncondBranchRangeType);
@@ -227,6 +231,9 @@ BufferOffset Assembler::b(Label* label) {
 
 
 BufferOffset Assembler::b(Label* label, Condition cond) {
+  // Prevent nop sequences in branch instructions.
+  js::jit::AutoForbidNops afn(this);
+
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(CondBranchRangeType);
@@ -260,6 +267,9 @@ void Assembler::bl(Instruction* at, int imm26) {
 
 
 void Assembler::bl(Label* label) {
+  // Prevent nop sequences in branch instructions.
+  js::jit::AutoForbidNops afn(this);
+
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(UncondBranchRangeType);
@@ -280,6 +290,9 @@ void Assembler::cbz(Instruction* at, const Register& rt, int imm19) {
 
 
 void Assembler::cbz(const Register& rt, Label* label) {
+  // Prevent nop sequences in branch instructions.
+  js::jit::AutoForbidNops afn(this);
+
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(CondBranchRangeType);
@@ -300,6 +313,9 @@ void Assembler::cbnz(Instruction* at, const Register& rt, int imm19) {
 
 
 void Assembler::cbnz(const Register& rt, Label* label) {
+  // Prevent nop sequences in branch instructions.
+  js::jit::AutoForbidNops afn(this);
+
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(CondBranchRangeType);
@@ -322,6 +338,9 @@ void Assembler::tbz(Instruction* at, const Register& rt, unsigned bit_pos, int i
 
 
 void Assembler::tbz(const Register& rt, unsigned bit_pos, Label* label) {
+  // Prevent nop sequences in branch instructions.
+  js::jit::AutoForbidNops afn(this);
+
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(TestBranchRangeType);
@@ -344,6 +363,9 @@ void Assembler::tbnz(Instruction* at, const Register& rt, unsigned bit_pos, int 
 
 
 void Assembler::tbnz(const Register& rt, unsigned bit_pos, Label* label) {
+  // Prevent nop sequences in branch instructions.
+  js::jit::AutoForbidNops afn(this);
+
   // Encode the relative offset from the inserted branch to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset(TestBranchRangeType);
@@ -366,6 +388,9 @@ void Assembler::adr(Instruction* at, const Register& rd, int imm21) {
 
 
 void Assembler::adr(const Register& rd, Label* label) {
+  // Prevent nop sequences in address instructions.
+  js::jit::AutoForbidNops afn(this);
+
   // Encode the relative offset from the inserted adr to the label.
   LabelDoc doc = refLabel(label);
   BufferOffset next = nextInstrOffset();
@@ -388,6 +413,9 @@ void Assembler::adrp(Instruction* at, const Register& rd, int imm21) {
 
 
 void Assembler::adrp(const Register& rd, Label* label) {
+  // Prevent nop sequences in address instructions.
+  js::jit::AutoForbidNops afn(this);
+
   VIXL_ASSERT(AllowPageOffsetDependentCode());
   // Encode the relative offset from the inserted adr to the label.
   LabelDoc doc = refLabel(label);
@@ -500,17 +528,17 @@ BufferOffset Assembler::DataProcShiftedRegister(const Register& rd, const Regist
 
 
 void MozBaseAssembler::InsertIndexIntoTag(uint8_t* load, uint32_t index) {
-  // Store the js::jit::PoolEntry index into the instruction.
+  // Store the pool entry index into the instruction.
   // finishPool() will walk over all literal load instructions
   // and use PatchConstantPoolLoad() to patch to the final relative offset.
   *((uint32_t*)load) |= Assembler::ImmLLiteral(index);
 }
 
 
-bool MozBaseAssembler::PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr) {
+void MozBaseAssembler::PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr) {
   Instruction* load = reinterpret_cast<Instruction*>(loadAddr);
 
-  // The load currently contains the js::jit::PoolEntry's index,
+  // The load currently contains the pool entry's index,
   // as written by InsertIndexIntoTag().
   uint32_t index = load->ImmLLiteral();
 
@@ -520,7 +548,6 @@ bool MozBaseAssembler::PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr
   Instruction* source = reinterpret_cast<Instruction*>(&constPool[index]);
 
   load->SetImmLLiteral(source);
-  return false; // Nothing uses the return value.
 }
 
 void

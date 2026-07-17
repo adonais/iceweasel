@@ -29,7 +29,7 @@ describe("Smart Window telemetry", () => {
     BrowserTestUtils.removeTab(gBrowser.selectedTab);
     Services.prefs.clearUserPref("browser.smartwindow.firstrun.modelChoice");
     Services.prefs.clearUserPref("browser.smartwindow.model");
-    Services.prefs.clearUserPref("browser.smartwindow.preferences.endpoint");
+    Services.prefs.clearUserPref("browser.smartwindow.customEndpoint");
     Services.prefs.clearUserPref("browser.smartwindow.endpoint");
     Services.prefs.clearUserPref("browser.smartwindow.apiKey");
     Services.fog.testResetFOG();

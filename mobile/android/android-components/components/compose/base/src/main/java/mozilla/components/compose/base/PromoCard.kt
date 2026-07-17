@@ -224,10 +224,10 @@ data class PromoCardColors(
          */
         @Composable
         fun promoCardColors(
-            backgroundColor: Color = MaterialTheme.colorScheme.primaryContainer,
+            backgroundColor: Color = MaterialTheme.colorScheme.secondaryContainer,
             titleTextColor: Color = MaterialTheme.colorScheme.onSurface,
             messageTextColor: Color = MaterialTheme.colorScheme.onSurfaceVariant,
-            actionsTextColor: Color = MaterialTheme.colorScheme.tertiary,
+            actionsTextColor: Color = MaterialTheme.colorScheme.onSurface,
             iconColor: Color = MaterialTheme.colorScheme.onSurface,
         ): PromoCardColors {
             return PromoCardColors(

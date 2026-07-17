@@ -17,6 +17,7 @@
 #include "nsIWebProgressListener.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsURLHelper.h"
 
 namespace mozilla::dom {

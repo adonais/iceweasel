@@ -387,7 +387,7 @@ class MockGlobalObject : public nsIGlobalObject, public nsWrapperCache {
     return mGlobal->SerialEventTarget();
   }
 
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const override {
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable) const override {
     return mGlobal->Dispatch(std::move(aRunnable));
   }
 

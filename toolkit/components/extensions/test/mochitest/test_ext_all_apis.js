@@ -31,6 +31,7 @@ let expectedCommonApis = [
   "runtime.RequestUpdateCheckStatus",
   "runtime.getManifest",
   "runtime.connect",
+  "runtime.getDocumentId",
   "runtime.getFrameId",
   "runtime.getURL",
   "runtime.id",

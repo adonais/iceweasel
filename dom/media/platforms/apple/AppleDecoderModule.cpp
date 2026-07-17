@@ -122,10 +122,9 @@ DecodeSupportSet AppleDecoderModule::SupportsMimeType(
     }
   }
 
-  MOZ_LOG(sPDMLog, LogLevel::Debug,
-          ("Apple decoder %s requested type '%s'",
-           supportType.isEmpty() ? "rejects" : "supports",
-           PromiseFlatCString(aMimeType).get()));
+  MOZ_LOG_FMT(sPDMLog, LogLevel::Debug, "Apple decoder {} requested type '{}'",
+              supportType.isEmpty() ? "rejects" : "supports",
+              PromiseFlatCString(aMimeType).get());
   return supportType;
 }
 
@@ -275,15 +274,15 @@ bool AppleDecoderModule::CanCreateHWDecoder(const MediaCodec& aCodec) {
       new AppleVTDecoder(info, nullptr, {}, nullptr, Nothing());
   auto release = MakeScopeExit([&]() { decoder->Shutdown(); });
   if (NS_FAILED(decoder->InitializeSession())) {
-    MOZ_LOG(sPDMLog, LogLevel::Debug,
-            ("Failed to initializing VT HW decoder session"));
+    MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
+                "Failed to initializing VT HW decoder session");
     return false;
   }
   nsAutoCString failureReason;
   bool hwSupport = decoder->IsHardwareAccelerated(failureReason);
   if (!hwSupport) {
-    MOZ_LOG(sPDMLog, LogLevel::Debug,
-            ("VT decoder failed to use HW : '%s'", failureReason.get()));
+    MOZ_LOG_FMT(sPDMLog, LogLevel::Debug, "VT decoder failed to use HW : '{}'",
+                failureReason.get());
   }
   return hwSupport;
 }

@@ -12,13 +12,13 @@
 #ifndef XSIMD_ARCH_HPP
 #define XSIMD_ARCH_HPP
 
-#include <initializer_list>
-#include <type_traits>
-#include <utility>
-
 #include "../types/xsimd_all_registers.hpp"
 #include "./xsimd_config.hpp"
 #include "./xsimd_cpuid.hpp"
+
+#include <initializer_list>
+#include <type_traits>
+#include <utility>
 
 namespace xsimd
 {
@@ -51,8 +51,8 @@ namespace xsimd
 
         template <class T, class Ty, class... Tys>
         struct contains<T, Ty, Tys...>
-            : std::conditional<std::is_same<Ty, T>::value, std::true_type,
-                               contains<T, Tys...>>::type
+            : std::conditional_t<std::is_same<Ty, T>::value, std::true_type,
+                                 contains<T, Tys...>>
         {
         };
 
@@ -162,8 +162,8 @@ namespace xsimd
     } // namespace detail
 
     using all_x86_architectures = arch_list<
-        avx512vnni<avx512vbmi2>, avx512vbmi2, avx512vbmi, avx512ifma, avx512pf, avx512vnni<avx512bw>, avx512bw, avx512er, avx512dq, avx512cd, avx512f,
-        avxvnni, fma3<avx2>, avx2, fma3<avx>, avx, fma4, fma3<sse4_2>,
+        avx512vnni<avx512vbmi2>, avx512vbmi2, avx512vbmi, avx512ifma, avx512pf, avx512vnni<avx512bw>, avx512bw, avx512er, avx512dq, avx512vl, avx512cd, avx512f,
+        avxvnni, fma3<avx2>, avx2, fma3<avx>, avx, avx2_128, avx_128, fma4, fma3<sse4_2>,
         sse4_2, sse4_1, /*sse4a,*/ ssse3, sse3, sse2>;
 
     using all_sve_architectures = arch_list<detail::sve<512>, detail::sve<256>, detail::sve<128>>;
@@ -172,7 +172,8 @@ namespace xsimd
     using all_power_architectures = arch_list<vsx>;
     using all_riscv_architectures = all_rvv_architectures;
     using all_wasm_architectures = arch_list<wasm>;
-    using all_architectures = typename detail::join<all_power_architectures, all_riscv_architectures, all_wasm_architectures, all_arm_architectures, all_x86_architectures>::type;
+    using all_s390x_architectures = arch_list<vxe>;
+    using all_architectures = typename detail::join<all_power_architectures, all_riscv_architectures, all_wasm_architectures, all_arm_architectures, all_x86_architectures, all_s390x_architectures>::type;
 
     using supported_architectures = typename detail::supported<all_architectures>::type;
 
@@ -180,6 +181,7 @@ namespace xsimd
     using arm_arch = typename detail::supported<all_arm_architectures>::type::best;
     using power_arch = typename detail::supported<all_power_architectures>::type::best;
     using riscv_arch = typename detail::supported<all_riscv_architectures>::type::best;
+    using s390x_arch = typename detail::supported<all_s390x_architectures>::type::best;
     using best_arch = typename supported_architectures::best;
 
 #ifdef XSIMD_DEFAULT_ARCH

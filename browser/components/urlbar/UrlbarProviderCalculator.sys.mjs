@@ -13,8 +13,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
-  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
+  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "l10n", () => {
@@ -92,12 +91,6 @@ export class UrlbarProviderCalculator extends UrlbarProvider {
   // of this provider.
   #sapName;
 
-  constructor() {
-    super();
-    lazy.UrlbarResult.addDynamicResultType(DYNAMIC_RESULT_TYPE);
-    lazy.UrlbarView.addDynamicViewTemplate(DYNAMIC_RESULT_TYPE, VIEW_TEMPLATE);
-  }
-
   /**
    * @returns {Values<typeof UrlbarUtils.PROVIDER_TYPE>}
    */
@@ -149,6 +142,10 @@ export class UrlbarProviderCalculator extends UrlbarProvider {
       });
       addCallback(this, result);
     } catch (e) {}
+  }
+
+  getViewTemplate(_result) {
+    return VIEW_TEMPLATE;
   }
 
   getViewUpdate(result) {
@@ -240,7 +237,7 @@ class BaseCalculator {
     if (["-", "+"].includes(val)) {
       return 2;
     }
-    if (["*", "/"].includes(val)) {
+    if (["*", "/", "÷", "×"].includes(val)) {
       return 3;
     }
     if ("^" === val) {
@@ -251,7 +248,7 @@ class BaseCalculator {
   }
 
   isLeftAssociative(val) {
-    if (["-", "+", "*", "/"].includes(val)) {
+    if (["-", "+", "*", "/", "÷", "×"].includes(val)) {
       return true;
     }
     if ("^" === val) {
@@ -310,9 +307,11 @@ class BaseCalculator {
 
   evaluate = {
     "*": (a, b) => a * b,
+    "×": (a, b) => a * b,
     "+": (a, b) => a + b,
     "-": (a, b) => a - b,
     "/": (a, b) => a / b,
+    "÷": (a, b) => a / b,
     "^": (a, b) => a ** b,
   };
 
@@ -326,7 +325,7 @@ class BaseCalculator {
         let op2 = stack.pop();
         let op1 = stack.pop();
         let result = this.evaluate[token](op1, op2);
-        if (token == "/" && op2 == 0) {
+        if ((token == "/" || token == "÷") && op2 == 0) {
           return UNDEFINED_VALUE;
         }
         if (isNaN(result) || !isFinite(result)) {

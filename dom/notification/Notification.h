@@ -153,7 +153,7 @@ class Notification : public DOMEventTargetHelper, public SupportsWeakPtr {
 
   bool DispatchClickEvent();
 
-  nsresult DispatchToMainThread(already_AddRefed<nsIRunnable>&& aRunnable);
+  nsresult DispatchToMainThread(already_AddRefed<nsIRunnable> aRunnable);
 
  protected:
   Notification(nsIGlobalObject* aGlobal,

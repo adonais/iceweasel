@@ -131,7 +131,7 @@ class KeymapWrapper {
    * GDK's state.
    */
   static guint ConvertWidgetModifierToGdkState(
-      nsIWidget::Modifiers aNativeModifiers);
+      nsIWidget::NativeModifiers aNativeModifiers);
 
   /**
    * InitInputEvent() initializes the aInputEvent with aModifierState.

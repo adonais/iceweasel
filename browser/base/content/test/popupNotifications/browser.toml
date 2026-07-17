@@ -83,8 +83,6 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
 ]
 
-["browser_popupNotification_popupshown_leak.js"]
-
 ["browser_popupNotification_no_anchors.js"]
 https_first_disabled = true
 skip-if = [
@@ -93,10 +91,14 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug",
 ]
 
+["browser_popupNotification_popupshown_leak.js"]
+
 ["browser_popupNotification_security_delay.js"]
 skip-if = [
-   "os == 'win' && arch == 'x86'", # Bug 1882452
+  "os == 'win' && arch == 'x86'", # Bug 1882452
 ]
+
+["browser_popupNotification_security_delay_cap.js"]
 
 ["browser_popupNotification_selection_required.js"]
 skip-if = [

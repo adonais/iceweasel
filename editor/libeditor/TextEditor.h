@@ -145,6 +145,8 @@ class TextEditor final : public EditorBase,
 
   MOZ_CAN_RUN_SCRIPT nsresult
   OnFocus(const nsINode& aOriginalEventTargetNode) final;
+  MOZ_CAN_RUN_SCRIPT void PostHandleFocusEvent(
+      const nsINode& aFocusEventTargetNode) final;
 
   nsresult OnBlur(const dom::EventTarget* aEventTarget) final;
 

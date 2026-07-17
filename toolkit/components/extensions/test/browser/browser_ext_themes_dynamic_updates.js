@@ -57,7 +57,7 @@ function validateTheme(
 
   Assert.equal(
     hasVerticalAlign,
-    docEl.hasAttribute("lwtheme-image-y-align"),
+    docEl.hasAttribute("theme-image-in-toolbox"),
     "root element should have attribute lwtheme-image-y-align when custom vertical alignment is expected"
   );
   Assert.ok(

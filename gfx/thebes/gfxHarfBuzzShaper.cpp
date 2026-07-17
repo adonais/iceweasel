@@ -992,7 +992,8 @@ hb_position_t gfxHarfBuzzShaper::GetHKerning(uint16_t aFirstGlyph,
       const KernTableSubtableHeaderVersion0* st0 =
           reinterpret_cast<const KernTableSubtableHeaderVersion0*>(base + offs);
       uint16_t subtableLen = uint16_t(st0->length);
-      if (offs + subtableLen > len) {
+      if (subtableLen < sizeof(KernTableSubtableHeaderVersion0) ||
+          subtableLen > len - offs) {
         break;
       }
       offs += subtableLen;
@@ -1047,6 +1048,10 @@ hb_position_t gfxHarfBuzzShaper::GetHKerning(uint16_t aFirstGlyph,
             reinterpret_cast<const KernTableSubtableHeaderVersion1*>(base +
                                                                      offs);
         uint32_t subtableLen = uint32_t(st1->length);
+        if (subtableLen < sizeof(KernTableSubtableHeaderVersion1) ||
+            subtableLen > len - offs) {
+          break;
+        }
         offs += subtableLen;
         uint16_t coverage = st1->coverage;
         if (coverage & (KERN1_COVERAGE_VERTICAL | KERN1_COVERAGE_CROSS_STREAM |
@@ -1107,6 +1112,19 @@ hb_position_t gfxHarfBuzzShaper::GetHKerning(uint16_t aFirstGlyph,
   return shaper->GetHKerning(first_glyph, second_glyph);
 }
 
+/* static */ hb_bool_t gfxHarfBuzzShaper::HBGetHExtents(
+    hb_font_t* font, void* font_data, hb_font_extents_t* extents,
+    void* user_data) {
+  const gfxHarfBuzzShaper* shaper =
+      static_cast<const gfxHarfBuzzShaper*>(font_data);
+  const gfxFont::Metrics& metrics =
+      shaper->GetFont()->GetMetrics(nsFontMetrics::eHorizontal);
+  extents->ascender = FloatToFixed(metrics.maxAscent);
+  extents->descender = -FloatToFixed(metrics.maxDescent);
+  extents->line_gap = FloatToFixed(metrics.externalLeading);
+  return true;
+}
+
 static void AddOpenTypeFeature(uint32_t aTag, uint32_t aValue, void* aUserArg) {
   nsTArray<hb_feature_t>* features =
       static_cast<nsTArray<hb_feature_t>*>(aUserArg);
@@ -1153,6 +1171,8 @@ bool gfxHarfBuzzShaper::Initialize() {
                                                nullptr, nullptr);
     hb_font_funcs_set_glyph_h_kerning_func(funcs, HBGetHKerning, nullptr,
                                            nullptr);
+    hb_font_funcs_set_font_h_extents_func(funcs, HBGetHExtents, nullptr,
+                                          nullptr);
     hb_font_funcs_make_immutable(funcs);
     return funcs;
   }();
@@ -1161,6 +1181,8 @@ bool gfxHarfBuzzShaper::Initialize() {
     auto* funcs = hb_font_funcs_create();
     hb_font_funcs_set_nominal_glyph_func(funcs, HBGetNominalGlyph, nullptr,
                                          nullptr);
+    hb_font_funcs_set_font_h_extents_func(funcs, HBGetHExtents, nullptr,
+                                          nullptr);
     hb_font_funcs_make_immutable(funcs);
     return funcs;
   }();
@@ -1693,7 +1715,7 @@ nsresult gfxHarfBuzzShaper::SetGlyphsFromRun(gfxShapedText* aShapedText,
       // there must be at least one in the clump, and we already measured
       // its advance, hence the placement of the loop-exit test and the
       // measurement of the next glyph.
-      while (1) {
+      while (true) {
         gfxTextRun::DetailedGlyph* details = detailedGlyphs.AppendElement();
         details->mGlyphID = ginfo[glyphStart].codepoint;
 

@@ -21,6 +21,7 @@
 #include "mozilla/dom/MaybeCrossOriginObject.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsXULAppAPI.h"
 
 using namespace JS;

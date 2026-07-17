@@ -39,6 +39,10 @@ struct APZEventResult;
 struct APZHandledResult;
 enum class BrowserGestureResponse : bool;
 
+// Indicating whether an incoming MULTITOUCH_MOVE event is the first touch-move
+// in the current touch block (i.e. the very first one after the touch-start).
+enum class InitialTouchMove : bool { No, Yes };
+
 using InputBlockCallback = std::function<void(uint64_t aInputBlockId,
                                               APZHandledResult aHandledResult)>;
 
@@ -84,7 +88,8 @@ class InputQueue {
   APZEventResult ReceiveInputEvent(
       const RefPtr<AsyncPanZoomController>& aTarget,
       TargetConfirmationFlags aFlags, InputData& aEvent,
-      const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors = Nothing());
+      const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors = Nothing(),
+      InitialTouchMove aInitialTouchMove = InitialTouchMove::No);
   /**
    * This function should be invoked to notify the InputQueue when web content
    * decides whether or not it wants to cancel a block of events. The block
@@ -217,7 +222,8 @@ class InputQueue {
   APZEventResult ReceiveTouchInput(
       const RefPtr<AsyncPanZoomController>& aTarget,
       TargetConfirmationFlags aFlags, const MultiTouchInput& aEvent,
-      const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors);
+      const Maybe<nsTArray<TouchBehaviorFlags>>& aTouchBehaviors,
+      InitialTouchMove aInitialTouchMove);
   APZEventResult ReceiveMouseInput(
       const RefPtr<AsyncPanZoomController>& aTarget,
       TargetConfirmationFlags aFlags, MouseInput& aEvent);

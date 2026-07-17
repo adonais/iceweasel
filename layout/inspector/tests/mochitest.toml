@@ -45,6 +45,8 @@ support-files = [
 
 ["test_getAnchorNamesFor.html"]
 
+["test_getComputationSteps.html"]
+
 ["test_getCSSPseudoElementNames.html"]
 
 ["test_getCSSWideKeywords.html"]

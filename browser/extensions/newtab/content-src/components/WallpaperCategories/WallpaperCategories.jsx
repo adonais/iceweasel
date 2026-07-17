@@ -631,7 +631,8 @@ export class _WallpaperCategories extends React.PureComponent {
                 style.backgroundColor = hex;
               }
               const isCategorySelected =
-                activeWallpaperObj || isCustomSolidColor;
+                wallpapersUserEnabled &&
+                (activeWallpaperObj || isCustomSolidColor);
               return (
                 <div key={category}>
                   <button

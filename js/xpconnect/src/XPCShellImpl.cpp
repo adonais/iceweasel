@@ -865,16 +865,16 @@ static bool ProcessArgs(AutoJSAPI& jsapi, char** argv, int argc,
    */
   argsObj = JS::NewArrayObject(cx, 0);
   if (!argsObj) {
-    return 1;
+    return true;
   }
   if (!JS_DefineProperty(cx, global, "arguments", argsObj, 0)) {
-    return 1;
+    return true;
   }
 
   for (int j = 0, length = argc - rootPosition; j < length; j++) {
     RootedString str(cx, JS_NewStringCopyZ(cx, argv[rootPosition++]));
     if (!str || !JS_DefineElement(cx, argsObj, j, str, JSPROP_ENUMERATE)) {
-      return 1;
+      return true;
     }
   }
 

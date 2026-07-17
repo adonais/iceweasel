@@ -11,6 +11,5 @@
 [Exposed=(Window, Worker, PaintWorklet), Pref="layout.css.typed-om.enabled"]
 interface CSSMathNegate : CSSMathValue {
   constructor(CSSNumberish arg);
-  // TODO: Remove [Throws] once the values attribute is fully implemented
-  [Throws] readonly attribute CSSNumericValue value;
+  readonly attribute CSSNumericValue value;
 };

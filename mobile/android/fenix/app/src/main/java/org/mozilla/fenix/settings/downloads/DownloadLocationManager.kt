@@ -3,19 +3,22 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 package org.mozilla.fenix.settings.downloads
 
-import android.content.Context
+import android.content.ContentResolver
 import android.os.Environment
 import android.provider.DocumentsContract
 import androidx.core.net.toUri
 import mozilla.components.support.base.log.logger.Logger
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
+import org.mozilla.fenix.utils.Settings
 import java.io.FileNotFoundException
 
 /**
  * A utility class for managing the default download location.
  */
-class DownloadLocationManager(private val context: Context) {
+class DownloadLocationManager(
+    private val settings: Settings,
+    private val contentResolver: ContentResolver,
+) {
     private val logger = Logger("DownloadLocationManager")
 
     /**
@@ -37,7 +40,7 @@ class DownloadLocationManager(private val context: Context) {
             Environment.DIRECTORY_DOWNLOADS,
         ).path
 
-        val configuredLocation = context.settings().downloadsDefaultLocation
+        val configuredLocation = settings.downloadsDefaultLocation
 
         if (!FxNimbus.features.downloadsCustomLocation.value().enabled || configuredLocation.isEmpty()) {
             return defaultFallbackPath
@@ -45,7 +48,7 @@ class DownloadLocationManager(private val context: Context) {
 
         val locationUri = configuredLocation.toUri()
 
-        val hasPermissions = context.contentResolver.persistedUriPermissions.any {
+        val hasPermissions = contentResolver.persistedUriPermissions.any {
             it.uri == locationUri && it.isReadPermission && it.isWritePermission
         }
 
@@ -58,7 +61,7 @@ class DownloadLocationManager(private val context: Context) {
                 locationUri,
                 DocumentsContract.getTreeDocumentId(locationUri),
             )
-            val isLocationAccessible = context.contentResolver.query(documentUri, null, null, null, null)?.use {
+            val isLocationAccessible = contentResolver.query(documentUri, null, null, null, null)?.use {
                 true
             } ?: false
 
@@ -81,7 +84,7 @@ class DownloadLocationManager(private val context: Context) {
         if (e != null) {
             logger.warn("Resetting download location to default due to ${e.javaClass.simpleName}.", e)
         }
-        context.settings().downloadsDefaultLocation = fallback
+        settings.downloadsDefaultLocation = fallback
         return fallback
     }
 }

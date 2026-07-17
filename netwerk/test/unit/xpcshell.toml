@@ -482,6 +482,14 @@ skip-if = [
 
 ["test_cache2-34-overlimit-eviction-preserves-active.js"]
 
+["test_cache2-35-encryption-disabled.js"]
+prefs = ["browser.cache.disk.encryption.enabled=false"]
+
+["test_cache2-35-encryption.js"]
+prefs = ["browser.cache.disk.encryption.enabled=true"]
+
+["test_cache2-35-racing-onCacheEntryCheck.js"]
+
 ["test_cache2_clear_with_principal.js"]
 run-sequentially = ["true"] # httpd server
 
@@ -538,6 +546,9 @@ skip-if = [
 
 ["test_content_decoding_error_telemetry.js"]
 run-sequentially = ["true"]
+skip-if = [
+  "artifact", # Bug 2040417 - known limitation of FOG ping testing APIs
+]
 
 ["test_content_encoding_gzip.js"]
 
@@ -558,6 +569,7 @@ run-sequentially = ["true"]
 ["test_cookiejars_safebrowsing.js"]
 
 ["test_cookies_async_failure.js"]
+prefs = ["security.storage.encryption.sqlite.enabled=false"]
 requesttimeoutfactor = 2  # Slow on Windows
 run-sequentially = [
   "os == 'mac'", # frequent timeouts in parallel on Mac
@@ -589,6 +601,7 @@ skip-if = [
 requesttimeoutfactor = 2  # Slow on macOS
 
 ["test_cookies_upgrade_10.js"]
+prefs = ["security.storage.encryption.sqlite.enabled=false"]
 
 ["test_cookies_validation_epoch.js"]
 
@@ -720,6 +733,27 @@ skip-if = [
 ["test_h2proxy_connection_limit.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
 
+["test_happy_eyeballs_0rtt_abandoned_requeueed.js"]
+run-sequentially = ["true"] # TlsServer listens to the same port
+skip-if = [
+  "os == 'android'",
+  "os == 'win'",
+]
+
+["test_happy_eyeballs_0rtt_fallback.js"]
+run-sequentially = ["true"] # TlsServer listens to the same port
+skip-if = [
+  "os == 'android'",
+  "os == 'win'",
+]
+
+["test_happy_eyeballs_0rtt_h1_reject.js"]
+run-sequentially = ["true"] # TlsServer listens to the same port
+skip-if = [
+  "os == 'android'",
+  "os == 'win'",
+]
+
 ["test_happy_eyeballs_cancel_and_reuse.js"]
 skip-if = [
   "os == 'android'",
@@ -736,11 +770,20 @@ skip-if = [
   "os == 'win' && msix",
 ]
 
+["test_happy_eyeballs_dns_prefetch_reuse.js"]
+run-sequentially = ["true"] # node server exceptions dont replay well
+
 ["test_happy_eyeballs_h1_0rtt.js"]
 run-sequentially = ["true"] # TlsServer listens to the same port
+skip-if = [
+  "os == 'win' && appname == 'thunderbird' && msix", # Bug 2038668
+]
 
 ["test_happy_eyeballs_h2_0rtt.js"]
 run-sequentially = ["true"] # TlsServer listens to the same port
+skip-if = [
+  "os == 'win' && appname == 'thunderbird' && msix", # Bug 2038668
+]
 
 ["test_happy_eyeballs_h2_fallback.js"]
 run-sequentially = ["true"] # node server exceptions dont replay well
@@ -789,6 +832,11 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 skip-if = [
   "os == 'android'",
   "os == 'win'",
+]
+
+["test_he_client_auth_pause.js"]
+skip-if = [
+  "os == 'android'", # pkcs11testmodule isn't built/installed on Android
 ]
 
 ["test_head.js"]
@@ -1292,6 +1340,8 @@ skip-if = [
 
 ["test_mozTXTToHTMLConv.js"]
 
+["test_moz_http2_exception_handling.js"]
+
 ["test_multipart_byteranges.js"]
 
 ["test_multipart_byteranges_invalid.js"]
@@ -1443,6 +1493,11 @@ run-sequentially = ["true"] # node server exceptions dont replay well
 ["test_proxy_pac.js"]
 
 ["test_proxyconnect.js"]
+skip-if = [
+  "socketprocess_networking", # Bug 1614708
+]
+
+["test_proxyconnect_headers.js"]
 skip-if = [
   "socketprocess_networking", # Bug 1614708
 ]
@@ -1725,6 +1780,7 @@ run-sequentially = ["true"] # We want to check performance
 ["test_trr_cname_chain.js"]
 
 ["test_trr_confirmation.js"]
+requesttimeoutfactor = 2
 run-if = [
   "!socketprocess_networking", # confirmation state isn't passed cross-process
 ]

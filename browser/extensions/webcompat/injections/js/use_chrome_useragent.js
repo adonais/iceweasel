@@ -19,19 +19,17 @@ if (!navigator.userAgent.includes("Chrome/")) {
   const wantedPlatform = window.__webcompat_spoof_platform ?? actualPlatform;
 
   if (wantedPlatform) {
+    let mobile = "";
     let osSegment = `Windows NT 10; Win64; x64`;
     if (wantedPlatform == "android") {
-      const androidVer = userAgent.match(/Android [0-9.]+/) || "Android 6.0";
-      const device = userAgent.includes("Mobile")
-        ? "Nexus 5 Build/MRA58N"
-        : "Nexus 7 Build/JSS15Q";
-      osSegment = `Linux; ${androidVer}; ${device}`;
+      mobile = userAgent.includes("Mobile") ? "Mobile " : "";
+      osSegment = `Linux; Android 10; K`;
     } else if (wantedPlatform == "mac") {
       osSegment = "Macintosh; Intel Mac OS X 10_15_7";
     } else if (wantedPlatform == "linux") {
-      osSegment = "X11; Ubuntu; Linux x86_64";
+      osSegment = "X11; Linux x86_64";
     }
-    const final_ua = `Mozilla/5.0 (${osSegment}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/143.0.0.0 Safari/537.36`;
+    const final_ua = `Mozilla/5.0 (${osSegment}) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 ${mobile}Safari/537.36`;
 
     const nav = Object.getPrototypeOf(navigator);
 

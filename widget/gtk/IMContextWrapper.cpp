@@ -2633,7 +2633,7 @@ already_AddRefed<TextRangeArray> IMContextWrapper::CreateTextRangeArray(
            this, aContext, NS_ConvertUTF16toUTF8(aCompositionString).get(),
            aCompositionString.Length()));
 
-  RefPtr<TextRangeArray> textRangeArray = new TextRangeArray();
+  auto textRangeArray = MakeRefPtr<TextRangeArray>();
 
   gchar* preedit_string;
   gint cursor_pos_in_chars;

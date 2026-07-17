@@ -14,13 +14,20 @@ const { sinon } = ChromeUtils.importESModule(
 ChromeUtils.defineESModuleGetters(lazy, {
   SpecialMessageActions:
     "resource://messaging-system/lib/SpecialMessageActions.sys.mjs",
-  IPPFxaActivateAuthProvider:
-    "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaActivateAuthProvider.sys.mjs",
   IPProtection:
     "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
   IPProtectionWidget:
     "moz-src:///browser/components/ipprotection/IPProtection.sys.mjs",
 });
+
+const { IPProtectionActivator } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPProtectionActivator.sys.mjs"
+);
+
+const { IPPDummyAuthProvider } = ChromeUtils.importESModule(
+  "resource://testing-common/ipprotection/IPPDummyAuthProvider.sys.mjs"
+);
+IPProtectionActivator.setAuthProvider(IPPDummyAuthProvider);
 
 const { BANDWIDTH } = ChromeUtils.importESModule(
   "chrome://browser/content/ipprotection/ipprotection-constants.mjs"
@@ -584,11 +591,7 @@ add_task(async function test_get_started_button() {
     .callsFake(async function () {
       return true;
     });
-  sandbox
-    .stub(lazy.IPPFxaActivateAuthProvider, "enroll")
-    .callsFake(async function () {
-      return true;
-    });
+  let enrollSpy = sandbox.spy(IPPDummyAuthProvider, "enroll");
 
   await setupVpnPrefs({
     feature: true,
@@ -627,7 +630,7 @@ add_task(async function test_get_started_button() {
       );
 
       Assert.ok(
-        lazy.IPPFxaActivateAuthProvider.enroll.calledOnce,
+        enrollSpy.calledOnce,
         "enroll should be called once when Get started button is clicked"
       );
     }
@@ -647,9 +650,7 @@ add_task(
     let fxaStub = sandbox
       .stub(lazy.SpecialMessageActions, "fxaSignInFlow")
       .resolves(true);
-    let enrollStub = sandbox
-      .stub(lazy.IPPFxaActivateAuthProvider, "enroll")
-      .resolves(true);
+    let enrollSpy = sandbox.spy(IPPDummyAuthProvider, "enroll");
 
     await setupVpnPrefs({
       feature: true,
@@ -673,7 +674,7 @@ add_task(
         window.document.addEventListener("popupshown", popupSpy, true);
 
         let enrollPromise = TestUtils.waitForCondition(
-          () => enrollStub.calledOnce,
+          () => enrollSpy.calledOnce,
           "enroll should be called after sign-in succeeds"
         );
 
@@ -686,7 +687,7 @@ add_task(
           "fxaSignInFlow should still be called when widget is not visible"
         );
         Assert.ok(
-          enrollStub.calledOnce,
+          enrollSpy.calledOnce,
           "enroll should still complete when widget is not visible"
         );
 
@@ -721,7 +722,6 @@ add_task(async function test_VPN_get_started_entrypoint() {
   let fxaStub = sandbox
     .stub(lazy.SpecialMessageActions, "fxaSignInFlow")
     .resolves(true);
-  sandbox.stub(lazy.IPPFxaActivateAuthProvider, "enroll").resolves(true);
 
   await setupVpnPrefs({
     feature: true,

@@ -57,6 +57,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
 
   assert(compareArray(sample, expected[TA.name]), sample);
   assert.sameValue(result, undefined, "returns undefined");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

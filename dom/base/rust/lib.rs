@@ -160,6 +160,8 @@ bitflags! {
         /// These 4 bits are used to pack the elements heading level into the element state
         /// Heading levels can be from 1-9 so 4 bits allows us to express the full range.
         const HEADING_LEVEL_BITS = 0b1111u64 << HEADING_LEVEL_OFFSET;
+        /// https://w3c.github.io/picture-in-picture/#css-pseudo-class
+        const PICTURE_IN_PICTURE = 1u64 << 61;
 
         /// Some convenience unions.
         const DIR_STATES = Self::LTR.bits() | Self::RTL.bits();

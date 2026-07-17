@@ -1853,6 +1853,7 @@ class ArgumentsReplacer : public MDefinitionVisitorDefaultNoop {
   void visitGuardToClass(MGuardToClass* ins);
   void visitGuardProto(MGuardProto* ins);
   void visitGuardArgumentsObjectFlags(MGuardArgumentsObjectFlags* ins);
+  void visitGuardObjectHasSameRealm(MGuardObjectHasSameRealm* ins);
   void visitUnbox(MUnbox* ins);
   void visitGetArgumentsObjectArg(MGetArgumentsObjectArg* ins);
   void visitLoadArgumentsObjectArg(MLoadArgumentsObjectArg* ins);
@@ -1933,6 +1934,14 @@ bool ArgumentsReplacer::escapes(MInstruction* ins, bool guardedForMapped) {
       }
 
       case MDefinition::Opcode::GuardArgumentsObjectFlags: {
+        if (escapes(def->toInstruction(), guardedForMapped)) {
+          JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
+          return true;
+        }
+        break;
+      }
+
+      case MDefinition::Opcode::GuardObjectHasSameRealm: {
         if (escapes(def->toInstruction(), guardedForMapped)) {
           JitSpewDef(JitSpew_Escape, "is indirectly escaped by\n", def);
           return true;
@@ -2112,6 +2121,23 @@ void ArgumentsReplacer::visitGuardArgumentsObjectFlags(
   MOZ_ASSERT_IF(ins->flags() & ArgumentsObject::FORWARDED_ARGUMENTS_BIT,
                 !args_->block()->info().anyFormalIsForwarded());
 #endif
+
+  // Replace the guard with the args object.
+  ins->replaceAllUsesWith(args_);
+
+  // Remove the guard.
+  ins->block()->discard(ins);
+}
+
+void ArgumentsReplacer::visitGuardObjectHasSameRealm(
+    MGuardObjectHasSameRealm* ins) {
+  // Skip guards on other objects.
+  if (ins->object() != args_) {
+    return;
+  }
+
+  // We can eliminate this guard because the arguments object is created in the
+  // script's realm and we don't inline cross-realm calls.
 
   // Replace the guard with the args object.
   ins->replaceAllUsesWith(args_);
@@ -4465,6 +4491,28 @@ bool ObjectKeysReplacer::run(MInstructionIterator& outerIterator) {
 
   auto* forRecovery = MObjectKeysFromIterator::New(alloc_, objToIter_);
   arr_->block()->insertBefore(arr_, forRecovery);
+
+  auto* nop = MNop::New(alloc_);
+  arr_->block()->insertBefore(arr_, nop);
+  if (!nop->copyResumePointFrom(alloc_, objToIter_)) {
+    return false;
+  }
+
+  {
+    // Use the PropertyIteratorObject in the resume point for the
+    // MObjectToIterator instruction. If this instruction calls a VM function
+    // that triggers an invalidation, we use ResumeMode::ResumeAfterObjectKeys
+    // to create the array from the iterator object when we bail out.
+    MResumePoint* rp = objToIter_->resumePoint();
+    size_t n = rp->numOperands() - 1;
+    for (size_t i = 0; i < n; i++) {
+      MOZ_RELEASE_ASSERT(rp->getOperand(i) != arr_);
+    }
+    MOZ_RELEASE_ASSERT(rp->getOperand(n) == arr_);
+    rp->replaceOperand(n, objToIter_);
+    MOZ_RELEASE_ASSERT(rp->mode() == ResumeMode::ResumeAfter);
+    rp->setMode(ResumeMode::ResumeAfterObjectKeys);
+  }
   arr_->replaceAllUsesWith(forRecovery);
 
   // We need to explicitly discard the instruction since it's marked as

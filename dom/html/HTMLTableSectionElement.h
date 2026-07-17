@@ -12,7 +12,7 @@ namespace mozilla::dom {
 class HTMLTableSectionElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLTableSectionElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {
     SetHasWeirdParserInsertionMode();
   }

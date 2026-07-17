@@ -189,6 +189,11 @@ bool GMPVideoi420FrameImpl::CheckFrameData(
     return false;
   }
 
+  // Check that plane strides match.
+  if (aFrameData.mUPlane().mStride() != aFrameData.mVPlane().mStride()) {
+    return false;
+  }
+
   // Validate plane end calculations
   auto y_plane_end = CheckedInt<int32_t>(aFrameData.mYPlane().mOffset()) +
                      aFrameData.mYPlane().mSize();

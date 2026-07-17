@@ -2414,6 +2414,23 @@ networking:
       - acreskey@mozilla.com
     expires: never
 
+  trans_found_in_pending_queue:
+    type: counter
+    description: >
+      Counts the number of times a transaction was unexpectedly still found in
+      a connection entry's pending queue when
+      nsHttpConnectionMgr::CheckTransInPendingQueue ran.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2040246
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2040246
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - necko@mozilla.com
+      - kershaw@mozilla.com
+    expires: never
+
   http_3_udp_datagram_segment_size_sent:
     type: memory_distribution
     memory_unit: byte
@@ -3021,9 +3038,11 @@ network:
   ssl_token_cache_evictions:
     type: counter
     description: >
-      Number of TLS session resumption tokens evicted because the in-memory
-      cache exceeded network.ssl_tokens_cache_capacity. Any non-zero value
-      indicates the capacity limit was reached and may need to be increased.
+      Number of still-valid TLS session resumption tokens evicted because the
+      in-memory cache exceeded network.ssl_tokens_cache_capacity. Already-expired
+      tokens removed under capacity pressure are not counted here (those are
+      tracked by ssl_token_cache_expired). Any non-zero value indicates the
+      capacity limit was reached and may need to be increased.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2024146
     data_reviews:

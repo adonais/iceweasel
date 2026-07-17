@@ -13,8 +13,6 @@ ChromeUtils.defineLazyGetter(lazy, "fxAccounts", () =>
   ).getFxAccountsSingleton()
 );
 ChromeUtils.defineESModuleGetters(lazy, {
-  IPPProxyManager:
-    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
 });
@@ -99,12 +97,12 @@ class IPPFxaAuthProviderSingleton extends IPPFxaBaseAuthProvider {
 
   /**
    * @param {boolean} [forceRefetch=false]
-   * @returns {Promise<{entitlement?: object, error?: string}>}
+   * @returns {Promise<{entitlement?: object|null, error?: string}>}
    */
   async getEntitlement(forceRefetch = false) {
     const isLinked = await this.#isLinkedToGuardian(!forceRefetch);
     if (!isLinked) {
-      return {};
+      return { entitlement: null };
     }
     return super.getEntitlement();
   }
@@ -173,20 +171,18 @@ class IPPFxaAuthProviderSingleton extends IPPFxaBaseAuthProvider {
       entitled.isEntitled = true;
     } else {
       const { entitlement, error } = await this.getEntitlement(forceRefetch);
-      if (error || !entitlement) {
-        this.#setEntitlement(null);
+      if (error) {
         entitled.error = error;
-      } else {
+        entitled.isEntitled = !!this.entitlement;
+      } else if (entitlement) {
         this.#setEntitlement(entitlement);
         entitled.isEntitled = true;
+      } else {
+        this.#setEntitlement(null);
       }
     }
 
     deferred.resolve(entitled);
-
-    if (entitled?.isEntitled) {
-      lazy.IPPProxyManager.refreshUsage();
-    }
 
     this.#entitlementPromise = null;
 

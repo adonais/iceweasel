@@ -17,7 +17,7 @@ import PropTypes from "devtools/client/shared/vendor/react-prop-types";
 import { connect } from "devtools/client/shared/vendor/react-redux";
 import actions from "../../actions/index";
 
-import { CloseButton } from "../shared/Button/index";
+import CloseButton from "devtools/client/shared/components/CloseButton";
 
 import { getXHRBreakpoints, shouldPauseOnAnyXHR } from "../../selectors/index";
 import ExceptionOption from "./Breakpoints/ExceptionOption";

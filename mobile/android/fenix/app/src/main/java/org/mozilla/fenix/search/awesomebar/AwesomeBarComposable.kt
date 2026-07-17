@@ -40,13 +40,13 @@ import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStor
 import mozilla.components.support.ktx.android.view.hideKeyboard
 import org.mozilla.fenix.HomeActivity
 import org.mozilla.fenix.R
+import org.mozilla.fenix.browser.browsingmode.BrowsingMode
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchEnded
 import org.mozilla.fenix.components.metrics.MetricsUtils
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getRootView
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.toolbar.edgeToEdgeClipboardBarBackground
 import org.mozilla.fenix.search.BrowserStoreToFenixSearchMapperMiddleware
 import org.mozilla.fenix.search.BrowserToolbarToFenixSearchMapperMiddleware
@@ -127,7 +127,10 @@ class AwesomeBarComposable(
                         state.clipboardHasUrl
             }
         }
-        val clipboardBarBackground = edgeToEdgeClipboardBarBackground(isEdgeToEdgeBackgroundEnabled)
+        val clipboardBarBackground = edgeToEdgeClipboardBarBackground(
+            shouldUseEdgeToEdgeColors = isEdgeToEdgeBackgroundEnabled,
+            isPrivateMode = activity.browsingModeManager.mode == BrowsingMode.Private,
+        )
         val view = LocalView.current
         val focusManager = LocalFocusManager.current
         val keyboardController = LocalSoftwareKeyboardController.current
@@ -162,15 +165,15 @@ class AwesomeBarComposable(
             if (state.showSearchSuggestionsHint) {
                 PrivateSuggestionsCard(
                     onSearchSuggestionsInPrivateModeAllowed = {
-                        activity.settings().shouldShowSearchSuggestionsInPrivate = true
-                        activity.settings().showSearchSuggestionsInPrivateOnboardingFinished = true
+                       components.settings.shouldShowSearchSuggestionsInPrivate = true
+                       components.settings.showSearchSuggestionsInPrivateOnboardingFinished = true
                         searchStore.dispatch(SearchFragmentAction.SetShowSearchSuggestions(true))
                         searchStore.dispatch(SearchFragmentAction.AllowSearchSuggestionsInPrivateModePrompt(false))
                         searchStore.dispatch(SearchFragmentAction.PrivateSuggestionsCardAccepted)
                     },
                     onSearchSuggestionsInPrivateModeBlocked = {
-                        activity.settings().shouldShowSearchSuggestionsInPrivate = false
-                        activity.settings().showSearchSuggestionsInPrivateOnboardingFinished = true
+                       components.settings.shouldShowSearchSuggestionsInPrivate = false
+                       components.settings.showSearchSuggestionsInPrivateOnboardingFinished = true
                         searchStore.dispatch(
                             SearchFragmentAction.AllowSearchSuggestionsInPrivateModePrompt(false),
                         )

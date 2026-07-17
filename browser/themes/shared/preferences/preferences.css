@@ -6,7 +6,6 @@
 
 /* Global rules */
 :root {
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.settings-redesign.enabled") {
     /**
      * Pre-SRD, headings are 1 level higher than they should be. These overrides
@@ -22,9 +21,8 @@
   --card-padding-inline: var(--space-xlarge);
   --card-padding-block: var(--card-padding-inline);
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.settings-redesign.enabled") {
-    --background-color-canvas: light-dark(var(--color-gray-05), var(--color-gray-90));
+    --background-color-canvas: light-dark(var(--color-gray-0), var(--color-gray-90));
   }
 
   user-select: text;
@@ -237,7 +235,6 @@ radio {
   margin: 4px 0;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.settings-redesign.enabled") {
   .spotlight {
     background-color: color-mix(in srgb, var(--color-accent-primary) 15%, transparent);
@@ -254,7 +251,6 @@ radio {
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.settings-redesign.enabled") {
   .spotlight {
     outline: 2px solid var(--border-color-selected);
@@ -282,7 +278,6 @@ radio {
   display: flex;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.settings-redesign.enabled") {
   /* Subcategory title */
 
@@ -312,7 +307,6 @@ radio {
   min-height: calc(64px + 2 * var(--border-width));
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.migrate.preferences-entrypoint.enabled") {
   #dataMigrationGroup {
     display: none;
@@ -780,6 +774,10 @@ html|dialog,
 #fxaChangeDeviceName {
   margin-block: 4px;
   margin-inline-end: 0;
+}
+
+#fxaAccountDisabled {
+  margin-bottom: calc(-1 * var(--space-large));
 }
 
 #noFxaAccount > label:first-child {
@@ -1655,8 +1653,21 @@ setting-pane[onsearchpane] {
   --box-label-font-weight: var(--font-weight-heading);
 }
 
+#no-addresses-stored,
+#no-payments-stored {
+  color: var(--text-color-deemphasized);
+}
+
 .box-header-bold {
   --box-label-font-weight: var(--font-weight-heading);
+}
+
+.containers-identity-item {
+  --box-icon-start-fill: var(--identity-icon-color);
+  --box-icon-size: var(--icon-size-xlarge);
+  --box-icon-padding: var(--space-small);
+  --box-icon-border-radius: var(--border-radius-circle);
+  --box-icon-background: color-mix(in srgb, var(--identity-icon-color) 15%, transparent);
 }
 
 .products-grid {

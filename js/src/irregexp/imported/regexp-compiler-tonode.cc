@@ -487,15 +487,7 @@ void AddLoneTrailSurrogates(Compiler* compiler, ChoiceNode* result,
 Node* UnanchoredAdvance(Compiler* compiler, Node* on_success) {
   // This implements ES2015 21.2.5.2.3, AdvanceStringIndex.
   DCHECK(!compiler->read_backward());
-  Zone* zone = compiler->zone();
-  // Advance any character. If the character happens to be a lead surrogate and
-  // we advanced into the middle of a surrogate pair, it will work out, as
-  // nothing will match from there. We will have to advance again, consuming
-  // the associated trail surrogate.
-  ZoneList<CharacterRange>* range =
-      CharacterRange::List(zone, CharacterRange::Range(0, kMaxUtf16CodeUnit));
-  Node* node =
-      TextNode::CreateForCharacterRanges(zone, range, false, on_success);
+  Node* node = compiler->zone()->New<UnanchoredAdvanceNode>(on_success);
   REGISTER_NODE(node);
   return node;
 }
@@ -1239,6 +1231,55 @@ Node* Assertion::ToNodeImpl(Compiler* compiler, Node* on_success) {
       Node* node = AssertionNode::AtEnd(on_success);
       REGISTER_NODE(node);
       return node;
+    }
+    case Type::END_OF_BUFFER: {
+      // \Z matches at end-of-input, OR end-of-input preceded by a single
+      // line terminator, OR end-of-input preceded by a trailing \r\n.
+      // Desugar as:
+      //   (?: (?:\r\n | [LF CR LS PS]) AT_END ) | AT_END
+      // wrapped so that the inner consumption is a positive lookahead
+      // (state is restored on success). The CRLF alternative is listed
+      // first so that a trailing "\r\n" takes the two-char branch
+      // without first trying the single-char branch and backtracking.
+      int stack_pointer_register = compiler->AllocateRegister();
+      int position_register = compiler->AllocateRegister();
+      Lookaround::Builder lookahead(true, on_success, compiler,
+                                    stack_pointer_register, position_register);
+      Node* submatch_success = lookahead.on_match_success();
+      // Alt A: \r\n atom then AT_END (inside the lookahead).
+      static constexpr base::uc16 kCrlf[] = {'\r', '\n'};
+      Atom* crlf_atom =
+          zone->New<Atom>(zone->CloneVector(base::ArrayVector(kCrlf)));
+      ZoneList<TextElement>* crlf_elms =
+          zone->New<ZoneList<TextElement>>(1, zone);
+      crlf_elms->Add(TextElement::FromAtom(crlf_atom), zone);
+      AssertionNode* crlf_at_end = AssertionNode::AtEnd(submatch_success);
+      REGISTER_NODE(crlf_at_end);
+      TextNode* crlf_matcher =
+          zone->New<TextNode>(crlf_elms, false, crlf_at_end);
+      REGISTER_NODE(crlf_matcher);
+      // Alt B: [LF CR LS PS] then AT_END.
+      ClassRanges* lt_atom =
+          zone->New<ClassRanges>(StandardCharacterSet::kLineTerminator);
+      AssertionNode* lt_at_end = AssertionNode::AtEnd(submatch_success);
+      REGISTER_NODE(lt_at_end);
+      TextNode* lt_matcher = zone->New<TextNode>(lt_atom, false, lt_at_end);
+      REGISTER_NODE(lt_matcher);
+      // Inner choice: CRLF first, then single LT.
+      ChoiceNode* inner_choice = zone->New<ChoiceNode>(2, zone);
+      inner_choice->AddAlternative(GuardedAlternative(crlf_matcher));
+      inner_choice->AddAlternative(GuardedAlternative(lt_matcher));
+      REGISTER_NODE(inner_choice);
+      // Wrap inner choice in a positive lookahead.
+      Node* lookahead_node = lookahead.ForMatch(compiler, inner_choice);
+      // Outer choice: either the trailing-terminator lookahead matches, or
+      // we're already at end-of-input.
+      ChoiceNode* result = zone->New<ChoiceNode>(2, zone);
+      result->AddAlternative(GuardedAlternative(lookahead_node));
+      result->AddAlternative(
+          GuardedAlternative(AssertionNode::AtEnd(on_success)));
+      REGISTER_NODE(result);
+      return result;
     }
     case Type::END_OF_LINE: {
       // Compile $ in multiline regexps as an alternation with a positive

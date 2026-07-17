@@ -11,7 +11,7 @@ namespace mozilla::dom {
 
 class HTMLLIElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLLIElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit HTMLLIElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   // nsISupports

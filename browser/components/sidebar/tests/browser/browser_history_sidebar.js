@@ -21,12 +21,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
 let URLs, dates, today;
 
 add_setup(async () => {
-  // test_history_context_menu opens the legacy bookmarks sidebar panel and
-  // inspects its tree view, so opt out of the updated bookmarks panel here.
-  // TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
   const historyInfo = await populateHistory();
   URLs = historyInfo.URLs;
   dates = historyInfo.dates;
@@ -37,6 +31,30 @@ registerCleanupFunction(async () => {
   await PlacesUtils.history.clear();
   Services.prefs.clearUserPref("sidebar.history.sortOption");
 });
+
+const SORT_BUTTONS = {
+  date: "_menuSortByDate",
+  site: "_menuSortBySite",
+  dateSite: "_menuSortByDateSite",
+  lastVisited: "_menuSortByLastVisited",
+};
+
+async function sortBy(sortOption, { component, contentWindow }) {
+  const menu = component._menu;
+  const menuButton = component.menuButton;
+
+  const promiseMenuShown = BrowserTestUtils.waitForEvent(menu, "popupshown");
+  EventUtils.synthesizeMouseAtCenter(menuButton, {}, contentWindow);
+  await promiseMenuShown;
+
+  const sortButton = component[SORT_BUTTONS[sortOption]];
+  menu.activateItem(sortButton);
+  await BrowserTestUtils.waitForMutationCondition(
+    sortButton,
+    { attributes: true, attributeFilter: ["checked"] },
+    () => sortButton.hasAttribute("checked")
+  );
+}
 
 // TO DO - move below helper into universal helper with Places Bug 1954843
 /**
@@ -216,8 +234,7 @@ add_task(async function test_history_searchbox_focused_with_history_pending() {
   sandbox.restore();
 });
 
-add_task(async function test_history_search() {
-  const { component, contentWindow } = await showHistorySidebar();
+async function test_history_search({ component, contentWindow }) {
   const { searchTextbox } = component;
 
   info("Input a search query.");
@@ -253,47 +270,42 @@ add_task(async function test_history_search() {
     () => !component.lists[0].emptyState,
     "The original cards are restored."
   );
+}
+
+add_task(async function test_history_search_for_all_sort_options() {
+  const { component, contentWindow } = await showHistorySidebar();
+  const sortOptions = ["date", "site", "dateSite", "lastVisited"];
+  for (const option of sortOptions) {
+    info(`Testing search with sort option: ${option}`);
+    await sortBy(option, { component, contentWindow });
+    await test_history_search({ component, contentWindow });
+  }
   SidebarController.hide();
 });
 
 add_task(async function test_history_sort() {
   const { component, contentWindow } = await showHistorySidebar();
-  const { menuButton } = component;
-  const menu = component._menu;
-  const sortByDateButton = component._menuSortByDate;
-  const sortBySiteButton = component._menuSortBySite;
-  const sortByDateSiteButton = component._menuSortByDateSite;
-  const sortByLastVisitedButton = component._menuSortByLastVisited;
 
   info("Sort history by site.");
-  let promiseMenuShown = BrowserTestUtils.waitForEvent(menu, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(menuButton, {}, contentWindow);
-  await promiseMenuShown;
-  menu.activateItem(sortBySiteButton);
+  await sortBy("site", { component, contentWindow });
   await BrowserTestUtils.waitForMutationCondition(
     component.shadowRoot,
     { childList: true, subtree: true },
     () => component.lists.length === URLs.length
   );
   ok(true, "There is a card for each site.");
-
-  ok(sortBySiteButton.hasAttribute("checked"), "Sort by site is checked.");
   for (const card of component.cards) {
     Assert.equal(card.expanded, true, "All cards are expanded.");
   }
 
   info("Sort history by date.");
-  promiseMenuShown = BrowserTestUtils.waitForEvent(menu, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(menuButton, {}, contentWindow);
-  await promiseMenuShown;
-  menu.activateItem(sortByDateButton);
+  await sortBy("date", { component, contentWindow });
   await BrowserTestUtils.waitForMutationCondition(
     component.shadowRoot,
     { childList: true, subtree: true },
     () => component.lists.length === dates.length
   );
   ok(true, "There is a card for each date.");
-  ok(sortByDateButton.hasAttribute("checked"), "Sort by date is checked.");
   for (const [i, card] of component.cards.entries()) {
     Assert.equal(
       card.expanded,
@@ -303,10 +315,7 @@ add_task(async function test_history_sort() {
   }
 
   info("Sort history by date and site.");
-  promiseMenuShown = BrowserTestUtils.waitForEvent(menu, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(menuButton, {}, contentWindow);
-  await promiseMenuShown;
-  menu.activateItem(sortByDateSiteButton);
+  await sortBy("dateSite", { component, contentWindow });
   await BrowserTestUtils.waitForMutationCondition(
     component.shadowRoot,
     { childList: true, subtree: true },
@@ -315,10 +324,6 @@ add_task(async function test_history_sort() {
   Assert.ok(
     true,
     "There is a card for each date, and a nested card for each site."
-  );
-  ok(
-    sortByDateSiteButton.hasAttribute("checked"),
-    "Sort by date and site is checked."
   );
   const outerCards = [...component.cards].filter(
     el => !el.classList.contains("nested-card")
@@ -332,10 +337,7 @@ add_task(async function test_history_sort() {
   }
 
   info("Sort history by last visited.");
-  promiseMenuShown = BrowserTestUtils.waitForEvent(menu, "popupshown");
-  EventUtils.synthesizeMouseAtCenter(menuButton, {}, contentWindow);
-  await promiseMenuShown;
-  menu.activateItem(sortByLastVisitedButton);
+  await sortBy("lastVisited", { component, contentWindow });
   await BrowserTestUtils.waitForMutationCondition(
     component.shadowRoot,
     { childList: true, subtree: true },
@@ -346,10 +348,6 @@ add_task(async function test_history_sort() {
     URLs.length,
     "There is a single card with a row for each site."
   );
-  ok(
-    sortByLastVisitedButton.hasAttribute("checked"),
-    "Sort by last visited is checked."
-  );
 
   SidebarController.hide();
   Services.prefs.clearUserPref("sidebar.history.sortOption");
@@ -357,20 +355,9 @@ add_task(async function test_history_sort() {
 
 add_task(async function test_history_sort_persists() {
   let { component, contentWindow } = await showHistorySidebar();
-  let {
-    _menu: sortMenu,
-    menuButton: sortMenuButton,
-    _menuSortByDateSite: sortByDateSiteOption,
-  } = component;
 
   info("Sort history by date and site.");
-  const promiseMenuShown = BrowserTestUtils.waitForEvent(
-    sortMenu,
-    "popupshown"
-  );
-  EventUtils.synthesizeMouseAtCenter(sortMenuButton, {}, contentWindow);
-  await promiseMenuShown;
-  sortMenu.activateItem(sortByDateSiteOption);
+  await sortBy("dateSite", { component, contentWindow });
   await TestUtils.waitForTick();
 
   info("Close the sidebar.");
@@ -378,7 +365,7 @@ add_task(async function test_history_sort_persists() {
 
   info("Reopen the sidebar and verify that sort order has not changed.");
   component = (await showHistorySidebar()).component;
-  sortByDateSiteOption = component._menuSortByDateSite;
+  const sortByDateSiteOption = component._menuSortByDateSite;
   await BrowserTestUtils.waitForMutationCondition(
     sortByDateSiteOption,
     { attributes: true, attributeFilter: ["checked"] },

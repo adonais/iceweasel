@@ -52,6 +52,8 @@ class GfxInfo final : public GfxInfoBase {
 
   NS_IMETHOD_(void) GetData() override;
 
+  const nsTArray<uint64_t>& GetDMABufEGLModifiers(uint32_t aDrmFourcc) const;
+
   static bool FireGLXTestProcess();
 
 #ifdef DEBUG
@@ -128,6 +130,12 @@ class GfxInfo final : public GfxInfoBase {
   int mV4L2SupportedCodecs = 0;
   mozilla::Maybe<bool> mIsVulkanSupported;
   int mVulkanSupportedCodecs = 0;
+
+  nsTArray<uint64_t> mDMABufEGLModifiersXRGB;
+  nsTArray<uint64_t> mDMABufEGLModifiersARGB;
+  nsTArray<uint64_t> mDMABufEGLModifiersNV12;
+  nsTArray<uint64_t> mDMABufEGLModifiersP010;
+  nsTArray<uint64_t> mDMABufEGLModifiersYUV420;
 
   static int sGLXTestPipe;
   static pid_t sGLXTestPID;

@@ -458,6 +458,30 @@
           "properties": {
             "type": {
               "type": "string",
+              "enum": ["CONFIRM_LAUNCH_ON_LOGIN"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Configure Firefox to launch on Windows login"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
+              "enum": ["REMOVE_LAUNCH_ON_LOGIN"]
+            }
+          },
+          "required": ["type"],
+          "additionalProperties": false,
+          "description": "Remove Firefox from Windows login items"
+        },
+        {
+          "type": "object",
+          "properties": {
+            "type": {
+              "type": "string",
               "enum": ["SET_DEFAULT_BROWSER"]
             }
           },
@@ -478,6 +502,10 @@
                 "onlyIfKnownBrowser": {
                   "type": "boolean",
                   "description": "Only set Firefox as the default PDF handler if the current PDF handler is a known browser."
+                },
+                "openInFirefox": {
+                  "type": "boolean",
+                  "description": "If the OS hands the stub PDF back to Firefox after the user picks Firefox in the open-with dialog, open a follow-up PDF in a new tab instead of suppressing the launch."
                 }
               },
               "additionalProperties": false

@@ -5,6 +5,7 @@
 import {
   backfillClockLabelColors,
   buildClocksRowAriaLabel,
+  buildLocalizedTimeZoneMap,
   buildNextClockZones,
   decorateDefaultZones,
   formatDateTimeAttr,
@@ -13,6 +14,7 @@ import {
   getCityFromTimeZone,
   getClockFormDerivedState,
   getDefaultTimeZones,
+  getLocalizedTimeZoneName,
   getTimeZoneAbbreviation,
   isValidTimeZone,
   isValidPaletteName,
@@ -267,6 +269,162 @@ describe("getClockFormDerivedState", () => {
         supportedTimeZones,
       }).canAddSelectedClock
     ).toBe(true);
+  });
+
+  it("filters by the localized zone name when a map is provided", () => {
+    const localizedTimeZoneMap = new Map([
+      ["Europe/Berlin", "Central European Time"],
+      ["Australia/Sydney", "Eastern Australia Time"],
+      ["America/New_York", "Eastern Time"],
+    ]);
+    expect(
+      getClockFormDerivedState({
+        canAddClock: true,
+        clockSearchQuery: "central european",
+        clockSelectedTimeZone: "",
+        isEditingClock: false,
+        localizedTimeZoneMap,
+        supportedTimeZones,
+      }).filteredTimeZones
+    ).toEqual(["Europe/Berlin"]);
+  });
+
+  it("resolves an exact-match localized name when only one zone produces it", () => {
+    const localizedTimeZoneMap = new Map([
+      ["America/New_York", "Eastern Time"],
+    ]);
+    expect(
+      getClockFormDerivedState({
+        canAddClock: true,
+        clockSearchQuery: "Eastern Time",
+        clockSelectedTimeZone: "",
+        isEditingClock: false,
+        localizedTimeZoneMap,
+        supportedTimeZones,
+      })
+    ).toMatchObject({
+      resolvedClockTimeZone: "America/New_York",
+      canAddSelectedClock: true,
+    });
+  });
+
+  it("does not auto-resolve an ambiguous localized name; dropdown stays open", () => {
+    const supportedWithDuplicates = [
+      "America/Detroit",
+      "America/New_York",
+      "America/Toronto",
+    ];
+    const localizedTimeZoneMap = new Map([
+      ["America/Detroit", "Eastern Time"],
+      ["America/New_York", "Eastern Time"],
+      ["America/Toronto", "Eastern Time"],
+    ]);
+    expect(
+      getClockFormDerivedState({
+        canAddClock: true,
+        clockSearchQuery: "Eastern Time",
+        clockSelectedTimeZone: "",
+        isEditingClock: false,
+        localizedTimeZoneMap,
+        supportedTimeZones: supportedWithDuplicates,
+      })
+    ).toMatchObject({
+      resolvedClockTimeZone: "",
+      showLocationDropdown: true,
+      canAddSelectedClock: false,
+    });
+  });
+
+  it("still resolves the exact IANA id or city even if the localized name is ambiguous", () => {
+    const supportedWithDuplicates = [
+      "America/Detroit",
+      "America/New_York",
+      "America/Toronto",
+    ];
+    const localizedTimeZoneMap = new Map([
+      ["America/Detroit", "Eastern Time"],
+      ["America/New_York", "Eastern Time"],
+      ["America/Toronto", "Eastern Time"],
+    ]);
+    expect(
+      getClockFormDerivedState({
+        canAddClock: true,
+        clockSearchQuery: "new york",
+        clockSelectedTimeZone: "",
+        isEditingClock: false,
+        localizedTimeZoneMap,
+        supportedTimeZones: supportedWithDuplicates,
+      }).resolvedClockTimeZone
+    ).toBe("America/New_York");
+  });
+});
+
+describe("getLocalizedTimeZoneName", () => {
+  // Single-result Intl.DateTimeFormat mock for unit tests that only
+  // need one call per assertion; takes the parts[] array directly.
+  const withMockedIntl = (parts, fn) => {
+    const Original = Intl.DateTimeFormat;
+    Intl.DateTimeFormat = function () {
+      return { formatToParts: () => parts };
+    };
+    try {
+      fn();
+    } finally {
+      Intl.DateTimeFormat = Original;
+    }
+  };
+
+  it("returns the timeZoneName part from Intl.DateTimeFormat.formatToParts", () => {
+    withMockedIntl(
+      [
+        { type: "literal", value: "12:34 " },
+        { type: "timeZoneName", value: "Eastern Time" },
+      ],
+      () => {
+        expect(getLocalizedTimeZoneName("America/New_York", "en-US")).toBe(
+          "Eastern Time"
+        );
+      }
+    );
+  });
+
+  it("falls back to the IANA id when no timeZoneName part is present", () => {
+    withMockedIntl([{ type: "literal", value: "noise" }], () => {
+      expect(getLocalizedTimeZoneName("Europe/Berlin", "en-US")).toBe(
+        "Europe/Berlin"
+      );
+    });
+  });
+
+  it("falls back to the IANA id when Intl.DateTimeFormat throws", () => {
+    const Original = Intl.DateTimeFormat;
+    Intl.DateTimeFormat = function () {
+      throw new Error("unsupported option");
+    };
+    try {
+      expect(getLocalizedTimeZoneName("America/New_York", "en-US")).toBe(
+        "America/New_York"
+      );
+    } finally {
+      Intl.DateTimeFormat = Original;
+    }
+  });
+});
+
+describe("buildLocalizedTimeZoneMap", () => {
+  it("returns a Map keyed by the input zones", () => {
+    const map = buildLocalizedTimeZoneMap(
+      ["Europe/Berlin", "America/New_York"],
+      "en-US"
+    );
+    expect(map).toBeInstanceOf(Map);
+    expect(map.size).toBe(2);
+    expect(map.has("Europe/Berlin")).toBe(true);
+    expect(map.has("America/New_York")).toBe(true);
+  });
+
+  it("returns an empty map for an empty list", () => {
+    expect(buildLocalizedTimeZoneMap([], "en-US").size).toBe(0);
   });
 });
 

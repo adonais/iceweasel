@@ -20,7 +20,7 @@ import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.utils.Settings
 
 @RunWith(AndroidJUnit4::class)
@@ -32,7 +32,7 @@ class DefaultOnboardingPreferencesRepositoryTest {
     @Before
     fun setup() {
         settings = Settings(testContext)
-        every { testContext.settings() } returns settings
+        every { testContext.components.settings } returns settings
     }
 
     @Test

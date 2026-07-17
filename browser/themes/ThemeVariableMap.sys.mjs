@@ -24,6 +24,13 @@ export const ThemeVariableMap = [
     },
   ],
   [
+    "--lwt-background-size",
+    {
+      isColor: false,
+      lwtProperty: "backgroundsSize",
+    },
+  ],
+  [
     "--tab-loading-fill",
     {
       lwtProperty: "tab_loading",

@@ -232,6 +232,11 @@ sealed class MenuAction : Action {
         data object Settings : Navigate()
 
         /**
+         * [Navigate] action dispatched when navigating to the wallpaper settings.
+         */
+        data object Wallpaper : Navigate()
+
+        /**
          * [Navigate] action dispatched when navigating to bookmarks.
          */
         data object Bookmarks : Navigate()

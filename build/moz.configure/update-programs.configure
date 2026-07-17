@@ -79,13 +79,16 @@ def mac_relaxed_requirements_string(identifier):
     return f'identifier "{identifier}" and anchor apple generic'
 
 
-@depends("--enable-mac-elevated-updates-with-generic-certs", when=target_is_osx)
-def smauthorizedclients_requirements(enabled):
-    bundle_id_env_var = "$(MOZ_MACBUNDLE_ID)"
+@depends(
+    "--enable-mac-elevated-updates-with-generic-certs",
+    moz_mac_bundle_id,
+    when=target_is_osx,
+)
+def smauthorizedclients_requirements(enabled, bundle_id):
     if enabled:
-        return mac_relaxed_requirements_string(bundle_id_env_var)
+        return mac_relaxed_requirements_string(bundle_id)
     else:
-        return mac_prod_requirements_string(bundle_id_env_var)
+        return mac_prod_requirements_string(bundle_id)
 
 
 set_config("MOZ_SMAUTHORIZEDCLIENTS_REQUIREMENTS", smauthorizedclients_requirements)

@@ -72,7 +72,7 @@ private const val THUMBNAIL_SIZE = 108
 @Composable
 fun RecentSyncedTab(
     tab: RecentSyncedTab?,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
     buttonBackgroundColor: Color = ButtonDefaults.buttonColors().containerColor,
     buttonTextColor: Color = ButtonDefaults.buttonColors().contentColor,
     onRecentSyncedTabClick: (RecentSyncedTab) -> Unit,

@@ -17,7 +17,7 @@ class FindInPageTest : BaseTest() {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3080130
     @SmokeTest
     @Test
-    fun verifyFindInPageSearchResultCountTest() {
+    fun verifyTheFindInPageMenuItemTest() {
         val testPage = mockWebServer.getGenericAsset(3)
 
         on.findInPage.navigateToPage(testPage.url.toString())

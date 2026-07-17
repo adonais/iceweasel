@@ -162,7 +162,7 @@ void InputStreamLengthHelper::GetAsyncLength(
             do_GetService(NS_STREAMTRANSPORTSERVICE_CONTRACTID);
         MOZ_ASSERT(target);
 
-        RefPtr<AvailableEvent> event = new AvailableEvent(aStream, aCallback);
+        RefPtr event = MakeRefPtr<AvailableEvent>(aStream, aCallback);
         target->Dispatch(event.forget(), NS_DISPATCH_NORMAL);
         return;
       }

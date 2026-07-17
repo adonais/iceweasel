@@ -55,7 +55,7 @@ class TextInputListener final : public nsIDOMEventListener,
   void StartToHandleShortcutKeys();
   void EndHandlingShortcutKeys();
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(TextInputListener,
                                            nsIDOMEventListener)
   NS_DECL_NSIDOMEVENTLISTENER

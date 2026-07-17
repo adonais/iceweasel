@@ -109,37 +109,17 @@ export const MEMORIES_DEDUPLICATION_SCHEMA = {
 };
 
 /**
- * JSON schema for filtering sensitive memories
+ * JSON schema for the quality + sensitivity filter
  */
-export const MEMORIES_NON_SENSITIVE_SCHEMA = {
+export const MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_SCHEMA = {
   type: "array",
   minItems: 1,
   items: {
     type: "object",
     additionalProperties: false,
-    required: ["non_sensitive_memories"],
+    required: ["kept_memories"],
     properties: {
-      non_sensitive_memories: {
-        type: "array",
-        minItems: 1,
-        items: { type: "string" },
-      },
-    },
-  },
-};
-
-/**
- * JSON schema for filtering low-quality memories
- */
-export const MEMORIES_QUALITY_FILTER_SCHEMA = {
-  type: "array",
-  minItems: 1,
-  items: {
-    type: "object",
-    additionalProperties: false,
-    required: ["good_memories"],
-    properties: {
-      good_memories: {
+      kept_memories: {
         type: "array",
         minItems: 1,
         items: { type: "string" },

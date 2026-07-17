@@ -172,8 +172,8 @@ RefPtr<gfx::DrawTarget> NativeLayerMacSurfaceHandler::NextSurfaceAsDrawTarget(
   }
 
   auto surf = MakeRefPtr<MacIOSurface>(
-      mInProgressSurface->mSurface, /* aHasAlpha */ true,
-      gfx::YUVColorSpace::Identity, gfx::TransferFunction::SRGB);
+      mInProgressSurface->mSurface, gfx::YUVColorSpace::Identity,
+      gfx::TransferFunction::SRGB, MacIOSurface::AllowAlpha::Yes);
   if (NS_WARN_IF(!surf->Lock(false))) {
     gfxCriticalError() << "NextSurfaceAsDrawTarget lock surface failed.";
     return nullptr;
@@ -188,8 +188,8 @@ RefPtr<gfx::DrawTarget> NativeLayerMacSurfaceHandler::NextSurfaceAsDrawTarget(
       [&](CFTypeRefPtr<IOSurfaceRef> validSource,
           const gfx::IntRegion& copyRegion) {
         RefPtr<MacIOSurface> source = new MacIOSurface(
-            validSource, /* aHasAlpha */ true, gfx::YUVColorSpace::Identity,
-            gfx::TransferFunction::SRGB);
+            validSource, gfx::YUVColorSpace::Identity,
+            gfx::TransferFunction::SRGB, MacIOSurface::AllowAlpha::Yes);
         if (source->Lock(true)) {
           RefPtr<gfx::DrawTarget> sourceDT =
               source->GetAsDrawTargetLocked(aBackendType);

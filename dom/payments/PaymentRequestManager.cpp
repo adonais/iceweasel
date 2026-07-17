@@ -13,6 +13,7 @@
 #include "nsContentUtils.h"
 #include "nsIPaymentActionResponse.h"
 #include "nsIPrincipal.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsString.h"
 
 namespace mozilla::dom {

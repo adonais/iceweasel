@@ -3,7 +3,7 @@
     "@base": {
       "value": {
         "light": "{color.gray.70}",
-        "dark": "{color.gray.05}",
+        "dark": "{color.gray.0}",
         "prefersContrast": "{text.color.@base}"
       }
     },

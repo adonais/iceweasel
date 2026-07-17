@@ -12,12 +12,16 @@ import android.graphics.drawable.Icon
 import android.os.Build
 import android.service.chooser.ChooserAction
 import androidx.annotation.RequiresApi
+import com.google.zxing.WriterException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.prompt.ShareData
+import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.ktx.android.content.share
 import mozilla.components.support.ktx.android.content.shareWithChooserActions
 import mozilla.components.support.ktx.kotlin.trimmed
@@ -123,6 +127,7 @@ interface ShareSheetLauncher {
  * @param shareDelegate [ShareDelegate] used to invoke share actions.
  * @param scope [CoroutineScope] used to dispatch QR code generation off the main thread.
  * @param ioDispatcher [CoroutineDispatcher] used for IO-bound QR code generation work.
+ * @param crashReporter [CrashReporting] instance used to record caught exceptions.
  */
 class DefaultShareSheetLauncher(
     private val applicationContext: Context,
@@ -132,7 +137,10 @@ class DefaultShareSheetLauncher(
     private val shareDelegate: ShareDelegate = ContextShareDelegate { applicationContext },
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.Main),
     private val ioDispatcher: CoroutineDispatcher = Dispatchers.IO,
+    private val crashReporter: CrashReporting? = null,
 ) : ShareSheetLauncher {
+
+    private val logger = Logger("DefaultShareSheetLauncher")
 
     companion object {
         private const val PRINT_REQUEST_CODE_OFFSET = 1
@@ -165,12 +173,12 @@ class DefaultShareSheetLauncher(
                 shareDelegate.shareWithChooserActions(
                     text = displayUrl,
                     subject = title ?: "",
-                    actions = arrayOf(
+                    actions = listOfNotNull(
                         savePDFChooserAction(applicationContext, id),
                         printAction(applicationContext, id),
                         sendToDevicesAction(applicationContext, id, url, title, isPrivate),
                         qrCodeAction,
-                    ),
+                    ).toTypedArray(),
                 )
             }
         } else {
@@ -305,11 +313,22 @@ class DefaultShareSheetLauncher(
      * @param context The context used to create intents and notifications.
      * @param id The session ID of the tab, used to compute the unique request code.
      * @param url The URL to generate a QR code for.
-     * @return A [ChooserAction] that can be added to the share intent chooser.
+     * @return A [ChooserAction] that can be added to the share intent chooser or `null` if the URL
+     * could not be encoded into a QR code (e.g. it exceeds the QR code data capacity).
      */
     @RequiresApi(Build.VERSION_CODES.UPSIDE_DOWN_CAKE)
-    private fun sendQRCodeChooserAction(context: Context, id: String, url: String): ChooserAction {
-        val qrCodeBitmap = qrCodeGenerator.generateQRCodeImage(url, 300, 300, context)
+    private fun sendQRCodeChooserAction(context: Context, id: String, url: String): ChooserAction? {
+        val qrCodeBitmap = try {
+            qrCodeGenerator.generateQRCodeImage(url, 300, 300, context)
+        } catch (e: WriterException) {
+            val message = "DefaultShareSheetLauncher - Failed to generate QR code for share sheet"
+            logger.error(message = message, throwable = e)
+            crashReporter?.recordCrashBreadcrumb(Breadcrumb(message = message))
+            crashReporter?.submitCaughtException(e)
+
+            return null
+        }
+
         val qrCodeUri = cacheHelper.saveBitmapToCache(context, qrCodeBitmap, url.hashCode().toString())
         val icon = Icon.createWithResource(context, iconsR.drawable.mozac_ic_qr_code_24)
 

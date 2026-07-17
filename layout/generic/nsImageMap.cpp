@@ -800,42 +800,29 @@ void nsImageMap::ContentInserted(nsIContent* aChild, const ContentInsertInfo&) {
   MaybeUpdateAreas(aChild->GetParent());
 }
 
-static UniquePtr<Area> TakeArea(nsImageMap::AreaList& aAreas,
-                                HTMLAreaElement* aArea) {
-  UniquePtr<Area> result;
-  size_t index = 0;
-  for (UniquePtr<Area>& area : aAreas) {
-    if (area->mArea == aArea) {
-      result = std::move(area);
-      break;
-    }
-    index++;
-  }
-
-  if (result) {
-    aAreas.RemoveElementAt(index);
-  }
-
-  return result;
-}
-
 void nsImageMap::ContentWillBeRemoved(nsIContent* aChild,
                                       const ContentRemoveInfo&) {
-  if (aChild->GetParent() != mMap && !mConsiderWholeSubtree) {
+  if (!mConsiderWholeSubtree && (aChild->GetParent() != mMap ||
+                                 !aChild->IsHTMLElement(nsGkAtoms::area))) {
     return;
   }
 
-  auto* areaElement = HTMLAreaElement::FromNode(aChild);
-  if (!areaElement) {
+  bool any = false;
+  mAreas.RemoveElementsBy([&](const UniquePtr<Area>& area) {
+    const bool remove =
+        area->mArea == aChild ||
+        (mConsiderWholeSubtree && area->mArea->IsInclusiveDescendantOf(aChild));
+    if (!remove) {
+      return false;
+    }
+    any = true;
+    AreaRemoved(area->mArea);
+    return true;
+  });
+
+  if (!any) {
     return;
   }
-
-  UniquePtr<Area> area = TakeArea(mAreas, areaElement);
-  if (!area) {
-    return;
-  }
-
-  AreaRemoved(area->mArea);
 
 #ifdef ACCESSIBILITY
   if (nsAccessibilityService* accService = GetAccService()) {

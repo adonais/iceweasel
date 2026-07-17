@@ -95,6 +95,11 @@ NS_IMETHODIMP nsSystemAlertsService::PbmTeardown() {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
+NS_IMETHODIMP nsSystemAlertsService::IsFullscreen(bool* aRetVal) {
+  *aRetVal = false;
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 bool nsSystemAlertsService::IsActiveListener(const nsAString& aAlertName,
                                              nsAlertsIconListener* aListener) {
   return mActiveListeners.Get(aAlertName) == aListener;

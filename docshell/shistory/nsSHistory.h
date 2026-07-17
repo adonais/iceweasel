@@ -8,6 +8,7 @@
 #include "nsCOMPtr.h"
 #include "nsDocShellLoadState.h"
 #include "nsExpirationTracker.h"
+#include "nsIDocumentViewer.h"
 #include "nsISHistory.h"
 #include "nsSHEntryShared.h"
 #include "nsSimpleEnumerator.h"
@@ -273,12 +274,12 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
       mozilla::dom::BrowsingContext* aParent,
       const std::function<void(SessionHistoryEntry*,
                                mozilla::dom::BrowsingContext*)>& aCallback);
-  void InitiateLoad(mozilla::dom::BrowsingContext* aSourceBrowsingContext,
-                    SessionHistoryEntry* aFrameEntry,
-                    mozilla::dom::BrowsingContext* aFrameBC, long aLoadType,
-                    nsTArray<LoadEntryResult>& aLoadResult,
-                    bool aLoadCurrentEntry, bool aUserActivation,
-                    int32_t aOffset, nsISHEntry* aPreviousEntryForActivation);
+  static void InitiateLoad(
+      mozilla::dom::BrowsingContext* aSourceBrowsingContext,
+      SessionHistoryEntry* aFrameEntry, mozilla::dom::BrowsingContext* aFrameBC,
+      long aLoadType, nsTArray<LoadEntryResult>& aLoadResult,
+      bool aLoadCurrentEntry, bool aUserActivation, int32_t aOffset,
+      nsISHEntry* aPreviousEntryForActivation);
 
   nsresult LoadEntry(mozilla::dom::BrowsingContext* aSourceBrowsingContext,
                      int32_t aIndex, long aLoadType, uint32_t aHistCmd,
@@ -332,6 +333,13 @@ class nsSHistory : public mozilla::LinkedListElement<nsSHistory>,
 
   void UpdateEntryLength(SessionHistoryEntry* aOldEntry,
                          SessionHistoryEntry* aNewEntry, bool aMove);
+
+  MOZ_CAN_RUN_SCRIPT
+  static bool MaybeCheckUnloadingIsCanceled(
+      const nsTArray<nsSHistory::LoadEntryResult>& aLoadResults,
+      mozilla::dom::BrowsingContext* aTraversable,
+      std::function<void(nsTArray<nsSHistory::LoadEntryResult>&,
+                         nsIDocumentViewer::PermitUnloadResult)>&& aResolver);
 
  protected:
   bool mHasOngoingUpdate;

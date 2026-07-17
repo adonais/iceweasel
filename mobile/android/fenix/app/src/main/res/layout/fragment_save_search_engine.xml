@@ -158,9 +158,7 @@
         <com.google.android.material.button.MaterialButton
             android:id="@+id/save_button"
             style="@style/PositiveButton"
-            android:backgroundTint="@color/button_state_list"
-            android:text="@string/search_custom_engine_save_button"
-            android:textColor="@color/text_on_color_state_list_text_color"/>
+            android:text="@string/search_custom_engine_save_button" />
 
         <ProgressBar
             android:id="@+id/progress"

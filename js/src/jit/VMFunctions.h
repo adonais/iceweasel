@@ -709,9 +709,9 @@ void DateFillLocalTimeSlots(DateObject* dateObj);
 double DateNow(JSContext* cx);
 double DateParse(JSContext* cx, const JSString* str);
 double DateLocalTimeToUTC(JSContext* cx, int64_t localTime);
-double DateYearFromTime(JSContext* cx, double utcTime);
-double DateMonthFromTime(JSContext* cx, double utcTime);
-double DateDateFromTime(JSContext* cx, double utcTime);
+void DateYearFromTime(JSContext* cx, double utcTime, JS::Value* result);
+void DateMonthFromTime(JSContext* cx, double utcTime, JS::Value* result);
+void DateDateFromTime(JSContext* cx, double utcTime, JS::Value* result);
 JSObject* NewDateObject(JSContext* cx, double utcTime);
 
 JSAtom* AtomizeStringNoGC(JSContext* cx, JSString* str);

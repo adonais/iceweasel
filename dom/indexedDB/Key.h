@@ -147,17 +147,17 @@ class Key {
   // This function implements the standard algorithm "convert a value to a key".
   // A key return value is indicated by returning `true` whereas `false` means
   // either invalid (if `aRv.Failed()` is `false`) or an exception (otherwise).
-  IDBResult<Ok, IDBSpecialValue::Invalid> SetFromJSVal(
-      JSContext* aCx, JS::Handle<JS::Value> aVal,
-      mozilla::dom::IDBTransaction* aTransaction = nullptr);
+  IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+  SetFromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
+               mozilla::dom::IDBTransaction* aTransaction = nullptr);
 
   nsresult ToJSVal(JSContext* aCx, JS::MutableHandle<JS::Value> aVal) const;
 
   nsresult ToJSVal(JSContext* aCx, JS::Heap<JS::Value>& aVal) const;
 
   // See SetFromJSVal() for the meaning of values returned by this function.
-  IDBResult<Ok, IDBSpecialValue::Invalid> AppendItem(
-      JSContext* aCx, bool aFirstOfArray, JS::Handle<JS::Value> aVal);
+  IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+  AppendItem(JSContext* aCx, bool aFirstOfArray, JS::Handle<JS::Value> aVal);
 
   Result<Key, nsresult> ToLocaleAwareKey(const nsCString& aLocale) const;
 
@@ -222,8 +222,8 @@ class Key {
   }
 
   // Encoding functions. These append the encoded value to the end of mBuffer
-  IDBResult<Ok, IDBSpecialValue::Invalid> EncodeJSVal(
-      JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset);
+  IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+  EncodeJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset);
 
   Result<Ok, nsresult> EncodeString(const nsAString& aString,
                                     uint8_t aTypeOffset);
@@ -282,9 +282,9 @@ class Key {
                             const AcquireBuffer& acquireBuffer,
                             const AcquireEmpty& acquireEmpty);
 
-  IDBResult<Ok, IDBSpecialValue::Invalid> EncodeJSValInternal(
-      JSContext* aCx, JS::Handle<JS::Value> aVal, uint8_t aTypeOffset,
-      uint16_t aRecursionDepth);
+  IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+  EncodeJSValInternal(JSContext* aCx, JS::Handle<JS::Value> aVal,
+                      uint8_t aTypeOffset, uint16_t aRecursionDepth);
 
   static nsresult DecodeJSValInternal(const EncodedDataType*& aPos,
                                       const EncodedDataType* aEnd,

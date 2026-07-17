@@ -9,19 +9,19 @@
 #include "mozilla/dom/SVGAnimationElement.h"
 
 nsresult NS_NewSVGSetElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
 class SVGSetElement final : public SVGAnimationElement {
  protected:
-  explicit SVGSetElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit SVGSetElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   SMILSetAnimationFunction mAnimationFunction;
 
   friend nsresult(::NS_NewSVGSetElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;

@@ -53,6 +53,17 @@ class nsBaseClipboard : public nsIClipboard {
   NS_IMETHOD GetData(
       nsITransferable* aTransferable, ClipboardType aWhichClipboard,
       mozilla::dom::WindowContext* aWindowContext) override final;
+  NS_IMETHOD GetDataIfSmallerThan(
+      nsITransferable* aTransferable, uint64_t aThreshold,
+      ClipboardType aWhichClipboard,
+      mozilla::dom::WindowContext* aWindowContext, JSContext* aJSContext,
+      mozilla::dom::Promise** aPromise) override final;
+  // If the clipboard data could not be taken by threshold,
+  // returns NS_ERROR_CLIPBOARD_TOO_BIG.
+  NS_IMETHOD GetDataIfSmallerThanNative(
+      nsITransferable* aTransferable, uint64_t aThreshold,
+      ClipboardType aWhichClipboard,
+      mozilla::dom::WindowContext* aWindowContext) override final;
   NS_IMETHOD GetDataSnapshot(
       const nsTArray<nsCString>& aFlavorList, ClipboardType aWhichClipboard,
       mozilla::dom::WindowContext* aRequestingWindowContext,
@@ -106,7 +117,8 @@ class nsBaseClipboard : public nsIClipboard {
                                     ClipboardType aWhichClipboard) = 0;
   virtual mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
   GetNativeClipboardData(const nsACString& aFlavor,
-                         ClipboardType aWhichClipboard) = 0;
+                         ClipboardType aWhichClipboard,
+                         uint64_t aThreshold = 0) = 0;
   virtual void AsyncGetNativeClipboardData(const nsACString& aFlavor,
                                            ClipboardType aWhichClipboard,
                                            GetNativeDataCallback&& aCallback);

@@ -434,6 +434,48 @@ NS_IMETHODIMP nsBaseClipboard::GetData(
     mozilla::dom::WindowContext* aWindowContext) {
   MOZ_CLIPBOARD_LOG("%s: clipboard=%d", __FUNCTION__, aWhichClipboard);
 
+  return GetDataIfSmallerThanNative(aTransferable, 0, aWhichClipboard,
+                                    aWindowContext);
+}
+
+NS_IMETHODIMP nsBaseClipboard::GetDataIfSmallerThan(
+    nsITransferable* aTransferable, uint64_t aThreshold,
+    ClipboardType aWhichClipboard, mozilla::dom::WindowContext* aWindowContext,
+    JSContext* aJSContext, mozilla::dom::Promise** aPromise) {
+  nsIGlobalObject* global = xpc::CurrentNativeGlobal(aJSContext);
+  if (!global) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  RefPtr<mozilla::dom::Promise> promise =
+      mozilla::dom::Promise::Create(global, mozilla::IgnoreErrors());
+  if (!promise) {
+    return NS_ERROR_UNEXPECTED;
+  }
+
+  auto guard = mozilla::MakeScopeExit([&]() { promise.forget(aPromise); });
+  nsresult rv = GetDataIfSmallerThanNative(aTransferable, aThreshold,
+                                           aWhichClipboard, aWindowContext);
+  if (rv == NS_ERROR_CLIPBOARD_TOO_BIG) {
+    promise->MaybeResolve(false);
+    return NS_OK;
+  }
+
+  if (NS_FAILED(rv)) {
+    promise->MaybeReject(rv);
+    return NS_OK;
+  }
+
+  promise->MaybeResolve(true);
+  return NS_OK;
+}
+
+NS_IMETHODIMP nsBaseClipboard::GetDataIfSmallerThanNative(
+    nsITransferable* aTransferable, uint64_t aThreshold,
+    ClipboardType aWhichClipboard,
+    mozilla::dom::WindowContext* aWindowContext) {
+  MOZ_CLIPBOARD_LOG("%s: clipboard=%d", __FUNCTION__, aWhichClipboard);
+
   if (!aTransferable) {
     NS_ASSERTION(false, "clipboard given a null transferable");
     return NS_ERROR_FAILURE;
@@ -445,13 +487,10 @@ NS_IMETHODIMP nsBaseClipboard::GetData(
     return NS_ERROR_FAILURE;
   }
 
-  if (mozilla::StaticPrefs::widget_clipboard_use_cached_data_enabled()) {
-    // If we were the last ones to put something on the native clipboard, then
-    // just use the cached transferable. Otherwise clear it because it isn't
-    // relevant any more.
+  if (!aThreshold &&
+      mozilla::StaticPrefs::widget_clipboard_use_cached_data_enabled()) {
     if (NS_SUCCEEDED(
             GetDataFromClipboardCache(aTransferable, aWhichClipboard))) {
-      // maybe try to fill in more types? Is there a point?
       if (!mozilla::contentanalysis::ContentAnalysis::
               CheckClipboardContentAnalysisSync(
                   this, aWindowContext->Canonical(), aTransferable,
@@ -461,9 +500,6 @@ NS_IMETHODIMP nsBaseClipboard::GetData(
       }
       return NS_OK;
     }
-
-    // at this point we can't satisfy the request from cache data so let's look
-    // for things other people put on the system clipboard
   }
 
   nsTArray<nsCString> flavors;
@@ -473,16 +509,25 @@ NS_IMETHODIMP nsBaseClipboard::GetData(
   }
 
   for (const auto& flavor : flavors) {
-    auto dataOrError = GetNativeClipboardData(flavor, aWhichClipboard);
+    auto dataOrError =
+        GetNativeClipboardData(flavor, aWhichClipboard, aThreshold);
     if (dataOrError.isErr()) {
+      if (dataOrError.unwrapErr() == NS_ERROR_CLIPBOARD_TOO_BIG) {
+        rv = NS_ERROR_CLIPBOARD_TOO_BIG;
+      }
       continue;
     }
 
     if (dataOrError.inspect()) {
       aTransferable->SetTransferData(flavor.get(), dataOrError.inspect());
       // XXX Maybe try to fill in more types? Is there a point?
+      rv = NS_OK;
       break;
     }
+  }
+
+  if (rv == NS_ERROR_CLIPBOARD_TOO_BIG) {
+    return NS_ERROR_CLIPBOARD_TOO_BIG;
   }
 
   if (!mozilla::contentanalysis::ContentAnalysis::
@@ -491,6 +536,7 @@ NS_IMETHODIMP nsBaseClipboard::GetData(
     aTransferable->ClearAllData();
     return NS_ERROR_CONTENT_BLOCKED;
   }
+
   return NS_OK;
 }
 

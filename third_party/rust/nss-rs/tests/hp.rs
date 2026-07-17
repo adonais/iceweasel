@@ -20,12 +20,14 @@ fn make_hp(cipher: Cipher) -> hp::Key {
     hp::Key::extract(TLS_VERSION_1_3, cipher, &prk, "hp").expect("extract label works")
 }
 
+// The same expected bytes hold under both backends; running with and without
+// --features blapi cross-verifies the freebl and PKCS#11 paths.
 fn hp_test(cipher: Cipher, expected: &[u8]) {
     let hp = make_hp(cipher);
     let mask = hp.mask(&[0; 16]).expect("should produce a mask");
     assert_eq!(mask, expected, "first invocation should be correct");
 
-    let hp2 = hp.clone();
+    let hp2 = hp.try_clone().expect("try_clone succeeds");
     let mask = hp2.mask(&[0; 16]).expect("clone produces mask");
     assert_eq!(mask, expected, "clone should produce the same mask");
 

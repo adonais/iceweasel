@@ -13,6 +13,7 @@ use crate::font_metrics::{FontMetrics, FontMetricsOrientation};
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::GeckoFontMetrics;
 use crate::parser::{Parse, ParserContext};
+use crate::typed_om::{NumericValue, ToTyped, TypedValue, UnitValue};
 use crate::values::computed::{self, CSSPixelLength, Context, FontSize};
 use crate::values::generics::length as generics;
 use crate::values::generics::length::{
@@ -35,8 +36,7 @@ use std::cmp;
 use std::fmt::{self, Write};
 use style_traits::values::specified::AllowedNumericType;
 use style_traits::{
-    CssString, CssWriter, NumericValue, ParseError, ParsingMode, SpecifiedValueInfo,
-    StyleParseErrorKind, ToCss, ToTyped, TypedValue, UnitValue,
+    CssString, CssWriter, ParseError, ParsingMode, SpecifiedValueInfo, StyleParseErrorKind, ToCss,
 };
 use thin_vec::ThinVec;
 
@@ -125,6 +125,79 @@ pub enum LengthUnit {
 }
 
 impl LengthUnit {
+    /// Returns the length unit for the given string.
+    #[inline]
+    pub fn from_str(unit: &str) -> Result<Self, ()> {
+        Self::from_str_with_flags(ParsingMode::DEFAULT, /* in_page_rule = */ false, unit)
+    }
+
+    /// Returns the length unit for the given flags and string.
+    #[inline]
+    pub fn from_str_with_flags(
+        parsing_mode: ParsingMode,
+        in_page_rule: bool,
+        unit: &str,
+    ) -> Result<Self, ()> {
+        let allows_computational_dependence = parsing_mode.allows_computational_dependence();
+
+        Ok(match_ignore_ascii_case! { unit,
+            "px" => Self::Px,
+            "in" => Self::In,
+            "cm" => Self::Cm,
+            "mm" => Self::Mm,
+            "q" => Self::Q,
+            "pt" => Self::Pt,
+            "pc" => Self::Pc,
+            // font-relative
+            "em" if allows_computational_dependence => Self::Em,
+            "ex" if allows_computational_dependence => Self::Ex,
+            "rex" if allows_computational_dependence => Self::Rex,
+            "ch" if allows_computational_dependence => Self::Ch,
+            "rch" if allows_computational_dependence => Self::Rch,
+            "cap" if allows_computational_dependence => Self::Cap,
+            "rcap" if allows_computational_dependence => Self::Rcap,
+            "ic" if allows_computational_dependence => Self::Ic,
+            "ric" if allows_computational_dependence => Self::Ric,
+            "rem" if allows_computational_dependence => Self::Rem,
+            "lh" if allows_computational_dependence => Self::Lh,
+            "rlh" if allows_computational_dependence => Self::Rlh,
+            // viewport percentages
+            "vw" if !in_page_rule => Self::Vw,
+            "svw" if !in_page_rule => Self::Svw,
+            "lvw" if !in_page_rule => Self::Lvw,
+            "dvw" if !in_page_rule => Self::Dvw,
+            "vh" if !in_page_rule => Self::Vh,
+            "svh" if !in_page_rule => Self::Svh,
+            "lvh" if !in_page_rule => Self::Lvh,
+            "dvh" if !in_page_rule => Self::Dvh,
+            "vmin" if !in_page_rule => Self::Vmin,
+            "svmin" if !in_page_rule => Self::Svmin,
+            "lvmin" if !in_page_rule => Self::Lvmin,
+            "dvmin" if !in_page_rule => Self::Dvmin,
+            "vmax" if !in_page_rule => Self::Vmax,
+            "svmax" if !in_page_rule => Self::Svmax,
+            "lvmax" if !in_page_rule => Self::Lvmax,
+            "dvmax" if !in_page_rule => Self::Dvmax,
+            "vb" if !in_page_rule => Self::Vb,
+            "svb" if !in_page_rule => Self::Svb,
+            "lvb" if !in_page_rule => Self::Lvb,
+            "dvb" if !in_page_rule => Self::Dvb,
+            "vi" if !in_page_rule => Self::Vi,
+            "svi" if !in_page_rule => Self::Svi,
+            "lvi" if !in_page_rule => Self::Lvi,
+            "dvi" if !in_page_rule => Self::Dvi,
+            // Container query lengths. Inherit the limitation from viewport units since
+            // we may fall back to them.
+            "cqw" if !in_page_rule && cfg!(feature = "gecko") => Self::Cqw,
+            "cqh" if !in_page_rule && cfg!(feature = "gecko") => Self::Cqh,
+            "cqi" if !in_page_rule && cfg!(feature = "gecko") => Self::Cqi,
+            "cqb" if !in_page_rule && cfg!(feature = "gecko") => Self::Cqb,
+            "cqmin" if !in_page_rule && cfg!(feature = "gecko") => Self::Cqmin,
+            "cqmax" if !in_page_rule && cfg!(feature = "gecko") => Self::Cqmax,
+            _ => return Err(()),
+        })
+    }
+
     /// Returns this unit as a string.
     #[inline]
     pub fn as_str(self) -> &'static str {
@@ -496,64 +569,7 @@ impl NoCalcLength {
         value: CSSFloat,
         unit: &str,
     ) -> Result<Self, ()> {
-        let allows_computational_dependence = parsing_mode.allows_computational_dependence();
-
-        let length_unit = match_ignore_ascii_case! { unit,
-            "px" => LengthUnit::Px,
-            "in" => LengthUnit::In,
-            "cm" => LengthUnit::Cm,
-            "mm" => LengthUnit::Mm,
-            "q" => LengthUnit::Q,
-            "pt" => LengthUnit::Pt,
-            "pc" => LengthUnit::Pc,
-            // font-relative
-            "em" if allows_computational_dependence => LengthUnit::Em,
-            "ex" if allows_computational_dependence => LengthUnit::Ex,
-            "rex" if allows_computational_dependence => LengthUnit::Rex,
-            "ch" if allows_computational_dependence => LengthUnit::Ch,
-            "rch" if allows_computational_dependence => LengthUnit::Rch,
-            "cap" if allows_computational_dependence => LengthUnit::Cap,
-            "rcap" if allows_computational_dependence => LengthUnit::Rcap,
-            "ic" if allows_computational_dependence => LengthUnit::Ic,
-            "ric" if allows_computational_dependence => LengthUnit::Ric,
-            "rem" if allows_computational_dependence => LengthUnit::Rem,
-            "lh" if allows_computational_dependence => LengthUnit::Lh,
-            "rlh" if allows_computational_dependence => LengthUnit::Rlh,
-            // viewport percentages
-            "vw" if !in_page_rule => LengthUnit::Vw,
-            "svw" if !in_page_rule => LengthUnit::Svw,
-            "lvw" if !in_page_rule => LengthUnit::Lvw,
-            "dvw" if !in_page_rule => LengthUnit::Dvw,
-            "vh" if !in_page_rule => LengthUnit::Vh,
-            "svh" if !in_page_rule => LengthUnit::Svh,
-            "lvh" if !in_page_rule => LengthUnit::Lvh,
-            "dvh" if !in_page_rule => LengthUnit::Dvh,
-            "vmin" if !in_page_rule => LengthUnit::Vmin,
-            "svmin" if !in_page_rule => LengthUnit::Svmin,
-            "lvmin" if !in_page_rule => LengthUnit::Lvmin,
-            "dvmin" if !in_page_rule => LengthUnit::Dvmin,
-            "vmax" if !in_page_rule => LengthUnit::Vmax,
-            "svmax" if !in_page_rule => LengthUnit::Svmax,
-            "lvmax" if !in_page_rule => LengthUnit::Lvmax,
-            "dvmax" if !in_page_rule => LengthUnit::Dvmax,
-            "vb" if !in_page_rule => LengthUnit::Vb,
-            "svb" if !in_page_rule => LengthUnit::Svb,
-            "lvb" if !in_page_rule => LengthUnit::Lvb,
-            "dvb" if !in_page_rule => LengthUnit::Dvb,
-            "vi" if !in_page_rule => LengthUnit::Vi,
-            "svi" if !in_page_rule => LengthUnit::Svi,
-            "lvi" if !in_page_rule => LengthUnit::Lvi,
-            "dvi" if !in_page_rule => LengthUnit::Dvi,
-            // Container query lengths. Inherit the limitation from viewport units since
-            // we may fall back to them.
-            "cqw" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqw,
-            "cqh" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqh,
-            "cqi" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqi,
-            "cqb" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqb,
-            "cqmin" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqmin,
-            "cqmax" if !in_page_rule && cfg!(feature = "gecko") => LengthUnit::Cqmax,
-            _ => return Err(()),
-        };
+        let length_unit = LengthUnit::from_str_with_flags(parsing_mode, in_page_rule, unit)?;
         Ok(Self::new(length_unit, value))
     }
 
@@ -741,6 +757,10 @@ impl NoCalcLength {
             );
             metrics.ic_width_or_default(reference_font_size.used_size())
         }
+
+        context
+            .builder
+            .add_flags(ComputedValueFlags::USES_FONT_RELATIVE_UNITS);
 
         let reference_font_size = base_size.resolve(context);
         let length = self.value;
@@ -1149,12 +1169,14 @@ impl Length {
                     .map_err(|()| location.new_unexpected_token_error(token.clone()))
             },
             Token::Number { value, .. } if num_context.is_ok(context.parsing_mode, value) => {
-                if value != 0.
-                    && !context.parsing_mode.allows_unitless_lengths()
-                    && !allow_quirks.allowed(context.quirks_mode)
-                {
+                let allowed = context.parsing_mode.allows_unitless_lengths()
+                    || allow_quirks.allowed(context.quirks_mode)
+                    || (value == 0. && context.parsing_mode.allows_unitless_zero_lengths());
+
+                if !allowed {
                     return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
+
                 Ok(Self::new(NoCalcLength::from_px(value)))
             },
             Token::Function(ref name) => {
@@ -1419,14 +1441,15 @@ impl LengthPercentage {
                 )));
             },
             Token::Number { value, .. } if num_context.is_ok(context.parsing_mode, value) => {
-                if value != 0.
-                    && !context.parsing_mode.allows_unitless_lengths()
-                    && !allow_quirks.allowed(context.quirks_mode)
-                {
-                    return Err(location.new_unexpected_token_error(token.clone()));
-                } else {
-                    return Ok(LengthPercentage::Length(NoCalcLength::from_px(value)));
+                let allowed = context.parsing_mode.allows_unitless_lengths()
+                    || allow_quirks.allowed(context.quirks_mode)
+                    || (value == 0. && context.parsing_mode.allows_unitless_zero_lengths());
+
+                if !allowed {
+                    return Err(location.new_custom_error(StyleParseErrorKind::UnspecifiedError));
                 }
+
+                Ok(LengthPercentage::Length(NoCalcLength::from_px(value)))
             },
             Token::Function(ref name) => {
                 let function = CalcNode::math_function(context, name, location)?;
@@ -1536,6 +1559,21 @@ impl LengthPercentage {
             allow_quirks,
             AllowAnchorPositioningFunctions::No,
         )
+    }
+
+    /// Computes this specified value without style context. This fails for calc and non-px units.
+    pub fn compute_without_context(&self) -> Option<computed::LengthPercentage> {
+        use crate::values::normalize;
+        match self {
+            Self::Length(ref length) => length
+                .to_computed_pixel_length_without_context()
+                .map(|v| computed::LengthPercentage::new_length(computed::Length::new(v)))
+                .ok(),
+            Self::Percentage(ref pc) => Some(computed::LengthPercentage::new_percent(
+                computed::Percentage(normalize(pc.get())),
+            )),
+            _ => None,
+        }
     }
 }
 

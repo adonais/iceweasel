@@ -190,7 +190,8 @@ class KeyframeEffect : public AnimationEffect {
                             JS::Handle<JSObject*> aKeyframes, ErrorResult& aRv);
   void SetKeyframes(nsTArray<Keyframe>&& aKeyframes,
                     const ComputedStyle* aStyle,
-                    const AnimationTimeline* aTimeline);
+                    const AnimationTimeline* aTimeline,
+                    const AnimationRange* aRange);
 
   // Replace the start value of the transition. This is used for updating
   // transitions running on the compositor.
@@ -371,7 +372,8 @@ class KeyframeEffect : public AnimationEffect {
 
   double AnimationsPlayBackRateMultiplier() const;
 
-  void MaybeUpdateKeyframeComputedOffsets(const AnimationTimeline* aTimelne);
+  void MaybeUpdateKeyframeComputedOffsets(const AnimationTimeline* aTimelne,
+                                          const AnimationRange& aRange);
 
  protected:
   ~KeyframeEffect() override = default;

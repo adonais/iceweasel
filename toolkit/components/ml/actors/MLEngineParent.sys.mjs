@@ -295,10 +295,13 @@ export class MLEngineParent extends JSProcessActorParent {
           return /** @type {MLEngine<FeatureId>} */ (currentEngine);
         }
         lazy.console.debug(`Replacing existing engine for ${engineId}`);
-        try {
-          Services.obs.removeObserver(currentEngine, "ipc:content-shutdown");
-        } catch (e) {
-          lazy.console.error("Failed to remove observer", e);
+        if (currentEngine.isObserving) {
+          try {
+            Services.obs.removeObserver(currentEngine, "ipc:content-shutdown");
+            currentEngine.isObserving = false;
+          } catch (e) {
+            lazy.console.error("Failed to remove observer", e);
+          }
         }
 
         await MLEngine.removeInstance(
@@ -343,6 +346,7 @@ export class MLEngineParent extends JSProcessActorParent {
       // and its pending request promises, which may prevent windows
       // that triggered inference from being cycle-collected.
       Services.obs.addObserver(engine, "ipc:content-shutdown", true);
+      engine.isObserving = true;
 
       const creationTime = ChromeUtils.now() - start;
 
@@ -669,7 +673,7 @@ export class MLEngineParent extends JSProcessActorParent {
 
     ChromeUtils.addProfilerMarker(
       "MLEngineParent",
-      null,
+      undefined,
       `Backend selected: ${bestBackend} (requested: ${backend})`
     );
 
@@ -1069,6 +1073,15 @@ export class MLEngine {
   engineStatus = "uninitialized";
 
   /**
+   * Whether this engine is currently registered as an "ipc:content-shutdown"
+   * observer. Used to avoid removing an observer that was never added, which
+   * would throw NS_ERROR_ILLEGAL_VALUE.
+   *
+   * @type {boolean}
+   */
+  isObserving = false;
+
+  /**
    * Unique identifier for the engine.
    *
    * @type {string}
@@ -1409,6 +1422,12 @@ export class MLEngine {
         if (data.error) {
           newPortResolvers.reject(data.error);
         } else {
+          // The child reports the backend it actually used; record it so
+          // telemetry and log messages reflect reality rather than the
+          // requested sentinel (e.g. "best-onnx").
+          if (data.resolvedBackend) {
+            this.pipelineOptions.backend = data.resolvedBackend;
+          }
           newPortResolvers.resolve();
         }
 

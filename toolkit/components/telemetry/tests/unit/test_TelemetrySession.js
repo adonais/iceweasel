@@ -338,11 +338,9 @@ function checkPayload(payload, reason, successfulPings) {
   let activeTicks = payload.simpleMeasurements.activeTicks;
   Assert.greaterOrEqual(activeTicks, 0);
 
-  if ("browser.timings.last_shutdown" in payload.processes.parent.scalars) {
-    Assert.equal(
-      payload.processes.parent.scalars["browser.timings.last_shutdown"],
-      SHUTDOWN_TIME
-    );
+  const lastShutdown = Glean.browserTimings.lastShutdown.testGetValue();
+  if (lastShutdown !== null) {
+    Assert.equal(lastShutdown, SHUTDOWN_TIME);
   }
 
   let profileDirectory = Services.dirsvc.get("ProfD", Ci.nsIFile);
@@ -402,8 +400,8 @@ function checkPayload(payload, reason, successfulPings) {
   // Telemetry doesn't touch a memory reporter with these units that's
   // available on all platforms.
 
-  Assert.ok("MEMORY_TOTAL" in payload.histograms); // UNITS_BYTES
-  Assert.ok("MEMORY_JS_COMPARTMENTS_SYSTEM" in payload.histograms); // UNITS_COUNT
+  Assert.notEqual(Glean.memory.total.testGetValue(), null); // UNITS_BYTES
+  Assert.notEqual(Glean.memory.jsCompartmentsSystem.testGetValue(), null); // UNITS_COUNT
 
   Assert.ok(
     "mainThread" in payload.slowSQL && "otherThreads" in payload.slowSQL

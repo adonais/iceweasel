@@ -6,7 +6,6 @@ package org.mozilla.fenix.summarization
 
 import io.mockk.every
 import io.mockk.mockk
-import mozilla.components.concept.llm.ErrorCode
 import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.feature.summarize.ContentExtracted
@@ -20,6 +19,7 @@ import mozilla.components.feature.summarize.ViewAppeared
 import mozilla.components.feature.summarize.ViewDismissed
 import mozilla.components.feature.summarize.content.Content
 import mozilla.components.feature.summarize.content.PageMetadata
+import mozilla.components.lib.llm.mlpa.service.RateLimited
 import mozilla.components.lib.state.Store
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Assert.assertEquals
@@ -66,8 +66,11 @@ class SummarizationTelemetryMiddlewareTest {
         invokeMiddleware(ViewAppeared)
         invokeMiddleware(createContentExtractedAction())
 
-        val extras = AiSummarize.started.testGetValue()!!.first().extra!!
-        assertEquals("SHAKE", extras["trigger"])
+        val startedExtras = AiSummarize.started.testGetValue()!!.first().extra!!
+        assertEquals("SHAKE", startedExtras["trigger"])
+
+        val requestedExtras = AiSummarize.requested.testGetValue()!!.first().extra!!
+        assertEquals("SHAKE", requestedExtras["trigger"])
     }
 
     @Test
@@ -77,8 +80,11 @@ class SummarizationTelemetryMiddlewareTest {
         invokeMiddleware(ViewAppeared)
         invokeMiddleware(createContentExtractedAction())
 
-        val extras = AiSummarize.started.testGetValue()!!.first().extra!!
-        assertEquals("MENU", extras["trigger"])
+        val startedExtras = AiSummarize.started.testGetValue()!!.first().extra!!
+        assertEquals("MENU", startedExtras["trigger"])
+
+        val requestedExtras = AiSummarize.requested.testGetValue()!!.first().extra!!
+        assertEquals("MENU", requestedExtras["trigger"])
     }
 
     @Test
@@ -88,7 +94,7 @@ class SummarizationTelemetryMiddlewareTest {
         every { store.state } returns SummarizationState.Inert(initializedWithShake = false)
         invokeMiddleware(ViewAppeared)
         invokeMiddleware(
-            SummarizationRequested(LlmProvider.Info(nameRes = 42)),
+            SummarizationRequested(LlmProvider.Info(nameRes = 42, modelId = LlmProvider.ModelID(TEST_MODEL))),
         )
         invokeMiddleware(
             createContentExtractedAction(
@@ -106,7 +112,7 @@ class SummarizationTelemetryMiddlewareTest {
 
         val extras = snapshot.first().extra!!
         assertEquals("MENU", extras["trigger"])
-        assertEquals("42", extras["model"])
+        assertEquals(TEST_MODEL, extras["model"])
         assertEquals("120", extras["length_words"])
         assertEquals("15", extras["length_chars"])
         assertEquals("[recipe]", extras["content_type"])
@@ -125,25 +131,50 @@ class SummarizationTelemetryMiddlewareTest {
         val extras = snapshot.first().extra!!
         assertEquals("true", extras["success"])
         assertEquals("WIFI", extras["connection_type"])
-        assertEquals("42", extras["model"])
+        assertEquals(TEST_MODEL, extras["model"])
         assertNull(extras["error_type"])
+        assertNull(extras["error_code"])
         assertNotNull(extras["summarize_duration_ms"])
     }
 
     @Test
-    fun `WHEN SummarizationFailed is received THEN summarization_completed is recorded with success false`() {
+    fun `WHEN SummarizationFailed with a known Llm subtype THEN error_code is the looked-up value and error_type carries provider attribution`() {
         assertNull(AiSummarize.completed.testGetValue())
 
         setupFullSession()
-        val exception = Llm.Exception("Error", ErrorCode(1001))
-        invokeMiddleware(SummarizationFailed(exception))
+        invokeMiddleware(SummarizationFailed(RateLimited(retryAfter = 60L)))
 
-        val snapshot = AiSummarize.completed.testGetValue()!!
-        assertEquals(1, snapshot.size)
-
-        val extras = snapshot.first().extra!!
+        val extras = AiSummarize.completed.testGetValue()!!.first().extra!!
         assertEquals("false", extras["success"])
-        assertEquals(exception.errorCode.value.toString(), extras["error_type"])
+        assertEquals("mozilla.components.lib.llm.mlpa.service.RateLimited", extras["error_type"])
+        assertEquals("1008", extras["error_code"])
+    }
+
+    @Test
+    fun `WHEN SummarizationFailed with an unrecognized throwable THEN error_code is the fallback`() {
+        assertNull(AiSummarize.completed.testGetValue())
+
+        setupFullSession()
+        invokeMiddleware(SummarizationFailed(IllegalStateException("boom")))
+
+        val extras = AiSummarize.completed.testGetValue()!!.first().extra!!
+        assertEquals("false", extras["success"])
+        assertEquals("IllegalStateException", extras["error_type"])
+        assertEquals("9999", extras["error_code"])
+    }
+
+    @Test
+    fun `WHEN SummarizationFailed with Llm Exception wrapping a cause THEN error_type is the cause class name`() {
+        assertNull(AiSummarize.completed.testGetValue())
+
+        setupFullSession()
+        val cause = IllegalStateException("boom")
+        invokeMiddleware(SummarizationFailed(Llm.Exception("Wrapped", cause = cause)))
+
+        val extras = AiSummarize.completed.testGetValue()!!.first().extra!!
+        assertEquals("false", extras["success"])
+        assertEquals("IllegalStateException", extras["error_type"])
+        assertEquals("9999", extras["error_code"])
     }
 
     @Test
@@ -173,12 +204,12 @@ class SummarizationTelemetryMiddlewareTest {
         every { store.state } returns SummarizationState.Inert(initializedWithShake = false)
         invokeMiddleware(ViewAppeared)
         invokeMiddleware(
-            SummarizationRequested(LlmProvider.Info(nameRes = 99)),
+            SummarizationRequested(LlmProvider.Info(nameRes = 99, modelId = LlmProvider.ModelID("another-model"))),
         )
         invokeMiddleware(ViewDismissed(true))
 
         val extras = AiSummarize.closed.testGetValue()!!.first().extra!!
-        assertEquals("99", extras["model"])
+        assertEquals("another-model", extras["model"])
     }
 
     @Test
@@ -247,7 +278,7 @@ class SummarizationTelemetryMiddlewareTest {
         every { store.state } returns SummarizationState.Inert(initializedWithShake = false)
         invokeMiddleware(ViewAppeared)
         invokeMiddleware(
-            SummarizationRequested(LlmProvider.Info(nameRes = 42)),
+            SummarizationRequested(LlmProvider.Info(nameRes = 42, modelId = LlmProvider.ModelID(TEST_MODEL))),
         )
         invokeMiddleware(createContentExtractedAction())
     }
@@ -263,5 +294,9 @@ class SummarizationTelemetryMiddlewareTest {
             next = {},
             action = action,
         )
+    }
+
+    private companion object {
+        const val TEST_MODEL = "moz-summarization"
     }
 }

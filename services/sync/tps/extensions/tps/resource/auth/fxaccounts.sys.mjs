@@ -20,13 +20,22 @@ const AUTOFILL_ACTOR_NAME = "TPSFxAAutofill";
 const FXA_HOSTS = new Set([
   "accounts.firefox.com",
   "accounts.stage.mozaws.net",
+  "api-accounts.stage.mozaws.net",
+  "api.accounts.firefox.com",
 ]);
+const BYPASS_TOKEN_PREF = "tps.fxa.bypassToken";
+const FXA_CI_HEADER = "fxa-ci";
 const OAUTH_READY_POLL_INTERVAL_MS = 1000;
 const OAUTH_TIMEOUT_MS = 120000;
 const RESTMAIL_POLL_INTERVAL_MS = 1000;
 const RESTMAIL_MAX_ATTEMPTS = 60;
 
+function getBypassToken() {
+  return Services.prefs.getStringPref(BYPASS_TOKEN_PREF, "");
+}
+
 let gAutofillActorRegistered = false;
+let gBypassHeaderObserverRegistered = false;
 
 function isFxaHost(url) {
   try {
@@ -35,6 +44,34 @@ function isFxaHost(url) {
     return false;
   }
 }
+
+// Inject the WAF bypass header on all requests to get through
+// the FxA stage WAF.
+function ensureBypassHeaderObserverRegistered() {
+  if (gBypassHeaderObserverRegistered) {
+    return;
+  }
+  const token = getBypassToken();
+  if (!token) {
+    return;
+  }
+  const observer = {
+    observe(subject, topic) {
+      if (topic !== "http-on-modify-request") {
+        return;
+      }
+      const channel = subject.QueryInterface(Ci.nsIHttpChannel);
+      if (FXA_HOSTS.has(channel.URI.host)) {
+        channel.setRequestHeader(FXA_CI_HEADER, token, false);
+      }
+    },
+  };
+  Services.obs.addObserver(observer, "http-on-modify-request");
+  gBypassHeaderObserverRegistered = true;
+}
+
+// Register at module load so the header is injected on every request
+ensureBypassHeaderObserverRegistered();
 
 function ensureAutofillActorRegistered() {
   if (gAutofillActorRegistered) {
@@ -353,10 +390,7 @@ export var Authentication = {
     const authPW = CommonUtils.bytesAsHex(creds.authPW);
     const response = await fetch(`${fxaApiUrl}/account/create?keys=true`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "User-Agent": "PyFxA", // Staging blocks any automation thats not from PyFxA
-      },
+      headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ email, authPW }),
     });
     if (!response.ok) {

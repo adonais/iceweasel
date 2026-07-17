@@ -62,7 +62,7 @@ JSObject* SVGPathElement::WrapNode(JSContext* aCx,
 // Implementation
 
 SVGPathElement::SVGPathElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGPathElementBase(std::move(aNodeInfo)) {}
 
 //----------------------------------------------------------------------
@@ -252,12 +252,10 @@ void SVGPathElement::GetAsSimplePath(SimplePath* aSimplePath) {
     const nsStyleSVGReset* styleSVGReset = s->StyleSVGReset();
     if (styleSVGReset->mD.IsPath()) {
       auto pathData = styleSVGReset->mD.AsPath()._0.AsSpan();
-      auto maybeRect = SVGPathToAxisAlignedRect(pathData);
+      auto maybeRect = SVGPathSegUtils::SVGPathToAxisAlignedRect(pathData);
       if (maybeRect.isSome()) {
-        const Rect& r = *maybeRect;
-        float zoom = s->EffectiveZoom().ToFloat();
-        aSimplePath->SetRect(r.x * zoom, r.y * zoom, r.width * zoom,
-                             r.height * zoom);
+        maybeRect->Scale(s->EffectiveZoom().ToFloat());
+        aSimplePath->SetRect(*maybeRect);
       }
     }
   };

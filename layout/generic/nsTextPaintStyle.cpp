@@ -461,17 +461,6 @@ bool nsTextPaintStyle::InitSelectionColorsAndShadow() {
           mFrame->ComputeSelectionStyle(selectionStatus)) {
     mSelectionPseudoStyle = std::move(style);
 
-    // Currently, there are separate code paths that determine whether to use
-    // native selection colors or author-specified ones, depending on whether
-    // this is web content or chrome content. See bug 2029839.
-    if (!mFrame->PresContext()->Document()->ChromeRulesEnabled()) {
-      mSelectionBGColor = mSelectionPseudoStyle->GetVisitedDependentColor(
-          &nsStyleBackground::mBackgroundColor);
-      mSelectionTextColor =
-          mSelectionPseudoStyle->GetVisitedDependentColor(&nsStyleText::mColor);
-      return true;
-    }
-
     if (nscolor bgColor = mSelectionPseudoStyle->GetVisitedDependentColor(
             &nsStyleBackground::mBackgroundColor);
         mSelectionPseudoStyle->HasAuthorSpecifiedTextColor() ||

@@ -25,31 +25,35 @@ enum PlaybackDirection {
 };
 
 dictionary EffectTiming {
-  double                              delay = 0.0;
-  double                              endDelay = 0.0;
-  FillMode                            fill = "auto";
-  double                              iterationStart = 0.0;
-  unrestricted double                 iterations = 1.0;
-  (unrestricted double or DOMString)  duration = "auto";
-  PlaybackDirection                   direction = "normal";
-  UTF8String                          easing = "linear";
+  // TODO: delay and endDelay should no longer have default values:
+  // https://drafts.csswg.org/web-animations-2/#the-effecttiming-dictionaries
+  double                                                  delay = 0.0;
+  double                                                  endDelay = 0.0;
+  FillMode                                                fill = "auto";
+  double                                                  iterationStart = 0.0;
+  unrestricted double                                     iterations = 1.0;
+  (unrestricted double or CSSNumericValue or DOMString)   duration = "auto";
+  PlaybackDirection                                       direction = "normal";
+  UTF8String                                              easing = "linear";
 };
 
 dictionary OptionalEffectTiming {
-  double                              delay;
-  double                              endDelay;
-  FillMode                            fill;
-  double                              iterationStart;
-  unrestricted double                 iterations;
-  (unrestricted double or DOMString)  duration;
-  PlaybackDirection                   direction;
-  UTF8String                          easing;
+  double                                                  delay;
+  double                                                  endDelay;
+  FillMode                                                fill;
+  double                                                  iterationStart;
+  unrestricted double                                     iterations;
+  // CSSNumericValue isn't currently in the spec, but that's probably a bug:
+  // https://github.com/w3c/csswg-drafts/issues/13990
+  (unrestricted double or CSSNumericValue or DOMString)   duration;
+  PlaybackDirection                                       direction;
+  UTF8String                                              easing;
 };
 
 dictionary ComputedEffectTiming : EffectTiming {
-  unrestricted double   endTime = 0.0;
-  unrestricted double   activeDuration = 0.0;
-  double?               localTime = null;
+  CSSNumberish          endTime;
+  CSSNumberish          activeDuration;
+  CSSNumberish?         localTime;
   double?               progress = null;
   unrestricted double?  currentIteration = null;
 };

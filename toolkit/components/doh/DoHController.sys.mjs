@@ -99,6 +99,17 @@ const BREADCRUMB_PREF = "doh-rollout.self-enabled";
 const NETWORK_TRR_MODE_PREF = "network.trr.mode";
 const NETWORK_TRR_URI_PREF = "network.trr.uri";
 
+// When set, the TRR service starts its confirmation in the CONFIRM_FAILED
+// state, so lookups fall back to native DNS until the first confirmation
+// succeeds instead of blocking on the TRR connection. We enable this on Android
+// to avoid cold-startup delays when DoH is turned on via the rollout.
+const NETWORK_TRR_START_CONFIRMATION_FAILED_PREF =
+  "network.trr.start-confirmation-in-failed-state";
+
+// Kill switch (default on) for the behavior above on Android.
+const ANDROID_DOH_START_CONFIRMATION_FAILED_PREF =
+  "network.android_doh.start_in_confirmation_failed_state";
+
 const ROLLOUT_MODE_PREF = "doh-rollout.mode";
 const ROLLOUT_URI_PREF = "doh-rollout.uri";
 
@@ -461,6 +472,18 @@ export const DoHController = {
         Services.prefs.setIntPref(ROLLOUT_MODE_PREF, 0);
         break;
       case "enabled":
+        if (
+          Services.appinfo.OS === "Android" &&
+          Services.prefs.getBoolPref(
+            ANDROID_DOH_START_CONFIRMATION_FAILED_PREF,
+            true
+          )
+        ) {
+          Services.prefs.setBoolPref(
+            NETWORK_TRR_START_CONFIRMATION_FAILED_PREF,
+            true
+          );
+        }
         Services.prefs.setIntPref(ROLLOUT_MODE_PREF, 2);
         Services.prefs.setBoolPref(BREADCRUMB_PREF, true);
         break;

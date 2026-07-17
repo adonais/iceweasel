@@ -23,8 +23,8 @@ GMPTimerParent::GMPTimerParent(nsCOMPtr<nsISerialEventTarget>&& aGMPEventTarget)
 
 mozilla::ipc::IPCResult GMPTimerParent::RecvSetTimer(
     const uint32_t& aTimerId, const uint32_t& aTimeoutMs) {
-  GMP_LOG_DEBUG("%s::%s: %p mIsOpen=%d", __CLASS__, __FUNCTION__, this,
-                mIsOpen);
+  GMP_LOG_DEBUG("{}::{}: {} mIsOpen={}", __CLASS__, __FUNCTION__,
+                fmt::ptr(this), mIsOpen);
 
   MOZ_ASSERT(mGMPEventTarget->IsOnCurrentThread());
 
@@ -50,8 +50,8 @@ mozilla::ipc::IPCResult GMPTimerParent::RecvSetTimer(
 }
 
 void GMPTimerParent::Shutdown() {
-  GMP_LOG_DEBUG("%s::%s: %p mIsOpen=%d", __CLASS__, __FUNCTION__, this,
-                mIsOpen);
+  GMP_LOG_DEBUG("{}::{}: {} mIsOpen={}", __CLASS__, __FUNCTION__,
+                fmt::ptr(this), mIsOpen);
 
   MOZ_ASSERT(mGMPEventTarget->IsOnCurrentThread());
 
@@ -65,8 +65,8 @@ void GMPTimerParent::Shutdown() {
 }
 
 void GMPTimerParent::ActorDestroy(ActorDestroyReason aWhy) {
-  GMP_LOG_DEBUG("%s::%s: %p mIsOpen=%d", __CLASS__, __FUNCTION__, this,
-                mIsOpen);
+  GMP_LOG_DEBUG("{}::{}: {} mIsOpen={}", __CLASS__, __FUNCTION__,
+                fmt::ptr(this), mIsOpen);
 
   Shutdown();
 }
@@ -82,8 +82,8 @@ void GMPTimerParent::GMPTimerExpired(nsITimer* aTimer, void* aClosure) {
 }
 
 void GMPTimerParent::TimerExpired(Context* aContext) {
-  GMP_LOG_DEBUG("%s::%s: %p mIsOpen=%d", __CLASS__, __FUNCTION__, this,
-                mIsOpen);
+  GMP_LOG_DEBUG("{}::{}: {} mIsOpen={}", __CLASS__, __FUNCTION__,
+                fmt::ptr(this), mIsOpen);
   MOZ_ASSERT(mGMPEventTarget->IsOnCurrentThread());
 
   if (!mIsOpen) {

@@ -335,6 +335,13 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "hideLogo",
+    {
+      title: "Hide the Firefox logo on new tab",
+      value: false,
+    },
+  ],
+  [
     "showSponsored",
     {
       title: "User pref for sponsored Pocket content",
@@ -552,6 +559,52 @@ export const PREFS_CONFIG = new Map([
     {
       title: "The Merino endpoint for fetching World Cup match data",
       value: "https://merino.services.mozilla.com/api/v1/wcs/matches",
+    },
+  ],
+  [
+    "sports.worldCup.liveEndpoint",
+    {
+      title: "The Merino endpoint for fetching live World Cup match data",
+      value: "https://merino.services.mozilla.com/api/v1/wcs/live",
+    },
+  ],
+  [
+    "sports.worldCup.watchLiveEndpoint",
+    {
+      title:
+        "The Merino endpoint for fetching World Cup watch-live broadcaster data",
+      value: "https://merino.services.mozilla.com/api/v1/wcs/watch-links",
+    },
+  ],
+  [
+    "widgets.sportsWidget.pollIdleMs",
+    {
+      title:
+        "Sports widget: poll interval when no games are imminent (milliseconds)",
+      value: 21600000, // 6 hours
+    },
+  ],
+  [
+    "widgets.sportsWidget.pollMatchDayMs",
+    {
+      title:
+        "Sports widget: poll interval on a match day pre-kickoff (milliseconds)",
+      value: 1800000, // 30 minutes
+    },
+  ],
+  [
+    "widgets.sportsWidget.pollLiveMs",
+    {
+      title: "Sports widget: poll interval during live play (milliseconds)",
+      value: 180000, // 3 minutes
+    },
+  ],
+  [
+    "widgets.sportsWidget.pollPregameLeadMs",
+    {
+      title:
+        "Sports widget: how early to enter LIVE polling before kickoff (milliseconds)",
+      value: 600000, // 10 minutes
     },
   ],
   [
@@ -1214,6 +1267,14 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.row.expanded",
+    {
+      title:
+        "Whether the Nova widgets row is expanded beyond its first visual row. Persists the user's Show more / Show less choice across sessions.",
+      value: false,
+    },
+  ],
+  [
     "widgets.focusTimer.enabled",
     {
       title: "Enables the focus timer widget",
@@ -1303,7 +1364,7 @@ export const PREFS_CONFIG = new Map([
     "widgets.defaultSize",
     {
       title: "Default size for widgets (medium or large)",
-      value: "large",
+      value: "medium",
     },
   ],
   [
@@ -1349,6 +1410,30 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "widgets.sportsWidget.celebrations.enabled",
+    {
+      title:
+        "Enables end-of-match celebration animations in the sports widget. Off by default; can also be turned on via the dedicated trainhopConfig.sportsCelebrations.enabled namespace (canonical), or the trainhopConfig.widgets.sportsWidgetCelebrationsEnabled / legacy trainhopConfig.sports.celebrationsEnabled fallbacks.",
+      value: false,
+    },
+  ],
+  [
+    "widgets.sportsWidget.celebrations.windowMs",
+    {
+      title:
+        "How recently (in ms) a match must have ended to still trigger a celebration. Default 24h; can also be set via the dedicated trainhopConfig.sportsCelebrations.windowMs namespace (canonical), or the trainhopConfig.widgets.sportsWidgetCelebrationsWindowMs / legacy trainhopConfig.sports.celebrationsWindowMs fallbacks.",
+      value: 86400000,
+    },
+  ],
+  [
+    "widgets.sports.forceLiveDataTrustable",
+    {
+      title:
+        "Dev/QA only: bypass the pre-kickoff guard and treat /live data as trustable",
+      value: false,
+    },
+  ],
+  [
     "widgets.sportsWidget.interaction",
     {
       title:
@@ -1360,7 +1445,7 @@ export const PREFS_CONFIG = new Map([
     "widgets.clocks.size",
     {
       title: "Size of the clock widget (small, medium, or large)",
-      getValue: getDefaultWidgetSize,
+      value: "",
     },
   ],
   [
@@ -1664,6 +1749,20 @@ export const PREFS_CONFIG = new Map([
     },
   ],
   [
+    "sectionsLearnMore.url",
+    {
+      title: "Link to HNT's personalization page",
+      getValue: () => {
+        // Services.urlFormatter completes the in-product SUMO page URL:
+        // https://support.mozilla.org/1/firefox/%VERSION%/%OS%/%LOCALE%/firefox-new-tab-personalization
+        const baseUrl = Services.urlFormatter.formatURLPref(
+          "app.support.baseURL"
+        );
+        return `${baseUrl}firefox-new-tab-personalization`;
+      },
+    },
+  ],
+  [
     "caretBlinkCount",
     {
       title:
@@ -1720,6 +1819,19 @@ export const PREFS_CONFIG = new Map([
       title:
         "Set to true to enable the RemoteSettings backed renderer for newtab. See RemoteRenderer.sys.mjs for more details.",
       value: false,
+    },
+  ],
+  /**
+   * @backward-compat { version 153 }
+   * Remove this pref entry after Firefox 153 hits Release — it's only
+   * needed while the 2026 World Cup logo variation is live.
+   */
+  [
+    "logo.variation",
+    {
+      title:
+        "Variant ID of a logo variation to render in place of the standard newtab logo (e.g. 'spin-ball-small'). Empty string disables. Overridden by trainhopConfig.logo.variation when set.",
+      value: "",
     },
   ],
 ]);

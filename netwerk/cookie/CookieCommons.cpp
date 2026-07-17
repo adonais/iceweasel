@@ -355,7 +355,7 @@ already_AddRefed<Cookie> CookieCommons::CreateCookieFromDocument(
   bool mustBePartitioned =
       isForeignAndNotAddon &&
       aDocument->CookieJarSettings()->GetCookieBehavior() ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN &&
+          nsICookieService::BEHAVIOR_PARTITION_FOREIGN &&
       !aDocument->UsingStorageAccess();
 
   // If we are here, we have been already accepted by the anti-tracking.

@@ -497,11 +497,11 @@ CellData* nsTableCellMap::AppendCell(nsTableCellFrame& aCellFrame,
              "invalid call on continuing frame");
   nsIFrame* rgFrame = aCellFrame.GetParent();  // get the row
   if (!rgFrame) {
-    return 0;
+    return nullptr;
   }
   rgFrame = rgFrame->GetParent();  // get the row group
   if (!rgFrame) {
-    return 0;
+    return nullptr;
   }
 
   CellData* result = nullptr;
@@ -884,45 +884,44 @@ void nsTableCellMap::SetBCBorderEdge(LogicalSide aSide, nsCellMap& aCellMap,
   BCCellData* cellData;
   int32_t lastIndex, xIndex, yIndex;
   int32_t xPos = aColIndex;
-  int32_t yPos = aRowIndex;
   int32_t rgYPos = aRowIndex - aCellMapStart;
   bool changed;
 
   switch (aSide) {
     case LogicalSide::BEnd:
       rgYPos++;
-      yPos++;
       [[fallthrough]];
     case LogicalSide::BStart:
       lastIndex = xPos + aLength - 1;
       for (xIndex = xPos; xIndex <= lastIndex; xIndex++) {
         changed = aChanged && (xIndex == xPos);
         BCData* bcData = nullptr;
-        cellData = (BCCellData*)aCellMap.GetDataAt(rgYPos, xIndex);
-        if (!cellData) {
-          int32_t numRgRows = aCellMap.GetRowCount();
-          if (yPos < numRgRows) {  // add a dead cell data
+        if (rgYPos < aCellMap.GetRowCount()) {
+          cellData = (BCCellData*)aCellMap.GetDataAt(rgYPos, xIndex);
+          if (!cellData) {  // add a dead cell data
             TableArea damageArea;
             cellData = (BCCellData*)aCellMap.AppendCell(*this, nullptr, rgYPos,
                                                         false, 0, damageArea);
             if (!cellData) ABORT0();
-          } else {
-            NS_ASSERTION(aSide == LogicalSide::BEnd, "program error");
-            // try the next non empty row group
-            nsCellMap* cellMap = aCellMap.GetNextSibling();
-            while (cellMap && (0 == cellMap->GetRowCount())) {
-              cellMap = cellMap->GetNextSibling();
+          }
+        } else {
+          // We are past this row group's content rows (note that mRows might
+          // have an entry there for a rowspan extending past the row group).
+          // Go to the next non-empty row group.
+          NS_ASSERTION(aSide == LogicalSide::BEnd, "program error");
+          nsCellMap* cellMap = aCellMap.GetNextSibling();
+          while (cellMap && (0 == cellMap->GetRowCount())) {
+            cellMap = cellMap->GetNextSibling();
+          }
+          if (cellMap) {
+            cellData = (BCCellData*)cellMap->GetDataAt(0, xIndex);
+            if (!cellData) {  // add a dead cell
+              TableArea damageArea;
+              cellData = (BCCellData*)cellMap->AppendCell(*this, nullptr, 0,
+                                                          false, 0, damageArea);
             }
-            if (cellMap) {
-              cellData = (BCCellData*)cellMap->GetDataAt(0, xIndex);
-              if (!cellData) {  // add a dead cell
-                TableArea damageArea;
-                cellData = (BCCellData*)cellMap->AppendCell(
-                    *this, nullptr, 0, false, 0, damageArea);
-              }
-            } else {  // must be at the end of the table
-              bcData = GetBEndMostBorder(xIndex);
-            }
+          } else {  // must be at the end of the table
+            bcData = GetBEndMostBorder(xIndex);
           }
         }
         if (!bcData && cellData) {
@@ -1000,31 +999,30 @@ void nsTableCellMap::SetBCBorderCorner(LogicalCorner aCorner,
     // at the iEnd edge of the table as we checked the corner before
     NS_ASSERTION(!aIsBEndIEnd, "should be handled before");
     bcData = GetIEndMostBorder(yPos);
-  } else {
+  } else if (rgYPos < aCellMap.GetRowCount()) {
+    // See the comments in SetBCBorderEdge for why we need to check
+    // GetRowCount() before null-checking cellData.
     cellData = (BCCellData*)aCellMap.GetDataAt(rgYPos, xPos);
-    if (!cellData) {
-      int32_t numRgRows = aCellMap.GetRowCount();
-      if (yPos < numRgRows) {  // add a dead cell data
+    if (!cellData) {  // add a dead cell data
+      TableArea damageArea;
+      cellData = (BCCellData*)aCellMap.AppendCell(*this, nullptr, rgYPos, false,
+                                                  0, damageArea);
+    }
+  } else {
+    // try the next non empty row group
+    nsCellMap* cellMap = aCellMap.GetNextSibling();
+    while (cellMap && (0 == cellMap->GetRowCount())) {
+      cellMap = cellMap->GetNextSibling();
+    }
+    if (cellMap) {
+      cellData = (BCCellData*)cellMap->GetDataAt(0, xPos);
+      if (!cellData) {  // add a dead cell
         TableArea damageArea;
-        cellData = (BCCellData*)aCellMap.AppendCell(*this, nullptr, rgYPos,
-                                                    false, 0, damageArea);
-      } else {
-        // try the next non empty row group
-        nsCellMap* cellMap = aCellMap.GetNextSibling();
-        while (cellMap && (0 == cellMap->GetRowCount())) {
-          cellMap = cellMap->GetNextSibling();
-        }
-        if (cellMap) {
-          cellData = (BCCellData*)cellMap->GetDataAt(0, xPos);
-          if (!cellData) {  // add a dead cell
-            TableArea damageArea;
-            cellData = (BCCellData*)cellMap->AppendCell(*this, nullptr, 0,
-                                                        false, 0, damageArea);
-          }
-        } else {  // must be at the bEnd of the table
-          bcData = GetBEndMostBorder(xPos);
-        }
+        cellData = (BCCellData*)cellMap->AppendCell(*this, nullptr, 0, false, 0,
+                                                    damageArea);
       }
+    } else {  // must be at the bEnd of the table
+      bcData = GetBEndMostBorder(xPos);
     }
   }
   if (!bcData && cellData) {

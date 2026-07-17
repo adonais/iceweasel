@@ -149,6 +149,11 @@ struct nsCharTraits<char16_t> {
     return 0;
   }
 
+  static bool equals(const char_type* aStr1, const char_type* aStr2,
+                     size_t aN) {
+    return memcmp(aStr1, aStr2, aN * sizeof(char_type)) == 0;
+  }
+
   static int compareASCII(const char_type* aStr1, const char* aStr2,
                           size_t aN) {
     for (; aN--; ++aStr1, ++aStr2) {
@@ -327,6 +332,11 @@ struct nsCharTraits<char> {
   static int compare(const char_type* aStr1, const char_type* aStr2,
                      size_t aN) {
     return memcmp(aStr1, aStr2, aN);
+  }
+
+  static bool equals(const char_type* aStr1, const char_type* aStr2,
+                     size_t aN) {
+    return memcmp(aStr1, aStr2, aN) == 0;
   }
 
   static int compareASCII(const char_type* aStr1, const char* aStr2,

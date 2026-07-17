@@ -177,6 +177,9 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
       return !wasm::HasSupport(cx);
 
     case JSProto_WasmModule:
+#ifdef ENABLE_WASM_COMPONENTS
+    case JSProto_WasmComponent:
+#endif
     case JSProto_WasmInstance:
     case JSProto_WasmMemory:
     case JSProto_WasmTable:
@@ -234,10 +237,8 @@ bool GlobalObject::skipDeselectedConstructor(JSContext* cx, JSProtoKey key) {
       return !JS::Prefs::experimental_explicit_resource_management();
 #endif
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case JSProto_AbstractModuleSource:
       return !JS::Prefs::experimental_source_phase_imports();
-#endif
 
     default:
       MOZ_CRASH("unexpected JSProtoKey");

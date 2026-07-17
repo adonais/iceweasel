@@ -115,6 +115,11 @@ class SharedWorkerManager final : public RemoteWorkerObserver {
 
   void UpdateFrozen();
 
+  void SetLocaleOverride(const nsACString& aLanguageOverride,
+                         const nsTArray<nsString>& aLanguages);
+
+  void UpdateTimezoneOverride(const nsAString& aTimezoneOverride);
+
   bool IsSecureContext() const;
 
   void Terminate();

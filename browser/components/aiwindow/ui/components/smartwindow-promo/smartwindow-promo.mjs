@@ -98,7 +98,11 @@ export class SmartwindowPromo extends MozLitElement {
         imagedisplay=${content.imageDisplay ?? "padded"}
       >
         ${content.secondaryActionText
-          ? html`<moz-button slot="actions" @click=${this.#handleClose}>
+          ? html`<moz-button
+              slot="actions"
+              type="ghost"
+              @click=${this.#handleClose}
+            >
               ${content.secondaryActionText}
             </moz-button>`
           : nothing}

@@ -5,7 +5,6 @@
 #tab-preview-panel {
   --panel-width: 280px;
   --panel-padding: 0;
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.tabs.notes.enabled") {
     pointer-events: none;
 

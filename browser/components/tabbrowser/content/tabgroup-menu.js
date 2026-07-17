@@ -1057,6 +1057,12 @@
         window.removeEventListener("TabOpen", onTabOpened);
       };
       window.addEventListener("TabOpen", onTabOpened);
+      // The tab group menu can be invoked on a window that isn't the OS-level
+      // frontmost window (most reproducibly on macOS in a multi-monitor
+      // setup). Raise the window so the new tab's focusUrlBar request can
+      // actually land OS keyboard focus on the address bar. Bug 2039674
+      // tracks routing this through URILoadingHelper instead.
+      window.focus();
       gBrowser.addAdjacentNewTab(lastTab);
     }
 

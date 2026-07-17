@@ -54,10 +54,10 @@ static already_AddRefed<Screen> MakeScreen(UIScreen* aScreen) {
            dpi));
 
   NSInteger fps = [aScreen maximumFramesPerSecond];
-  RefPtr<Screen> screen =
-      new Screen(rect, rect, pixelDepth, pixelDepth, fps, contentsScaleFactor,
-                 defaultCssScaleFactor, dpi, Screen::IsPseudoDisplay::No,
-                 Screen::IsHDR::No);
+  auto screen =
+      MakeRefPtr<Screen>(rect, rect, pixelDepth, pixelDepth, fps,
+                         contentsScaleFactor, defaultCssScaleFactor, dpi,
+                         Screen::IsPseudoDisplay::No, Screen::IsHDR::No);
   return screen.forget();
 
   NS_OBJC_END_TRY_BLOCK_RETURN(nullptr);

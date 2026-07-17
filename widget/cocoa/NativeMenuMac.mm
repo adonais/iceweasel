@@ -275,27 +275,7 @@ void NativeMenuMac::ShowMenuAnchored(nsIFrame* aClickedFrame,
 
   NSAppearance* appearance = NativeAppearanceForContent(mMenu->Content());
   NSMenu* menu = mMenu->NativeNSMenu();
-
-  // XUL accepts many more anchor popup alignments than Cocoa. Map to the best
-  // approximate edge setting. Because the view the button cell gets anchored
-  // to is not flipped, NSRectEdgeMinY represents the bottom edge.
-  NSRectEdge edge;
-  switch (position) {
-    case POPUPPOSITION_BEFORESTART:
-    case POPUPPOSITION_BEFOREEND:
-      edge = NSRectEdgeMaxY;
-      break;
-    case POPUPPOSITION_STARTBEFORE:
-    case POPUPPOSITION_STARTAFTER:
-      edge = NSRectEdgeMinX;
-      break;
-    case POPUPPOSITION_ENDBEFORE:
-    case POPUPPOSITION_ENDAFTER:
-      edge = NSRectEdgeMaxX;
-      break;
-    default:
-      edge = NSRectEdgeMinY;
-  }
+  NSRectEdge edge = nsCocoaUtils::PopupPositionToNSRectEdge(position);
 
   // Get the font size of the menupopup element which will be used to size the
   // NSPopUpButtonCell, except for pull-down menus, which do not use custom font

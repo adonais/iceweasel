@@ -59,6 +59,7 @@ export class _Weather extends React.PureComponent {
       url: "https://example.com",
       impressionSeen: false,
       errorSeen: false,
+      isMenuEnabled: false,
     };
     this.setImpressionRef = element => {
       this.impressionElement = element;
@@ -67,7 +68,13 @@ export class _Weather extends React.PureComponent {
       this.errorElement = element;
     };
     this.setPanelRef = element => {
+      if (this.panelElement) {
+        this.panelElement.removeEventListener("toggle", this.handlePanelToggle);
+      }
       this.panelElement = element;
+      if (element) {
+        element.addEventListener("toggle", this.handlePanelToggle);
+      }
     };
     this.setSizeSubmenuRef = element => {
       if (this.sizeSubmenuElement) {
@@ -85,6 +92,7 @@ export class _Weather extends React.PureComponent {
     this.onProviderClick = this.onProviderClick.bind(this);
     this.onMenuButtonClick = this.onMenuButtonClick.bind(this);
     this.onMenuButtonKeyDown = this.onMenuButtonKeyDown.bind(this);
+    this.handlePanelToggle = this.handlePanelToggle.bind(this);
   }
 
   onSizeSubmenuClick(e) {
@@ -267,6 +275,7 @@ export class _Weather extends React.PureComponent {
   handleChangeLocation = () => {
     if (this.panelElement) {
       this.panelElement.hide();
+      this.setState({ isMenuEnabled: false });
     }
     batch(() => {
       this.props.dispatch(
@@ -554,6 +563,11 @@ export class _Weather extends React.PureComponent {
     return systemValue || experimentValue;
   }
 
+  handlePanelToggle(e) {
+    const isOpen = e.newState === "open";
+    this.setState({ isMenuEnabled: isOpen });
+  }
+
   render() {
     // Check if weather should be rendered
     if (!this.isEnabled()) {
@@ -643,6 +657,7 @@ export class _Weather extends React.PureComponent {
             so we use a standard button element that can be fully controlled with CSS. */}
         <button
           aria-haspopup="true"
+          aria-expanded={this.state.isMenuEnabled}
           onKeyDown={this.onMenuButtonKeyDown}
           onClick={this.onMenuButtonClick}
           data-l10n-id="newtab-menu-section-tooltip"

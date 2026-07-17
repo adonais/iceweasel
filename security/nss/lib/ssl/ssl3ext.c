@@ -727,7 +727,12 @@ ssl_CallCustomExtensionSenders(sslSocket *ss, sslBuffer *buf,
         if (hook->writer) {
             /* The writer writes directly into |buf|.  Provide space that allows
              * for the existing extensions, any tail, plus type and length. */
-            unsigned int space = buf->space - (buf->len + tail.len + 4);
+            unsigned int used = buf->len + tail.len + 4;
+            if (used > buf->space) {
+                PORT_SetError(SEC_ERROR_APPLICATION_CALLBACK_ERROR);
+                goto loser;
+            }
+            unsigned int space = buf->space - used;
             append = (*hook->writer)(ss->fd, message,
                                      buf->buf + buf->len + 4, &len, space,
                                      hook->writerArg);

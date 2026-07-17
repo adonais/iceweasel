@@ -51,7 +51,7 @@ SVGElement::EnumInfo SVGMarkerElement::sEnumInfo[1] = {
 // Implementation
 
 SVGMarkerElement::SVGMarkerElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGMarkerElementBase(std::move(aNodeInfo)), mCoordCtx(nullptr) {}
 
 //----------------------------------------------------------------------
@@ -168,7 +168,8 @@ gfx::Matrix SVGMarkerElement::GetMarkerTransform(float aStrokeWidth,
   }
 
   return gfx::Matrix(cos(angle) * scale, sin(angle) * scale,
-                     -sin(angle) * scale, cos(angle) * scale, aMark.x, aMark.y);
+                     -sin(angle) * scale, cos(angle) * scale, aMark.pos.x,
+                     aMark.pos.y);
 }
 
 SVGViewBox SVGMarkerElement::GetViewBox() {

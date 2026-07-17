@@ -6,6 +6,7 @@
 
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
+use crate::typed_om::{NumericValue, ToTyped, TypedValue, UnitValue};
 use crate::values::computed::angle::Angle as ComputedAngle;
 use crate::values::computed::{Context, ToComputedValue};
 use crate::values::specified::calc::{CalcNode, CalcNumeric, Leaf};
@@ -16,10 +17,7 @@ use cssparser::{match_ignore_ascii_case, Parser, Token};
 use std::f32::consts::PI;
 use std::fmt::{self, Write};
 use std::ops::Neg;
-use style_traits::{
-    CssString, CssWriter, NumericValue, ParseError, SpecifiedValueInfo, ToCss, ToTyped, TypedValue,
-    UnitValue,
-};
+use style_traits::{CssString, CssWriter, ParseError, SpecifiedValueInfo, ToCss};
 use thin_vec::ThinVec;
 
 /// Number of degrees per radian.
@@ -48,10 +46,10 @@ impl AngleUnit {
     #[inline]
     pub fn from_str(unit: &str) -> Result<Self, ()> {
         Ok(match_ignore_ascii_case! { unit,
-            "deg" => AngleUnit::Deg,
-            "grad" => AngleUnit::Grad,
-            "turn" => AngleUnit::Turn,
-            "rad" => AngleUnit::Rad,
+            "deg" => Self::Deg,
+            "grad" => Self::Grad,
+            "turn" => Self::Turn,
+            "rad" => Self::Rad,
              _ => return Err(())
         })
     }
@@ -156,13 +154,19 @@ impl NoCalcAngle {
         self.degrees() * RAD_PER_DEG
     }
 
+    /// Returns the unit of the angle.
+    #[inline]
+    pub fn angle_unit(&self) -> AngleUnit {
+        self.unit
+    }
+
     /// Returns the unitless, raw value.
     #[inline]
     pub fn unitless_value(&self) -> CSSFloat {
         self.value
     }
 
-    /// Returns the unit of the angle.
+    /// Returns the unit of the angle as a string.
     #[inline]
     pub fn unit(&self) -> &'static str {
         self.unit.as_str()

@@ -37,7 +37,7 @@ class RemoteMediaManagerParent;
  */
 class MFMediaEngineParent final : public PMFMediaEngineParent {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFMediaEngineParent);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFMediaEngineParent, final);
   MFMediaEngineParent(RemoteMediaManagerParent* aManager,
                       nsISerialEventTarget* aManagerThread);
 
@@ -62,8 +62,6 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   mozilla::ipc::IPCResult RecvSetLooping(bool aLooping);
   mozilla::ipc::IPCResult RecvNotifyEndOfStream(TrackInfo::TrackType aType);
   mozilla::ipc::IPCResult RecvShutdown();
-
-  void Destroy();
 
  private:
   ~MFMediaEngineParent();
@@ -103,11 +101,6 @@ class MFMediaEngineParent final : public PMFMediaEngineParent {
   static inline uint64_t sMediaEngineIdx = 0;
 
   const uint64_t mMediaEngineId;
-
-  // The life cycle of this class is determined by the actor in the content
-  // process, we would hold a reference until the content actor asks us to
-  // destroy.
-  RefPtr<MFMediaEngineParent> mIPDLSelfRef;
 
   const RefPtr<RemoteMediaManagerParent> mManager;
   const RefPtr<nsISerialEventTarget> mManagerThread;

@@ -77,8 +77,9 @@ void WebGL2Context::CopyBufferSubData(GLenum readTarget, GLenum writeTarget,
   if (writeBuffer->mIndexCache) {
     MOZ_ASSERT(readBuffer->mIndexCache);
     if (readBuffer->mIndexCache) {
-      // The read and write ranges have been validated above by fnValidateOffsetSize.
-      // If allocated, the size of mIndexCache is always mByteLength.
+      // The read and write ranges have been validated above by
+      // fnValidateOffsetSize. If allocated, the size of mIndexCache is always
+      // mByteLength.
       const auto* src =
           static_cast<const uint8_t*>(readBuffer->mIndexCache.get()) +
           readOffset;

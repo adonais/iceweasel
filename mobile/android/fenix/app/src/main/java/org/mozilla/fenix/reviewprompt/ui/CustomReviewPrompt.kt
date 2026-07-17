@@ -17,7 +17,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -183,8 +182,8 @@ private fun FoxEmojiButton(
     Column(
         modifier
             .height(100.dp)
-            .clip(RoundedCornerShape(size = 18.dp))
-            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, RoundedCornerShape(size = 18.dp))
+            .clip(MaterialTheme.shapes.large)
+            .border(1.dp, MaterialTheme.colorScheme.outlineVariant, MaterialTheme.shapes.large)
             .background(MaterialTheme.colorScheme.surfaceDimVariant)
             .clickable(onClick = onClick),
         Arrangement.Center,

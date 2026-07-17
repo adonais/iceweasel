@@ -248,6 +248,7 @@ def GeneratedFile(name, *names, **kwargs):
     script = kwargs.pop("script", None)
     entry_point = kwargs.pop("entry_point", None)
     inputs = kwargs.pop("inputs", [])
+    extra_deps = kwargs.pop("extra_deps", [])
     flags = kwargs.pop("flags", [])
     force = kwargs.pop("force", False)
     if kwargs:
@@ -269,6 +270,7 @@ def GeneratedFile(name, *names, **kwargs):
     if script and entry_point:
         generated_file.script = script + ":" + entry_point
     generated_file.inputs = inputs
+    generated_file.extra_deps = extra_deps
     generated_file.flags = flags
     generated_file.force = force
 

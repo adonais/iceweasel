@@ -71,18 +71,18 @@
   .nova-enabled & {
     display: grid;
     grid-column: 1 / -1;
-    grid-template-columns: repeat(2, calc(2 * var(--col-width) + 1 * var(--space-medium)));
+    grid-template-columns: repeat(2, var(--col-span-2));
     gap: var(--space-medium);
     justify-content: center;
 
     // 2-column layout
     @include at-content-cols(8) {
-      grid-template-columns: repeat(4, calc(2 * var(--col-width) + 1 * var(--space-medium)));
+      grid-template-columns: repeat(4, var(--col-span-2));
     }
 
     // 3, and 4 column layouts.
     @include at-content-cols(12) {
-      grid-template-columns: repeat(4, calc(3 * var(--col-width) + 2 * var(--space-medium)));
+      grid-template-columns: repeat(4, var(--col-span-3));
     }
 
     .ds-highlights-title {

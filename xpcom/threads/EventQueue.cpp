@@ -16,7 +16,7 @@ using namespace mozilla::detail;
 
 template <size_t ItemsPerPage>
 void EventQueueInternal<ItemsPerPage>::PutEvent(
-    already_AddRefed<nsIRunnable>&& aEvent, EventQueuePriority aPriority,
+    already_AddRefed<nsIRunnable> aEvent, EventQueuePriority aPriority,
     const MutexAutoLock& aProofOfLock, mozilla::TimeDuration* aDelay) {
   nsCOMPtr<nsIRunnable> event(aEvent);
 

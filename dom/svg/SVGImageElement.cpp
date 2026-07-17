@@ -55,7 +55,7 @@ NS_IMPL_ISUPPORTS_INHERITED(SVGImageElement, SVGImageElementBase,
 namespace SVGT = SVGGeometryProperty::Tags;
 
 SVGImageElement::SVGImageElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGImageElementBase(std::move(aNodeInfo)) {
   // We start out broken
   AddStatesSilently(ElementState::BROKEN);

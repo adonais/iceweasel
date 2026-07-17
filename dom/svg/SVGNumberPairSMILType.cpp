@@ -82,14 +82,10 @@ nsresult SVGNumberPairSMILType::Interpolate(const SMILValue& aStartVal,
   MOZ_ASSERT(aStartVal.mType == this, "Unexpected types for interpolation");
   MOZ_ASSERT(aResult.mType == this, "Unexpected result type");
 
-  aResult.mU.mNumberPair[0] =
-      float(aStartVal.mU.mNumberPair[0] +
-            (aEndVal.mU.mNumberPair[0] - aStartVal.mU.mNumberPair[0]) *
-                aUnitDistance);
-  aResult.mU.mNumberPair[1] =
-      float(aStartVal.mU.mNumberPair[1] +
-            (aEndVal.mU.mNumberPair[1] - aStartVal.mU.mNumberPair[1]) *
-                aUnitDistance);
+  aResult.mU.mNumberPair[0] = std::lerp(
+      aStartVal.mU.mNumberPair[0], aEndVal.mU.mNumberPair[0], aUnitDistance);
+  aResult.mU.mNumberPair[1] = std::lerp(
+      aStartVal.mU.mNumberPair[1], aEndVal.mU.mNumberPair[1], aUnitDistance);
   return NS_OK;
 }
 

@@ -24,6 +24,7 @@ android {
 }
 
 dependencies {
+    implementation platform(libs.androidx.compose.bom)
     implementation project(':components:compose-base')
     implementation project(':components:concept-ai-controls')
     implementation project(':components:concept-llm')

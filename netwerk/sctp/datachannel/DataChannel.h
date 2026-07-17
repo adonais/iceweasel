@@ -216,7 +216,8 @@ class DataChannelConnection : public net::NeckoTargetHolder {
                           const uint16_t aLocalPort,
                           const uint16_t aRemotePort);
   void TransportStateChange(const std::string& aTransportId,
-                            TransportLayer::State aState);
+                            TransportLayer::State aState,
+                            const nsTArray<nsTArray<uint8_t>>& aRemoteCerts);
   void SetSignals(const std::string& aTransportId);
 
   [[nodiscard]] already_AddRefed<DataChannel> Open(

@@ -607,7 +607,6 @@ private val iconsSync24 = listOf(
 
 private val iconsTabs24 = listOf(
     iconsR.drawable.mozac_ic_tab_tray_24,
-    iconsR.drawable.mozac_ic_tab_number_24,
     iconsR.drawable.mozac_ic_tab_24,
     iconsR.drawable.mozac_ic_tab_group_24,
     iconsR.drawable.mozac_ic_tab_group_close_24,

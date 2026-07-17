@@ -124,8 +124,6 @@ nsresult nsHtml5StringParser::Tokenize(const nsAString& aSourceBuffer,
   mTreeBuilder->setScriptingEnabled(aScriptingEnabledForNoscriptParsing);
   mTreeBuilder->setIsSrcdocDocument(aDocument->IsSrcdocDocument());
   mTreeBuilder->setAllowDeclarativeShadowRoots(aDeclarativeShadowRootsAllowed);
-  mTreeBuilder->setNoInSelectMode(
-      StaticPrefs::dom_lift_select_parser_restrictions_enabled());
   mBuilder->Start();
   mTokenizer->start();
   if (!aSourceBuffer.IsEmpty()) {

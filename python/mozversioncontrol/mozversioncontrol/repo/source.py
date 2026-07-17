@@ -156,12 +156,13 @@ class SrcRepository(Repository):
     ):
         pass
 
-    def push_to_try(
-        self,
-        message: str,
-        changed_files: dict[str, str] = {},
-        allow_log_capture: bool = False,
-    ):
+    def _resolve_try_branch(self):
+        pass
+
+    def _push_to_git_try(self, *args, **kwargs):
+        pass
+
+    def _push_to_hg_try(self, *args, **kwargs):
         pass
 
     def set_config(self, name, value):

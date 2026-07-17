@@ -14,6 +14,48 @@ newtab-personalize-icon-label =
 newtab-personalize-dialog-label =
     .aria-label = Personalise
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = New tabs
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } row
+           *[other] { $num } rows
+        }
+home-restore-defaults-srd =
+    .label = Restore Staunarts
+    .accesskey = R
+home-mode-choice-custom-srd =
+    .label = Custom URLs…
+home-mode-choice-blank-srd =
+    .label = Blank Page
+home-prefs-shortcuts-header-srd =
+    .label = Shortcuts
+home-prefs-shortcuts-select =
+    .aria-label = Shortcuts
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Sponsored shortcuts
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Sponsored Stories
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Veesitit Pages
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Buikmerks
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Maist Recent Doonload
+home-prefs-recent-activity-header-srd =
+    .label = Recent activity
+home-prefs-recent-activity-select =
+    .aria-label = Recent activity
+
 ## Search box component.
 
 # "Search" is a verb/action

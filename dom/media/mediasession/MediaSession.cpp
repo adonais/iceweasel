@@ -10,12 +10,13 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/MediaControlUtils.h"
 #include "mozilla/dom/WindowContext.h"
+#include "nsPIDOMWindowInlines.h"
 
 // avoid redefined macro in unified build
 #undef LOG
-#define LOG(msg, ...)                        \
-  MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
-          ("MediaSession=%p, " msg, this, ##__VA_ARGS__))
+#define LOG(msg, ...)                                                     \
+  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug, "MediaSession={}, " msg, \
+              fmt::ptr(this), ##__VA_ARGS__)
 
 namespace mozilla::dom {
 
@@ -97,7 +98,7 @@ void MediaSession::Shutdown() {
 
 void MediaSession::NotifyOwnerDocumentActivityChanged() {
   const bool isDocActive = mDoc->IsCurrentActiveDocument();
-  LOG("Document activity changed, isActive=%d", isDocActive);
+  LOG("Document activity changed, isActive={}", isDocActive);
   if (isDocActive) {
     SetMediaSessionDocStatus(SessionDocStatus::eActive);
   } else {
@@ -269,8 +270,8 @@ bool MediaSession::IsActive() const {
   if (!activeSessionContextId) {
     return false;
   }
-  LOG("session context Id=%" PRIu64 ", active session context Id=%" PRIu64,
-      currentBC->Id(), *activeSessionContextId);
+  LOG("session context Id={}, active session context Id={}", currentBC->Id(),
+      *activeSessionContextId);
   return *activeSessionContextId == currentBC->Id();
 }
 
@@ -353,8 +354,12 @@ void MediaSession::NotifyMetadataUpdated() {
     return;
   }
 
+  if (!mDoc) {
+    return;
+  }
+
   LOG("Starting load of the MediaMetadata artwork.");
-  mMediaMetadata->LoadMetadataArtwork()
+  mMediaMetadata->LoadMetadataArtwork(mDoc)
       ->Then(
           GetCurrentSerialEventTarget(), __func__,
           [self = RefPtr{this}, currentBC](MediaMetadataBase&& aMetadata) {

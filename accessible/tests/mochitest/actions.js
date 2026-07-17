@@ -1,5 +1,5 @@
 /* import-globals-from common.js */
-/* import-globals-from promisified-events.js */
+/* import-globals-from events.js */
 
 // //////////////////////////////////////////////////////////////////////////////
 // Event constants

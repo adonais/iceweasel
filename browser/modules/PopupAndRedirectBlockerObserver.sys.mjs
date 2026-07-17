@@ -166,12 +166,16 @@ export var PopupAndRedirectBlockerObserver = {
     const blockedPopupAllowSite = document.getElementById(
       "blockedPopupAllowSite"
     );
-    blockedPopupAllowSite.removeAttribute("hidden");
-    document.l10n.setAttributes(
-      blockedPopupAllowSite,
-      "popups-infobar-allow2",
-      { uriHost }
-    );
+    if (Services.prefs.prefIsLocked("dom.disable_open_during_load")) {
+      blockedPopupAllowSite.setAttribute("hidden", "true");
+    } else {
+      blockedPopupAllowSite.removeAttribute("hidden");
+      document.l10n.setAttributes(
+        blockedPopupAllowSite,
+        "popups-infobar-allow2",
+        { uriHost }
+      );
+    }
 
     // "Dont show this message when..."
     const blockedPopupDontShowMessage = document.getElementById(
@@ -367,6 +371,10 @@ export var PopupAndRedirectBlockerObserver = {
   async toggleAllowPopupsForSite(aEvent) {
     const window = aEvent.originalTarget.documentGlobal;
     const { gBrowser } = window;
+
+    if (Services.prefs.prefIsLocked("dom.disable_open_during_load")) {
+      return;
+    }
 
     // The toggle should only be visible (and therefore clickable) if
     // popups are currently blocked.

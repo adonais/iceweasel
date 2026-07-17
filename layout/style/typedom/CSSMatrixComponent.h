@@ -6,9 +6,11 @@
 #define LAYOUT_STYLE_TYPEDOM_CSSMATRIXCOMPONENT_H_
 
 #include "js/TypeDecls.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/dom/CSSMatrixComponentBindingFwd.h"
 #include "mozilla/dom/CSSTransformComponent.h"
 #include "mozilla/dom/DOMMatrixBindingFwd.h"
+#include "nsCycleCollectionParticipant.h"
 
 template <class T>
 struct already_AddRefed;
@@ -18,7 +20,7 @@ class nsISupports;
 
 namespace mozilla {
 
-class ErrorResult;
+struct StyleMatrixComponent;
 
 namespace dom {
 
@@ -26,18 +28,28 @@ class GlobalObject;
 
 class CSSMatrixComponent final : public CSSTransformComponent {
  public:
-  explicit CSSMatrixComponent(nsCOMPtr<nsISupports> aParent);
+  CSSMatrixComponent(nsCOMPtr<nsISupports> aParent, bool aIs2D,
+                     RefPtr<DOMMatrix> aMatrix);
+
+  static RefPtr<CSSMatrixComponent> Create(
+      nsCOMPtr<nsISupports> aParent,
+      const StyleMatrixComponent& aMatrixComponent);
+
+  NS_DECL_ISUPPORTS_INHERITED
+  NS_DECL_CYCLE_COLLECTION_CLASS_INHERITED(CSSMatrixComponent,
+                                           CSSTransformComponent)
 
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
 
   // start of CSSMatrixComponent Web IDL declarations
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssmatrixcomponent-cssmatrixcomponent
   static already_AddRefed<CSSMatrixComponent> Constructor(
       const GlobalObject& aGlobal, DOMMatrixReadOnly& aMatrix,
       const CSSMatrixComponentOptions& aOptions);
 
-  DOMMatrix* GetMatrix(ErrorResult& aRv) const;
+  DOMMatrix* Matrix() const;
 
   void SetMatrix(DOMMatrix& aArg);
 
@@ -48,6 +60,8 @@ class CSSMatrixComponent final : public CSSTransformComponent {
 
  protected:
   virtual ~CSSMatrixComponent() = default;
+
+  RefPtr<DOMMatrix> mMatrix;
 };
 
 }  // namespace dom

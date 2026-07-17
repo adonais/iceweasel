@@ -1108,7 +1108,7 @@ void nsFilePicker::SendFailureNotification(nsFilePicker::ResultCode aResult,
     return;  // normal during XPCOM shutdown
   }
 
-  RefPtr<nsHashPropertyBag> props = new nsHashPropertyBag();
+  auto props = mozilla::MakeRefPtr<nsHashPropertyBag>();
   props->SetPropertyAsInterface(u"ctx"_ns, mBrowsingContext);
   props->SetPropertyAsUint32(u"mode"_ns, mMode);
   if (aFallback.isOk()) {

@@ -127,9 +127,9 @@ class CharacterDataBuffer final {
     if (MOZ_UNLIKELY(aString.Length() > NS_MAX_CHARACTER_DATA_BUFFER_LENGTH)) {
       return false;
     }
-    ReleaseBuffer();
     if (aForce2b && !aUpdateBidi) {
       if (mozilla::StringBuffer* buffer = aString.GetStringBuffer()) {
+        ReleaseBuffer();
         NS_ADDREF(m2b = buffer);
         mState.mInHeap = true;
         mState.mIs2b = true;

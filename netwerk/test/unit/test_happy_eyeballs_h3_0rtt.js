@@ -91,6 +91,28 @@ function openChan(uri) {
   });
 }
 
+// Like openChan but resolves on both success and failure.
+function openChanMayFail(uri) {
+  const chan = NetUtil.newChannel({
+    uri,
+    loadUsingSystemPrincipal: true,
+  }).QueryInterface(Ci.nsIHttpChannel);
+  chan.loadFlags = Ci.nsIChannel.LOAD_INITIAL_DOCUMENT_URI;
+  const promise = new Promise(resolve => {
+    chan.asyncOpen({
+      onStartRequest() {},
+      onDataAvailable(_req, stream, _offset, count) {
+        read_stream(stream, count);
+      },
+      onStopRequest(_req, status) {
+        resolve(status);
+      },
+      QueryInterface: ChromeUtils.generateQI(["nsIStreamListener"]),
+    });
+  });
+  return { chan, promise };
+}
+
 add_task(async function test_he_h3_0rtt_resumes() {
   const url = "https://foo.example.com/30";
 
@@ -112,4 +134,46 @@ add_task(async function test_he_h3_0rtt_resumes() {
   Assert.equal(r2.status, 200, "Second fetch should succeed");
   Assert.equal(r2.protocol, "h3", "Second fetch should be h3");
   Assert.equal(r2.resumed, true, "Second fetch should resume via 0-RTT");
+});
+
+// Verifies that when ZeroRttHandle::Finish0RTT sees a null real transaction.
+add_task(async function test_he_h3_0rtt_txn_gone_closes_connection() {
+  const url = "https://foo.example.com/30";
+
+  // Establish a fresh H3 connection and obtain a session ticket so the next
+  // request can attempt 0-RTT.
+  let r1 = await openChan(url);
+  Assert.equal(r1.status, 200, "warm-up request should succeed");
+  Assert.equal(r1.protocol, "h3", "warm-up request should be h3");
+
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+  await new Promise(resolve => setTimeout(resolve, 1000));
+  Services.obs.notifyObservers(null, "net:cancel-all-connections");
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  Services.prefs.setBoolPref(
+    "network.http.0rtt_force_txn_gone_for_testing",
+    true
+  );
+
+  const { promise: failPromise } = openChanMayFail(url);
+  const failStatus = await failPromise;
+  Assert.equal(
+    failStatus,
+    Cr.NS_ERROR_ABORT,
+    "request with forced-null txn should be aborted cleanly"
+  );
+
+  Services.prefs.clearUserPref("network.http.0rtt_force_txn_gone_for_testing");
+
+  // Allow the closed connection to be fully torn down before retrying.
+  Services.obs.notifyObservers(null, "net:cancel-all-connections");
+  // eslint-disable-next-line mozilla/no-arbitrary-setTimeout
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  // The networking stack must still be functional after the forced close.
+  let r3 = await openChan(url);
+  Assert.equal(r3.status, 200, "recovery request should succeed");
+  Assert.equal(r3.protocol, "h3", "recovery request should be h3");
 });

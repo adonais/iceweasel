@@ -8,6 +8,10 @@
 #include "mozilla/SyncRunnable.h"
 #include "mozilla/gtest/MozHelpers.h"
 
+#ifdef XP_MACOSX
+#  include "gfxPlatformMac.h"
+#endif
+
 using namespace mozilla;
 using namespace mozilla::gtest;
 using namespace mozilla::media;
@@ -67,6 +71,10 @@ void DoCreateTicketBeforeAppShutdownOnMain() {
   AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownTelemetry);
 
   NS_ShutdownXPCOM(nullptr);
+
+#  ifdef XP_MACOSX
+  gfxPlatformMac::WaitForFontRegistration();
+#  endif
 }
 
 void DoCreateTicketAfterAppShutdownOnMain() {
@@ -84,6 +92,10 @@ void DoCreateTicketAfterAppShutdownOnMain() {
   AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownTelemetry);
 
   NS_ShutdownXPCOM(nullptr);
+
+#  ifdef XP_MACOSX
+  gfxPlatformMac::WaitForFontRegistration();
+#  endif
 }
 
 void DoCreateTicketBeforeAppShutdownOffMain() {
@@ -142,6 +154,10 @@ void DoCreateTicketBeforeAppShutdownOffMain() {
   AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownTelemetry);
 
   NS_ShutdownXPCOM(nullptr);
+
+#  ifdef XP_MACOSX
+  gfxPlatformMac::WaitForFontRegistration();
+#  endif
 }
 
 void DoCreateTicketAfterAppShutdownOffMain() {
@@ -167,6 +183,10 @@ void DoCreateTicketAfterAppShutdownOffMain() {
   AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownTelemetry);
 
   NS_ShutdownXPCOM(nullptr);
+
+#  ifdef XP_MACOSX
+  gfxPlatformMac::WaitForFontRegistration();
+#  endif
 }
 
 void DoTwoTicketsWithSameNameBothBlockShutdown() {
@@ -202,6 +222,11 @@ void DoTwoTicketsWithSameNameBothBlockShutdown() {
   AppShutdown::AdvanceShutdownPhase(ShutdownPhase::AppShutdownTelemetry);
 
   NS_ShutdownXPCOM(nullptr);
+
+#  ifdef XP_MACOSX
+  gfxPlatformMac::WaitForFontRegistration();
+#  endif
+
   TimeStamp after = TimeStamp::Now();
   EXPECT_GT((after - before).ToMilliseconds(),
             waitBeforeDestroyingTicket.ToMilliseconds());

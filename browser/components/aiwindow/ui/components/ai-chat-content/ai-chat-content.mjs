@@ -14,6 +14,8 @@ import "chrome://browser/content/aiwindow/components/chat-assistant-loader.mjs";
 import "chrome://browser/content/aiwindow/components/website-chip-container.mjs";
 // eslint-disable-next-line import/no-unassigned-import
 import "chrome://browser/content/aiwindow/components/ai-website-confirmation.mjs";
+// eslint-disable-next-line import/no-unassigned-import
+import "chrome://browser/content/aiwindow/components/kit-mention.mjs";
 
 const FOLLOW_UP_QTY = 2;
 /**
@@ -209,6 +211,16 @@ export class AIChatContent extends MozLitElement {
       const { messageId } = event.detail ?? {};
       const text = this.#getAssistantMessageBody(messageId);
       this.#dispatchAction("copy", { messageId, text });
+    });
+
+    this.addEventListener("copy-table", event => {
+      const { messageId, lineRange } = event.detail ?? {};
+      const text = this.#getAssistantMessageBody(messageId);
+      const tableMarkdown = text
+        .split("\n")
+        .slice(lineRange[0], lineRange[1])
+        .join("\n");
+      this.#dispatchAction("copy-table", { messageId, text: tableMarkdown });
     });
 
     this.addEventListener("retry-message", event => {
@@ -549,6 +561,10 @@ export class AIChatContent extends MozLitElement {
     wrapper.scrollTo({ top: wrapper.scrollHeight, behavior: "instant" });
   }
 
+  get #kitMention() {
+    return this.shadowRoot?.querySelector("kit-mention");
+  }
+
   #setMessageComplete(message) {
     const messageId = message.content?.id;
     if (!messageId) {
@@ -617,6 +633,7 @@ export class AIChatContent extends MozLitElement {
       this.followUpSuggestions = [];
       this.#clearAssistantResponseAnnouncement();
       this.isSearching = false;
+      this.#kitMention?.reset();
       if (convIdChanged) {
         this.shadowRoot
           ?.querySelector(".chat-inner-wrapper")
@@ -767,6 +784,8 @@ export class AIChatContent extends MozLitElement {
       followUpSuggestions = [],
       isPreviousMessage,
       toolUIData,
+      kit,
+      isRestored,
     } = event.detail;
 
     if (!this.#isAIResponseValid(content, toolUIData)) {
@@ -801,7 +820,12 @@ export class AIChatContent extends MozLitElement {
       isLastChunk,
       toolUIData,
       historyResults,
+      isRestored,
     };
+
+    if (kit && !isPreviousMessage) {
+      this.#kitMention?.trigger({ value: kit, convId });
+    }
 
     this.requestUpdate();
   }
@@ -906,30 +930,6 @@ export class AIChatContent extends MozLitElement {
     this.dispatchEvent(event);
   }
 
-  /**
-   * Render a turn's tool calls as a single grouped action log container
-   *
-   * @param {Array<object>} toolMsgs - one entry per tool call this turn
-   * @param {boolean} isComplete - whether the turn has finished
-   */
-  #renderActionLogGroup(toolMsgs, isComplete) {
-    const finalMessage = {
-      l10nId: "action-log-completed-steps",
-      l10nArgs: { count: toolMsgs.length },
-    };
-    const summary = isComplete
-      ? finalMessage
-      : toolMsgs[toolMsgs.length - 1]?.pendingLabel;
-    return html`
-      <ai-action-result
-        .labelL10nId=${summary?.l10nId}
-        .labelL10nArgs=${summary?.l10nArgs}
-        .rows=${this.#buildGroupedActionLogRows(toolMsgs)}
-        .isExpanded=${false}
-      ></ai-action-result>
-    `;
-  }
-
   #getCloseTabsData(confirmedData) {
     const selectedTabs = confirmedData.selectedTabs || [];
     const tabCount = selectedTabs.length;
@@ -983,20 +983,52 @@ export class AIChatContent extends MozLitElement {
     };
   }
 
-  #renderToolUI(toolUIData, messageId) {
-    if (!toolUIData) {
+  /**
+   * Render a turn's tool calls as a single grouped action log container
+   *
+   * @param {Array<object>} toolMsgs - one entry per tool call this turn
+   * @param {boolean} isComplete - whether the turn has finished
+   */
+  #renderActionLogGroup(toolMsgs, isComplete) {
+    const finalMessage = {
+      l10nId: "action-log-completed-steps",
+      l10nArgs: { count: toolMsgs.length },
+    };
+    const summary = isComplete
+      ? finalMessage
+      : toolMsgs[toolMsgs.length - 1]?.pendingLabel;
+    return html`
+      <ai-action-result
+        .labelL10nId=${summary?.l10nId}
+        .labelL10nArgs=${summary?.l10nArgs}
+        .rows=${this.#buildGroupedActionLogRows(toolMsgs)}
+        .isExpanded=${false}
+      ></ai-action-result>
+    `;
+  }
+
+  /**
+   * Render the appropriate tool UI for a tool message, if applicable.
+   *
+   * @param {object} msg - A conversationState entry.
+   * @returns {TemplateResult|nothing} - The rendered tool UI or nothing if not applicable.
+   */
+  #renderToolUI(msg) {
+    if (!msg.toolUIData) {
       return nothing;
     }
 
+    const toolUIData = msg.toolUIData;
+
     switch (toolUIData.uiType) {
       case UI_TYPES.WEBSITE_CONFIRMATION:
-        return this.#renderWebsiteConfirmation(toolUIData, messageId);
+        return this.#renderWebsiteConfirmation(msg);
       case UI_TYPES.AI_ACTION_RESULT:
-        return this.#renderActionResult(toolUIData, messageId);
+        return this.#renderActionResult(msg);
       case UI_TYPES.CANCELLED_COMPONENT:
         return this.#renderCancelledComponent();
       case UI_TYPES.RETRY_COMPONENT:
-        return this.#renderRetryComponent(toolUIData, messageId);
+        return this.#renderRetryComponent(msg);
       default:
         return nothing;
     }
@@ -1020,27 +1052,34 @@ export class AIChatContent extends MozLitElement {
     });
   };
 
-  #renderWebsiteConfirmation(toolUIData, messageId) {
+  #renderWebsiteConfirmation(msg) {
+    const toolUIData = msg.toolUIData;
+    // For restored website confirmations, show a retry component instead
+    if (msg.isRestored) {
+      return this.#renderRetryComponent(msg);
+    }
+
     return html`
       <ai-website-confirmation
         .tabs=${toolUIData.properties?.tabs || []}
         @ai-website-confirmation:submit=${event =>
           this.#handleConfirmationSubmit(
             event,
-            messageId,
+            msg.messageId,
             toolUIData.toolCallId
           )}
         @ai-website-confirmation:close=${event =>
           this.#handleConfirmationClose(
             event,
-            messageId,
+            msg.messageId,
             toolUIData.toolCallId
           )}
       ></ai-website-confirmation>
     `;
   }
 
-  #renderActionResult(toolUIData, messageId) {
+  #renderActionResult(msg) {
+    const toolUIData = msg.toolUIData;
     // Extract the confirmed selections and operation data
     const confirmedData = toolUIData.properties?.confirmedData || {};
     const wasRestored = confirmedData.wasRestored || false;
@@ -1060,7 +1099,7 @@ export class AIChatContent extends MozLitElement {
     const onUndo = canUndo
       ? () =>
           this.#dispatchToolUIUpdate({
-            messageId,
+            messageId: msg.messageId,
             toolCallId: toolUIData.toolCallId,
             updateType: UI_UPDATE_TYPES.UNDO_TAB_CLOSE,
             updateData: {
@@ -1090,7 +1129,8 @@ export class AIChatContent extends MozLitElement {
     return html`<div data-l10n-id="smart-window-cancelled-label"></div>`;
   }
 
-  #renderRetryComponent(toolUIData, messageId) {
+  #renderRetryComponent(msg) {
+    const toolUIData = msg.toolUIData;
     const originalPrompt = toolUIData.properties?.originalUserPrompt || "";
     return html`
       <div>
@@ -1099,7 +1139,7 @@ export class AIChatContent extends MozLitElement {
           class="tool-retry-button"
           @click=${() =>
             this.#handleRetryClick(
-              messageId,
+              msg.messageId,
               toolUIData.toolCallId,
               originalPrompt
             )}
@@ -1140,7 +1180,7 @@ export class AIChatContent extends MozLitElement {
     return html`
       <div class=${`chat-bubble chat-bubble-${msg.role}`}>
         ${msg.role === "assistant" && isRetryComponent
-          ? this.#renderToolUI(msg.toolUIData, msg.messageId)
+          ? this.#renderToolUI(msg)
           : nothing}
         ${chips?.length
           ? html`<website-chip-container
@@ -1157,7 +1197,7 @@ export class AIChatContent extends MozLitElement {
           .historyResults=${msg.historyResults}
         ></ai-chat-message>
         ${msg.role === "assistant" && msg.toolUIData && !isRetryComponent
-          ? this.#renderToolUI(msg.toolUIData, msg.messageId)
+          ? this.#renderToolUI(msg)
           : nothing}
         ${msg.role === "assistant" && msg.isLastChunk
           ? html`
@@ -1334,6 +1374,7 @@ export class AIChatContent extends MozLitElement {
           ${this.#renderLoader()} ${this.#renderError()}
         </div>
       </div>
+      <kit-mention variant="sidebar"></kit-mention>
       <div
         class="assistant-response-announcer"
         role="status"
@@ -1348,6 +1389,7 @@ export class AIChatContent extends MozLitElement {
         data-l10n-attrs="aria-label,tooltiptext"
         iconsrc="chrome://global/skin/icons/shaft-arrow-down.svg"
         disabled
+        type="ghost icon"
       ></moz-button>
     `;
   }

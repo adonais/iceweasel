@@ -264,13 +264,14 @@ class MOZ_RAII AutoProfilerTextMarker {
                          MarkerOptions&& aOptions, const std::string& aText)
       : mMarkerName(aMarkerName),
         mCategory(aCategory),
-        mOptions(std::move(aOptions)),
-        mText(aText) {
+        mOptions(std::move(aOptions)) {
     MOZ_ASSERT(mOptions.Timing().EndTime().IsNull(),
                "AutoProfilerTextMarker options shouldn't have an end time");
-    if (profiler_is_active_and_unpaused() &&
-        mOptions.Timing().StartTime().IsNull()) {
-      mOptions.Set(MarkerTiming::InstantNow());
+    if (profiler_is_active_and_unpaused()) {
+      mText = aText;
+      if (mOptions.Timing().StartTime().IsNull()) {
+        mOptions.Set(MarkerTiming::InstantNow());
+      }
     }
   }
 

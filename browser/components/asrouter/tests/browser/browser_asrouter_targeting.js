@@ -8,6 +8,7 @@ ChromeUtils.defineESModuleGetters(this, {
   ASRouterTargeting: "resource:///modules/asrouter/ASRouterTargeting.sys.mjs",
   AttributionCode:
     "moz-src:///browser/components/attribution/AttributionCode.sys.mjs",
+  BrowserInitState: "resource:///modules/BrowserGlue.sys.mjs",
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   BuiltInThemes: "resource:///modules/BuiltInThemes.sys.mjs",
   CFRMessageProvider: "resource:///modules/asrouter/CFRMessageProvider.sys.mjs",
@@ -1186,6 +1187,33 @@ add_task(async function check_pinned_tabs() {
   );
 });
 
+add_task(async function check_has_active_ai_window() {
+  is(
+    await ASRouterTargeting.Environment.hasActiveAIWindow,
+    false,
+    "No active Smart Window without one open"
+  );
+});
+
+add_task(async function check_has_active_ai_window_true() {
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.enabled", true]],
+  });
+
+  const win = await BrowserTestUtils.openNewBrowserWindow();
+  win.document.documentElement.setAttribute("ai-window", "");
+
+  is(
+    await ASRouterTargeting.Environment.hasActiveAIWindow,
+    true,
+    "Should detect an active Smart Window while one is open"
+  );
+
+  win.document.documentElement.removeAttribute("ai-window");
+  await BrowserTestUtils.closeWindow(win);
+  await SpecialPowers.popPrefEnv();
+});
+
 add_task(async function check_tabsOpenInTopWindow() {
   const baseline = await ASRouterTargeting.Environment.tabsOpenInTopWindow;
 
@@ -1374,54 +1402,6 @@ add_task(async function checkPatternsValid() {
   for (const message of messages) {
     Assert.ok(new MatchPatternSet(message.trigger.patterns));
   }
-});
-
-add_task(async function check_isChinaRepack() {
-  const prefDefaultBranch = Services.prefs.getDefaultBranch("distribution.");
-  const originalDistributionId = prefDefaultBranch.getCharPref("id", "");
-  const messages = [
-    { id: "msg_for_china_repack", targeting: "isChinaRepack == true" },
-    { id: "msg_for_everyone_else", targeting: "isChinaRepack == false" },
-  ];
-
-  is(
-    await ASRouterTargeting.Environment.isChinaRepack,
-    false,
-    "Fx w/o partner repack info set is not China repack"
-  );
-  is(
-    (await ASRouterTargeting.findMatchingMessage({ messages })).id,
-    "msg_for_everyone_else",
-    "should select the message for non China repack users"
-  );
-
-  prefDefaultBranch.setCharPref("id", "MozillaOnline");
-
-  is(
-    await ASRouterTargeting.Environment.isChinaRepack,
-    true,
-    "Fx with `distribution.id` set to `MozillaOnline` is China repack"
-  );
-  is(
-    (await ASRouterTargeting.findMatchingMessage({ messages })).id,
-    "msg_for_china_repack",
-    "should select the message for China repack users"
-  );
-
-  prefDefaultBranch.setCharPref("id", "Example");
-
-  is(
-    await ASRouterTargeting.Environment.isChinaRepack,
-    false,
-    "Fx with `distribution.id` set to other string is not China repack"
-  );
-  is(
-    (await ASRouterTargeting.findMatchingMessage({ messages })).id,
-    "msg_for_everyone_else",
-    "should select the message for non China repack users"
-  );
-
-  prefDefaultBranch.setCharPref("id", originalDistributionId);
 });
 
 add_task(async function check_userId() {
@@ -2758,10 +2738,18 @@ add_task(async function check_backupArchiveEnabled() {
 
   await pushPrefs(["browser.backup.archive.enabled", true]);
 
+  // Backup is disabled whenever SQLite at-rest encryption is on, so the
+  // targeting value is false regardless of the killswitch in that build.
+  const sqliteEncryptionDisablesBackup = Services.prefs.getBoolPref(
+    "security.storage.encryption.sqlite.enabled",
+    false
+  );
   is(
     await ASRouterTargeting.Environment.backupArchiveEnabled,
-    true,
-    "should return true if the killswitch is not on"
+    !sqliteEncryptionDisablesBackup,
+    sqliteEncryptionDisablesBackup
+      ? "should be false when SQLite at-rest encryption disables backup"
+      : "should return true if the killswitch is not on"
   );
   await SpecialPowers.popPrefEnv();
   const archiveExperiment = await NimbusTestUtils.enrollWithFeatureConfig({
@@ -2787,10 +2775,18 @@ add_task(async function check_backupRestoreEnabled() {
 
   await pushPrefs(["browser.backup.restore.enabled", true]);
 
+  // Backup is disabled whenever SQLite at-rest encryption is on, so the
+  // targeting value is false regardless of the killswitch in that build.
+  const sqliteEncryptionDisablesBackup = Services.prefs.getBoolPref(
+    "security.storage.encryption.sqlite.enabled",
+    false
+  );
   is(
     await ASRouterTargeting.Environment.backupRestoreEnabled,
-    true,
-    "should return true if the killswitch is not on"
+    !sqliteEncryptionDisablesBackup,
+    sqliteEncryptionDisablesBackup
+      ? "should be false when SQLite at-rest encryption disables backup"
+      : "should return true if the killswitch is not on"
   );
   await SpecialPowers.popPrefEnv();
   await pushPrefs(["browser.backup.restore.enabled", true]);
@@ -2993,4 +2989,24 @@ add_task(async function check_daysSinceLastCrash_returnsDaysSinceLastCrash() {
   } finally {
     sandbox.restore();
   }
+});
+
+add_task(async function check_isLaunchOnLogin() {
+  const result = ASRouterTargeting.Environment.isLaunchOnLogin;
+  is(typeof result, "boolean", "isLaunchOnLogin should be a boolean");
+  is(
+    result,
+    BrowserInitState.isLaunchOnLogin,
+    "isLaunchOnLogin should reflect BrowserInitState.isLaunchOnLogin"
+  );
+
+  const message = {
+    id: "check_isLaunchOnLogin",
+    targeting: `isLaunchOnLogin == ${BrowserInitState.isLaunchOnLogin}`,
+  };
+  is(
+    (await ASRouterTargeting.findMatchingMessage({ messages: [message] })).id,
+    message.id,
+    "should select message matching current isLaunchOnLogin value"
+  );
 });

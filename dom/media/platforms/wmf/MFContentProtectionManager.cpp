@@ -14,9 +14,10 @@ namespace mozilla {
 
 using Microsoft::WRL::ComPtr;
 
-#define LOG(msg, ...)                         \
-  MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug, \
-          ("MFContentProtectionManager=%p, " msg, this, ##__VA_ARGS__))
+#define LOG(msg, ...)                                                \
+  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Debug,                    \
+              "MFContentProtectionManager={}, " msg, fmt::ptr(this), \
+              ##__VA_ARGS__)
 
 MFContentProtectionManager::MFContentProtectionManager() {
   MOZ_COUNT_CTOR(MFContentProtectionManager);
@@ -75,8 +76,9 @@ HRESULT MFContentProtectionManager::BeginEnableContent(
       mCDMProxy->SetContentEnabler(unknownObject.Get(), asyncResult.Get()));
 
   if (mNotifyWaitingForKeyCb) {
-    // Follow Chromium's approach of a 500ms delay before signalling
-    // waitingforkey, to avoid noise from transient content enabler requests.
+    // Follow Chromium's approach of a 500ms delay before
+    // signalling waitingforkey, to avoid noise from transient
+    // content enabler requests.
     // https://source.chromium.org/chromium/chromium/src/+/main:media/renderers/win/media_foundation_protection_manager.cc;l=201-203
     auto result = NS_NewTimerWithFuncCallback(
         &MFContentProtectionManager::WaitingForKeyTimerCallback, this, 500,
@@ -98,9 +100,9 @@ HRESULT MFContentProtectionManager::EndEnableContent(
   }
   HRESULT hr = aAsyncResult->GetStatus();
   if (FAILED(hr)) {
-    // Follow Chromium to not to return failure, which avoid doing additional
-    // work here.
-    LOG("Content enabling failed. hr=%lx", hr);
+    // Follow Chromium to not to return failure, which avoid doing
+    // additional work here.
+    LOG("Content enabling failed. hr={:x}", hr);
   } else {
     LOG("Content enabling succeeded");
   }
@@ -165,9 +167,9 @@ HRESULT MFContentProtectionManager::SetPMPServer(
       serverMap;
   RETURN_IF_FAILED(mPMPServerSet.As(&serverMap));
 
-  // MFMediaEngine uses |serverKey| to get the Protected Media Path (PMP)
-  // server used for playing protected content. This is not currently documented
-  // in MSDN.
+  // MFMediaEngine uses |serverKey| to get the Protected Media
+  // Path (PMP) server used for playing protected content. This is
+  // not currently documented in MSDN.
   boolean replaced = false;
   ScopedHString serverKey{L"Windows.Media.Protection.MediaProtectionPMPServer"};
   RETURN_IF_FAILED(serverMap->Insert(serverKey.Get(), aPMPServer, &replaced));

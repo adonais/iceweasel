@@ -379,18 +379,6 @@ Preferences.addSetting({
   onUserClick: () => {
     window.gotoPref("containers");
   },
-  getControlConfig: config => {
-    let searchKeywords = [
-      "user-context-personal",
-      "user-context-work",
-      "user-context-banking",
-      "user-context-shopping",
-    ]
-      .map(lazy.ContextualIdentityService.formatContextLabel)
-      .join(" ");
-    config.controlAttrs.searchkeywords = searchKeywords;
-    return config;
-  },
   disabled: ({ browserContainersCheckbox }) => !browserContainersCheckbox.value,
 });
 
@@ -689,10 +677,6 @@ SettingGroupManager.registerGroups({
             loadPane: "containers",
             l10nId: "browser-containers-settings-2",
             control: "moz-box-button",
-            controlAttrs: {
-              "search-l10n-ids":
-                "containers-add-button.label, containers-settings-button.label, containers-remove-button.label, containers-new-tab-check.label",
-            },
           },
         ],
       },

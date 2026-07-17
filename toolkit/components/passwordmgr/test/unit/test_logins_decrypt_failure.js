@@ -18,7 +18,6 @@ function resetPrimaryPassword() {
     Ci.nsIPKCS11Token
   );
   token.reset();
-  token.initPassword("");
 }
 
 // Tests

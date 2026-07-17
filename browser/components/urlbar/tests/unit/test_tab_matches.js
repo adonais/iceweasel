@@ -156,7 +156,7 @@ add_task(async function test_tab_matches() {
 
   info("tab match search with restriction character");
   await addOpenPages(uri1, 1);
-  context = createContext(UrlbarTokenizer.RESTRICT.OPENPAGE + " abc", {
+  context = createContext(UrlbarShared.RESTRICT_TOKENS.OPENPAGE + " abc", {
     isPrivate: false,
   });
   await check_results({
@@ -164,7 +164,7 @@ add_task(async function test_tab_matches() {
     matches: [
       makeSearchResult(context, {
         query: "abc",
-        alias: UrlbarTokenizer.RESTRICT.OPENPAGE,
+        alias: UrlbarShared.RESTRICT_TOKENS.OPENPAGE,
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
@@ -208,7 +208,7 @@ add_task(async function test_tab_matches() {
   });
 
   info("tab match with not-addable pages and restriction character");
-  context = createContext(UrlbarTokenizer.RESTRICT.OPENPAGE + " mozilla", {
+  context = createContext(UrlbarShared.RESTRICT_TOKENS.OPENPAGE + " mozilla", {
     isPrivate: false,
   });
   await check_results({
@@ -216,7 +216,7 @@ add_task(async function test_tab_matches() {
     matches: [
       makeSearchResult(context, {
         query: "mozilla",
-        alias: UrlbarTokenizer.RESTRICT.OPENPAGE,
+        alias: UrlbarShared.RESTRICT_TOKENS.OPENPAGE,
         source: UrlbarUtils.RESULT_SOURCE.OTHER_LOCAL,
         heuristic: true,
       }),
@@ -228,7 +228,7 @@ add_task(async function test_tab_matches() {
   });
 
   info("tab match with not-addable pages and only restriction character");
-  context = createContext(UrlbarTokenizer.RESTRICT.OPENPAGE, {
+  context = createContext(UrlbarShared.RESTRICT_TOKENS.OPENPAGE, {
     isPrivate: false,
   });
   await check_results({

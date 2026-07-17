@@ -119,7 +119,11 @@ export class SettingGroup extends SettingElement {
     // Only set/remove attributes when explicitly defined in config
     // This allows handleVisibilityChange to manage visibility independently
     if (this.config?.hiddenFromSearch !== undefined) {
-      this.toggleAttribute(HiddenAttr.Search, !!this.config.hiddenFromSearch);
+      if (this.config.hiddenFromSearch) {
+        this.setAttribute(HiddenAttr.Search, "true");
+      } else {
+        this.removeAttribute(HiddenAttr.Search);
+      }
     }
     if (this.config?.hidden !== undefined) {
       this.toggleAttribute(HiddenAttr.Self, this.config.hidden);
@@ -254,7 +258,7 @@ export class SettingGroup extends SettingElement {
       (this.srdEnabled || this.inSubPane || this.config.card == "always") &&
       this.config.card != "never"
     ) {
-      return html`<moz-card>${content}</moz-card>`;
+      return html`<moz-card role="presentation">${content}</moz-card>`;
     }
     return content;
   }

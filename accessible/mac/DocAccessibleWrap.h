@@ -22,11 +22,11 @@ class DocAccessibleWrap : public DocAccessible {
 
   virtual ~DocAccessibleWrap();
 
-  virtual void Shutdown() override;
+  void Shutdown() override;
 
-  virtual void AttributeChanged(dom::Element* aElement, int32_t aNameSpaceID,
-                                nsAtom* aAttribute, AttrModType aModType,
-                                const nsAttrValue* aOldValue) override;
+  void AttributeChanged(dom::Element* aElement, int32_t aNameSpaceID,
+                        nsAtom* aAttribute, AttrModType aModType,
+                        const nsAttrValue* aOldValue) override;
 
   void QueueNewLiveRegion(LocalAccessible* aAccessible);
 

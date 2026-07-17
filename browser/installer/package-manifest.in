@@ -215,6 +215,13 @@
 @BINPATH@/@MOZ_DXC_DLL_NAME@
 #endif
 
+; Bundled stub PDFs handed to the OS "Open with" picker by the
+; set-default-PDF-handler flow (see WindowsSetDefaultAppCmdHandler).
+#ifdef XP_WIN
+@RESPATH@/browser/confused_fox.pdf
+@RESPATH@/browser/blank.pdf
+#endif
+
 ; [Browser Chrome Files]
 @RESPATH@/browser/chrome.manifest
 @RESPATH@/browser/chrome/browser@JAREXT@

@@ -43,6 +43,11 @@ pub struct BorderRadiusAu {
     pub top_right: LayoutSizeAu,
     pub bottom_left: LayoutSizeAu,
     pub bottom_right: LayoutSizeAu,
+
+    pub shape_top_left: u32,
+    pub shape_top_right: u32,
+    pub shape_bottom_left: u32,
+    pub shape_bottom_right: u32,
 }
 
 impl From<BorderRadius> for BorderRadiusAu {
@@ -52,6 +57,10 @@ impl From<BorderRadius> for BorderRadiusAu {
             top_right: radius.top_right.to_au(),
             bottom_right: radius.bottom_right.to_au(),
             bottom_left: radius.bottom_left.to_au(),
+            shape_top_left: radius.shape_top_left.to_bits(),
+            shape_top_right: radius.shape_top_right.to_bits(),
+            shape_bottom_left: radius.shape_bottom_left.to_bits(),
+            shape_bottom_right: radius.shape_bottom_right.to_bits(),
         }
     }
 }
@@ -63,6 +72,10 @@ impl From<BorderRadiusAu> for BorderRadius {
             top_right: LayoutSize::from_au(radius.top_right),
             bottom_right: LayoutSize::from_au(radius.bottom_right),
             bottom_left: LayoutSize::from_au(radius.bottom_left),
+            shape_top_left: f32::from_bits(radius.shape_top_left),
+            shape_top_right: f32::from_bits(radius.shape_top_right),
+            shape_bottom_left: f32::from_bits(radius.shape_bottom_left),
+            shape_bottom_right: f32::from_bits(radius.shape_bottom_right),
         }
     }
 }
@@ -1493,3 +1506,84 @@ impl NinePatchDescriptor {
         segments
     }
 }
+
+// Computes the stretch-size of a repeated pattern along a border segment,
+// given the segment size and the size of the source pattern.
+pub fn compute_border_repetition(
+    segment_size: LayoutSize,
+    src_size: DeviceSize,
+    repeat_x: RepeatMode,
+    repeat_y: RepeatMode,
+    stretch_size: &mut LayoutSize,
+    spacing: &mut LayoutSize,
+    offset: &mut LayoutVector2D,
+) {
+    use euclid::size2;
+
+    compute_border_repetition_1d(
+        segment_size,
+        src_size,
+        repeat_x,
+        &mut stretch_size.width,
+        &mut spacing.width,
+        &mut offset.x,
+    );
+
+    compute_border_repetition_1d(
+        size2(segment_size.height, segment_size.width),
+        size2(src_size.height, src_size.width),
+        repeat_y,
+        &mut stretch_size.height,
+        &mut spacing.height,
+        &mut offset.y,
+    );
+}
+
+pub fn compute_border_repetition_1d(
+    segment_size: LayoutSize,
+    src_size: DeviceSize,
+    repeat_mode: RepeatMode,
+    out_stretch_size: &mut f32,
+    out_spacing: &mut f32,
+    out_offset: &mut f32,
+) {
+    *out_spacing = 0.0;
+    *out_offset = 0.0;
+
+    let mut stretch_size;
+    if repeat_mode == RepeatMode::Stretch {
+        stretch_size = segment_size.width;
+    } else {
+        let xy_ratio = src_size.width / src_size.height;
+        // Maintain the aspect ratio of the source pattern.
+        stretch_size = segment_size.height * xy_ratio;
+
+        let repetitions = (segment_size.width / stretch_size).floor().max(1.0);
+        let remaining_space = (segment_size.width - stretch_size * repetitions).max(0.0);
+
+        if repeat_mode == RepeatMode::Round {
+            // Stretch the pattern so that an integer number of repetitions
+            // fill the segment exactly.
+            stretch_size = segment_size.width / repetitions
+        }
+
+        if repeat_mode == RepeatMode::Space {
+            // Maintain an integer number of repetitions using some space
+            // between them.
+            *out_spacing = remaining_space / (repetitions - 1.0).max(1.0);
+        }
+
+
+        if repeat_mode == RepeatMode::Repeat {
+            // Offset the pattern to distribute the overflowing repetitions
+            // equally on both sides. To partially include a repetition on the
+            // left side we have to enlarge the local rect to include a full
+            // repetition and let the local clip rect remove the part we don't
+            // want.
+            *out_offset = (remaining_space - stretch_size) * 0.5;
+        }
+    }
+
+    *out_stretch_size = stretch_size;
+}
+

@@ -79,7 +79,11 @@ export var Policy = {
     return TelemetryReportingPolicyImpl._showModal(data);
   },
   delayedSetup: async () => TelemetryReportingPolicyImpl._delayedSetup(),
-  isEligibleOnLinux: () => {
+  // Windows and macOS are enabled through the default pref value in firefox.js
+  // and don't need a runtime opt in. Otherwise, TOU is only supported on
+  // official Mozilla Linux distributions. All other platforms are excluded both
+  // by the pref default in firefox.js and by this explicit Linux gate.
+  shouldEnableTOUAtRuntime: () => {
     return (
       AppConstants.platform === "linux" &&
       Services.prefs
@@ -1268,7 +1272,7 @@ var TelemetryReportingPolicyImpl = {
     }
     this._nimbusVariables = lazy.NimbusFeatures.preonboarding.getAllVariables();
 
-    if (Policy.isEligibleOnLinux()) {
+    if (Policy.shouldEnableTOUAtRuntime()) {
       this._nimbusVariables.enabled = null;
     }
 

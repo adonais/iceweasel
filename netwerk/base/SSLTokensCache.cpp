@@ -7,7 +7,10 @@
 #include "mozilla/Components.h"
 
 #include "CertVerifier.h"
+#include "brotli/decode.h"
+#include "brotli/encode.h"
 #include "CommonSocketControl.h"
+#include "mozilla/EndianUtils.h"
 #include "TransportSecurityInfo.h"
 #include "mozilla/ArrayAlgorithm.h"
 #include "mozilla/glean/NetwerkMetrics.h"
@@ -52,8 +55,6 @@ class ExpirationComparator {
   }
 };
 
-// Deep-copies a flat cert chain (a list of DER-encoded certs).  Used by
-// SessionCacheInfo::Clone() and the FFI marshaling helpers below.
 static nsTArray<nsTArray<uint8_t>> CloneCertChain(
     const nsTArray<nsTArray<uint8_t>>& aSrc) {
   return TransformIntoNewArray(aSrc, [](const auto& c) { return c.Clone(); });
@@ -73,6 +74,197 @@ SessionCacheInfo SessionCacheInfo::Clone() const {
   return result;
 }
 
+// Serialized payload layout (all integers little-endian):
+//   [4: token_len][token bytes]
+//   [1: ev_status]
+//   [2: ct_status]
+//   [1: overridable_error]
+//   [1: builtin_root] (0=Nothing, 1=Some(false), 2=Some(true))
+//   [4: server_cert_len][server_cert bytes]
+//   [1: has_succeeded_chain] if 1: [1: count] then for each [4: len][bytes]
+//   [1: has_handshake_certs] if 1: [1: count] then for each [4: len][bytes]
+//
+// Stored compressed with a 4-byte LE original-size prefix.
+
+template <typename T>
+static void AppendLE(nsTArray<uint8_t>& aBuf, T aVal) {
+  T le = mozilla::NativeEndian::swapToLittleEndian(aVal);
+  aBuf.AppendElements(reinterpret_cast<const uint8_t*>(&le), sizeof(T));
+}
+
+static nsTArray<uint8_t> SerializeRecord(Span<const uint8_t> aToken,
+                                         const SessionCacheInfo& aInfo) {
+  nsTArray<uint8_t> buf;
+  AppendLE(buf, AssertedCast<uint32_t>(aToken.Length()));
+  buf.AppendElements(aToken.Elements(), aToken.Length());
+  buf.AppendElement(aInfo.mEVStatus == psm::EVStatus::EV ? 1 : 0);
+  AppendLE(buf, aInfo.mCertificateTransparencyStatus);
+  buf.AppendElement(static_cast<uint8_t>(aInfo.mOverridableErrorCategory));
+  if (aInfo.mIsBuiltCertChainRootBuiltInRoot.isNothing()) {
+    buf.AppendElement(0);
+  } else {
+    buf.AppendElement(*aInfo.mIsBuiltCertChainRootBuiltInRoot ? 2 : 1);
+  }
+  AppendLE(buf, AssertedCast<uint32_t>(aInfo.mServerCertBytes.Length()));
+  buf.AppendElements(aInfo.mServerCertBytes.Elements(),
+                     aInfo.mServerCertBytes.Length());
+  auto appendChain = [&](const Maybe<nsTArray<nsTArray<uint8_t>>>& aChain) {
+    if (aChain.isNothing()) {
+      buf.AppendElement(0);
+      return;
+    }
+    buf.AppendElement(1);
+    MOZ_RELEASE_ASSERT(aChain->Length() <= 0xFF);
+    buf.AppendElement(static_cast<uint8_t>(aChain->Length()));
+    for (const auto& cert : *aChain) {
+      AppendLE(buf, AssertedCast<uint32_t>(cert.Length()));
+      buf.AppendElements(cert.Elements(), cert.Length());
+    }
+  };
+  appendChain(aInfo.mSucceededCertChainBytes);
+  appendChain(aInfo.mHandshakeCertificatesBytes);
+  return buf;
+}
+
+// Returns empty array on failure.
+static nsTArray<uint8_t> CompressRecord(Span<const uint8_t> aPayload) {
+  size_t bound = BrotliEncoderMaxCompressedSize(aPayload.Length());
+  nsTArray<uint8_t> result;
+  if (!result.SetLength(4 + bound, fallible)) {
+    return {};
+  }
+  uint32_t originalLen = AssertedCast<uint32_t>(aPayload.Length());
+  LittleEndian::writeUint32(result.Elements(), originalLen);
+  size_t encodedSize = bound;
+  if (!BrotliEncoderCompress(5, BROTLI_DEFAULT_WINDOW, BROTLI_MODE_GENERIC,
+                             aPayload.Length(), aPayload.Elements(),
+                             &encodedSize, result.Elements() + 4)) {
+    return {};
+  }
+  result.TruncateLength(4 + encodedSize);
+  return result;
+}
+
+// Returns empty array on failure.
+static nsTArray<uint8_t> DecompressRecord(Span<const uint8_t> aCompressed) {
+  if (aCompressed.Length() < 4) {
+    return {};
+  }
+  uint32_t originalLen = LittleEndian::readUint32(aCompressed.Elements());
+  if (originalLen > 256 * 1024) {
+    LOG(("SSLTokensCache: implausible payload originalLen %" PRIu32,
+         originalLen));
+    return {};
+  }
+  nsTArray<uint8_t> result;
+  if (!result.SetLength(originalLen, fallible)) {
+    return {};
+  }
+  size_t decodedSize = originalLen;
+  BrotliDecoderResult r = BrotliDecoderDecompress(
+      aCompressed.Length() - 4, aCompressed.Elements() + 4, &decodedSize,
+      result.Elements());
+  if (r != BROTLI_DECODER_RESULT_SUCCESS || decodedSize != originalLen) {
+    return {};
+  }
+  return result;
+}
+
+struct PayloadReader {
+  Span<const uint8_t> buf;
+  size_t pos = 0;
+
+  template <typename T>
+  bool Read(T& out) {
+    if (buf.Length() - pos < sizeof(T)) return false;
+    if constexpr (sizeof(T) == 1) {
+      out = static_cast<T>(buf[pos]);
+    } else {
+      T le;
+      memcpy(&le, buf.Elements() + pos, sizeof(T));
+      out = mozilla::NativeEndian::swapFromLittleEndian(le);
+    }
+    pos += sizeof(T);
+    return true;
+  }
+  bool Bytes(nsTArray<uint8_t>& out, uint32_t len) {
+    if (buf.Length() - pos < len) return false;
+    if (!out.SetLength(len, fallible)) return false;
+    memcpy(out.Elements(), buf.Elements() + pos, len);
+    pos += len;
+    return true;
+  }
+  bool AtEnd() const { return pos == buf.Length(); }
+};
+
+static bool DeserializeRecord(Span<const uint8_t> aBuf,
+                              nsTArray<uint8_t>& aToken,
+                              SessionCacheInfo& aInfo) {
+  PayloadReader r{aBuf};
+
+  uint32_t tokenLen;
+  if (!r.Read(tokenLen)) return false;
+  if (tokenLen > 256 * 1024) return false;
+  if (!r.Bytes(aToken, tokenLen)) return false;
+
+  uint8_t evStatus;
+  if (!r.Read(evStatus)) return false;
+  aInfo.mEVStatus = evStatus ? psm::EVStatus::EV : psm::EVStatus::NotEV;
+
+  uint16_t ctStatus;
+  if (!r.Read(ctStatus)) return false;
+  aInfo.mCertificateTransparencyStatus = ctStatus;
+
+  uint8_t overridableError;
+  if (!r.Read(overridableError)) return false;
+  aInfo.mOverridableErrorCategory =
+      static_cast<nsITransportSecurityInfo::OverridableErrorCategory>(
+          overridableError);
+
+  uint8_t builtinRoot;
+  if (!r.Read(builtinRoot)) return false;
+  if (builtinRoot == 0) {
+    aInfo.mIsBuiltCertChainRootBuiltInRoot = Nothing();
+  } else if (builtinRoot == 1) {
+    aInfo.mIsBuiltCertChainRootBuiltInRoot = Some(false);
+  } else if (builtinRoot == 2) {
+    aInfo.mIsBuiltCertChainRootBuiltInRoot = Some(true);
+  } else {
+    return false;
+  }
+
+  uint32_t serverCertLen;
+  if (!r.Read(serverCertLen)) return false;
+  if (serverCertLen > 64 * 1024) return false;
+  if (!r.Bytes(aInfo.mServerCertBytes, serverCertLen)) return false;
+
+  auto readChain = [&](Maybe<nsTArray<nsTArray<uint8_t>>>& aChain) -> bool {
+    uint8_t present;
+    if (!r.Read(present)) return false;
+    if (!present) {
+      aChain = Nothing();
+      return true;
+    }
+    uint8_t count;
+    if (!r.Read(count)) return false;
+    nsTArray<nsTArray<uint8_t>> chain;
+    for (uint8_t i = 0; i < count; i++) {
+      uint32_t certLen;
+      if (!r.Read(certLen)) return false;
+      if (certLen > 64 * 1024) return false;
+      nsTArray<uint8_t> cert;
+      if (!r.Bytes(cert, certLen)) return false;
+      chain.AppendElement(std::move(cert));
+    }
+    aChain = Some(std::move(chain));
+    return true;
+  };
+
+  if (!readChain(aInfo.mSucceededCertChainBytes)) return false;
+  if (!readChain(aInfo.mHandshakeCertificatesBytes)) return false;
+  return r.AtEnd();
+}
+
 StaticRefPtr<SSLTokensCache> SSLTokensCache::gInstance;
 StaticMutex SSLTokensCache::sLock;
 uint64_t SSLTokensCache::sRecordId = 0;
@@ -81,42 +273,11 @@ SSLTokensCache::TokenCacheRecord::~TokenCacheRecord() {
   if (!gInstance) {
     return;
   }
-
   gInstance->OnRecordDestroyed(this);
 }
 
 uint32_t SSLTokensCache::TokenCacheRecord::Size() const {
-  uint32_t size = mToken.Length() + sizeof(mSessionCacheInfo.mEVStatus) +
-                  sizeof(mSessionCacheInfo.mCertificateTransparencyStatus) +
-                  mSessionCacheInfo.mServerCertBytes.Length() +
-                  sizeof(mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot) +
-                  sizeof(mSessionCacheInfo.mOverridableErrorCategory);
-  if (mSessionCacheInfo.mSucceededCertChainBytes) {
-    for (const auto& cert : mSessionCacheInfo.mSucceededCertChainBytes.ref()) {
-      size += cert.Length();
-    }
-  }
-  if (mSessionCacheInfo.mHandshakeCertificatesBytes) {
-    for (const auto& cert :
-         mSessionCacheInfo.mHandshakeCertificatesBytes.ref()) {
-      size += cert.Length();
-    }
-  }
-  return size;
-}
-
-void SSLTokensCache::TokenCacheRecord::Reset() {
-  mToken.Clear();
-  mExpirationTime = 0;
-  mSessionCacheInfo.mEVStatus = psm::EVStatus::NotEV;
-  mSessionCacheInfo.mCertificateTransparencyStatus =
-      nsITransportSecurityInfo::CERTIFICATE_TRANSPARENCY_NOT_APPLICABLE;
-  mSessionCacheInfo.mServerCertBytes.Clear();
-  mSessionCacheInfo.mSucceededCertChainBytes.reset();
-  mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot.reset();
-  mSessionCacheInfo.mOverridableErrorCategory =
-      nsITransportSecurityInfo::OverridableErrorCategory::ERROR_UNSET;
-  mSessionCacheInfo.mHandshakeCertificatesBytes.reset();
+  return mKey.Length() + mCompressedPayload.Length();
 }
 
 uint32_t SSLTokensCache::TokenCacheEntry::Size() const {
@@ -399,61 +560,22 @@ SSLTokensCache::SSLTokensCache() { LOG(("SSLTokensCache::SSLTokensCache")); }
 
 SSLTokensCache::~SSLTokensCache() { LOG(("SSLTokensCache::~SSLTokensCache")); }
 
-// Helpers for marshaling cert chain data across the Rust FFI boundary.
-// The FFI representation uses nsTArray<nsTArray<uint8_t>> where an empty
-// array signals "absent" (i.e. Maybe::Nothing on the C++ side), and
-// nsTArray<bool> with 0 or 1 elements for optional booleans.
-
-static nsTArray<nsTArray<uint8_t>> ChainToFfi(
-    const Maybe<nsTArray<nsTArray<uint8_t>>>& aSrc) {
-  if (aSrc.isNothing()) {
-    return {};
-  }
-  return CloneCertChain(*aSrc);
-}
-
-static Maybe<nsTArray<nsTArray<uint8_t>>> ChainFromFfi(
-    const nsTArray<nsTArray<uint8_t>>& aSrc) {
-  return aSrc.IsEmpty() ? Nothing() : Some(CloneCertChain(aSrc));
-}
-
-static nsTArray<bool> BoolToFfi(const Maybe<bool>& aSrc) {
-  if (aSrc.isNothing()) return {};
-  return nsTArray<bool>{*aSrc};
-}
-
-static Maybe<bool> BoolFromFfi(const nsTArray<bool>& aSrc) {
-  return aSrc.IsEmpty() ? Nothing() : Some(aSrc[0]);
-}
-
 nsTArray<SslTokensPersistedRecord> SSLTokensCache::CollectSnapshotLocked()
     const {
   sLock.AssertCurrentThreadOwns();
   nsTArray<SslTokensPersistedRecord> snapshot;
   for (const auto& entry : mTokenCacheRecords.Values()) {
     for (const auto& rec : entry->Records()) {
-      const uint8_t overridable = static_cast<uint8_t>(
-          rec->mSessionCacheInfo.mOverridableErrorCategory);
-      if (!ShouldPersistKey(rec->mKey, overridable)) {
+      if (!ShouldPersistKey(rec->mKey, rec->mOverridableError)) {
         continue;
       }
       auto& ffi = *snapshot.AppendElement();
       ffi.id = rec->mId;
       ffi.key = rec->mKey;
       ffi.expiration_time = static_cast<int64_t>(rec->mExpirationTime);
-      ffi.token = rec->mToken.Elements();
-      ffi.token_len = rec->mToken.Length();
-      ffi.ev_status =
-          rec->mSessionCacheInfo.mEVStatus == psm::EVStatus::EV ? 1 : 0;
-      ffi.ct_status = rec->mSessionCacheInfo.mCertificateTransparencyStatus;
-      ffi.overridable_error = overridable;
-      ffi.server_cert = rec->mSessionCacheInfo.mServerCertBytes.Clone();
-      ffi.succeeded_cert_chain =
-          ChainToFfi(rec->mSessionCacheInfo.mSucceededCertChainBytes);
-      ffi.handshake_certs =
-          ChainToFfi(rec->mSessionCacheInfo.mHandshakeCertificatesBytes);
-      ffi.is_built_cert_chain_root_built_in_root =
-          BoolToFfi(rec->mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot);
+      ffi.overridable_error = rec->mOverridableError;
+      ffi.compressed_payload = rec->mCompressedPayload.Elements();
+      ffi.compressed_payload_len = rec->mCompressedPayload.Length();
     }
   }
   return snapshot;
@@ -588,6 +710,22 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
     handshakeCertificatesBytes.emplace(result.unwrap());
   }
 
+  SessionCacheInfo info;
+  info.mEVStatus = isEV ? psm::EVStatus::EV : psm::EVStatus::NotEV;
+  info.mCertificateTransparencyStatus = certificateTransparencyStatus;
+  info.mOverridableErrorCategory = overridableErrorCategory;
+  info.mIsBuiltCertChainRootBuiltInRoot = isBuiltCertChainRootBuiltInRoot;
+  info.mServerCertBytes = std::move(certBytes);
+  info.mSucceededCertChainBytes = std::move(succeededCertChainBytes);
+  info.mHandshakeCertificatesBytes = std::move(handshakeCertificatesBytes);
+
+  nsTArray<uint8_t> payload = SerializeRecord({aToken, aTokenLen}, info);
+  nsTArray<uint8_t> compressed = CompressRecord(payload);
+  if (compressed.IsEmpty()) {
+    LOG(("SSLTokensCache::Put: compression failed"));
+    return NS_ERROR_FAILURE;
+  }
+
   {
     StaticMutexAutoLock lock(sLock);
 
@@ -600,22 +738,8 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
       auto rec = MakeUnique<TokenCacheRecord>();
       rec->mKey = aKey;
       rec->mExpirationTime = aExpirationTime;
-      MOZ_ASSERT(rec->mToken.IsEmpty());
-      rec->mToken.AppendElements(aToken, aTokenLen);
-      rec->mSessionCacheInfo.mServerCertBytes = certBytes.Clone();
-      rec->mSessionCacheInfo.mSucceededCertChainBytes =
-          succeededCertChainBytes.map(CloneCertChain);
-      if (isEV) {
-        rec->mSessionCacheInfo.mEVStatus = psm::EVStatus::EV;
-      }
-      rec->mSessionCacheInfo.mCertificateTransparencyStatus =
-          certificateTransparencyStatus;
-      rec->mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot =
-          isBuiltCertChainRootBuiltInRoot;
-      rec->mSessionCacheInfo.mOverridableErrorCategory =
-          overridableErrorCategory;
-      rec->mSessionCacheInfo.mHandshakeCertificatesBytes =
-          handshakeCertificatesBytes.map(CloneCertChain);
+      rec->mOverridableError = static_cast<uint8_t>(overridableErrorCategory);
+      rec->mCompressedPayload = std::move(compressed);
       return rec;
     };
 
@@ -628,47 +752,33 @@ nsresult SSLTokensCache::Put(const nsACString& aKey, const uint8_t* aToken,
 }
 
 // static
-// Retrieves a TLS session resumption token from the cache.
-//
-// Behavior:
-// - Searches for cached tokens matching aKey (typically a peer ID that includes
-//   hostname, port, and TLS flags)
-// - Multiple tokens may exist per key (stored in a pool); this method retrieves
-//   and removes the first non-expired token
-// - Expired tokens are automatically discarded during lookup
-// - Returns NS_ERROR_NOT_AVAILABLE if no valid token is found
-//
-// Parameters:
-// - aKey: Cache key identifying the connection (peer ID)
-// - aToken: [out] The TLS session resumption token bytes
-// - aResult: [out] Associated session info (certificates, EV status, CT status)
-// - aTokenId: [out, optional] Unique ID of the retrieved token (for later
-// removal)
-//
-// Note: This is a destructive read - the token is removed from the cache after
-// retrieval to prevent reuse, as TLS session tickets are typically single-use.
 nsresult SSLTokensCache::Get(const nsACString& aKey, nsTArray<uint8_t>& aToken,
                              SessionCacheInfo& aResult, uint64_t* aTokenId) {
-  StaticMutexAutoLock lock(sLock);
-
   LOG(("SSLTokensCache::Get [key=%s]", PromiseFlatCString(aKey).get()));
 
+  StaticMutexAutoLock lock(sLock);
   if (!gInstance) {
     LOG(("  service not initialized"));
     return NS_ERROR_NOT_INITIALIZED;
   }
-
-  return gInstance->GetLocked(aKey, aToken, aResult, aTokenId);
+  UniquePtr<TokenCacheRecord> owned =
+      gInstance->GetRecordLocked(aKey, aTokenId);
+  if (!owned) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+  nsTArray<uint8_t> payload = DecompressRecord(owned->mCompressedPayload);
+  if (payload.IsEmpty() || !DeserializeRecord(payload, aToken, aResult)) {
+    return NS_ERROR_FAILURE;
+  }
+  return NS_OK;
 }
 
-nsresult SSLTokensCache::GetLocked(const nsACString& aKey,
-                                   nsTArray<uint8_t>& aToken,
-                                   SessionCacheInfo& aResult,
-                                   uint64_t* aTokenId) {
+UniquePtr<SSLTokensCache::TokenCacheRecord> SSLTokensCache::GetRecordLocked(
+    const nsACString& aKey, uint64_t* aTokenId) {
   sLock.AssertCurrentThreadOwns();
 
   if (!mLoadComplete && mBackingFile) {
-    LOG(("SSLTokensCache::GetLocked: connection before load complete"));
+    LOG(("SSLTokensCache::GetRecordLocked: connection before load complete"));
     mozilla::glean::network::ssl_token_cache_early_connections.Add(1);
   }
 
@@ -678,7 +788,7 @@ nsresult SSLTokensCache::GetLocked(const nsACString& aKey,
     if (cacheEntry->RecordCount() == 0) {
       MOZ_ASSERT(false, "Found a cacheEntry with no records");
       mTokenCacheRecords.Remove(aKey);
-      return NS_ERROR_NOT_AVAILABLE;
+      return nullptr;
     }
 
     PRTime now = PR_Now();
@@ -690,8 +800,6 @@ nsresult SSLTokensCache::GetLocked(const nsACString& aKey,
         uint64_t id = rec->mId;
         uint32_t size = rec->Size();
         UniquePtr<TokenCacheRecord> owned = cacheEntry->RemoveWithId(id);
-        aToken = std::move(owned->mToken);
-        aResult = std::move(owned->mSessionCacheInfo);
         if (aTokenId) {
           *aTokenId = id;
         }
@@ -700,9 +808,9 @@ nsresult SSLTokensCache::GetLocked(const nsACString& aKey,
           mTokenCacheRecords.Remove(aKey);
         }
         mozilla::glean::network::ssl_token_cache_hits.Get("hit"_ns).Add(1);
-        LOG(("SSLTokensCache::GetLocked: hit [key=%s, load_complete=%s]",
+        LOG(("SSLTokensCache::GetRecordLocked: hit [key=%s, load_complete=%s]",
              PromiseFlatCString(aKey).get(), mLoadComplete ? "yes" : "no"));
-        return NS_OK;
+        return owned;
       }
 
       LOG(("  skipping expired token [expirationTime=%" PRId64 ", now=%" PRId64
@@ -719,7 +827,7 @@ nsresult SSLTokensCache::GetLocked(const nsACString& aKey,
 
   LOG(("  token not found"));
   mozilla::glean::network::ssl_token_cache_hits.Get("miss"_ns).Add(1);
-  return NS_ERROR_NOT_AVAILABLE;
+  return nullptr;
 }
 
 // static
@@ -816,10 +924,16 @@ void SSLTokensCache::EvictIfNecessary() {
 
   mExpirationArray.Sort(ExpirationComparator());
 
+  PRTime now = PR_Now();
   while (mCacheSize > capacity && mExpirationArray.Length() > 0) {
-    mozilla::glean::network::ssl_token_cache_evictions.Add(1);
-    DebugOnly<nsresult> rv =
-        RemoveLocked(mExpirationArray[0]->mKey, mExpirationArray[0]->mId);
+    auto* rec = mExpirationArray[0];
+    // Only count evictions of tokens that are still valid; already-expired
+    // tokens would be discarded on lookup anyway and are tracked separately
+    // by ssl_token_cache_expired.
+    if (rec->mExpirationTime > now) {
+      mozilla::glean::network::ssl_token_cache_evictions.Add(1);
+    }
+    DebugOnly<nsresult> rv = RemoveLocked(rec->mKey, rec->mId);
     MOZ_ASSERT(NS_SUCCEEDED(rv),
                "mExpirationArray and mTokenCacheRecords are out of sync!");
   }
@@ -848,7 +962,7 @@ size_t SSLTokensCache::SizeOfIncludingThis(
   for (const auto* rec : mExpirationArray) {
     n += mallocSizeOf(rec);
     n += rec->mKey.SizeOfExcludingThisIfUnshared(mallocSizeOf);
-    n += rec->mToken.ShallowSizeOfExcludingThis(mallocSizeOf);
+    n += rec->mCompressedPayload.ShallowSizeOfExcludingThis(mallocSizeOf);
   }
 
   return n;
@@ -1058,24 +1172,12 @@ bool SSLTokensCache::PutFromPersisted(const SslTokensPersistedRecord* aRec,
   if (!gInstance || gInstance->mLoadGeneration != aExpectedGen) {
     return false;
   }
-
   auto rec = MakeUnique<TokenCacheRecord>();
   rec->mKey = aRec->key;
   rec->mExpirationTime = static_cast<PRTime>(aRec->expiration_time);
-  rec->mToken.AppendElements(aRec->token, aRec->token_len);
-  rec->mSessionCacheInfo.mEVStatus =
-      aRec->ev_status ? psm::EVStatus::EV : psm::EVStatus::NotEV;
-  rec->mSessionCacheInfo.mCertificateTransparencyStatus = aRec->ct_status;
-  rec->mSessionCacheInfo.mOverridableErrorCategory =
-      static_cast<nsITransportSecurityInfo::OverridableErrorCategory>(
-          aRec->overridable_error);
-  rec->mSessionCacheInfo.mServerCertBytes = aRec->server_cert.Clone();
-  rec->mSessionCacheInfo.mSucceededCertChainBytes =
-      ChainFromFfi(aRec->succeeded_cert_chain);
-  rec->mSessionCacheInfo.mHandshakeCertificatesBytes =
-      ChainFromFfi(aRec->handshake_certs);
-  rec->mSessionCacheInfo.mIsBuiltCertChainRootBuiltInRoot =
-      BoolFromFfi(aRec->is_built_cert_chain_root_built_in_root);
+  rec->mOverridableError = aRec->overridable_error;
+  rec->mCompressedPayload.AppendElements(aRec->compressed_payload,
+                                         aRec->compressed_payload_len);
   gInstance->InsertRecordLocked(std::move(rec));
   return true;
 }
@@ -1196,6 +1298,12 @@ uint32_t SSLTokensCache::CountForTest() {
 }
 
 // static
+uint32_t SSLTokensCache::CacheSizeForTest() {
+  StaticMutexAutoLock lock(sLock);
+  return gInstance ? gInstance->mCacheSize : 0;
+}
+
+// static
 void SSLTokensCache::PutForTest(const nsACString& aKey) {
   uint32_t gen = 0;
   {
@@ -1205,11 +1313,18 @@ void SSLTokensCache::PutForTest(const nsACString& aKey) {
     }
   }
   uint8_t dummyToken[] = {0xDE, 0xAD, 0xBE, 0xEF};
+  SessionCacheInfo info;
+  nsTArray<uint8_t> payload =
+      SerializeRecord({dummyToken, sizeof(dummyToken)}, info);
+  nsTArray<uint8_t> compressed = CompressRecord(payload);
+  if (compressed.IsEmpty()) {
+    return;
+  }
   SslTokensPersistedRecord rec{};
   rec.key = aKey;
   rec.expiration_time = PR_Now() + 3600LL * PR_USEC_PER_SEC;
-  rec.token = dummyToken;
-  rec.token_len = sizeof(dummyToken);
+  rec.compressed_payload = compressed.Elements();
+  rec.compressed_payload_len = compressed.Length();
   PutFromPersisted(&rec, gen);
 }
 
@@ -1250,6 +1365,7 @@ SSLTokensCache::Observe(nsISupports* aSubject, const char* aTopic,
         if (!wantPersistence) {
           gInstance->mBackingFile = nullptr;
           gInstance->mWriteTaskQueue = nullptr;
+          gInstance->ClearCacheLocked();
         }
       }
     }

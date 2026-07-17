@@ -188,22 +188,6 @@ void MutationObservers::NotifyContentWillBeRemoved(
                                   nsIMutationObserver::kContentWillBeRemoved);
 }
 
-void MutationObservers::NotifyARIAAttributeDefaultWillChange(
-    mozilla::dom::Element* aElement, nsAtom* aAttribute, AttrModType aModType) {
-  Notify<NotifyPresShell::No>(
-      aElement,
-      NOTIFIER(ARIAAttributeDefaultWillChange, aElement, aAttribute, aModType),
-      nsIMutationObserver::kARIAAttributeDefaultWillChange);
-}
-
-void MutationObservers::NotifyARIAAttributeDefaultChanged(
-    mozilla::dom::Element* aElement, nsAtom* aAttribute, AttrModType aModType) {
-  Notify<NotifyPresShell::No>(
-      aElement,
-      NOTIFIER(ARIAAttributeDefaultChanged, aElement, aAttribute, aModType),
-      nsIMutationObserver::kARIAAttributeDefaultChanged);
-}
-
 }  // namespace mozilla
 
 void MutationObservers::NotifyAnimationMutated(

@@ -827,19 +827,7 @@ template <typename I>
 static int32_t MemoryInit(JSContext* cx, Instance* instance,
                           uint32_t memoryIndex, I dstOffset, uint32_t srcOffset,
                           uint32_t len, const DataSegment* maybeSeg) {
-  if (!maybeSeg) {
-    if (len == 0 && srcOffset == 0) {
-      return 0;
-    }
-
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
-    return -1;
-  }
-
-  const DataSegment& seg = *maybeSeg;
-  MOZ_RELEASE_ASSERT(!seg.active());
-
-  const uint32_t segLen = seg.bytes.length();
+  const uint32_t segLen = maybeSeg ? maybeSeg->bytes.length() : 0;
   WasmMemoryObject* mem = instance->memory(memoryIndex);
   const size_t memLen = mem->volatileMemoryLength();
 
@@ -853,6 +841,17 @@ static int32_t MemoryInit(JSContext* cx, Instance* instance,
     ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
     return -1;
   }
+
+  // Besides the obvious, this condition also handles dropped data segments,
+  // because any nonzero init length on a dropped segment will fail the above
+  // bounds check.
+  if (len == 0) {
+    return 0;
+  }
+
+  MOZ_RELEASE_ASSERT(maybeSeg);
+  const DataSegment& seg = *maybeSeg;
+  MOZ_RELEASE_ASSERT(!seg.active());
 
   // The required read/write direction is upward, but that is not currently
   // observable as there are no fences nor any read/write protect operation.
@@ -1527,10 +1526,10 @@ template void* Instance::arrayNew<false>(Instance* instance,
                                          uint32_t typeDefIndex,
                                          gc::AllocSite* allocSite);
 
-// Copies from a data segment into a wasm GC array. Performs the necessary
-// bounds checks, accounting for the array's element size. If this function
-// returns false, it has already reported a trap error. Null arrays should
-// be handled in the caller.
+// Copies from a (possibly dropped) data segment into a wasm GC array. Performs
+// the necessary bounds checks, accounting for the array's element size. If this
+// function returns false, it has already reported a trap error. Null arrays
+// should be handled in the caller.
 static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
                               uint32_t arrayIndex, const DataSegment* seg,
                               uint32_t segByteOffset, uint32_t numElements) {
@@ -1540,7 +1539,8 @@ static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   CheckedUint32 numBytesToCopy =
       CheckedUint32(numElements) * CheckedUint32(elemSize);
   if (!numBytesToCopy.isValid()) {
-    // Because the request implies that 2^32 or more bytes are to be copied.
+    // If 2^32 or more bytes are to be copied, this is necessarily out of bounds
+    // on the data segment.
     ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
     return false;
   }
@@ -1552,7 +1552,7 @@ static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   CheckedUint32 lastByteOffsetPlus1 =
       CheckedUint32(segByteOffset) + numBytesToCopy;
 
-  CheckedUint32 numBytesAvailable(seg->bytes.length());
+  CheckedUint32 numBytesAvailable(seg ? seg->bytes.length() : 0);
   if (!lastByteOffsetPlus1.isValid() || !numBytesAvailable.isValid() ||
       lastByteOffsetPlus1.value() > numBytesAvailable.value()) {
     // Because the last byte to copy doesn't exist inside `seg->bytes`.
@@ -1575,6 +1575,7 @@ static bool ArrayCopyFromData(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   // Because `numBytesToCopy` is an in-range `CheckedUint32`, the cast to
   // `size_t` is safe even on a 32-bit target.
   if (numElements != 0) {
+    MOZ_RELEASE_ASSERT(seg);
     memcpy(&arrayObj->data_[dstByteOffset], &seg->bytes[segByteOffset],
            size_t(numBytesToCopy.value()));
   }
@@ -1632,17 +1633,6 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
                      "ensured by validation");
   const DataSegment* seg = instance->passiveDataSegments_[segIndex];
 
-  // `seg` will be nullptr if the segment has already been 'data.drop'ed
-  // (either implicitly in the case of 'active' segments during instantiation,
-  // or explicitly by the data.drop instruction.)  In that case we can
-  // continue only if there's no need to copy any data out of it.
-  if (!seg && (numElements != 0 || segByteOffset != 0)) {
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
-    return nullptr;
-  }
-  // At this point, if `seg` is null then `numElements` and `segByteOffset`
-  // are both zero.
-
   Rooted<WasmArrayObject*> arrayObj(
       cx,
       WasmArrayObject::createArray<true>(
@@ -1652,11 +1642,6 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
     return nullptr;
   }
   MOZ_RELEASE_ASSERT(arrayObj->is<WasmArrayObject>());
-
-  if (!seg) {
-    // A zero-length array was requested and has been created, so we're done.
-    return arrayObj;
-  }
 
   if (!ArrayCopyFromData(cx, arrayObj, 0, seg, segByteOffset, numElements)) {
     // Trap errors will be reported by ArrayCopyFromData.
@@ -1732,27 +1717,10 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
                      "ensured by validation");
   const DataSegment* seg = instance->passiveDataSegments_[segIndex];
 
-  // `seg` will be nullptr if the segment has already been 'data.drop'ed
-  // (either implicitly in the case of 'active' segments during instantiation,
-  // or explicitly by the data.drop instruction.)  In that case we can
-  // continue only if there's no need to copy any data out of it.
-  if (!seg && (numElements != 0 || segByteOffset != 0)) {
-    ReportTrapError(cx, JSMSG_WASM_OUT_OF_BOUNDS);
-    return -1;
-  }
-  // At this point, if `seg` is null then `numElements` and `segByteOffset`
-  // are both zero.
-
   // Trap if the array is null.
   if (!array) {
     ReportTrapError(cx, JSMSG_WASM_DEREF_NULL);
     return -1;
-  }
-
-  if (!seg) {
-    // The segment was dropped, therefore a zero-length init was requested, so
-    // we're done.
-    return 0;
   }
 
   // Get hold of the array.
@@ -1911,9 +1879,10 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   }
   MOZ_ASSERT(target->isWasm());
 
-  void* stub = instance->code().sharedStubs().codeBase +
-               instance->code().contBaseFrameOffset();
-  ContObject* cont = ContObject::create(cx, target, stub);
+  const Code& creatorCode = instance->code();
+  void* stub =
+      creatorCode.sharedStubs().codeBase + creatorCode.contBaseFrameOffset();
+  ContObject* cont = ContObject::create(cx, target, stub, &creatorCode);
   return AnyRef::fromJSObjectOrNull(cont).forCompiledCode();
 }
 
@@ -1943,7 +1912,7 @@ static bool ArrayCopyFromElem(JSContext* cx, Handle<WasmArrayObject*> arrayObj,
   // We don't create the .stack property by default, unless the pref is set for
   // debugging.
   if (JS::Prefs::wasm_exception_force_stack_trace() &&
-      !CaptureStack(cx, &stack)) {
+      !CaptureStack(cx, &stack, MAX_REPORTED_STACK_DEPTH)) {
     ReportOutOfMemory(cx);
     return nullptr;
   }
@@ -2668,8 +2637,14 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
   // Create and initialize alloc sites, they are all the same for Wasm.
   uint32_t allocSitesCount = codeTailMeta().numAllocSites;
   if (allocSitesCount > 0) {
-    allocSites_ =
-        (gc::AllocSite*)js_malloc(sizeof(gc::AllocSite) * allocSitesCount);
+    mozilla::CheckedInt<size_t> numBytesRequired =
+        mozilla::CheckedInt<size_t>(allocSitesCount) *
+        mozilla::CheckedInt<size_t>(sizeof(gc::AllocSite));
+    if (!numBytesRequired.isValid()) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+    allocSites_ = (gc::AllocSite*)js_malloc(numBytesRequired.value());
     if (!allocSites_) {
       ReportOutOfMemory(cx);
       return false;
@@ -2687,14 +2662,20 @@ bool Instance::init(JSContext* cx, const JSObjectVector& funcImports,
 #ifdef ENABLE_WASM_JSPI
     if (JSObject* suspendingObject = MaybeUnwrapSuspendingObject(f)) {
       // Compile suspending function Wasm wrapper.
-      const FuncType& funcType = codeMeta().getFuncType(i);
+      uint32_t funcTypeIndex = codeMeta().funcs[i].typeIndex;
       RootedObject wrapped(cx, suspendingObject);
-      RootedFunction wrapper(cx, WasmSuspendingFunctionCreate(
-                                     cx, wrapped, funcType, codeMeta().types));
+      RootedFunction wrapper(
+          cx, WasmSuspendingFunctionCreate(cx, wrapped, funcTypeIndex,
+                                           codeMeta().types));
       if (!wrapper) {
         return false;
       }
-      MOZ_ASSERT(wrapper->isWasm());
+      // The wrapper must expose exactly the import's declared type so that
+      // ref.test/ref.cast/call_indirect against that type behave correctly.
+      MOZ_RELEASE_ASSERT(wrapper->isWasm());
+      MOZ_RELEASE_ASSERT(&wrapper->wasmInstance().codeMeta().getFuncTypeDef(
+                             wrapper->wasmFuncIndex()) ==
+                         &codeMeta().getFuncTypeDef(i));
       f = wrapper;
     }
 #endif
@@ -3920,6 +3901,8 @@ static bool WasmCall(JSContext* cx, unsigned argc, Value* vp) {
 
 bool Instance::getExportedFunction(JSContext* cx, uint32_t funcIndex,
                                    MutableHandleFunction result) {
+  MOZ_RELEASE_ASSERT(realm() == cx->realm());
+
   uint32_t funcExportIndex = codeMeta().findFuncExportIndex(funcIndex);
   FuncExportInstanceData& instanceData =
       funcExportInstanceData(funcExportIndex);
@@ -4302,8 +4285,8 @@ JSString* Instance::createDisplayURL(JSContext* cx) {
   // In the best case, we simply have a URL, from a streaming compilation of a
   // fetched Response.
 
-  if (codeMeta().scriptedCaller().filenameIsURL) {
-    const char* filename = codeMeta().scriptedCaller().filename.get();
+  if (codeMeta().scriptedCaller().kind == ScriptedCallerKind::Url) {
+    const char* filename = codeMeta().scriptedCaller().source.get();
     return NewStringCopyUTF8N(cx, JS::UTF8Chars(filename, strlen(filename)));
   }
 
@@ -4317,7 +4300,7 @@ JSString* Instance::createDisplayURL(JSContext* cx) {
     return nullptr;
   }
 
-  if (const char* filename = codeMeta().scriptedCaller().filename.get()) {
+  if (const char* filename = codeMeta().scriptedCaller().source.get()) {
     // EncodeURI returns false due to invalid chars or OOM -- fail only
     // during OOM.
     JSString* filenamePrefix = EncodeURI(cx, filename, strlen(filename));

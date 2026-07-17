@@ -17,8 +17,6 @@ NS_IMPL_ISUPPORTS(MozIntlHelper, mozIMozIntlHelper)
 
 MozIntlHelper::MozIntlHelper() = default;
 
-MozIntlHelper::~MozIntlHelper() = default;
-
 NS_IMETHODIMP
 MozIntlHelper::AddGetCalendarInfo(JS::Handle<JS::Value> val, JSContext* cx) {
   if (!val.isObject()) {

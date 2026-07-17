@@ -38,8 +38,6 @@ UNIFIED_SOURCES += [
 
 if CONFIG["TARGET_KERNEL"] == "WINNT":
     SOURCES += [
-        "src/base/condition_variable_win.cc",
-        "src/base/lock_impl_win.cc",
         "src/base/message_pump_win.cc",
         "src/base/object_watcher.cc",
         "src/base/platform_thread_win.cc",
@@ -63,8 +61,6 @@ elif CONFIG["TARGET_KERNEL"] != "Darwin":
 
 if CONFIG["TARGET_KERNEL"] != "WINNT":
     UNIFIED_SOURCES += [
-        "src/base/condition_variable_posix.cc",
-        "src/base/lock_impl_posix.cc",
         "src/base/platform_thread_posix.cc",
         "src/base/process_util_posix.cc",
         "src/base/string16.cc",

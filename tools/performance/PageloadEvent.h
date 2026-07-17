@@ -55,7 +55,13 @@ struct PageLoadDomainExtra;
   _(networkType, uint32_t)                     \
   _(androidAppLinkLaunchType, uint32_t)        \
   _(androidAppLinkToNavigationStart, uint32_t) \
-  _(androidIsolationCategory, uint32_t)
+  _(androidIsolationCategory, uint32_t)        \
+  _(interactionCount, uint32_t)                \
+  _(inpLongest, uint32_t)                      \
+  _(inpP98, uint32_t)                          \
+  _(inpP75, uint32_t)                          \
+  _(keypressMaxDuration, uint32_t)             \
+  _(mouseClick, uint32_t)
 
 namespace mozilla::performance::pageload_event {
 /*

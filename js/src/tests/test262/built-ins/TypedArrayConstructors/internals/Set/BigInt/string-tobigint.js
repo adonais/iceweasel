@@ -82,6 +82,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(SyntaxError, function() {
     typedArray[0] = '1e7';
   }, '`typedArray[0] = "1e7"` throws SyntaxError');
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

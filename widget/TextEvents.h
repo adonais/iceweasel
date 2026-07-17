@@ -316,24 +316,6 @@ class WidgetKeyboardEvent final : public WidgetInputEvent {
     if (IsModifierKeyEvent()) {
       return false;
     }
-
-    if (mFlags.mIsShortcutKey) {
-      // Space is quite common shortcut for playing media.
-      return mKeyCode == NS_VK_SPACE ||
-             // ctrl-c/ctrl-x/ctrl-v is quite common shortcut for clipboard
-             // operation.
-             // XXXedgar, we probably could improve this by referring to
-             // EditCommandsConstRef() if we're sure the event target on Linux
-             // and macOS is active with any edit commands.
-             // ctrl+f5 is used by web apps e.g. Google Slides as a
-             // presentation/fullscreen shortcut. See bug 2001938
-             ((mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_C ||
-               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_V ||
-               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_X ||
-               mKeyCode == dom::KeyboardEvent_Binding::DOM_VK_F5) &&
-              IsAccel());
-    }
-
     // ESC key is ususally used to exit some state, it should not be considered
     // as a user activation key to avoid page requests to enter again the same
     // state to trap the user.

@@ -115,7 +115,7 @@ export class SuggestBackendRust extends SuggestBackend {
     // fine. Alternatively the test harnesses could disable Suggest by default
     // just like they set the server pref to the dummy URL, but Suggest is more
     // than Rust suggestions.
-    if (!lazy.Utils.shouldSkipRemoteActivityDueToTests) {
+    if (!lazy.Utils.shouldSkipRemoteActivity) {
       this.#remoteSettingsService =
         lazy.SharedRemoteSettingsService.rustService();
     }

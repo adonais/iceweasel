@@ -4,21 +4,24 @@
       "@base": {
         "comment": "TODO Bug 1821203 - Gray use needs to be consolidated",
         "value": {
+          "nativeTheme": "color-mix(in srgb, currentColor 13%, transparent)",
           "default": "transparent",
           "forcedColors": "ButtonFace"
         }
       },
       "hover": {
         "value": {
-          "light": "{color.violet-desaturated.10}",
+          "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)",
+          "light": "{color.violet-desaturated.20}",
           "dark": "{color.violet-desaturated.50}",
           "forcedColors": "SelectedItemText"
         }
       },
       "active": {
         "value": {
-          "light": "{color.violet-desaturated.20}",
-          "dark": "{color.violet-desaturated.60}",
+          "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)",
+          "light": "{color.violet-desaturated.30}",
+          "dark": "{color.violet-desaturated.40}",
           "forcedColors": "SelectedItemText"
         }
       },
@@ -38,28 +41,31 @@
         "@base": {
           "value": {
             "light": "{color.red.50}",
-            "dark": "{color.red.20}",
+            "dark": "{color.red.30}",
             "forcedColors": "{button.background.color.primary.@base}"
           }
         },
         "active": {
           "value": {
             "light": "{color.red.70}",
-            "dark": "{color.red.40}",
+            "dark": "{color.red.10}",
             "forcedColors": "{button.background.color.primary.active}"
           }
         },
         "hover": {
           "value": {
             "light": "{color.red.60}",
-            "dark": "{color.red.30}",
+            "dark": "{color.red.20}",
             "forcedColors": "{button.background.color.primary.hover}"
           }
         }
       },
       "ghost": {
         "@base": {
-          "value": "{button.background.color.@base}"
+          "value": {
+            "nativeTheme": "transparent",
+            "default": "{button.background.color.@base}"
+          }
         },
         "disabled": {
           "value": {
@@ -179,6 +185,7 @@
     "color": {
       "@base": {
         "value": {
+          "nativeTheme": "currentColor",
           "light": "{color.violet.90}",
           "dark": "{color.gray.0}",
           "forcedColors": "ButtonText"
@@ -253,11 +260,19 @@
             "dark": "{button.text.color.hover}",
             "forcedColors": "{button.text.color.primary.@base}"
           }
+        },
+        "selected": {
+          "value": {
+            "light": "{button.text.color.ghost.selected}",
+            "dark": "{button.text.color.selected}",
+            "forcedColors": "{button.text.color.primary.selected}"
+          }
         }
       },
       "primary": {
         "@base": {
           "value": {
+            "nativeTheme": "AccentColorText",
             "light": "{color.white.@base}",
             "dark": "{color.gray.70}",
             "forcedColors": "ButtonFace"

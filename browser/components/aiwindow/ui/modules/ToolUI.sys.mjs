@@ -104,6 +104,19 @@ export class ToolUI {
     this.#tabKeysByToolCall.delete(toolCallId);
   }
 
+  static #getConfirmationReason(tabs) {
+    if (tabs.some(t => t.pinned)) {
+      return "pinned_tab";
+    }
+    if (tabs.some(t => t.selected)) {
+      return "active_tab";
+    }
+    if (tabs.length === 1) {
+      return "last_tab";
+    }
+    return "user_action";
+  }
+
   /**
    * Resolve selected tabs to live tab objects in the given window by
    * permanentKey
@@ -153,19 +166,6 @@ export class ToolUI {
     }
 
     return verifiedTabObjects;
-  }
-
-  static #getConfirmationReason(tabs) {
-    if (tabs.some(t => t.pinned)) {
-      return "pinned_tab";
-    }
-    if (tabs.some(t => t.selected)) {
-      return "active_tab";
-    }
-    if (tabs.length === 1) {
-      return "last_tab";
-    }
-    return "user_action";
   }
 
   /**

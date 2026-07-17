@@ -21,10 +21,13 @@ export class ContextIconButton extends MozLitElement {
     disabled: { type: Boolean, reflect: true },
   };
 
-  // Prevent mousedown from closing `panel-list` before the CustomEvent
-  // `aiwindow-context-button:on-click` can be handled.
+  // stopPropagation: keep `panel-list` open until the on-click CustomEvent
+  // fires. preventDefault: keep focus on the Smartbar input on
+  // Windows/Linux (the stopPropagation above hides this mousedown from
+  // the Smartbar's own focus-preserving guard).
   #onMousedown(event) {
     event.stopPropagation();
+    event.preventDefault();
   }
 
   #onClick(event) {

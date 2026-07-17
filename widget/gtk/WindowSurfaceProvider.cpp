@@ -102,7 +102,7 @@ void WindowSurfaceProvider::CleanupResources() {
 #endif
 #ifdef MOZ_X11
   mXWindow = 0;
-  mXVisual = 0;
+  mXVisual = nullptr;
   mXDepth = 0;
 #endif
 }

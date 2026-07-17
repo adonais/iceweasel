@@ -25,6 +25,11 @@ gRegistry.on(TaskbarTabsRegistry.events.patched, patchedSpy);
 sinon.stub(ShellService, "writeShortcutIcon").resolves();
 sinon.stub(ShellService, "createLinuxDesktopEntry").resolves();
 sinon.stub(ShellService, "deleteLinuxDesktopEntry").resolves();
+sinon.stub(ShellService, "shellService").value({
+  getGlibPrgname() {
+    return "glib.mock.prgname";
+  },
+});
 
 sinon.stub(TaskbarTabsPin, "_getLocalization").returns({
   formatValue(msg) {
@@ -48,7 +53,7 @@ function checkCreateLinuxDesktopEntryCall(aTaskbarTab) {
   );
   Assert.equal(
     ShellService.createLinuxDesktopEntry.firstCall.args[0],
-    "org.mozilla.firefox.webapp-" + aTaskbarTab.id,
+    "glib.mock.prgname.webapp-" + aTaskbarTab.id,
     "Correct application ID was specified."
   );
   Assert.equal(
@@ -66,7 +71,7 @@ function checkCreateLinuxDesktopEntryCall(aTaskbarTab) {
   Assert.equal(patchedSpy.callCount, 1, "A single patched event was emitted");
   Assert.equal(
     aTaskbarTab.shortcutRelativePath,
-    "org.mozilla.firefox.webapp-" + aTaskbarTab.id + ".desktop",
+    "glib.mock.prgname.webapp-" + aTaskbarTab.id + ".desktop",
     "Correct relative path is saved to the taskbar tab"
   );
 }

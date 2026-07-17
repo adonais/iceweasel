@@ -91,12 +91,9 @@ int NR_reg_set_uint4(NR_registry_name name, UINT4 data);
 
 int NR_reg_set_registry(NR_registry_name name);
 
-int NR_reg_set_bytes(NR_registry_name name, const UCHAR *data, size_t length);
 int NR_reg_set_string(NR_registry_name name, const char *data);
 
 int NR_reg_set2_uchar(NR_registry_name prefix, const char *name, UCHAR data);
-
-int NR_reg_set2_string(NR_registry_name prefix, const char *name, const char *data);
 
 int NR_reg_del(NR_registry_name name);
 

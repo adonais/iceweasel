@@ -14,12 +14,14 @@
 #include "MediaGleanMetrics.h"
 #include "MediaInfo.h"
 #include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 #include "PerformanceRecorder.h"
 #include "VPXDecoder.h"
 #include "VideoFrameContainer.h"
 #include "VideoUtils.h"
 #include "mozilla/AbstractThread.h"
 #include "mozilla/CDMProxy.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/ClearOnShutdown.h"
 #include "mozilla/NotNull.h"
 #include "mozilla/Preferences.h"
@@ -1213,10 +1215,7 @@ void MediaFormatReader::OnDemuxerInitDone(const MediaResult& aResult) {
 
   UniquePtr<MetadataTags> tags(MakeUnique<MetadataTags>());
 
-  RefPtr<PDMFactory> platform;
-  if (!IsWaitingOnCDMResource()) {
-    platform = new PDMFactory();
-  }
+  const bool checkSupport = !IsWaitingOnCDMResource();
 
   // To decode, we need valid video and a place to put it.
   bool videoActive = !!mDemuxer->GetNumberTracks(TrackInfo::kVideoTrack) &&
@@ -1235,8 +1234,8 @@ void MediaFormatReader::OnDemuxerInitDone(const MediaResult& aResult) {
     UniquePtr<TrackInfo> videoInfo = mVideo.mTrackDemuxer->GetInfo();
     videoActive = videoInfo && videoInfo->IsValid();
     if (videoActive) {
-      if (platform &&
-          platform->SupportsMimeType(videoInfo->mMimeType).isEmpty()) {
+      if (checkSupport &&
+          PDMFactorySupport::IsTypeSupported(videoInfo->mMimeType).isEmpty()) {
         // We have no decoder for this track. Error.
         LOG("No supported decoder for video track (%s)",
             videoInfo->mMimeType.get());
@@ -1274,9 +1273,10 @@ void MediaFormatReader::OnDemuxerInitDone(const MediaResult& aResult) {
 
     UniquePtr<TrackInfo> audioInfo = mAudio.mTrackDemuxer->GetInfo();
     // We actively ignore audio tracks that we know we can't play.
-    audioActive = audioInfo && audioInfo->IsValid() &&
-                  (!platform ||
-                   !platform->SupportsMimeType(audioInfo->mMimeType).isEmpty());
+    audioActive =
+        audioInfo && audioInfo->IsValid() &&
+        (!checkSupport ||
+         !PDMFactorySupport::IsTypeSupported(audioInfo->mMimeType).isEmpty());
 
     if (audioActive) {
       mInfo.mAudio = *audioInfo->GetAsAudioInfo();
@@ -2101,6 +2101,30 @@ void MediaFormatReader::DecodeDemuxedSamples(TrackType aTrack,
           aSample->mEOS ? " eos" : "");
 
   decoder.StartRecordDecodingPerf(aTrack, aSample);
+
+  const CryptoSample& crypto = aSample->mCrypto;
+  if (crypto.IsEncrypted() && !crypto.mPlainSizes.IsEmpty()) {
+    if (crypto.mPlainSizes.Length() != crypto.mEncryptedSizes.Length()) {
+      NotifyError(aTrack,
+                  MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
+                              "Mismatched crypto subsample array lengths"));
+      return;
+    }
+    CheckedInt<size_t> subsampleTotal = 0;
+    for (size_t i = 0; i < crypto.mPlainSizes.Length(); i++) {
+      subsampleTotal += crypto.mPlainSizes[i];
+      subsampleTotal += crypto.mEncryptedSizes[i];
+    }
+    if (!subsampleTotal.isValid() ||
+        subsampleTotal.value() != aSample->Size()) {
+      NotifyError(
+          aTrack,
+          MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
+                      "Crypto subsample sizes don't match sample size"));
+      return;
+    }
+  }
+
   if (aSample->mCrypto.IsEncrypted() &&
       (mMediaEngineId || (mCDMProxy && !!mCDMProxy->AsRemoteCDMProxy()))) {
     aSample->mShouldCopyCryptoToRemoteRawData = true;

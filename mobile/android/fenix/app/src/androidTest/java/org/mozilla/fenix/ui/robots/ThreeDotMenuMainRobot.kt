@@ -337,6 +337,9 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
         Log.i(TAG, "verifyMoreMainMenuItems: Trying to verify that the \"Translate page\" button exists.")
         composeTestRule.translatePageButton().assertIsDisplayed()
         Log.i(TAG, "verifyMoreMainMenuItems: Verified that the \"Translate page\" button exists.")
+        Log.i(TAG, "verifyMoreMainMenuItems: Trying to verify that the \"Summarize page\" button exists.")
+        composeTestRule.summarizePageButton().assertIsDisplayed()
+        Log.i(TAG, "verifyMoreMainMenuItems: Verified that the \"Summarize page\" button exists.")
         Log.i(TAG, "verifyMoreMainMenuItems: Trying to verify that the \"Report broken site\" button exists.")
         composeTestRule.reportBrokenSiteButton().assertIsDisplayed()
         Log.i(TAG, "verifyMoreMainMenuItems: Verified that the \"Report broken site\" button exists.")
@@ -483,6 +486,12 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             composeTestRule.addToShortcutsButton().assertIsNotDisplayed()
             Log.i(TAG, "verifyAddToShortcutsButton: Verified that the \"Add to shortcuts\" button is not displayed.")
         }
+    }
+
+    fun verifySummarizePageButton() {
+        Log.i(TAG, "verifySummarizePageButton: Trying to verify that the \"Summarize page\" button exists.")
+        composeTestRule.summarizePageButton().assertIsDisplayed()
+        Log.i(TAG, "verifySummarizePageButton: Verified that the \"Summarize page\" button exists.")
     }
 
     class Transition(private val composeTestRule: ComposeTestRule) {
@@ -798,6 +807,18 @@ class ThreeDotMenuMainRobot(private val composeTestRule: ComposeTestRule) {
             SettingsSubMenuAddonsManagerRobot(composeTestRule).interact()
             return SettingsSubMenuAddonsManagerRobot.Transition(composeTestRule)
         }
+
+        fun clickSummarizePageButton(interact: SettingsSubMenuPageSummariesRobot.() -> Unit): SettingsSubMenuPageSummariesRobot.Transition {
+            Log.i(TAG, "clickSummarizePageButton: Trying to click the Summarize Page button from the new main menu design.")
+            composeTestRule.summarizePageButton().performClick()
+            Log.i(TAG, "clickSummarizePageButton: Clicked the Summarize Page button from the new main menu design.")
+            Log.i(TAG, "clickSummarizePageButton: Waiting for compose test rule to be idle")
+            composeTestRule.waitForIdle()
+            Log.i(TAG, "clickSummarizePageButton: Waited for compose test rule to be idle")
+
+            SettingsSubMenuPageSummariesRobot(composeTestRule).interact()
+            return SettingsSubMenuPageSummariesRobot.Transition(composeTestRule)
+        }
     }
 }
 
@@ -925,3 +946,5 @@ private fun ComposeTestRule.defaultOpenInAppButton() = onNodeWithContentDescript
 private fun ComposeTestRule.openInAppNameButton(appName: String) = onNodeWithContentDescription(getStringResource(R.string.browser_menu_open_in_fenix, appName))
 
 private fun ComposeTestRule.extensionsChevronButton() = onNodeWithTag(EXTENSIONS_OPTION_CHEVRON, useUnmergedTree = true)
+
+private fun ComposeTestRule.summarizePageButton() = onNodeWithContentDescription(getStringResource(R.string.browser_menu_summarize_page))

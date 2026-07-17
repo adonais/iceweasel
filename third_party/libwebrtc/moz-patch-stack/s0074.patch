@@ -12,10 +12,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/237d19fe96dd7d25b
  1 file changed, 2 insertions(+), 2 deletions(-)
 
 diff --git a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-index 3a732caaa3..48d55555a7 100644
+index 1a255aad45..353c9ab763 100644
 --- a/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
 +++ b/modules/desktop_capture/linux/wayland/shared_screencast_stream.cc
-@@ -478,7 +478,7 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
+@@ -479,7 +479,7 @@ bool SharedScreenCastStreamPrivate::StartScreenCastStream(
      RTC_LOG(LS_ERROR) << "Unable to open PipeWire library";
      return false;
    }
@@ -24,7 +24,7 @@ index 3a732caaa3..48d55555a7 100644
      egl_dmabuf_ = EglDmaBuf::CreateDefault();
    }
  
-@@ -1024,7 +1024,7 @@ bool SharedScreenCastStreamPrivate::ProcessDMABuffer(
+@@ -1037,7 +1037,7 @@ bool SharedScreenCastStreamPrivate::ProcessDMABuffer(
  
    const uint n_planes = spa_buffer->n_datas;
  

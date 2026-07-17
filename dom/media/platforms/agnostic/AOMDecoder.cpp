@@ -37,10 +37,10 @@
   DDMOZ_LOGEX(_this, sPDMLog, mozilla::LogLevel::Debug, \
               "::%s: %s (code %d) " message, __func__,  \
               aom_codec_err_to_string(code), (int)code, ##__VA_ARGS__)
-#define LOG_STATIC_RESULT(code, message, ...)                 \
-  MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug,                  \
-          ("AOMDecoder::%s: %s (code %d) " message, __func__, \
-           aom_codec_err_to_string(code), (int)code, ##__VA_ARGS__))
+#define LOG_STATIC_RESULT(code, message, ...)                    \
+  MOZ_LOG_FMT(sPDMLog, mozilla::LogLevel::Debug,                 \
+              "AOMDecoder::{}: {} (code {}) " message, __func__, \
+              aom_codec_err_to_string(code), (int)code, ##__VA_ARGS__)
 
 #define ASSERT_BYTE_ALIGNED(bitIO) MOZ_ASSERT((bitIO).BitCount() % 8 == 0)
 
@@ -817,8 +817,9 @@ mozilla::Maybe<mozilla::gfx::HDRMetadata> AOMDecoder::ReadMetadataOBUHDR(
       if (r0x.isErr() || r0y.isErr() || g1x.isErr() || g1y.isErr() ||
           b2x.isErr() || b2y.isErr() || wpx.isErr() || wpy.isErr() ||
           maxL.isErr() || minL.isErr()) {
-        MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug,
-                ("AOMDecoder::ReadMetadataOBUHDR: failed to read MDCV fields"));
+        MOZ_LOG_FMT(
+            sPDMLog, mozilla::LogLevel::Debug,
+            "AOMDecoder::ReadMetadataOBUHDR: failed to read MDCV fields");
         continue;
       }
       gfx::Chromaticity red{r0x.unwrap() / kPrimariesDivisor,
@@ -844,8 +845,9 @@ mozilla::Maybe<mozilla::gfx::HDRMetadata> AOMDecoder::ReadMetadataOBUHDR(
       auto maxCLL = br.ReadU16();
       auto maxFALL = br.ReadU16();
       if (maxCLL.isErr() || maxFALL.isErr()) {
-        MOZ_LOG(sPDMLog, mozilla::LogLevel::Debug,
-                ("AOMDecoder::ReadMetadataOBUHDR: failed to read CLL fields"));
+        MOZ_LOG_FMT(
+            sPDMLog, mozilla::LogLevel::Debug,
+            "AOMDecoder::ReadMetadataOBUHDR: failed to read CLL fields");
         continue;
       }
       hdr.mContentLightLevel =

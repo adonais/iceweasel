@@ -273,7 +273,6 @@ class SettingsSubMenuAutofillRobot(private val composeTestRule: ComposeTestRule)
         listOf(
             composeTestRule.saveButton(),
             composeTestRule.cancelButton(),
-            composeTestRule.deleteAddressButton(),
         ).forEach { it.assertIsDisplayed() }
         Log.i(TAG, "verifyEditAddressView: Verified that the \"Edit address\" items are displayed")
     }
@@ -741,7 +740,6 @@ private fun ComposeTestRule.emailTextInput() = onNodeWithTag(EditAddressTestTag.
 private fun ComposeTestRule.addressForm() = onNodeWithTag(EditAddressTestTag.FORM)
 private fun ComposeTestRule.saveButton() = onNodeWithTag(EditAddressTestTag.SAVE_BUTTON)
 private fun ComposeTestRule.cancelButton() = onNodeWithTag(EditAddressTestTag.CANCEL_BUTTON)
-private fun ComposeTestRule.deleteAddressButton() = onNodeWithTag(EditAddressTestTag.DELETE_BUTTON)
 private fun ComposeTestRule.toolbarDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.TOPBAR_DELETE_BUTTON)
 private fun ComposeTestRule.cancelDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.DIALOG_CANCEL_BUTTON)
 private fun ComposeTestRule.confirmDeleteAddressButton() = onNodeWithTag(EditAddressTestTag.DIALOG_DELETE_BUTTON)
@@ -860,7 +858,12 @@ private fun waitForPopupToDismiss(composeTestRule: ComposeTestRule, timeoutMs: L
  * here prevents the IME animation from dismissing a dropdown popup that opens immediately after.
  */
 private fun waitForKeyboardDismiss(timeoutMs: Long = 15000L) {
+    Log.i(TAG, "waitForKeyboardDismiss: Trying to close the soft keyboard")
     closeSoftKeyboard()
+    Log.i(TAG, "waitForKeyboardDismiss: Successfully closed the soft keyboard")
+
+    waitForAppWindowToBeUpdated()
+
     val startTime = SystemClock.elapsedRealtime()
     var polled = 0
     while (SystemClock.elapsedRealtime() - startTime < timeoutMs) {

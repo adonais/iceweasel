@@ -576,6 +576,7 @@ const PanelUI = {
         tempPanel.setAttribute("animate", "false");
       }
       tempPanel.setAttribute("context", "");
+
       document.getElementById("mainPopupSet").appendChild(tempPanel);
 
       let multiView = document.createXULElement("panelmultiview");
@@ -585,6 +586,16 @@ const PanelUI = {
       multiView.appendChild(viewNode);
       tempPanel.appendChild(multiView);
       viewNode.classList.add("cui-widget-panelview", "PanelUI-subView");
+
+      // Set a role and name on the panel.
+      // If the panelview provides either data-panelrole or
+      // data-panelname, use it.
+      tempPanel.role = viewNode.dataset.panelrole || "group";
+      if (viewNode.dataset.panelname) {
+        tempPanel.ariaLabel = viewNode.dataset.panelname;
+      } else {
+        tempPanel.ariaLabelledByElements = [aAnchor];
+      }
 
       let viewShown = false;
       let panelRemover = event => {

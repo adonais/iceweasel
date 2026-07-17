@@ -115,7 +115,7 @@ export class _CustomizeMenu extends React.PureComponent {
                 <label data-l10n-id="newtab-customize-panel-icon-button-label" />
                 <div>
                   <img
-                    role="presentation"
+                    alt=""
                     src="chrome://global/skin/icons/edit-outline.svg"
                   />
                 </div>

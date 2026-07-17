@@ -188,6 +188,12 @@ mozilla::ipc::IPCResult GMPVideoDecoderChild::RecvDecode(
     return IPC_FAIL(this, "!mVideoDecoder");
   }
 
+  if (!GMPVideoEncodedFrameImpl::CheckFrameData(aInputFrame,
+                                                aInputShmem.Size<uint8_t>())) {
+    DeallocShmem(aInputShmem);
+    return IPC_OK();
+  }
+
   auto* f =
       new GMPVideoEncodedFrameImpl(aInputFrame, std::move(aInputShmem), this);
 

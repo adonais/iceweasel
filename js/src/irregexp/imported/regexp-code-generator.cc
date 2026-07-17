@@ -51,7 +51,7 @@ CodeGenerator::Result CodeGenerator::Assemble(DirectHandle<RegExpData> re_data,
                                 pattern_cstring.get(), &analysis);
     }
   }
-#endif // !COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
+#endif  // !COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
 
   PreVisitBytecodes();
   iter_.reset();

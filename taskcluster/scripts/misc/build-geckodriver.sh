@@ -26,7 +26,7 @@ case "$TARGET" in
 *apple-darwin)
   MACOSCROSS=1
   export PATH="$MOZ_FETCHES_DIR/clang/bin:$PATH"
-  COMMON_RUSTFLAGS="-Clinker=$MOZ_FETCHES_DIR/clang/bin/clang++ -C link-arg=-isysroot -C link-arg=$MOZ_FETCHES_DIR/MacOSX26.4.sdk -C link-arg=-fuse-ld=lld"
+  COMMON_RUSTFLAGS="-Clinker=$MOZ_FETCHES_DIR/clang/bin/clang++ -C link-arg=-isysroot -C link-arg=$MOZ_FETCHES_DIR/MacOSX26.5.sdk -C link-arg=-fuse-ld=lld"
   ;;
 aarch64-unknown-linux-musl)
   RUSTFLAGS="-C linker=$MOZ_FETCHES_DIR/clang/bin/clang -C link-arg=--target=$TARGET -C link-arg=-fuse-ld=lld"

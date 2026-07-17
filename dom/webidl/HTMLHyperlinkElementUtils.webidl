@@ -12,4 +12,6 @@
 interface mixin HTMLHyperlinkElementUtils {
   [CEReactions, SetterThrows]
   stringifier attribute UTF8String href;
+  [CEReactions, SetterThrows]
+  attribute DOMString target;
 };

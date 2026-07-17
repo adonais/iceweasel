@@ -147,7 +147,7 @@ class Clobberer:
             rust_build_kind = "debug"
 
         # Top-level files and directories to not clobber by default.
-        no_clobber = {".mozbuild", "msvc", "_virtualenvs"}
+        no_clobber = {".clangd", ".mozbuild", "clangd", "msvc", "_virtualenvs"}
 
         # Hold off on clobbering cargo build artifacts
         no_clobber |= rust_targets

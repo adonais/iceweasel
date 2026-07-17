@@ -57,7 +57,7 @@ class PushNotifier final : public nsIPushNotifier {
  public:
   PushNotifier() = default;
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(PushNotifier, nsIPushNotifier)
   NS_DECL_NSIPUSHNOTIFIER
 
@@ -75,7 +75,7 @@ class PushData final : public nsIPushData {
  public:
   explicit PushData(const nsTArray<uint8_t>& aData);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(PushData, nsIPushData)
   NS_DECL_NSIPUSHDATA
 
@@ -97,7 +97,7 @@ class PushMessage final : public nsIPushMessage {
  public:
   PushMessage(nsIPrincipal* aPrincipal, nsIPushData* aData);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(PushMessage, nsIPushMessage)
   NS_DECL_NSIPUSHMESSAGE
 

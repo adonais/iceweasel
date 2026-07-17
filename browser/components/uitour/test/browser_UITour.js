@@ -7,6 +7,8 @@ var gTestTab;
 var gContentAPI;
 
 ChromeUtils.defineESModuleGetters(this, {
+  AppProvidedConfigEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   ProfileAge: "resource://gre/modules/ProfileAge.sys.mjs",
   UpdateUtils: "resource://gre/modules/UpdateUtils.sys.mjs",
   CustomizableUITestUtils:
@@ -610,7 +612,7 @@ var tests = [
     let defaultEngine = await SearchService.getDefault();
     let visibleEngines = await SearchService.getVisibleEngines();
     let expectedEngines = visibleEngines
-      .filter(engine => engine.isAppProvided)
+      .filter(engine => engine instanceof AppProvidedConfigEngine)
       .map(engine => "searchEngine-" + engine.id);
 
     let data = await new Promise(resolve =>

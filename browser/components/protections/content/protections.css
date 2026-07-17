@@ -203,8 +203,8 @@ a.hidden,
     --fingerprinter-highlight-color: var(--color-orange-30);
     --cryptominer-highlight-color: var(--color-gray-50);
 
-    --gear-icon-fill: oklch(from var(--color-gray-05) l c h / 60%);
-    --hover-grey-link: var(--grey-30);
+    --gear-icon-fill: oklch(from var(--color-gray-0) l c h / 60%);
+    --hover-grey-link: var(--color-gray-30);
     --feature-banner-color: var(--color-white-alpha-10);
   }
 

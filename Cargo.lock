@@ -328,6 +328,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "64f46ca51dca4837f1520754d1c8c36636356b81553d928dc9c177025369a06e"
 
 [[package]]
+name = "atomic-waker"
+version = "1.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1505bd5d3d116872e7271a6d4e16d81d0c8570876c8de68093a09ac269d8aac0"
+
+[[package]]
 name = "atomic_refcell"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -344,9 +350,9 @@ dependencies = [
 
 [[package]]
 name = "audio_thread_priority"
-version = "0.35.0"
+version = "0.35.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8865406116350b733332de840244b6be15c7ff4d22f4278e98a73da343b935f"
+checksum = "7b1b4a0adbf971420cca66a75361a1190f34a6762d66361e5cde03dda35d1ed3"
 dependencies = [
  "cfg-if",
  "dbus",
@@ -359,7 +365,7 @@ dependencies = [
 [[package]]
 name = "audioipc2"
 version = "0.6.0"
-source = "git+https://github.com/mozilla/audioipc?rev=57a79753da9de4cf4b1c54e0c6775d3d2aba26f6#57a79753da9de4cf4b1c54e0c6775d3d2aba26f6"
+source = "git+https://github.com/mozilla/audioipc?rev=c9dcbaee1624daad2fa6b1445fd047efde4f1ec0#c9dcbaee1624daad2fa6b1445fd047efde4f1ec0"
 dependencies = [
  "arrayvec",
  "ashmem",
@@ -385,7 +391,7 @@ dependencies = [
 [[package]]
 name = "audioipc2-client"
 version = "0.6.0"
-source = "git+https://github.com/mozilla/audioipc?rev=57a79753da9de4cf4b1c54e0c6775d3d2aba26f6#57a79753da9de4cf4b1c54e0c6775d3d2aba26f6"
+source = "git+https://github.com/mozilla/audioipc?rev=c9dcbaee1624daad2fa6b1445fd047efde4f1ec0#c9dcbaee1624daad2fa6b1445fd047efde4f1ec0"
 dependencies = [
  "audio_thread_priority",
  "audioipc2",
@@ -396,7 +402,7 @@ dependencies = [
 [[package]]
 name = "audioipc2-server"
 version = "0.6.0"
-source = "git+https://github.com/mozilla/audioipc?rev=57a79753da9de4cf4b1c54e0c6775d3d2aba26f6#57a79753da9de4cf4b1c54e0c6775d3d2aba26f6"
+source = "git+https://github.com/mozilla/audioipc?rev=c9dcbaee1624daad2fa6b1445fd047efde4f1ec0#c9dcbaee1624daad2fa6b1445fd047efde4f1ec0"
 dependencies = [
  "audio_thread_priority",
  "audioipc2",
@@ -408,26 +414,25 @@ dependencies = [
 
 [[package]]
 name = "authenticator"
-version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bbd6f57365675990f2db272a6560b28945df74cf3749c70aafd9b1c7829edebc"
+version = "0.6.0"
+source = "git+https://github.com/mozilla/authenticator-rs?tag=v0.6.0#86caf8b8bcda16d8a36325e9e78f8da2c46084e2"
 dependencies = [
  "base64 0.21.999",
  "bitflags 1.999.999",
  "cfg-if",
- "core-foundation 0.9.999",
+ "core-foundation 0.10.0",
  "devd-rs",
  "libc",
  "libudev",
  "log",
  "memoffset 0.8.999",
- "nss-gk-api",
+ "nss-rs",
  "pkcs11-bindings",
  "rand",
  "runloop",
  "serde",
  "serde_bytes",
- "serde_cbor",
+ "serde_cbor_2",
  "serde_json",
  "sha2",
  "winapi",
@@ -446,7 +451,7 @@ dependencies = [
  "nsstring",
  "rand",
  "serde",
- "serde_cbor",
+ "serde_cbor_2",
  "serde_json",
  "static_prefs",
  "thin-vec",
@@ -1044,18 +1049,18 @@ checksum = "1462739cb27611015575c0c11df5df7601141071f07518d56fcc1be504cbec97"
 
 [[package]]
 name = "clubcard"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ec3fe691cfeac642b45d2acee55f4c745fe9eed548380fd41d1fb7daf54297c"
+checksum = "3ef474a1b4f0f838c9f513e224f6b5b74ee63a55d9ec42874bfb343b0fce29c8"
 dependencies = [
  "serde",
 ]
 
 [[package]]
 name = "clubcard-crlite"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd2c6f668aeaab6cf4c9637400ce5bc1f7ab1cf9b424dd0125273f16bd26ca25"
+checksum = "94db8308070798e004eba1d535f6fb78e3ba7170deb40ab767776d3025747707"
 dependencies = [
  "base64 0.21.999",
  "bincode",
@@ -1308,7 +1313,7 @@ dependencies = [
  "crash_helper_common",
  "mach2",
  "minidump-writer",
- "nix 0.30.1",
+ "nix",
  "num-derive",
  "num-traits",
  "rust_minidump_writer_linux",
@@ -1321,14 +1326,17 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "getrandom 0.3.3",
+ "linked-hash-map",
  "log",
  "mach2",
  "minidump-writer",
- "nix 0.30.1",
+ "mozannotation_server",
+ "nix",
  "num-derive",
  "num-traits",
  "thiserror 2.0.12",
  "windows-sys",
+ "yaml-rust2",
 ]
 
 [[package]]
@@ -1342,21 +1350,18 @@ dependencies = [
  "crash_helper_common",
  "dirs",
  "env_logger",
- "linked-hash-map",
  "log",
  "minidump-writer",
  "mozannotation_server",
  "mozbuild",
  "mozilla-central-workspace-hack",
- "nix 0.30.1",
- "num-derive",
+ "nix",
  "num-traits",
  "once_cell",
  "rust_minidump_writer_linux",
  "thiserror 2.0.12",
  "uuid",
  "windows-sys",
- "yaml-rust2",
 ]
 
 [[package]]
@@ -1611,7 +1616,7 @@ dependencies = [
 [[package]]
 name = "cubeb-pulse"
 version = "0.5.0"
-source = "git+https://github.com/mozilla/cubeb-pulse-rs?rev=3cf4a1af09a1748d0e184297a17132bdcc608874#3cf4a1af09a1748d0e184297a17132bdcc608874"
+source = "git+https://github.com/mozilla/cubeb-pulse-rs?rev=5eb4d5bdb725d3d53e42cc88f82269fac2aa42b7#5eb4d5bdb725d3d53e42cc88f82269fac2aa42b7"
 dependencies = [
  "cubeb-backend",
  "pulse",
@@ -2117,9 +2122,9 @@ checksum = "5443807d6dff69373d433ab9ef5378ad8df50ca6298caf15de6e52e24aaf54d5"
 
 [[package]]
 name = "errno"
-version = "0.3.8"
+version = "0.3.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a258e46cdc063eb8519c00b9fc845fc47bcfca4130e2f08e88665ceda8474245"
+checksum = "39cab71617ae0d63f51a36d69f866391735b51691dbda63cf6f96d042b63efeb"
 dependencies = [
  "libc",
  "windows-sys",
@@ -2750,14 +2755,14 @@ dependencies = [
 
 [[package]]
 name = "geckodriver"
-version = "0.36.0"
+version = "0.37.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
  "chrono",
  "clap",
  "flate2",
- "hyper",
+ "http",
  "icu_segmenter",
  "lazy_static",
  "log",
@@ -2799,6 +2804,7 @@ dependencies = [
  "selectors",
  "servo_arc",
  "smallvec",
+ "static_prefs",
  "style",
  "style_traits",
  "thin-vec",
@@ -3149,7 +3155,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "51255ea7cfaadb6c5f1528d43e92a82acb2b96c43365989a28b2d44ee38f8795"
 dependencies = [
  "ash",
- "hashbrown 0.16.0",
+ "hashbrown 0.16.999",
  "log",
  "presser",
  "thiserror 2.0.12",
@@ -3176,28 +3182,21 @@ dependencies = [
 
 [[package]]
 name = "h2"
-version = "0.3.26"
+version = "0.4.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "81fe527a889e1532da5c525686d96d4c2e74cdd345badf8dfef9f6b39dd5f5e8"
+checksum = "2f44da3a8150a6703ed5d34e164b875fd14c2cdab9af1252a9a1020bde2bdc54"
 dependencies = [
+ "atomic-waker",
  "bytes",
  "fnv",
  "futures-core",
  "futures-sink",
- "futures-util",
  "http",
  "indexmap",
  "slab",
  "tokio",
  "tokio-util",
  "tracing",
-]
-
-[[package]]
-name = "half"
-version = "1.999.999"
-dependencies = [
- "half 2.5.0",
 ]
 
 [[package]]
@@ -3214,8 +3213,8 @@ dependencies = [
 
 [[package]]
 name = "happy-eyeballs"
-version = "0.5.0"
-source = "git+https://github.com/mozilla/happy-eyeballs?tag=v0.5.0#962a5c9e2c0f9d693ce00d017ab2eb2790d0e7e0"
+version = "0.6.0"
+source = "git+https://github.com/mozilla/happy-eyeballs?tag=v0.6.0#0807628db2bb90ced2c05e1f236473ee92719d22"
 dependencies = [
  "log",
  "thiserror 2.0.12",
@@ -3286,19 +3285,27 @@ dependencies = [
 name = "hashbrown"
 version = "0.15.999"
 dependencies = [
- "hashbrown 0.16.0",
+ "hashbrown 0.16.999",
 ]
 
 [[package]]
 name = "hashbrown"
-version = "0.16.0"
+version = "0.16.999"
+dependencies = [
+ "hashbrown 0.17.1",
+]
+
+[[package]]
+name = "hashbrown"
+version = "0.17.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5419bdc4f6a9207fbeba6d11b604d481addf78ecd10c11ad51e76c2f6482748d"
+checksum = "ed5909b6e89a2db4456e54cd5f673791d7eca6732202bbf2a9cc504fe2f9b84a"
 dependencies = [
  "allocator-api2",
  "equivalent",
  "foldhash",
  "serde",
+ "serde_core",
 ]
 
 [[package]]
@@ -3314,7 +3321,7 @@ version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ea0b22561a9c04a7cb1a302c013e0259cd3b4bb619f145b32f72b8b4bcbed230"
 dependencies = [
- "hashbrown 0.16.0",
+ "hashbrown 0.16.999",
 ]
 
 [[package]]
@@ -3333,11 +3340,11 @@ dependencies = [
 
 [[package]]
 name = "headers"
-version = "0.3.9"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06683b93020a07e3dbcf5f8c0f6d40080d725bea7936fc01ad345c01b97dc270"
+checksum = "b3314d5adb5d94bcdf56771f2e50dbbc80bb4bdf88967526706205ac9eff24eb"
 dependencies = [
- "base64 0.21.999",
+ "base64 0.22.1",
  "bytes",
  "headers-core",
  "http",
@@ -3348,9 +3355,9 @@ dependencies = [
 
 [[package]]
 name = "headers-core"
-version = "0.2.0"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7f66481bfee273957b1f20485a4ff3362987f85b2c236580d81b4eb7a326429"
+checksum = "54b4a22553d4242c49fddb9ba998a99962b5cc6f22cb5a3482bec22522403ce4"
 dependencies = [
  "http",
 ]
@@ -3376,23 +3383,34 @@ dependencies = [
 
 [[package]]
 name = "http"
-version = "0.2.9"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd6effc99afb63425aff9b05836f029929e345a6148a14b7ecd5ab67af944482"
+checksum = "e3ba2a386d7f85a81f119ad7498ebe444d2e22c2af0b86b069416ace48b3311a"
 dependencies = [
  "bytes",
- "fnv",
  "itoa",
 ]
 
 [[package]]
 name = "http-body"
-version = "0.4.5"
+version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d5f38f16d184e36f2408a55281cd658ecbd3ca05cce6d6510a176eca393e26d1"
+checksum = "1efedce1fb8e6913f23e0c92de8e62cd5b772a67e7b3946df930a62566c93184"
 dependencies = [
  "bytes",
  "http",
+]
+
+[[package]]
+name = "http-body-util"
+version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b021d93e26becf5dc7e1b75b1bed1fd93124b374ceb73f43d4d4eafec896a64a"
+dependencies = [
+ "bytes",
+ "futures-core",
+ "http",
+ "http-body",
  "pin-project-lite",
 ]
 
@@ -3404,7 +3422,9 @@ dependencies = [
  "bindgen 0.69.999",
  "cfg-if",
  "http",
+ "http-body-util",
  "hyper",
+ "hyper-util",
  "log",
  "mozilla-central-workspace-hack",
  "neqo-bin",
@@ -3430,9 +3450,9 @@ dependencies = [
 
 [[package]]
 name = "httparse"
-version = "1.8.0"
+version = "1.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d897f394bad6a705d5f4104762e116a75639e470d80901eed05a860a95cb1904"
+checksum = "6dbf3de79e51f3d586ab4cb9d5c3e2c14aa28ed23d180cf89b4df0454a69cc87"
 
 [[package]]
 name = "httpdate"
@@ -3442,14 +3462,14 @@ checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
 name = "hyper"
-version = "0.14.32"
+version = "1.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "41dfc780fdec9373c01bae43289ea34c972e40ee3c9f6b3c8801a35f35586ce7"
+checksum = "6299f016b246a94207e63da54dbe807655bf9e00044f73ded42c3ac5305fbcca"
 dependencies = [
+ "atomic-waker",
  "bytes",
  "futures-channel",
  "futures-core",
- "futures-util",
  "h2",
  "http",
  "http-body",
@@ -3457,11 +3477,29 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
+ "smallvec",
+ "tokio",
+ "want",
+]
+
+[[package]]
+name = "hyper-util"
+version = "0.1.20"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "96547c2556ec9d12fb1578c4eaf448b04993e7fb79cbaad930a656880a6bdfa0"
+dependencies = [
+ "bytes",
+ "futures-channel",
+ "futures-util",
+ "http",
+ "http-body",
+ "hyper",
+ "libc",
+ "pin-project-lite",
  "socket2",
  "tokio",
  "tower-service",
  "tracing",
- "want",
 ]
 
 [[package]]
@@ -3777,7 +3815,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4b0f83760fb341a774ed326568e19f5a863af4a952def8c39f9ab92fd95b88e5"
 dependencies = [
  "equivalent",
- "hashbrown 0.16.0",
+ "hashbrown 0.16.999",
  "serde",
  "serde_core",
 ]
@@ -4275,9 +4313,9 @@ checksum = "0717cef1bc8b636c6e1c1bbdefc09e6322da8a9321966e8928ef80d20f7f770f"
 
 [[package]]
 name = "linux-raw-sys"
-version = "0.4.14"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "78b3ae25bc7c8c38cec158d1f2757ee79e9b3740fbc7ccf0e59e4b08d793fa89"
+checksum = "32a66949e030da00e8c7d4434b251670a91556f4144941d37452769c25d58a53"
 
 [[package]]
 name = "litemap"
@@ -4482,7 +4520,7 @@ dependencies = [
 
 [[package]]
 name = "marionette"
-version = "0.7.0"
+version = "0.8.0"
 dependencies = [
  "serde",
  "serde_json",
@@ -4669,7 +4707,7 @@ dependencies = [
  "memmap2",
  "minidump-common",
  "num-traits",
- "procfs-core",
+ "procfs-core 0.17.999",
  "prost",
  "range-map",
  "scroll",
@@ -4731,9 +4769,8 @@ dependencies = [
 
 [[package]]
 name = "minidump-writer"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0e1fc14d6ded915b8e850801465e7096f77ed60bf87e4e85878d463720d9dc4d"
+version = "0.12.0"
+source = "git+https://github.com/rust-minidump/minidump-writer.git?rev=107e531a7a06f8e886ffcee13eb07e9ded43473b#107e531a7a06f8e886ffcee13eb07e9ded43473b"
 dependencies = [
  "bitflags 2.10.0",
  "byteorder",
@@ -4746,14 +4783,12 @@ dependencies = [
  "log",
  "mach2",
  "memmap2",
- "memoffset 0.9.0",
  "minidump-common",
- "nix 0.29.0",
- "procfs-core",
+ "nix",
+ "procfs-core 0.18.0",
  "scroll",
  "serde",
  "serde_json",
- "tempfile",
  "thiserror 2.0.12",
 ]
 
@@ -4781,8 +4816,9 @@ checksum = "05015102dad0f7d61691ca347e9d9d9006685a64aefb3d79eecf62665de2153d"
 
 [[package]]
 name = "mio"
-version = "1.1.1"
-source = "git+https://github.com/kinetiknz/mio?rev=5e8b202db39facecc343170f50a07916640a607c#5e8b202db39facecc343170f50a07916640a607c"
+version = "1.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50b7e5b27aa02a74bac8c3f23f448f8d87ff11f92d3aac1a6ed369ee08cc56c1"
 dependencies = [
  "libc",
  "log",
@@ -4793,7 +4829,7 @@ dependencies = [
 [[package]]
 name = "mls-platform-api"
 version = "0.2.0"
-source = "git+https://github.com/mozilla/mls-platform-api?rev=bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b#bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b"
+source = "git+https://github.com/mozilla/mls-platform-api?rev=2a2e344019bfc76b7e566ee6e0549cf668d90127#2a2e344019bfc76b7e566ee6e0549cf668d90127"
 dependencies = [
  "bincode",
  "hex",
@@ -4892,8 +4928,8 @@ dependencies = [
 
 [[package]]
 name = "mls-rs-crypto-nss"
-version = "0.2.0"
-source = "git+https://github.com/mozilla/mls-platform-api?rev=bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b#bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b"
+version = "0.2.1"
+source = "git+https://github.com/mozilla/mls-platform-api?rev=2a2e344019bfc76b7e566ee6e0549cf668d90127#2a2e344019bfc76b7e566ee6e0549cf668d90127"
 dependencies = [
  "getrandom 0.2.999",
  "hex",
@@ -4936,7 +4972,7 @@ dependencies = [
 [[package]]
 name = "mls-rs-provider-sqlite"
 version = "0.22.0"
-source = "git+https://github.com/mozilla/mls-platform-api?rev=bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b#bbbf9d51d60e5f63ab2b791ffbfd884c4d1a317b"
+source = "git+https://github.com/mozilla/mls-platform-api?rev=2a2e344019bfc76b7e566ee6e0549cf668d90127#2a2e344019bfc76b7e566ee6e0549cf668d90127"
 dependencies = [
  "async-trait",
  "hex",
@@ -5060,7 +5096,7 @@ version = "0.1.0"
 
 [[package]]
 name = "mozdevice"
-version = "0.5.4"
+version = "0.5.5"
 dependencies = [
  "log",
  "once_cell",
@@ -5169,7 +5205,7 @@ dependencies = [
 
 [[package]]
 name = "mozprofile"
-version = "0.9.4"
+version = "0.9.5"
 dependencies = [
  "tempfile",
  "thiserror 1.999.999",
@@ -5177,7 +5213,7 @@ dependencies = [
 
 [[package]]
 name = "mozrunner"
-version = "0.15.4"
+version = "0.15.5"
 dependencies = [
  "dirs",
  "log",
@@ -5201,7 +5237,7 @@ dependencies = [
 
 [[package]]
 name = "mozversion"
-version = "0.5.3"
+version = "0.5.4"
 dependencies = [
  "regex",
  "rust-ini",
@@ -5214,6 +5250,7 @@ name = "mozwer_s"
 version = "0.1.0"
 dependencies = [
  "crash_helper_client",
+ "crash_helper_common",
  "libc",
  "mozilla-central-workspace-hack",
  "rust-ini",
@@ -5255,7 +5292,7 @@ dependencies = [
 [[package]]
 name = "mtu"
 version = "0.4.1"
-source = "git+https://github.com/mozilla/neqo?tag=v0.28.0#cca436bc84a8f6606cb66cf68add1a5a15a440ad"
+source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
 dependencies = [
  "cfg_aliases",
  "libc",
@@ -5272,7 +5309,7 @@ checksum = "a2983372caf4480544083767bf2d27defafe32af49ab4df3a0b7fc90793a3664"
 [[package]]
 name = "naga"
 version = "29.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc#a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc"
+source = "git+https://github.com/gfx-rs/wgpu?rev=1ff557ddf68731c825bcc9f74a30fe519e968089#1ff557ddf68731c825bcc9f74a30fe519e968089"
 dependencies = [
  "arrayvec",
  "bit-set",
@@ -5280,8 +5317,8 @@ dependencies = [
  "cfg-if",
  "cfg_aliases",
  "codespan-reporting",
- "half 2.5.0",
- "hashbrown 0.16.0",
+ "half",
+ "hashbrown 0.16.999",
  "indexmap",
  "libm",
  "log",
@@ -5296,8 +5333,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-bin"
-version = "0.28.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.28.0#cca436bc84a8f6606cb66cf68add1a5a15a440ad"
+version = "0.29.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
 dependencies = [
  "cfg_aliases",
  "clap",
@@ -5316,14 +5353,15 @@ dependencies = [
  "quinn-udp",
  "rustc-hash 2.1.1",
  "strum",
+ "test-fixture",
  "thiserror 2.0.12",
  "tokio",
 ]
 
 [[package]]
 name = "neqo-common"
-version = "0.28.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.28.0#cca436bc84a8f6606cb66cf68add1a5a15a440ad"
+version = "0.29.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
 dependencies = [
  "enum-map",
  "env_logger",
@@ -5336,8 +5374,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-http3"
-version = "0.28.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.28.0#cca436bc84a8f6606cb66cf68add1a5a15a440ad"
+version = "0.29.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
 dependencies = [
  "enumset",
  "http",
@@ -5355,8 +5393,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-qpack"
-version = "0.28.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.28.0#cca436bc84a8f6606cb66cf68add1a5a15a440ad"
+version = "0.29.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
 dependencies = [
  "log",
  "neqo-common",
@@ -5369,8 +5407,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-transport"
-version = "0.28.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.28.0#cca436bc84a8f6606cb66cf68add1a5a15a440ad"
+version = "0.29.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
 dependencies = [
  "enum-map",
  "enumset",
@@ -5389,8 +5427,8 @@ dependencies = [
 
 [[package]]
 name = "neqo-udp"
-version = "0.28.0"
-source = "git+https://github.com/mozilla/neqo?tag=v0.28.0#cca436bc84a8f6606cb66cf68add1a5a15a440ad"
+version = "0.29.0"
+source = "git+https://github.com/mozilla/neqo?tag=v0.29.0#18832752db4700df4bdbb26f655b675931b234ac"
 dependencies = [
  "cfg_aliases",
  "libc",
@@ -5498,13 +5536,6 @@ dependencies = [
 
 [[package]]
 name = "nix"
-version = "0.29.0"
-dependencies = [
- "nix 0.30.1",
-]
-
-[[package]]
-name = "nix"
 version = "0.30.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "74523f3a35e05aba87a1d978330aef40f67b0304ac79c1c00b294c9830543db6"
@@ -5571,23 +5602,9 @@ dependencies = [
 ]
 
 [[package]]
-name = "nss-gk-api"
-version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4c17aec6d4e1822c023689899f09311592a36cbf6de8f85dfaf5f01976790d8d"
-dependencies = [
- "bindgen 0.72.0",
- "mozbuild",
- "once_cell",
- "pkcs11-bindings",
- "serde",
- "serde_derive",
- "toml 0.5.999",
-]
-
-[[package]]
 name = "nss-rs"
-version = "0.9.0"
+version = "0.13.2"
+source = "git+https://github.com/mozilla/nss-rs#a77e4287a92ba310b1542be2f53fcde3552a79e3"
 dependencies = [
  "bindgen 0.72.0",
  "enum-map",
@@ -5602,6 +5619,7 @@ dependencies = [
  "thiserror 2.0.12",
  "toml 0.9.8",
  "windows",
+ "zeroize",
 ]
 
 [[package]]
@@ -6350,9 +6368,16 @@ dependencies = [
 
 [[package]]
 name = "procfs-core"
-version = "0.17.0"
+version = "0.17.999"
+dependencies = [
+ "procfs-core 0.18.0",
+]
+
+[[package]]
+name = "procfs-core"
+version = "0.18.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "239df02d8349b06fc07398a3a1697b06418223b1c7725085e801e7c0fc6a12ec"
+checksum = "e6401bf7b6af22f78b563665d15a22e9aef27775b79b149a66ca022468a4e405"
 dependencies = [
  "bitflags 2.10.0",
  "hex",
@@ -6419,7 +6444,7 @@ dependencies = [
 [[package]]
 name = "pulse"
 version = "0.3.0"
-source = "git+https://github.com/mozilla/cubeb-pulse-rs?rev=3cf4a1af09a1748d0e184297a17132bdcc608874#3cf4a1af09a1748d0e184297a17132bdcc608874"
+source = "git+https://github.com/mozilla/cubeb-pulse-rs?rev=5eb4d5bdb725d3d53e42cc88f82269fac2aa42b7#5eb4d5bdb725d3d53e42cc88f82269fac2aa42b7"
 dependencies = [
  "bitflags 2.10.0",
  "pulse-ffi",
@@ -6428,7 +6453,7 @@ dependencies = [
 [[package]]
 name = "pulse-ffi"
 version = "0.1.0"
-source = "git+https://github.com/mozilla/cubeb-pulse-rs?rev=3cf4a1af09a1748d0e184297a17132bdcc608874#3cf4a1af09a1748d0e184297a17132bdcc608874"
+source = "git+https://github.com/mozilla/cubeb-pulse-rs?rev=5eb4d5bdb725d3d53e42cc88f82269fac2aa42b7#5eb4d5bdb725d3d53e42cc88f82269fac2aa42b7"
 dependencies = [
  "libc",
 ]
@@ -6949,8 +6974,10 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "crash-context",
+ "crash_helper_common",
  "libc",
  "minidump-writer",
+ "mozannotation_server",
 ]
 
 [[package]]
@@ -6983,9 +7010,9 @@ dependencies = [
 
 [[package]]
 name = "rustix"
-version = "0.38.39"
+version = "1.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "375116bee2be9ed569afe2154ea6a99dfdffd257f533f187498c2a8f5feaf4ee"
+checksum = "b6fe4565b9518b83ef4f91bb47ce29620ca828bd32cb7e408f0062e9930ba190"
 dependencies = [
  "bitflags 2.10.0",
  "errno",
@@ -7124,12 +7151,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "serde_cbor"
-version = "0.11.2"
+name = "serde_cbor_2"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bef2ebfde456fb76bbcf9f59315333decc4fda0b2b44b420243c11e0f5ec1f5"
+checksum = "34aec2709de9078e077090abd848e967abab63c9fb3fdb5d4799ad359d8d482c"
 dependencies = [
- "half 1.999.999",
+ "half",
  "serde",
 ]
 
@@ -7365,7 +7392,7 @@ version = "0.0.0"
 dependencies = [
  "chrono",
  "futures",
- "hashbrown 0.16.0",
+ "hashbrown 0.16.999",
  "rusqlite 0.37.0",
  "serde",
  "serde_json",
@@ -7389,9 +7416,9 @@ checksum = "75ce4f9dc4a41b4c3476cc925f1efb11b66df373a8fde5d4b8915fa91b5d995e"
 
 [[package]]
 name = "smallvec"
-version = "1.15.1"
+version = "1.15.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "67b1b7a3b5fe4f1376887184045fcf45c69e92af734b7aaddc05fb777b6fbd03"
+checksum = "8ed6a63f02c8539c91a8685a86f4099661ba3da017932f6ebbea6de3f0fa7c90"
 dependencies = [
  "serde",
 ]
@@ -7415,9 +7442,9 @@ checksum = "b7c388c1b5e93756d0c740965c41e8822f866621d41acbdf6336a6a168f8840c"
 
 [[package]]
 name = "socket2"
-version = "0.5.7"
+version = "0.6.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce305eb0b4296696835b71df73eb912e0f1ffd2556a501fcede6e0c50349191c"
+checksum = "3a766e1110788c36f4fa1c2b71b387a7815aa65f88ce0229841826633d93723e"
 dependencies = [
  "libc",
  "windows-sys",
@@ -7454,11 +7481,10 @@ dependencies = [
 name = "ssl_tokens_cache"
 version = "0.1.0"
 dependencies = [
+ "adler2",
  "bincode",
- "flate2",
  "log",
  "nsstring",
- "rustc-hash 2.1.1",
  "serde",
  "static_assertions",
  "tempfile",
@@ -7802,11 +7828,10 @@ dependencies = [
 
 [[package]]
 name = "tempfile"
-version = "3.16.0"
+version = "3.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38c246215d7d24f48ae091a2902398798e05d978b24315d6efbc00ede9a8bb91"
+checksum = "32497e9a4c7b38532efcdebeef879707aa9f794296a4f0244f6f69e9bc8574bd"
 dependencies = [
- "cfg-if",
  "fastrand",
  "getrandom 0.3.3",
  "once_cell",
@@ -7832,6 +7857,15 @@ name = "termtree"
 version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8f50febec83f5ee1df3015341d8bd429f2d1cc62bcba7ea2076759d315084683"
+
+[[package]]
+name = "test-fixture"
+version = "0.1.0"
+source = "git+https://github.com/mozilla/nss-rs#a77e4287a92ba310b1542be2f53fcde3552a79e3"
+dependencies = [
+ "log",
+ "nss-rs",
+]
 
 [[package]]
 name = "test-trust-anchors-static"
@@ -7976,11 +8010,10 @@ dependencies = [
 
 [[package]]
 name = "tokio"
-version = "1.45.1"
+version = "1.52.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75ef51a33ef1da925cea3e4eb122833cb377c61439ca401b770f54902b806779"
+checksum = "8fc7f01b389ac15039e4dc9531aa973a135d7a4135281b12d7c1bc79fd57fffe"
 dependencies = [
- "backtrace",
  "bytes",
  "libc",
  "mio",
@@ -7993,9 +8026,9 @@ dependencies = [
 
 [[package]]
 name = "tokio-macros"
-version = "2.5.0"
+version = "2.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6e06d43f1345a3bcd39f6a56dbb7dcab2ba47e68e8ac134855e7e2bdbaf8cab8"
+checksum = "385a6cb71ab9ab790c5fe8d67f1645e6c450a7ce006a33de03daa956cf70a496"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8003,28 +8036,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "tokio-stream"
-version = "0.1.12"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8fb52b74f05dbf495a8fba459fdc331812b96aa086d9eb78101fa0d4569c3313"
-dependencies = [
- "futures-core",
- "pin-project-lite",
- "tokio",
-]
-
-[[package]]
 name = "tokio-util"
-version = "0.7.2"
+version = "0.7.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f988a1a1adc2fb21f9c12aa96441da33a1728193ae0b95d2be22dbd17fcb4e5c"
+checksum = "9ae9cec805b01e8fc3fd2fe289f89149a9b66dd16786abd8b19cfa7b48cb0098"
 dependencies = [
  "bytes",
  "futures-core",
  "futures-sink",
  "pin-project-lite",
  "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -8713,16 +8734,18 @@ dependencies = [
 
 [[package]]
 name = "warp"
-version = "0.3.7"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4378d202ff965b011c64817db11d5829506d3404edeadb61f190d111da3f231c"
+checksum = "51d06d9202adc1f15d709c4f4a2069be5428aa912cc025d6f268ac441ab066b0"
 dependencies = [
  "bytes",
- "futures-channel",
  "futures-util",
  "headers",
  "http",
+ "http-body",
+ "http-body-util",
  "hyper",
+ "hyper-util",
  "log",
  "mime",
  "mime_guess",
@@ -8810,7 +8833,7 @@ version = "0.3.100"
 
 [[package]]
 name = "webdriver"
-version = "0.53.0"
+version = "0.54.0"
 dependencies = [
  "base64 0.22.1",
  "bytes",
@@ -8824,7 +8847,6 @@ dependencies = [
  "thiserror 1.999.999",
  "time",
  "tokio",
- "tokio-stream",
  "url",
  "warp",
 ]
@@ -8880,8 +8902,11 @@ dependencies = [
  "gleam",
  "glean",
  "glslopt",
+ "http-body-util",
  "hyper",
+ "hyper-util",
  "lazy_static",
+ "libloading",
  "log",
  "malloc_size_of_derive",
  "num-traits",
@@ -8988,7 +9013,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core"
 version = "29.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc#a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc"
+source = "git+https://github.com/gfx-rs/wgpu?rev=1ff557ddf68731c825bcc9f74a30fe519e968089#1ff557ddf68731c825bcc9f74a30fe519e968089"
 dependencies = [
  "arrayvec",
  "bit-set",
@@ -8997,7 +9022,7 @@ dependencies = [
  "bytemuck",
  "cfg_aliases",
  "document-features",
- "hashbrown 0.16.0",
+ "hashbrown 0.16.999",
  "indexmap",
  "log",
  "macro_rules_attribute",
@@ -9021,7 +9046,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core-deps-apple"
 version = "29.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc#a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc"
+source = "git+https://github.com/gfx-rs/wgpu?rev=1ff557ddf68731c825bcc9f74a30fe519e968089#1ff557ddf68731c825bcc9f74a30fe519e968089"
 dependencies = [
  "wgpu-hal",
 ]
@@ -9029,7 +9054,7 @@ dependencies = [
 [[package]]
 name = "wgpu-core-deps-windows-linux-android"
 version = "29.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc#a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc"
+source = "git+https://github.com/gfx-rs/wgpu?rev=1ff557ddf68731c825bcc9f74a30fe519e968089#1ff557ddf68731c825bcc9f74a30fe519e968089"
 dependencies = [
  "wgpu-hal",
 ]
@@ -9037,7 +9062,7 @@ dependencies = [
 [[package]]
 name = "wgpu-hal"
 version = "29.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc#a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc"
+source = "git+https://github.com/gfx-rs/wgpu?rev=1ff557ddf68731c825bcc9f74a30fe519e968089#1ff557ddf68731c825bcc9f74a30fe519e968089"
 dependencies = [
  "android_system_properties",
  "arrayvec",
@@ -9049,7 +9074,7 @@ dependencies = [
  "cfg-if",
  "cfg_aliases",
  "gpu-allocator",
- "hashbrown 0.16.0",
+ "hashbrown 0.16.999",
  "libc",
  "libloading",
  "log",
@@ -9067,6 +9092,7 @@ dependencies = [
  "raw-window-handle",
  "raw-window-metal",
  "smallvec",
+ "static_assertions",
  "thiserror 2.0.12",
  "wgpu-naga-bridge",
  "wgpu-types",
@@ -9077,7 +9103,7 @@ dependencies = [
 [[package]]
 name = "wgpu-naga-bridge"
 version = "29.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc#a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc"
+source = "git+https://github.com/gfx-rs/wgpu?rev=1ff557ddf68731c825bcc9f74a30fe519e968089#1ff557ddf68731c825bcc9f74a30fe519e968089"
 dependencies = [
  "naga",
  "wgpu-types",
@@ -9086,7 +9112,7 @@ dependencies = [
 [[package]]
 name = "wgpu-types"
 version = "29.0.0"
-source = "git+https://github.com/gfx-rs/wgpu?rev=a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc#a2c9a1c6a1e5fe4f58a6db74648cf37635abc6cc"
+source = "git+https://github.com/gfx-rs/wgpu?rev=1ff557ddf68731c825bcc9f74a30fe519e968089#1ff557ddf68731c825bcc9f74a30fe519e968089"
 dependencies = [
  "bitflags 2.10.0",
  "bytemuck",
@@ -9285,11 +9311,11 @@ dependencies = [
 
 [[package]]
 name = "windows-sys"
-version = "0.52.0"
+version = "0.61.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "282be5f36a8ce781fad8c8ae18fa3f9beff57ec1b52cb3de0789201425d9a33d"
+checksum = "ae137229bcbd6cdf0f7b80a31df61766145077ddf49416a728b02cb3921ff3fc"
 dependencies = [
- "windows-targets",
+ "windows-link",
 ]
 
 [[package]]

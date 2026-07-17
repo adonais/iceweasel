@@ -69,7 +69,7 @@ class JsepSession {
       : mName(name), mState(kJsepStateStable), mNegotiations(0) {}
   virtual ~JsepSession() {}
 
-  virtual JsepSession* Clone() const = 0;
+  virtual UniquePtr<JsepSession> Clone() const = 0;
 
   virtual nsresult Init() = 0;
 

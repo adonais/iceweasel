@@ -296,8 +296,10 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
     JSContext* cx = rt->mainContextFromOwnThread();
 
     // Trace active interpreter and JIT stack roots.
-    TraceInterpreterActivations(cx, trc);
-    jit::TraceJitActivations(cx, trc);
+    TraceActivations(cx, trc);
+#ifdef ENABLE_WASM_JSPI
+    jit::TraceWasmSuspendedContStacks(cx, trc);
+#endif
 
     // Trace legacy C stack roots.
     cx->traceAllGCRooters(trc);
@@ -335,11 +337,6 @@ void js::gc::GCRuntime::traceRuntimeCommon(JSTracer* trc,
     for (ZonesIter zone(this, ZoneSelector::SkipAtoms); !zone.done();
          zone.next()) {
       zone->traceRootsInMajorGC(trc);
-    }
-
-    // Trace interpreter entry code generated with --emit-interpreter-entry
-    if (rt->hasJitRuntime() && rt->jitRuntime()->hasInterpreterEntryMap()) {
-      rt->jitRuntime()->getInterpreterEntryMap()->traceTrampolineCode(trc);
     }
   }
 
@@ -401,7 +398,7 @@ IncrementalProgress GCRuntime::traceEmbeddingGrayRoots(JSTracer* trc,
 
 #ifdef DEBUG
 class AssertNoRootsTracer final : public JS::CallbackTracer {
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     MOZ_CRASH("There should not be any roots during runtime shutdown");
   }
 
@@ -432,9 +429,6 @@ void js::gc::GCRuntime::finishRoots() {
 #ifdef JS_GC_ZEAL
   clearSelectedForMarking();
 #endif
-
-  // Clear out the interpreter entry map before the final gc.
-  ClearInterpreterEntryMap(rt);
 
   // Clear any remaining roots from the embedding (as otherwise they will be
   // left dangling after we shut down) and remove the callbacks.

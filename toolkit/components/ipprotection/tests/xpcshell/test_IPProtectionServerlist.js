@@ -347,6 +347,44 @@ add_task(async function test_PrefServerList() {
   Assert.deepEqual(city, TEST_US_CITY, "The US city should be returned.");
 });
 
+add_task(async function test_PrefServerList_prefChangeTriggersListChanged() {
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref(PrefServerList.PREF_NAME);
+  });
+
+  Services.prefs.setCharPref(
+    PrefServerList.PREF_NAME,
+    JSON.stringify(TEST_COUNTRIES)
+  );
+
+  const serverList = new PrefServerList();
+  await serverList.initOnStartupCompleted();
+  Assert.ok(serverList.hasList, "Initial list should be loaded.");
+
+  let listChangedFired = false;
+  serverList.addEventListener("IPProtectionServerlist:ListChanged", () => {
+    listChangedFired = true;
+  });
+
+  const updatedList = [
+    {
+      code: "US",
+      cities: [{ servers: [{ host: "updated.example.com", port: "9090" }] }],
+    },
+  ];
+  Services.prefs.setCharPref(
+    PrefServerList.PREF_NAME,
+    JSON.stringify(updatedList)
+  );
+
+  Assert.ok(
+    listChangedFired,
+    "ListChanged should fire when the serverlist pref changes."
+  );
+
+  serverList.uninit();
+});
+
 add_task(async function test_IPProtectionServerlistFactory() {
   registerCleanupFunction(() => {
     Services.prefs.clearUserPref(PrefServerList.PREF_NAME);

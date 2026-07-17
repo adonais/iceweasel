@@ -37,12 +37,12 @@ static EGLStreamKHR StreamFromD3DTexture(EglDisplay* const egl,
           EGLExtension::NV_stream_consumer_gltexture_yuv) ||
       !egl->IsExtensionSupported(
           EGLExtension::ANGLE_stream_producer_d3d_texture)) {
-    return 0;
+    return nullptr;
   }
 
   const auto stream = egl->fCreateStreamKHR(nullptr);
   MOZ_ASSERT(stream);
-  if (!stream) return 0;
+  if (!stream) return nullptr;
   bool ok = true;
   NOTE_IF_FALSE(ok &= bool(egl->fStreamConsumerGLTextureExternalAttribsNV(
                     stream, nullptr)));
@@ -53,7 +53,7 @@ static EGLStreamKHR StreamFromD3DTexture(EglDisplay* const egl,
   if (ok) return stream;
 
   (void)egl->fDestroyStreamKHR(stream);
-  return 0;
+  return nullptr;
 }
 
 static RefPtr<ID3D11Texture2D> OpenSharedTexture(ID3D11Device* const d3d,
@@ -96,7 +96,7 @@ class BindAnglePlanes final {
         mNumPlanes(numPlanes),
         mMultiTex(mParent.mGL, mNumPlanes, LOCAL_GL_TEXTURE_EXTERNAL),
         mTempTexs{0},
-        mStreams{0},
+        mStreams{nullptr},
         mSuccess(true) {
     MOZ_RELEASE_ASSERT(numPlanes >= 1 && numPlanes <= 3);
 
@@ -168,7 +168,7 @@ ID3D11Device* GLBlitHelper::GetD3D11() const {
 
   const auto& gle = GLContextEGL::Cast(mGL);
   const auto& egl = gle->mEgl;
-  EGLDeviceEXT deviceEGL = 0;
+  EGLDeviceEXT deviceEGL = nullptr;
   NOTE_IF_FALSE(egl->fQueryDisplayAttribEXT(LOCAL_EGL_DEVICE_EXT,
                                             (EGLAttrib*)&deviceEGL));
   ID3D11Device* device = nullptr;

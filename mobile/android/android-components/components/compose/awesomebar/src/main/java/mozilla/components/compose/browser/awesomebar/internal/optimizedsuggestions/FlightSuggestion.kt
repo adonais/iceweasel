@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -339,9 +338,9 @@ private fun FlightStatusBadge(flightStatus: FlightSuggestionStatus, modifier: Mo
         modifier = modifier
             .background(
                 color = color,
-                shape = RoundedCornerShape(8.dp),
+                shape = MaterialTheme.shapes.small,
             )
-            .clip(RoundedCornerShape(8.dp))
+            .clip(MaterialTheme.shapes.small)
             .padding(horizontal = 8.dp),
     ) {
         Text(

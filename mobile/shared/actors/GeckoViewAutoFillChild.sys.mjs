@@ -9,7 +9,6 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   FormLikeFactory: "resource://gre/modules/FormLikeFactory.sys.mjs",
-  LayoutUtils: "resource://gre/modules/LayoutUtils.sys.mjs",
   LoginManagerChild: "resource://gre/modules/LoginManagerChild.sys.mjs",
 });
 
@@ -307,10 +306,13 @@ export class GeckoViewAutoFillChild extends GeckoViewActorChild {
 
     const info = aTarget && this._autofillInfos?.get(aTarget);
     if (info) {
+      const win = aTarget.documentGlobal;
       const bounds = aTarget.getBoundingClientRect();
-      const screenRect = lazy.LayoutUtils.rectToScreenRect(
-        aTarget.documentGlobal,
-        bounds
+      const screenRect = win.windowUtils.toScreenRect(
+        bounds.left,
+        bounds.top,
+        bounds.width,
+        bounds.height
       );
       info.screenRect = {
         left: screenRect.left,

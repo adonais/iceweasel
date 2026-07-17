@@ -24,15 +24,16 @@ class PathBuilder;
 // https://drafts.csswg.org/css-shapes/#basic-shape-functions
 //
 struct ShapeUtils final {
-  // Compute the length of a keyword <shape-radius>, i.e. closest-side or
-  // farthest-side, for a circle or an ellipse on a single dimension. The
-  // caller needs to call for both dimensions and combine the result.
+  // Compute the orthogonal length of a keyword <shape-radius>, i.e.
+  // closest-side, farthest-side, closest-corner, or farthest-corner for
+  // a circle or an ellipse on a single dimension. The caller needs to
+  // call for both dimensions and combine the result.
   // https://drafts.csswg.org/css-shapes/#typedef-shape-radius.
-  // @return The length of the radius in app units.
-  static nscoord ComputeShapeRadius(const StyleShapeRadius& aType,
-                                    const nscoord aCenter,
-                                    const nscoord aPosMin,
-                                    const nscoord aPosMax);
+  // @return The orthogonal length in app units.
+  static nscoord ComputeOrthogonalDistanceTo(const StyleShapeRadius& aType,
+                                             const nscoord aCenter,
+                                             const nscoord aPosMin,
+                                             const nscoord aPosMax);
 
   // Compute the position based on |aRefBox|.
   // @param aRefBox The reference box for the position.

@@ -43,7 +43,7 @@ nsPrintSettingsGTK::nsPrintSettingsGTK()
 
 already_AddRefed<nsIPrintSettings> CreatePlatformPrintSettings(
     const mozilla::PrintSettingsInitializer& aSettings) {
-  RefPtr<nsPrintSettings> settings = new nsPrintSettingsGTK();
+  auto settings = mozilla::MakeRefPtr<nsPrintSettingsGTK>();
   settings->InitWithInitializer(aSettings);
   settings->SetDefaultFileName();
   return settings.forget();

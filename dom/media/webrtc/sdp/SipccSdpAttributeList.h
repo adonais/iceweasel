@@ -5,6 +5,7 @@
 #ifndef DOM_MEDIA_WEBRTC_SDP_SIPCCSDPATTRIBUTELIST_H_
 #define DOM_MEDIA_WEBRTC_SDP_SIPCCSDPATTRIBUTELIST_H_
 
+#include "mozilla/UniquePtr.h"
 #include "sdp/SdpAttributeList.h"
 #include "sdp/SdpParser.h"
 
@@ -30,7 +31,7 @@ class SipccSdpAttributeList : public SdpAttributeList {
                             const bool sessionFallback) const override;
   virtual const SdpAttribute* GetAttribute(
       const AttributeType type, const bool sessionFallback) const override;
-  virtual void SetAttribute(SdpAttribute* attr) override;
+  virtual void SetAttribute(UniquePtr<SdpAttribute>&& attr) override;
   virtual void RemoveAttribute(const AttributeType type) override;
   virtual void Clear() override;
   virtual uint32_t Count() const override;
@@ -77,7 +78,7 @@ class SipccSdpAttributeList : public SdpAttributeList {
 
   virtual void Serialize(std::ostream&) const override;
 
-  virtual ~SipccSdpAttributeList();
+  virtual ~SipccSdpAttributeList() = default;
 
   SipccSdpAttributeList(const SipccSdpAttributeList& orig) = delete;
   SipccSdpAttributeList& operator=(const SipccSdpAttributeList& rhs) = delete;
@@ -144,7 +145,7 @@ class SipccSdpAttributeList : public SdpAttributeList {
 
   const SipccSdpAttributeList* mSessionLevel;
 
-  SdpAttribute* mAttributes[kNumAttributeTypes];
+  mozilla::UniquePtr<SdpAttribute> mAttributes[kNumAttributeTypes];
 };
 
 }  // namespace mozilla

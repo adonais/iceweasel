@@ -1,6 +1,12 @@
-commit 6eb59c58d21b6148fe13c0374201cafd9464e32e
+commit 7b0bc3d196d480cce121a7aef375eda817e7e7ce
+Author: Ashley Hale <ahale@mozilla.com>
+Date:   Tue Jun 09 02:49:49 2026 -0700
+
+    Cherry-pick another translator fix
+
+commit a25624ef5e0ffa6d30956d99fba040de008a1b3f
 Author: Shahbaz Youssefi <syoussefi@chromium.org>
-Date:   Tue Apr 7 15:51:37 2026 -0400
+Date:   Tue Apr 07 15:51:37 2026 -0400
 
     M148: Translator: Fix redeclared built-in type checks
     
@@ -17,7 +23,7 @@ Date:   Tue Apr 7 15:51:37 2026 -0400
     Reviewed-on: https://chromium-review.googlesource.com/c/angle/angle/+/7818777
     Reviewed-by: Yuxin Hu <yuxinhu@google.com>
 
-commit b2a02e6a10589f2890ab8522bd00d3102834925d
+commit 71efafb2033e86950eb40ba4e455f2034960f6bd
 Author: Geoff Lang <geofflang@chromium.org>
 Date:   Thu Mar 26 18:05:30 2026 -0500
 
@@ -54,7 +60,7 @@ Date:   Mon May 11 11:09:56 2026 +0200
 
 commit a1db0642de56a9a0d7754cd068c97a852f54a16b
 Author: Shrek Shao <shrekshao@google.com>
-Date:   Thu Apr 2 15:41:06 2026 -0700
+Date:   Thu Apr 02 15:41:06 2026 -0700
 
     D3D11: Fix overflow in compressed 3D texture deferred-init
     
@@ -163,7 +169,7 @@ Date:   Tue Mar 17 14:04:32 2026 -0700
 
 commit c194cd0c42e86451d1499c57397e7ef8eefa135c
 Author: Antonio Maiorano <amaiorano@google.com>
-Date:   Tue Apr 7 16:03:19 2026 -0400
+Date:   Tue Apr 07 16:03:19 2026 -0400
 
     D3D11: Fix potential OOB read in StoreStaticAttrib
     
@@ -203,13 +209,13 @@ Date:   Wed Apr 22 18:57:59 2026 +0200
 
 commit 1640bca09e9ab1cd44c0d2d5b2ee3baafff426fe
 Author: Teodor Tanasoaia <28601907+teoxoy@users.noreply.github.com>
-Date:   Thu Apr 9 17:44:53 2026 +0200
+Date:   Thu Apr 09 17:44:53 2026 +0200
 
     Add return statement for empty bodies
 
 commit d4d97ea4f918c6d702d62cde4b76d2d6c4723777
 Author: Stephen White <senorblanco@chromium.org>
-Date:   Wed Mar 4 15:44:30 2026 -0500
+Date:   Wed Mar 04 15:44:30 2026 -0500
 
     M146: D3D11: fix overflow in line loop and triangle fan
     
@@ -229,7 +235,7 @@ Date:   Wed Mar 4 15:44:30 2026 -0500
 
 commit b0098a1ebdb0400b515ff7a662685bda111e9e87
 Author: Emilio Cobos Álvarez <emilio@crisal.io>
-Date:   Thu Apr 9 15:03:30 2026 +0200
+Date:   Thu Apr 09 15:03:30 2026 +0200
 
     Add a missing change to 7918168436578718b234bfd56da152e34a85af1d that is in Gecko.
 
@@ -252,7 +258,7 @@ Date:   Mon Mar 27 13:05:36 2023 -0400
 
 commit 4f5c3dbc01f70efbaaed41743893ed2c8a7653cd
 Author: Emilio Cobos Álvarez <emilio@crisal.io>
-Date:   Thu Apr 9 13:40:10 2026 +0200
+Date:   Thu Apr 09 13:40:10 2026 +0200
 
     Add missing codegen from #27.
 
@@ -305,7 +311,7 @@ Date:   Thu May 30 11:36:58 2024 -0600
 
 commit 28669be7c0129fa7ed117f730484db302a39bcb2
 Author: Nisha Jain <nisha_jain@apple.com>
-Date:   Thu Mar 7 14:19:58 2024 +0200
+Date:   Thu Mar 07 14:19:58 2024 +0200
 
     Avoid asserts when const folding binary ops on void variables
     
@@ -322,7 +328,7 @@ Date:   Thu Mar 7 14:19:58 2024 +0200
 
 commit ebaab5cd66b66183175f8c5d5f72210afcba38ca
 Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Fri Mar 8 14:26:56 2024 +0200
+Date:   Fri Mar 08 14:26:56 2024 +0200
 
     Check array index against unsigned array size
     
@@ -338,7 +344,7 @@ Date:   Fri Mar 8 14:26:56 2024 +0200
 
 commit 5a3f53d8bff0709e94e9b5c2a97684c9a012f6f6
 Author: Erica Li <lerica@apple.com>
-Date:   Fri Mar 8 12:40:09 2024 +0200
+Date:   Fri Mar 08 12:40:09 2024 +0200
 
     Avoid assert with multiple memory qualifiers
     
@@ -353,7 +359,7 @@ Date:   Fri Mar 8 12:40:09 2024 +0200
 
 commit f95d411e7d0c5cfb4b0dfef2ecadb952cc92b06a
 Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Tue Mar 5 21:42:32 2024 +0200
+Date:   Tue Mar 05 21:42:32 2024 +0200
 
     Ensure unary math op parse to an node on error
     
@@ -369,7 +375,7 @@ Date:   Tue Mar 5 21:42:32 2024 +0200
 
 commit 386e3783a143a5268df86bdf93cd10892419f395
 Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Mon Mar 4 14:43:10 2024 +0200
+Date:   Mon Mar 04 14:43:10 2024 +0200
 
     Fix layout(index=) parse assert on es 100 shaders
     
@@ -423,7 +429,7 @@ Date:   Tue Feb 13 17:54:12 2024 +0200
 
 commit a7ce496eaa3ac8f108190ca544e00024edead840
 Author: Kimmo Kinnunen <kkinnunen@apple.com>
-Date:   Wed Feb 7 14:25:32 2024 +0200
+Date:   Wed Feb 07 14:25:32 2024 +0200
 
     Fix an assert on multidim array constructors
     
@@ -444,13 +450,13 @@ Date:   Wed Feb 7 14:25:32 2024 +0200
 
 commit 7918168436578718b234bfd56da152e34a85af1d
 Author: Kelsey Gilbert <kelsey.gilbert@mozilla.com>
-Date:   Tue Jun 4 15:37:29 2024 -0700
+Date:   Tue Jun 04 15:37:29 2024 -0700
 
     Add GLSL variable byte size limits to ShBuiltInResources.
 
 commit 31c0a5bff1330706aff3c4594c8166745814a45b
 Author: Shahbaz Youssefi <syoussefi@chromium.org>
-Date:   Wed May 3 13:41:36 2023 -0400
+Date:   Wed May 03 13:41:36 2023 -0400
 
     WebGL: Limit total size of private data
     
@@ -464,7 +470,7 @@ Date:   Wed May 3 13:41:36 2023 -0400
 
 commit ddaf44ac75d5d0390873c2af193e02159ecbe672
 Author: Geoff Lang <geofflang@chromium.org>
-Date:   Fri Dec 8 13:20:36 2023 -0500
+Date:   Fri Dec 08 13:20:36 2023 -0500
 
     Validate Uniform variable limits with each iteration
     
@@ -511,13 +517,13 @@ Date:   Wed Mar 29 16:13:39 2023 -0700
 
 commit aa3a569c8ddc1122d55663749a6db63e48b3033c
 Author: Ashley Hale <ahale@mozilla.com>
-Date:   Wed Mar 1 18:03:04 2023 -0800
+Date:   Wed Mar 01 18:03:04 2023 -0800
 
     Disable ClearView with scissor on Skylake iGPU because of observed bugs with edge corruption. (#27)
 
 commit d93c05cd2d786f2c624fbf8f4465238b38a771a1
 Author: Kelsey Gilbert <jgilbert@mozilla.com>
-Date:   Thu Sep 8 17:10:21 2022 -0700
+Date:   Thu Sep 08 17:10:21 2022 -0700
 
     Import <cmath> in SymbolTable_ESSL_autogen.cpp.
     
@@ -562,7 +568,7 @@ Date:   Thu Feb 11 17:34:00 2021 -0800
 
 commit 43e9d9a7c95b509869a774fab62bf42d6d15b745
 Author: Jeff Muizelaar <jrmuizel@gmail.com>
-Date:   Wed May 6 14:04:42 2020 -0400
+Date:   Wed May 06 14:04:42 2020 -0400
 
     Don't use ClearView if we previously used dual source blending on Intel gen6. (#22)
     
@@ -576,13 +582,13 @@ Date:   Wed May 6 14:04:42 2020 -0400
 
 commit b16ebaa05424354c06c2ccdccc36df2c7c1b191e
 Author: Erich Gubler <erichdongubler@gmail.com>
-Date:   Wed Nov 9 21:12:44 2022 -0500
+Date:   Wed Nov 09 21:12:44 2022 -0500
 
     Fix broken build from `-Wexit-time-destructors` on Windows x64
 
 commit 4c3a473aec4e09ffacd0466817cb851529087767
 Author: Dzmitry Malyshau <dmalyshau@mozilla.com>
-Date:   Thu Dec 5 13:02:14 2019 -0500
+Date:   Thu Dec 05 13:02:14 2019 -0500
 
     Restrict the slow texture upload workaround to 128bit formats. (#21)
     

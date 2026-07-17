@@ -207,6 +207,13 @@ CONFIGS = defaultdict(
                 "BIN_SUFFIX": ".prog",
             },
         },
+        "extra-link-deps": {
+            "defines": {},
+            "substs": {
+                "COMPILE_ENVIRONMENT": "1",
+                "BIN_SUFFIX": "",
+            },
+        },
         "shared-lib-paths": {
             "defines": {},
             "substs": {

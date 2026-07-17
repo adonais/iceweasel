@@ -10,6 +10,7 @@
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/IDBCursorBinding.h"
 #include "mozilla/dom/IDBIndexBinding.h"
+#include "mozilla/dom/indexedDB/PBackgroundIDBSharedTypes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsString.h"
@@ -26,6 +27,7 @@ class ErrorResult;
 namespace dom {
 
 class DOMStringList;
+struct IDBGetAllOptions;
 class IDBRequest;
 class IDBTransaction;
 class StringOrStringSequence;
@@ -212,14 +214,16 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
                                          ErrorResult& aRv);
 
   [[nodiscard]] RefPtr<IDBRequest> GetAll(JSContext* aCx,
-                                          JS::Handle<JS::Value> aKey,
+                                          JS::Handle<JS::Value> aQueryOrOptions,
                                           const Optional<uint32_t>& aLimit,
                                           ErrorResult& aRv);
 
-  [[nodiscard]] RefPtr<IDBRequest> GetAllKeys(JSContext* aCx,
-                                              JS::Handle<JS::Value> aKey,
-                                              const Optional<uint32_t>& aLimit,
-                                              ErrorResult& aRv);
+  [[nodiscard]] RefPtr<IDBRequest> GetAllKeys(
+      JSContext* aCx, JS::Handle<JS::Value> aQueryOrOptions,
+      const Optional<uint32_t>& aLimit, ErrorResult& aRv);
+
+  [[nodiscard]] RefPtr<IDBRequest> GetAllRecords(
+      JSContext* aCx, const IDBGetAllOptions& aOptions, ErrorResult& aRv);
 
   [[nodiscard]] RefPtr<IDBRequest> OpenCursor(JSContext* aCx,
                                               JS::Handle<JS::Value> aRange,
@@ -247,7 +251,7 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
     return !!mDeletedSpec;
   }
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(IDBObjectStore)
 
   // nsWrapperCache
@@ -281,9 +285,25 @@ class IDBObjectStore final : public nsISupports, public nsWrapperCache {
                                                JS::Handle<JS::Value> aKey,
                                                ErrorResult& aRv);
 
+  enum class GetRequestType : uint8_t {
+    Value,   // getAll
+    Key,     // getAllKeys
+    Record,  // getAllRecords
+  };
+
+  // Common function for GetAll functions (GetAll, GetAllKeys, GetAllRecords).
+  // Takes a parsing function as a parameter, because the parsing is different
+  // for GetAll/GetAllKeys and GetAllRecords. And we can't pass a GetAllOptions
+  // object directly because the parsing needs to happen after performing some
+  // initial checks (connection still active, ...)
+  template <typename ParseFn>
   [[nodiscard]] RefPtr<IDBRequest> GetAllInternal(
-      bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aKey,
-      const Optional<uint32_t>& aLimit, ErrorResult& aRv);
+      GetRequestType aType, JSContext* aCx, const ParseFn& aParseOptionsFn,
+      ErrorResult& aRv);
+
+  // Build a request of the corresponding type
+  indexedDB::RequestParams CreateRequestParams(
+      GetRequestType aType, const indexedDB::GetAllOptions& aOptions);
 
   [[nodiscard]] RefPtr<IDBRequest> OpenCursorInternal(
       bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aRange,

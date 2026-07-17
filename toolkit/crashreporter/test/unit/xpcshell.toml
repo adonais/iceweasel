@@ -69,6 +69,12 @@ run-if = [
 ]
 reason = "Test covering Linux-specific PSI (Pressure Stall Information) annotation"
 
+["test_crash_signal_origin_linux.js"]
+run-if = [
+  "os == 'linux'",
+]
+reason = "Test covering Linux-specific SignalOrigin annotation"
+
 ["test_crash_purevirtual.js"]
 
 ["test_crash_rust_panic.js"]

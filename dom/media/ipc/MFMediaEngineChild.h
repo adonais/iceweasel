@@ -24,13 +24,13 @@ class MFMediaEngineWrapper;
  */
 class MFMediaEngineChild final : public PMFMediaEngineChild {
  public:
-  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFMediaEngineChild);
+  NS_INLINE_DECL_THREADSAFE_REFCOUNTING(MFMediaEngineChild, final);
 
   MFMediaEngineChild(MFMediaEngineWrapper* aOwner,
                      FrameStatistics* aFrameStats);
 
   void OwnerDestroyed();
-  void IPDLActorDestroyed();
+  void ActorDestroy(ActorDestroyReason aWhy) override;
 
   RefPtr<GenericNonExclusivePromise> Init(
       const MediaInfo& aInfo,
@@ -72,8 +72,6 @@ class MFMediaEngineChild final : public PMFMediaEngineChild {
   // remote process.
   // Modified on the manager thread, and read on other threads.
   Atomic<uint64_t> mMediaEngineId;
-
-  RefPtr<MFMediaEngineChild> mIPDLSelfRef;
 
   MozPromiseHolder<GenericNonExclusivePromise> mInitPromiseHolder;
   MozPromiseRequestHolder<InitMediaEnginePromise> mInitEngineRequest;

@@ -118,7 +118,7 @@ add_task(async function removeUniversalInfobars() {
   let browser = BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser;
   let origBox = browser.documentGlobal.gNotificationBox;
   browser.documentGlobal.gNotificationBox = {
-    appendNotification: sandbox.stub().resolves({}),
+    appendNotification: sandbox.stub().resolves(document.createElement("span")),
     removeNotification: sandbox.stub(),
   };
 
@@ -156,7 +156,7 @@ add_task(async function initialUniversal_showsAllWindows_andSendsTelemetry() {
   let browser = BrowserWindowTracker.getTopWindow().gBrowser.selectedBrowser;
   let origBox = browser.documentGlobal.gNotificationBox;
   browser.documentGlobal.gNotificationBox = {
-    appendNotification: sandbox.stub().resolves({}),
+    appendNotification: sandbox.stub().resolves(document.createElement("span")),
     removeNotification: sandbox.stub(),
   };
 
@@ -464,9 +464,9 @@ add_task(async function universal_inline_anchor_dismiss_multiple_windows() {
   dispatch1.resetHistory();
   dispatch2.resetHistory();
 
-  const link = getNotification1().messageText.querySelector(
-    'a[data-l10n-name="test"]'
-  );
+  const link = getNotification1()
+    .querySelector(':scope > [slot="message"]')
+    .querySelector('a[data-l10n-name="test"]');
   Assert.ok(link, "Inline anchor exists in window 1");
   EventUtils.synthesizeMouseAtCenter(link, {}, win1);
 

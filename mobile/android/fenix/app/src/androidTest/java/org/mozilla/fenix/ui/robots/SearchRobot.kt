@@ -431,9 +431,13 @@ class SearchRobot(private val composeTestRule: ComposeTestRule) {
     }
 
     fun longClickToolbar() {
+        Log.i(TAG, "longClickToolbar: Trying to perform \"Close soft keyboard\" action")
+        closeSoftKeyboard()
+        Log.i(TAG, "longClickToolbar: Performed \"Close soft keyboard\" action")
         composeTestRule.waitForIdle()
+        mDevice.waitForIdle()
         Log.i(TAG, "longClickToolbar: Trying to perform long click on the toolbar")
-        composeTestRule.onNodeWithTag("ADDRESSBAR_SEARCH_BOX").performTouchInput { longClick() }
+        composeTestRule.onNodeWithTag(ADDRESSBAR_SEARCH_BOX).performTouchInput { longClick() }
         Log.i(TAG, "longClickToolbar: Performed long click on the toolbar")
     }
 

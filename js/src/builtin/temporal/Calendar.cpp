@@ -96,7 +96,8 @@ bool js::temporal::WrapCalendarValue(JSContext* cx,
  */
 static constexpr bool IsISOLeapYear(int32_t year) {
   // Steps 1-5.
-  return (year % 4 == 0) && ((year % 100 != 0) || (year % 400 == 0));
+  int32_t d = (year % 100 != 0) ? 4 : 16;
+  return (year & (d - 1)) == 0;
 }
 
 /**

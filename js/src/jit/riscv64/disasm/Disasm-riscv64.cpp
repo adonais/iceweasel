@@ -29,6 +29,7 @@
 #include <string_view>
 
 #include "jit/riscv64/Assembler-riscv64.h"
+#include "jit/riscv64/extension/extension-riscv-zfa.h"
 
 namespace js {
 namespace jit {
@@ -51,7 +52,7 @@ class Decoder {
 
   // Writes one disassembled instruction into 'buffer' (0-terminated).
   // Returns the length of the disassembled machine instruction in bytes.
-  int InstructionDecode(uint8_t* instruction);
+  int InstructionDecode(Instruction* instr);
 
   static bool IsConstantPoolAt(uint8_t* instr_ptr);
   static int ConstantPoolSizeAt(uint8_t* instr_ptr);
@@ -107,6 +108,8 @@ class Decoder {
   void PrintRvvUimm5(Instruction* instr);
   void PrintRoundingMode(Instruction* instr);
   void PrintMemoryOrder(Instruction* instr, bool is_pred);
+  void PrintFLISImm(Instruction* instr);
+  void PrintFLIDImm(Instruction* instr);
 
   // Each of these functions decodes one particular instruction type.
   void DecodeRType(Instruction* instr);
@@ -286,6 +289,17 @@ int Decoder::FormatFPURegisterOrRoundMode(Instruction* instr,
     MOZ_ASSERT(STRING_STARTS_WITH(option, "frm"));
     PrintRoundingMode(instr);
     return 3;
+  } else if (option[1] == 'i') {  // 'fis or 'fid: FLI immediate values.
+    if (option[2] == 's') {
+      MOZ_ASSERT(STRING_STARTS_WITH(option, "fis"));
+      PrintFLISImm(instr);
+      return 3;
+    } else if (option[2] == 'd') {
+      MOZ_ASSERT(STRING_STARTS_WITH(option, "fid"));
+      PrintFLIDImm(instr);
+      return 3;
+    }
+    MOZ_CRASH();
   }
   MOZ_CRASH();
 }
@@ -681,12 +695,11 @@ void Decoder::PrintImm12(Instruction* instr) {
 }
 
 void Decoder::PrintTarget(Instruction* instr) {
-  // if (Assembler::IsJalr(instr->InstructionBits())) {
-  //   if (Assembler::IsAuipc((instr - 4)->InstructionBits()) &&
+  // if (instr->IsJalr()) {
+  //   if ((instr - 4)->IsAuipc() &&
   //       (instr - 4)->RdValue() == instr->Rs1Value()) {
-  //     int32_t imm = Assembler::BrachlongOffset((instr -
-  //     4)->InstructionBits(),
-  //                                              instr->InstructionBits());
+  //     int32_t imm = Assembler::BrachlongOffset(
+  //         (instr - 4)->InstructionBits(), instr->InstructionBits());
   //     const char* target =
   //         converter_.NameOfAddress(reinterpret_cast<byte*>(instr - 4) + imm);
   //     out_buffer_pos_ +=
@@ -922,6 +935,21 @@ void Decoder::PrintMemoryOrder(Instruction* instr, bool is_pred) {
   out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%s", s);
 }
 
+// Print the FLI.S immediate value as a floating-point constant.
+// The rs1 field encodes the imm5 value (0-31), which corresponds to
+// predefined floating-point constants.
+void Decoder::PrintFLISImm(Instruction* instr) {
+  uint8_t imm5 = static_cast<uint8_t>(instr->Rs1Value());
+  float value = GetFLISValue(imm5);
+
+  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%.3e", value);
+}
+void Decoder::PrintFLIDImm(Instruction* instr) {
+  uint8_t imm5 = static_cast<uint8_t>(instr->Rs1Value());
+  double value = GetFLIDValue(imm5);
+  out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%.3e", value);
+}
+
 // Printing of instruction name.
 void Decoder::PrintInstructionName(Instruction* instr) {}
 
@@ -1083,10 +1111,10 @@ void Decoder::DecodeRType(Instruction* instr) {
       Format(instr, "zext.h    'rd, 'rs1");
       break;
     case RO_ROL:
-      Format(instr, "rol      'rd, 'rs1, 'rs2");
+      Format(instr, "rol       'rd, 'rs1, 'rs2");
       break;
     case RO_ROR:
-      Format(instr, "ror      'rd, 'rs1, 'rs2");
+      Format(instr, "ror       'rd, 'rs1, 'rs2");
       break;
     case RO_BCLR:
       Format(instr, "bclr      'rd, 'rs1, 'rs2");
@@ -1099,6 +1127,12 @@ void Decoder::DecodeRType(Instruction* instr) {
       break;
     case RO_BSET:
       Format(instr, "bset      'rd, 'rs1, 'rs2");
+      break;
+    case RO_CZERO_EQZ:
+      Format(instr, "czero.eqz 'rd, 'rs1, 'rs2");
+      break;
+    case RO_CZERO_NEZ:
+      Format(instr, "czero.nez 'rd, 'rs1, 'rs2");
       break;
     // TODO(riscv): End Add RISCV M extension macro
     default: {
@@ -1180,7 +1214,7 @@ void Decoder::DecodeRAType(Instruction* instr) {
       Format(instr, "amomin.d'a 'rd, 'rs2, ('rs1)");
       break;
     case RO_AMOMAX_D:
-      Format(instr, "amoswap.d'a 'rd, 'rs2, ('rs1)");
+      Format(instr, "amomax.d'a 'rd, 'rs2, ('rs1)");
       break;
     case RO_AMOMINU_D:
       Format(instr, "amominu.d'a 'rd, 'rs2, ('rs1)");
@@ -1246,8 +1280,14 @@ void Decoder::DecodeRFPType(Instruction* instr) {
         case 0b000:  // RO_FMIN_S
           Format(instr, "fmin.s    'fd, 'fs1, 'fs2");
           break;
+        case 0b010:  // RO_FMINM_S
+          Format(instr, "fminm.s   'fd, 'fs1, 'fs2");
+          break;
         case 0b001:  // RO_FMAX_S
           Format(instr, "fmax.s    'fd, 'fs1, 'fs2");
+          break;
+        case 0b011:  // RO_FMAXM_S
+          Format(instr, "fmaxm.s   'fd, 'fs1, 'fs2");
           break;
         default:
           UNSUPPORTED_RISCV();
@@ -1273,7 +1313,7 @@ void Decoder::DecodeRFPType(Instruction* instr) {
       }
       break;
     }
-    case RO_FMV: {  // RO_FCLASS_S
+    case RO_FMV_X_W: {  // RO_FCLASS_S
       if (instr->Rs2Value() != 0b00000) {
         UNSUPPORTED_RISCV();
       }
@@ -1299,6 +1339,12 @@ void Decoder::DecodeRFPType(Instruction* instr) {
           break;
         case 0b000:  // RO_FLE_S
           Format(instr, "fle.s     'rd, 'fs1, 'fs2");
+          break;
+        case 0b100:  // RO_FLEQ_S
+          Format(instr, "fleq.s    'rd, 'fs1, 'fs2");
+          break;
+        case 0b101:  // RO_FLTQ_S
+          Format(instr, "fltq.s    'rd, 'fs1, 'fs2");
           break;
         default:
           UNSUPPORTED_RISCV();
@@ -1327,7 +1373,13 @@ void Decoder::DecodeRFPType(Instruction* instr) {
     }
     case RO_FMV_W_X: {
       if (instr->Funct3Value() == 0b000) {
-        Format(instr, "fmv.w.x   'fd, 'rs1");
+        if (instr->Rs2Value() == 0) {
+          Format(instr, "fmv.w.x   'fd, 'rs1");
+        } else if (instr->Rs2Value() == 0b00001) {
+          Format(instr, "fli.s     'fd, 'fis");
+        } else {
+          UNSUPPORTED_RISCV();
+        }
       } else {
         UNSUPPORTED_RISCV();
       }
@@ -1384,8 +1436,14 @@ void Decoder::DecodeRFPType(Instruction* instr) {
         case 0b000:  // RO_FMIN_D
           Format(instr, "fmin.d    'fd, 'fs1, 'fs2");
           break;
+        case 0b010:  // RO_FMINM_D
+          Format(instr, "fminm.d   'fd, 'fs1, 'fs2");
+          break;
         case 0b001:  // RO_FMAX_D
           Format(instr, "fmax.d    'fd, 'fs1, 'fs2");
+          break;
+        case 0b011:  // RO_FMAXM_D
+          Format(instr, "fmaxm.d   'fd, 'fs1, 'fs2");
           break;
         default:
           UNSUPPORTED_RISCV();
@@ -1395,14 +1453,26 @@ void Decoder::DecodeRFPType(Instruction* instr) {
     case (RO_FCVT_S_D & kRFPTypeMask): {
       if (instr->Rs2Value() == 0b00001) {
         Format(instr, "fcvt.s.d  ['frm] 'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00010) {
+        Format(instr, "fcvt.s.h ['frm] 'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00100) {
+        Format(instr, "fround.s ['frm] 'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00101) {
+        Format(instr, "froundnx.s ['frm] 'fd, 'fs1");
       } else {
         UNSUPPORTED_RISCV();
       }
       break;
     }
-    case RO_FCVT_D_S: {
+    case RO_FCVT_D_S: {  // RO_FCVT_D_H
       if (instr->Rs2Value() == 0b00000) {
         Format(instr, "fcvt.d.s  'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00010) {
+        Format(instr, "fcvt.d.h ['frm] 'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00100) {
+        Format(instr, "fround.d ['frm] 'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00101) {
+        Format(instr, "froundnx.d ['frm] 'fd, 'fs1");
       } else {
         UNSUPPORTED_RISCV();
       }
@@ -1418,6 +1488,12 @@ void Decoder::DecodeRFPType(Instruction* instr) {
           break;
         case 0b000:  // RO_FLE_D
           Format(instr, "fle.d     'rd, 'fs1, 'fs2");
+          break;
+        case 0b100:  // RO_FLEQ_S
+          Format(instr, "fleq.d    'rd, 'fs1, 'fs2");
+          break;
+        case 0b101:  // RO_FLTQ_S
+          Format(instr, "fltq.d    'rd, 'fs1, 'fs2");
           break;
         default:
           UNSUPPORTED_RISCV();
@@ -1448,6 +1524,10 @@ void Decoder::DecodeRFPType(Instruction* instr) {
           break;
         case 0b00001:  // RO_FCVT_WU_D
           Format(instr, "fcvt.wu.d ['frm] 'rd, 'fs1");
+          break;
+        case 0b01000:  // RO_FCVTMOD_W_D
+          MOZ_ASSERT(instr->RoundMode() == FPURoundingMode::RTZ);
+          Format(instr, "fcvtmod.w.d ['frm] 'rd, 'fs1");
           break;
         case 0b00010:  // RO_FCVT_L_D
           Format(instr, "fcvt.l.d  ['frm] 'rd, 'fs1");
@@ -1480,8 +1560,171 @@ void Decoder::DecodeRFPType(Instruction* instr) {
       break;
     }
     case RO_FMV_D_X: {
-      if (instr->Funct3Value() == 0b000 && instr->Rs2Value() == 0b00000) {
-        Format(instr, "fmv.d.x   'fd, 'rs1");
+      if (instr->Funct3Value() == 0b000) {
+        if (instr->Rs2Value() == 0b00000) {
+          Format(instr, "fmv.d.x   'fd, 'rs1");
+        } else if (instr->Rs2Value() == 0b00001) {
+          Format(instr, "fli.d     'fd, 'fid");
+        } else {
+          UNSUPPORTED_RISCV();
+        }
+      } else {
+        UNSUPPORTED_RISCV();
+      }
+      break;
+    }
+    // TODO(riscv): Add macro for RISCV ZFH extension
+    case RO_FADD_H:
+      Format(instr, "fadd.h    'fd, 'fs1, 'fs2");
+      break;
+    case RO_FSUB_H:
+      Format(instr, "fsub.h    'fd, 'fs1, 'fs2");
+      break;
+    case RO_FMUL_H:
+      Format(instr, "fmul.h    'fd, 'fs1, 'fs2");
+      break;
+    case RO_FDIV_H:
+      Format(instr, "fdiv.h    'fd, 'fs1, 'fs2");
+      break;
+    case RO_FSQRT_H:
+      Format(instr, "fsqrt.h   'fd, 'fs1");
+      break;
+    case RO_FSGNJ_H: {  // RO_FSGNJN_H  RO_FSGNJX_H
+      switch (instr->Funct3Value()) {
+        case 0b000:  // RO_FSGNJ_H
+          if (instr->Rs1Value() == instr->Rs2Value()) {
+            Format(instr, "fmv.h     'fd, 'fs1");
+          } else {
+            Format(instr, "fsgnj.h   'fd, 'fs1, 'fs2");
+          }
+          break;
+        case 0b001:  // RO_FSGNJN_H
+          if (instr->Rs1Value() == instr->Rs2Value()) {
+            Format(instr, "fneg.h    'fd, 'fs1");
+          } else {
+            Format(instr, "fsgnjn.h  'fd, 'fs1, 'fs2");
+          }
+          break;
+        case 0b010:  // RO_FSGNJX_H
+          if (instr->Rs1Value() == instr->Rs2Value()) {
+            Format(instr, "fabs.h    'fd, 'fs1");
+          } else {
+            Format(instr, "fsgnjx.h  'fd, 'fs1, 'fs2");
+          }
+          break;
+        default:
+          UNSUPPORTED_RISCV();
+      }
+      break;
+    }
+    case RO_FMIN_H: {  // RO_FMAX_H
+      switch (instr->Funct3Value()) {
+        case 0b000:  // RO_FMIN_H
+          Format(instr, "fmin.h    'fd, 'fs1, 'fs2");
+          break;
+        case 0b001:  // RO_FMAX_H
+          Format(instr, "fmax.h    'fd, 'fs1, 'fs2");
+          break;
+        default:
+          UNSUPPORTED_RISCV();
+      }
+      break;
+    }
+    case RO_FCVT_W_H: {  // RO_FCVT_WU_H , 64F RO_FCVT_L_H RO_FCVT_LU_H
+      switch (instr->Rs2Value()) {
+        case 0b00000:  // RO_FCVT_W_H
+          Format(instr, "fcvt.w.h ['frm] 'rd, 'fs1");
+          break;
+        case 0b00001:  // RO_FCVT_WU_H
+          Format(instr, "fcvt.wu.h ['frm] 'rd, 'fs1");
+          break;
+        case 0b00010:  // RO_FCVT_L_H
+          Format(instr, "fcvt.l.h ['frm] 'rd, 'fs1");
+          break;
+        case 0b00011:  // RO_FCVT_LU_H
+          Format(instr, "fcvt.lu.h ['frm] 'rd, 'fs1");
+          break;
+        default:
+          UNSUPPORTED_RISCV();
+      }
+      break;
+    }
+    case RO_FCVT_H_S: {
+      if (instr->Rs2Value() == 0b00000) {
+        Format(instr, "fcvt.h.s ['frm] 'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00001) {
+        Format(instr, "fcvt.h.d ['frm] 'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00100) {
+        Format(instr, "fround.h ['frm] 'fd, 'fs1");
+      } else if (instr->Rs2Value() == 0b00101) {
+        Format(instr, "froundnx.h ['frm] 'fd, 'fs1");
+      } else {
+        UNSUPPORTED_RISCV();
+      }
+      break;
+    }
+    case RO_FMV_X_H: {  // RO_FCLASS_H
+      if (instr->Rs2Value() != 0b00000) {
+        UNSUPPORTED_RISCV();
+      }
+      switch (instr->Funct3Value()) {
+        case 0b000:  // RO_FMV_X_H
+          Format(instr, "fmv.x.h   'rd, 'fs1");
+          break;
+        case 0b001:  // RO_FCLASS_H
+          Format(instr, "fclass.h  'rd, 'fs1");
+          break;
+        default:
+          UNSUPPORTED_RISCV();
+      }
+      break;
+    }
+    case RO_FLE_H: {  // RO_FEQ_H RO_FLT_H RO_FLE_H
+      switch (instr->Funct3Value()) {
+        case 0b010:  // RO_FEQ_H
+          Format(instr, "feq.h     'rd, 'fs1, 'fs2");
+          break;
+        case 0b001:  // RO_FLT_H
+          Format(instr, "flt.h     'rd, 'fs1, 'fs2");
+          break;
+        case 0b000:  // RO_FLE_H
+          Format(instr, "fle.h     'rd, 'fs1, 'fs2");
+          break;
+        default:
+          UNSUPPORTED_RISCV();
+      }
+      break;
+    }
+    case RO_FCVT_H_W: {  // RO_FCVT_H_WU , 64F RO_FCVT_H_L RO_FCVT_H_LU
+      switch (instr->Rs2Value()) {
+        case 0b00000:  // RO_FCVT_H_W
+          Format(instr, "fcvt.h.w ['frm] 'fd, 'rs1");
+          break;
+        case 0b00001:  // RO_FCVT_H_WU
+          Format(instr, "fcvt.h.wu ['frm] 'fd, 'rs1");
+          break;
+        case 0b00010:  // RO_FCVT_H_L
+          Format(instr, "fcvt.h.l ['frm] 'fd, 'rs1");
+          break;
+        case 0b00011:  // RO_FCVT_H_LU
+          Format(instr, "fcvt.h.lu ['frm] 'fd, 'rs1");
+          break;
+        default: {
+          UNSUPPORTED_RISCV();
+        }
+      }
+      break;
+    }
+    case RO_FMV_H_X: {
+      if (instr->Funct3Value() == 0b000) {
+        if (instr->Rs2Value() == 0b00000) {
+          Format(instr, "fmv.h.x   'fd, 'rs1");
+        } else if (instr->Rs2Value() == 0b00001) {
+          // fli.h not supported
+          UNSUPPORTED_RISCV();
+        } else {
+          UNSUPPORTED_RISCV();
+        }
       } else {
         UNSUPPORTED_RISCV();
       }
@@ -1520,6 +1763,19 @@ void Decoder::DecodeR4Type(Instruction* instr) {
       break;
     case RO_FNMADD_D:
       Format(instr, "fnmadd.d  'fd, 'fs1, 'fs2, 'fs3");
+      break;
+    // TODO(riscv): use ZFH Extension macro block
+    case RO_FMADD_H:
+      Format(instr, "fmadd.h   'fd, 'fs1, 'fs2, 'fs3");
+      break;
+    case RO_FMSUB_H:
+      Format(instr, "fmsub.h   'fd, 'fs1, 'fs2, 'fs3");
+      break;
+    case RO_FNMSUB_H:
+      Format(instr, "fnmsub.h   'fd, 'fs1, 'fs2, 'fs3");
+      break;
+    case RO_FNMADD_H:
+      Format(instr, "fnmadd.h   'fd, 'fs1, 'fs2, 'fs3");
       break;
     default:
       UNSUPPORTED_RISCV();
@@ -1826,6 +2082,9 @@ void Decoder::DecodeIType(Instruction* instr) {
     case RO_FLW:
       Format(instr, "flw       'fd, 'imm12('rs1)");
       break;
+    case RO_FLH:
+      Format(instr, "flh       'fd, 'imm12('rs1)");
+      break;
     // TODO(riscv): use D Extension macro block
     case RO_FLD:
       Format(instr, "fld       'fd, 'imm12('rs1)");
@@ -1861,6 +2120,9 @@ void Decoder::DecodeSType(Instruction* instr) {
     // TODO(riscv): use F Extension macro block
     case RO_FSW:
       Format(instr, "fsw       'fs2, 'offS('rs1)");
+      break;
+    case RO_FSH:
+      Format(instr, "fsh       'fs2, 'offS('rs1)");
       break;
     // TODO(riscv): use D Extension macro block
     case RO_FSD:
@@ -2127,8 +2389,7 @@ int Decoder::ConstantPoolSizeAt(uint8_t* instr_ptr) {
 }
 
 // Disassemble the instruction at *instr_ptr into the output buffer.
-int Decoder::InstructionDecode(uint8_t* instruction) {
-  Instruction* instr = Instruction::At(instruction);
+int Decoder::InstructionDecode(Instruction* instr) {
   // Print raw instruction bytes.
   out_buffer_pos_ += SNPrintF(out_buffer_ + out_buffer_pos_, "%08x       ",
                               instr->InstructionBits());
@@ -2236,10 +2497,9 @@ Disassembler::Disassembler(const NameConverter& converter)
 
 Disassembler::~Disassembler() {}
 
-int Disassembler::InstructionDecode(V8Vector<char> buffer,
-                                    uint8_t* instruction) {
+int Disassembler::InstructionDecode(V8Vector<char> buffer, Instruction* instr) {
   Decoder d(converter_, buffer);
-  return d.InstructionDecode(instruction);
+  return d.InstructionDecode(instr);
 }
 
 int Disassembler::ConstantPoolSizeAt(uint8_t* instruction) {
@@ -2253,7 +2513,7 @@ void Disassembler::Disassemble(FILE* f, uint8_t* begin, uint8_t* end) {
     EmbeddedVector<char, ReasonableBufferSize> buffer;
     buffer[0] = '\0';
     uint8_t* prev_pc = pc;
-    pc += d.InstructionDecode(buffer, pc);
+    pc += d.InstructionDecode(buffer, Instruction::At(pc));
     fprintf(f, "%p    %08x      %s\n", prev_pc,
             *reinterpret_cast<int32_t*>(prev_pc), buffer.start());
   }

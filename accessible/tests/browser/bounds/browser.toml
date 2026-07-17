@@ -22,6 +22,8 @@ prefs = [
 
 ["browser_test_display_contents.js"]
 
+["browser_test_iframe_body_doc_bounds.js"]
+
 ["browser_test_iframe_transform.js"]
 
 ["browser_test_resolution.js"]

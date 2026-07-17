@@ -55,12 +55,30 @@ void IDBKeyRange::FromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
   MOZ_ASSERT_IF(!aCx, aVal.isUndefined());
   MOZ_ASSERT(aKeyRange);
 
+  auto result = FromJSVal(aCx, aVal, aKeyRange, aTransaction);
+  if (result.isErr()) {
+    aRv = result.unwrapErr().ExtractErrorResult(
+        InvalidMapsTo<NS_ERROR_DOM_INDEXEDDB_DATA_ERR>);
+  }
+}
+
+// Implements the following algorithm:
+// https://w3c.github.io/IndexedDB/#convert-a-value-to-a-key-range
+// Note: check for "null disallowed flag" (step 2) is performed by the caller
+// (check if the aKeyRange result is null)
+// static
+IDBResult<Ok, IDBSpecialValue::InvalidType, IDBSpecialValue::InvalidValue>
+IDBKeyRange::FromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
+                       RefPtr<IDBKeyRange>* aKeyRange,
+                       IDBTransaction* aTransaction) {
+  MOZ_ASSERT(aKeyRange);
+
   RefPtr<IDBKeyRange> keyRange;
 
   if (aVal.isNullOrUndefined()) {
     // undefined and null returns no IDBKeyRange.
     *aKeyRange = std::move(keyRange);
-    return;
+    return Ok();
   }
 
   JS::Rooted<JSObject*> obj(aCx, aVal.isObject() ? &aVal.toObject() : nullptr);
@@ -69,15 +87,15 @@ void IDBKeyRange::FromJSVal(JSContext* aCx, JS::Handle<JS::Value> aVal,
   if (obj && NS_SUCCEEDED(UNWRAP_OBJECT(IDBKeyRange, obj, keyRange))) {
     MOZ_ASSERT(keyRange);
     *aKeyRange = std::move(keyRange);
-    return;
+    return Ok();
   }
 
-  // A valid key returns an 'only' IDBKeyRange.
   keyRange = new IDBKeyRange(false, false, true);
-  GetKeyFromJSVal(aCx, aVal, keyRange->Lower(), aRv, aTransaction);
-  if (!aRv.Failed()) {
+  auto result = keyRange->Lower().SetFromJSVal(aCx, aVal, aTransaction);
+  if (result.isOk()) {
     *aKeyRange = std::move(keyRange);
   }
+  return result;
 }
 
 // static

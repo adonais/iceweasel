@@ -1555,10 +1555,18 @@ void AppWindow::SyncAttributesToWidget() {
       windowElement->HasAttribute(u"toggletoolbar"_ns));
   NS_ENSURE_TRUE_VOID(mWindow);
 
-  // "macnativefullscreen" attribute
-  mWindow->SetSupportsNativeFullscreen(
-      windowElement->HasAttribute(u"macnativefullscreen"_ns));
-  NS_ENSURE_TRUE_VOID(mWindow);
+  // "macnativefullscreen" attribute. Only override the creation-time default
+  // when the attribute is actually present; absence means "use the
+  // window-creation default" (set in nsCocoaWindow::CreateNativeWindow), not
+  // "force off". Read the attribute value as a boolean so an explicit
+  // macnativefullscreen="false" correctly turns native fullscreen off, rather
+  // than just turning it on the way HasAttribute would (bug 2038980).
+  if (windowElement->HasAttribute(u"macnativefullscreen"_ns)) {
+    nsAutoString value;
+    windowElement->GetAttribute(u"macnativefullscreen"_ns, value);
+    mWindow->SetSupportsNativeFullscreen(!value.EqualsLiteral("false"));
+    NS_ENSURE_TRUE_VOID(mWindow);
+  }
 
   // "macanimationtype" attribute
   windowElement->GetAttribute(u"macanimationtype"_ns, attr);
@@ -3016,7 +3024,31 @@ void AppWindow::OnChromeLoaded() {
   ///////////////////////////////
   if (!gfxPlatform::IsHeadless()) {
     if (RefPtr<Document> menubarDoc = mDocShell->GetExtantDocument()) {
-      if (mIsHiddenWindow || !sWaitingForHiddenWindowToLoadNativeMenus) {
+      nsCOMPtr<nsIAppShellService> appShellService(
+          do_GetService(NS_APPSHELLSERVICE_CONTRACTID));
+      bool hasHiddenWindow = false;
+      if (appShellService) {
+        appShellService->GetHasHiddenWindow(&hasHiddenWindow);
+      }
+
+      // Load this window's native menus immediately if any of the
+      // following hold; otherwise queue them to be loaded once the
+      // hidden window has loaded its own menus first.
+      //
+      //   (a) This window IS the hidden window. Its menus must load
+      //       first so the application menu is set up before any
+      //       other window's <menubar>.
+      //   (b) The hidden window has already loaded its native menus
+      //       (sWaitingForHiddenWindowToLoadNativeMenus is false).
+      //   (c) No hidden window has been (or will be) created. This
+      //       happens in flows that run before normal startup, e.g.
+      //       Profile Manager / Profile Downgrade (bug 1154697).
+      //       Without this check we would queue indefinitely and the
+      //       early-startup window's <menubar> would render in-window.
+      bool shouldLoadNativeMenus = mIsHiddenWindow ||
+                                   !sWaitingForHiddenWindowToLoadNativeMenus ||
+                                   !hasHiddenWindow;
+      if (shouldLoadNativeMenus) {
         BeginLoadNativeMenus(menubarDoc, mWindow);
       } else {
         sLoadNativeMenusListeners.EmplaceBack(menubarDoc, mWindow);

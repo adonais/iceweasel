@@ -12,3 +12,7 @@ const { setupPolicyEngineWithJson } = EnterprisePolicyTesting;
 EnterprisePolicyTesting.pathResolver = getTestFilePath;
 
 PoliciesPrefTracker.start();
+
+registerCleanupFunction(function () {
+  PoliciesPrefTracker.stop();
+});

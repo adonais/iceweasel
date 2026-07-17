@@ -12,7 +12,7 @@
 #include "mozilla/GUniquePtr.h"
 #include "nsAppShell.h"
 
-#include <dlfcn.h>
+#include <dbus/dbus.h>
 
 #undef LOG
 #ifdef MOZ_LOGGING
@@ -77,20 +77,12 @@ bool nsDBusRemoteClient::GetRemoteDestinationName(const char* aProgram,
   if (aDestinationName.Length() > DBUS_MAXIMUM_NAME_LENGTH)
     aDestinationName.Truncate(DBUS_MAXIMUM_NAME_LENGTH);
 
-  static auto sDBusValidateBusName = (bool (*)(const char*, DBusError*))dlsym(
-      RTLD_DEFAULT, "dbus_validate_bus_name");
-  if (!sDBusValidateBusName) {
-    LOG("  failed to get dbus_validate_bus_name()");
-    return false;
-  }
-
-  if (!sDBusValidateBusName(aDestinationName.get(), nullptr)) {
+  if (!g_dbus_is_name(aDestinationName.get())) {
     // We don't have a valid busName yet - try to create a default one.
     aDestinationName =
         nsPrintfCString("org.mozilla.%s.%s", aProgram, "default");
-    if (!sDBusValidateBusName(aDestinationName.get(), nullptr)) {
-      // We failed completelly to get a valid bus name - just quit
-      // to prevent crash at dbus_bus_request_name().
+    if (!g_dbus_is_name(aDestinationName.get())) {
+      // We failed completely to get a valid bus name - just quit.
       LOG("  failed to validate profile DBus name");
       return false;
     }
@@ -120,10 +112,7 @@ nsresult nsDBusRemoteClient::DoSendDBusCommandLine(const char* aProfile,
   nsAutoCString pathName;
   pathName = nsPrintfCString("/org/mozilla/%s/Remote", appName.get());
 
-  static auto sDBusValidatePathName = (bool (*)(const char*, DBusError*))dlsym(
-      RTLD_DEFAULT, "dbus_validate_path");
-  if (!sDBusValidatePathName ||
-      !sDBusValidatePathName(pathName.get(), nullptr)) {
+  if (!g_variant_is_object_path(pathName.get())) {
     LOG("  failed to validate path name");
     return NS_ERROR_FAILURE;
   }

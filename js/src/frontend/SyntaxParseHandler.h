@@ -476,13 +476,11 @@ class SyntaxParseHandler {
                                         const TokenPos& pos) {
     return NodeGeneric;
   }
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   BinaryNodeResult newImportSourceDeclaration(Node importedBinding,
                                               Node moduleRequest,
                                               const TokenPos& pos) {
     return NodeGeneric;
   }
-#endif
   BinaryNodeResult newImportSpec(Node importNameNode, Node bindingName) {
     return NodeGeneric;
   }
@@ -513,15 +511,10 @@ class SyntaxParseHandler {
                                  NullaryNodeType metaHolder) {
     return NodeGeneric;
   }
-  BinaryNodeResult newCallImport(NullaryNodeType importHolder, Node singleArg) {
+  BinaryNodeResult newCallImport(NullaryNodeType importHolder, Node singleArg,
+                                 ParseNodeKind kind) {
     return NodeGeneric;
   }
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  BinaryNodeResult newCallImportSource(NullaryNodeType importHolder,
-                                       Node singleArg) {
-    return NodeGeneric;
-  }
-#endif
   BinaryNodeResult newCallImportSpec(Node specifierArg, Node optionalArg) {
     return NodeGeneric;
   }

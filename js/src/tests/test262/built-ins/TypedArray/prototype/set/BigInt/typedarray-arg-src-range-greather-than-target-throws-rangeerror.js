@@ -48,6 +48,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(RangeError, function() {
     sample.set(src, Infinity);
   }, "2 + Infinity > 2");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

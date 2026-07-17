@@ -51,6 +51,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
     TA,
     "use defaultCtor on an undefined return - .constructor check"
   );
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

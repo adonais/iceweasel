@@ -70,7 +70,7 @@ import org.mozilla.fenix.utils.Settings
  * @param tabStripContent Composable content for the tab strip.
  * @param searchSuggestionsContent [Composable] as the search suggestions content to be displayed
  * together with this toolbar.
- * @param navigationBarContent Composable content for the navigation bar.
+ * @param navigationBarContent [Composable] content for the navigation bar.
  */
 @Suppress("LongParameterList")
 class BrowserToolbarComposable(
@@ -132,8 +132,9 @@ class BrowserToolbarComposable(
                     surface = customColors.value?.toolbarColor?.let { Color(it) }
                         ?: materialColors.surface,
                     // Page origin background
-                    surfaceDim = when (customTabSession) {
-                        null -> materialColors.surfaceDim // show a different background only for normal tabs
+                    surfaceContainerHighest = when (customTabSession) {
+                        // show a different background only for normal tabs
+                        null -> materialColors.surfaceContainerHighest
                         else -> customColors.value?.toolbarColor?.let { Color(it) }
                             ?: materialColors.surface
                     },

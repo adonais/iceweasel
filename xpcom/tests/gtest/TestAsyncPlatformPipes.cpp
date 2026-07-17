@@ -115,8 +115,7 @@ TEST(AsyncPlatformPipes, ReadAsyncWait)
   auto pipe = CreatePipePair(64);
 
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
-  RefPtr<testing::InputStreamCallback> callback =
-      new testing::InputStreamCallback();
+  RefPtr callback = mozilla::MakeRefPtr<testing::InputStreamCallback>();
   ASSERT_NS_SUCCEEDED(pipe.mReader->AsyncWait(callback, 0, 0, thread));
 
   nsCString payload("hello async pipe"_ns);
@@ -138,8 +137,7 @@ TEST(AsyncPlatformPipes, ReadAsyncWaitClosureOnly)
   auto pipe = CreatePipePair(64);
 
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
-  RefPtr<testing::InputStreamCallback> callback =
-      new testing::InputStreamCallback();
+  RefPtr callback = mozilla::MakeRefPtr<testing::InputStreamCallback>();
   ASSERT_NS_SUCCEEDED(pipe.mReader->AsyncWait(
       callback, nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0, thread));
 
@@ -169,8 +167,7 @@ TEST(AsyncPlatformPipes, InputStreamIsBufferedDoesNotStartRead)
   ASSERT_EQ(available, 0u);
 
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
-  RefPtr<testing::InputStreamCallback> readCallback =
-      new testing::InputStreamCallback();
+  RefPtr readCallback = mozilla::MakeRefPtr<testing::InputStreamCallback>();
   ASSERT_NS_SUCCEEDED(pipe.mReader->AsyncWait(readCallback, 0, 0, thread));
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
       "xpcom:TEST(AsyncPlatformPipes, InputStreamIsBufferedDoesNotStartRead, Read)"_ns,
@@ -203,8 +200,7 @@ TEST(AsyncPlatformPipes, LargeDataMultipleCycles)
   nsCString result;
   uint32_t totalRead = 0;
   while (totalRead < kTotalBytes) {
-    RefPtr<testing::InputStreamCallback> readCallback =
-        new testing::InputStreamCallback();
+    RefPtr readCallback = mozilla::MakeRefPtr<testing::InputStreamCallback>();
     ASSERT_NS_SUCCEEDED(pipe.mReader->AsyncWait(readCallback, 0, 0, thread));
     MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
         "xpcom:TEST(AsyncPlatformPipes, LargeDataMultipleCycles)"_ns,
@@ -235,8 +231,7 @@ TEST(AsyncPlatformPipes, ClosureOnlyCallbackIgnoresData)
   auto pipe = CreatePipePair(64);
 
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
-  RefPtr<testing::InputStreamCallback> callback =
-      new testing::InputStreamCallback();
+  RefPtr callback = mozilla::MakeRefPtr<testing::InputStreamCallback>();
   ASSERT_NS_SUCCEEDED(pipe.mReader->AsyncWait(
       callback, nsIAsyncInputStream::WAIT_CLOSURE_ONLY, 0, thread));
 
@@ -274,8 +269,7 @@ TEST(AsyncPlatformPipes, ReadSegmentsPartialConsume)
   nsCString payload("abcdefghij"_ns);
   WriteAllRaw(pipe.mWriteHandle, payload.get(), payload.Length());
 
-  RefPtr<testing::InputStreamCallback> callback =
-      new testing::InputStreamCallback();
+  RefPtr callback = mozilla::MakeRefPtr<testing::InputStreamCallback>();
   ASSERT_NS_SUCCEEDED(pipe.mReader->AsyncWait(callback, 0, 0, thread));
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
       "xpcom:TEST(AsyncPlatformPipes, ReadSegmentsPartialConsume) wait"_ns,
@@ -313,8 +307,7 @@ TEST(AsyncPlatformPipes, ReadAfterWriteSideClosed)
   WriteAllRaw(pipe.mWriteHandle, payload.get(), payload.Length());
   pipe.mWriteHandle.reset();
 
-  RefPtr<testing::InputStreamCallback> readCallback =
-      new testing::InputStreamCallback();
+  RefPtr readCallback = mozilla::MakeRefPtr<testing::InputStreamCallback>();
   ASSERT_NS_SUCCEEDED(pipe.mReader->AsyncWait(readCallback, 0, 0, thread));
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
       "xpcom:TEST(AsyncPlatformPipes, ReadAfterWriteSideClosed) data"_ns,
@@ -324,8 +317,7 @@ TEST(AsyncPlatformPipes, ReadAfterWriteSideClosed)
   ReadExactly(pipe.mReader, payload.Length(), output);
   ASSERT_TRUE(payload.Equals(output));
 
-  RefPtr<testing::InputStreamCallback> eofCallback =
-      new testing::InputStreamCallback();
+  RefPtr eofCallback = mozilla::MakeRefPtr<testing::InputStreamCallback>();
   ASSERT_NS_SUCCEEDED(pipe.mReader->AsyncWait(eofCallback, 0, 0, thread));
   MOZ_ALWAYS_TRUE(SpinEventLoopUntil(
       "xpcom:TEST(AsyncPlatformPipes, ReadAfterWriteSideClosed) eof"_ns,
@@ -346,8 +338,7 @@ TEST(AsyncPlatformPipes, CloseWithOutstandingIO)
   auto pipe = CreatePipePair(64);
   nsCOMPtr<nsIThread> thread = do_GetCurrentThread();
 
-  RefPtr<testing::InputStreamCallback> callback =
-      new testing::InputStreamCallback();
+  RefPtr callback = mozilla::MakeRefPtr<testing::InputStreamCallback>();
   ASSERT_NS_SUCCEEDED(pipe.mReader->AsyncWait(callback, 0, 0, thread));
 
   ASSERT_NS_SUCCEEDED(pipe.mReader->Close());

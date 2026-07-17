@@ -5,6 +5,7 @@
 #include "IpcResourceUpdateQueue.h"
 #include <string.h>
 #include <algorithm>
+#include "mozilla/CheckedInt.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/layers/PTextureChild.h"
 #include "mozilla/layers/WebRenderBridgeChild.h"
@@ -217,7 +218,8 @@ bool ShmSegmentsReader::Read(const layers::OffsetRange& aRange,
     return false;
   }
 
-  if (aRange.start() + aRange.length() > mChunkSize * mSmallAllocs.Length()) {
+  CheckedInt<size_t> end = CheckedInt<size_t>(aRange.start()) + aRange.length();
+  if (!end.isValid() || end.value() > mChunkSize * mSmallAllocs.Length()) {
     return false;
   }
 
@@ -269,8 +271,9 @@ Maybe<Range<uint8_t>> ShmSegmentsReader::GetReadPointer(
     return GetReadPointerLarge(aRange);
   }
 
-  if (mChunkSize == 0 ||
-      aRange.start() + aRange.length() > mChunkSize * mSmallAllocs.Length()) {
+  CheckedInt<size_t> end = CheckedInt<size_t>(aRange.start()) + aRange.length();
+  if (mChunkSize == 0 || !end.isValid() ||
+      end.value() > mChunkSize * mSmallAllocs.Length()) {
     return Nothing();
   }
 

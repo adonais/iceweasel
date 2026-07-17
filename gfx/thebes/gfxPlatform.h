@@ -397,28 +397,26 @@ class gfxPlatform : public mozilla::layers::MemoryPressureListener {
   /**
    * Look up a local platform font using the full font face name.
    * (Needed to support @font-face src local().)
-   * Ownership of the returned gfxFontEntry is passed to the caller,
-   * who must either AddRef() or delete.
+   * Ownership of the returned gfxFontEntry is passed to the caller.
    */
-  gfxFontEntry* LookupLocalFont(FontVisibilityProvider* aFontVisibilityProvider,
-                                const nsACString& aFontName,
-                                const WeightRange& aWeightForEntry,
-                                const StretchRange& aStretchForEntry,
-                                const SlantStyleRange& aStyleForEntry);
+  already_AddRefed<gfxFontEntry> LookupLocalFont(
+      FontVisibilityProvider* aFontVisibilityProvider,
+      const nsACString& aFontName, const WeightRange& aWeightForEntry,
+      const StretchRange& aStretchForEntry,
+      const SlantStyleRange& aStyleForEntry);
 
   /**
    * Activate a platform font.  (Needed to support @font-face src url().)
    * aFontData is a NS_Malloc'ed block that must be freed by this function
    * (or responsibility passed on) when it is no longer needed; the caller
    * will NOT free it.
-   * Ownership of the returned gfxFontEntry is passed to the caller,
-   * who must either AddRef() or delete.
+   * Ownership of the returned gfxFontEntry is passed to the caller.
    */
-  gfxFontEntry* MakePlatformFont(const nsACString& aFontName,
-                                 const WeightRange& aWeightForEntry,
-                                 const StretchRange& aStretchForEntry,
-                                 const SlantStyleRange& aStyleForEntry,
-                                 const uint8_t* aFontData, uint32_t aLength);
+  already_AddRefed<gfxFontEntry> MakePlatformFont(
+      const nsACString& aFontName, const WeightRange& aWeightForEntry,
+      const StretchRange& aStretchForEntry,
+      const SlantStyleRange& aStyleForEntry, const uint8_t* aFontData,
+      uint32_t aLength);
 
   /**
    * Whether to allow downloadable fonts via @font-face rules

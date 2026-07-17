@@ -643,7 +643,7 @@ nsresult txExprParser::createPathExpr(txExprLexer& lexer,
   pathExpr->addExpr(expr.release(), PathExpr::RELATIVE_OP);
 
   // this is ugly
-  while (1) {
+  while (true) {
     PathExpr::PathOperator pathOp;
     switch (lexer.peek()->mType) {
       case Token::ANCESTOR_OP:
@@ -762,7 +762,7 @@ nsresult txExprParser::parseParameters(FunctionCall* aFnCall,
 
   UniquePtr<Expr> expr;
   nsresult rv = NS_OK;
-  while (1) {
+  while (true) {
     rv = createExpr(lexer, aContext, mozilla::getter_Transfers(expr));
     NS_ENSURE_SUCCESS(rv, rv);
 

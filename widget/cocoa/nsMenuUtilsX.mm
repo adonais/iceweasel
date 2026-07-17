@@ -34,8 +34,8 @@ void nsMenuUtilsX::DispatchCommandTo(nsIContent* aTargetContent,
   MOZ_ASSERT(aTargetContent, "null ptr");
 
   dom::Document* doc = aTargetContent->OwnerDoc();
-  RefPtr<dom::XULCommandEvent> event =
-      new dom::XULCommandEvent(doc, doc->GetPresContext(), nullptr);
+  auto event =
+      MakeRefPtr<dom::XULCommandEvent>(doc, doc->GetPresContext(), nullptr);
 
   bool ctrlKey = aModifierFlags & NSEventModifierFlagControl;
   bool altKey = aModifierFlags & NSEventModifierFlagOption;

@@ -78,7 +78,9 @@ const SAMPLE_HTML = `<div class="MjjYud">
  * Test extraction without sourceUrl option (default behavior).
  */
 add_task(async function test_extraction_without_page_url() {
-  const { actor, cleanup } = await html([SAMPLE_HTML]);
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`${SAMPLE_HTML}`;
+  const actor = getPageExtractor();
 
   const result = await actor.getText({});
 
@@ -104,7 +106,9 @@ add_task(async function test_extraction_without_page_url() {
  * Test that the Google search extraction strategy matches various Google domains.
  */
 add_task(async function test_google_search_domain_matching() {
-  const { actor, cleanup } = await html([SAMPLE_HTML]);
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`${SAMPLE_HTML}`;
+  const actor = getPageExtractor();
 
   const googleDomains = [
     "https://www.google.com/search?q=test",
@@ -139,7 +143,9 @@ add_task(async function test_google_search_domain_matching() {
  * should preserve cite elements and not format block anchors as markdown links.
  */
 add_task(async function test_non_google_sites_preserve_default_strategy() {
-  const { actor, cleanup } = await html([SAMPLE_HTML]);
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`${SAMPLE_HTML}`;
+  const actor = getPageExtractor();
 
   const nonGoogleUrls = [
     // other search engines
@@ -201,7 +207,8 @@ add_task(async function test_non_google_sites_preserve_default_strategy() {
  */
 add_task(
   async function test_google_search_filter_selector_removes_cite_elements() {
-    const { actor, cleanup } = await html`
+    const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+    const { getPageExtractor, cleanup } = await html`
       <div>
         <div class="result">
           <a href="https://example1.com/path">
@@ -226,6 +233,7 @@ add_task(
         </div>
       </div>
     `;
+    const actor = getPageExtractor();
 
     const result = await actor.getText({
       sourceUrl: "https://www.google.com/search?q=test",
@@ -265,13 +273,15 @@ add_task(
  * so removal is independent of block-anchor markdown formatting.
  */
 add_task(async function test_google_search_filter_selector_outside_anchor() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <div>
       <p>Preamble text.</p>
       <cite>https://example.com &gt; standalone</cite>
       <p>Following description.</p>
     </div>
   `;
+  const actor = getPageExtractor();
 
   const result = await actor.getText({
     sourceUrl: "https://www.google.com/search?q=test",
@@ -293,7 +303,8 @@ add_task(async function test_google_search_filter_selector_outside_anchor() {
  * with cite elements excluded from the link text.
  */
 add_task(async function test_google_search_markdown_deduped_per_block() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <div>
       <a href="https://example.com/article">
         <div>
@@ -309,6 +320,7 @@ add_task(async function test_google_search_markdown_deduped_per_block() {
       </a>
     </div>
   `;
+  const actor = getPageExtractor();
 
   const result = await actor.getText({
     sourceUrl: "https://www.google.com/search?q=test",
@@ -334,7 +346,8 @@ add_task(async function test_google_search_markdown_deduped_per_block() {
  * even on Google search pages.
  */
 add_task(async function test_google_search_block_links_with_selector() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <div>
       <a href="https://example.com/with-cite">
         <h3>Has Cite Title</h3>
@@ -347,6 +360,8 @@ add_task(async function test_google_search_block_links_with_selector() {
       </a>
     </div>
   `;
+  const actor = getPageExtractor();
+
   const result = await actor.getText({
     sourceUrl: "https://www.google.com/search?q=test",
   });
@@ -372,12 +387,14 @@ add_task(async function test_google_search_block_links_with_selector() {
  * Unlike block anchors, inline link formatting applies regardless of sourceUrl.
  */
 add_task(async function test_inline_links_formatted_as_markdown() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <p>
       Visit <a href="https://example.com/page">the example page</a> for more
       information.
     </p>
   `;
+  const actor = getPageExtractor();
 
   const expected =
     "Visit [the example page](https://example.com/page) for more information.";
@@ -401,12 +418,14 @@ add_task(async function test_inline_links_formatted_as_markdown() {
  * Test that multiple inline anchors within the same block are all formatted as markdown.
  */
 add_task(async function test_multiple_inline_links_in_block() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <p>
       See <a href="https://example.com/a">link A</a> and
       <a href="https://example.com/b">link B</a> for details.
     </p>
   `;
+  const actor = getPageExtractor();
 
   const result = await actor.getText({
     sourceUrl: "https://www.google.com/search?q=test",

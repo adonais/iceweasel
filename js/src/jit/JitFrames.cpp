@@ -388,6 +388,9 @@ static void OnLeaveBaselineFrame(JSContext* cx, const JSJitFrameIter& frame,
   BaselineFrame* baselineFrame = frame.baselineFrame();
   bool returnFromThisFrame = jit::DebugEpilogue(cx, baselineFrame, pc, frameOk);
   if (returnFromThisFrame) {
+    if (!baselineFrame->hasReturnValue()) {
+      baselineFrame->setReturnValue(UndefinedValue());
+    }
     rfe->kind = ExceptionResumeKind::ForcedReturnBaseline;
     rfe->framePointer = frame.fp();
     rfe->stackPointer = reinterpret_cast<uint8_t*>(baselineFrame);
@@ -1416,7 +1419,7 @@ static void TraceTrampolineNativeFrame(JSTracer* trc,
   }
 }
 
-static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
+void TraceJitFrames(JSTracer* trc, JitActivation* activation) {
 #ifdef CHECK_OSIPOINT_REGISTERS
   if (JitOptions.checkOsiPointRegisters) {
     // GC can modify spilled registers, breaking our register checks.
@@ -1425,8 +1428,6 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
     activation->setCheckRegs(false);
   }
 #endif
-
-  activation->trace(trc);
 
   // This is used for sanity checking continuity of the sequence of wasm stack
   // maps as we unwind.  It has no functional purpose.
@@ -1473,7 +1474,7 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
       gc::AssertRootMarkingPhase(trc);
       MOZ_ASSERT(frames.isWasm());
       uint8_t* nextPC = frames.resumePCinCurrentFrame();
-      MOZ_ASSERT(nextPC != 0);
+      MOZ_ASSERT(nextPC != nullptr);
       wasm::WasmFrameIter& wasmFrameIter = frames.asWasm();
 #ifdef ENABLE_WASM_JSPI
       if (wasmFrameIter.currentFrameStackSwitched()) {
@@ -1494,7 +1495,7 @@ static void TraceJitActivation(JSTracer* trc, JitActivation* activation) {
 }
 
 #ifdef ENABLE_WASM_JSPI
-static void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
+void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
   gc::AssertRootMarkingPhase(trc);
 
   // If we're tenuring, then unconditionally trace all suspended stacks. This
@@ -1514,17 +1515,6 @@ static void TraceWasmSuspendedContStacks(JSContext* cx, JSTracer* trc) {
   });
 }
 #endif
-
-void TraceJitActivations(JSContext* cx, JSTracer* trc) {
-  for (JitActivationIterator activations(cx); !activations.done();
-       ++activations) {
-    TraceJitActivation(trc, activations->asJit());
-  }
-
-#ifdef ENABLE_WASM_JSPI
-  TraceWasmSuspendedContStacks(cx, trc);
-#endif
-}
 
 void TraceWeakJitActivationsInSweepingZones(JSContext* cx, JSTracer* trc) {
   for (JitActivationIterator activation(cx); !activation.done(); ++activation) {
@@ -2193,7 +2183,7 @@ const RResumePoint* SnapshotIterator::resumePoint() const {
 }
 
 uint32_t SnapshotIterator::numAllocations() const {
-  return instruction()->numOperands();
+  return recover_.numOperands();
 }
 
 uint32_t SnapshotIterator::pcOffset() const {
@@ -2206,7 +2196,7 @@ ResumeMode SnapshotIterator::resumeMode() const {
 
 void SnapshotIterator::skipInstruction() {
   MOZ_ASSERT(snapshot_.numAllocationsRead() == 0);
-  size_t numOperands = instruction()->numOperands();
+  size_t numOperands = recover_.numOperands();
   for (size_t i = 0; i < numOperands; i++) {
     skip();
   }
@@ -2625,13 +2615,13 @@ uintptr_t MachineState::read(Register reg) const {
 
 template <typename T>
 T MachineState::read(FloatRegister reg) const {
-  MOZ_ASSERT(reg.size() == sizeof(T));
+  MOZ_RELEASE_ASSERT(reg.size() == sizeof(T));
 
 #if !defined(JS_CODEGEN_NONE) && !defined(JS_CODEGEN_WASM32)
   if (state_.is<BailoutState>()) {
     uint32_t offset = reg.getRegisterDumpOffsetInBytes();
-    MOZ_ASSERT((offset % sizeof(T)) == 0);
-    MOZ_ASSERT((offset + sizeof(T)) <= sizeof(RegisterDump::FPUArray));
+    MOZ_RELEASE_ASSERT((offset % sizeof(T)) == 0);
+    MOZ_RELEASE_ASSERT(offset <= sizeof(RegisterDump::FPUArray) - sizeof(T));
 
     const BailoutState& state = state_.as<BailoutState>();
     char* addr = reinterpret_cast<char*>(state.floatRegs.begin()) + offset;

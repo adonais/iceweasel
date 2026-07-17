@@ -179,6 +179,7 @@ jobs:
           - mozilla-beta
           - mozilla-release
           - mozilla-esr140
+          - mozilla-esr153
           - elm
           - cypress
       # For all non m-c jobs we just run once daily matching the 10 UTC

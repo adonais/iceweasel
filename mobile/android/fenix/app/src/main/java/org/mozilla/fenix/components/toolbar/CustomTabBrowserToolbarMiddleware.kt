@@ -279,21 +279,31 @@ class CustomTabBrowserToolbarMiddleware(
                 )
             }
 
-            is CopyToClipboardClicked -> {
-                Events.copyUrlTapped.record(NoExtras())
-
-                clipboard.text = customTab?.content?.url?.also {
-                    // Android 13+ shows by default a popup for copied text.
-                    // Avoid overlapping popups informing the user when the URL is copied to the clipboard.
-                    // and only show our snackbar when Android will not show an indication by default.
-                    // See https://developer.android.com/develop/ui/views/touch-and-input/copy-paste#duplicate-notifications).
-                    if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
-                        appStore.dispatch(URLCopiedToClipboard)
-                    }
-                }
-            }
+            is CopyToClipboardClicked -> handleCopyToClipboard()
 
             else -> next(action)
+        }
+    }
+
+    private fun handleCopyToClipboard() {
+        Events.copyUrlTapped.record(NoExtras())
+        val currentTab = customTab
+        val url = currentTab?.content?.url
+        // For added safety unless the current tab is explicitly set to non-private,
+        // fall back to sensitiveText even if the check comes back as null.
+        if (currentTab?.content?.private == false) {
+            clipboard.text = url
+        } else {
+            clipboard.sensitiveText = url
+        }
+        url?.also {
+            // Android 13+ shows by default a popup for copied text.
+            // Avoid overlapping popups informing the user when the URL is copied to the clipboard.
+            // and only show our snackbar when Android will not show an indication by default.
+            // See https://developer.android.com/develop/ui/views/touch-and-input/copy-paste#duplicate-notifications).
+            if (Build.VERSION.SDK_INT <= Build.VERSION_CODES.S_V2) {
+                appStore.dispatch(URLCopiedToClipboard)
+            }
         }
     }
 

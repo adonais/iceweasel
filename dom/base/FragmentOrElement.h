@@ -83,7 +83,7 @@ class FragmentOrElement : public nsIContent {
   explicit FragmentOrElement(
       already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo);
   explicit FragmentOrElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   // We want to avoid the overhead of extra function calls for
   // refcounting when we're not doing refcount logging, so we can't

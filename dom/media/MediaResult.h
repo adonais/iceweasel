@@ -45,12 +45,12 @@ class MediaResult {
   }
   static MediaResult Logged(nsresult aResult, const char* aMessage,
                             const LogModule* aLogModule) {
-    MOZ_LOG(aLogModule, LogLevel::Warning, ("%s", aMessage));
+    MOZ_LOG_FMT(aLogModule, LogLevel::Warning, "{}", aMessage);
     return MediaResult(aResult, aMessage);
   }
   static MediaResult Logged(nsresult aResult, const nsCString& aMessage,
                             const LogModule* aLogModule) {
-    MOZ_LOG(aLogModule, LogLevel::Warning, ("%s", aMessage.get()));
+    MOZ_LOG_FMT(aLogModule, LogLevel::Warning, "{}", aMessage.get());
     return MediaResult(aResult, aMessage);
   }
   MediaResult(const MediaResult& aOther) = default;

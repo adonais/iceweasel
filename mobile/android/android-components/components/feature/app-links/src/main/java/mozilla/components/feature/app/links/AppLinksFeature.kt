@@ -302,9 +302,12 @@ class AppLinksFeature(
 
     private fun buildDialogTitle(targetAppName: String?): String = when {
         !targetAppName.isNullOrBlank() ->
-            context.getString(R.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name, targetAppName)
+            context.getString(
+                R.string.mozac_feature_applinks_normal_confirm_dialog_title_with_app_name_2,
+                targetAppName,
+            )
         else ->
-            context.getString(R.string.mozac_feature_applinks_normal_confirm_dialog_title)
+            context.getString(R.string.mozac_feature_applinks_normal_confirm_dialog_title_2)
     }
 
     private fun buildDialogMessage(): String =

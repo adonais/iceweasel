@@ -174,13 +174,6 @@ void SVGDisplayContainerFrame::InsertFrames(
   }
 }
 
-void SVGDisplayContainerFrame::RemoveFrame(DestroyContext& aContext,
-                                           ChildListID aListID,
-                                           nsIFrame* aOldFrame) {
-  SVGObserverUtils::InvalidateRenderingObservers(aOldFrame);
-  SVGContainerFrame::RemoveFrame(aContext, aListID, aOldFrame);
-}
-
 bool SVGDisplayContainerFrame::DoGetParentSVGTransforms(
     gfx::Matrix* aFromParentTransform) const {
   return SVGUtils::GetParentSVGTransforms(this, aFromParentTransform);

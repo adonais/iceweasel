@@ -15,7 +15,7 @@ class XMLStylesheetProcessingInstruction final : public ProcessingInstruction,
                                                  public LinkStyle {
  public:
   XMLStylesheetProcessingInstruction(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
       const nsAString& aData)
       : ProcessingInstruction(std::move(aNodeInfo), aData) {}
 

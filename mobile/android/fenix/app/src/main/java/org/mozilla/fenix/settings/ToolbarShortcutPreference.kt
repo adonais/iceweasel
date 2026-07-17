@@ -19,6 +19,7 @@ import com.google.android.material.color.MaterialColors
 import org.mozilla.fenix.GleanMetrics.CustomizationSettings
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.isWideWindow
+import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.utils.view.addToRadioGroup
 import com.google.android.material.R as materialR
 
@@ -78,11 +79,11 @@ internal abstract class ToolbarShortcutPreference @JvmOverloads constructor(
         shortcutPreview?.updateLayoutParams<LinearLayout.LayoutParams> {
             if (context.isWideWindow()) {
                 gravity = Gravity.NO_GRAVITY
-                marginStart = context.resources.getDimensionPixelSize(R.dimen.top_bar_alignment_margin_start)
+                marginStart = context.pixelSizeFor(R.dimen.top_bar_alignment_margin_start)
                 marginEnd = 0
             } else {
                 gravity = Gravity.CENTER_HORIZONTAL
-                val horizontalMargin = context.resources.getDimensionPixelSize(
+                val horizontalMargin = context.pixelSizeFor(
                     R.dimen.radiobutton_preference_margin_start,
                 )
                 marginStart = horizontalMargin

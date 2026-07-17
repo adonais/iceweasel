@@ -30,10 +30,13 @@ use style::color::mix::ColorInterpolationMethod;
 use style::color::{AbsoluteColor, ColorComponents, ColorSpace};
 use style::computed_value_flags::ComputedValueFlags;
 use style::context::ThreadLocalStyleContext;
-use style::context::{CascadeInputs, QuirksMode, SharedStyleContext, StyleContext};
+use style::context::{
+    CascadeInputs, QuirksMode, SharedStyleContext, StyleContext, TreeCountingCaches,
+};
 use style::counter_style::{self, DescriptorId as CounterStyleDescriptorId};
 use style::custom_properties::DeferFontRelativeCustomPropertyResolution;
 use style::data::{self, ElementStyles};
+use style::dom::ElementContext;
 use style::dom::{AttributeTracker, ShowSubtreeData, TDocument, TElement, TNode, TShadowRoot};
 use style::driver;
 use style::error_reporting::{ParseErrorReporter, SelectorWarningKind};
@@ -65,8 +68,8 @@ use style::gecko_bindings::bindings::{
     Gecko_HaveSeenPtr, IterationCompositeOperation, Loader, LoaderReusableStyleSheets,
     MallocSizeOf as GeckoMallocSizeOf, NonCustomCSSPropertyId, OriginFlags, PropertyValuePair,
     PseudoStyleType, SeenPtrs, ServoElementSnapshotTable, ServoStyleSetSizes, ServoTraversalFlags,
-    ShadowRoot as RawShadowRoot, SheetLoadData, SheetLoadDataHolder, SheetParsingMode,
-    StyleRuleInclusion, StyleSheet as DomStyleSheet, URLExtraData,
+    ShadowRoot as RawShadowRoot, SheetLoadData, SheetLoadDataHolder, StyleRuleInclusion,
+    StyleSheet as DomStyleSheet, URLExtraData,
 };
 use style::gecko_bindings::structs;
 use style::gecko_bindings::sugar::ownership::Strong;
@@ -128,7 +131,11 @@ use style::traversal::resolve_style;
 use style::traversal::DomTraversal;
 use style::traversal_flags::{self, TraversalFlags};
 use style::typed_om::numeric_declaration::NumericDeclaration;
+use style::typed_om::numeric_type::NumericType;
 use style::typed_om::sum_value::SumValue;
+use style::typed_om::{
+    ImageValue, MathSum, NumericValue, ToTyped, TypedValue, TypedValueList, UnitValue,
+};
 use style::url;
 use style::use_counters::{CustomUseCounter, UseCounters};
 use style::values::animated::{Animate, Procedure, ToAnimatedZero};
@@ -146,6 +153,7 @@ use style::values::distance::{ComputeSquaredDistance, SquaredDistance};
 use style::values::generics::color::ColorMixFlags;
 use style::values::generics::easing::BeforeFlag;
 use style::values::generics::length::GenericAnchorSizeFunction;
+use style::values::generics::Optional;
 use style::values::resolved;
 use style::values::resolved::ToResolvedValue;
 use style::values::specified::align::AlignFlags;
@@ -155,10 +163,7 @@ use style::values::specified::source_size_list::SourceSizeList;
 use style::values::specified::svg_path::PathCommand;
 use style::values::specified::{LengthUnit, NoCalcLength};
 use style::values::{specified, AtomIdent, CustomIdent, KeyframesName};
-use style_traits::{
-    CssWriter, NumericValue, ParseError, ParsingMode, SpecifiedValueInfo, ToCss, ToTyped,
-    TypedValue, TypedValueList, UnitValue,
-};
+use style_traits::{CssWriter, ParseError, ParsingMode, SpecifiedValueInfo, ToCss};
 use thin_vec::ThinVec as nsTArray;
 use to_shmem::SharedMemoryBuilder;
 
@@ -1557,49 +1562,60 @@ pub extern "C" fn Servo_Element_IsPrimaryStyleReusedViaRuleNode(element: &RawGec
         .contains(data::ElementDataFlags::PRIMARY_STYLE_REUSED_VIA_RULE_NODE)
 }
 
-#[no_mangle]
-pub extern "C" fn Servo_Element_ReferencesAttribute(
+fn check_element_and_eager_pseudos(
     element: &RawGeckoElement,
-    attr: *const nsAtom,
+    check_styles_fn: impl Fn(&ComputedValues) -> bool,
 ) -> bool {
     let element = GeckoElement(element);
     let Some(data) = element.borrow_data() else {
         return false;
     };
-    if let Some(ref attrs) = data.styles.primary().attribute_references {
-        if unsafe { Atom::with(attr, |attr| attrs.contains_key(AtomIdent::cast(attr))) } {
-            return true;
-        }
+
+    if check_styles_fn(data.styles.primary()) {
+        return true;
     }
 
     // Some eager pseudos (::first-letter, ::first-line) lack Gecko element nodes,
-    // so check them for attr() dependency through the originating element here.
+    // so check them through the originating element here.
     for pseudo_styles in data.styles.pseudos.as_array() {
         let Some(ref styles) = pseudo_styles else {
             continue;
         };
-        let Some(ref attrs) = styles.attribute_references else {
-            continue;
-        };
-        if unsafe { Atom::with(attr, |attr| attrs.contains_key(AtomIdent::cast(attr))) } {
+        if check_styles_fn(styles) {
             return true;
         }
     }
+
     false
 }
 
-fn mode_to_origin(mode: SheetParsingMode) -> Origin {
-    match mode {
-        SheetParsingMode::eAuthorSheetFeatures => Origin::Author,
-        SheetParsingMode::eUserSheetFeatures => Origin::User,
-        SheetParsingMode::eAgentSheetFeatures => Origin::UserAgent,
-    }
+#[no_mangle]
+pub extern "C" fn Servo_Element_ReferencesAttribute(
+    element: &RawGeckoElement,
+    attr: *const nsAtom,
+) -> bool {
+    check_element_and_eager_pseudos(element, |styles| {
+        if let Some(ref attrs) = styles.attribute_references {
+            if unsafe { Atom::with(attr, |attr| attrs.contains_key(AtomIdent::cast(attr))) } {
+                return true;
+            }
+        }
+        false
+    })
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_StyleSheet_Empty(mode: SheetParsingMode) -> Strong<StylesheetContents> {
+pub extern "C" fn Servo_Element_UsesTreeCountingFunction(element: &RawGeckoElement) -> bool {
+    check_element_and_eager_pseudos(element, |styles| {
+        styles
+            .flags
+            .intersects(ComputedValueFlags::tree_counting_function_flags())
+    })
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_StyleSheet_Empty(origin: Origin) -> Strong<StylesheetContents> {
     let global_style_data = &*GLOBAL_STYLE_DATA;
-    let origin = mode_to_origin(mode);
     let shared_lock = &global_style_data.shared_lock;
     StylesheetContents::from_str(
         "",
@@ -1624,7 +1640,7 @@ pub unsafe extern "C" fn Servo_StyleSheet_FromUTF8Bytes(
     stylesheet: *mut DomStyleSheet,
     load_data: *mut SheetLoadData,
     bytes: &nsACString,
-    mode: SheetParsingMode,
+    origin: Origin,
     extra_data: *mut URLExtraData,
     quirks_mode: nsCompatibility,
     reusable_sheets: *mut LoaderReusableStyleSheets,
@@ -1663,7 +1679,7 @@ pub unsafe extern "C" fn Servo_StyleSheet_FromUTF8Bytes(
     let contents = StylesheetContents::from_str(
         input,
         url_data.clone(),
-        mode_to_origin(mode),
+        origin,
         &global_style_data.shared_lock,
         loader,
         reporter.as_ref().map(|r| r as &dyn ParseErrorReporter),
@@ -1686,7 +1702,7 @@ pub unsafe extern "C" fn Servo_StyleSheet_FromUTF8BytesAsync(
     load_data: *mut SheetLoadDataHolder,
     extra_data: *mut URLExtraData,
     bytes: &nsACString,
-    mode: SheetParsingMode,
+    origin: Origin,
     quirks_mode: nsCompatibility,
     allow_import_rules: AllowImportRules,
 ) {
@@ -1700,7 +1716,7 @@ pub unsafe extern "C" fn Servo_StyleSheet_FromUTF8BytesAsync(
         load_data,
         extra_data,
         sheet_bytes,
-        mode_to_origin(mode),
+        origin,
         quirks_mode.into(),
         allow_import_rules,
     );
@@ -2652,9 +2668,7 @@ pub extern "C" fn Servo_DeclarationBlock_IsImmutable(
 }
 
 #[no_mangle]
-pub extern "C" fn Servo_DeclarationBlock_SetImmutable(
-    declarations: &LockedDeclarationBlock,
-) {
+pub extern "C" fn Servo_DeclarationBlock_SetImmutable(declarations: &LockedDeclarationBlock) {
     use std::sync::atomic::Ordering;
     // SAFETY: See StyleSource::mark_in_rule_tree. This boolean is conceptually not part of the
     // locked data, and it's a relaxed atomic, so it's sound to read.
@@ -5124,6 +5138,86 @@ pub extern "C" fn Servo_ParseProperty(
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_ParseAndComputeViewTimelineInset(
+    inset: &nsACString,
+    // view timeline subject doesn't support pseudo element, so only element here.
+    subject: &RawGeckoElement,
+    style: Option<&ComputedValues>,
+    raw_data: &PerDocumentStyleData,
+    output: &mut computed::ViewTimelineInset,
+) -> bool {
+    use style::properties::longhands::view_timeline_inset;
+    use style::values::specified::length::LengthPercentageOrAuto;
+
+    let inset = unsafe { inset.as_str_unchecked() };
+    let mut input = ParserInput::new(&inset);
+    let mut parser = Parser::new(&mut input);
+    let context = ParserContext::new(
+        Origin::Author,
+        unsafe { dummy_url_data() },
+        Some(CssRuleType::Style),
+        ParsingMode::DEFAULT,
+        QuirksMode::NoQuirks,
+        /* namespaces = */ Default::default(),
+        None,
+        None,
+        /* attr_taint */ Default::default(),
+    );
+    let Ok(specified) =
+        parser.parse_entirely(|p| view_timeline_inset::single_value::parse(&context, p))
+    else {
+        return false;
+    };
+
+    // If the subject is detached from the document, we don't have the style so we cannot get the
+    // computed value. However, we still can convert the specified value into the computed value
+    // for some simple cases (as the fallback way), e.g. auto, px only, or percentage only. This is
+    // not spec'ed so we just follow Blink's behavior here.
+    let Some(style) = style else {
+        let to_computed_value_without_context = |lp: &LengthPercentageOrAuto| {
+            let LengthPercentageOrAuto::LengthPercentage(ref lp) = lp else {
+                return Some(computed::LengthPercentageOrAuto::Auto);
+            };
+            lp.compute_without_context()
+                .map(computed::LengthPercentageOrAuto::LengthPercentage)
+        };
+        let Some(start) = to_computed_value_without_context(&specified.start) else {
+            return false;
+        };
+        let Some(end) = to_computed_value_without_context(&specified.end) else {
+            return false;
+        };
+        output.start = start;
+        output.end = end;
+        return true;
+    };
+
+    let data = raw_data.borrow();
+    let element = GeckoElement(subject);
+    let parent_element = element.inheritance_parent();
+    let parent_data = parent_element.as_ref().and_then(|e| e.borrow_data());
+    let parent_style = parent_data
+        .as_ref()
+        .map(|d| d.styles.primary())
+        .map(|x| &**x);
+    let container_size_query =
+        ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
+    let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
+    let context = create_context_for_animation(
+        &data,
+        &style,
+        parent_style,
+        &mut conditions,
+        container_size_query,
+        &element,
+        &mut tree_counting_caches,
+    );
+    *output = specified.to_computed_value(&context);
+    true
+}
+
+#[no_mangle]
 pub extern "C" fn Servo_ParseEasing(
     easing: &nsACString,
     output: &mut ComputedTimingFunction,
@@ -5731,7 +5825,7 @@ pub extern "C" fn Servo_DeclarationBlock_SetPropertyTypedValue(
         value,
         Origin::Author,
         unsafe { UrlExtraData::from_ptr_ref(&url_extra_data) },
-        ParsingMode::DEFAULT,
+        ParsingMode::DISALLOW_UNITLESS_ZERO_LENGTH,
         QuirksMode::NoQuirks,
         CssRuleType::Style,
         None,
@@ -5886,6 +5980,19 @@ pub extern "C" fn Servo_NumericDeclaration_GetValue(
 }
 
 #[no_mangle]
+pub extern "C" fn Servo_NumericType_Create(unit: &nsACString, result: &mut NumericType) -> bool {
+    let unit = unsafe { unit.as_str_unchecked() };
+
+    match NumericType::try_from_unit(unit) {
+        Ok(numeric_type) => {
+            *result = numeric_type;
+            true
+        },
+        Err(..) => false,
+    }
+}
+
+#[no_mangle]
 pub extern "C" fn Servo_SumValue_Create(numeric_value: &NumericValue) -> *mut SumValue {
     let sum_value = match SumValue::try_from_numeric_value(numeric_value) {
         Ok(sum_value) => sum_value,
@@ -5900,37 +6007,56 @@ pub unsafe extern "C" fn Servo_SumValue_Drop(sum_value: *mut SumValue) {
     let _ = Box::from_raw(sum_value);
 }
 
-/// A result of attempting to convert a sum value to a concrete unit.
+/// Attempts to convert a sum value to a concrete unit.
 ///
-/// Unlike `NumericValueResult`, the `Unsupported` case here is a valid and
-/// expected outcome. It indicates that the sum value cannot be converted to
-/// the requested unit, for example because the value contains multiple items,
-/// or incompatible units.
-#[repr(C)]
-pub enum UnitValueResult {
-    /// The sum value could not be converted to the requested unit.
-    ///
-    /// This represents a valid conversion failure, such as attempting to
-    /// convert a multi-item sum value or converting between incompatible
-    /// units. In this case, the caller is expected to throw an error.
-    Unsupported,
-
-    /// The sum value was successfully converted to a `UnitValue`.
-    Unit(UnitValue),
-}
-
+/// Returns `Optional::Some` if the sum value can be converted to the
+/// requested unit, or `Optional::None` if conversion is not possible.
+///
+/// Conversion may fail for valid reasons, such as:
+/// - the sum value containing multiple items
+/// - converting between incompatible units
 #[no_mangle]
 pub extern "C" fn Servo_SumValue_ToUnit(
     sum_value: &SumValue,
     unit: &nsACString,
-    result: &mut UnitValueResult,
+    result: &mut Optional<UnitValue>,
 ) {
     let unit = unsafe { unit.as_str_unchecked() };
 
-    *result = match sum_value.resolve_to_unit(unit) {
-        Ok(unit_value) => UnitValueResult::Unit(unit_value),
-        Err(..) => UnitValueResult::Unsupported,
+    *result = match sum_value.to_unit(unit) {
+        Ok(unit_value) => Optional::Some(unit_value),
+        Err(..) => Optional::None,
     };
+}
+
+/// Attempts to convert a sum value to concrete units.
+///
+/// Returns `Optional::Some` if the sum value can be converted to the
+/// requested units, or `Optional::None` if conversion is not possible.
+///
+/// Conversion may fail for valid reasons, such as:
+/// - converting between incompatible units
+/// - requested units not accounting for all items in the sum value
+#[no_mangle]
+pub extern "C" fn Servo_SumValue_ToUnits(
+    sum_value: &SumValue,
+    units: &nsTArray<nsCString>,
+    result: &mut Optional<MathSum>,
+) {
+    let units = units
+        .iter()
+        .map(|unit| unsafe { unit.as_str_unchecked() })
+        .collect::<Vec<_>>();
+
+    *result = match sum_value.to_units(&units) {
+        Ok(math_sum) => Optional::Some(math_sum),
+        Err(..) => Optional::None,
+    };
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_ImageValue_ToCss(image_value: &ImageValue, value: &mut nsACString) {
+    image_value.to_css(&mut CssWriter::new(value)).unwrap();
 }
 
 #[no_mangle]
@@ -6002,7 +6128,7 @@ pub unsafe extern "C" fn Servo_MediaList_SetText(
         CallerType::NonSystem => Origin::Author,
     };
 
-    let context = ParserContext::new(
+    let mut context = ParserContext::new(
         origin,
         url_data,
         Some(CssRuleType::Media),
@@ -6016,7 +6142,7 @@ pub unsafe extern "C" fn Servo_MediaList_SetText(
     );
 
     write_locked_arc(list, |list: &mut MediaList| {
-        *list = MediaList::parse(&context, &mut parser);
+        *list = MediaList::parse(&mut context, &mut parser);
     })
 }
 
@@ -6867,12 +6993,26 @@ pub extern "C" fn Servo_CSSSupports2(property: &nsACString, value: &nsACString) 
     .is_ok()
 }
 
+#[repr(u8)]
+#[derive(Clone, Copy)]
+pub enum CssSupportsUrlContext {
+    Default,
+    Chrome,
+}
+
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct CssSupportsParams {
+    pub origin: Origin,
+    pub url_context: CssSupportsUrlContext,
+    pub quirks: nsCompatibility,
+}
+
 #[no_mangle]
-pub extern "C" fn Servo_CSSSupports(
+pub unsafe extern "C" fn Servo_CSSSupports(
     cond: &nsACString,
-    ua_origin: bool,
-    chrome_sheet: bool,
-    quirks: bool,
+    params: &CssSupportsParams,
+    raw_extra_data: *mut URLExtraData,
 ) -> bool {
     let condition = unsafe { cond.as_str_unchecked() };
     let mut input = ParserInput::new(&condition);
@@ -6882,32 +7022,27 @@ pub extern "C" fn Servo_CSSSupports(
         Err(..) => return false,
     };
 
-    let origin = if ua_origin {
-        Origin::UserAgent
-    } else {
-        Origin::Author
-    };
     let url_data = unsafe {
-        if chrome_sheet {
-            dummy_chrome_url_data()
-        } else {
-            dummy_url_data()
+        match params.url_context {
+            CssSupportsUrlContext::Default => {
+                if !raw_extra_data.is_null() {
+                    UrlExtraData::from_ptr_ref(&raw_extra_data)
+                } else {
+                    dummy_url_data()
+                }
+            },
+            CssSupportsUrlContext::Chrome => dummy_chrome_url_data(),
         }
-    };
-    let quirks_mode = if quirks {
-        QuirksMode::Quirks
-    } else {
-        QuirksMode::NoQuirks
     };
 
     // NOTE(emilio): The supports API is not associated to any stylesheet,
     // so the fact that there is no namespace map here is fine.
     let context = ParserContext::new(
-        origin,
+        params.origin,
         url_data,
         Some(CssRuleType::Style),
         ParsingMode::DEFAULT,
-        quirks_mode,
+        params.quirks.into(),
         /* namespaces = */ Default::default(),
         None,
         None,
@@ -7144,6 +7279,7 @@ pub extern "C" fn Servo_ReparentStyle(
             /* try_tactic = */ &Default::default(),
             /* rule_cache = */ None,
             &mut RuleCacheConditions::default(),
+            &mut TreeCountingCaches::default(),
         )
         .into()
 }
@@ -7166,6 +7302,8 @@ fn create_context_for_animation<'a>(
     parent_style: Option<&'a ComputedValues>,
     rule_cache_conditions: &'a mut RuleCacheConditions,
     container_size_query: ContainerSizeQuery<'a>,
+    element_context: &'a dyn ElementContext,
+    tree_counting_caches: &'a mut TreeCountingCaches,
 ) -> Context<'a> {
     Context::new_for_animation(
         StyleBuilder::for_derived_style(
@@ -7177,6 +7315,8 @@ fn create_context_for_animation<'a>(
         per_doc_data.stylist.quirks_mode(),
         rule_cache_conditions,
         container_size_query,
+        element_context,
+        tree_counting_caches,
     )
 }
 
@@ -7262,12 +7402,15 @@ pub extern "C" fn Servo_GetComputedKeyframeValues(
     let container_size_query =
         ContainerSizeQuery::for_element(element, parent_style, pseudo.is_some());
     let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
     let mut context = create_context_for_animation(
         &data,
         &style,
         parent_style,
         &mut conditions,
         container_size_query,
+        &element,
+        &mut tree_counting_caches,
     );
 
     let restriction = pseudo.and_then(|p| p.property_restriction());
@@ -7399,12 +7542,15 @@ pub extern "C" fn Servo_GetAnimationValues(
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
     let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
     let mut context = create_context_for_animation(
         &data,
         &style,
         parent_style,
         &mut conditions,
         container_size_query,
+        &element,
+        &mut tree_counting_caches,
     );
 
     let default_values = data.default_computed_values();
@@ -7444,12 +7590,15 @@ pub extern "C" fn Servo_AnimationValue_Compute(
     let container_size_query =
         ContainerSizeQuery::for_element(element, None, /* is_pseudo = */ false);
     let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
     let mut context = create_context_for_animation(
         &data,
         style,
         parent_style,
         &mut conditions,
         container_size_query,
+        &element,
+        &mut tree_counting_caches,
     );
 
     let default_values = data.default_computed_values();
@@ -9242,6 +9391,26 @@ pub unsafe extern "C" fn Servo_IsValidCSSColor(value: &nsACString) -> bool {
     specified::Color::is_valid(&context, &mut input)
 }
 
+#[no_mangle]
+pub unsafe extern "C" fn Servo_IsValidCSSImage(value: &nsACString) -> bool {
+    let mut input = ParserInput::new(value.as_str_unchecked());
+    let mut input = Parser::new(&mut input);
+    let context = ParserContext::new(
+        Origin::Author,
+        dummy_url_data(),
+        Some(CssRuleType::Style),
+        ParsingMode::DEFAULT,
+        QuirksMode::NoQuirks,
+        /* namespaces = */ Default::default(),
+        None,
+        None,
+        /* attr_taint */ Default::default(),
+    );
+    input
+        .parse_entirely(|input| specified::Image::parse(&context, input))
+        .is_ok()
+}
+
 struct ComputeColorResult {
     result_color: AbsoluteColor,
     was_current_color: bool,
@@ -9455,6 +9624,22 @@ pub extern "C" fn Servo_ConvertColorSpace(
     color_space: ColorSpace,
 ) -> AbsoluteColor {
     color.to_color_space(color_space)
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_GamutMapColorUsingBinarySearchMINDE(
+    color: &AbsoluteColor,
+    destination_color_space: ColorSpace,
+) -> AbsoluteColor {
+    color.gamut_map_binary_search(destination_color_space)
+}
+
+#[no_mangle]
+pub extern "C" fn Servo_GamutMapColorUsingRaytrace(
+    color: &AbsoluteColor,
+    destination_color_space: ColorSpace,
+) -> AbsoluteColor {
+    color.gamut_map_raytrace(destination_color_space)
 }
 
 #[no_mangle]
@@ -10626,11 +10811,11 @@ fn get_byte_index_from_line_and_column(css_text: &str, line: u32, column: u32) -
 
     let line_byte_index = line_byte_index.unwrap();
     let mut current_column = 1;
-    for (byte_index, _char) in css_text[line_byte_index..].char_indices() {
-        if current_column == column {
+    for (byte_index, char) in css_text[line_byte_index..].char_indices() {
+        if current_column >= column {
             return Some(line_byte_index + byte_index);
         }
-        current_column += 1;
+        current_column += char.len_utf16() as u32;
     }
 
     None
@@ -11197,4 +11382,179 @@ pub extern "C" fn Servo_GetShadowRootForScoped(
     scope
         .get_shadow_root_for_scoped(element)
         .map_or(ptr::null(), |sr| sr.0 as *const _)
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Servo_GetComputationStepsSupportedCSSFunctions(
+    out: &mut nsTArray<nsCString>,
+) {
+    use style::values::specified::calc::MathFunction;
+
+    out.push(nsCString::from("var"));
+    out.push(nsCString::from("attr"));
+    out.push(nsCString::from("env"));
+    for func in MathFunction::variants() {
+        out.push(nsCString::from(func.as_ref()));
+    }
+}
+
+#[no_mangle]
+pub unsafe extern "C" fn Servo_GetComputationSteps(
+    str: &nsAString,
+    element: &RawGeckoElement,
+    pseudo_type: PseudoStyleType,
+    style: &ComputedValues,
+    raw_data: &PerDocumentStyleData,
+    out: &mut nsTArray<nsString>,
+) {
+    use style::values::generics::calc::{CalcUnits, SimplificationResult};
+    use style::values::specified::calc::{CalcNode, CalcParseFlags, Leaf};
+
+    let parser_context = ParserContext::new(
+        Origin::Author,
+        dummy_url_data(),
+        Some(CssRuleType::Style),
+        ParsingMode::DEFAULT,
+        QuirksMode::NoQuirks,
+        /* namespaces = */ Default::default(),
+        None,
+        None,
+        /* attr_taint */ Default::default(),
+    );
+
+    let string = str.to_string();
+    let mut input = ParserInput::new(&string);
+    let mut parser = Parser::new(&mut input);
+
+    // At the moment, we're only supporting top-level Math function
+    // TODO: we should handle others like env()/var()/attr() (See Bug 2041622)
+    let math_func = match parser.next() {
+        Ok(Token::Function(ref name)) => {
+            match CalcNode::math_function(
+                &parser_context,
+                name,
+                // we don't need to have a valid location here, it's only used to report errors
+                SourceLocation { line: 0, column: 0 },
+            ) {
+                Ok(f) => f,
+                Err(_) => {
+                    return;
+                },
+            }
+        },
+        _ => {
+            return;
+        },
+    };
+
+    let mut flags = CalcParseFlags::new(CalcUnits::ALL);
+    flags = flags.new_without_in_place_operations();
+    // Initial parsing
+    let mut node = match CalcNode::parse(&parser_context, &mut parser, math_func, flags) {
+        Ok(n) => n,
+        Err(_) => {
+            return;
+        },
+    };
+
+    let mut value = match node.as_leaf() {
+        Some(l) => l.to_css_string(),
+        None => node.to_css_string(),
+    };
+    // `value` is the serialized version of `string`, which can be different from the
+    // authored expression (for example `round(Infinity) will serialize as `round(infinity, 1)`).
+    // We only want to put `string` in the array if it's significantly different (as in, it
+    // should have more differences than juste whitespace/casing).
+    if value.replace(" ", "").to_lowercase() != string.replace(" ", "").to_lowercase() {
+        out.push(nsString::from(&string));
+    }
+    out.push(nsString::from(&value));
+
+    let data = raw_data.borrow();
+    let element = GeckoElement(element);
+    let pseudo = PseudoElement::from_pseudo_type(pseudo_type, None);
+    let parent_element = if pseudo.is_none() {
+        element.inheritance_parent()
+    } else {
+        Some(element)
+    };
+    let parent_data = parent_element.as_ref().and_then(|e| e.borrow_data());
+    let parent_style = parent_data
+        .as_ref()
+        .map(|d| d.styles.primary())
+        .map(|x| &**x);
+
+    let container_size_query =
+        ContainerSizeQuery::for_element(element, parent_style, pseudo.is_some());
+    let mut conditions = Default::default();
+    let mut tree_counting_caches = TreeCountingCaches::default();
+    let context = create_context_for_animation(
+        &data,
+        &style,
+        parent_style,
+        &mut conditions,
+        container_size_query,
+        &element,
+        &mut tree_counting_caches,
+    );
+
+    // Go through the leaves so we have consistent units to run the computation
+    node = node.map_leaves(|leaf| match *leaf {
+        // TODO: Percentages should be replaced by the appropriate value (See Bug 2041621)
+        // Leaf::Percentage(p) => { },
+        Leaf::Length(l) => {
+            let result = l.to_computed_value(&context);
+            Leaf::Length(NoCalcLength::from_computed_value(&result))
+        },
+        ref l => l.clone(),
+    });
+
+    let mut new_value = match node.as_leaf() {
+        Some(l) => l.to_css_string(),
+        None => node.to_css_string(),
+    };
+    if new_value != value {
+        value = new_value;
+        out.push(nsString::from(&value));
+    }
+
+    // We don't want to call node.simplify_and_sort() since it simplifies the whole tree
+    // in one swoop. We do want to have it done incrementally to have the different steps.
+    // So until we get a single leaf…
+    while node.as_leaf().is_none() {
+        // …use visit_depth_first to get to the first inner non-leaf node
+        let mut res = SimplificationResult::Unchanged;
+        node.visit_depth_first(|n| {
+            // we don't have a way to stop this function to be called, so just bail
+            // out when we already handled a node
+            match res {
+                SimplificationResult::Simplified => return,
+                _ => {},
+            }
+
+            match n.as_leaf() {
+                None => {
+                    res = n.simplify_and_sort_direct_children();
+                },
+                _ => {},
+            }
+        });
+
+        // If we didn't simplify any node during the last call to visit_depth_first,
+        // consider we can't do better and break out of the loop
+        match res {
+            SimplificationResult::Unchanged => return,
+            SimplificationResult::Simplified => {
+                // If we did simplify something, we have a new step to put in our output.
+                new_value = match node.as_leaf() {
+                    Some(l) => l.to_css_string(),
+                    None => node.to_css_string(),
+                };
+                if new_value != value {
+                    value = new_value;
+                    out.push(nsString::from(&value));
+                }
+            },
+        }
+    }
 }

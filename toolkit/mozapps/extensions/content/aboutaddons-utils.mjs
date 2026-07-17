@@ -1,7 +1,6 @@
 /* This Source Code Form is subject to the terms of the Mozilla Public
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
-/* globals windowRoot */
 
 import { gViewController } from "./view-controller.mjs";
 
@@ -212,6 +211,28 @@ export function openOptionsInTab(optionsURL) {
       relatedToCurrent: true,
       triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
     });
+    return true;
+  }
+  return false;
+}
+
+export function openAboutSettingsInTab() {
+  let mainWindow = window.windowRoot.window;
+  if ("switchToTabHavingURI" in mainWindow) {
+    let hasAboutSettings = mainWindow.switchToTabHavingURI(
+      "about:settings",
+      false,
+      {
+        ignoreFragment: "whenComparing",
+      }
+    );
+    if (!hasAboutSettings) {
+      let systemPrincipal = Services.scriptSecurityManager.getSystemPrincipal();
+      mainWindow.switchToTabHavingURI("about:preferences", true, {
+        ignoreFragment: "whenComparing",
+        triggeringPrincipal: systemPrincipal,
+      });
+    }
     return true;
   }
   return false;
@@ -890,7 +911,7 @@ export function openAmoInTab(el, path) {
   }
 
   amoUrl = formatUTMParams("find-more-link-bottom", amoUrl);
-  windowRoot.window.openTrustedLinkIn(amoUrl, "tab");
+  window.windowRoot.window.openTrustedLinkIn(amoUrl, "tab");
 }
 
 // DOMParser instance used by AboutAddonsElementMixin to parse the

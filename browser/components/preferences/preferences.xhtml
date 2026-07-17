@@ -33,10 +33,7 @@
     href="chrome://browser/skin/preferences/applications.css"
   />
   <link rel="stylesheet" href="chrome://browser/skin/preferences/search.css" />
-  <link
-    rel="stylesheet"
-    href="chrome://browser/skin/preferences/containers.css"
-  />
+  <link rel="stylesheet" href="chrome://browser/content/usercontext/usercontext.css" />
   <link rel="stylesheet" href="chrome://browser/skin/preferences/privacy.css" />
   <link rel="stylesheet" href="chrome://browser/content/preferences/widgets/setting-group.css" />
   <link rel="stylesheet" href="chrome://browser/skin/preferences/iceweasel.css" />
@@ -205,7 +202,6 @@
       <!-- Hidden sub-page entries (CSS display:none via .hidden-category).
            These keep gotoPref() routing working for sub-pages that are
            navigated to from within other panes. -->
-      <html:moz-page-nav-button class="hidden-category" view="paneContainers"/>
       <html:moz-page-nav-button class="hidden-category" view="paneProfiles"/>
       <html:moz-page-nav-button class="hidden-category" view="paneTranslations"/>
 
@@ -251,7 +247,6 @@
 #include home.inc.xhtml
 #include search.inc.xhtml
 #include privacy.inc.xhtml
-#include containers.inc.xhtml
 #include sync.inc.xhtml
 #include moreFromMozilla.inc.xhtml
 #include iceweasel.inc.xhtml

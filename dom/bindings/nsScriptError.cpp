@@ -12,6 +12,7 @@
 #include "js/Printf.h"
 #include "mozilla/Assertions.h"
 #include "mozilla/BasePrincipal.h"
+#include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIMutableArray.h"

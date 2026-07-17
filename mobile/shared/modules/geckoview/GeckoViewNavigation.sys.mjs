@@ -753,7 +753,11 @@ export class GeckoViewNavigation extends GeckoViewModule {
           ? this.window.document.hasValidTransientUserGestureActivation
           : false,
     };
-    lazy.TranslationsParent.onLocationChange(this.browser);
+    lazy.TranslationsParent.onLocationChange(
+      this.window,
+      aLocationURI,
+      aWebProgress
+    );
     this.eventDispatcher.sendRequest("GeckoView:LocationChange", message);
   }
 }

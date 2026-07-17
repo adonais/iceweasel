@@ -87,7 +87,7 @@ Building NSS
 
    .. code::
 
-      hg clone https://hg.mozilla.org/projects/nspr
+      git clone https://github.com/mozilla/nspr
       hg clone https://hg.mozilla.org/projects/nss
 
 
@@ -98,7 +98,7 @@ Building NSS
 
    .. code::
 
-      git clone hg::https://hg.mozilla.org/projects/nspr
+      git clone https://github.com/mozilla/nspr
       git clone hg::https://hg.mozilla.org/projects/nss
 
 

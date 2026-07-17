@@ -6,6 +6,7 @@
 #include "nsNSSCallbacks.h"
 
 #include "NSSSocketControl.h"
+#include "EnabledSignatureSchemes.h"
 #include "ScopedNSSTypes.h"
 #include "SharedCertVerifier.h"
 #include "mozilla/Assertions.h"
@@ -830,42 +831,19 @@ nsCString getSignatureName(uint32_t aSignatureScheme) {
     case ssl_sig_none:
       signatureName = "none"_ns;
       break;
-    case ssl_sig_rsa_pkcs1_sha1:
-      signatureName = "RSA-PKCS1-SHA1"_ns;
-      break;
-    case ssl_sig_rsa_pkcs1_sha256:
-      signatureName = "RSA-PKCS1-SHA256"_ns;
-      break;
-    case ssl_sig_rsa_pkcs1_sha384:
-      signatureName = "RSA-PKCS1-SHA384"_ns;
-      break;
-    case ssl_sig_rsa_pkcs1_sha512:
-      signatureName = "RSA-PKCS1-SHA512"_ns;
-      break;
-    case ssl_sig_ecdsa_secp256r1_sha256:
-      signatureName = "ECDSA-P256-SHA256"_ns;
-      break;
-    case ssl_sig_ecdsa_secp384r1_sha384:
-      signatureName = "ECDSA-P384-SHA384"_ns;
-      break;
-    case ssl_sig_ecdsa_secp521r1_sha512:
-      signatureName = "ECDSA-P521-SHA512"_ns;
-      break;
-    case ssl_sig_rsa_pss_sha256:
-      signatureName = "RSA-PSS-SHA256"_ns;
-      break;
-    case ssl_sig_rsa_pss_sha384:
-      signatureName = "RSA-PSS-SHA384"_ns;
-      break;
-    case ssl_sig_rsa_pss_sha512:
-      signatureName = "RSA-PSS-SHA512"_ns;
-      break;
-    case ssl_sig_ecdsa_sha1:
-      signatureName = "ECDSA-SHA1"_ns;
-      break;
     case ssl_sig_rsa_pkcs1_sha1md5:
       signatureName = "RSA-PKCS1-SHA1MD5"_ns;
       break;
+
+#define ENABLED_SCHEME(SCHEME, NAME) \
+  case SCHEME:                       \
+    signatureName = NAME##_ns;       \
+    break;
+
+      FOR_EACH_ENABLED_SIGNATURE_SCHEME(ENABLED_SCHEME);
+
+#undef ENABLED_SCHEME
+
     // All other groups are not enabled in Firefox. See sEnabledSignatureSchemes
     // in nsNSSIOLayer.cpp.
     default:

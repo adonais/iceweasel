@@ -13,6 +13,7 @@
 #include "nsStringFwd.h"
 #include "nsIHttpAuthCache.h"
 #include "nsIObserver.h"
+#include "nsWeakReference.h"
 
 namespace mozilla {
 
@@ -160,13 +161,19 @@ class nsHttpAuthNode {
 //  (holds a hash table from host:port to nsHttpAuthNode)
 //-----------------------------------------------------------------------------
 
-class nsHttpAuthCache : public nsIHttpAuthCache, public nsIObserver {
+class nsHttpAuthCache : public nsIHttpAuthCache,
+                        public nsIObserver,
+                        public nsSupportsWeakReference {
  public:
   NS_DECL_ISUPPORTS
   NS_DECL_NSIHTTPAUTHCACHE
   NS_DECL_NSIOBSERVER
 
   nsHttpAuthCache();
+
+  // Registers the observer. Must be called after the instance is held by a
+  // RefPtr (weak registration transiently refcounts |this|).
+  void Init();
 
   // |scheme|, |host|, and |port| are required
   // |path| can be null

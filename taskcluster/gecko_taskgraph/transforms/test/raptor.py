@@ -34,7 +34,9 @@ class RaptorSchema(Schema, kw_only=True):
         optionally_keyed_by("app", "test-platform", bool, use_msgspec=True)
     ] = None
     subtests: Optional[  # type: ignore
-        optionally_keyed_by("app", "test-platform", list[object], use_msgspec=True)
+        optionally_keyed_by(
+            "app", "test-platform", "variant", list[object], use_msgspec=True
+        )
     ] = None
     test: Optional[str] = None
     test_url_param: Optional[  # type: ignore
@@ -161,7 +163,12 @@ def handle_keyed_by_prereqs(config, tests):
     as well.
     """
     for test in tests:
-        resolve_keyed_by(test, "raptor.subtests", item_name=test["test-name"])
+        resolve_keyed_by(
+            test,
+            "raptor.subtests",
+            item_name=test["test-name"],
+            variant=test["attributes"].get("unittest_variant"),
+        )
         yield test
 
 
@@ -531,9 +538,12 @@ def select_tasks_to_lambda(config, tasks):
     all motionmark tests
     speedometer3 test
     unity-webgl test
-    all non-power-testing youtube-playback tests
+    all youtube-playback tests (including power)
     all vpl (video-playback-latency) tests
     all pageload tests (ideally fenix/CaR/ChR)
+    jetstream2/jetstream3 benchmarks
+    background/foreground resource tests (browsertime-power idle/idle-bg)
+    trr-* performance tests
 
     """
     tests_to_run_at_lambdatest = [
@@ -545,7 +555,25 @@ def select_tasks_to_lambda(config, tasks):
         "youtube-playback-av1-sfr",
         "youtube-playback-hfr",
         "youtube-playback-vp9-sfr",
+        "youtube-playback-h264-sfr",
+        "youtube-playback-h264-720p60",
+        "youtube-playback-vp9-720p60",
         "tp6m",
+        "jetstream2",
+        "jetstream3",
+        "browsertime-power",
+        "browsertime-trr-performance",
+    ]
+
+    # Bug 2017151 - newly-migrated tests run at tier 2 while stabilizing on LT
+    tests_to_force_tier2 = [
+        "youtube-playback-h264-sfr",
+        "youtube-playback-h264-720p60",
+        "youtube-playback-vp9-720p60",
+        "jetstream2",
+        "jetstream3",
+        "browsertime-power",
+        "browsertime-trr-performance",
     ]
 
     def redirect_to_lt(task):
@@ -566,6 +594,10 @@ def select_tasks_to_lambda(config, tasks):
             ])
         task["worker"]["command"] = cmds
         task["worker"]["env"]["DISABLE_USB_POWER_METER_RESET"] = "1"
+        # Bug 2017151 - newly-migrated tests run at tier 2 while stabilizing on LT
+        if any(t in task["label"] for t in tests_to_force_tier2):
+            th = task.setdefault("treeherder", {})
+            th["tier"] = max(th.get("tier", 1), 2)
         return task
 
     def make_sp3_lt_copy(task):
@@ -603,7 +635,7 @@ def select_tasks_to_lambda(config, tasks):
 
 @transforms.add
 def add_simpleperf(config, tests):
-    is_simpleperf = config.params.get("try_task_config", {}).get(
+    is_native_profiling = config.params.get("try_task_config", {}).get(
         "native-profiling", False
     )
     app_packages = {
@@ -613,15 +645,15 @@ def add_simpleperf(config, tests):
     for test in tests:
         test_name = test.get("test-name", None)
         app = test.get("app")
-        if is_simpleperf and app in app_packages and "speedometer3-mobile" in test_name:
+
+        def _setup_simpleperf_profiling(test):
             extra_options = test.setdefault("mozharness", {}).setdefault(
                 "extra-options", []
             )
             extra_options.extend([
-                "--add-option=--simpleperf",
+                "--simpleperf",
                 "--browsertime-arg=androidSimpleperf=$MOZ_FETCHES_DIR/android-simpleperf",
             ])
-
             app_data_dir = f"/storage/emulated/0/Android/data/{app_packages[app]}/files"
             extra_options.extend([
                 "--setenv MOZ_USE_PERFORMANCE_MARKER_FILE=1",
@@ -636,13 +668,41 @@ def add_simpleperf(config, tests):
                 "artifact": "target.crashreporter-symbols.zip",
                 "extract": False,
             })
-
             toolchains = [
                 "linux64-android-simpleperf-linux-repack",
                 "linux64-samply",
             ]
             by_app = fetches.setdefault("toolchain", {}).setdefault("by-app", {})
-            by_app.setdefault("default", []).extend(toolchains)
+            default_toolchains = by_app.setdefault("default", [])
+            for toolchain in toolchains:
+                if toolchain not in default_toolchains:
+                    default_toolchains.append(toolchain)
+
+        if app in app_packages and "speedometer3-mobile" in test_name:
+            # On autoland, run a copy of the Speedometer 3 a55 Fenix task
+            # with native (Simpleperf) profiling
+
+            is_autoland_job = (
+                config.params["project"] == "autoland"
+                and app == "fenix"
+                and "a55" in test.get("test-platform", "")
+                and test["attributes"].get("shippable", False)
+                and "no-fission"
+                not in (test.get("attributes", {}).get("unittest_variant") or "")
+            )
+
+            if is_autoland_job:
+                # Modify a duplicate test
+                autoland_test = deepcopy(test)
+                autoland_test["run-on-projects"] = ["autoland-only"]
+                autoland_test["test-name"] += "-native-profiling"
+                autoland_test["try-name"] += "-native-profiling"
+                _setup_simpleperf_profiling(autoland_test)
+                yield autoland_test
+            elif is_native_profiling:
+                # Modify the test in-place
+                _setup_simpleperf_profiling(test)
+
         yield test
 
 
@@ -650,7 +710,7 @@ def add_simpleperf(config, tests):
 def handle_simpleperf_symbol(config, tests):
     for test in tests:
         extra_options = test.get("mozharness", {}).get("extra-options", [])
-        if "--add-option=--simpleperf" in extra_options:
+        if "--simpleperf" in extra_options:
             group, symbol = split_symbol(test["treeherder-symbol"])
-            test["treeherder-symbol"] = join_symbol(group, f"{symbol}-simpleperf")
+            test["treeherder-symbol"] = join_symbol(group, f"{symbol}-p")
         yield test

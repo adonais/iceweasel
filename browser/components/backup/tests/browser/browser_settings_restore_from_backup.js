@@ -65,7 +65,6 @@ async function initializedBackupWidgets(browser) {
     "Waiting for restore-from-backup element to show up"
   );
   let restoreFromBackup = settings.restoreFromBackupEl;
-
   await restoreFromBackup.initializedPromise;
   return {
     restoreFromBackup,
@@ -86,6 +85,14 @@ add_task(async function test_backup_failure() {
       Ci.nsIFile
     );
     mockBackupFile.initWithPath(mockBackupFilePath);
+    let sandbox = sinon.createSandbox();
+    let bs = getAndMaybeInitBackupService();
+
+    sandbox.stub(bs, "findBackupsInWellKnownLocations").resolves({
+      found: false,
+      backupFileToRestore: null,
+      multipleBackupsFound: false,
+    });
 
     MockFilePicker.showCallback = () => {
       Assert.ok(true, "Filepicker shown");
@@ -95,7 +102,6 @@ add_task(async function test_backup_failure() {
 
     let { restoreFromBackup } = await initializedBackupWidgets(browser);
     Services.fog.testResetFOG();
-
     let stateUpdatedPromise = TestUtils.topicObserved(
       "browser-backup-glean-sent"
     );
@@ -113,6 +119,7 @@ add_task(async function test_backup_failure() {
       { location: "other", valid: "false" },
       "Restore telemetry event should have the right data"
     );
+    sandbox.restore();
   });
 });
 
@@ -237,11 +244,6 @@ add_task(async function test_restore_from_backup() {
 
     await restorePromise.then(e => {
       Assert.equal(
-        e.detail.backupFile,
-        mockBackupFile.path,
-        "Event should contain the file path"
-      );
-      Assert.equal(
         e.detail.backupPassword,
         "h-*@Vfge3_hGxdpwqr@w",
         "Event should contain the password"
@@ -311,8 +313,6 @@ add_task(async function test_restore_uses_matching_initial_folder() {
     await filePickerShownPromise;
     await selectedFilePromise;
   });
-
-  BackupService.get().resetLastBackupInternalState();
 });
 
 /**
@@ -322,6 +322,7 @@ add_task(async function test_restore_in_progress() {
   await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
     let sandbox = sinon.createSandbox();
     let bs = getAndMaybeInitBackupService();
+    bs.resetLastBackupInternalState();
 
     let { promise: recoverPromise, resolve: recoverResolve } =
       Promise.withResolvers();
@@ -352,6 +353,15 @@ add_task(async function test_restore_in_progress() {
       PathUtils.tempDir,
       "backup.html"
     );
+
+    let originalState = bs.state;
+    sandbox.stub(bs, "state").get(() => ({
+      ...originalState,
+      backupFileToRestore: mockBackupFilePath,
+      backupFileInfo: {
+        date: new Date(0),
+      },
+    }));
 
     restoreFromBackup.backupServiceState = {
       ...restoreFromBackup.backupServiceState,
@@ -431,6 +441,54 @@ add_task(async function test_restore_in_progress() {
   });
 });
 
+add_task(async function test_restore_fails_without_backup_in_state() {
+  await BrowserTestUtils.withNewTab("about:preferences#sync", async browser => {
+    let sandbox = sinon.createSandbox();
+    let bs = getAndMaybeInitBackupService();
+
+    let recoverStub = sandbox.stub(bs, "recoverFromBackupArchive").resolves();
+
+    let originalState = bs.state;
+    sandbox.stub(bs, "state").get(() => ({
+      ...originalState,
+      backupFileToRestore: null,
+    }));
+
+    let { restoreFromBackup, settings } =
+      await initializedBackupWidgets(browser);
+
+    restoreFromBackup.backupServiceState = {
+      ...restoreFromBackup.backupServiceState,
+      backupFileToRestore: "/fake/path.html",
+      backupFileInfo: { date: new Date() },
+    };
+    await restoreFromBackup.updateComplete;
+
+    Assert.ok(
+      !restoreFromBackup.confirmButtonEl.disabled,
+      "Confirm button should not be disabled."
+    );
+
+    let restorePromise = BrowserTestUtils.waitForEvent(
+      window,
+      "BackupUI:RestoreFromBackupFile"
+    );
+    restoreFromBackup.confirmButtonEl.click();
+    await restorePromise;
+
+    Assert.ok(
+      !recoverStub.called,
+      "recoverFromBackupArchive should not be called when state has no backup file."
+    );
+    Assert.ok(
+      settings.restoreFromBackupDialogEl.open,
+      "Restore dialog should still be open."
+    );
+
+    sandbox.restore();
+  });
+});
+
 add_task(async function test_restore_from_backup_prefills_prior_valid_backup() {
   let dir = await IOUtils.createUniqueDirectory(
     TEST_PROFILE_PATH,
@@ -463,7 +521,7 @@ add_task(async function test_restore_from_backup_prefills_prior_valid_backup() {
 
     // Wait for the state to reflect the newly selected file. We can't
     // simply wait for the next BackupUI:StateWasUpdated because a stale
-    // getBackupFileInfo request (from maybeGetBackupFileInfo during
+    // loadBackupFileInfo request (from maybeGetBackupFileInfo during
     // connectedCallback) may resolve first with an outdated state.
     await TestUtils.waitForCondition(async () => {
       await restoreFromBackup.updateComplete;

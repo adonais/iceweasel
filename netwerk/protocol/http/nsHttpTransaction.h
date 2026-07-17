@@ -215,13 +215,17 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   // not on this transaction.
   void FinishAdopted0RTT(bool aRestart);
 
+  // Remove all SSL session tokens keyed by aSecInfo->GetPeerId() so a 0-RTT
+  // restart starts a fresh handshake instead of looping on the rejected ticket.
+  void RemoveSSLTokens(nsITransportSecurityInfo* aSecInfo);
+
   uint64_t BrowserId() override { return mBrowserId; }
 
   void SetHttpTrailers(nsCString& aTrailers);
 
   bool IsWebsocketUpgrade();
 
-  void OnProxyConnectComplete(int32_t aResponseCode) override;
+  void OnProxyConnectComplete(ProxyConnectResponseHead* aResponseHead) override;
   void SetFlat407Headers(const nsACString& aHeaders);
 
   void UpdateConnectionInfo(nsHttpConnectionInfo* aConnInfo);
@@ -642,7 +646,12 @@ class nsHttpTransaction final : public nsAHttpTransaction,
   } mEarlyDataDisposition{EARLY_NONE};
 
   HttpTrafficCategory mTrafficCategory{HttpTrafficCategory::eInvalid};
-  Atomic<int32_t> mProxyConnectResponseCode{0};
+  // Shared pointer to the full CONNECT response head, owned by the connection.
+  // Held here only so it survives the transaction being detached from the
+  // connection; copying the RefPtr is just an addref rather than a deep copy
+  // of the header array on every request. See bug 2045419.
+  RefPtr<ProxyConnectResponseHead> mProxyConnectResponseHead
+      MOZ_GUARDED_BY(mLock);
 
   nsCOMPtr<nsICancelable> mDNSRequest;
   Atomic<uint32_t, Relaxed> mHTTPSSVCReceivedStage{HTTPSSVC_NOT_USED};

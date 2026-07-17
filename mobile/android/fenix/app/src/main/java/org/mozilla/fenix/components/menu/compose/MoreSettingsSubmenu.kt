@@ -18,11 +18,11 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.badge.StatusBadge
 import mozilla.components.compose.base.theme.information
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.menu.store.SummarizationMenuState
 import org.mozilla.fenix.components.menu.store.TranslationInfo
-import org.mozilla.fenix.compose.StatusBadge
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -37,7 +37,6 @@ internal fun MoreSettingsSubmenu(
     hasExternalApp: Boolean,
     externalAppName: String,
     isReaderViewActive: Boolean,
-    isWebCompatReporterSupported: Boolean,
     isWebCompatEnabled: Boolean,
     isOpenInAppMenuHighlighted: Boolean,
     translationInfo: TranslationInfo,
@@ -73,7 +72,6 @@ internal fun MoreSettingsSubmenu(
             onMoveToNonPrivateTabMenuClick = onMoveToNonPrivateTabMenuClick,
         )
         WebCompatReporterMenuItem(
-            isWebCompatReporterSupported = isWebCompatReporterSupported,
             isWebCompatEnabled = isWebCompatEnabled,
             onWebCompatReporterClick = onWebCompatReporterClick,
         )
@@ -173,18 +171,15 @@ private fun SummarizationMenuItem(
 
 @Composable
 private fun WebCompatReporterMenuItem(
-    isWebCompatReporterSupported: Boolean,
     isWebCompatEnabled: Boolean,
     onWebCompatReporterClick: () -> Unit,
 ) {
-    if (isWebCompatReporterSupported) {
-        MenuItem(
-            label = stringResource(id = R.string.browser_menu_webcompat_reporter_2),
-            beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_lightbulb_24),
-            state = if (isWebCompatEnabled) MenuItemState.ENABLED else MenuItemState.DISABLED,
-            onClick = onWebCompatReporterClick,
-        )
-    }
+    MenuItem(
+        label = stringResource(id = R.string.browser_menu_webcompat_reporter_2),
+        beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_lightbulb_24),
+        state = if (isWebCompatEnabled) MenuItemState.ENABLED else MenuItemState.DISABLED,
+        onClick = onWebCompatReporterClick,
+    )
 }
 
 @Composable
@@ -370,7 +365,6 @@ private fun MoreSettingsSubmenuPreview(
                     hasExternalApp = true,
                     externalAppName = "Pocket",
                     isReaderViewActive = false,
-                    isWebCompatReporterSupported = true,
                     isWebCompatEnabled = true,
                     isOpenInAppMenuHighlighted = false,
                     translationInfo = TranslationInfo(
@@ -423,7 +417,6 @@ private fun MoreSettingsSubmenuDisabledOpenPreview(
                     hasExternalApp = false,
                     externalAppName = "Pocket",
                     isReaderViewActive = false,
-                    isWebCompatReporterSupported = true,
                     isWebCompatEnabled = true,
                     isOpenInAppMenuHighlighted = true,
                     translationInfo = TranslationInfo(

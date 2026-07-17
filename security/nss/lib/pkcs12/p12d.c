@@ -1106,7 +1106,7 @@ p12u_DigestClose(void *arg, PRBool removeFile)
 static int
 p12u_DigestRead(void *arg, unsigned char *buf, unsigned long len)
 {
-    int toread = len;
+    int toread;
     SEC_PKCS12DecoderContext *p12cxt = arg;
 
     if (!buf || len == 0 || !p12cxt->buffer) {
@@ -1114,10 +1114,16 @@ p12u_DigestRead(void *arg, unsigned char *buf, unsigned long len)
         return -1;
     }
 
-    if ((p12cxt->filesize - p12cxt->currentpos) < (long)len) {
-        /* trying to read past the end of the buffer */
-        toread = p12cxt->filesize - p12cxt->currentpos;
+    /* Clamp `len` to the bytes left in the buffer.  toread is positive here,
+     * so the comparison stays unsigned and `len` cannot wrap. */
+    toread = p12cxt->filesize - p12cxt->currentpos;
+    if (toread <= 0) {
+        return 0;
     }
+    if (len < (unsigned long)toread) {
+        toread = (int)len;
+    }
+
     memcpy(buf, (char *)p12cxt->buffer + p12cxt->currentpos, toread);
     p12cxt->currentpos += toread;
     return toread;
@@ -1132,10 +1138,18 @@ p12u_DigestWrite(void *arg, unsigned char *buf, unsigned long len)
         return -1;
     }
 
-    if (p12cxt->currentpos + (long)len > p12cxt->filesize) {
-        p12cxt->filesize = p12cxt->currentpos + len;
+    /* The buffer position counters are signed PRInt32.  Reject any write
+     * whose length would not fit so that `len` cannot overflow or wrap them
+     * on LLP64 platforms where unsigned long is 32-bit (Win64). */
+    if (len > (unsigned long)(PR_INT32_MAX - p12cxt->currentpos)) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return -1;
+    }
+
+    if (p12cxt->currentpos + (PRInt32)len > p12cxt->filesize) {
+        p12cxt->filesize = p12cxt->currentpos + (PRInt32)len;
     } else {
-        p12cxt->filesize += len;
+        p12cxt->filesize += (PRInt32)len;
     }
     if (p12cxt->filesize > p12cxt->allocated) {
         void *newbuffer;
@@ -1713,6 +1727,13 @@ sec_pkcs12_sanitize_nickname(PK11SlotInfo *slot, SECItem *nick)
         slotName[slotNameLen] = '\0';
         if (PORT_Strcmp(PK11_GetTokenName(slot), slotName) == 0) {
             delimitlen = PORT_Strlen(delimit + 1);
+            if (delimitlen == 0) {
+                /* Nickname was exactly "TokenName:" with nothing after the
+                 * prefix.  Stripping it would yield an empty SECItem, which
+                 * is not a useful nickname; leave the original in place. */
+                PORT_Free(slotName);
+                return;
+            }
             PORT_Memmove(nickname, delimit + 1, delimitlen + 1);
             nick->len = delimitlen;
         }

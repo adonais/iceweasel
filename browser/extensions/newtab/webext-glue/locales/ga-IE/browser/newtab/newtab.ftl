@@ -9,6 +9,19 @@ newtab-page-title = Cluaisín Nua
 newtab-settings-button =
     .title = Saincheap an Leathanach do Chluaisín Nua
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Cluaisíní nua
+
+## Firefox Home content
+
+home-mode-choice-blank-srd =
+    .label = Leathanach Bán
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Leabharmharcanna
+
 ## Search box component.
 
 # "Search" is a verb/action

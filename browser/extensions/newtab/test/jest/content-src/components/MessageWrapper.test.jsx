@@ -33,4 +33,17 @@ describe("<MessageWrapper>", () => {
     );
     expect(container.querySelector(".message-wrapper")).toBeInTheDocument();
   });
+
+  it("applies wrapperClassName alongside message-wrapper when provided", () => {
+    const { container } = render(
+      <WrapWithProvider>
+        <MessageWrapper dispatch={jest.fn()} wrapperClassName="extra-class">
+          <Child />
+        </MessageWrapper>
+      </WrapWithProvider>
+    );
+    const wrapper = container.querySelector(".message-wrapper");
+    expect(wrapper).toBeInTheDocument();
+    expect(wrapper.classList.contains("extra-class")).toBe(true);
+  });
 });

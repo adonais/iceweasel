@@ -35,7 +35,6 @@ import mozilla.components.feature.summarize.ViewDismissed
 import mozilla.components.feature.summarize.content.PageContentExtractor
 import mozilla.components.feature.summarize.content.PageMetadata
 import mozilla.components.feature.summarize.content.PageMetadataExtractor
-import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.feature.summarize.settings.SummarizeSettingsMiddleware
 import mozilla.components.feature.summarize.settings.SummarizeSettingsState
 import mozilla.components.feature.summarize.settings.SummarizeSettingsStore
@@ -67,7 +66,7 @@ private fun EngineSession?.asPageContentExtractor(): PageContentExtractor = { op
                     continuation.resume(content)
                 },
                 onException = { error ->
-                    continuation.resumeWithException(PageContentExtractor.Exception(error))
+                    continuation.resumeWithException(error)
                 },
             )
         }
@@ -89,7 +88,7 @@ private fun EngineSession?.asPageMetadataExtractor(): PageMetadataExtractor = {
                     )
                 },
                 onException = { error ->
-                    continuation.resumeWithException(PageMetadataExtractor.Exception(error))
+                    continuation.resumeWithException(error)
                 },
             )
         }
@@ -123,7 +122,7 @@ class SummarizationFragment : BottomSheetDialogFragment() {
             pageTitle = title,
             connectionType = requireContext().getConnectionType(),
             llmProvider = provider,
-            settings = SummarizationSettings.dataStore(requireContext()),
+            settings = requireComponents.summarizationSettings,
             pageContentExtractor = engineSession.asPageContentExtractor(),
             pageMetadataExtractor = engineSession.asPageMetadataExtractor(),
             errorReporter = { tag, exception ->
@@ -178,24 +177,15 @@ class SummarizationFragment : BottomSheetDialogFragment() {
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?,
-    ): View = content {
-        val summarizeSettings = SummarizationSettings.dataStore(requireContext())
-
-        val state by storeViewModel.store.stateFlow.collectAsStateWithLifecycle()
-        LaunchedEffect(state) {
-            when (state) {
-                SummarizationState.LearnMoreAboutShakeConsent -> {
-                    openLearnMoreLink()
-                }
-                is SummarizationState.Finished -> {
-                    dismiss()
-                }
-                else -> {}
-            }
-        }
+    ): View {
+        val summarizeSettings = requireComponents.summarizationSettings
+        val cache = requireComponents.summarizationSettingsCache
 
         val settingsStore = SummarizeSettingsStore(
-            initialState = SummarizeSettingsState(),
+            initialState = SummarizeSettingsState(
+                isFeatureEnabled = cache.featureEnabled.value,
+                isGestureEnabled = cache.gestureEnabled.value,
+            ),
             reducer = ::summarizeSettingsReducer,
             middleware = listOf(
                 SummarizeSettingsMiddleware(
@@ -206,12 +196,28 @@ class SummarizationFragment : BottomSheetDialogFragment() {
             ),
         )
 
-        FirefoxTheme {
-            SummarizationUi(
-                productName = getString(R.string.app_name),
-                store = storeViewModel.store,
-                settingsStore = settingsStore,
-            )
+        return content {
+            val state by storeViewModel.store.stateFlow.collectAsStateWithLifecycle()
+            LaunchedEffect(state) {
+                when (state) {
+                    SummarizationState.LearnMoreAboutShakeConsent -> {
+                        openLearnMoreLink()
+                    }
+                    is SummarizationState.Finished -> {
+                        dismiss()
+                    }
+                    else -> {}
+                }
+            }
+
+            FirefoxTheme {
+                SummarizationUi(
+                    productName = getString(R.string.app_name),
+                    store = storeViewModel.store,
+                    settingsStore = settingsStore,
+                    resolveError = { throwable -> ErrorCodeLookup.lookup(throwable).code },
+                )
+            }
         }
     }
 

@@ -22,6 +22,10 @@ class nsWindowX11 final : public nsWindow {
 
   void SetProgress(unsigned long progressPercent) override;
 
+  void LockNativePointer(NativePointerLockMode aNativePointerLockMode) override;
+  void UnlockNativePointer() override;
+  void UpdateNativePointerBarriers();
+
  protected:
   virtual ~nsWindowX11() = default;
 
@@ -36,6 +40,16 @@ class nsWindowX11 final : public nsWindow {
   } WindowComposeRequest;
 
   void SetCompositorHint(WindowComposeRequest aState);
+
+  struct Barriers {
+    unsigned long mLeft = 0;
+    unsigned long mRight = 0;
+    unsigned long mTop = 0;
+    unsigned long mBottom = 0;
+  };
+
+  bool mIsNativePointerLocked = false;
+  mozilla::Maybe<Barriers> mNativePointerBarriers;
 };
 
 }  // namespace mozilla::widget

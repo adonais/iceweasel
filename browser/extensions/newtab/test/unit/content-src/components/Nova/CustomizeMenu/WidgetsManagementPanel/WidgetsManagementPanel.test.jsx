@@ -9,7 +9,11 @@ import { mount } from "enzyme";
 import { Provider } from "react-redux";
 import { INITIAL_STATE, reducers } from "common/Reducers.sys.mjs";
 import { combineReducers, createStore } from "redux";
+import { WIDGET_REGISTRY } from "common/WidgetsRegistry.mjs";
 import { WidgetsManagementPanel } from "content-src/components/Nova/CustomizeMenu/WidgetsManagementPanel/WidgetsManagementPanel";
+
+const defaultSizeFor = telemetryName =>
+  WIDGET_REGISTRY.find(w => w.telemetryName === telemetryName).defaultSize;
 
 function WrapWithProvider({ children, state = INITIAL_STATE }) {
   const store = createStore(combineReducers(reducers), state);
@@ -263,7 +267,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#weather-toggle").prop("onToggle")({
+      wrapper.find("#weather-toggle").prop("ontoggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: true,
@@ -284,7 +288,7 @@ describe("<WidgetsManagementPanel>", () => {
         </WrapWithProvider>
       );
 
-      wrapper.find("#weather-toggle").prop("onToggle")({
+      wrapper.find("#weather-toggle").prop("ontoggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: true,
@@ -305,7 +309,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#lists-toggle").prop("onToggle")({
+      wrapper.find("#lists-toggle").prop("ontoggle")({
         target: {
           dataset: {
             preference: "widgets.lists.enabled",
@@ -329,7 +333,7 @@ describe("<WidgetsManagementPanel>", () => {
         </WrapWithProvider>
       );
 
-      wrapper.find("#lists-toggle").prop("onToggle")({
+      wrapper.find("#lists-toggle").prop("ontoggle")({
         target: {
           dataset: {
             preference: "widgets.lists.enabled",
@@ -353,7 +357,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#timer-toggle").prop("onToggle")({
+      wrapper.find("#timer-toggle").prop("ontoggle")({
         target: {
           dataset: {
             preference: "widgets.focusTimer.enabled",
@@ -377,7 +381,7 @@ describe("<WidgetsManagementPanel>", () => {
         </WrapWithProvider>
       );
 
-      wrapper.find("#timer-toggle").prop("onToggle")({
+      wrapper.find("#timer-toggle").prop("ontoggle")({
         target: {
           dataset: {
             preference: "widgets.focusTimer.enabled",
@@ -405,7 +409,7 @@ describe("<WidgetsManagementPanel>", () => {
         </Provider>
       );
 
-      wrapper.find("#weather-toggle").prop("onToggle")({
+      wrapper.find("#weather-toggle").prop("ontoggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: false,
@@ -421,21 +425,17 @@ describe("<WidgetsManagementPanel>", () => {
       );
     });
 
-    it("should dispatch WIDGETS_ENABLED with widget_size: 'mini' for weather when not detailed forecast", () => {
+    it("should dispatch WIDGETS_ENABLED with the weather widget's registry default size when no pref is set", () => {
       const store = createStore(combineReducers(reducers), INITIAL_STATE);
       const dispatchSpy = sandbox.spy(store, "dispatch");
 
       wrapper = mount(
         <Provider store={store}>
-          <WidgetsManagementPanel
-            {...DEFAULT_PROPS}
-            showPanel={true}
-            mayHaveWeatherForecast={false}
-          />
+          <WidgetsManagementPanel {...DEFAULT_PROPS} showPanel={true} />
         </Provider>
       );
 
-      wrapper.find("#weather-toggle").prop("onToggle")({
+      wrapper.find("#weather-toggle").prop("ontoggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: true,
@@ -446,32 +446,32 @@ describe("<WidgetsManagementPanel>", () => {
         dispatchSpy,
         sinon.match({
           type: "WIDGETS_ENABLED",
-          data: sinon.match({ widget_size: "mini" }),
+          data: sinon.match({ widget_size: defaultSizeFor("weather") }),
         })
       );
     });
 
-    it("should dispatch WIDGETS_ENABLED with widget_size: 'small' for weather when detailed forecast and widgetsMayBeMaximized but not widgetsMaximized", () => {
-      const store = createStore(combineReducers(reducers), INITIAL_STATE);
+    it("should reflect a user-set weather size pref in widget_size", () => {
+      const state = {
+        ...INITIAL_STATE,
+        Prefs: {
+          ...INITIAL_STATE.Prefs,
+          values: {
+            ...INITIAL_STATE.Prefs.values,
+            "widgets.weather.size": "large",
+          },
+        },
+      };
+      const store = createStore(combineReducers(reducers), state);
       const dispatchSpy = sandbox.spy(store, "dispatch");
 
       wrapper = mount(
         <Provider store={store}>
-          <WidgetsManagementPanel
-            {...DEFAULT_PROPS}
-            showPanel={true}
-            mayHaveWeatherForecast={true}
-            weatherDisplay="detailed"
-            enabledWidgets={{
-              ...DEFAULT_PROPS.enabledWidgets,
-              widgetsMayBeMaximized: true,
-              widgetsMaximized: false,
-            }}
-          />
+          <WidgetsManagementPanel {...DEFAULT_PROPS} showPanel={true} />
         </Provider>
       );
 
-      wrapper.find("#weather-toggle").prop("onToggle")({
+      wrapper.find("#weather-toggle").prop("ontoggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: true,
@@ -482,32 +482,32 @@ describe("<WidgetsManagementPanel>", () => {
         dispatchSpy,
         sinon.match({
           type: "WIDGETS_ENABLED",
-          data: sinon.match({ widget_size: "small" }),
+          data: sinon.match({ widget_size: "large" }),
         })
       );
     });
 
-    it("should dispatch WIDGETS_ENABLED with widget_size: 'medium' for weather when detailed forecast and widgetsMaximized", () => {
-      const store = createStore(combineReducers(reducers), INITIAL_STATE);
+    it("should reflect a trainhopConfig size override when no size pref is set", () => {
+      const state = {
+        ...INITIAL_STATE,
+        Prefs: {
+          ...INITIAL_STATE.Prefs,
+          values: {
+            ...INITIAL_STATE.Prefs.values,
+            trainhopConfig: { widgets: { weatherSize: "large" } },
+          },
+        },
+      };
+      const store = createStore(combineReducers(reducers), state);
       const dispatchSpy = sandbox.spy(store, "dispatch");
 
       wrapper = mount(
         <Provider store={store}>
-          <WidgetsManagementPanel
-            {...DEFAULT_PROPS}
-            showPanel={true}
-            mayHaveWeatherForecast={true}
-            weatherDisplay="detailed"
-            enabledWidgets={{
-              ...DEFAULT_PROPS.enabledWidgets,
-              widgetsMayBeMaximized: true,
-              widgetsMaximized: true,
-            }}
-          />
+          <WidgetsManagementPanel {...DEFAULT_PROPS} showPanel={true} />
         </Provider>
       );
 
-      wrapper.find("#weather-toggle").prop("onToggle")({
+      wrapper.find("#weather-toggle").prop("ontoggle")({
         target: {
           dataset: { preference: "showWeather", eventSource: "WEATHER" },
           pressed: true,
@@ -518,30 +518,22 @@ describe("<WidgetsManagementPanel>", () => {
         dispatchSpy,
         sinon.match({
           type: "WIDGETS_ENABLED",
-          data: sinon.match({ widget_size: "medium" }),
+          data: sinon.match({ widget_size: "large" }),
         })
       );
     });
 
-    it("should dispatch WIDGETS_ENABLED with widget_size: 'small' for non-weather widget when widgetsMayBeMaximized and not widgetsMaximized", () => {
+    it("should dispatch WIDGETS_ENABLED with the focus timer widget's registry default size when no pref is set", () => {
       const store = createStore(combineReducers(reducers), INITIAL_STATE);
       const dispatchSpy = sandbox.spy(store, "dispatch");
 
       wrapper = mount(
         <Provider store={store}>
-          <WidgetsManagementPanel
-            {...DEFAULT_PROPS}
-            showPanel={true}
-            enabledWidgets={{
-              ...DEFAULT_PROPS.enabledWidgets,
-              widgetsMayBeMaximized: true,
-              widgetsMaximized: false,
-            }}
-          />
+          <WidgetsManagementPanel {...DEFAULT_PROPS} showPanel={true} />
         </Provider>
       );
 
-      wrapper.find("#timer-toggle").prop("onToggle")({
+      wrapper.find("#timer-toggle").prop("ontoggle")({
         target: {
           dataset: {
             preference: "widgets.focusTimer.enabled",
@@ -555,44 +547,7 @@ describe("<WidgetsManagementPanel>", () => {
         dispatchSpy,
         sinon.match({
           type: "WIDGETS_ENABLED",
-          data: sinon.match({ widget_size: "small" }),
-        })
-      );
-    });
-
-    it("should dispatch WIDGETS_ENABLED with widget_size: 'medium' for non-weather widget when widgetsMaximized", () => {
-      const store = createStore(combineReducers(reducers), INITIAL_STATE);
-      const dispatchSpy = sandbox.spy(store, "dispatch");
-
-      wrapper = mount(
-        <Provider store={store}>
-          <WidgetsManagementPanel
-            {...DEFAULT_PROPS}
-            showPanel={true}
-            enabledWidgets={{
-              ...DEFAULT_PROPS.enabledWidgets,
-              widgetsMayBeMaximized: true,
-              widgetsMaximized: true,
-            }}
-          />
-        </Provider>
-      );
-
-      wrapper.find("#timer-toggle").prop("onToggle")({
-        target: {
-          dataset: {
-            preference: "widgets.focusTimer.enabled",
-            eventSource: "WIDGET_TIMER",
-          },
-          pressed: true,
-        },
-      });
-
-      assert.calledWith(
-        dispatchSpy,
-        sinon.match({
-          type: "WIDGETS_ENABLED",
-          data: sinon.match({ widget_size: "medium" }),
+          data: sinon.match({ widget_size: defaultSizeFor("focus_timer") }),
         })
       );
     });

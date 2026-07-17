@@ -211,10 +211,15 @@ enum class NodeSelectorFlags : uint32_t {
   /// All instances of :nth flags.
   HasSlowSelectorNthAll = HasSlowSelectorNthOf | HasSlowSelectorNth,
 
+  /// A child of this node may be using sibling-index() or sibling-count(),
+  /// and must be recascaded if other children are added or removed.
+  MayHaveTreeCountingFunction = 1 << 6,
+
   /// Set of selector flags that may trigger a restyle on DOM append, with
   /// restyle on siblings or a single parent (And perhaps their subtrees).
-  AllSimpleRestyleFlagsForAppend = HasEmptySelector | HasSlowSelector |
-                                   HasEdgeChildSelector | HasSlowSelectorNthAll,
+  AllSimpleRestyleFlagsForAppend =
+      HasEmptySelector | HasSlowSelector | HasEdgeChildSelector |
+      HasSlowSelectorNthAll | MayHaveTreeCountingFunction,
 
   /// Set of selector flags that may trigger a restyle as a result of any
   /// DOM mutation.
@@ -222,17 +227,17 @@ enum class NodeSelectorFlags : uint32_t {
       AllSimpleRestyleFlagsForAppend | HasSlowSelectorLaterSiblings,
 
   // This node was evaluated as an anchor for a relative selector.
-  RelativeSelectorAnchor = 1 << 6,
+  RelativeSelectorAnchor = 1 << 7,
 
   // This node was evaluated as an anchor for a relative selector, and that
   // relative selector was not the subject of the overall selector.
-  RelativeSelectorAnchorNonSubject = 1 << 7,
+  RelativeSelectorAnchorNonSubject = 1 << 8,
 
   // This node's sibling(s) performed a relative selector search to this node.
-  RelativeSelectorSearchDirectionSibling = 1 << 8,
+  RelativeSelectorSearchDirectionSibling = 1 << 9,
 
   // This node's ancestor(s) performed a relative selector search to this node.
-  RelativeSelectorSearchDirectionAncestor = 1 << 9,
+  RelativeSelectorSearchDirectionAncestor = 1 << 10,
 
   // This node's sibling(s) and ancestor(s), and/or this node's ancestor's
   // sibling(s) performed a relative selector search to this node.
@@ -267,6 +272,10 @@ ASSERT_NODE_FLAGS_SPACE(NODE_TYPE_SPECIFIC_BITS_OFFSET);
  * nsMutationGuard on the stack before unexpected mutations could occur.
  * You can then at any time call Mutated to check if any unexpected mutations
  * have occurred.
+ *
+ * NOTE: There is SelectionChangeGuard which manages the generation of selection
+ * ranges. If you need to fix a bug of this class, you need to touch
+ * SelectionChangeGuard too.
  */
 class nsMutationGuard {
  public:
@@ -280,7 +289,7 @@ class nsMutationGuard {
    * finding the difference between two elements of the group Z < 2^64.  Once
    * we know the difference between two elements we only need to check that is
    * less than the given number of mutations to know less than that many
-   * mutations occured.  Assuming constant 1ns mutations it would take 584
+   * mutations occurred.  Assuming constant 1ns mutations it would take 584
    * years for sGeneration to fully wrap around so we can ignore a guard living
    * through a full wrap around.
    */
@@ -423,7 +432,7 @@ class nsINode : public mozilla::dom::EventTarget {
   friend class AttrArray;
 
 #ifdef MOZILLA_INTERNAL_API
-  explicit nsINode(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit nsINode(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 #endif
 
   virtual ~nsINode();
@@ -759,12 +768,6 @@ class nsINode : public mozilla::dom::EventTarget {
   mozilla::Maybe<uint32_t> ComputeIndexInParentContent() const;
 
   /**
-   * Return true if the parent node may cache the computed index for further
-   * calls.
-   */
-  [[nodiscard]] bool MaybeParentCachesComputedIndex() const;
-
-  /**
    * Get the index of a child within this content.
    *
    * @param aPossibleChild the child to get the index of.
@@ -907,8 +910,27 @@ class nsINode : public mozilla::dom::EventTarget {
   /**
    * Print a debugger friendly descriptor of this element. This will describe
    * the position of this element in the document.
+   *
+   * @param aOutput [output] The result value.
+   * @param aRoot [optional] The root node which should be printed at last.
    */
-  friend std::ostream& operator<<(std::ostream& aStream, const nsINode& aNode);
+  void GetDebugDescription(nsACString& aOutput,
+                           const nsINode* aRoot = nullptr) const;
+
+  /**
+   * Return nsCString instance which is converted from the result of
+   * GetDebugDescription(). This is useful to dump the node path in an specific
+   * element like contenteditable or something and print it with fmt::format()
+   * or MOZ_LOG_FMT().
+   *
+   * @param aRoot The root node which should be printed at last. Can be null.
+   */
+  nsCString FormatAs(const nsINode* aRoot) const;
+
+  friend std::ostream& operator<<(std::ostream&, const nsINode&);
+  friend nsCString format_as(const nsINode& aNode) {
+    return aNode.FormatAs(nullptr);
+  }
 
  protected:
   // These 2 methods are useful for the recursive templates IsHTMLElement,
@@ -1415,6 +1437,8 @@ class nsINode : public mozilla::dom::EventTarget {
    *                            nodeinfos for aNode and its attributes and
    *                            descendants. May be null if the nodeinfos
    *                            shouldn't be changed.
+   * @param aNewScope The destination global. A node's wrapper is preserved
+   *                  unless it already lives in it. Unused when cloning.
    * @param aParent If aClone is true the cloned node will be appended to
    *                aParent's children. May be null. If not null then aNode
    *                must be an nsIContent.
@@ -1426,8 +1450,8 @@ class nsINode : public mozilla::dom::EventTarget {
    */
   static already_AddRefed<nsINode> CloneAndAdopt(
       nsINode* aNode, bool aClone, bool aDeep,
-      nsNodeInfoManager* aNewNodeInfoManager, nsINode* aParent,
-      mozilla::ErrorResult& aError);
+      nsNodeInfoManager* aNewNodeInfoManager, nsIGlobalObject* aNewScope,
+      nsINode* aParent, mozilla::ErrorResult& aError);
 
  public:
   /**
@@ -1739,6 +1763,18 @@ class nsINode : public mozilla::dom::EventTarget {
            mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentbackdrop;
   }
 
+  /** Whether this is the container of a ::checkmark pseudo-element. */
+  bool IsGeneratedContentContainerForCheckmark() const {
+    return IsRootOfNativeAnonymousSubtree() &&
+           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentcheckmark;
+  }
+
+  /** Whether this is the container of a ::picker-icon pseudo-element. */
+  bool IsGeneratedContentContainerForPickerIcon() const {
+    return IsRootOfNativeAnonymousSubtree() &&
+           mNodeInfo->NameAtom() == nsGkAtoms::mozgeneratedcontentpickericon;
+  }
+
   /**
    * Returns true if |this| node is the closest common inclusive ancestor
    * (https://dom.spec.whatwg.org/#concept-tree-inclusive-ancestor) of the
@@ -1811,6 +1847,12 @@ class nsINode : public mozilla::dom::EventTarget {
    *                    For example, when this is a text control element,
    *                    return the document's selection root if "No" or return
    *                    the native anonymous <div> if "Yes".
+   * @param aAllowCrossShadowBoundary
+   *                    If "Yes", the result may be shadow including DOM
+   *                    ancestor element.
+   * @return Return the selection root element.
+   *         - If this is in an editing host, return the editing host even if
+   *           this is not editable.
    */
   nsIContent* GetSelectionRootContent(
       mozilla::PresShell* aPresShell,
@@ -2004,7 +2046,7 @@ class nsINode : public mozilla::dom::EventTarget {
       return nullptr;
     }
     const nsINode* cur = this;
-    while (1) {
+    while (true) {
       nsIContent* next = cur->GetNextSibling();
       if (next) {
         return next;

@@ -88,13 +88,25 @@ class DefaultDeleteBrowsingDataControllerTest {
 
     @Test
     fun deleteBrowsingHistory() = runTest(testDispatcher) {
+        val onSuccessSlot = slot<() -> Unit>()
+        val onErrorSlot = slot<(Throwable) -> Unit>()
+        every {
+            engine.clearTrackingProtectionData(
+                onSuccess = capture(onSuccessSlot),
+                onError = capture(onErrorSlot),
+            )
+        } answers { onSuccessSlot.captured.invoke() }
+
         controller.deleteBrowsingHistory()
 
         coVerify(ordering = Ordering.ORDERED) {
             historyStorage.deleteEverything()
             store.dispatch(EngineAction.PurgeHistoryAction)
             store.dispatch(RecentlyClosedAction.RemoveAllClosedTabAction)
+            engine.clearTrackingProtectionData(onSuccess = any(), onError = any())
         }
+        assertTrue(onSuccessSlot.isCaptured)
+        assertTrue(onErrorSlot.isCaptured)
     }
 
     @Test

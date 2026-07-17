@@ -101,7 +101,7 @@ export class PendingWrites {
     //
     // We explicitly check for the presence of the value, not the key, in case
     // this is a re-enrollment following an unenrollment.
-    if (!this.enrollments.get(slug)) {
+    if (!this.enrollments.has(slug) || recipe) {
       this.enrollments.set(slug, recipe);
     }
   }
@@ -739,6 +739,50 @@ export class NimbusEnrollments {
     lazy.log.debug(`Loaded ${enrollments.length} enrollments`);
 
     return Object.fromEntries(enrollments);
+  }
+
+  /**
+   * Load third-party opt-in recipes from the database.
+   *
+   * Only opt-ins that are not from Remote Settings will be loaded (e.g., this
+   * will load the opt-ins provided by nimbus-devtools).
+   *
+   * @returns {Promise<object[]>} The third-party opt-in recipes.
+   */
+  static async loadThirdPartyOptInRecipes() {
+    // We only load third-party opt-ins (e.g., Nimbus Devtools, force
+    // enrollment) because the RemoteSettingsExperimentLoader will update the
+    // list with its opt-ins at enable time.
+    function processRow(row) {
+      const recipe = JSON.parse(row.getResultByName("recipe"));
+      const source = row.getResultByName("source");
+
+      return { recipe, source };
+    }
+
+    const conn = await lazy.ProfilesDatastoreService.getConnection();
+    const rows = await conn.execute(
+      `
+      SELECT
+        json(recipe) AS recipe,
+        source
+      FROM NimbusEnrollments
+      WHERE
+            profileId = :profileId
+        AND recipe ->> "$.isFirefoxLabsOptIn"
+        AND (
+                 NOT (recipe ->> "$.isEnrollmentPaused")
+              OR active
+        )
+        AND source != :source;
+      `,
+      {
+        profileId: lazy.ExperimentAPI.profileId,
+        source: lazy.NimbusTelemetry.EnrollmentSource.RS_LOADER,
+      }
+    );
+
+    return rows.map(processRow);
   }
 
   /**

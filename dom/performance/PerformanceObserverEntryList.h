@@ -32,7 +32,7 @@ class PerformanceObserverEntryList final : public nsISupports,
   virtual JSObject* WrapObject(JSContext* aCx,
                                JS::Handle<JSObject*> aGivenProto) override;
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(PerformanceObserverEntryList)
 
   void GetEntries(const PerformanceEntryFilterOptions& aFilter,

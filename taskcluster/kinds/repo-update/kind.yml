@@ -5,6 +5,7 @@
 loader: taskgraph.loader.transform:loader
 
 transforms:
+    - taskgraph.transforms.task_context
     - gecko_taskgraph.transforms.repo_update:transforms
     - gecko_taskgraph.transforms.job:transforms
     - gecko_taskgraph.transforms.task:transforms
@@ -37,6 +38,13 @@ task-defaults:
 tasks:
     pinning-update:
         description: HSTS and HPKP pinning update
+        task-context:
+            from-parameters:
+                project: project
+            substitution-fields:
+                - worker.env.DO_HSTS
+                - worker.env.DO_HPKP
+                - worker.env.USE_MOZILLA_CENTRAL
         treeherder:
             symbol: hfu
         worker:
@@ -65,6 +73,15 @@ tasks:
     periodic-file-update:
         description: Remote settings, suffix list, mobile experiments, mobile merino manifest, and CT log update
         worker-type: b-linux
+        task-context:
+            from-parameters:
+                project: project
+            substitution-fields:
+                - worker.env.DO_REMOTE_SETTINGS
+                - worker.env.DO_SUFFIX_LIST
+                - worker.env.DO_MOBILE_EXPERIMENTS
+                - worker.env.DO_MOBILE_MERINO_MANIFEST
+                - worker.env.DO_CT_LOGS
         treeherder:
             symbol: pfu
         worker:

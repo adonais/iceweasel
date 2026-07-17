@@ -87,12 +87,12 @@ class PermissionManager final : public nsIPermissionManager,
    */
   class PermissionKey {
    public:
-    static PermissionKey* CreateFromPrincipal(nsIPrincipal* aPrincipal,
-                                              bool aForceStripOA,
-                                              bool aScopeToSite,
-                                              nsresult& aResult);
-    static PermissionKey* CreateFromURI(nsIURI* aURI, nsresult& aResult);
-    static PermissionKey* CreateFromURIAndOriginAttributes(
+    static already_AddRefed<PermissionKey> CreateFromPrincipal(
+        nsIPrincipal* aPrincipal, bool aForceStripOA, bool aScopeToSite,
+        nsresult& aResult);
+    static already_AddRefed<PermissionKey> CreateFromURI(nsIURI* aURI,
+                                                         nsresult& aResult);
+    static already_AddRefed<PermissionKey> CreateFromURIAndOriginAttributes(
         nsIURI* aURI, const OriginAttributes* aOriginAttributes,
         bool aForceStripOA, nsresult& aResult);
 

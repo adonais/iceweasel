@@ -508,7 +508,10 @@ HRESULT
 MediaFoundationInitializer::MFShutdown() {
   ENSURE_FUNCTION_PTR(MFShutdown, Mfplat.dll)
   HRESULT hr = E_FAIL;
-  mozilla::mscom::EnsureMTA([&]() -> void { hr = (MFShutdownPtr)(); });
+  mozilla::mscom::EnsureMTA([&]() -> void {
+    StaticMutexAutoLock lock(sMFTEnumShutdownMutex);
+    hr = (MFShutdownPtr)();
+  });
   return hr;
 }
 
@@ -573,6 +576,7 @@ MFTEnumEx(GUID guidCategory, UINT32 Flags,
           const MFT_REGISTER_TYPE_INFO* pOutputType,
           IMFActivate*** pppMFTActivate, UINT32* pnumMFTActivate) {
   ENSURE_FUNCTION_PTR(MFTEnumEx, mfplat.dll)
+  StaticMutexAutoLock lock(sMFTEnumShutdownMutex);
   return (MFTEnumExPtr)(guidCategory, Flags, pInputType, pOutputType,
                         pppMFTActivate, pnumMFTActivate);
 }

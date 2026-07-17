@@ -14,6 +14,7 @@
 #include "mozilla/extensions/ExtensionMockAPI.h"
 #include "mozilla/extensions/ExtensionPort.h"
 #include "mozilla/extensions/ExtensionProxy.h"
+#include "mozilla/extensions/ExtensionPublicSuffix.h"
 #include "mozilla/extensions/ExtensionRuntime.h"
 #include "mozilla/extensions/ExtensionScripting.h"
 #include "mozilla/extensions/ExtensionTest.h"
@@ -38,6 +39,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(ExtensionBrowser)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mExtensionDns)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mExtensionMockAPI)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mExtensionProxy)
+  NS_IMPL_CYCLE_COLLECTION_UNLINK(mExtensionPublicSuffix)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mExtensionRuntime)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mExtensionScripting)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mExtensionTest)
@@ -54,6 +56,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(ExtensionBrowser)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mExtensionMockAPI)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mExtensionRuntime)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mExtensionProxy)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mExtensionPublicSuffix)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mExtensionScripting)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mExtensionTest)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
@@ -236,6 +239,14 @@ ExtensionProxy* ExtensionBrowser::GetExtensionProxy() {
   }
 
   return mExtensionProxy;
+}
+
+ExtensionPublicSuffix* ExtensionBrowser::GetExtensionPublicSuffix() {
+  if (!mExtensionPublicSuffix) {
+    mExtensionPublicSuffix = new ExtensionPublicSuffix(mGlobal, this);
+  }
+
+  return mExtensionPublicSuffix;
 }
 
 ExtensionRuntime* ExtensionBrowser::GetExtensionRuntime() {

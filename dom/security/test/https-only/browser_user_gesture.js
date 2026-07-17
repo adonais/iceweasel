@@ -39,12 +39,12 @@ add_task(async function () {
         // The scheme of the link url is `http` and the load should be able to
         // upgraded to `https` because of HTTPS-only mode.
         let button = content.document.getElementById(buttonId);
-        await EventUtils.synthesizeMouseAtCenter(
+        EventUtils.synthesizeMouseAtCenter(
           button,
           { type: "mousedown" },
           content
         );
-        await EventUtils.synthesizeMouseAtCenter(
+        EventUtils.synthesizeMouseAtCenter(
           button,
           { type: "mouseup" },
           content

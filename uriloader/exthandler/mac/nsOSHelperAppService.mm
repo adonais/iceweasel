@@ -314,7 +314,7 @@ nsresult nsOSHelperAppService::GetMIMEInfoFromOS(const nsACString& aMIMEType,
           ("Mac: HelperAppService lookup for type '%s' ext '%s'\n",
            flatType.get(), flatExt.get()));
 
-  RefPtr<nsMIMEInfoMac> mimeInfoMac = new nsMIMEInfoMac(aMIMEType);
+  RefPtr mimeInfoMac = mozilla::MakeRefPtr<nsMIMEInfoMac>(aMIMEType);
 
   nsAutoreleasePool localPool;
 

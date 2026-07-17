@@ -204,7 +204,7 @@ add_task(async function test_error_status() {
 
       await testErrorScenario(
         { error: 7 },
-        "smartwindow-assistant-error-page-content-header",
+        "smartwindow-assistant-error-request-blocked-header",
         null,
         null,
         null

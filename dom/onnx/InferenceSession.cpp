@@ -313,7 +313,13 @@ void InferenceSession::Init(const RefPtr<Promise>& aPromise,
     sAPI = GetOrtAPI();
     if (!sAPI) {
       LOGD("Couldn't get ahold of ORT API");
-      aPromise->MaybeReject(NS_ERROR_FAILURE);
+      // Use a distinguishable error so JS callers can recognize that the
+      // native runtime is unavailable on this machine and fall back to the
+      // wasm onnx backend (see MLEngineChild's best-onnx handling).
+      // KEEP IN SYNC: MLEngineChild.sys.mjs matches this message string to
+      // cache the wasm fallback decision.
+      aPromise->MaybeRejectWithNotSupportedError(
+          "onnxruntime shared library could not be loaded");
       return;
     }
     OrtThreadingOptions* threadingOptions;

@@ -42,12 +42,10 @@ bool DocumentChannelParent::Init(dom::CanonicalBrowsingContext* aContext,
       static_cast<ContentParent*>(Manager()->Manager());
 
   RefPtr<DocumentLoadListener::OpenPromise> promise;
-  if (loadState->GetChannelInitialized()) {
-    promise = DocumentLoadListener::ClaimParentLoad(
-        getter_AddRefs(mDocumentLoadListener), loadState->GetLoadIdentifier(),
-        Some(aArgs.channelId()));
-  }
-  if (!promise) {
+  mDocumentLoadListener = loadState->TakeSpeculativeListener();
+  if (mDocumentLoadListener) {
+    promise = mDocumentLoadListener->ClaimParentLoad(Some(aArgs.channelId()));
+  } else {
     bool isDocumentLoad =
         aArgs.elementCreationArgs().type() ==
         DocumentChannelElementCreationArgs::TDocumentCreationArgs;

@@ -8,6 +8,7 @@
 #include "js/RootingAPI.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/IDBCursorBinding.h"
+#include "mozilla/dom/indexedDB/PBackgroundIDBSharedTypes.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
 #include "nsTArrayForwardDeclare.h"
@@ -21,13 +22,13 @@ class ErrorResult;
 
 namespace dom {
 
+struct IDBGetAllOptions;
 class IDBObjectStore;
 class IDBRequest;
 template <typename>
 class Sequence;
 
 namespace indexedDB {
-class IndexMetadata;
 class KeyPath;
 }  // namespace indexedDB
 
@@ -49,7 +50,7 @@ class IDBIndex final : public nsISupports, public nsWrapperCache {
   bool mRooted;
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(IDBIndex)
 
   [[nodiscard]] static RefPtr<IDBIndex> Create(
@@ -114,7 +115,7 @@ class IDBIndex final : public nsISupports, public nsWrapperCache {
                                          ErrorResult& aRv);
 
   [[nodiscard]] RefPtr<IDBRequest> GetAll(JSContext* aCx,
-                                          JS::Handle<JS::Value> aKey,
+                                          JS::Handle<JS::Value> aQueryOrOptions,
                                           const Optional<uint32_t>& aLimit,
                                           ErrorResult& aRv);
 
@@ -122,6 +123,9 @@ class IDBIndex final : public nsISupports, public nsWrapperCache {
                                               JS::Handle<JS::Value> aKey,
                                               const Optional<uint32_t>& aLimit,
                                               ErrorResult& aRv);
+
+  [[nodiscard]] RefPtr<IDBRequest> GetAllRecords(
+      JSContext* aCx, const IDBGetAllOptions& aOptions, ErrorResult& aRv);
 
   void RefreshMetadata(bool aMayDelete);
 
@@ -155,9 +159,25 @@ class IDBIndex final : public nsISupports, public nsWrapperCache {
                                                JS::Handle<JS::Value> aKey,
                                                ErrorResult& aRv);
 
+  enum class GetRequestType : uint8_t {
+    Value,   // getAll
+    Key,     // getAllKeys
+    Record,  // getAllRecords
+  };
+
+  // Common function for GetAll functions (GetAll, GetAllKeys, GetAllRecords).
+  // Takes a parsing function as a parameter, because the parsing is different
+  // for GetAll/GetAllKeys and GetAllRecords. And we can't pass a GetAllOptions
+  // object directly because the parsing needs to happen after performing some
+  // initial checks (connection still active, ...)
+  template <typename ParseFn>
   [[nodiscard]] RefPtr<IDBRequest> GetAllInternal(
-      bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aKey,
-      const Optional<uint32_t>& aLimit, ErrorResult& aRv);
+      GetRequestType aType, JSContext* aCx, const ParseFn& aParseOptionsFn,
+      ErrorResult& aRv);
+
+  // Build a request for the corresponding type
+  indexedDB::RequestParams CreateRequestParams(
+      GetRequestType aType, const indexedDB::GetAllOptions& aOptions);
 
   [[nodiscard]] RefPtr<IDBRequest> OpenCursorInternal(
       bool aKeysOnly, JSContext* aCx, JS::Handle<JS::Value> aRange,

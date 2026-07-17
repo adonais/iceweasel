@@ -183,7 +183,6 @@ EXTRA_JS_MODULES += [
     "JsonSchema.sys.mjs",
     "KeyboardLockUtils.sys.mjs",
     "KeywordUtils.sys.mjs",
-    "LayoutUtils.sys.mjs",
     "Log.sys.mjs",
     "LogManager.sys.mjs",
     "NewTabUtils.sys.mjs",
@@ -249,6 +248,10 @@ else:
 EXTRA_PP_JS_MODULES += [
     "AppConstants.sys.mjs",
 ]
+# `AppConstants.sys.mjs` does `#include @TOPOBJDIR@/source-repo.h` and
+# `#include @TOPOBJDIR@/buildid.h`. The preprocessor opens those at
+# build time so they must exist before the preprocess step runs.
+PP_FILES_EXTRA_DEPS += ["!/buildid.h", "!/source-repo.h"]
 
 if "Android" != CONFIG["OS_TARGET"]:
     EXTRA_JS_MODULES += [
@@ -366,4 +369,5 @@ XPIDL_MODULE = "toolkit_modules"
 
 MOZ_SRC_FILES += [
     "PrefUtils.sys.mjs",
+    "WebAuthnPromptHelper.sys.mjs",
 ]

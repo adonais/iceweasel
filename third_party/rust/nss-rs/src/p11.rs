@@ -363,7 +363,7 @@ struct RandomCache {
 }
 
 impl RandomCache {
-    const SIZE: usize = 256;
+    const SIZE: usize = 4096;
     const CUTOFF: usize = 32;
 
     // Const constructor for compile-time initialization in thread_local!.

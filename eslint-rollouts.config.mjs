@@ -93,7 +93,6 @@ export default [
       "toolkit/components/utils/JsonSchemaValidator.sys.mjs",
       "toolkit/modules/AsanReporter.sys.mjs",
       "toolkit/modules/GMPInstallManager.sys.mjs",
-      "toolkit/modules/OSKeyStore.sys.mjs",
       "toolkit/modules/ProfileAge.sys.mjs",
       "toolkit/modules/tests/xpcshell/test_Log*.js",
       "toolkit/mozapps/defaultagent/BackgroundTask_defaultagent.sys.mjs",
@@ -103,6 +102,40 @@ export default [
     plugins: { mozilla },
     rules: {
       "mozilla/use-console-createInstance": "off",
+    },
+  },
+  {
+    // Bug 1790711 - Preferences.sys.mjs is deprecated. To support a gradual
+    // switch, we log these as warnings until they have been transitioned.
+    name: "rollout-reject-import-preferences-module",
+    files: [
+      "browser/base/content/test/performance/browser_startup.js",
+      "browser/components/enterprisepolicies/tests/xpcshell/head.js",
+      "browser/components/urlbar/QuickSuggest.sys.mjs",
+      "browser/components/urlbar/tests/browser/head-common.js",
+      "browser/components/urlbar/tests/quicksuggest/unit/head.js",
+      "browser/components/urlbar/tests/quicksuggest/unit/test_quicksuggest_defaultPrefs.js",
+      "browser/extensions/newtab/lib/ActivityStreamPrefs.sys.mjs",
+      "dom/push/test/xpcshell/head.js",
+      "mobile/android/geckoview/src/androidTest/assets/web_extensions/test-support/test-api.js",
+      "toolkit/components/aboutconfig/content/aboutconfig.js",
+      "toolkit/components/aboutconfig/test/browser/head.js",
+      "toolkit/components/doh/DoHConfig.sys.mjs",
+      "toolkit/components/enterprisepolicies/tests/EnterprisePolicyTesting.sys.mjs",
+      "toolkit/components/extensions/ExtensionPreferencesManager.sys.mjs",
+      "toolkit/components/extensions/test/xpcshell/test_ext_browserSettings.js",
+      "toolkit/components/extensions/test/xpcshell/test_ext_privacy.js",
+      "toolkit/components/extensions/test/xpcshell/test_ext_privacy_disable.js",
+      "toolkit/components/extensions/test/xpcshell/test_ext_privacy_update.js",
+      "toolkit/components/extensions/test/xpcshell/test_ext_proxy_config.js",
+      "toolkit/components/ipprotection/IPPSessionPrefManager.sys.mjs",
+      "toolkit/components/normandy/test/browser/head.js",
+      "toolkit/components/normandy/test/NormandyTestUtils.sys.mjs",
+      "toolkit/modules/tests/xpcshell/head.js",
+    ],
+    plugins: { mozilla },
+    rules: {
+      "mozilla/reject-import-preferences-module": "warn",
     },
   },
   {

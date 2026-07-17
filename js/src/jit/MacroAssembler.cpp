@@ -3256,8 +3256,27 @@ void MacroAssembler::extractCurrentIndexAndKindFromIterator(Register iterator,
                          PropertyIteratorObject::offsetOfIteratorSlot());
   loadPrivate(nativeIterAddr, outIndex);
 
+#ifdef DEBUG
+  // Assert the Active flag is set.
+  Label iterActive;
+  branchTest32(Assembler::NonZero,
+               Address(outIndex, NativeIterator::offsetOfFlags()),
+               Imm32(NativeIterator::Flags::Active), &iterActive);
+  assumeUnreachable("iterator-index fast path on an inactive iterator");
+  bind(&iterActive);
+#endif
+
   // Load the property count into outKind.
   load32(Address(outIndex, NativeIterator::offsetOfPropertyCount()), outKind);
+
+  // The cursor must not be 0 because then we would access indices[cursor - 1]
+  // below.
+  Label cursorOk;
+  branch32(Assembler::NotEqual,
+           Address(outIndex, NativeIterator::offsetOfPropertyCursor()),
+           Imm32(0), &cursorOk);
+  assumeUnreachable("iterator-index fast path on a closed iterator");
+  bind(&cursorOk);
 
   // We need two bits of wiggle room in a u32 here for the logic below.
   static_assert(NativeIterator::PropCountLimit <= 1 << 30);
@@ -6169,10 +6188,9 @@ static ReturnCallTrampolineData MakeReturnCallTrampoline(MacroAssembler& masm) {
   ReturnCallTrampolineData data;
 
   {
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) || \
+    defined(JS_CODEGEN_RISCV64)
     AutoForbidPoolsAndNops afp(&masm, 1);
-#elif defined(JS_CODEGEN_RISCV64)
-    BlockTrampolinePoolScope block_trampoline_pool(&masm, 1);
 #endif
 
     // Build simple trampoline code: load the instance slot from the frame,
@@ -6614,10 +6632,11 @@ CodeOffset MacroAssembler::wasmReturnCall(
   return offset;
 }
 
-CodeOffset MacroAssembler::wasmCallBuiltinInstanceMethod(
+void MacroAssembler::wasmCallBuiltinInstanceMethod(
     const wasm::CallSiteDesc& desc, const ABIArg& instanceArg,
     wasm::SymbolicAddress builtin, wasm::FailureMode failureMode,
-    wasm::Trap failureTrap) {
+    wasm::Trap failureTrap, CodeOffset* callStackMapKey,
+    CodeOffset* trapStackMapKey) {
   MOZ_ASSERT(instanceArg != ABIArg());
   MOZ_ASSERT_IF(!wasm::NeedsBuiltinThunk(builtin),
                 failureMode == wasm::FailureMode::Infallible ||
@@ -6644,7 +6663,7 @@ CodeOffset MacroAssembler::wasmCallBuiltinInstanceMethod(
   }
 #endif
 
-  CodeOffset ret = call(desc, builtin);
+  *callStackMapKey = call(desc, builtin);
 
 #ifdef JS_CHECK_UNSAFE_CALL_WITH_ABI
   if (checkUnsafeCallWithABI) {
@@ -6652,19 +6671,18 @@ CodeOffset MacroAssembler::wasmCallBuiltinInstanceMethod(
   }
 #endif
 
-  wasmTrapOnFailedInstanceCall(ReturnReg, failureMode, failureTrap,
-                               desc.toTrapSiteDesc());
-  return ret;
+  *trapStackMapKey = wasmTrapOnFailedInstanceCall(
+      ReturnReg, failureMode, failureTrap, desc.toTrapSiteDesc());
 }
 
-void MacroAssembler::wasmTrapOnFailedInstanceCall(
+CodeOffset MacroAssembler::wasmTrapOnFailedInstanceCall(
     Register resultRegister, wasm::FailureMode failureMode,
     wasm::Trap failureTrap, const wasm::TrapSiteDesc& trapSiteDesc) {
   Label noTrap;
   switch (failureMode) {
     case wasm::FailureMode::Infallible:
       MOZ_ASSERT(failureTrap == wasm::Trap::Limit);
-      return;
+      return CodeOffset();
     case wasm::FailureMode::FailOnNegI32:
       branchTest32(Assembler::NotSigned, resultRegister, resultRegister,
                    &noTrap);
@@ -6685,6 +6703,14 @@ void MacroAssembler::wasmTrapOnFailedInstanceCall(
   }
   wasmTrap(failureTrap, trapSiteDesc);
   bind(&noTrap);
+
+  if (failureTrap != wasm::Trap::ThrowReported) {
+    return CodeOffset();
+  }
+
+  // For Trap::ThrowReported, the caller(s) may want to create a stackmap, so
+  // tell them what its key must be.
+  return CodeOffset(currentOffset());
 }
 
 CodeOffset MacroAssembler::asmCallIndirect(const wasm::CallSiteDesc& desc,
@@ -8412,10 +8438,9 @@ void MacroAssembler::emitWeapMapBarrierFastPath(ValueOperand value,
   branchTestPtr(Assembler::NonZero, markWord, mask, barrier);
 
   // Otherwise, the tenured cell needs a barrier only if its zone is being
-  // marked by an incremental GC. The zone is stored on the cell's arena.
+  // marked by an incremental GC.
   Register zone = temp2;
-  andPtr(Imm32(int32_t(~gc::ArenaMask)), cell, zone);
-  loadPtr(Address(zone, gc::ArenaZoneOffset), zone);
+  loadPtr(Address(chunk, gc::ChunkZoneOffset), zone);
   branchTest32(Assembler::NonZero,
                Address(zone, Zone::offsetOfNeedsMarkingBarrier()), Imm32(0x1),
                barrier);
@@ -9815,6 +9840,11 @@ void MacroAssembler::maybeLoadIteratorFromShape(Register obj, Register dest,
   computeEffectiveAddress(BaseIndex(nativeIterator, temp3, ScalePointer,
                                     NativeIterator::offsetOfFirstProperty()),
                           nativeIterator);
+
+  if constexpr (sizeof(PropertyIndex) != alignof(GCPtr<Shape*>)) {
+    addPtr(Imm32(alignof(GCPtr<Shape*>) - 1), nativeIterator);
+    andPtr(Imm32(-int32_t(alignof(GCPtr<Shape*>))), nativeIterator);
+  }
 
   Register expectedProtoShape = nativeIterator;
 

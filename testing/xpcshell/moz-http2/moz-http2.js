@@ -226,7 +226,7 @@ var didUnknownRst = false;
 var illegalheader_conn = null;
 
 // eslint-disable-next-line complexity
-function handleRequest(req, res) {
+function handleRequestImpl(req, res) {
   var u = "";
   if (req.url != undefined) {
     u = url.parse(req.url, true);
@@ -247,6 +247,12 @@ function handleRequest(req, res) {
     res.writeHead(200);
     res.end("ok");
     process.exit();
+  }
+
+  if (u.pathname === "/exception-test") {
+    // Intentionally throws to test that handleRequest isolates exceptions.
+    // Without the try/catch wrapper this would crash the server process.
+    throw new Error("Intentional test exception from /exception-test");
   }
 
   if (req.method == "CONNECT") {
@@ -553,17 +559,6 @@ function handleRequest(req, res) {
     res.writeHead(200, "OK");
     res.end('["http://' + req.headers.host + '"]');
     return;
-  } else if (u.pathname === "/stale-while-revalidate-loop-test") {
-    res.setHeader(
-      "Cache-Control",
-      "s-maxage=86400, stale-while-revalidate=86400, immutable"
-    );
-    res.setHeader("Content-Type", "text/plain; charset=utf-8");
-    res.setHeader("X-Content-Type-Options", "nosniff");
-    res.setHeader("Content-Length", "1");
-    res.writeHead(200, "OK");
-    res.end("1");
-    return;
   } else if (u.pathname === "/illegalhpacksoft") {
     // This will cause the compressor to compress a header that is not legal,
     // but only affects the stream, not the session.
@@ -701,6 +696,43 @@ function handleRequest(req, res) {
   res.writeHead(200);
   res.end(content);
 }
+
+/**
+ * Wrapper that isolates per-request exceptions from the server process.
+ *
+ * Without this wrapper, a throw inside handleRequestImpl propagates as an
+ * uncaught exception and kills the entire Node.js process, causing every
+ * subsequent test that depends on the shared moz-http2 server to fail.
+ *
+ * With this wrapper, the exception is caught, a 500 response is written,
+ * and the server continues running for the next test.
+ */
+function handleRequest(req, res) {
+  try {
+    handleRequestImpl(req, res);
+  } catch (e) {
+    console.error("moz-http2: Unhandled exception in request handler:", e);
+    try {
+      // Attempt to send a 500 so the client gets a response rather than a
+      // connection reset, which makes test failures easier to diagnose.
+      res.writeHead(500, "Internal Server Error", {
+        "content-type": "text/plain",
+      });
+      res.end("moz-http2 handler exception: " + e.message);
+    } catch (_) {
+      // The response object may already be in an unusable state; ignore.
+    }
+  }
+}
+
+/**
+ * Last-resort safety net for exceptions thrown by asynchronous callbacks
+ * (e.g., a setTimeout inside a handler) that cannot be caught by the
+ * synchronous try/catch in handleRequest above.
+ */
+process.on("uncaughtException", function (err) {
+  console.error("moz-http2: Uncaught exception (server continuing):", err);
+});
 
 // Set up the SSL certs for our server - this server has a cert for foo.example.com
 // signed by netwerk/tests/unit/http2-ca.pem

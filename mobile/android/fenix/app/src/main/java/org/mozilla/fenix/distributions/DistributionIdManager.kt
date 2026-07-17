@@ -9,6 +9,8 @@ import android.os.Build
 import androidx.annotation.VisibleForTesting
 import mozilla.components.support.base.log.logger.Logger
 import mozilla.components.support.utils.ext.PackageManagerWrapper
+import mozilla.telemetry.glean.Glean
+import mozilla.telemetry.glean.internal.DistributionMetrics
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.Partnerships
@@ -235,6 +237,7 @@ class DistributionIdManager(
         this.distribution = distribution
         browserStoreProvider.updateDistributionId(distribution.id)
         distributionSettings.saveDistributionId(distribution.id)
+        Glean.updateDistribution(DistributionMetrics(name = distribution.id))
     }
 }
 

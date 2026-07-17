@@ -26,7 +26,6 @@ async function setupBandwidthPrecisionTest(maxBytes, remaining) {
     },
     usageInfo: usage,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
   await IPPProxyManager.refreshUsage();
   await SpecialPowers.pushPrefEnv({
     set: [["browser.ipProtection.bandwidth.enabled", true]],

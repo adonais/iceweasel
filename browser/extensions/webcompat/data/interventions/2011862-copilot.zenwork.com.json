@@ -1,7 +1,7 @@
 {
   "label": "copilot.zenwork.com",
   "bugs": {
-    "2007641": {
+    "2011862": {
       "issue": "broken-interactive-elements",
       "matches": ["*://copilot.zenwork.com/*"]
     }

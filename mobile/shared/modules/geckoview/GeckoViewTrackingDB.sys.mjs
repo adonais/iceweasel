@@ -48,6 +48,11 @@ export const GeckoViewTrackingDB = {
           aCallback.onSuccess({ date: date ?? 0 });
           break;
         }
+        case "GeckoView:TrackingDB:ClearAll": {
+          await lazy.TrackingDBService.clearAll();
+          aCallback.onSuccess();
+          break;
+        }
       }
     } catch (ex) {
       warn`Error in ${aEvent}: ${ex}`;

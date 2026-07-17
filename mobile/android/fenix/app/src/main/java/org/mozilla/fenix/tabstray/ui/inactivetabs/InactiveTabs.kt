@@ -18,7 +18,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.HorizontalDivider
@@ -54,8 +53,6 @@ import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.tabstray.ui.tabitems.BasicTabListItem
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.ui.icons.R as iconsR
-
-private val CardShape = RoundedCornerShape(12.dp)
 
 /**
  * Top-level list for displaying an expandable section of Inactive Tabs.
@@ -96,7 +93,7 @@ fun InactiveTabsList(
             containerColor = MaterialTheme.colorScheme.surfaceContainerLowest,
             contentColor = MaterialTheme.colorScheme.secondary,
         ),
-        shape = CardShape,
+        shape = MaterialTheme.shapes.medium,
     ) {
         InactiveTabsHeader(
             expanded = expanded,
@@ -263,7 +260,7 @@ private fun InactiveTabsAutoClosePrompt(
 ) {
     Card(
         modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
-        shape = CardShape,
+        shape = MaterialTheme.shapes.medium,
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceContainerLowest),
         border = BorderStroke(
             width = 1.dp,

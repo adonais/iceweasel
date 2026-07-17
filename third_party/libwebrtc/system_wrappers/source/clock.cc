@@ -63,7 +63,7 @@ class RealTimeClock : public Clock {
   }
 };
 
-Clock* absl_nonnull Clock::GetRealTimeClockRaw() {
+Clock* absl_nonnull Clock::GetRealTimeClockOnlyUseForRelativeTime() {
   static Clock* const clock = new RealTimeClock();
   return clock;
 }

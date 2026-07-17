@@ -180,6 +180,11 @@ void IDBTypedCursor<CursorType>::Reset() {
   AssertIsOnOwningThread();
 
   if constexpr (!IsKeyOnlyCursor) {
+    // May run after GetValue() already deserialized and cleared mCloneInfo in
+    // place (via DeserializeValue's scope-exit guard). That's fine:
+    // ClearCloneReadInfo early-returns once the files are released, so this is
+    // a no-op in that case, and still releases the files when GetValue() was
+    // never called.
     IDBObjectStore::ClearCloneReadInfo(mData.mCloneInfo);
   }
 
@@ -316,9 +321,6 @@ void IDBTypedCursor<CursorType>::GetValue(JSContext* const aCx,
         aRv.Throw(NS_ERROR_DOM_DATA_CLONE_ERR);
         return;
       }
-
-      // XXX This seems redundant, sine mData.mCloneInfo is moved above.
-      IDBObjectStore::ClearCloneReadInfo(mData.mCloneInfo);
 
       mCachedValue = val;
       mHaveCachedValue = true;

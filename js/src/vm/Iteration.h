@@ -13,6 +13,7 @@
 
 #include "builtin/SelfHostingDefines.h"
 #include "gc/Barrier.h"
+#include "util/Memory.h"
 #include "vm/NativeObject.h"
 #include "vm/TypedArrayObject.h"
 
@@ -352,7 +353,11 @@ struct NativeIterator : public NativeIteratorListNode {
     uintptr_t result = propertiesEnd;
     if (flags_ & Flags::IndicesAllocated) {
       result += numProperties * sizeof(PropertyIndex);
+      if constexpr (sizeof(PropertyIndex) != alignof(GCPtr<Shape*>)) {
+        result = AlignBytes(result, alignof(GCPtr<Shape*>));
+      }
     }
+    MOZ_ASSERT(result % alignof(GCPtr<Shape*>) == 0);
     return reinterpret_cast<GCPtr<Shape*>*>(result);
   }
 

@@ -14,6 +14,7 @@
 #include "nsIGlobalObject.h"
 #include "nsIURIMutator.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 
 namespace mozilla::dom {
 
@@ -39,6 +40,22 @@ void ReportingUtils::StripURL(nsIURI* aURI, nsACString& outStrippedURL) {
 
   // 4. Return the result of executing the URL serializer on url.
   stripped->GetSpec(outStrippedURL);
+}
+
+// static
+void ReportingUtils::StripLocationFileName(
+    const mozilla::JSCallingLocation& aLocation,
+    nsACString& outStrippedFileName) {
+  nsCOMPtr<nsIURI> uri;
+  if (aLocation.mResource.is<nsCOMPtr<nsIURI>>()) {
+    uri = aLocation.mResource.as<nsCOMPtr<nsIURI>>();
+  } else {
+    (void)NS_NewURI(getter_AddRefs(uri), aLocation.FileName());
+  }
+
+  if (uri) {
+    ReportingUtils::StripURL(uri, outStrippedFileName);
+  }
 }
 
 // static

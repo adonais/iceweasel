@@ -54,6 +54,7 @@ struct JSSettings {
     return false;
   }
 
+  // Copies refcounted strings to prevent accessing them on multiple threads.
   void CopyOverrideStrings() {
     chromeRealmOptions.behaviors().copyOverrideStrings();
     contentRealmOptions.behaviors().copyOverrideStrings();

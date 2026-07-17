@@ -4,7 +4,9 @@ import pytest
 from webdriver.error import WebDriverException
 
 URL = "https://mp3cut.net/it/"
-PICKER_DROPDOWN_BUTTON_CSS = ".file-picker.el-dropdown button[aria-haspopup=list]"
+PICKER_DROPDOWN_BUTTON_CSS = (
+    ".file-picker.el-dropdown button[aria-haspopup=list]:not(:disabled)"
+)
 PICKER_FROM_URL_CSS = ".el-dropdown-menu__item.url"
 AUDIO_FILE_URL = (
     "https://searchfox.org/firefox-main/source/toolkit/content/tests/widgets/audio.wav"

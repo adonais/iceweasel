@@ -374,9 +374,12 @@ var gPermissionPanel = {
     // being focused (and therefore, interacted with) by the user. However, we
     // want to allow opening the identity popup from the device control menu,
     // which calls click() on the identity button, so we don't return early.
+    // Persisted search terms also produce pageproxystate=invalid, but a real
+    // page is loaded underneath, so the permission popup is still meaningful.
     if (
       !this._sharingState &&
-      gURLBar.getAttribute("pageproxystate") != "valid"
+      gURLBar.getAttribute("pageproxystate") != "valid" &&
+      !gURLBar.hasAttribute("persistsearchterms")
     ) {
       return;
     }
@@ -744,6 +747,13 @@ var gPermissionPanel = {
       block.setAttribute("class", "permission-popup-permission-item-container");
       menulist.setAttribute("sizetopopup", "none");
       menulist.setAttribute("id", "permission-popup-menulist");
+
+      if (
+        idNoSuffix == "popup" &&
+        Services.prefs.prefIsLocked("dom.disable_open_during_load")
+      ) {
+        menulist.setAttribute("disabled", "true");
+      }
 
       for (let state of SitePermissions.getAvailableStates(idNoSuffix)) {
         let menuitem = document.createXULElement("menuitem");

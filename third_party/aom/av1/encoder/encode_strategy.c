@@ -1345,6 +1345,8 @@ int av1_encode_strategy(AV1_COMP *const cpi, size_t *const size,
   // Allocation of mi buffers.
   alloc_mb_mode_info_buffers(cpi);
 
+  cpi->cb_delta_rdmult_enabled = 0;
+
   cpi->skip_tpl_setup_stats = 0;
 #if !CONFIG_REALTIME_ONLY
   if (oxcf->pass != AOM_RC_FIRST_PASS) {

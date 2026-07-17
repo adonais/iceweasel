@@ -176,7 +176,7 @@ nsresult StyleUpdatingCommand::GetCurrentState(nsStaticAtom& aTagName,
 nsresult StyleUpdatingCommand::ToggleState(nsStaticAtom& aTagName,
                                            HTMLEditor& aHTMLEditor,
                                            nsIPrincipal* aPrincipal) const {
-  RefPtr<nsCommandParams> params = new nsCommandParams();
+  RefPtr params = MakeRefPtr<nsCommandParams>();
 
   // tags "href" and "name" are special cases in the core editor
   // they are used to remove named anchor/link and shouldn't be used for
@@ -240,7 +240,7 @@ nsresult ListCommand::GetCurrentState(nsStaticAtom& aTagName,
 nsresult ListCommand::ToggleState(nsStaticAtom& aTagName,
                                   HTMLEditor& aHTMLEditor,
                                   nsIPrincipal* aPrincipal) const {
-  RefPtr<nsCommandParams> params = new nsCommandParams();
+  RefPtr params = MakeRefPtr<nsCommandParams>();
   nsresult rv = GetCurrentState(aTagName, aHTMLEditor, *params);
   if (NS_FAILED(rv)) {
     NS_WARNING("ListCommand::GetCurrentState() failed");
@@ -307,7 +307,7 @@ nsresult ListItemCommand::ToggleState(nsStaticAtom& aTagName,
                                       HTMLEditor& aHTMLEditor,
                                       nsIPrincipal* aPrincipal) const {
   // Need to use aTagName????
-  RefPtr<nsCommandParams> params = new nsCommandParams();
+  RefPtr params = MakeRefPtr<nsCommandParams>();
   GetCurrentState(aTagName, aHTMLEditor, *params);
   ErrorResult error;
   bool inList = params->GetBool(STATE_ALL, error);

@@ -21,6 +21,99 @@ newtab-card-dismiss-button =
     .title = رڌ کردن
     .aria-label = رڌ کردن
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-title =
+    .label = بلگه هووه ای
+home-homepage-new-windows =
+    .label = نیمدری یل نۊ
+home-homepage-new-tabs =
+    .label = بلگه یل نۊ
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = نشۊوی (ا) وبگه
+home-custom-homepage-address =
+    .placeholder = زیذن نشۊوی
+home-custom-homepage-address-button =
+    .label = ٱووردن نشۊوی
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with-prompt =
+    .label = جایونی کردن وا
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-current-pages-button =
+    .label = بلگه یل گۊشیڌه وابیڌه هیم سکویی
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-bookmarks-button =
+    .label = نشووکا…
+
+## Firefox Home content
+
+home-prefs-content-header =
+    .label = { -firefox-home-brand-name }
+home-prefs-search-header2 =
+    .label = پیتینیڌن
+home-prefs-widgets-header =
+    .label = ویجتا
+# Lists is a widget on New Tab, similar to a to-do widget
+home-prefs-lists-header =
+    .label = نومگه یل
+# Timer is a widget on New Tab, similar to the Pomodoro timer.
+home-prefs-timer-header =
+    .label = زمووݩ سنج
+home-prefs-manage-topics-link2 =
+    .label = دؽوۉداری سرتالا
+home-prefs-choose-wallpaper-link2 =
+    .label = پسند شؽوات زمینه
+home-prefs-firefox-logo-header =
+    .label = لوگو { -brand-short-name }
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } ردیف
+           *[other] { $num } ردیف
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = وردنی ({ $extension })
+home-restore-defaults-srd =
+    .label = وورگندن پؽش فرزا
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (پؽش فرز)
+home-mode-choice-custom-srd =
+    .label = نشۊویا سفارشی…
+home-mode-choice-blank-srd =
+    .label = بلگه پتی
+home-prefs-shortcuts-header-srd =
+    .label = ره نهنگا
+home-prefs-shortcuts-select =
+    .aria-label = ره نهنگا
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = ره نهنگا هؽزگرووݩ
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = وزعیتا هؽزگرووݩ
+home-prefs-highlights-option-visited-pages-srd =
+    .label = بلگه یل نیشته وابیڌه
+home-prefs-highlights-options-bookmarks-srd =
+    .label = نشووکا
+home-prefs-recent-activity-header-srd =
+    .label = فعالیتا دیندایی
+home-prefs-recent-activity-select =
+    .aria-label = فعالیتا دیندایی
+home-prefs-weather-header-srd =
+    .label = ٱو وو هوا
+home-prefs-support-firefox-header-srd =
+    .label = لادرار { -brand-product-name }
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -132,6 +225,8 @@ newtab-menu-report = گوزارش
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = مسدۊد کردن
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = قلوه دووسته بۊین
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 
@@ -442,8 +537,6 @@ newtab-widget-lists-button-add-item = ٱووردن ی موورد
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = ٱووردن ی موورد
     .aria-label = ٱووردن ی موورد
-newtab-widget-lists-input-add-an-item =
-    .placeholder = ٱووردن ی موورد
 newtab-widget-lists-input-menu-open-link = گۊشیڌن لینگ
 newtab-widget-lists-input-menu-move-up = جاگورو و روء
 newtab-widget-lists-input-menu-move-down = جاگورو و لم
@@ -460,9 +553,6 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = نومگه نۊ
     .aria-label = آلشت نومگه نوم
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = نومگه نۊ
 newtab-widget-section-title = ویجتا
 # Tooltip for hide all widgets button
 newtab-widget-section-hide-all-button =

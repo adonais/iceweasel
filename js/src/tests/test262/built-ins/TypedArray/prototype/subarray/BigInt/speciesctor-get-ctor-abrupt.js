@@ -37,6 +37,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.throws(Test262Error, function() {
     sample.subarray(0);
   });
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

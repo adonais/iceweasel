@@ -15,7 +15,7 @@ namespace mozilla {
 
 class SandboxTestingThread {
  public:
-  void Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) {
+  void Dispatch(already_AddRefed<nsIRunnable> aRunnable) {
     mThread->Dispatch(std::move(aRunnable), nsIEventTarget::NS_DISPATCH_NORMAL);
   }
 

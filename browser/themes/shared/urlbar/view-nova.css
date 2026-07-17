@@ -70,7 +70,7 @@
   --urlbarView-action-button-hover-background-color: var(--urlbarview-background-color-hover);
 
   --urlbarView-tail150-overlay-background: var(--color-violet-90);
-  --urlbarView-tail150-overlay-color: var(--color-gray-05);
+  --urlbarView-tail150-overlay-color: var(--color-gray-0);
   --urlbarView-tail150-canvas-background: var(--color-violet-110);
 
   --urlbarView-separator-char: "•" / "—";
@@ -95,7 +95,7 @@
 .urlbarView {
   /* Compensate for the row's transparent border (gutter), so the selection rect
      is flush with the input container's border edge. */
-  margin-inline: calc(-1 * var(--urlbarView-row-gutter));
+  margin: calc(-1 * var(--urlbarView-row-gutter));
 
   /* Don't handle window drag events in case we are overlapping a toolbar */
   -moz-window-dragging: no-drag;
@@ -106,12 +106,14 @@
 }
 
 .urlbarView-results {
-  padding-block: var(--urlbarView-padding);
   white-space: nowrap;
 
-  /* Vertically center the one-offs when no results are present. */
-  .urlbarView[noresults] > .urlbarView-body-outer > .urlbarView-body-inner > & {
-    padding-block: 0;
+  .urlbar:not([noresults]) > .urlbarView > .urlbarView-body-outer > .urlbarView-body-inner > & {
+    padding-block-start: var(--urlbarView-padding);
+
+    :root[uidensity="compact"] & {
+      padding: var(--urlbarView-padding);
+    }
   }
 }
 
@@ -327,7 +329,6 @@
   }
 
   /* The following badges are used for debugging purposes */
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.urlbar.showDebuggingIcons") {
     .urlbarView-row[type] > .urlbarView-row-inner > &::before {
       display: flex;
@@ -959,8 +960,10 @@
   --urlbarView-icon-border-radius: var(--urlbarView-icon-border-radius-rounded);
 }
 
-.urlbarView-row[type$="_adm_sponsored"][is-top-pick] {
-  --urlbarView-icon-size: var(--urlbarView-rich-search-suggestion-icon-size);
+@media not -moz-pref("browser.urlbar.quicksuggest.ampTopPickUseNovaIconSize") {
+  .urlbarView-row[type$="_adm_sponsored"][is-top-pick] {
+    --urlbarView-icon-size: var(--urlbarView-rich-search-suggestion-icon-size);
+  }
 }
 
 .urlbarView-row[type$="_amo"] {
@@ -1489,9 +1492,21 @@
 
     &[backgroundImageId] {
       background-position: center;
+      background-size: 100% 100%;
+      background-repeat: no-repeat;
       -moz-context-properties: fill, stroke;
       fill: var(--airline-color, currentColor);
       stroke: var(--airline-color, currentColor);
+
+      &:-moz-locale-dir(rtl) {
+        /* Flip the background image, an in-progress flight path, and then flip the
+           inner foreground image, an airline logo, so it's oriented correctly. */
+        transform: scaleX(-1);
+        /* stylelint-disable-next-line max-nesting-depth */
+        > .urlbarView-realtime-image {
+          transform: scaleX(-1);
+        }
+      }
     }
 
     &[backgroundImageId="0"] {
@@ -1515,12 +1530,14 @@
     }
 
     &[hasForegroundImage] {
-      /* Move up the progress image if exists */
+      /* The background image is an in-progress flight path that arcs from left to
+         right. The foreground image is an airline logo. Move the flight path up
+         so there's room below it for the logo and place the logo in the bottom right. */
       background-position-y: bottom 12px;
-      /* Move the foreground image to the end corner */
       display: flex;
-      justify-content: end;
+      justify-content: right;
       align-items: end;
+      overflow: hidden;
     }
 
     > .urlbarView-realtime-image[fallback] {
@@ -1675,9 +1692,11 @@
   align-items: start;
   padding-block: 10px;
   flex-wrap: wrap;
+  width: unset;
+  margin-inline: calc(var(--urlbarView-padding) + var(--urlbarView-favicon-margin-start));
 }
 
-.urlbarView:not([noresults]) > .search-one-offs:not([hidden]) {
+#urlbar:not([noresults]) > .urlbarView > .search-one-offs:not([hidden]) {
   border-top: 1px solid var(--urlbarview-separator-color);
 }
 

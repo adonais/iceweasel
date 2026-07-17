@@ -8,12 +8,14 @@ use crate::applicable_declarations::{
     ApplicableDeclarationBlock, ApplicableDeclarationList, CascadePriority, ScopeProximity,
 };
 use crate::computed_value_flags::ComputedValueFlags;
-use crate::context::{CascadeInputs, QuirksMode};
+use crate::context::{CascadeInputs, QuirksMode, TreeCountingCaches};
 use crate::custom_properties::ComputedCustomProperties;
 use crate::custom_properties::{parse_name, SpecifiedValue};
 use crate::derives::*;
 use crate::device::Device;
-use crate::dom::{TElement, TShadowRoot};
+use crate::dom::TElement;
+#[cfg(feature = "gecko")]
+use crate::dom::TShadowRoot;
 #[cfg(feature = "gecko")]
 use crate::gecko_bindings::structs::{ServoStyleSetSizes, StyleRuleInclusion};
 use crate::invalidation::element::invalidation_map::{
@@ -927,9 +929,11 @@ impl Stylist {
         {
             let mut seen_names = PrecomputedHashSet::default();
             let mut rule_cache_conditions = RuleCacheConditions::default();
+            let mut tree_counting_caches = TreeCountingCaches::default();
             let context = computed::Context::new_for_initial_at_property_value(
                 self,
                 &mut rule_cache_conditions,
+                &mut tree_counting_caches,
             );
 
             for (k, v) in self.custom_property_script_registry().properties().iter() {
@@ -1372,6 +1376,7 @@ impl Stylist {
             &PositionTryFallbacksTryTactic::default(),
             /* rule_cache = */ None,
             &mut RuleCacheConditions::default(),
+            &mut TreeCountingCaches::default(),
         )
     }
 
@@ -1454,6 +1459,7 @@ impl Stylist {
                     &name_and_try_tactic.try_tactic,
                     /* rule_cache = */ None,
                     &mut RuleCacheConditions::default(),
+                    &mut TreeCountingCaches::default(),
                 ))
             },
         )
@@ -1483,6 +1489,7 @@ impl Stylist {
         try_tactic: &PositionTryFallbacksTryTactic,
         rule_cache: Option<&RuleCache>,
         rule_cache_conditions: &mut RuleCacheConditions,
+        tree_counting_caches: &mut TreeCountingCaches,
     ) -> Arc<ComputedValues>
     where
         E: TElement,
@@ -1527,6 +1534,7 @@ impl Stylist {
             rule_cache,
             rule_cache_conditions,
             element,
+            tree_counting_caches,
         )
     }
 
@@ -1714,7 +1722,7 @@ impl Stylist {
         E: TElement,
     {
         let mut cur = element;
-        let mut pseudos = SmallVec::new();
+        let mut pseudos = SmallVec::<[_; 2]>::new();
         if let Some(pseudo) = pseudo_element {
             pseudos.push(pseudo.clone());
         }
@@ -1728,7 +1736,8 @@ impl Stylist {
         RuleCollector::new(
             self,
             element,
-            pseudos,
+            cur,
+            &pseudos,
             style_attribute,
             smil_override,
             animation_declarations,
@@ -2021,6 +2030,7 @@ impl Stylist {
             /* rule_cache = */ None,
             &mut Default::default(),
             /* element = */ None,
+            &mut TreeCountingCaches::default(),
         )
     }
 
@@ -3868,7 +3878,7 @@ impl CascadeData {
             }
 
             debug_assert!(!pseudo_elements
-                    .iter()
+                .iter()
                 .any(|p| p.is_precomputed() || p.is_unknown_webkit_pseudo_element()));
 
             let selector = match ancestor_selectors {

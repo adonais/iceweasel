@@ -32,6 +32,11 @@
     accent-color: var(--smartwindow-assistant-accent-color-focus);
     outline-style: inset;
   }
+
+  /* making sure links keep the same color while being printed */
+  :host(:not([complete])) & a {
+    --smartwindow-assistant-link-color-visited: var(--smartwindow-assistant-link-color);
+  }
 }
 
 .message-assistant.with-history {
@@ -60,7 +65,6 @@ ai-chat-table {
   display: block;
   font-size: var(--font-size-small);
   max-width: 100%;
-  width: fit-content;
 
   & th,
   & td {

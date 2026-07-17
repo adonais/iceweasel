@@ -36,12 +36,12 @@ namespace mozilla {
 
 LazyLogModule sPEMLog("PlatformEncoderModule");
 
-#define LOGE(fmt, ...)                       \
-  MOZ_LOG(sPEMLog, mozilla::LogLevel::Error, \
-          ("[PEMFactory] %s: " fmt, __func__, ##__VA_ARGS__))
-#define LOG(fmt, ...)                        \
-  MOZ_LOG(sPEMLog, mozilla::LogLevel::Debug, \
-          ("[PEMFactory] %s: " fmt, __func__, ##__VA_ARGS__))
+#define LOGE(fmt, ...)                                                    \
+  MOZ_LOG_FMT(sPEMLog, mozilla::LogLevel::Error, "[PEMFactory] {}: " fmt, \
+              __func__, ##__VA_ARGS__)
+#define LOG(fmt, ...)                                                     \
+  MOZ_LOG_FMT(sPEMLog, mozilla::LogLevel::Debug, "[PEMFactory] {}: " fmt, \
+              __func__, ##__VA_ARGS__)
 
 static CodecType MediaCodecToCodecType(MediaCodec aCodec) {
   switch (aCodec) {
@@ -189,6 +189,12 @@ void PEMFactory::InitUtilityPEMs() {
             FFmpegRuntimeLinker::CreateEncoder()) {
       mCurrentPEMs.AppendElement(pem);
     }
+  }
+#endif
+
+#ifdef MOZ_WIDGET_ANDROID
+  if (StaticPrefs::media_utility_android_media_codec_enabled()) {
+    mCurrentPEMs.AppendElement(new AndroidEncoderModule());
   }
 #endif
 }
@@ -432,11 +438,11 @@ EncodeSupportSet PEMFactory::Supports(const EncoderConfig& aConfig) const {
     EncodeSupportSet supports = m->Supports(aConfig);
     if (!supports.isEmpty()) {
       // TODO name
-      LOG("Checking if %s supports codec %s: yes", m->GetName(),
+      LOG("Checking if {} supports codec {}: yes", m->GetName(),
           EnumValueToString(aConfig.mCodec));
       return supports;
     }
-    LOG("Checking if %s supports codec %s: no", m->GetName(),
+    LOG("Checking if {} supports codec {}: no", m->GetName(),
         EnumValueToString(aConfig.mCodec));
   }
   return EncodeSupportSet{};
@@ -447,12 +453,12 @@ EncodeSupportSet PEMFactory::SupportsCodec(CodecType aCodec) const {
   for (const auto& m : mCurrentPEMs) {
     EncodeSupportSet pemSupports = m->SupportsCodec(aCodec);
     // TODO name
-    LOG("Checking if %s supports codec %d: %s", m->GetName(),
+    LOG("Checking if {} supports codec {}: {}", m->GetName(),
         static_cast<int>(aCodec), pemSupports.isEmpty() ? "no" : "yes");
     supports += pemSupports;
   }
   if (supports.isEmpty()) {
-    LOG("No PEM support %d", static_cast<int>(aCodec));
+    LOG("No PEM support {}", static_cast<int>(aCodec));
   }
   return supports;
 }

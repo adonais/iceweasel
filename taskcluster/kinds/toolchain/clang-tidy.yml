@@ -23,7 +23,7 @@ task-defaults:
             - 'build/build-clang/build-clang.py'
     fetches:
         fetch:
-            - clang-20
+            - clang-21
 
 linux64-clang-tidy:
     index:

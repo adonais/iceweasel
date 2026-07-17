@@ -184,10 +184,14 @@ nsIThread* last_non_watched_thread = nullptr;
  * call the real mutex function.
  */
 extern "C" void wrapped_MutexEnter(sqlite3_mutex* mutex) {
-  if (PR_GetCurrentThread() == watched_thread) {
+  PRThread* current = PR_GetCurrentThread();
+  if (current == watched_thread) {
     mutex_used_on_watched_thread = true;
-  } else if (!NS_IsMainThread()) {
-    last_non_watched_thread = NS_GetCurrentThread();
+  } else {
+    const char* name = PR_GetThreadName(current);
+    if (name && strncmp(name, "sqldb:", 6) == 0) {
+      last_non_watched_thread = NS_GetCurrentThread();
+    }
   }
   orig_mutex_methods.xMutexEnter(mutex);
 }
@@ -228,9 +232,8 @@ already_AddRefed<nsIThread> get_conn_async_thread(mozIStorageConnection* db) {
   nsCOMPtr<mozIStorageAsyncStatement> stmt;
   db->CreateAsyncStatement("SELECT 1"_ns, getter_AddRefs(stmt));
   blocking_async_execute(stmt);
-  stmt->Finalize();
-
   nsCOMPtr<nsIThread> asyncThread = last_non_watched_thread;
+  stmt->Finalize();
 
   // Additionally, check that the thread we get as the background thread is the
   // same one as the one we report from getInterface.

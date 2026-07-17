@@ -25,6 +25,80 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-title =
+    .label = പൂമുഖം
+home-homepage-new-tabs =
+    .label = പുതിയ ടാബുകൾ
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = വെബ്ബിട വിലാസം(കൾ)
+home-custom-homepage-address =
+    .placeholder = വിലാസം നല്കുക
+home-custom-homepage-address-button =
+    .label = വിലാസം ചേൎക്കുക
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-results =
+    .label = വെബ്ബിടങ്ങൾ ചേൎത്തിട്ടില്ല
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-current-pages-button =
+    .label = നിലവിൽ തുറന്നിരിക്കുന്ന താളുകൾ
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-bookmarks-button =
+    .label = അടയാളക്കുറിപ്പുകൾ…
+
+## Firefox Home content
+
+home-prefs-search-header2 =
+    .label = തിരയുക
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } വരികൾ
+           *[other] { $num } വരികൾ
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = വിപുലീകരണം ({ $extension })
+home-restore-defaults-srd =
+    .label = സ്വതവേയുള്ളവ പുനഃസ്ഥാപിക്കുക
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (തനതായവ)
+home-mode-choice-custom-srd =
+    .label = ഇഷ്ടാനുസൃത URL കൾ ...
+home-mode-choice-blank-srd =
+    .label = ശൂന്യമായ താൾ
+home-prefs-shortcuts-header-srd =
+    .label = കുറുക്കുവഴികൾ
+home-prefs-shortcuts-select =
+    .aria-label = കുറുക്കുവഴികൾ
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = പണം കൊണ്ടു് പ്രസരിപ്പിച്ച കുറുക്കുവഴികൾ
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = പണം കൊണ്ടു് പ്രസരിപ്പിച്ച കഥകൾ
+home-prefs-highlights-option-visited-pages-srd =
+    .label = സന്ദർശിച്ച പേജുകൾ
+home-prefs-highlights-options-bookmarks-srd =
+    .label = ബുക്ക്മാർക്കുകൾ
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = ഏറ്റവും അടുത്തിടെ ഇറക്കിവച്ച സാധനം
+home-prefs-recent-activity-header-srd =
+    .label = ഒടുവിലുള്ള പ്രവൎത്തനം
+home-prefs-recent-activity-select =
+    .aria-label = ഒടുവിലുള്ള പ്രവൎത്തനം
+home-prefs-weather-header-srd =
+    .label = കാലാവസ്ഥ
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -129,6 +203,8 @@ newtab-menu-report = വിവരം അറിയിക്കുക
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = തടയുക
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = കൂടുതല്‍ അറിയുക
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = വിഷയം പിന്തുടരാൻ നി‌രുത്തുക
@@ -509,8 +585,6 @@ newtab-widget-lists-button-add-item = ഇനം ചേർക്കുക
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = ഇനം ചേർക്കുക
     .aria-label = ഇനം ചേർക്കുക
-newtab-widget-lists-input-add-an-item =
-    .placeholder = ഇനം ചേർക്കുക
 newtab-widget-lists-input-menu-open-link = കണ്ണി തുറക്കുക
 newtab-widget-lists-input-menu-move-up = മുകളിലേക്കു് നീക്കു്
 newtab-widget-lists-input-menu-move-down = താഴോട്ടു നീക്കു്
@@ -523,6 +597,3 @@ newtab-widget-lists-name-label-default =
     .label = കാര്യപ്പട്ടിക
 newtab-widget-lists-name-placeholder-default =
     .placeholder = കാര്യപ്പട്ടിക
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = പുതിയ പട്ടിക

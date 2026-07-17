@@ -29,7 +29,6 @@ import org.mozilla.fenix.GleanMetrics.Preferences
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.SettingsStudiesBinding
 import org.mozilla.fenix.ext.getPreferenceKey
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.SupportUtils.SumoTopic.OPT_OUT_STUDIES
 import org.mozilla.fenix.utils.Settings
@@ -64,7 +63,7 @@ class StudiesView(
             settings.isExperimentationEnabled = isChecked
             settings.hasUserDisabledExperimentation = !isChecked
             val experimentsKey = context.getPreferenceKey(R.string.pref_key_experimentation_v2)
-            context.settings().preferences.edit(commit = true) { putBoolean(experimentsKey, isChecked) }
+            settings.preferences.edit(commit = true) { putBoolean(experimentsKey, isChecked) }
 
             // Use experimentParticipation for studies-specific settings
             experiments.experimentParticipation = isChecked

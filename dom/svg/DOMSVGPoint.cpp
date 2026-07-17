@@ -35,7 +35,7 @@ class MOZ_RAII AutoChangePointNotifier {
   DOMSVGPoint* const mValue;
 };
 
-constinit static SVGAttrTearoffTable<SVGPoint, DOMSVGPoint>
+constinit static SVGAttrTearoffTable<Point, DOMSVGPoint>
     sSVGTranslateTearOffTable;
 
 // We could use NS_IMPL_CYCLE_COLLECTION(, except that in Unlink() we need to
@@ -67,7 +67,7 @@ float DOMSVGPoint::X() {
   if (mIsAnimValItem && IsInList()) {
     Element()->FlushAnimations();  // May make IsInList() == false
   }
-  return InternalItem().mX;
+  return InternalItem().X();
 }
 
 void DOMSVGPoint::SetX(float aX, ErrorResult& aRv) {
@@ -78,21 +78,21 @@ void DOMSVGPoint::SetX(float aX, ErrorResult& aRv) {
 
   auto& val = InternalItem();
 
-  if (val.mX == aX) {
+  if (val.X() == aX) {
     return;
   }
 
   AutoChangePointListNotifier listNotifier(this);
   AutoChangePointNotifier translateNotifier(this);
 
-  val.mX = aX;
+  val.x = aX;
 }
 
 float DOMSVGPoint::Y() {
   if (mIsAnimValItem && IsInList()) {
     Element()->FlushAnimations();  // May make IsInList() == false
   }
-  return InternalItem().mY;
+  return InternalItem().Y();
 }
 
 void DOMSVGPoint::SetY(float aY, ErrorResult& aRv) {
@@ -102,14 +102,14 @@ void DOMSVGPoint::SetY(float aY, ErrorResult& aRv) {
   }
   auto& val = InternalItem();
 
-  if (val.mY == aY) {
+  if (val.Y() == aY) {
     return;
   }
 
   AutoChangePointListNotifier listNotifier(this);
   AutoChangePointNotifier translateNotifier(this);
 
-  val.mY = aY;
+  val.y = aY;
 }
 
 already_AddRefed<DOMSVGPoint> DOMSVGPoint::MatrixTransform(
@@ -122,8 +122,8 @@ already_AddRefed<DOMSVGPoint> DOMSVGPoint::MatrixTransform(
     aRv.ThrowTypeError<MSG_NOT_FINITE>("MatrixTransform matrix");
     return nullptr;
   }
-  auto pt = matrix2D.TransformPoint(InternalItem());
-  return MakeAndAddRef<DOMSVGPoint>(ToPoint(pt));
+  auto pt = matrix2D.TransformPoint(gfx::ThebesPoint(InternalItem()));
+  return MakeAndAddRef<DOMSVGPoint>(::ToPoint(pt));
 }
 
 void DOMSVGPoint::InsertingIntoList(DOMSVGPointList* aList, uint32_t aListIndex,
@@ -146,12 +146,12 @@ void DOMSVGPoint::RemovingFromList() {
   MOZ_ASSERT(
       IsInList(),
       "We should start in a list if we're going to be removed from one.");
-  mVal = new SVGPoint(InternalItem());
+  mVal = new Point(InternalItem());
   mOwner = nullptr;
   mIsAnimValItem = false;
 }
 
-SVGPoint& DOMSVGPoint::InternalItem() {
+Point& DOMSVGPoint::InternalItem() {
   if (nsCOMPtr<DOMSVGPointList> pointList = do_QueryInterface(mOwner)) {
     return pointList->InternalList().mItems[mListIndex];
   }
@@ -159,7 +159,7 @@ SVGPoint& DOMSVGPoint::InternalItem() {
 }
 
 already_AddRefed<DOMSVGPoint> DOMSVGPoint::GetTranslateTearOff(
-    SVGPoint* aVal, SVGSVGElement* aSVGSVGElement) {
+    Point* aVal, SVGSVGElement* aSVGSVGElement) {
   RefPtr<DOMSVGPoint> domPoint = sSVGTranslateTearOffTable.GetTearoff(aVal);
   if (!domPoint) {
     domPoint = new DOMSVGPoint(aVal, aSVGSVGElement);

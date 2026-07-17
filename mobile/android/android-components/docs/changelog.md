@@ -4,7 +4,12 @@ title: Changelog
 permalink: /changelog/
 ---
 
-# 152.0 (In Development)
+# 153.0 (In Development)
+* **support-utils**
+  * 🆕 Added `DiskLruCacheStore` to provide shared `DiskLruCache` read, write, remove, and clear helpers for disk-backed components.
+  * 🆕 Added `CacheDirectoryMigration` to help migrating the cache directory used by `DiskLruCache`.
+
+# 152.0
 * **browser-engine-gecko**
     * 🆕 New `getTrackingProtectionEventsByDateRange`, `sumAllTrackingProtectionEvents` and `getEarliestTrackingProtectionDate` APIs to query the tracking protection database from Gecko. [Bug 2031989](https://bugzilla.mozilla.org/show_bug.cgi?id=2031989)
 * **feature-session**

@@ -238,6 +238,7 @@ class HistoryMetadataGroupFragment :
     ) {
         CoroutineScope(Dispatchers.IO).allowUndo(
             requireView(),
+            settings = requireComponents.settings,
             getSnackBarMessage(items),
             getString(R.string.snackbar_deleted_undo),
             {

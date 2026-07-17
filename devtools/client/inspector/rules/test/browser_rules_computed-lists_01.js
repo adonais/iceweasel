@@ -54,7 +54,7 @@ add_task(async function () {
   );
 
   info("Check that the expander gets shown again after we're done editing");
-  let onEditingCancelled = view.once("ruleview-changed");
+  let onEditingCancelled = view.once("property-value-updated");
   EventUtils.sendKey("ESCAPE", view.styleWindow);
   await onEditingCancelled;
   is(
@@ -75,7 +75,7 @@ add_task(async function () {
   await onValueFocus;
 
   // the value span was focused, cancel the edit
-  onEditingCancelled = view.once("ruleview-changed");
+  onEditingCancelled = view.once("property-value-updated");
   EventUtils.sendKey("ESCAPE", view.styleWindow);
   await onEditingCancelled;
 

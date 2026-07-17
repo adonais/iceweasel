@@ -878,7 +878,7 @@ class BrowserToolbarMiddlewareTest {
 
         assertEquals(Normal, browsingModeManager.mode)
         verify(exactly = 0) {
-            tabsUseCases.removeTab(any(), any())
+            tabsUseCases.removeTab(any(), any(), any())
             appStore.dispatch(CurrentTabClosed(true))
             appStore.dispatch(CurrentTabClosed(false))
         }
@@ -918,7 +918,7 @@ class BrowserToolbarMiddlewareTest {
 
         assertEquals(Private, browsingModeManager.mode)
         verify(exactly = 0) {
-            tabsUseCases.removeTab(any(), any())
+            tabsUseCases.removeTab(any(), any(), any())
             appStore.dispatch(CurrentTabClosed(true))
             appStore.dispatch(CurrentTabClosed(false))
         }
@@ -964,7 +964,7 @@ class BrowserToolbarMiddlewareTest {
 
         assertEquals(Private, browsingModeManager.mode)
         verify(exactly = 0) {
-            tabsUseCases.removeTab(any(), any())
+            tabsUseCases.removeTab(any(), any(), any())
             appStore.dispatch(CurrentTabClosed(true))
             appStore.dispatch(CurrentTabClosed(false))
             navController.navigate(
@@ -1016,7 +1016,7 @@ class BrowserToolbarMiddlewareTest {
 
         assertEquals(Private, browsingModeManager.mode)
         verify(exactly = 0) {
-            tabsUseCases.removeTab(any(), any())
+            tabsUseCases.removeTab(any(), any(), any())
             appStore.dispatch(CurrentTabClosed(true))
             appStore.dispatch(CurrentTabClosed(false))
             browserScreenStore.dispatch(any())
@@ -1385,6 +1385,7 @@ class BrowserToolbarMiddlewareTest {
         settings.isTabStripEnabled = true
         settings.shouldUseExpandedToolbar = false
         settings.toolbarSimpleShortcutKey = ShortcutType.SHARE.value
+        settings.nativeShareSheetEnabled = false
         every { navController.currentDestination?.id } returns R.id.browserFragment
         every { navController.navigate(any<NavDirections>(), null) } just Runs
         val browserScreenStore = buildBrowserScreenStore()

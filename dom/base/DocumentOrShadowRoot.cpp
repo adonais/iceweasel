@@ -333,6 +333,42 @@ Element* DocumentOrShadowRoot::GetFullscreenElement() const {
   return Element::FromNodeOrNull(Retarget(element));
 }
 
+// https://w3c.github.io/picture-in-picture/#dom-documentorshadowroot-pictureinpictureelement
+// See: https://github.com/w3c/picture-in-picture/issues/248
+Element* DocumentOrShadowRoot::GetPictureInPictureElement() const {
+  // 1. If this is a shadow root and its host is not connected, return null.
+  if (const auto* shadow = ShadowRoot::FromNode(AsNode())) {
+    const Element* host = shadow->GetHost();
+    if (!host || !host->IsInComposedDoc()) {
+      return nullptr;
+    }
+  }
+
+  // 2. Let candidate be the result of retargeting Picture-in-Picture element
+  //    against this.
+  Element* candidate = Element::FromNodeOrNull(nsContentUtils::Retarget(
+      AsNode().OwnerDoc()->GetPictureInPictureElementInternal(), mAsNode));
+
+  // 3. If candidate is null, return null.
+  if (!candidate) {
+    return nullptr;
+  }
+
+  // 4. If candidate and this are in the same tree, return candidate.
+  if (candidate->SubtreeRoot() == &AsNode()) {
+    return candidate;
+  }
+
+  // 5. If this is a Document and candidate's node document is this, return
+  //    candidate.
+  if (AsNode().IsDocument() && candidate->OwnerDoc() == AsNode().AsDocument()) {
+    return candidate;
+  }
+
+  // 6. Return null.
+  return nullptr;
+}
+
 namespace {
 
 using FrameForPointOption = nsLayoutUtils::FrameForPointOption;
@@ -758,21 +794,17 @@ void DocumentOrShadowRoot::Unlink(DocumentOrShadowRoot* tmp) {
   tmp->mIdentifierMap.Clear();
 }
 
-void DocumentOrShadowRoot::SetCustomElementRegistry(
-    CustomElementRegistry& aRegistry) {
-  MOZ_ASSERT(StaticPrefs::dom_scoped_custom_element_registries_enabled());
-  MOZ_ASSERT(mKind == Kind::ShadowRoot,
-             "SetCustomElementRegistry should only be called on ShadowRoots");
-  ShadowRoot& root = static_cast<ShadowRoot&>(AsNode());
-  root.SetCustomElementRegistry(&aRegistry);
-}
-
 /* https://dom.spec.whatwg.org/#dom-documentorshadowroot-customelementregistry
  */
 CustomElementRegistry* DocumentOrShadowRoot::GetCustomElementRegistry() {
   // Step 1. If this is a document, then return this's custom element registry.
-  // TODO(2021247): Per document registries
   if (mKind == Kind::Document) {
+    if (StaticPrefs::dom_scoped_custom_element_registries_enabled()) {
+      if (RefPtr<CustomElementRegistry> registry =
+              CustomElementRegistry::GetScopedRegistry(AsNode())) {
+        return registry;
+      }
+    }
     Document* doc = AsNode().AsDocument();
     nsPIDOMWindowInner* window = doc->GetInnerWindow();
     if (!window) {

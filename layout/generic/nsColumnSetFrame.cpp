@@ -1235,9 +1235,6 @@ void nsColumnSetFrame::Reflow(nsPresContext* aPresContext,
       aReflowInput, aReflowInput.ComputedISize() == NS_UNCONSTRAINEDSIZE);
 
   const bool shouldDoMeasuringReflow = [&]() {
-    if (!aPresContext->FragmentainerAwarePositioningEnabled()) {
-      return false;
-    }
     if (isNestedMulticol) {
       // Only the top-level multicol can initiate a measuring reflow. If we are
       // a nested multicol, perform a measuring reflow only when the top-level

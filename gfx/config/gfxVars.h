@@ -222,6 +222,15 @@ class gfxVars final {
     }
 
     void SetListener(const std::function<void()>& aListener) {
+      // Each gfxVar exposes a single-slot listener: a second registration
+      // would silently overwrite the first, breaking whatever consumer the
+      // first listener belonged to. Catch an accidental second consumer in
+      // diagnostic builds (debug / Nightly) rather than producing silent
+      // misbehaviour. If a future use case legitimately needs more than one
+      // listener per variable, change this storage to a list.
+      MOZ_DIAGNOSTIC_ASSERT(!mListener,
+                            "gfxVar already has a listener; only one "
+                            "consumer is supported per variable.");
       mListener = aListener;
     }
 

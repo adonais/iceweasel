@@ -306,9 +306,11 @@ system_headers = [
     "getopt.h",
     "gio/gdesktopappinfo.h",
     "gio/gio.h",
+    "gio/gunixinputstream.h",
     "glibconfig.h",
     "glib.h",
     "glib-object.h",
+    "glib-unix.h",
     "glob.h",
     "gmodule.h",
     "gnome.h",
@@ -855,7 +857,6 @@ system_headers = [
     "sys/shm.h",
     "sys/siginfo.h",
     "sys/signal.h",
-    "sys/single_threaded.h",
     "sys/socket.h",
     "sys/sockio.h",
     "sys/sparc/frame.h",
@@ -1030,6 +1031,11 @@ if CONFIG["HAVE_EXECINFO"]:
         "execinfo.h",
     ]
 
+if CONFIG["HAVE_SINGLE_THREADED_H"]:
+    system_headers += [
+        "sys/single_threaded.h",
+    ]
+
 if CONFIG["MOZ_X11"]:
     system_headers += [
         "gdk/gdkx.h",
@@ -1135,6 +1141,8 @@ if CONFIG["OS_TARGET"] == "Android":
         "media/IOMX.h",
         "media/MediaProfiles.h",
         "media/MediaRecorderBase.h",
+        "media/NdkImage.h",
+        "media/NdkImageReader.h",
         "media/NdkMediaCodec.h",
         "media/NdkMediaCrypto.h",
         "media/NdkMediaDrm.h",

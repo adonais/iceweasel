@@ -999,7 +999,7 @@ function removeNotificationOnEnd(notification, installs) {
   }
 }
 
-function buildNotificationAction(msg, callback) {
+function buildNotificationAction(msg, callback, options = {}) {
   let label = "";
   let accessKey = "";
   for (let { name, value } of msg.attributes) {
@@ -1012,7 +1012,11 @@ function buildNotificationAction(msg, callback) {
         break;
     }
   }
-  return { label, accessKey, callback };
+  const action = { label, accessKey, callback };
+  if (options.disableSecurityDelay) {
+    action.disableSecurityDelay = true;
+  }
+  return action;
 }
 
 var gXPInstallObserver = {
@@ -1173,7 +1177,9 @@ var gXPInstallObserver = {
       "addon-install-cancel-button",
     ]);
     const action = buildNotificationAction(acceptMsg, acceptInstallation);
-    const secondaryAction = buildNotificationAction(cancelMsg, () => {});
+    const secondaryAction = buildNotificationAction(cancelMsg, () => {}, {
+      disableSecurityDelay: true,
+    });
 
     if (height) {
       notification.style.minHeight = height + "px";
@@ -1302,7 +1308,11 @@ var gXPInstallObserver = {
           action = buildNotificationAction(disabledMsg, () => {
             Services.prefs.setBoolPref("xpinstall.enabled", true);
           });
-          secondaryActions = [buildNotificationAction(cancelMsg, () => {})];
+          secondaryActions = [
+            buildNotificationAction(cancelMsg, () => {}, {
+              disableSecurityDelay: true,
+            }),
+          ];
         }
 
         PopupNotifications.show(
@@ -1478,8 +1488,12 @@ var gXPInstallObserver = {
         };
 
         const declineActions = [
-          buildNotificationAction(dontAllowMsg, cancelInstallation),
-          buildNotificationAction(neverAllowMsg, neverAllowCallback),
+          buildNotificationAction(dontAllowMsg, cancelInstallation, {
+            disableSecurityDelay: true,
+          }),
+          buildNotificationAction(neverAllowMsg, neverAllowCallback, {
+            disableSecurityDelay: true,
+          }),
         ];
 
         if (isSitePermissionAddon) {
@@ -1488,13 +1502,17 @@ var gXPInstallObserver = {
           const permissionType =
             installInfo.installs[0].addon.sitePermissions?.[0];
           declineActions.push(
-            buildNotificationAction(neverAllowAndReportMsg, () => {
-              AMTelemetry.recordSuspiciousSiteEvent({
-                displayURI,
-                permissionType,
-              });
-              neverAllowCallback();
-            })
+            buildNotificationAction(
+              neverAllowAndReportMsg,
+              () => {
+                AMTelemetry.recordSuspiciousSiteEvent({
+                  displayURI,
+                  permissionType,
+                });
+                neverAllowCallback();
+              },
+              { disableSecurityDelay: true }
+            )
           );
         }
 
@@ -1545,13 +1563,17 @@ var gXPInstallObserver = {
         const action = buildNotificationAction(acceptMsg, () => {});
         action.disabled = true;
 
-        const secondaryAction = buildNotificationAction(cancelMsg, () => {
-          for (let install of installInfo.installs) {
-            if (install.state != AddonManager.STATE_CANCELLED) {
-              install.cancel();
+        const secondaryAction = buildNotificationAction(
+          cancelMsg,
+          () => {
+            for (let install of installInfo.installs) {
+              if (install.state != AddonManager.STATE_CANCELLED) {
+                install.cancel();
+              }
             }
-          }
-        });
+          },
+          { disableSecurityDelay: true }
+        );
 
         let notification = PopupNotifications.show(
           browser,

@@ -49,6 +49,9 @@
     <!-- Ignore due to baseline bloat and lack of actionability -->
     <issue id="VectorPath" severity="ignore" />
 
+    <!-- pixelSizeFor() helper only exists in fenix -->
+    <issue id="Resources.GetDimensionPixelSizeInsteadOfPixelSizeFor" severity="ignore" />
+
     <issue id="InvalidPackage">
         <!-- Sentry: it uses one SDK for desktop apps and Android apps so I assume it's
         calling functions from desktop apps and silently ignoring those calls when

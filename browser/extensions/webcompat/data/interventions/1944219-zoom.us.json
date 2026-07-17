@@ -1,7 +1,7 @@
 {
   "label": "zoom.us",
   "bugs": {
-    "1911423": {
+    "1944219": {
       "issue": "firefox-blocked-completely",
       "matches": ["*://*.zoom.us/*"]
     }

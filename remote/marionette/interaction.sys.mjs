@@ -169,7 +169,10 @@ async function webdriverClickElement(el, a11y) {
 
   // step 7
   let rects = containerEl.getClientRects();
-  let clickPoint = lazy.dom.getInViewCentrePoint(rects[0], win);
+  let clickPoint = lazy.dom.getInViewCentrePoint(
+    lazy.dom.getFirstNonZeroRect(rects),
+    win
+  );
 
   if (lazy.dom.isObscured(containerEl)) {
     throw new lazy.error.ElementClickInterceptedError(
@@ -276,7 +279,10 @@ async function seleniumClickElement(el, a11y) {
     interaction.selectOption(el);
   } else {
     let rects = el.getClientRects();
-    let centre = lazy.dom.getInViewCentrePoint(rects[0], win);
+    let centre = lazy.dom.getInViewCentrePoint(
+      lazy.dom.getFirstNonZeroRect(rects),
+      win
+    );
     let opts = {};
     await lazy.event.synthesizeMouseAtPoint(centre.x, centre.y, opts, win);
   }

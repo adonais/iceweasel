@@ -34,11 +34,14 @@
 #include "gc/TraceKind.h"
 #include "gc/WeakMap.h"
 #include "gc/Zone.h"
+#include "jit/CacheIRHealth.h"
 #include "jit/JitFrames.h"
 #include "jit/JitRuntime.h"
+#include "jit/JitScript.h"
 #include "jit/JitZone.h"
 #include "proxy/DeadObjectProxy.h"
 #include "vm/BigIntType.h"
+#include "vm/CodeCoverage.h"
 #include "vm/HelperThreads.h"
 #include "vm/JSContext.h"
 #include "vm/Probes.h"
@@ -49,6 +52,7 @@
 #include "gc/PrivateIterators-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSObject-inl.h"
+#include "vm/JSScript-inl.h"
 #include "vm/PropMap-inl.h"
 #include "vm/Shape-inl.h"
 #include "vm/StringType-inl.h"
@@ -1365,6 +1369,7 @@ IncrementalProgress GCRuntime::endMarkingSweepGroup(JS::GCContext* gcx,
   }
 
   MOZ_ASSERT(marker().isDrained());
+  MOZ_ASSERT(!hasAnyDeferredWeakMaps());
 
   // We must not yield after this point before we start sweeping the group.
   safeToYield = false;
@@ -1461,6 +1466,47 @@ void GCRuntime::sweepUniqueIds() {
 void JS::Zone::sweepUniqueIds() {
   SweepingTracer trc(runtimeFromAnyThread());
   uniqueIds().traceWeak(&trc);
+}
+
+void GCRuntime::maybeWriteCoverageAndSpew() {
+  // Write any code coverage information and JIT spew for dying scripts before
+  // the relevant tables are swept.
+
+  gcstats::AutoPhase ap(stats(), gcstats::PhaseKind::SWEEP_SCRIPT_MAPS);
+  for (SweepGroupZonesIter zone(this); !zone.done(); zone.next()) {
+    AutoSetThreadIsSweeping threadIsSweeping(zone);
+    zone->maybeWriteCoverageAndSpew();
+  }
+}
+
+void JS::Zone::maybeWriteCoverageAndSpew() {
+  MOZ_ASSERT_IF(scriptLCovMap, coverage::IsLCovEnabled());
+  if (scriptLCovMap) {
+    for (auto iter = scriptLCovMap->get().iter(); !iter.done(); iter.next()) {
+      if (IsAboutToBeFinalized(iter.get().key())) {
+        (void)MaybeWriteScriptCoverage(iter.get().key()->asJSScript(),
+                                       iter.get().value());
+      }
+    }
+  }
+
+#ifdef JS_CACHEIR_SPEW
+  if (scriptFinalWarmUpCountMap) {
+    for (auto iter = scriptFinalWarmUpCountMap->get().iter(); !iter.done();
+         iter.next()) {
+      if (IsAboutToBeFinalized(iter.get().key())) {
+        BaseScript* base = iter.get().key();
+        if (base->hasBytecode()) {
+          JSScript* jsScript = base->asJSScript();
+          if (jsScript->hasJitScript()) {
+            maybeUpdateWarmUpCount(jsScript);
+          }
+          maybeSpewScriptFinalWarmUpCount(jsScript);
+        }
+      }
+    }
+  }
+#endif
 }
 
 /* static */
@@ -1752,6 +1798,8 @@ IncrementalProgress GCRuntime::beginSweepingSweepGroup(JS::GCContext* gcx,
 
   sweepEmbeddingWeakPointers(gcx);
 
+  maybeWriteCoverageAndSpew();
+
   {
     AutoLockHelperThreadState lock;
 
@@ -1911,7 +1959,8 @@ IncrementalProgress GCRuntime::markDuringSweeping(JS::GCContext* gcx,
 
   // If we can mark in parallel with sweeping on the main thread we do that.
   if (markOnBackgroundThreadDuringSweeping) {
-    if (!marker().isDrained() || hasDelayedMarking()) {
+    if (!marker().isDrained() || hasDelayedMarking() ||
+        hasAnyDeferredWeakMaps()) {
       AutoLockHelperThreadState lock;
       MOZ_ASSERT(markTask.isIdle(lock));
       markTask.initialize(false, budget, lock);

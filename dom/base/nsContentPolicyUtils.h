@@ -20,12 +20,13 @@
 #include "nsIContent.h"
 #include "nsIContentPolicy.h"
 #include "nsIURI.h"
+#include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"  // FIXME: Stop including inline definitions!
 #include "nsServiceManagerUtils.h"
 #include "nsStringFwd.h"
 
 // XXXtw sadly, this makes consumers of nsContentPolicyUtils depend on widget
 #include "mozilla/dom/Document.h"
-#include "nsPIDOMWindow.h"
 
 #define NS_CONTENTPOLICY_CONTRACTID "@mozilla.org/layout/content-policy;1"
 #define NS_CONTENTPOLICY_CATEGORY "content-policy"

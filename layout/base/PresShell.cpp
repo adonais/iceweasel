@@ -64,7 +64,6 @@
 #include "mozilla/SVGObserverUtils.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/ScrollContainerFrame.h"
-#include "mozilla/ScrollTimelineAnimationTracker.h"
 #include "mozilla/ScrollTypes.h"
 #include "mozilla/ServoBindings.h"
 #include "mozilla/ServoStyleSet.h"
@@ -276,7 +275,7 @@ static const char kGrandTotalsStr[] = "Grand Totals";
 class ReflowCounter {
  public:
   explicit ReflowCounter(ReflowCountMgr* aMgr = nullptr);
-  ~ReflowCounter();
+  ~ReflowCounter() = default;
 
   void ClearTotals();
   void DisplayTotals(const char* aStr);
@@ -2446,23 +2445,31 @@ NS_IMETHODIMP
 PresShell::CompleteMove(bool aForward, bool aExtend) {
   // Beware! This may flush notifications via synchronous
   // ScrollSelectionIntoView.
-  RefPtr<nsFrameSelection> frameSelection = mSelection;
-  Element* const limiter = frameSelection->GetAncestorLimiter();
-  nsIFrame* frame = limiter ? limiter->GetPrimaryFrame()
-                            : FrameConstructor()->GetRootElementFrame();
-  if (!frame) {
+  const RefPtr<nsFrameSelection> frameSelection = mSelection;
+  const RefPtr<Element> limiter = frameSelection->GetAncestorLimiter();
+  const auto pos = [&]() -> Maybe<nsIFrame::CaretPosition> {
+    nsIFrame* frame = limiter ? limiter->GetPrimaryFrame()
+                              : FrameConstructor()->GetRootElementFrame();
+    if (!frame) [[unlikely]] {
+      return Nothing{};
+    }
+    return Some(frame->GetExtremeCaretPosition(!aForward));
+  }();
+  if (pos.isNothing()) [[unlikely]] {
     return NS_ERROR_FAILURE;
   }
-  nsIFrame::CaretPosition pos = frame->GetExtremeCaretPosition(!aForward);
 
   const nsFrameSelection::FocusMode focusMode =
       aExtend ? nsFrameSelection::FocusMode::kExtendSelection
               : nsFrameSelection::FocusMode::kCollapseToNewPoint;
   frameSelection->HandleClick(
-      MOZ_KnownLive(pos.mResultContent) /* bug 1636889 */, pos.mContentOffset,
-      pos.mContentOffset, focusMode,
+      MOZ_KnownLive(pos->mResultContent) /* bug 1636889 */, pos->mContentOffset,
+      pos->mContentOffset, focusMode,
       aForward ? CaretAssociationHint::After : CaretAssociationHint::Before);
-  if (limiter) {
+  if (IsDestroying()) [[unlikely]] {
+    return NS_OK;
+  }
+  if (limiter && GetDocument() == limiter->GetComposedDoc()) {
     // HandleClick resets ancestorLimiter, so set it again.
     frameSelection->SetAncestorLimiter(limiter);
   }
@@ -3873,7 +3880,8 @@ void PresShell::ScrollFrameIntoVisualViewport(
   // scroll-behavior for visual scrolling.
   ScrollMode scrollMode =
       GetScrollModeForScrollIntoView(rootScrollContainer, aScrollFlags);
-  root->ScrollToVisual(*aDestination, FrameMetrics::eMainThread, scrollMode);
+  root->ScrollToVisual(*aDestination, ScrollOffsetUpdateType::MainThread,
+                       scrollMode);
 }
 
 bool PresShell::ScrollFrameIntoView(
@@ -4402,14 +4410,6 @@ static inline void AssertFrameTreeIsSane(const PresShell& aPresShell) {
 #endif
 }
 
-static void TriggerPendingScrollTimelineAnimations(Document* aDocument) {
-  auto* tracker = aDocument->GetScrollTimelineAnimationTracker();
-  if (!tracker || !tracker->HasPendingAnimations()) {
-    return;
-  }
-  tracker->TriggerPendingAnimations();
-}
-
 void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   // FIXME(emilio, bug 1530177): Turn into a release assert when bug 1530188 and
   // bug 1530190 are fixed.
@@ -4567,17 +4567,6 @@ void PresShell::DoFlushPendingNotifications(mozilla::ChangesToFlush aFlush) {
   }
 
   FlushPendingScrollResnap();
-
-  if (MOZ_LIKELY(!mIsDestroying)) {
-    // Try to trigger pending scroll-driven animations after we flush
-    // style and layout (if any). If we try to trigger them after flushing
-    // style but the frame tree is not ready, we will check them again after
-    // we flush layout because the requirement to trigger scroll-driven
-    // animations is that the associated scroll containers are ready (i.e. the
-    // scroll-timeline is active), and this depends on the readiness of the
-    // scrollable frame and the primary frame of the scroll container.
-    TriggerPendingScrollTimelineAnimations(mDocument);
-  }
 }
 
 MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::CharacterDataChanged(
@@ -4585,6 +4574,12 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::CharacterDataChanged(
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected CharacterDataChanged");
   MOZ_ASSERT(aContent->OwnerDoc() == mDocument, "Unexpected document");
+
+#ifdef ACCESSIBILITY
+  if (mDocAccessible) {
+    mDocAccessible->MaybeHandleChangeToHiddenNameOrDescription(aContent);
+  }
+#endif
 
   nsAutoCauseReflowNotifier crNotifier(this);
 
@@ -4597,6 +4592,12 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ElementStateChanged(
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected ContentStateChanged");
   MOZ_ASSERT(aDocument == mDocument, "Unexpected aDocument");
+
+#ifdef ACCESSIBILITY
+  if (mDocAccessible) {
+    mDocAccessible->ElementStateChanged(aDocument, aElement, aStateMask);
+  }
+#endif
 
   if (mDidInitialize) {
     nsAutoCauseReflowNotifier crNotifier(this);
@@ -4647,6 +4648,13 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::AttributeWillChange(
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected AttributeWillChange");
   MOZ_ASSERT(aElement->OwnerDoc() == mDocument, "Unexpected document");
 
+#ifdef ACCESSIBILITY
+  if (mDocAccessible) {
+    mDocAccessible->AttributeWillChange(aElement, aNameSpaceID, aAttribute,
+                                        aModType);
+  }
+#endif
+
   // XXXwaterson it might be more elegant to wait until after the
   // initial reflow to begin observing the document. That would
   // squelch any other inappropriate notifications as well.
@@ -4663,6 +4671,13 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::AttributeChanged(
   MOZ_ASSERT(!nsContentUtils::IsSafeToRunScript());
   MOZ_ASSERT(!mIsDocumentGone, "Unexpected AttributeChanged");
   MOZ_ASSERT(aElement->OwnerDoc() == mDocument, "Unexpected document");
+
+#ifdef ACCESSIBILITY
+  if (mDocAccessible) {
+    mDocAccessible->AttributeChanged(aElement, aNameSpaceID, aAttribute,
+                                     aModType, aOldValue);
+  }
+#endif
 
   // XXXwaterson it might be more elegant to wait until after the
   // initial reflow to begin observing the document. That would
@@ -4710,6 +4725,13 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentAppended(
     return;
   }
 
+#ifdef ACCESSIBILITY
+  if (mDocAccessible) {
+    mDocAccessible->MaybeHandleChangeToHiddenNameOrDescription(
+        aFirstNewContent);
+  }
+#endif
+
   mPresContext->EventStateManager()->ContentAppended(aFirstNewContent, aInfo);
 
   if (aInfo.mOldParent) {
@@ -4739,6 +4761,12 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentInserted(
 
   mPresContext->EventStateManager()->ContentInserted(aChild, aInfo);
 
+#ifdef ACCESSIBILITY
+  if (mDocAccessible) {
+    mDocAccessible->MaybeHandleChangeToHiddenNameOrDescription(aChild);
+  }
+#endif
+
   if (aInfo.mOldParent) {
     MaybeDestroyFramesAndStyles(aChild, *mPresContext);
   }
@@ -4763,6 +4791,12 @@ MOZ_CAN_RUN_SCRIPT_BOUNDARY void PresShell::ContentWillBeRemoved(
   // it can clean up any state related to the content.
 
   mPresContext->EventStateManager()->ContentRemoved(mDocument, aChild, aInfo);
+
+#ifdef ACCESSIBILITY
+  if (mDocAccessible) {
+    mDocAccessible->ContentRemoved(aChild);
+  }
+#endif
 
   nsAutoCauseReflowNotifier crNotifier(this);
 
@@ -5819,7 +5853,19 @@ void PresShell::SynthesizeMouseMove(bool aFromScroll) {
   }
 
   if (mLastMousePointerId.isNothing() && mPointerIds.IsEmpty()) {
-    return;
+    // After a same-tab navigation, the new PresShell hasn't received
+    // any mouse events yet so its per-PresShell pointer state is
+    // empty. The static last-mouse state in PointerEventHandler may
+    // still hold a valid position from before the navigation; if so,
+    // claim it for this PresShell so cursor / :hover restyles can
+    // take effect without requiring the user to move the mouse first
+    // (bug 2038491).
+    if (Maybe<uint32_t> claimedPointerId =
+            PointerEventHandler::TryClaimOrphanedLastMouseInfo(*this)) {
+      mLastMousePointerId = claimedPointerId;
+    } else {
+      return;
+    }
   }
 
   if (!mSynthMouseMoveEvent.IsPending()) {
@@ -6737,17 +6783,23 @@ nsIFrame* PresShell::GetCurrentEventFrame() {
   return mCurrentEventTarget.mFrame;
 }
 
-already_AddRefed<nsIContent> PresShell::GetEventTargetContent(
-    WidgetEvent* aEvent) {
-  nsCOMPtr<nsIContent> content = GetCurrentEventContent();
+nsIContent* PresShell::GetExplicitEventTargetContent(
+    const WidgetEvent* aEvent /* = nullptr */) {
+  nsIContent* content = GetCurrentEventContent();
   if (!content) {
     if (nsIFrame* currentEventFrame = GetCurrentEventFrame()) {
-      content = currentEventFrame->GetContentForEvent(aEvent);
+      content = currentEventFrame->GetExplicitEventTargetContent(aEvent);
       NS_ASSERTION(!content || content->GetComposedDoc() == mDocument,
                    "handing out content from a different doc");
     }
   }
-  return content.forget();
+  return content;
+}
+
+nsIContent* PresShell::GetEventTargetContent(
+    const WidgetEvent* aEvent /* = nullptr */) {
+  return nsContentUtils::GetEventTargetContent(
+      GetExplicitEventTargetContent(aEvent), aEvent);
 }
 
 void PresShell::PushCurrentEventInfo(const EventTargetInfo& aInfo) {
@@ -8628,7 +8680,7 @@ bool PresShell::EventHandler::MaybeDiscardOrDelayMouseEvent(
     return true;
   }
 
-  if (auto* target = aFrameToHandleEvent->GetContentForEvent(aGUIEvent)) {
+  if (auto* target = aFrameToHandleEvent->GetEventTargetContent(aGUIEvent)) {
     aGUIEvent->mTarget = target;
   }
 
@@ -9667,12 +9719,7 @@ nsresult PresShell::EventHandler::DispatchEventToDOM(
     nsCOMPtr<nsIContent> targetContent;
     if (mPresShell->mCurrentEventTarget.mFrame) {
       targetContent =
-          mPresShell->mCurrentEventTarget.mFrame->GetContentForEvent(aEvent);
-      if (targetContent && !targetContent->IsElement() &&
-          IsForbiddenDispatchingToNonElementContent(aEvent->mMessage)) {
-        targetContent =
-            targetContent->GetInclusiveFlattenedTreeAncestorElement();
-      }
+          mPresShell->mCurrentEventTarget.mFrame->GetEventTargetContent(aEvent);
     }
     if (targetContent) {
       eventTarget = targetContent;
@@ -11083,9 +11130,6 @@ ReflowCounter::ReflowCounter(ReflowCountMgr* aMgr) : mMgr(aMgr) {
 }
 
 //------------------------------------------------------------------
-ReflowCounter::~ReflowCounter() = default;
-
-//------------------------------------------------------------------
 void ReflowCounter::ClearTotals() { mTotal = 0; }
 
 //------------------------------------------------------------------
@@ -12240,7 +12284,7 @@ void PresShell::RefreshViewportSize() {
 }
 
 void PresShell::ScrollToVisual(const nsPoint& aVisualViewportOffset,
-                               FrameMetrics::ScrollOffsetUpdateType aUpdateType,
+                               ScrollOffsetUpdateType aUpdateType,
                                ScrollMode aMode) {
   if (aMode == ScrollMode::Smooth || aMode == ScrollMode::SmoothMsd) {
     if (ScrollContainerFrame* sf = GetRootScrollContainerFrame()) {
@@ -12256,8 +12300,7 @@ void PresShell::ScrollToVisual(const nsPoint& aVisualViewportOffset,
 }
 
 void PresShell::SetPendingVisualScrollUpdate(
-    const nsPoint& aVisualViewportOffset,
-    FrameMetrics::ScrollOffsetUpdateType aUpdateType) {
+    const nsPoint& aVisualViewportOffset, ScrollOffsetUpdateType aUpdateType) {
   mPendingVisualScrollUpdate =
       Some(VisualScrollUpdate{aVisualViewportOffset, aUpdateType});
 
@@ -12657,7 +12700,7 @@ void PresShell::EventHandler::EventTargetData::
 void PresShell::EventHandler::EventTargetData::SetContentForEventFromFrame(
     WidgetGUIEvent* aGUIEvent) {
   MOZ_ASSERT(mFrame);
-  mContent = mFrame->GetContentForEvent(aGUIEvent);
+  mContent = mFrame->GetEventTargetContent(aGUIEvent);
   AssertIfEventTargetContentAndFrameContentMismatch(aGUIEvent);
 }
 
@@ -12675,7 +12718,7 @@ void PresShell::EventHandler::EventTargetData::
 
   // If we know the event, we can compute the target correctly.
   if (aGUIEvent) {
-    MOZ_ASSERT(mContent == mFrame->GetContentForEvent(aGUIEvent));
+    MOZ_ASSERT(mContent == mFrame->GetEventTargetContent(aGUIEvent));
     return;
   }
   // If clicking an image map, mFrame should be the image frame, but mContent

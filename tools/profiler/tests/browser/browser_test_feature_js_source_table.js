@@ -6,10 +6,7 @@
  * Test that the source table in the profile includes all necessary information.
  */
 add_task(async function test_source_table_schema() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   const url = BASE_URL_HTTPS + "simple.html";
   await BrowserTestUtils.withNewTab(url, async contentBrowser => {
@@ -127,10 +124,7 @@ add_task(async function test_source_table_schema() {
  * Test that inline scripts have correct startLine and startColumn values.
  */
 add_task(async function test_inline_script_start_positions() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   await ProfilerTestUtils.startProfiler({
     features: ["stackwalk", "js", "jssources"],

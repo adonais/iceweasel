@@ -28,8 +28,8 @@ class FindInPagePage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestR
         )
     }
 
-    override fun navigateToPage(url: String): FindInPagePage {
-        super.navigateToPage(url.ifBlank { "example.com" })
+    override fun navigateToPage(url: String, forceNavigation: Boolean): FindInPagePage {
+        super.navigateToPage(url = url.ifBlank { "example.com" }, forceNavigation = forceNavigation)
         return this
     }
 

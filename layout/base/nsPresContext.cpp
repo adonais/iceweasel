@@ -704,9 +704,6 @@ void nsPresContext::Init(nsDeviceContext* aDeviceContext) {
     }
   }
 
-  mFragmentainerAwarePositioningEnabled =
-      StaticPrefs::layout_abspos_fragmentainer_aware_positioning_enabled();
-
   // Register callbacks so we're notified when the preferences change
   Preferences::RegisterPrefixCallbacks(nsPresContext::PreferenceChanged,
                                        gPrefixCallbackPrefs, this);
@@ -885,6 +882,18 @@ void nsPresContext::SetColorSchemeOverride(
         MediaFeatureChange::ForPreferredColorSchemeOrForcedColorsChange(),
         MediaFeatureChangePropagation::JustThisDocument);
   }
+}
+
+void nsPresContext::SetLinkParametersOverride(
+    const StyleLinkParameters& aLinkParameters) {
+  if (mLinkParameters == aLinkParameters) {
+    return;
+  }
+  mLinkParameters = aLinkParameters;
+
+  // Link params affect env() functions, so we need to re-cascade but there's no
+  // need to re-selector-match.
+  RebuildAllStyleData(nsChangeHint(0), RestyleHint::RecascadeSubtree());
 }
 
 void nsPresContext::UpdateAnimationsPlayBackRateMultiplier(double aMultiplier) {

@@ -23,7 +23,7 @@ class ClearSiteData final : public nsIObserver {
 
  private:
   ClearSiteData();
-  ~ClearSiteData();
+  ~ClearSiteData() = default;
 
   static void Shutdown();
 

@@ -12,6 +12,7 @@
 #include <bit>
 
 #include "jit/riscv64/Assembler-riscv64.h"
+#include "jit/riscv64/base/Integer.h"
 
 namespace js {
 namespace jit {
@@ -57,8 +58,7 @@ void Assembler::RecursiveLiImpl(Register rd, int64_t imm) {
     // v[0,12) != 0 && v[12,32) == 0 : ADDI
     // v[0,12) == 0 && v[12,32) != 0 : LUI
     // v[0,32) != 0                  : LUI+ADDI(W)
-    int64_t Hi20 = ((imm + 0x800) >> 12) & 0xFFFFF;
-    int64_t Lo12 = imm << 52 >> 52;
+    auto [Hi20, Lo12] = ToHigh20Low12(int32_t(imm));
 
     if (Hi20) {
       lui(rd, (int32_t)Hi20);
@@ -135,8 +135,7 @@ int Assembler::RecursiveLiImplCount(int64_t imm) {
     // v[0,12) != 0 && v[12,32) == 0 : ADDI
     // v[0,12) == 0 && v[12,32) != 0 : LUI
     // v[0,32) != 0                  : LUI+ADDI(W)
-    int64_t Hi20 = ((imm + 0x800) >> 12) & 0xFFFFF;
-    int64_t Lo12 = imm << 52 >> 52;
+    auto [Hi20, Lo12] = ToHigh20Low12(int32_t(imm));
 
     if (Hi20) {
       // lui(rd, (int32_t)Hi20);

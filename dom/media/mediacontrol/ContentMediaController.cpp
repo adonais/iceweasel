@@ -16,9 +16,10 @@
 namespace mozilla::dom {
 
 #undef LOG
-#define LOG(msg, ...)                        \
-  MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
-          ("ContentMediaController=%p, " msg, this, ##__VA_ARGS__))
+#define LOG(msg, ...)                                            \
+  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug,                 \
+              "ContentMediaController={}, " msg, fmt::ptr(this), \
+              ##__VA_ARGS__)
 
 static Maybe<bool> sXPCOMShutdown;
 
@@ -78,7 +79,7 @@ void ContentMediaAgent::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
     return;
   }
 
-  LOG("Notify media %s in BC %" PRId64, ToString(aState).c_str(), bc->Id());
+  LOG("Notify media {} in BC {}", ToString(aState).c_str(), bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
     (void)contentChild->SendNotifyMediaPlaybackChanged(bc, aState);
@@ -92,27 +93,28 @@ void ContentMediaAgent::NotifyMediaPlaybackChanged(uint64_t aBrowsingContextId,
   }
 }
 
-void ContentMediaAgent::NotifyMediaAudibleChanged(uint64_t aBrowsingContextId,
-                                                  MediaAudibleState aState,
-                                                  ControlType aType) {
+void ContentMediaAgent::NotifyMediaAudibleChanged(
+    uint64_t aBrowsingContextId, MediaAudibleState aState, ControlType aType,
+    AudioSessionType aSessionType) {
   MOZ_ASSERT(NS_IsMainThread());
   RefPtr<BrowsingContext> bc = GetBrowsingContextForAgent(aBrowsingContextId);
   if (!bc || bc->IsDiscarded()) {
     return;
   }
 
-  LOG("Notify media became %s in BC %" PRId64,
+  LOG("Notify media became {} in BC {}",
       aState == MediaAudibleState::eAudible ? "audible" : "inaudible",
       bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
-    (void)contentChild->SendNotifyMediaAudibleChanged(bc, aState, aType);
+    (void)contentChild->SendNotifyMediaAudibleChanged(bc, aState, aType,
+                                                      aSessionType);
   } else {
     // Currently this only happen when we disable e10s, otherwise all controlled
     // media would be run in the content process.
     if (RefPtr<IMediaInfoUpdater> updater =
             bc->Canonical()->GetMediaController()) {
-      updater->NotifyMediaAudibleChanged(bc->Id(), aState, aType);
+      updater->NotifyMediaAudibleChanged(bc->Id(), aState, aType, aSessionType);
     }
   }
 }
@@ -125,7 +127,7 @@ void ContentMediaAgent::SetIsInPictureInPictureMode(
     return;
   }
 
-  LOG("Notify media Picture-in-Picture mode '%s' in BC %" PRId64,
+  LOG("Notify media Picture-in-Picture mode '{}' in BC {}",
       aIsInPictureInPictureMode ? "enabled" : "disabled", bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
@@ -148,7 +150,7 @@ void ContentMediaAgent::SetDeclaredPlaybackState(
     return;
   }
 
-  LOG("Notify declared playback state  '%s' in BC %" PRId64,
+  LOG("Notify declared playback state  '{}' in BC {}",
       ToMediaSessionPlaybackStateStr(aState), bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
@@ -168,7 +170,7 @@ void ContentMediaAgent::NotifySessionCreated(uint64_t aBrowsingContextId) {
     return;
   }
 
-  LOG("Notify media session being created in BC %" PRId64, bc->Id());
+  LOG("Notify media session being created in BC {}", bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
     (void)contentChild->SendNotifyMediaSessionUpdated(bc, true);
@@ -187,7 +189,7 @@ void ContentMediaAgent::NotifySessionDestroyed(uint64_t aBrowsingContextId) {
     return;
   }
 
-  LOG("Notify media session being destroyed in BC %" PRId64, bc->Id());
+  LOG("Notify media session being destroyed in BC {}", bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
     (void)contentChild->SendNotifyMediaSessionUpdated(bc, false);
@@ -207,7 +209,7 @@ void ContentMediaAgent::UpdateMetadata(
     return;
   }
 
-  LOG("Notify media session metadata change in BC %" PRId64, bc->Id());
+  LOG("Notify media session metadata change in BC {}", bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
     (void)contentChild->SendNotifyUpdateMediaMetadata(bc, aMetadata);
@@ -227,8 +229,8 @@ void ContentMediaAgent::EnableAction(uint64_t aBrowsingContextId,
     return;
   }
 
-  LOG("Notify to enable action '%s' in BC %" PRId64,
-      GetEnumString(aAction).get(), bc->Id());
+  LOG("Notify to enable action '{}' in BC {}", GetEnumString(aAction).get(),
+      bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
     (void)contentChild->SendNotifyMediaSessionSupportedActionChanged(
@@ -249,8 +251,8 @@ void ContentMediaAgent::DisableAction(uint64_t aBrowsingContextId,
     return;
   }
 
-  LOG("Notify to disable action '%s' in BC %" PRId64,
-      GetEnumString(aAction).get(), bc->Id());
+  LOG("Notify to disable action '{}' in BC {}", GetEnumString(aAction).get(),
+      bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
     (void)contentChild->SendNotifyMediaSessionSupportedActionChanged(
@@ -271,8 +273,8 @@ void ContentMediaAgent::NotifyMediaFullScreenState(uint64_t aBrowsingContextId,
     return;
   }
 
-  LOG("Notify %s fullscreen in BC %" PRId64,
-      aIsInFullScreen ? "entered" : "left", bc->Id());
+  LOG("Notify {} fullscreen in BC {}", aIsInFullScreen ? "entered" : "left",
+      bc->Id());
   if (XRE_IsContentProcess()) {
     ContentChild* contentChild = ContentChild::GetSingleton();
     (void)contentChild->SendNotifyMediaFullScreenState(bc, aIsInFullScreen);
@@ -312,12 +314,12 @@ void ContentMediaAgent::UpdateGuessedPositionState(
   }
 
   if (aState) {
-    LOG("Update guessed position state for BC %" PRId64
-        " media id %s (duration=%f, playbackRate=%f, position=%f)",
+    LOG("Update guessed position state for BC {} media id {} (duration={}, "
+        "playbackRate={}, position={})",
         bc->Id(), aMediaId.ToString().get(), aState->mDuration,
         aState->mPlaybackRate, aState->mLastReportedPlaybackPosition);
   } else {
-    LOG("Clear guessed position state for BC %" PRId64 " media id %s", bc->Id(),
+    LOG("Clear guessed position state for BC {} media id {}", bc->Id(),
         aMediaId.ToString().get());
   }
 
@@ -335,7 +337,7 @@ void ContentMediaAgent::UpdateGuessedPositionState(
 }
 
 ContentMediaController::ContentMediaController(uint64_t aId) {
-  LOG("Create content media controller for BC %" PRId64, aId);
+  LOG("Create content media controller for BC {}", aId);
 }
 
 void ContentMediaController::AddReceiver(
@@ -364,7 +366,7 @@ void ContentMediaController::HandleMediaKey(
   if (mControllableReceivers.IsEmpty() && mUncontrollableReceivers.IsEmpty()) {
     return;
   }
-  LOG("Handle '%s' event, controllable num=%zu, uncontrollable num=%zu",
+  LOG("Handle '{}' event, controllable num={}, uncontrollable num={}",
       GetEnumString(aKey).get(), mControllableReceivers.Length(),
       mUncontrollableReceivers.Length());
   // We have default handlers for these actions

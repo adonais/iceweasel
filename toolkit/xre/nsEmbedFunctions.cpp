@@ -124,6 +124,7 @@
 #endif
 
 #include "VRProcessChild.h"
+#include "nsTraceRefcnt.h"
 
 using namespace mozilla;
 
@@ -296,6 +297,7 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
   ScopedLogging logger;
 
   mozilla::LogModule::Init(aArgc, aArgv);
+  nsTraceRefcnt::EarlyInit();
 
   AUTO_BASE_PROFILER_LABEL("XRE_InitChildProcess (around Gecko Profiler)",
                            OTHER);
@@ -351,12 +353,14 @@ nsresult XRE_InitChildProcess(int aArgc, char* aArgv[],
 
   bool exceptionHandlerIsSet = false;
   if (!CrashReporter::IsDummy()) {
-    exceptionHandlerIsSet =
-        CrashReporter::SetRemoteExceptionHandler(aArgc, aArgv);
+    if (geckoargs::sCrashReporter.IsPresent(aArgc, aArgv)) {
+      exceptionHandlerIsSet =
+          CrashReporter::SetRemoteExceptionHandler(aArgc, aArgv);
 
-    if (!exceptionHandlerIsSet) {
-      // Bug 684322 will add better visibility into this condition
-      NS_WARNING("Could not setup crash reporting");
+      if (!exceptionHandlerIsSet) {
+        // Bug 684322 will add better visibility into this condition
+        NS_WARNING("Could not setup crash reporting");
+      }
     } else {
       // We might have registered a runtime exception module very early in
       // process startup to catch early crashes. This is before we process the

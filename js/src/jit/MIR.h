@@ -27,6 +27,7 @@
 
 #include "NamespaceImports.h"
 
+#include "builtin/ModuleObject.h"  // js::ImportPhase
 #include "jit/AtomicOp.h"
 #include "jit/FixedList.h"
 #include "jit/InlineList.h"
@@ -1064,6 +1065,9 @@ class MInstruction : public MDefinition, public InlineListNode<MInstruction> {
 
   void setResumePoint(MResumePoint* resumePoint);
   void stealResumePoint(MInstruction* other);
+  // Copy resume point from the previous instruction.
+  [[nodiscard]] bool copyResumePointFrom(TempAllocator& alloc,
+                                         MInstruction* previous);
 
   void moveResumePointAsEntry();
   void clearResumePoint();
@@ -8880,6 +8884,9 @@ class MResumePoint final : public MNode
  public:
   static MResumePoint* New(TempAllocator& alloc, MBasicBlock* block,
                            jsbytecode* pc, ResumeMode mode);
+  // NOTE: instruction_ is left null; call setResumePoint to associate the
+  // clone with an instruction.
+  [[nodiscard]] MResumePoint* clone(TempAllocator& alloc);
 
   MBasicBlock* block() const { return resumePointBlock(); }
 
@@ -8929,6 +8936,7 @@ class MResumePoint final : public MNode
     instruction_ = nullptr;
   }
   ResumeMode mode() const { return mode_; }
+  void setMode(ResumeMode mode) { mode_ = mode; }
 
   void releaseUses() {
     for (size_t i = 0, e = numOperands(); i < e; i++) {
@@ -8980,6 +8988,7 @@ class MHasClass : public MUnaryInstruction, public SingleObjectPolicy::Data {
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
   AliasSet getAliasSet() const override {
+    // ProxyObject::swap can change the JSClass of certain proxy objects.
     return AliasSet::Load(AliasSet::ObjectFields);
   }
   bool congruentTo(const MDefinition* ins) const override {
@@ -9022,6 +9031,7 @@ class MGuardToClass : public MUnaryInstruction,
 
   MDefinition* foldsTo(TempAllocator& alloc) override;
   AliasSet getAliasSet() const override {
+    // ProxyObject::swap can change the JSClass of certain proxy objects.
     return AliasSet::Load(AliasSet::ObjectFields);
   }
   bool congruentTo(const MDefinition* ins) const override {

@@ -99,7 +99,7 @@ nsresult PKCS11Module::GetModuleInfo(ModuleInfo& moduleInfo) {
   mozilla::AutoSECMODListReadLock lock;
   for (int i = 0; i < mModule->slotCount; i++) {
     if (mModule->slots[i]) {
-      RefPtr<PKCS11Slot> slot = new PKCS11Slot(mModule->slots[i]);
+      RefPtr slot = mozilla::MakeRefPtr<PKCS11Slot>(mModule->slots[i]);
       SlotInfo slotInfo;
       rv = slot->GetSlotInfo(slotInfo);
       if (NS_FAILED(rv)) {

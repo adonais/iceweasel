@@ -933,6 +933,12 @@ interface nsIDOMWindowUtils : nsISupports {
                                       in float aWidth, in float aHeight);
 
   /**
+   * For a given DOM element, returns its position in screen coordinates
+   * of CSS units.
+   */
+  DOMRect getElementBoundingScreenRect(in Element aElement);
+
+  /**
    * Transform a rectangle given in coordinates relative to this document
    * into CSS coordinates relative to the screen.
    */

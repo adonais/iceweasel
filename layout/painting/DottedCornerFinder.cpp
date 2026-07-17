@@ -384,6 +384,13 @@ void DottedCornerFinder::FindBestOverlap(Float aMinR, Float aMinBorderRadius,
         mCount = mMaxCount;
         break;
       }
+      // GetCountAndLastOverlap() failed without writing |count| and
+      // |actualOverlap|: the walk needed more than mMaxCount circles, i.e.
+      // this overlap produces too many circles.  Narrow the search toward
+      // smaller overlaps.
+      upper = overlap;
+      overlap = (upper + lower) / 2.0f;
+      continue;
     }
 
     if (j == 0) {

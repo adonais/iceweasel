@@ -202,7 +202,6 @@
 }
 
 #sidebar-button {
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.revamp") {
     list-style-image: url("chrome://browser/skin/sidebar-collapsed.svg");
 
@@ -212,11 +211,9 @@
     }
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.revamp") {
     list-style-image: url("chrome://browser/skin/sidebar-collapsed.svg");
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("sidebar.verticalTabs") {
       &:hover {
         list-style-image: url("chrome://browser/skin/sidebar-expanded.svg");
@@ -235,7 +232,6 @@
     &:-moz-locale-dir(rtl):not([sidebar-positionend]) {
       list-style-image: url("chrome://browser/skin/sidebar-collapsed-right.svg");
 
-      /* stylelint-disable-next-line media-query-no-invalid */
       @media -moz-pref("sidebar.verticalTabs") {
         &:hover {
           list-style-image: url("chrome://browser/skin/sidebar-expanded-right.svg");
@@ -326,7 +322,7 @@
 }
 
 #ipprotection-button {
-  list-style-image: url("chrome://browser/content/logos/ipprotection-off.svg");
+  list-style-image: url("chrome://browser/content/logos/ipprotection-states.svg#off");
   -moz-context-properties: fill, stroke, fill-opacity;
 
   &:is([overflowedItem="true"], [cui-areatype="panel"]) {
@@ -334,7 +330,7 @@
   }
 
   &.ipprotection-on {
-    list-style-image: url("chrome://browser/content/logos/ipprotection-on.svg");
+    list-style-image: url("chrome://browser/content/logos/ipprotection-states.svg#on");
     stroke: var(--icon-color-success);
 
     &:is([overflowedItem="true"], [cui-areatype="panel"]) {
@@ -344,7 +340,7 @@
   }
 
   &.ipprotection-network-error {
-    list-style-image: url("chrome://browser/content/logos/ipprotection-info.svg");
+    list-style-image: url("chrome://browser/content/logos/ipprotection-states.svg#info");
     stroke: var(--icon-color-information);
 
     &:is([overflowedItem="true"], [cui-areatype="panel"]) {
@@ -354,7 +350,7 @@
   }
 
   &.ipprotection-error {
-    list-style-image: url("chrome://browser/content/logos/ipprotection-error.svg");
+    list-style-image: url("chrome://browser/content/logos/ipprotection-states.svg#error");
     stroke: var(--icon-color-critical);
 
     &:is([overflowedItem="true"], [cui-areatype="panel"]) {
@@ -364,7 +360,7 @@
   }
 
   &.ipprotection-excluded {
-    list-style-image: url("chrome://browser/content/logos/ipprotection-excluded.svg");
+    list-style-image: url("chrome://browser/content/logos/ipprotection-states.svg#excluded");
     stroke: var(--icon-color-success);
 
     &:is([overflowedItem="true"], [cui-areatype="panel"]) {
@@ -375,7 +371,7 @@
   }
 
   &.ipprotection-paused {
-    list-style-image: url("chrome://browser/content/logos/ipprotection-paused.svg");
+    list-style-image: url("chrome://browser/content/logos/ipprotection-states.svg#paused");
     fill: var(--icon-color);
 
     &:is([overflowedItem="true"], [cui-areatype="panel"]) {

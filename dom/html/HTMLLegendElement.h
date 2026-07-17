@@ -12,8 +12,7 @@ namespace mozilla::dom {
 
 class HTMLLegendElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLLegendElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit HTMLLegendElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLLegendElement, legend)

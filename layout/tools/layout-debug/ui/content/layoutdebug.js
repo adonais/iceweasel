@@ -648,13 +648,10 @@ function openFile() {
 
 // A simplified version of the function with the same name in tabbrowser.js.
 function updateBrowserRemotenessByURL(aURL) {
-  let oa = E10SUtils.predictOriginAttributes({ browser: gBrowser });
-  let remoteType = E10SUtils.getRemoteTypeForURIObject(aURL, {
-    multiProcess: gMultiProcessBrowser,
-    remoteSubFrames: gFissionBrowser,
+  let remoteType = ChromeUtils.predictRemoteTypeForURI(aURL, {
+    window,
+    // NOTE: userContextId is always 0
     preferredRemoteType: gBrowser.remoteType,
-    currentURI: gBrowser.currentURI,
-    originAttributes: oa,
   });
   if (gBrowser.remoteType != remoteType) {
     gDebugger.detachBrowser();

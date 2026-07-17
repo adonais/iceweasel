@@ -142,12 +142,12 @@ NotNull<StyleSheet*> GlobalStyleSheetCache::BuiltInSheet(
   auto& slot = mBuiltIns[aSheet];
   if (!slot) {
     const auto& info = kBuiltInSheetInfo[size_t(aSheet)];
-    const auto parsingMode = (info.mFlags & BuiltInStyleSheetFlags::UA)
-                                 ? eAgentSheetFeatures
-                                 : eAuthorSheetFeatures;
+    const auto origin = (info.mFlags & BuiltInStyleSheetFlags::UA)
+                            ? StyleOrigin::UserAgent
+                            : StyleOrigin::Author;
     MOZ_ASSERT(info.mFlags & BuiltInStyleSheetFlags::UA ||
                info.mFlags & BuiltInStyleSheetFlags::Author);
-    slot = LoadSheetURL(info.mURL, parsingMode, eCrash);
+    slot = LoadSheetURL(info.mURL, origin, eCrash);
   }
   return WrapNotNull(slot);
 }
@@ -240,7 +240,7 @@ GlobalStyleSheetCache::GlobalStyleSheetCache() {
   if (gUserContentSheetURL) {
     MOZ_ASSERT(XRE_IsContentProcess(), "Only used in content processes.");
     mUserContentSheet =
-        LoadSheet(gUserContentSheetURL, eUserSheetFeatures, eLogToConsole);
+        LoadSheet(gUserContentSheetURL, StyleOrigin::User, eLogToConsole);
     gUserContentSheetURL = nullptr;
   }
 
@@ -287,24 +287,21 @@ GlobalStyleSheetCache::GlobalStyleSheetCache() {
         if (info.mFlags & BuiltInStyleSheetFlags::NotShared) {
           continue;
         }
-        const auto parsingMode = (info.mFlags & BuiltInStyleSheetFlags::UA)
-                                     ? eAgentSheetFeatures
-                                     : eAuthorSheetFeatures;
-        LoadSheetFromSharedMemory(info.mURL, &mBuiltIns[kind], parsingMode,
-                                  header, kind);
+        const auto origin = (info.mFlags & BuiltInStyleSheetFlags::UA)
+                                ? StyleOrigin::UserAgent
+                                : StyleOrigin::Author;
+        LoadSheetFromSharedMemory(info.mURL, &mBuiltIns[kind], origin, header,
+                                  kind);
       }
     }
   }
 }
 
 void GlobalStyleSheetCache::LoadSheetFromSharedMemory(
-    const nsACString& aURL, RefPtr<StyleSheet>* aSheet,
-    SheetParsingMode aParsingMode, const Header* aHeader,
-    BuiltInStyleSheet aSheetID) {
+    const nsACString& aURL, RefPtr<StyleSheet>* aSheet, StyleOrigin aOrigin,
+    const Header* aHeader, BuiltInStyleSheet aSheetID) {
   auto i = size_t(aSheetID);
-
-  auto sheet =
-      MakeRefPtr<StyleSheet>(aParsingMode, CORS_NONE, dom::SRIMetadata());
+  auto sheet = MakeRefPtr<StyleSheet>(aOrigin, CORS_NONE, dom::SRIMetadata());
 
   nsCOMPtr<nsIURI> uri;
   MOZ_ALWAYS_SUCCEEDS(NS_NewURI(getter_AddRefs(uri), aURL));
@@ -489,20 +486,19 @@ void GlobalStyleSheetCache::InitFromProfile() {
   contentFile->Append(u"userContent.css"_ns);
   chromeFile->Append(u"userChrome.css"_ns);
 
-  mUserContentSheet = LoadSheetFile(contentFile, eUserSheetFeatures);
-  mUserChromeSheet = LoadSheetFile(chromeFile, eUserSheetFeatures);
+  mUserContentSheet = LoadSheetFile(contentFile, StyleOrigin::User);
+  mUserChromeSheet = LoadSheetFile(chromeFile, StyleOrigin::User);
 }
 
 RefPtr<StyleSheet> GlobalStyleSheetCache::LoadSheetURL(
-    const nsACString& aURL, SheetParsingMode aParsingMode,
-    FailureAction aFailureAction) {
+    const nsACString& aURL, StyleOrigin aOrigin, FailureAction aFailureAction) {
   nsCOMPtr<nsIURI> uri;
   NS_NewURI(getter_AddRefs(uri), aURL);
-  return LoadSheet(uri, aParsingMode, aFailureAction);
+  return LoadSheet(uri, aOrigin, aFailureAction);
 }
 
-RefPtr<StyleSheet> GlobalStyleSheetCache::LoadSheetFile(
-    nsIFile* aFile, SheetParsingMode aParsingMode) {
+RefPtr<StyleSheet> GlobalStyleSheetCache::LoadSheetFile(nsIFile* aFile,
+                                                        StyleOrigin aOrigin) {
   bool exists = false;
   aFile->Exists(&exists);
   if (!exists) {
@@ -511,7 +507,7 @@ RefPtr<StyleSheet> GlobalStyleSheetCache::LoadSheetFile(
 
   nsCOMPtr<nsIURI> uri;
   NS_NewFileURI(getter_AddRefs(uri), aFile);
-  return LoadSheet(uri, aParsingMode, eLogToConsole);
+  return LoadSheet(uri, aOrigin, eLogToConsole);
 }
 
 static void ErrorLoadingSheet(nsIURI* aURI, const char* aMsg,
@@ -531,7 +527,7 @@ static void ErrorLoadingSheet(nsIURI* aURI, const char* aMsg,
 }
 
 RefPtr<StyleSheet> GlobalStyleSheetCache::LoadSheet(
-    nsIURI* aURI, SheetParsingMode aParsingMode, FailureAction aFailureAction) {
+    nsIURI* aURI, StyleOrigin aOrigin, FailureAction aFailureAction) {
   if (!aURI) {
     ErrorLoadingSheet(aURI, "null URI", eCrash);
     return nullptr;
@@ -541,7 +537,7 @@ RefPtr<StyleSheet> GlobalStyleSheetCache::LoadSheet(
     gCSSLoader = new Loader;
   }
 
-  auto result = gCSSLoader->LoadSheetSync(aURI, aParsingMode,
+  auto result = gCSSLoader->LoadSheetSync(aURI, aOrigin,
                                           css::Loader::UseSystemPrincipal::Yes);
   if (MOZ_UNLIKELY(result.isErr())) {
     ErrorLoadingSheet(

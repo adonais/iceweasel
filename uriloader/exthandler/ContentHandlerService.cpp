@@ -195,8 +195,7 @@ NS_IMETHODIMP ContentHandlerService::GetMIMEInfoFromOS(
     return rv;
   }
 
-  RefPtr<nsChildProcessMIMEInfo> mimeInfo =
-      new nsChildProcessMIMEInfo(returnedInfo.type());
+  RefPtr mimeInfo = MakeRefPtr<nsChildProcessMIMEInfo>(returnedInfo.type());
   CopyHandlerInfoTonsIHandlerInfo(returnedInfo, mimeInfo);
   mimeInfo.forget(aMIMEInfo);
   return NS_OK;

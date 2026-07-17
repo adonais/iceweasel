@@ -170,7 +170,7 @@ nsPrintDialogServiceX::ShowPrintDialog(mozIDOMWindowProxy* aParent,
     nsAutoString adjustedTitle;
     PrintTarget::AdjustPrintJobNameForIPP(docName, adjustedTitle);
     CFStringRef cfTitleString = CFStringCreateWithCharacters(
-        NULL, reinterpret_cast<const UniChar*>(adjustedTitle.BeginReading()),
+        nullptr, reinterpret_cast<const UniChar*>(adjustedTitle.BeginReading()),
         adjustedTitle.Length());
     if (cfTitleString) {
       auto pmPrintSettings =

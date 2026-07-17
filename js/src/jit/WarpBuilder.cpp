@@ -1562,23 +1562,14 @@ bool WarpBuilder::build_DebugCheckSelfHosted(BytecodeLocation loc) {
 }
 
 bool WarpBuilder::build_DynamicImport(BytecodeLocation loc) {
+  auto phase = ImportPhase(GET_UINT8(loc.toRawBytecode()));
   MDefinition* options = current->pop();
   MDefinition* specifier = current->pop();
-  MDynamicImport* ins = MDynamicImport::New(alloc(), specifier, options);
+  MDynamicImport* ins = MDynamicImport::New(alloc(), specifier, options, phase);
   current->add(ins);
   current->push(ins);
   return resumeAfter(ins, loc);
 }
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-bool WarpBuilder::build_DynamicImportSource(BytecodeLocation loc) {
-  MDefinition* specifier = current->pop();
-  MDynamicImportSource* ins = MDynamicImportSource::New(alloc(), specifier);
-  current->add(ins);
-  current->push(ins);
-  return resumeAfter(ins, loc);
-}
-#endif
 
 bool WarpBuilder::build_Not(BytecodeLocation loc) {
   if (auto* cacheIRSnapshot = getOpSnapshot<WarpCacheIR>(loc)) {
@@ -1630,16 +1621,6 @@ bool WarpBuilder::build_GlobalOrEvalDeclInstantiation(BytecodeLocation loc) {
   auto* redeclCheck = MGlobalDeclInstantiation::New(alloc());
   current->add(redeclCheck);
   return resumeAfter(redeclCheck, loc);
-}
-
-bool WarpBuilder::build_BindVar(BytecodeLocation) {
-  MOZ_ASSERT(usesEnvironmentChain());
-
-  MDefinition* env = current->environmentChain();
-  MCallBindVar* ins = MCallBindVar::New(alloc(), env);
-  current->add(ins);
-  current->push(ins);
-  return true;
 }
 
 bool WarpBuilder::build_MutateProto(BytecodeLocation loc) {
@@ -2468,17 +2449,6 @@ bool WarpBuilder::build_AsyncResolve(BytecodeLocation loc) {
   current->add(resolve);
   current->push(resolve);
   return resumeAfter(resolve, loc);
-}
-
-bool WarpBuilder::build_AsyncReject(BytecodeLocation loc) {
-  MDefinition* generator = current->pop();
-  MDefinition* stack = current->pop();
-  MDefinition* reason = current->pop();
-
-  auto* reject = MAsyncReject::New(alloc(), generator, reason, stack);
-  current->add(reject);
-  current->push(reject);
-  return resumeAfter(reject, loc);
 }
 
 bool WarpBuilder::build_ResumeKind(BytecodeLocation loc) {
@@ -3319,6 +3289,10 @@ bool WarpBuilder::build_CreateSuppressedError(BytecodeLocation) {
   MOZ_CRASH("Unreachable because we skip catch-blocks");
 }
 #endif
+
+bool WarpBuilder::build_AsyncReject(BytecodeLocation) {
+  MOZ_CRASH("Unreachable because we skip catch-blocks");
+}
 
 bool WarpBuilder::build_Throw(BytecodeLocation loc) {
   MDefinition* def = current->pop();

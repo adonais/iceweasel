@@ -10,7 +10,7 @@ add_task(async function test_message_footer_wires_buttons() {
       const footer = doc.getElementById("footer");
 
       footer.messageId = "msg-1";
-      footer.appliedMemories = ["User is vegan"];
+      footer.appliedMemories = [{ memory_summary: "User is vegan" }];
 
       await content.customElements.whenDefined("assistant-message-footer");
 

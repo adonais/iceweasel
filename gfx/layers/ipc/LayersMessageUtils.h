@@ -156,11 +156,11 @@ struct ParamTraits<mozilla::layers::ScrollDirection>
           mozilla::layers::kHighestScrollDirection> {};
 
 template <>
-struct ParamTraits<mozilla::layers::FrameMetrics::ScrollOffsetUpdateType>
+struct ParamTraits<mozilla::layers::ScrollOffsetUpdateType>
     : public ContiguousEnumSerializerInclusive<
-          mozilla::layers::FrameMetrics::ScrollOffsetUpdateType,
-          mozilla::layers::FrameMetrics::ScrollOffsetUpdateType::eNone,
-          mozilla::layers::FrameMetrics::sHighestScrollOffsetUpdateType> {};
+          mozilla::layers::ScrollOffsetUpdateType,
+          mozilla::layers::ScrollOffsetUpdateType::None,
+          mozilla::layers::kHighestScrollOffsetUpdateType> {};
 
 template <>
 struct ParamTraits<mozilla::layers::RepaintRequest::ScrollOffsetUpdateType>
@@ -466,6 +466,23 @@ struct ParamTraits<mozilla::SnapPoint> {
 };
 
 template <>
+struct ParamTraits<mozilla::ScrollSnapRange> {
+  typedef mozilla::ScrollSnapRange paramType;
+
+  static void Write(MessageWriter* aWriter, const paramType& aParam) {
+    WriteParam(aWriter, aParam.mDirection);
+    WriteParam(aWriter, aParam.mSnapArea);
+    WriteParam(aWriter, aParam.mTargetId);
+  }
+
+  static bool Read(MessageReader* aReader, paramType* aResult) {
+    return ReadParam(aReader, &aResult->mDirection) &&
+           ReadParam(aReader, &aResult->mSnapArea) &&
+           ReadParam(aReader, &aResult->mTargetId);
+  }
+};
+
+template <>
 struct ParamTraits<mozilla::ScrollSnapInfo::SnapTarget> {
   typedef mozilla::ScrollSnapInfo::SnapTarget paramType;
 
@@ -480,23 +497,6 @@ struct ParamTraits<mozilla::ScrollSnapInfo::SnapTarget> {
     return ReadParam(aReader, &aResult->mSnapPoint) &&
            ReadParam(aReader, &aResult->mSnapArea) &&
            ReadParam(aReader, &aResult->mScrollSnapStop) &&
-           ReadParam(aReader, &aResult->mTargetId);
-  }
-};
-
-template <>
-struct ParamTraits<mozilla::ScrollSnapInfo::ScrollSnapRange> {
-  typedef mozilla::ScrollSnapInfo::ScrollSnapRange paramType;
-
-  static void Write(MessageWriter* aWriter, const paramType& aParam) {
-    WriteParam(aWriter, aParam.mDirection);
-    WriteParam(aWriter, aParam.mSnapArea);
-    WriteParam(aWriter, aParam.mTargetId);
-  }
-
-  static bool Read(MessageReader* aReader, paramType* aResult) {
-    return ReadParam(aReader, &aResult->mDirection) &&
-           ReadParam(aReader, &aResult->mSnapArea) &&
            ReadParam(aReader, &aResult->mTargetId);
   }
 };
@@ -822,6 +822,7 @@ struct ParamTraits<mozilla::layers::APZEventResult> {
     WriteParam(aWriter, aParam.GetHandledResult());
     WriteParam(aWriter, aParam.mTargetGuid);
     WriteParam(aWriter, aParam.mInputBlockId);
+    WriteParam(aWriter, aParam.mTargetCanScrollHorizontally);
   }
 
   static bool Read(MessageReader* aReader, paramType* aResult) {
@@ -838,7 +839,8 @@ struct ParamTraits<mozilla::layers::APZEventResult> {
     aResult->UpdateHandledResult(handledResult);
 
     return (ReadParam(aReader, &aResult->mTargetGuid) &&
-            ReadParam(aReader, &aResult->mInputBlockId));
+            ReadParam(aReader, &aResult->mInputBlockId) &&
+            ReadParam(aReader, &aResult->mTargetCanScrollHorizontally));
   }
 };
 

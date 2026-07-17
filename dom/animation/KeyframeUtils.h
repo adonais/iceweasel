@@ -27,6 +27,7 @@ enum class PseudoStyleType : uint8_t;
 enum class StyleTimelineRangeName : uint8_t;
 
 namespace dom {
+struct AnimationRange;
 class AnimationTimeline;
 class Document;
 class Element;
@@ -76,22 +77,26 @@ class KeyframeUtils {
    *
    * @param aKeyframes The set of keyframes to adjust.
    * @param aTimeline The animation timeline.
+   * @param aRange The animation attachment range.
    * @return The preprocess info for quickly checking the keyframes whether they
    *   use timeline range offsets or percentage offset.
    */
   static KeyframesOffsetHasAny ComputeMissingKeyframeOffsets(
-      nsTArray<Keyframe>& aKeframes, const dom::AnimationTimeline* aTimeline);
+      nsTArray<Keyframe>& aKeframes, const dom::AnimationTimeline* aTimeline,
+      const dom::AnimationRange* aRange);
 
   /**
    * Calculate the computed offset for view timelines.
    *
    * @param aOffset The timeline range offset of the specified keyframe offset.
    * @param aTimeline The animation timeline.
+   * @param aRange The animation attachment range.
    * @return The computed offset for |aOffset|. It returns unresolved offset if
    *   the timeline isn't ViewTimeline.
    */
   static double GetComputedOffset(const Keyframe::OffsetType& aOffset,
-                                  const dom::AnimationTimeline* aTimeline);
+                                  const dom::AnimationTimeline* aTimeline,
+                                  const dom::AnimationRange* aRange);
 
   /**
    * Converts an array of Keyframe objects into an array of AnimationProperty

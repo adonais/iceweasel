@@ -179,14 +179,14 @@ bool FFmpegRuntimeLinker::Init() {
           }
           break;
       }
-      FFMPEGP_LOG("Failed to link %s: %s", lib,
+      FFMPEGP_LOG("Failed to link {}: {}", lib,
                   FFmpegLibWrapper::EnumValueToString(res));
     }
   }
 
   FFMPEGV_LOG("H264/AAC codecs unsupported without [");
   for (size_t i = 0; i < std::size(sLibs); i++) {
-    FFMPEGV_LOG("%s %s", i ? "," : " ", sLibs[i]);
+    FFMPEGV_LOG("{} {}", i ? "," : " ", sLibs[i]);
   }
   FFMPEGV_LOG(" ]\n");
 

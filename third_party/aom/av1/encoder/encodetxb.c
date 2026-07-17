@@ -277,7 +277,7 @@ void av1_txb_init_levels_c(const tran_low_t *const coeff, const int width,
 }
 
 void av1_get_nz_map_contexts_c(const uint8_t *const levels,
-                               const int16_t *const scan, const uint16_t eob,
+                               const int16_t *const scan, const int eob,
                                const TX_SIZE tx_size, const TX_CLASS tx_class,
                                int8_t *const coeff_contexts) {
   const int bhl = get_txb_bhl(tx_size);

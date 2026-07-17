@@ -1557,12 +1557,6 @@ const BASE_MESSAGES = () => [
     template: "pb_newtab",
     groups: ["pbNewtab"],
     content: {
-      infoBody: "fluent:about-private-browsing-info-description-simplified",
-      infoEnabled: true,
-      infoIcon: "chrome://global/skin/icons/indicator-private-browsing.svg",
-      infoLinkText: "fluent:about-private-browsing-learn-more-link",
-      infoTitle: "",
-      infoTitleEnabled: false,
       promoEnabled: true,
       promoType: "FOCUS",
       promoHeader: "fluent:about-private-browsing-focus-promo-header-c",
@@ -1662,12 +1656,6 @@ const BASE_MESSAGES = () => [
     template: "pb_newtab",
     groups: ["pbNewtab"],
     content: {
-      infoBody: "fluent:about-private-browsing-info-description-simplified",
-      infoEnabled: true,
-      infoIcon: "chrome://global/skin/icons/indicator-private-browsing.svg",
-      infoLinkText: "fluent:about-private-browsing-learn-more-link",
-      infoTitle: "",
-      infoTitleEnabled: false,
       promoEnabled: true,
       promoType: "FOCUS",
       promoHeader: "fluent:about-private-browsing-focus-promo-header-c",
@@ -1763,12 +1751,6 @@ const BASE_MESSAGES = () => [
     template: "pb_newtab",
     groups: ["pbNewtab"],
     content: {
-      infoBody: "fluent:about-private-browsing-info-description-simplified",
-      infoEnabled: true,
-      infoIcon: "chrome://global/skin/icons/indicator-private-browsing.svg",
-      infoLinkText: "fluent:about-private-browsing-learn-more-link",
-      infoTitle: "",
-      infoTitleEnabled: false,
       promoEnabled: true,
       promoType: "FOCUS",
       promoHeader: "fluent:about-private-browsing-focus-promo-header-c",
@@ -1866,12 +1848,6 @@ const BASE_MESSAGES = () => [
     type: "default",
     groups: ["pbNewtab"],
     content: {
-      infoBody: "fluent:about-private-browsing-info-description-simplified",
-      infoEnabled: true,
-      infoIcon: "chrome://global/skin/icons/indicator-private-browsing.svg",
-      infoLinkText: "fluent:about-private-browsing-learn-more-link",
-      infoTitle: "",
-      infoTitleEnabled: false,
       promoEnabled: true,
       promoType: "PIN",
       promoHeader: "fluent:about-private-browsing-pin-promo-header",
@@ -1935,12 +1911,6 @@ const BASE_MESSAGES = () => [
     type: "default",
     groups: ["pbNewtab"],
     content: {
-      infoBody: "fluent:about-private-browsing-info-description-simplified",
-      infoEnabled: true,
-      infoIcon: "chrome://global/skin/icons/indicator-private-browsing.svg",
-      infoLinkText: "fluent:about-private-browsing-learn-more-link",
-      infoTitle: "",
-      infoTitleEnabled: false,
       promoEnabled: true,
       promoType: "COOKIE_BANNERS",
       promoHeader: "fluent:about-private-browsing-cookie-banners-promo-heading",
@@ -2120,7 +2090,7 @@ const BASE_MESSAGES = () => [
     content: {
       template: "multistage",
       transitions: true,
-      modal: "tab",
+      modal: "window",
       backdrop: "transparent",
       id: "RESTORE_FROM_BACKUP",
       screens: [
@@ -2166,7 +2136,7 @@ const BASE_MESSAGES = () => [
     content: {
       template: "multistage",
       transitions: true,
-      modal: "tab",
+      modal: "window",
       backdrop: "transparent",
       id: "RESTORE_FROM_BACKUP_NEED_DEFAULT_NEED_PIN",
       screens: [
@@ -2271,7 +2241,7 @@ const BASE_MESSAGES = () => [
     content: {
       template: "multistage",
       transitions: true,
-      modal: "tab",
+      modal: "window",
       backdrop: "transparent",
       id: "RESTORE_FROM_BACKUP_NEED_DEFAULT",
       screens: [
@@ -2354,7 +2324,7 @@ const BASE_MESSAGES = () => [
     content: {
       template: "multistage",
       transitions: true,
-      modal: "tab",
+      modal: "window",
       backdrop: "transparent",
       id: "RESTORE_FROM_BACKUP_NEED_PIN",
       screens: [
@@ -3802,13 +3772,6 @@ export const OnboardingMessageProvider = {
         mobileContent.cta_paragraph.text = {
           string_id: "mr2022-onboarding-no-mobile-download-cta-text",
         };
-      }
-      // Update CN specific QRCode url
-      if (lazy.BrowserUtils.isChinaRepack()) {
-        mobileContent.hero_image.url = `${mobileContent.hero_image.url.slice(
-          0,
-          mobileContent.hero_image.url.indexOf(".svg")
-        )}-cn.svg`;
       }
     }
 

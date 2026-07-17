@@ -8,6 +8,10 @@ const { GetPageContent } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
 
+const { PageExtractorParent } = ChromeUtils.importESModule(
+  "resource://gre/actors/PageExtractorParent.sys.mjs"
+);
+
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
@@ -473,6 +477,79 @@ add_task(async function test_getPageContent_allows_untrusted_input_only() {
     Assert.ok(
       result[0].includes("Example Page"),
       "Should return real content, not a refusal"
+    );
+  } finally {
+    sb.restore();
+  }
+});
+
+add_task(
+  async function test_getPageContent_returns_error_string_for_non_array_url_list() {
+    const result = await GetPageContent.getPageContent(
+      { url_list: "not-an-array" },
+      makeConversation()
+    );
+    Assert.equal(typeof result, "string", "Should return a string");
+    Assert.ok(
+      result.startsWith("Error:"),
+      "Should return an error string so the model can self-correct"
+    );
+  }
+);
+
+add_task(async function test_getPageContent_ledger_url_uses_stripped_fetch() {
+  // A URL in the untrusted ledger (e.g. one extracted from a SERP) should
+  // bypass the private+untrusted block and be fetched through a stripped
+  // headless extractor with `anonymousFetch: true`.
+  const sb = sinon.createSandbox();
+  try {
+    const targetUrl = "https://search-result.example.com/article";
+    const tabs = [createFakeTab("https://other.com", "Other")];
+    setupBrowserWindowTracker(sb, createFakeWindow(tabs));
+
+    const extractedText = "Stripped page content";
+    const headlessStub = sb
+      .stub(PageExtractorParent, "getHeadlessExtractor")
+      .callsFake(({ callback }) => {
+        const fakeExtractor = {
+          getText: sinon.stub().resolves({
+            text: extractedText,
+            links: [],
+          }),
+        };
+        return callback(fakeExtractor);
+      });
+
+    const conversation = makeConversation({
+      privateData: true,
+      untrustedInput: true,
+    });
+    conversation.serpUrlsForAnonymousFetch = new Set([targetUrl]);
+
+    const result = await GetPageContent.getPageContent(
+      { url_list: [targetUrl] },
+      conversation
+    );
+
+    Assert.equal(result.length, 1, "Should return one result");
+    Assert.equal(
+      result[0],
+      "Content from https://search-result.example.com/article:\n\nStripped page content",
+      "Should return the content extracted by the headless extractor"
+    );
+    Assert.ok(
+      headlessStub.calledOnce,
+      "getHeadlessExtractor should be called for the ledger URL"
+    );
+    Assert.equal(
+      headlessStub.firstCall.args[0].urlString,
+      targetUrl,
+      "Headless extractor should be called with the SERP URL"
+    );
+    Assert.equal(
+      headlessStub.firstCall.args[0].anonymousFetch,
+      true,
+      "Ledger URLs must use the stripped fetch path"
     );
   } finally {
     sb.restore();

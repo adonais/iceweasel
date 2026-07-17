@@ -1334,3 +1334,81 @@ TEST(TestCookie, RemoveOlderCookiesByBytesEntryFreed)
   // The entry should be gone from the hash table.
   EXPECT_FALSE(storage->mHostTable.GetEntry(key));
 }
+
+// Regression test for Bug 2041131: HasCookiesForSite must find cookies stored
+// under any OriginAttributes matching the pattern (containers, partitionKey,
+// …), not just the default-OA bucket.
+TEST(TestCookie, HasCookiesForSite)
+{
+  RefPtr<TestableCookieStorage> storage = TestableCookieStorage::Create();
+
+  nsAutoCString baseDomain("example.com"_ns);
+
+  auto addCookie = [&](const OriginAttributes& aAttrs) {
+    CookieStruct cookieData;
+    cookieData.name() = "c"_ns;
+    cookieData.value() = "v"_ns;
+    cookieData.host() = "example.com"_ns;
+    cookieData.path() = "/"_ns;
+    cookieData.expiryInMSec() = PR_Now() / PR_USEC_PER_MSEC + 86400 * 1000;
+    cookieData.lastAccessedInUSec() = 0;
+    cookieData.creationTimeInUSec() = 0;
+    cookieData.updateTimeInUSec() = 0;
+    cookieData.isHttpOnly() = false;
+    cookieData.isSession() = true;
+    cookieData.isSecure() = false;
+    cookieData.isPartitioned() = false;
+    cookieData.sameSite() = nsICookie::SAMESITE_LAX;
+    cookieData.schemeMap() = 2;
+
+    RefPtr<Cookie> cookie = Cookie::Create(cookieData, aAttrs);
+    ASSERT_TRUE(cookie);
+    storage->AddCookieToList(baseDomain, aAttrs, cookie);
+  };
+
+  OriginAttributesPattern nonPbPattern;
+  nonPbPattern.mPrivateBrowsingId.Construct(0);
+
+  // No cookies at all → false.
+  EXPECT_FALSE(storage->HasCookiesForSite(baseDomain, nonPbPattern));
+  EXPECT_FALSE(storage->HasCookiesForSite("other.test"_ns, nonPbPattern));
+
+  // Cookie in the default-OA bucket → true.
+  OriginAttributes defaultAttrs;
+  addCookie(defaultAttrs);
+  EXPECT_TRUE(storage->HasCookiesForSite(baseDomain, nonPbPattern));
+
+  // Different base domain still gets false.
+  EXPECT_FALSE(storage->HasCookiesForSite("other.test"_ns, nonPbPattern));
+
+  // Cookie only in a container (userContextId != 0) → true. This is the
+  // direct regression case from Bug 2041131.
+  RefPtr<TestableCookieStorage> containerOnly = TestableCookieStorage::Create();
+  storage = containerOnly;
+  OriginAttributes containerAttrs;
+  containerAttrs.mUserContextId = 1;
+  addCookie(containerAttrs);
+  EXPECT_TRUE(storage->HasCookiesForSite(baseDomain, nonPbPattern));
+
+  // PB-only cookie must NOT be visible to a non-PB pattern.
+  RefPtr<TestableCookieStorage> pbOnly = TestableCookieStorage::Create();
+  storage = pbOnly;
+  OriginAttributes pbAttrs;
+  pbAttrs.mPrivateBrowsingId = 1;
+  addCookie(pbAttrs);
+  EXPECT_FALSE(storage->HasCookiesForSite(baseDomain, nonPbPattern));
+  // And IS visible to a PB-matching pattern.
+  OriginAttributesPattern pbPattern;
+  pbPattern.mPrivateBrowsingId.Construct(1);
+  EXPECT_TRUE(storage->HasCookiesForSite(baseDomain, pbPattern));
+
+  // Partitioned-only cookie (non-default partitionKey) → true under
+  // privateBrowsingId=0 pattern.
+  RefPtr<TestableCookieStorage> partitionedOnly =
+      TestableCookieStorage::Create();
+  storage = partitionedOnly;
+  OriginAttributes partAttrs;
+  partAttrs.mPartitionKey = u"(http,other.test)"_ns;
+  addCookie(partAttrs);
+  EXPECT_TRUE(storage->HasCookiesForSite(baseDomain, nonPbPattern));
+}

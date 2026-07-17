@@ -36,14 +36,6 @@
           "ScrollLock",
           "FnLock",
           "Meta",
-          "ArrowUp",
-          "ArrowDown",
-          "ArrowLeft",
-          "ArrowRight",
-          "PageUp",
-          "PageDown",
-          "Home",
-          "End",
           "Fn",
           "Alt",
           "AltGraph",
@@ -51,23 +43,6 @@
           "Shift",
           "Escape",
         ];
-
-        // XXX not sure why Android behave different on handling Backspace key.
-        if (!navigator.appVersion.includes("Android")) {
-          blacklistKeyPresses.push("Backspace");
-        }
-
-        let modifiedKeys = [
-          { key: "a", modifiers: { accelKey: true } },
-          { key: "z", modifiers: { accelKey: true } },
-        ];
-
-        // Browser shortcut on non-Linux platform.
-        if (navigator.platform.indexOf("Linux") !== 0) {
-          modifiedKeys.push(
-            { key: "KEY_ArrowRight", modifiers: { metaKey: true } },
-            { key: "KEY_ArrowRight", modifiers: { altKey: true } });
-        }
 
         let script = SpecialPowers.loadChromeScript(function() {
           var EventUtils = {};
@@ -151,15 +126,6 @@
             await synthesizeKeyAndWait("KEY_" + key);
             played = await element.play().then(() => true, () => false);
             is(played, false, "Key " + key + " should not activate document and should not unblock play");
-          }
-
-          // Try pressing some keys with modifiers.
-          let keyNames = (m) => Object.keys(m).join("+");
-          for (let x of modifiedKeys) {
-            document.body.focus();
-            await synthesizeKeyAndWait(x.key, x.modifiers);
-            played = await element.play().then(() => true, () => false);
-            is(played, false, "Key (" + x.key + "+" + keyNames(x.modifiers) + ") should not activate document and should not unblock play");
           }
 
           // Try pressing a key not in the blacklist, then playing.

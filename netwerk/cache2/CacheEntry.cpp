@@ -12,6 +12,7 @@
 #include "CacheLog.h"
 #include "CacheObserver.h"
 #include "CacheStorageService.h"
+#include "mozilla/net/NoVarySearchUtils.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Telemetry.h"
 #include "mozilla/psm/TransportSecurityInfo.h"
@@ -24,7 +25,10 @@
 #include "nsISeekableStream.h"
 #include "nsIURI.h"
 #include "nsNetCID.h"
+#include "nsNetUtil.h"
 #include "nsProxyRelease.h"
+#include "mozilla/net/NoVarySearchUtils.h"
+#include "mozilla/StaticPrefs_network.h"
 #include "nsServiceManagerUtils.h"
 #include "nsString.h"
 #include "nsThreadUtils.h"
@@ -265,6 +269,20 @@ nsresult CacheEntry::HashingKey(nsACString& aResult) const {
   return HashingKey(""_ns, mEnhanceID, mURI, aResult);
 }
 
+void CacheEntry::NoteNoVarySearchEntry(nsIURI* aURI) {
+  nsAutoCString basePath;
+  if (NS_FAILED(ExtractNoVarySearchBasePath(aURI, basePath))) {
+    return;
+  }
+  nsAutoCString entryKey;
+  if (NS_FAILED(HashingKey(entryKey))) {
+    return;
+  }
+  if (auto* svc = CacheStorageService::Self()) {
+    svc->NoteNoVarySearchEntry(mStorageID, basePath, entryKey);
+  }
+}
+
 // static
 nsresult CacheEntry::HashingKey(const nsACString& aStorageID,
                                 const nsACString& aEnhanceID, nsIURI* aURI,
@@ -498,36 +516,69 @@ NS_IMETHODIMP CacheEntry::OnFileReady(nsresult aResult, bool aIsNew) {
   // Until this moment there is no consumer that could manipulate
   // the entry state.
 
-  mozilla::MutexAutoLock lock(mLock);
+  // Collect No-Vary-Search metadata before releasing mLock.
+  // NoteNoVarySearchEntry must be called outside mLock since it acquires sLock
+  // (lock ordering: sLock > mLock).
+  nsAutoCString nvsVal;
 
-  MOZ_ASSERT(mState == LOADING);
+  {
+    mozilla::MutexAutoLock lock(mLock);
 
-  mState = (aIsNew || NS_FAILED(aResult)) ? EMPTY : READY;
+    MOZ_ASSERT(mState == LOADING);
 
-  mFileStatus = aResult;
+    mState = (aIsNew || NS_FAILED(aResult)) ? EMPTY : READY;
 
-  mPinned = mFile->IsPinned();
+    mFileStatus = aResult;
 
-  mPinningKnown = true;
-  LOG(("  pinning=%d", (bool)mPinned));
+    mPinned = mFile->IsPinned();
 
-  if (mState == READY) {
-    mHasData = true;
+    mPinningKnown = true;
+    LOG(("  pinning=%d", (bool)mPinned));
 
-    uint32_t frecency;
-    mFile->GetFrecency(&frecency);
-    // mFrecency is held in a double to increase computance precision.
-    // It is ok to persist frecency only as a uint32 with some math involved.
-    mFrecency = INT2FRECENCY(frecency);
+    if (mState == READY) {
+      mHasData = true;
+
+      uint32_t frecency;
+      mFile->GetFrecency(&frecency);
+      // mFrecency is held in a double to increase computance precision.
+      // It is ok to persist frecency only as a uint32 with some math involved.
+      mFrecency = INT2FRECENCY(frecency);
+
+      // Check for No-Vary-Search metadata on existing entries loaded from disk.
+      char* rawNvs = nullptr;
+      if (StaticPrefs::network_cache_no_vary_search() && !aIsNew &&
+          NS_SUCCEEDED(mFile->GetElement("no-vary-search", &rawNvs)) &&
+          rawNvs) {
+        nvsVal.Adopt(rawNvs);
+      }
+    }
+
+    InvokeCallbacks();
+  }  // mLock released
+
+  // Populate mNoVarySearchIndex now that mLock is released.
+  if (!nvsVal.IsEmpty()) {
+    nsCOMPtr<nsIURI> uri;
+    nsAutoCString basePath, entryKey;
+    if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(uri), mURI)) &&
+        NS_SUCCEEDED(ExtractNoVarySearchBasePath(uri, basePath)) &&
+        NS_SUCCEEDED(HashingKey(""_ns, mEnhanceID, mURI, entryKey))) {
+      if (auto* svc = CacheStorageService::Self()) {
+        svc->NoteNoVarySearchEntry(mStorageID, basePath, entryKey);
+      }
+    }
   }
-
-  InvokeCallbacks();
 
   return NS_OK;
 }
 
 NS_IMETHODIMP CacheEntry::OnFileDoomed(nsresult aResult) {
-  if (mDoomCallback) {
+  bool doomCallback = false;
+  {
+    mozilla::MutexAutoLock lock(mLock);
+    doomCallback = bool(mDoomCallback);
+  }
+  if (doomCallback) {
     RefPtr<DoomCallbackRunnable> event =
         new DoomCallbackRunnable(this, aResult);
     NS_DispatchToMainThread(event);
@@ -590,8 +641,7 @@ already_AddRefed<CacheEntryHandle> CacheEntry::ReopenTruncated(
   // reference counter and doesn't revert entry state back when write
   // fails and also doesn't update the entry frecency.  Not updating
   // frecency causes entries to not be purged from our memory pools.
-  RefPtr<CacheEntryHandle> writeHandle = newEntry->NewWriteHandle();
-  return writeHandle.forget();
+  return newEntry->NewWriteHandle();
 }
 
 void CacheEntry::TransferCallbacks(CacheEntry& aFromEntry) {
@@ -955,16 +1005,21 @@ void CacheEntry::OnFetched(Callback const& aCallback) {
   }
 }
 
-CacheEntryHandle* CacheEntry::NewHandle() { return new CacheEntryHandle(this); }
+already_AddRefed<CacheEntryHandle> CacheEntry::NewHandle() {
+  return MakeAndAddRef<CacheEntryHandle>(this);
+}
 
-CacheEntryHandle* CacheEntry::NewWriteHandle() {
+already_AddRefed<CacheEntryHandle> CacheEntry::NewWriteHandle() {
   mozilla::MutexAutoLock lock(mLock);
 
   // Ignore the OPEN_SECRETLY flag on purpose here, which should actually be
   // used only along with OPEN_READONLY, but there is no need to enforce that.
   BackgroundOp(Ops::FRECENCYUPDATE);
 
-  return (mWriter = NewHandle());
+  RefPtr<CacheEntryHandle> handle = NewHandle();
+  // mWriter is a weak reference; the returned handle holds the strong ref.
+  mWriter = handle;
+  return handle.forget();
 }
 
 void CacheEntry::OnHandleClosed(CacheEntryHandle const* aHandle) {
@@ -1849,8 +1904,12 @@ void CacheEntry::DoomFile() {
     }
   }
 
-  // Always posts to the main thread.
-  OnFileDoomed(rv);
+  // mLock is already held; dispatch directly instead of calling
+  // OnFileDoomed() which would deadlock re-acquiring it.
+  if (mDoomCallback) {
+    RefPtr<DoomCallbackRunnable> event = new DoomCallbackRunnable(this, rv);
+    NS_DispatchToMainThread(event);
+  }
 }
 
 void CacheEntry::RemoveForcedValidity() {

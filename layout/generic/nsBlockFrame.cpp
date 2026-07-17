@@ -60,6 +60,7 @@
 #include "nsGkAtoms.h"
 #include "nsHTMLParts.h"
 #include "nsIFrameInlines.h"
+#include "nsInlineFrame.h"
 #include "nsLayoutUtils.h"
 #include "nsLineBox.h"
 #include "nsLineLayout.h"
@@ -1280,10 +1281,205 @@ static bool ClearLineClampEllipsis(nsBlockFrame* aFrame) {
 
 void nsBlockFrame::ClearLineClampEllipsis() { ::ClearLineClampEllipsis(this); }
 
+// Compute an inline absolute containing block's rect in aInlineFrame's
+// coordinate space (relative to its border-box origin) per
+// https://drafts.csswg.org/css-position-3/#absolute-cb
+static nsRect ComputeInlineAbsoluteCBRect(const nsInlineFrame* aInlineFrame) {
+  MOZ_ASSERT(aInlineFrame->IsAbsoluteContainer(),
+             "Why computing the rect if it is not an absolute container?");
+
+  const auto cbwm = aInlineFrame->GetWritingMode();
+
+  // The LogicalRect API requires a container size to compute logical
+  // coordinates whose "start" side is on the far physical side of the container
+  // (RTL or vertical-rl writing modes). For our usage here, we don't need a
+  // real container size, because that only influences the position of the
+  // logical rect (which is an intermediate variable in this function). The
+  // container size ultimately gets canceled out when we convert the logical
+  // rect back to a physical rect at the end of this function, so we use a
+  // zero-initialized dummy size.
+  const nsSize dummyContainerSize;
+
+  // A helper to get aFrame's border-box rect relative to aInlineFrame, in
+  // aInlineFrame's writing mode.
+  auto BorderBoxRectRelativeToInlineFrame = [&](const nsIFrame* aFrame) {
+    const nsRect physicalRect =
+        aFrame->GetRectRelativeToSelf() + aFrame->GetOffsetTo(aInlineFrame);
+    return LogicalRect(cbwm, physicalRect, dummyContainerSize);
+  };
+
+  const auto* firstCont =
+      nsLayoutUtils::FirstContinuationOrIBSplitSibling(aInlineFrame);
+  const auto* lastCont =
+      nsLayoutUtils::LastContinuationOrIBSplitSibling(aInlineFrame);
+  const LogicalRect firstContRect =
+      BorderBoxRectRelativeToInlineFrame(firstCont);
+  const LogicalRect lastContRect = BorderBoxRectRelativeToInlineFrame(lastCont);
+
+  // Start edges from the first continuation, end edges from the last
+  // continuation.
+  const nscoord iStart = firstContRect.IStart(cbwm);
+  const nscoord bStart = firstContRect.BStart(cbwm);
+  const nscoord iEnd = lastContRect.IEnd(cbwm);
+  const nscoord bEnd = lastContRect.BEnd(cbwm);
+  LogicalRect cbRect(cbwm, iStart, bStart, iEnd - iStart, bEnd - bStart);
+
+  // The CSS Position 3 spec says to form the cb rect from content edges of
+  // continuations [1], but other browsers and the unfragmented scenario defined
+  // in CSS 2.2 section 10.1.4 [2] use the padding edge. Therefore, we deflate
+  // only the border for interop.
+  // https://github.com/w3c/csswg-drafts/issues/13952
+  //
+  // [1] https://drafts.csswg.org/css-position-3/#absolute-cb
+  // [2] https://www.w3.org/TR/CSS22/visudet.html#containing-block-details
+  const LogicalMargin firstBorder = firstCont->GetLogicalUsedBorder(cbwm);
+  const LogicalMargin lastBorder = lastCont->GetLogicalUsedBorder(cbwm);
+  const LogicalMargin cbBorder(cbwm, firstBorder.BStart(cbwm),
+                               lastBorder.IEnd(cbwm), lastBorder.BEnd(cbwm),
+                               firstBorder.IStart(cbwm));
+  cbRect.Deflate(cbwm, cbBorder);
+
+  return cbRect.GetPhysicalRect(cbwm, dummyContainerSize);
+}
+
+void nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame(
+    nsPresContext* aPresContext, const ReflowInput& aReflowInput,
+    ReflowOutput& aReflowOutput, nsReflowStatus& aStatus) {
+  bool foundAbspos = false;
+  for (auto& line : Lines()) {
+    if (line.IsBlock()) {
+      // The block frame in this line is responsible for reflowing its abspos
+      // descendants.
+      continue;
+    }
+
+    // Traverse the kids on this inline line, and translate each kid's overflow
+    // areas into this block's coordinate space and accumulate.
+    OverflowAreas lineAbsposOverflow;
+    for (nsIFrame* kid : line.ChildFrames()) {
+      if (auto kidOverflow = WalkInlineDescendantsToReflowAbsoluteFrames(
+              kid, aPresContext, aReflowInput, aStatus)) {
+        foundAbspos = true;
+        lineAbsposOverflow.UnionWithAbsoluteOverflowAreas(*kidOverflow +
+                                                          kid->GetPosition());
+      }
+    }
+
+    if (lineAbsposOverflow != OverflowAreas()) {
+      // Update the line's overflow areas to include abspos descendants'
+      // overflow areas. This is required for painting code to generate their
+      // display items.
+      OverflowAreas lineOverflow = line.GetOverflowAreas();
+      lineOverflow.UnionWithAbsoluteOverflowAreas(lineAbsposOverflow);
+      line.SetOverflowAreas(lineOverflow);
+
+      // Update this block frame's output overflow areas, too.
+      aReflowOutput.mOverflowAreas.UnionWithAbsoluteOverflowAreas(
+          lineAbsposOverflow);
+    }
+  }
+
+  if (!foundAbspos) {
+    // Remove NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT bit if we didn't find any
+    // abspos descendants after a full walk over all our inline lines.
+    RemoveStateBits(NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT);
+  }
+}
+
+Maybe<OverflowAreas> nsBlockFrame::WalkInlineDescendantsToReflowAbsoluteFrames(
+    nsIFrame* aFrame, nsPresContext* aPresContext,
+    const ReflowInput& aReflowInput, nsReflowStatus& aStatus) {
+  if (aFrame->IsBlockFrameOrSubclass()) {
+    // Block frames (e.g. 'inline-block') will walk their own inline
+    // descendants.
+    return Nothing();
+  }
+
+  // absposOverflow accumulates overflow areas from the visited abspos
+  // descendants, in aFrame's coordinate space.
+  OverflowAreas absposOverflow;
+  bool foundAbspos = false;
+
+  // Traverse aFrame's kids first. Each kid will give us back the overflow areas
+  // from its own abspos descendants. We translate those to aFrame's coordinate
+  // space, and accumulate.
+  for (nsIFrame* kid : aFrame->PrincipalChildList()) {
+    if (auto absposOverflowFromKid =
+            WalkInlineDescendantsToReflowAbsoluteFrames(
+                kid, aPresContext, aReflowInput, aStatus)) {
+      foundAbspos = true;
+      absposOverflow.UnionWithAbsoluteOverflowAreas(*absposOverflowFromKid +
+                                                    kid->GetPosition());
+    }
+  }
+
+  if (nsInlineFrame* inlineFrame = do_QueryFrame(aFrame)) {
+    // If aFrame is an inline frame (or a subclass of inline frame), reflow its
+    // abspos kids, and accumulate their overflow areas.
+    if (auto absposOverflowFromInlineFrame = ReflowAbsoluteFramesInInlineFrame(
+            inlineFrame, aPresContext, aReflowInput, aStatus)) {
+      foundAbspos = true;
+      absposOverflow.UnionWithAbsoluteOverflowAreas(
+          *absposOverflowFromInlineFrame);
+    }
+  }
+
+  if (!foundAbspos) {
+    return Nothing();
+  }
+
+  if (absposOverflow != OverflowAreas()) {
+    // Update aFrame's overflow areas via FinishAndStoreOverflow() so that
+    // painting related properties are set correctly, e.g. setting
+    // PreEffectsBBoxProperty() in ComputeEffectsRect().
+    OverflowAreas frameOverflow = aFrame->GetOverflowAreas();
+    frameOverflow.UnionWithAbsoluteOverflowAreas(absposOverflow);
+    aFrame->FinishAndStoreOverflow(frameOverflow, aFrame->GetSize());
+  }
+
+  return Some(absposOverflow);
+}
+
+Maybe<OverflowAreas> nsBlockFrame::ReflowAbsoluteFramesInInlineFrame(
+    nsInlineFrame* aInlineFrame, nsPresContext* aPresContext,
+    const ReflowInput& aReflowInput, nsReflowStatus& aStatus) {
+  auto* absCB = aInlineFrame->GetAbsoluteContainingBlock();
+  if (!absCB || !absCB->PrepareAbsoluteFrames(aInlineFrame)) {
+    return Nothing();
+  }
+
+  // TODO(Bug 2038072): After we support splitting abspos frames in multicol or
+  // printing, a later inline continuation might have abspos kids.
+  MOZ_ASSERT(!aInlineFrame->GetPrevInFlow(),
+             "Only the first inline continuation can have absolute kids!");
+
+  const nsRect cbRect = ComputeInlineAbsoluteCBRect(aInlineFrame);
+  const WritingMode cbwm = aInlineFrame->GetWritingMode();
+
+  // TODO(Bug 2038072): Pass an actual available block-size to split the abspos
+  // frames correctly in multicol or printing.
+  const LogicalSize availSize(cbwm, aInlineFrame->ISize(cbwm),
+                              NS_UNCONSTRAINEDSIZE);
+  ReflowInput inlineRI(aPresContext, aReflowInput, aInlineFrame, availSize);
+
+  // TODO(Bug 2038072): Add AbsPosReflowFlag::AllowFragmentation flag.
+  AbsPosReflowFlags flags{AbsPosReflowFlag::CBWidthChanged,
+                          AbsPosReflowFlag::CBHeightChanged};
+
+  // absoluteOverflow is in aInlineFrame's coordinate space.
+  OverflowAreas absposOverflow;
+  nsReflowStatus absposStatus;
+  absCB->Reflow(aInlineFrame, aPresContext, inlineRI, absposStatus, cbRect,
+                flags, &absposOverflow);
+  aStatus.MergeCompletionStatusFrom(absposStatus);
+  return Some(absposOverflow);
+}
+
 void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
                           const ReflowInput& aReflowInput,
                           nsReflowStatus& aStatus) {
-  if (IsHiddenByContentVisibilityOfInFlowParentForLayout()) {
+  if (IsHiddenByContentVisibilityOfInFlowParentForLayout() &&
+      !GetNextContinuation()) {
     FinishAndStoreOverflow(&aMetrics, aReflowInput.mStyleDisplay);
     return;
   }
@@ -1619,6 +1815,25 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
   // Factor pushed float child bounds into the overflow area
   aMetrics.mOverflowAreas.UnionWith(trialState.mFcBounds);
 
+  // Reflow absolute descendants of inline absolute containing blocks after all
+  // the lines are reflowed and placed.
+  //
+  // NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT would have been set on us, if
+  // appropriate, when we reflowed our inline lines, by
+  // nsInlineFrame::MarkBlockAncestorHavingAbsoluteDescendants() (called from
+  // the Reflow() of an inline/ruby descendant that has abspos children), so it
+  // is up to date here. At the end of ReflowAbsoluteDescendantsInInlineFrame(),
+  // the bit will be cleared when no abspos descendant is found (we do not
+  // proactively traverse this block's subtree to clear the bit when an abspos
+  // frame is removed).
+  if (StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled() &&
+      HasAnyStateBits(NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT) &&
+      !aReflowInput.WillReflowAgainForClearance() &&
+      !aPresContext->HasPendingInterrupt()) {
+    ReflowAbsoluteDescendantsInInlineFrame(aPresContext, aReflowInput, aMetrics,
+                                           reflowStatus);
+  }
+
   // Let the absolutely positioned container reflow any absolutely positioned
   // child frames that need to be reflowed, e.g., elements with a percentage
   // based width/height
@@ -1699,10 +1914,12 @@ void nsBlockFrame::Reflow(nsPresContext* aPresContext, ReflowOutput& aMetrics,
       LogicalRect cbRect(wm, LogicalPoint(wm), aMetrics.Size(wm));
       cbRect.Deflate(wm, aReflowInput.ComputedLogicalBorder(wm).ApplySkipSides(
                              PreReflowBlockLevelLogicalSkipSides()));
+      nsReflowStatus absposStatus;
       absoluteContainer->Reflow(
-          this, aPresContext, aReflowInput, reflowStatus,
+          this, aPresContext, aReflowInput, absposStatus,
           cbRect.GetPhysicalRect(wm, aMetrics.PhysicalSize()), flags,
           &aMetrics.mOverflowAreas);
+      reflowStatus.MergeCompletionStatusFrom(absposStatus);
     }
   }
 
@@ -5744,13 +5961,14 @@ void nsBlockFrame::PushLines(BlockReflowState& aState,
       // Mark all the overflow lines dirty so that they get reflowed when
       // they are pulled up by our next-in-flow.
 
-      nsLineBox* cursor = GetLineCursorForDisplay();
+      nsLineBox* cursorForDisplay = GetLineCursorForDisplay();
+      nsLineBox* cursorForQuery = GetLineCursorForQuery();
 
       // XXXldb Can this get called O(N) times making the whole thing O(N^2)?
       for (LineIterator line = overflowLines->mLines.begin(),
                         line_end = overflowLines->mLines.end();
            line != line_end; ++line) {
-        if (line == cursor) {
+        if (line == cursorForDisplay || line == cursorForQuery) {
           ClearLineCursors();
         }
         line->MarkDirty();
@@ -8139,7 +8357,8 @@ void nsBlockFrame::Init(nsIContent* aContent, nsContainerFrame* aParent,
   // NS_BLOCK_FLAGS_NON_INHERITED_MASK bits below.
   constexpr nsFrameState NS_BLOCK_FLAGS_MASK =
       NS_BLOCK_BFC | NS_BLOCK_HAS_FIRST_LETTER_STYLE |
-      NS_BLOCK_HAS_FIRST_LETTER_CHILD | NS_BLOCK_HAS_MARKER;
+      NS_BLOCK_HAS_FIRST_LETTER_CHILD | NS_BLOCK_HAS_MARKER |
+      NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT;
 
   // This is the subset of NS_BLOCK_FLAGS_MASK that is NOT inherited
   // by default.  They should only be set on the first-in-flow.

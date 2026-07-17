@@ -4,6 +4,8 @@
 
 package org.mozilla.fenix.ui.efficiency.selectors
 
+import org.mozilla.fenix.R
+import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.ui.efficiency.helpers.Selector
 import org.mozilla.fenix.ui.efficiency.helpers.SelectorStrategy
 
@@ -31,14 +33,14 @@ object SettingsHomepageSelectors {
 
     val JUMP_BACK_IN_BUTTON = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-        value = "Jump Back In",
+        value = "Jump back in",
         description = "the Jump Back In button",
         groups = listOf("homepageSettings"),
     )
 
     val RECENT_BOOKMARKS_BUTTON = Selector(
         strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
-        value = "Recent bookmarks",
+        value = getStringResource(R.string.customize_toggle_bookmarks),
         description = "the Recent bookmarks button",
         groups = listOf("homepageSettings"),
     )

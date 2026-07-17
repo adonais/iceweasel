@@ -71,8 +71,7 @@ already_AddRefed<nsMIMEInfoBase> nsGNOMERegistry::GetFromExtension(
 /* static */
 already_AddRefed<nsMIMEInfoBase> nsGNOMERegistry::GetFromType(
     const nsACString& aMIMEType) {
-  RefPtr<nsMIMEInfoUnix> mimeInfo = new nsMIMEInfoUnix(aMIMEType);
-  NS_ENSURE_TRUE(mimeInfo, nullptr);
+  RefPtr mimeInfo = mozilla::MakeRefPtr<nsMIMEInfoUnix>(aMIMEType);
 
   nsAutoString name;
   nsAutoCString description;

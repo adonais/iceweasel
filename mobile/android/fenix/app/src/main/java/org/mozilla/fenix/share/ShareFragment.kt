@@ -33,7 +33,6 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentShareBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.share.DefaultShareController.Companion.ACTION_COPY_LINK_TO_CLIPBOARD
 import org.mozilla.fenix.share.listadapters.AppShareOption
 import org.mozilla.fenix.theme.DefaultThemeProvider
@@ -160,14 +159,11 @@ class ShareFragment : AppCompatDialogFragment() {
             }
         }
 
-        FxNimbus.features.print.recordExposure()
-        if (FxNimbus.features.print.value().sharePrintEnabled) {
-            binding.print.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
-            binding.print.setContent {
-                FirefoxTheme(theme = DefaultThemeProvider.provideTheme()) {
-                    PrintItem {
-                        shareInteractor.onPrint(tabId = args.sessionId)
-                    }
+        binding.print.setViewCompositionStrategy(ViewCompositionStrategy.DisposeOnViewTreeLifecycleDestroyed)
+        binding.print.setContent {
+            FirefoxTheme(theme = DefaultThemeProvider.provideTheme()) {
+                PrintItem {
+                    shareInteractor.onPrint(tabId = args.sessionId)
                 }
             }
         }

@@ -9,6 +9,7 @@ let lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   FaviconUtils: "moz-src:///toolkit/modules/FaviconUtils.sys.mjs",
+  ShellService: "moz-src:///browser/components/shell/ShellService.sys.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetters(lazy, {
@@ -176,6 +177,19 @@ export const TaskbarTabsUtils = {
     return await TaskbarTabsUtils._imageFromLocalURI(
       lazy.Favicons.defaultFavicon
     );
+  },
+
+  /**
+   * Gets the name that should be used for a new desktop entry on Linux. This
+   * avoids duplicating the logic between TaskbarTabsWindowManager, where we
+   * want the name before pinning, and TaskbarTabsPin, where it is actually
+   * pinned. As such, this should be constant within a single session.
+   *
+   * @param {string} aTaskbarTabId - The ID of the taskbar tab.
+   * @returns {string} The desktop entry name, excluding the '.desktop' suffix.
+   */
+  _determineNewDesktopEntryName(aTaskbarTabId) {
+    return `${lazy.ShellService.getGlibPrgname()}.webapp-${aTaskbarTabId}`;
   },
 };
 

@@ -31,7 +31,6 @@ import org.mozilla.fenix.components.IntentProcessorType
 import org.mozilla.fenix.components.IntentProcessors
 import org.mozilla.fenix.customtabs.ExternalAppBrowserActivity
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.perf.TestStrictModeManager
 import org.mozilla.fenix.shortcut.NewTabShortcutIntentProcessor
@@ -299,7 +298,7 @@ class IntentReceiverActivityTest {
     }
 
     private fun attachMocks(activity: Activity) {
-        every { activity.settings() } returns settings
+        every { activity.components.settings } returns settings
         every { activity.components.analytics } returns mockk(relaxed = true)
         every { activity.components.core } returns mockk(relaxed = true)
         every { activity.components.intentProcessors } returns intentProcessors

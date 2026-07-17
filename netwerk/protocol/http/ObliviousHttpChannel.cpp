@@ -656,6 +656,18 @@ ObliviousHttpChannel::SetLoadInfo(nsILoadInfo* aLoadInfo) {
 }
 
 NS_IMETHODIMP
+ObliviousHttpChannel::GetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle** aValue) {
+  return mInnerChannel->GetParentProcessChannelHandle(aValue);
+}
+
+NS_IMETHODIMP
+ObliviousHttpChannel::SetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle* aValue) {
+  return mInnerChannel->SetParentProcessChannelHandle(aValue);
+}
+
+NS_IMETHODIMP
 ObliviousHttpChannel::GetIsDocument(bool* aIsDocument) {
   return mInnerChannel->GetIsDocument(aIsDocument);
 }

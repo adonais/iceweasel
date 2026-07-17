@@ -10,15 +10,6 @@ const { SidebarTestUtils } = ChromeUtils.importESModule(
 SidebarTestUtils.init(this);
 SidebarTestUtils.restoreStateAtCleanup(window);
 
-add_setup(async () => {
-  // withSidebarTree opens the legacy bookmarks sidebar panel and inspects its
-  // tree view, so opt out of the updated bookmarks panel here.
-  // TODO(Bug 2039395): adapt this test to the new bookmarks sidear panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv)
-  await SpecialPowers.pushPrefEnv({
-    set: [["sidebar.updatedBookmarks.enabled", false]],
-  });
-});
-
 registerCleanupFunction(() => {
   Services.prefs.clearUserPref(
     "browser.toolbarbuttons.introduced.sidebar-button"

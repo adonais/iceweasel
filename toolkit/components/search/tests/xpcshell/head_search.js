@@ -1,6 +1,10 @@
 ChromeUtils.defineESModuleGetters(this, {
   AddonTestUtils: "resource://testing-common/AddonTestUtils.sys.mjs",
+  AppProvidedConfigEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   clearTimeout: "resource://gre/modules/Timer.sys.mjs",
+  ConfigSearchEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   EnterprisePolicyTesting:
     "resource://testing-common/EnterprisePolicyTesting.sys.mjs",
   ExtensionTestUtils:

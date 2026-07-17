@@ -62,9 +62,9 @@ add_task(async function () {
     // Expect a ruleview-changed event if we are moving from a property value
     // to the next property name (which occurs after the first iteration, as for
     // i=0, the previous field is the selector).
-    const onRuleViewChanged = i > 0 ? view.once("ruleview-changed") : null;
+    const onModifications = i > 0 ? view.once("property-value-updated") : null;
     await focusNextEditableField(view, ruleEditor);
-    await onRuleViewChanged;
+    await onModifications;
     assertEditor(
       view,
       propEditor.nameSpan,
@@ -81,9 +81,9 @@ add_task(async function () {
   }
 
   // Expect a ruleview-changed event again as we're bluring a property value.
-  const onRuleViewChanged = view.once("ruleview-changed");
+  const onModifications = view.once("property-value-updated");
   await focusNextEditableField(view, ruleEditor);
-  await onRuleViewChanged;
+  await onModifications;
   assertEditor(
     view,
     ruleEditor.newPropSpan,
@@ -100,7 +100,9 @@ add_task(async function () {
   );
 
   info("Blur the selector field");
+  const anchorNamesUpdated = inspector.once("anchor-names-updated");
   EventUtils.synthesizeKey("KEY_Escape");
+  await anchorNamesUpdated;
 });
 
 async function focusNextEditableField(view, ruleEditor) {

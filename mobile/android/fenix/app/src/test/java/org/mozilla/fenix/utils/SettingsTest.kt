@@ -31,7 +31,6 @@ import org.mozilla.fenix.nimbus.FakeNimbusEventStore
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.nimbus.HomescreenEdgeToEdgeBackground
 import org.mozilla.fenix.settings.PhoneFeature
-import org.mozilla.fenix.settings.ShortcutType
 import org.mozilla.fenix.settings.deletebrowsingdata.DeleteBrowsingDataOnQuitType
 import org.mozilla.fenix.wallpapers.Wallpaper
 import org.robolectric.RobolectricTestRunner
@@ -827,26 +826,12 @@ class SettingsTest {
     }
 
     @Test
-    fun `GIVEN feature is disabled, hasUserBeenOnboarded is true and isLauncherIntent is true THEN shouldShowOnboarding returns false`() {
+    fun `GIVEN feature is disabled, hasUserBeenOnboarded is true THEN shouldShowOnboarding returns false`() {
         val settings = spyk(settings)
 
         val actual = settings.shouldShowOnboarding(
             featureEnabled = false,
             hasUserBeenOnboarded = true,
-            isLauncherIntent = true,
-        )
-
-        assertFalse(actual)
-    }
-
-    @Test
-    fun `GIVEN feature is enabled, hasUserBeenOnboarded is false and isLauncherIntent is false THEN shouldShowOnboarding returns false`() {
-        val settings = spyk(settings)
-
-        val actual = settings.shouldShowOnboarding(
-            featureEnabled = true,
-            hasUserBeenOnboarded = false,
-            isLauncherIntent = false,
         )
 
         assertFalse(actual)
@@ -859,20 +844,18 @@ class SettingsTest {
         val actual = settings.shouldShowOnboarding(
             featureEnabled = true,
             hasUserBeenOnboarded = true,
-            isLauncherIntent = true,
         )
 
         assertFalse(actual)
     }
 
     @Test
-    fun `GIVEN feature is enabled, hasUserBeenOnboarded is false and isLauncherIntent is true THEN shouldShowOnboarding returns true`() {
+    fun `GIVEN feature is enabled, hasUserBeenOnboarded is false THEN shouldShowOnboarding returns true`() {
         val settings = spyk(settings)
 
         val actual = settings.shouldShowOnboarding(
             featureEnabled = true,
             hasUserBeenOnboarded = false,
-            isLauncherIntent = true,
         )
 
         assertTrue(actual)
@@ -886,7 +869,6 @@ class SettingsTest {
         val actual = settings.shouldShowOnboarding(
             featureEnabled = false,
             hasUserBeenOnboarded = true,
-            isLauncherIntent = false,
         )
 
         assertTrue(actual)

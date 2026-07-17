@@ -205,8 +205,9 @@ NS_INTERFACE_MAP_END
 NS_IMPL_CYCLE_COLLECTING_ADDREF(nsPrinterBase)
 NS_IMPL_CYCLE_COLLECTING_RELEASE(nsPrinterBase)
 
-nsPrinterBase::nsPrinterBase(const CommonPaperInfoArray* aPaperInfoArray)
-    : mCommonPaperInfo(aPaperInfoArray) {
+nsPrinterBase::nsPrinterBase(const CommonPaperInfoArray* aPaperInfoArray,
+                             bool aSortAfterLocal)
+    : mCommonPaperInfo(aPaperInfoArray), mSortAfterLocal(aSortAfterLocal) {
   MOZ_DIAGNOSTIC_ASSERT(aPaperInfoArray, "Localized paper info was null");
 }
 nsPrinterBase::~nsPrinterBase() = default;

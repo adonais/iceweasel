@@ -159,7 +159,7 @@ class Selection final : public nsSupportsWeakReference,
   using IsUnlinking = AbstractRange::IsUnlinking;
 
  protected:
-  virtual ~Selection();
+  ~Selection();
 
  public:
   /**
@@ -168,7 +168,7 @@ class Selection final : public nsSupportsWeakReference,
   explicit Selection(SelectionType aSelectionType,
                      nsFrameSelection* aFrameSelection);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Selection)
 
   /**
@@ -232,6 +232,7 @@ class Selection final : public nsSupportsWeakReference,
   // utility methods for scrolling the selection into view
   nsPresContext* GetPresContext() const;
   PresShell* GetPresShell() const;
+  Document* GetDocument() const;
   nsFrameSelection* GetFrameSelection() const { return mFrameSelection; }
   // Returns a rect containing the selection region, and frame that that
   // position is relative to. For SELECTION_ANCHOR_REGION or
@@ -338,6 +339,12 @@ class Selection final : public nsSupportsWeakReference,
   // Get the anchor-to-focus range if we don't care which end is
   // anchor and which end is focus.
   const nsRange* GetAnchorFocusRange() const { return mAnchorFocusRange; }
+
+  /**
+   * Set mAnchorFocusRange to mStyledRanges.mRanges[aIndex] if aIndex is a
+   * valid index.
+   */
+  void SetAnchorFocusRange(size_t aIndex);
 
   void GetDirection(nsAString& aDirection) const;
 
@@ -949,11 +956,6 @@ class Selection final : public nsSupportsWeakReference,
     ScrollFlags mFlags;
   };
 
-  /**
-   * Set mAnchorFocusRange to mStyledRanges.mRanges[aIndex] if aIndex is a valid
-   * index.
-   */
-  void SetAnchorFocusRange(size_t aIndex);
   void RemoveAnchorFocusRange() { mAnchorFocusRange = nullptr; }
   void SelectFramesOf(nsIContent* aContent, bool aSelected) const;
 
@@ -976,8 +978,6 @@ class Selection final : public nsSupportsWeakReference,
    */
   MOZ_CAN_RUN_SCRIPT nsresult MaybeAddTableCellRange(nsRange& aRange,
                                                      Maybe<size_t>* aOutIndex);
-
-  Document* GetDocument() const;
 
   MOZ_CAN_RUN_SCRIPT void RemoveAllRangesInternal(
       mozilla::ErrorResult& aRv, IsUnlinking aIsUnlinking = IsUnlinking::No);
@@ -1315,6 +1315,26 @@ inline std::ostream& operator<<(
       return aStream << "<Illegal value>";
   }
 }
+
+/**
+ * Use this to detect unexpected selection changes. This is almost the same as
+ * nsMutationGuard. So, when you fix some bugs of this, you should change
+ * nsMutationGuard too.
+ */
+class SelectionChangeGuard {
+ public:
+  SelectionChangeGuard() : mStartingGeneration(sGeneration) {}
+
+  [[nodiscard]] bool Changed(uint32_t aIgnoreCount) const {
+    return (sGeneration - mStartingGeneration) > aIgnoreCount;
+  }
+
+  static void DidChange() { sGeneration++; }
+
+ private:
+  uint64_t mStartingGeneration;
+  static uint64_t sGeneration;
+};
 
 }  // namespace mozilla
 

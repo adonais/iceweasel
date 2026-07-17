@@ -239,6 +239,9 @@ bool WeakRefObject::deref(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
+void WeakRefObject::setTarget(Value target) {
+  setReservedSlotGCThingAsPrivate(TargetSlot, target.toGCThing());
+}
 void WeakRefObject::setTargetUnbarriered(Value target) {
   setReservedSlotGCThingAsPrivateUnbarriered(TargetSlot, target.toGCThing());
 }

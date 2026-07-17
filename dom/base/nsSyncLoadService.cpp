@@ -350,7 +350,7 @@ nsresult nsSyncLoadService::PushSyncStreamToListener(
   rv = aListener->OnStartRequest(aChannel);
   if (NS_SUCCEEDED(rv)) {
     uint64_t sourceOffset = 0;
-    while (1) {
+    while (true) {
       uint64_t readCount = 0;
       rv = in->Available(&readCount);
       if (NS_FAILED(rv) || !readCount) {

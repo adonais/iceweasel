@@ -83,8 +83,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(DOMIntersectionObserver)
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 
 DOMIntersectionObserver::DOMIntersectionObserver(
-    already_AddRefed<nsPIDOMWindowInner>&& aOwner,
-    dom::IntersectionCallback& aCb)
+    already_AddRefed<nsPIDOMWindowInner> aOwner, dom::IntersectionCallback& aCb)
     : mOwner(aOwner),
       mDocument(mOwner->GetExtantDoc()),
       mCallback(RefPtr<dom::IntersectionCallback>(&aCb)) {}

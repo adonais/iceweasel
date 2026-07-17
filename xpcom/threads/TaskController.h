@@ -257,7 +257,7 @@ class Task {
 // run during idle periods.
 class IdleTaskManager : public TaskManager {
  public:
-  explicit IdleTaskManager(already_AddRefed<nsIIdlePeriod>&& aIdlePeriod)
+  explicit IdleTaskManager(already_AddRefed<nsIIdlePeriod> aIdlePeriod)
       : mIdlePeriodState(std::move(aIdlePeriod)), mProcessedTaskCount(0) {}
 
   IdlePeriodState& State() { return mIdlePeriodState; }
@@ -305,7 +305,7 @@ class TaskController {
     mExternalCondVar = aExternalCondVar;
   }
 
-  void SetIdleTaskManager(IdleTaskManager* aIdleTaskManager) {
+  void SetIdleTaskManager(already_AddRefed<IdleTaskManager> aIdleTaskManager) {
     mIdleTaskManager = aIdleTaskManager;
   }
   IdleTaskManager* GetIdleTaskManager() { return mIdleTaskManager.get(); }
@@ -322,7 +322,7 @@ class TaskController {
 
   // This adds a task to the TaskController graph.
   // This may be called on any thread.
-  void AddTask(already_AddRefed<Task>&& aTask);
+  void AddTask(already_AddRefed<Task> aTask);
 
   // This wait function is the theoretical function you would need if our main
   // thread needs to also process OS messages or something along those lines.
@@ -339,7 +339,7 @@ class TaskController {
   // This may be called on any thread.
   void ReprioritizeTask(Task* aTask, uint32_t aPriority);
 
-  void DispatchRunnable(already_AddRefed<nsIRunnable>&& aRunnable,
+  void DispatchRunnable(already_AddRefed<nsIRunnable> aRunnable,
                         uint32_t aPriority, TaskManager* aManager = nullptr);
 
   nsIRunnable* GetRunnableForMTTask(bool aReallyWait);

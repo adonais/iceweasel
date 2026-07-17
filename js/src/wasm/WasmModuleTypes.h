@@ -88,8 +88,14 @@ struct CacheableName {
     return true;
   }
 
+  bool operator==(const CacheableName& other) const {
+    return utf8Bytes() == other.utf8Bytes();
+  }
+
   static CacheableName fromUTF8Chars(UniqueChars&& utf8Chars);
   [[nodiscard]] static bool fromUTF8Chars(const char* utf8Chars,
+                                          CacheableName* name);
+  [[nodiscard]] static bool fromUTF8Bytes(mozilla::Span<const char> utf8Bytes,
                                           CacheableName* name);
 
   [[nodiscard]] JSString* toJSString(JSContext* cx) const;

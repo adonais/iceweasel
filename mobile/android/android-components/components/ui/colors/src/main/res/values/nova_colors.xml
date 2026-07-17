@@ -6,6 +6,7 @@
     <!-- Black And White -->
     <color name="novaWhite">#ffffffff</color>
     <color name="novaBlack">#ff000000</color>
+    <color name="novaBlackA50">#80000000</color>
 
     <!-- Gray -->
     <color name="novaGray0">#fffcfbff</color>
@@ -18,6 +19,8 @@
     <color name="novaGray35">#ffa6a4a9</color>
     <color name="novaGray40">#ff949297</color>
     <color name="novaGray45">#ff817f84</color>
+    <color name="novaGray45A80">#cc817f84</color>
+    <color name="novaGray45A81">#cf817f84</color>
     <color name="novaGray50">#ff67666a</color>
     <color name="novaGray55">#ff515054</color>
     <color name="novaGray60">#ff3f3e42</color>
@@ -30,19 +33,25 @@
 
     <!-- Violet Desaturated -->
     <color name="novaVioletDesaturated0">#fff2f0f8</color>
+    <color name="novaVioletDesaturated0A70">#b2f2f0f8</color>
     <color name="novaVioletDesaturated10">#ffe2dcf2</color>
     <color name="novaVioletDesaturated20">#ffcac1e4</color>
     <color name="novaVioletDesaturated30">#ffb0a3d2</color>
+    <color name="novaVioletDesaturated30A55">#8cb0a3d2</color>
     <color name="novaVioletDesaturated40">#ff9484bd</color>
     <color name="novaVioletDesaturated50">#ff75669f</color>
+    <color name="novaVioletDesaturated50A86">#db75669f</color>
     <color name="novaVioletDesaturated60">#ff584a7d</color>
     <color name="novaVioletDesaturated70">#ff3e315f</color>
     <color name="novaVioletDesaturated80">#ff281d44</color>
     <color name="novaVioletDesaturated90">#ff180e30</color>
+    <color name="novaVioletDesaturated90A50">#80180e30</color>
+    <color name="novaVioletDesaturated90A70">#b2180e30</color>
 
     <!-- Violet -->
     <color name="novaViolet0">#fff5ecff</color>
     <color name="novaViolet10">#ffe5d6ff</color>
+    <color name="novaViolet10A50">#80e5d6ff</color>
     <color name="novaViolet20">#ffcdb7ff</color>
     <color name="novaViolet30">#ffb393ff</color>
     <color name="novaViolet40">#ff956eff</color>
@@ -91,12 +100,14 @@
     <!-- Orange -->
     <color name="novaOrange0">#ffffede0</color>
     <color name="novaOrange10">#ffffd4b7</color>
+    <color name="novaOrange10A50">#80ffd4b7</color>
     <color name="novaOrange20">#fffeb48c</color>
     <color name="novaOrange30">#ffff8f5d</color>
     <color name="novaOrange40">#fff5672b</color>
     <color name="novaOrange50">#ffd24300</color>
     <color name="novaOrange60">#ffa02d02</color>
     <color name="novaOrange70">#ff711d08</color>
+    <color name="novaOrange70A50">#80711d08</color>
     <color name="novaOrange80">#ff47130a</color>
     <color name="novaOrange90">#ff250e0b</color>
 

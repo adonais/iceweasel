@@ -391,7 +391,8 @@ std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
     VideoStreamEncoder::BitrateAllocationCallbackType
         bitrate_allocation_callback_type,
     Metronome* metronome,
-    VideoEncoderFactory::EncoderSelectorInterface* encoder_selector,
+    scoped_refptr<VideoEncoderFactory::EncoderSelectorInterface>
+        encoder_selector,
     EncoderSwitchRequestCallback encoder_switch_request_callback) {
   std::unique_ptr<TaskQueueBase, TaskQueueDeleter> encoder_queue =
       env.task_queue_factory().CreateTaskQueue(
@@ -407,7 +408,7 @@ std::unique_ptr<VideoStreamEncoderInterface> CreateVideoStreamEncoder(
           &env.clock(), encoder_queue_ptr, metronome,
           /*worker_queue=*/TaskQueueBase::Current(), env.field_trials()),
       std::move(encoder_queue), bitrate_allocation_callback_type,
-      encoder_selector, std::move(encoder_switch_request_callback));
+      std::move(encoder_selector), std::move(encoder_switch_request_callback));
 }
 
 bool HasActiveEncodings(const VideoEncoderConfig& config) {
@@ -969,11 +970,6 @@ EncodedImageCallback::Result VideoSendStreamImpl::OnEncodedImage(
       SafeTask(worker_queue_safety_.flag(), std::move(task_to_run_on_worker)));
 
   return rtp_video_sender_->OnEncodedImage(encoded_image, codec_specific_info);
-}
-
-void VideoSendStreamImpl::OnDroppedFrame(
-    EncodedImageCallback::DropReason reason) {
-  activity_ = true;
 }
 
 void VideoSendStreamImpl::OnFrameDropped(uint32_t rtp_timestamp,

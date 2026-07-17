@@ -1,49 +1,24 @@
-From: Andreas Pehrson <apehrson@mozilla.com>
-Date: Tue, 28 Jan 2025 21:45:00 +0000
-Subject: Bug 1938047 - Hook up VideoStreamFactory with EncoderInfo like the
- libwebrtc factory. r=webrtc-reviewers,dbaker
+From: Michael Froman <mfroman@mozilla.com>
+Date: Tue, 13 May 2025 22:39:00 +0000
+Subject: Bug 1966238 - (fix-bf85c38fb3) fix build for our added 'pid' field in
+ DesktopCapturer::Source r?pehrsons!
 
-This is necessary for the factory to factor in the encoder's resolution
-alignment requirements when calculating stream resolutions.
-
-Differential Revision: https://phabricator.services.mozilla.com/D235702
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8b5653392e88ccd0c2b0675c761bb22733364225
+Differential Revision: https://phabricator.services.mozilla.com/D249164
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/b6b37905a574e7706d98eb683e6800c9525815e7
 ---
- video/config/video_encoder_config.h | 4 ++++
- video/video_stream_encoder.cc       | 1 +
- 2 files changed, 5 insertions(+)
+ modules/desktop_capture/mac/screen_capturer_sck.mm | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/video/config/video_encoder_config.h b/video/config/video_encoder_config.h
-index cbb3bf1ce9..06dcbf8a6d 100644
---- a/video/config/video_encoder_config.h
-+++ b/video/config/video_encoder_config.h
-@@ -26,6 +26,7 @@
- #include "api/video_codecs/sdp_video_format.h"
- #include "api/video_codecs/spatial_layer.h"
- #include "api/video_codecs/video_codec.h"
-+#include "api/video_codecs/video_encoder.h"
- 
- namespace webrtc {
- 
-@@ -158,6 +159,9 @@ class VideoEncoderConfig {
-         int frame_height,
-         const VideoEncoderConfig& encoder_config) = 0;
- 
-+    // Mozilla: Patching in necessary info our custom VideoStreamFactory will need to know.
-+    virtual void SetEncoderInfo(const VideoEncoder::EncoderInfo& info) {}
-+
-    protected:
-     ~VideoStreamFactoryInterface() override {}
-   };
-diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
-index 3b5df4e521..f5770ca3c2 100644
---- a/video/video_stream_encoder.cc
-+++ b/video/video_stream_encoder.cc
-@@ -1109,6 +1109,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
-   std::vector<VideoStream> streams;
-   if (encoder_config_.video_stream_factory) {
-     // Note: only tests set their own EncoderStreamFactory...
-+    encoder_config_.video_stream_factory->SetEncoderInfo(encoder_->GetEncoderInfo());
-     streams = encoder_config_.video_stream_factory->CreateEncoderStreams(
-         env_.field_trials(), last_frame_info_->width, last_frame_info_->height,
-         encoder_config_);
+diff --git a/modules/desktop_capture/mac/screen_capturer_sck.mm b/modules/desktop_capture/mac/screen_capturer_sck.mm
+index 49c923e56b..0d0750f63e 100644
+--- a/modules/desktop_capture/mac/screen_capturer_sck.mm
++++ b/modules/desktop_capture/mac/screen_capturer_sck.mm
+@@ -444,7 +444,7 @@ bool ScreenCapturerSck::GetSourceList(SourceList* sources) {
+   sources->clear();
+   EnsurePickerHandle();
+   if (picker_handle_) {
+-    sources->push_back({picker_handle_->Source(), std::string()});
++    sources->push_back({picker_handle_->Source(), 0, std::string()});
+   }
+   return true;
+ }

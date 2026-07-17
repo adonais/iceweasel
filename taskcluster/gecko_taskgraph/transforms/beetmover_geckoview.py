@@ -5,21 +5,16 @@
 Transform the beetmover task into an actual task description.
 """
 
-from typing import Optional
-
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.copy import deepcopy
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import Schema
 
 from gecko_taskgraph.transforms.beetmover import (
     craft_release_properties as beetmover_craft_release_properties,
 )
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import (
-    copy_attributes_from_dependent_job,
-    release_level,
-)
+from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.declarative_artifacts import (
     get_geckoview_artifact_id,
     get_geckoview_artifact_map,
@@ -33,16 +28,8 @@ class BeetmoverDescriptionSchema(Schema, kw_only=True):
     treeherder: TaskDescriptionSchema.__annotations__["treeherder"] = None
     run_on_projects: TaskDescriptionSchema.__annotations__["run_on_projects"]  # noqa: F821
     run_on_hg_branches: TaskDescriptionSchema.__annotations__["run_on_hg_branches"]  # noqa: F821
-    bucket_scope: Optional[
-        optionally_keyed_by("release-level", str, use_msgspec=True)
-    ] = None  # type: ignore
-    shipping_phase: Optional[  # type: ignore
-        optionally_keyed_by(
-            "project",
-            TaskDescriptionSchema.__annotations__["shipping_phase"],
-            use_msgspec=True,
-        )
-    ] = None
+    bucket_scope: str
+    shipping_phase: TaskDescriptionSchema.__annotations__["shipping_phase"] = None
     shipping_product: TaskDescriptionSchema.__annotations__["shipping_product"] = None
     attributes: TaskDescriptionSchema.__annotations__["attributes"] = None
     task_from: TaskDescriptionSchema.__annotations__["task_from"] = None
@@ -61,30 +48,6 @@ def remove_name(config, jobs):
 
 
 transforms.add_validate(BeetmoverDescriptionSchema)
-
-
-@transforms.add
-def resolve_keys(config, jobs):
-    for job in jobs:
-        resolve_keyed_by(
-            job,
-            "run-on-hg-branches",
-            item_name=job["label"],
-            project=config.params["project"],
-        )
-        resolve_keyed_by(
-            job,
-            "shipping-phase",
-            item_name=job["label"],
-            project=config.params["project"],
-        )
-        resolve_keyed_by(
-            job,
-            "bucket-scope",
-            item_name=job["label"],
-            **{"release-level": release_level(config.params)},
-        )
-        yield job
 
 
 @transforms.add

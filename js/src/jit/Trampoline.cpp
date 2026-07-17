@@ -232,9 +232,10 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     // There can be multiple previous frame types so just "unwrap" this frame
     // and try again.
     masm.loadPtr(Address(fpScratch, CallerFPOffset), fpScratch);
-    emitAssertPrevFrameType(fpScratch, scratch,
-                            {FrameType::IonJS, FrameType::BaselineStub,
-                             FrameType::CppToJSJit, FrameType::WasmToJSJit});
+    emitAssertPrevFrameType(
+        fpScratch, scratch,
+        {FrameType::IonJS, FrameType::BaselineStub, FrameType::IonICCall,
+         FrameType::CppToJSJit, FrameType::WasmToJSJit});
     masm.jump(&again);
   }
 
@@ -243,10 +244,11 @@ void JitRuntime::generateProfilerExitFrameTailStub(MacroAssembler& masm,
     {
       // Unwrap the baseline interpreter entry frame and try again.
       masm.loadPtr(Address(fpScratch, CallerFPOffset), fpScratch);
-      emitAssertPrevFrameType(fpScratch, scratch,
-                              {FrameType::IonJS, FrameType::BaselineJS,
-                               FrameType::BaselineStub, FrameType::CppToJSJit,
-                               FrameType::WasmToJSJit, FrameType::IonICCall});
+      emitAssertPrevFrameType(
+          fpScratch, scratch,
+          {FrameType::IonJS, FrameType::BaselineJS, FrameType::BaselineStub,
+           FrameType::CppToJSJit, FrameType::WasmToJSJit, FrameType::IonICCall,
+           FrameType::TrampolineNative});
       masm.jump(&again);
     }
   }

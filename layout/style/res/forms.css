@@ -160,6 +160,11 @@ button,
   margin-inline-start: -100%;
 }
 
+input::placeholder,
+input::-moz-text-control-preview {
+  overflow-inline: clip;
+}
+
 ::-moz-text-control-preview {
   font-family: system-ui;
 }
@@ -239,6 +244,7 @@ select::picker-icon {
   display: inline-block;
   appearance: auto;
   -moz-default-appearance: -moz-menulist-arrow-button;
+  content: "\feff";
   pointer-events: none;
   -webkit-text-security: none;
   max-block-size: 100%;
@@ -247,6 +253,11 @@ select::picker-icon {
    * baseline of the combobox to match the baseline of the label, so the
    * dropmarker is what gets the vertical-align. */
   vertical-align: top;
+}
+
+/* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+select:-moz-select-list-box::picker-icon {
+  display: none;
 }
 
 select:-moz-select-list-box {
@@ -273,6 +284,11 @@ select::picker(select) {
 /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
 select:-moz-select-list-box::picker(select) {
   display: contents !important;
+}
+
+select > button:first-child {
+  all: unset;
+  display: contents;
 }
 
 option[label]::before {
@@ -874,7 +890,6 @@ textarea:autofill {
   color: FieldText !important;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("layout.css.appearance-base.enabled") {
   /* https://drafts.csswg.org/css-forms/#basic-appearance-stylesheet */
   /* See https://github.com/w3c/csswg-drafts/pull/13658 for divergences.
@@ -963,6 +978,25 @@ textarea:autofill {
     input:is([type="color"], [type="button"], [type="reset"], [type="submit"]):disabled,
     input[type="file"]:disabled::file-selector-button {
       color: color-mix(currentColor 50%, transparent);
+    }
+
+    /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+    select option::checkmark {
+      content: "\2713" / "";
+      pointer-events: none;
+    }
+
+    /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+    select option:not(:checked)::checkmark {
+      visibility: hidden;
+    }
+
+    /* stylelint-disable-next-line selector-pseudo-element-no-unknown */
+    select::picker-icon {
+      -moz-default-appearance: none;
+      content: counter(fake-counter-name, disclosure-open) / "";
+      display: block;
+      margin-inline-start: auto;
     }
   }
 }

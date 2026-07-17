@@ -13,6 +13,7 @@ import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.test.runTest
 import mozilla.components.browser.state.action.SearchAction
 import mozilla.components.browser.state.search.RegionState
@@ -947,6 +948,20 @@ class DefaultTopSiteControllerTest {
 
         coVerify {
             topSitesUseCases.updateTopSites(topSite = topSite, title = title, url = url)
+        }
+    }
+
+    @Test
+    fun `WHEN a new shortcut is saved THEN add the shortcut as a pinned top site`() = runTest {
+        val controller = createController(this)
+        val title = "Firefox"
+        val url = "firefox.com"
+
+        controller.handleSaveShortcut(title = title, url = url)
+        testScheduler.advanceUntilIdle()
+
+        coVerify {
+            topSitesUseCases.addPinnedSites(title = title, url = url)
         }
     }
 

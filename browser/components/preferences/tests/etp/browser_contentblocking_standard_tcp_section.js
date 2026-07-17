@@ -12,10 +12,8 @@ const LEARN_MORE_URL =
   Services.urlFormatter.formatURLPref("app.support.baseURL") +
   "total-cookie-protection";
 
-const {
-  BEHAVIOR_REJECT_TRACKER,
-  BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
-} = Ci.nsICookieService;
+const { BEHAVIOR_REJECT_TRACKER, BEHAVIOR_PARTITION_FOREIGN } =
+  Ci.nsICookieService;
 
 async function testTCPSection({ dFPIEnabled }) {
   info(
@@ -30,9 +28,7 @@ async function testTCPSection({ dFPIEnabled }) {
     .getDefaultBranch("")
     .setIntPref(
       COOKIE_BEHAVIOR_PREF,
-      dFPIEnabled
-        ? BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
-        : BEHAVIOR_REJECT_TRACKER
+      dFPIEnabled ? BEHAVIOR_PARTITION_FOREIGN : BEHAVIOR_REJECT_TRACKER
     );
 
   // Setting to standard category explicitly, since changing the default cookie
@@ -43,7 +39,7 @@ async function testTCPSection({ dFPIEnabled }) {
 
   const uiEnabled =
     Services.prefs.getIntPref(COOKIE_BEHAVIOR_PREF) ==
-    BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+    BEHAVIOR_PARTITION_FOREIGN;
 
   await openPreferencesViaOpenPreferencesAPI("privacy", { leaveOpen: true });
   let doc = gBrowser.contentDocument;

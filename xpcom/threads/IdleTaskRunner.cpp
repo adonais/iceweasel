@@ -136,8 +136,9 @@ void IdleTaskRunner::Run() {
   }
 }
 
-static void TimedOut(nsITimer* aTimer, void* aClosure) {
+void IdleTaskRunner::TimedOut(nsITimer* aTimer, void* aClosure) {
   RefPtr<IdleTaskRunner> runner = static_cast<IdleTaskRunner*>(aClosure);
+  runner->mTimerActive = false;
   runner->Run();
 }
 
@@ -282,14 +283,17 @@ void IdleTaskRunner::ResetTimer(TimeDuration aDelay) {
   }
 
   if (mTimer) {
-    // We rely on timers that target the main thread to be infallible (except
-    // for very late shutdown edge cases that should not occur, normally).
     nsresult rv = mTimer->InitWithNamedFuncCallback(
         TimedOut, this, aDelay.ToMilliseconds(), nsITimer::TYPE_ONE_SHOT,
         mName);
     if (NS_WARN_IF(NS_FAILED(rv))) {
-      MOZ_ASSERT(
-          AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads));
+      if (AppShutdown::IsInOrBeyond(ShutdownPhase::XPCOMShutdownThreads)) {
+        Cancel();
+      } else {
+        MOZ_ASSERT_UNREACHABLE(
+            "We rely on timers that target the main thread to be infallible "
+            "before shutdown.");
+      }
     } else {
       mTimerActive = true;
     }

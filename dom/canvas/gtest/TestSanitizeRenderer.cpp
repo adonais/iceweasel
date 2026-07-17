@@ -205,6 +205,17 @@ TEST(SanitizeRenderer, TestAngleSamsungVulkanAlt)
   EXPECT_EQ(sanitized, expectation);
 }
 
+TEST(SanitizeRenderer, TestAngleMetalApple)
+{
+  const std::string renderer(
+      "ANGLE (Apple, ANGLE Metal Renderer: Apple M5 Max, Version 26.5 (Build "
+      "25F71))");
+  const std::string expectation(
+      "ANGLE (Apple, ANGLE Metal Renderer: Apple M1), or similar");
+  const auto sanitized = mozilla::webgl::SanitizeRenderer(renderer);
+  EXPECT_EQ(sanitized, expectation);
+}
+
 TEST(SanitizeRenderer, TestLinuxK600)
 {
   const std::string renderer("NVE7");

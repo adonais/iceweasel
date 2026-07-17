@@ -4,6 +4,7 @@
 
 import { PrivateBrowsingUtils } from "resource://gre/modules/PrivateBrowsingUtils.sys.mjs";
 import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+import { IPPEarlyStartupFilter } from "moz-src:///toolkit/components/ipprotection/IPPEarlyStartupFilter.sys.mjs";
 
 const lazy = {};
 
@@ -11,8 +12,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
   IPProtectionServerlist:
     "moz-src:///toolkit/components/ipprotection/IPProtectionServerlist.sys.mjs",
   IPPProxyManager:
-    "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
-  IPPProxyStates:
     "moz-src:///toolkit/components/ipprotection/IPPProxyManager.sys.mjs",
   IPProtectionService:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
@@ -116,76 +115,9 @@ class IPPAutoStartSingleton {
 
 const IPPAutoStart = new IPPAutoStartSingleton();
 
-/**
- * This class monitors the startup phases and registers/unregisters the channel
- * filter to avoid data leak. The activation of the VPN is done by the
- * IPPAutoStart and IPPAutoRestore objects above.
- */
-class IPPEarlyStartupFilter {
-  #autoStartAndAtStartup = false;
-
-  constructor() {
-    this.handleEvent = this.#handleEvent.bind(this);
-    this.#autoStartAndAtStartup = IPPAutoStart.autoStart;
-  }
-
-  init() {
-    if (this.#autoStartAndAtStartup) {
-      lazy.IPPProxyManager.createChannelFilter();
-
-      lazy.IPProtectionService.addEventListener(
-        "IPProtectionService:StateChanged",
-        this.handleEvent
-      );
-      lazy.IPPProxyManager.addEventListener(
-        "IPPProxyManager:StateChanged",
-        this.handleEvent
-      );
-    }
-  }
-
-  initOnStartupCompleted() {}
-
-  uninit() {
-    if (this.#autoStartAndAtStartup) {
-      this.#autoStartAndAtStartup = false;
-
-      lazy.IPPProxyManager.removeEventListener(
-        "IPPProxyManager:StateChanged",
-        this.handleEvent
-      );
-      lazy.IPProtectionService.removeEventListener(
-        "IPProtectionService:StateChanged",
-        this.handleEvent
-      );
-    }
-  }
-
-  #cancelChannelFilter() {
-    lazy.IPPProxyManager.cancelChannelFilter();
-  }
-
-  #handleEvent(_event) {
-    switch (lazy.IPProtectionService.state) {
-      case lazy.IPProtectionStates.UNAVAILABLE:
-      case lazy.IPProtectionStates.UNAUTHENTICATED:
-        // These states block the auto-start at startup.
-        this.#cancelChannelFilter();
-        this.uninit();
-        break;
-
-      default:
-        // Let's ignoring any other state.
-        break;
-    }
-
-    if (lazy.IPPProxyManager.state === lazy.IPPProxyStates.ACTIVE) {
-      // We have completed our task.
-      this.uninit();
-    }
-  }
-}
-
-const IPPAutoStartHelpers = [IPPAutoStart, new IPPEarlyStartupFilter()];
+const IPPAutoStartHelpers = [
+  IPPAutoStart,
+  new IPPEarlyStartupFilter(() => IPPAutoStart.autoStart),
+];
 
 export { IPPAutoStartHelpers };

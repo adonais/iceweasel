@@ -53,19 +53,6 @@ class PriorityQueue {
     heap.popBack();
     siftDown(0);
   }
-
-  // removeHighest cannot be used with UniquePtrs, and should only be used for
-  // other datatypes.
-  T removeHighest() {
-    T highest = heap[0];
-    T last = heap.popCopy();
-    if (!heap.empty()) {
-      heap[0] = last;
-      siftDown(0);
-    }
-    return highest;
-  }
-
   [[nodiscard]] bool insert(T&& v) {
     if (!heap.append(std::move(v))) {
       return false;

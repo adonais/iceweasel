@@ -61,7 +61,6 @@ import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.feature.syncedtabs.commands.GlobalSyncedTabsCommandsProvider
 import mozilla.components.feature.top.sites.TopSitesFrecencyConfig
 import mozilla.components.feature.top.sites.TopSitesProviderConfig
-import mozilla.components.feature.webcompat.reporter.WebCompatReporterFeature
 import mozilla.components.lib.crash.CrashReporter
 import mozilla.components.service.fxa.manager.SyncEnginesStorage
 import mozilla.components.service.sync.autofill.GlobalAutofillDependencyProvider
@@ -93,7 +92,6 @@ import org.mozilla.fenix.GleanMetrics.CreditCards
 import org.mozilla.fenix.GleanMetrics.CustomizeHome
 import org.mozilla.fenix.GleanMetrics.Events.marketingNotificationAllowed
 import org.mozilla.fenix.GleanMetrics.GenaiAiControls
-import org.mozilla.fenix.GleanMetrics.Integrity
 import org.mozilla.fenix.GleanMetrics.Logins
 import org.mozilla.fenix.GleanMetrics.Metrics
 import org.mozilla.fenix.GleanMetrics.PerfStartup
@@ -115,7 +113,6 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.containsQueryParameters
 import org.mozilla.fenix.ext.isCustomEngine
 import org.mozilla.fenix.ext.isKnownSearchDomain
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_PROVIDER_LIMIT
 import org.mozilla.fenix.home.topsites.TopSitesConfigConstants.TOP_SITES_PROVIDER_MAX_THRESHOLD
 import org.mozilla.fenix.lifecycle.StoreLifecycleObserver
@@ -262,7 +259,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         // We delay the Glean initialization until we have user consent from onboarding.
         // If onboarding is disabled (when in local builds), continue to initialize Glean.
         if (components.fenixOnboarding.userHasBeenOnboarded() || !FeatureFlags.onboardingFeatureEnabled) {
-            initializeGlean(this, logger, settings().isTelemetryEnabled, components.core.client)
+            initializeGlean(this, logger, components.settings.isTelemetryEnabled, components.core.client)
         }
     }
 
@@ -322,7 +319,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         // StartupMetrics accesses shared preferences so do this off thread.
         @OptIn(DelicateCoroutinesApi::class)
         GlobalScope.launch(IO) {
-            setStartupMetrics(store, settings())
+            setStartupMetrics(store, components.settings)
         }
 
         // Start setup for concept-fetch networking in megazord. This runs off-thread, but we wait
@@ -369,10 +366,10 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             startMetricsIfEnabled(
                 logger = logger,
                 analytics = components.analytics,
-                isTelemetryEnabled = settings().isTelemetryEnabled,
-                isMarketingTelemetryEnabled = settings().isMarketingTelemetryEnabled &&
-                    settings().hasMadeMarketingTelemetrySelection,
-                isDailyUsagePingEnabled = settings().isDailyUsagePingEnabled,
+                isTelemetryEnabled = components.settings.isTelemetryEnabled,
+                isMarketingTelemetryEnabled = components.settings.isMarketingTelemetryEnabled &&
+                    components.settings.hasMadeMarketingTelemetrySelection,
+                isDailyUsagePingEnabled = components.settings.isDailyUsagePingEnabled,
             )
         } else {
             CoroutineScope(IO).launch {
@@ -416,7 +413,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         val store = components.core.store
         val sessionStorage = components.core.sessionStorage
 
-        components.useCases.tabsUseCases.restore(sessionStorage, settings().getTabTimeout())
+        components.useCases.tabsUseCases.restore(sessionStorage, components.settings.getTabTimeout())
 
         // Now that we have restored our previous state (if there's one) let's setup auto saving the state while
         // the app is used.
@@ -445,7 +442,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         queueNimbusFetchInForeground(queue)
         queueDownloadWallpapers(queue)
 
-        if (settings().enableFxSuggest) {
+        if (components.settings.enableFxSuggest) {
             queueSuggestIngest(queue)
         }
 
@@ -506,7 +503,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                     // new search suggestions. The worker requires us to have called
                     // `GlobalFxSuggestDependencyProvider.initialize`, which we did before
                     // scheduling these tasks. When disabled we stop the periodic work.
-                    if (settings().enableFxSuggest) {
+                    if (components.settings.enableFxSuggest) {
                         components.fxSuggest.ingestionScheduler.startPeriodicIngestion()
                     } else {
                         components.fxSuggest.ingestionScheduler.stopPeriodicIngestion()
@@ -548,7 +545,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     private fun queueIncrementNumberOfAppLaunches(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
             GlobalScope.launch(IO) {
-                settings().numberOfAppLaunches += 1
+                components.settings.numberOfAppLaunches += 1
             }
         }
 
@@ -578,14 +575,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
         runOnVisualCompleteness(queue) {
             GlobalScope.launch(IO) {
-                val start = System.currentTimeMillis()
-                val result = components.integrityClient.warmUp()
-                Integrity.warmedUp.record(
-                    Integrity.WarmedUpExtra(
-                        durationMs = (System.currentTimeMillis() - start).toInt(),
-                        success = result,
-                        ),
-                    )
+                components.integrityClient.warmUp()
             }
         }
     }
@@ -596,7 +586,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             components.nimbus.geckoPrefHandler.start()
             GlobalScope.launch(IO) {
                 components.nimbus.sdk.maybeFetchExperiments(
-                    context = this@FenixApplication,
+                    settings = components.settings,
                 )
                 components.nimbus.geckoPrefHandler.getPreferenceStateFromGecko().await()
             }
@@ -616,7 +606,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     @OptIn(DelicateCoroutinesApi::class) // GlobalScope usage
     private fun queueCollectProcessExitInfo(queue: RunWhenReadyQueue) =
         runOnVisualCompleteness(queue) {
-            if (SDK_INT >= Build.VERSION_CODES.R && settings().isTelemetryEnabled) {
+            if (SDK_INT >= Build.VERSION_CODES.R && components.settings.isTelemetryEnabled) {
                 GlobalScope.launch(IO) {
                     ApplicationExitInfoMetrics.recordProcessExits(applicationContext)
                 }
@@ -665,7 +655,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
 
     private fun maybeSetupIPProtection() {
         components.ipProtection.feature.initialize()
-//        components.ipProtection.storageSynchronizer.onResume(ProcessLifecycleOwner.get())
+        components.ipProtection.storageSynchronizer.initialize()
     }
 
     private fun setupCrashReporting(): CrashReporter {
@@ -728,7 +718,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
 
     @VisibleForTesting
     internal fun restoreMessaging() {
-        if (settings().isExperimentationEnabled) {
+        if (components.settings.isExperimentationEnabled) {
             components.appStore.dispatch(AppAction.MessagingAction.Restore)
         }
     }
@@ -761,7 +751,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     }
 
     private fun setDayNightTheme() {
-        val settings = this.settings()
+        val settings = components.settings
         when {
             settings.shouldUseLightTheme -> {
                 AppCompatDelegate.setDefaultNightMode(
@@ -823,7 +813,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
         }
     }
 
-    @Suppress("ForbiddenComment")
     private fun initializeWebExtensionSupport() {
         try {
             GlobalAddonDependencyProvider.initialize(
@@ -836,14 +825,14 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             WebExtensionSupport.initialize(
                 components.core.engine,
                 components.core.store,
-                onNewTabOverride = { _, engineSession, url ->
+                onNewTabOverride = { _, engineSession, url, selected ->
                     val shouldCreatePrivateSession =
                         components.core.store.state.selectedTab?.content?.private
                             ?: components.settings.openLinksInAPrivateTab
 
                     components.useCases.tabsUseCases.addTab(
                         url = url,
-                        selectTab = true,
+                        selectTab = selected,
                         engineSession = engineSession,
                         private = shouldCreatePrivateSession,
                     )
@@ -857,15 +846,6 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
                 onExtensionsLoaded = { extensions ->
                     components.addonUpdater.registerForFutureUpdates(extensions)
                     subscribeForNewAddonsIfNeeded(components.supportedAddonsChecker, extensions)
-
-                    // Bug 1948634 - Make sure the webcompat-reporter extension is fully uninstalled.
-                    // This is added here because we need gecko to load the extension first.
-                    //
-                    // TODO: Bug 1953359 - remove the code below in the next release.
-                    if (Config.channel.isNightlyOrDebug || Config.channel.isBeta) {
-                        logger.debug("Attempting to uninstall the WebCompat Reporter extension")
-                        WebCompatReporterFeature.uninstall(components.core.engine)
-                    }
                 },
                 onUpdatePermissionRequest = components.addonUpdater::onUpdatePermissionRequest,
             )
@@ -992,7 +972,7 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
             )
 
             ramMoreThanThreshold.set(isDeviceRamAboveThreshold)
-            deviceTotalRam.set(getDeviceTotalRAM())
+            deviceTotalRam.set(deviceTotalRAM)
 
             isLargeDevice.set(isLargeScreenSize())
         }
@@ -1073,28 +1053,14 @@ open class FenixApplication : Application(), Provider, ThemeProvider {
     }
 
     @VisibleForTesting
-    internal fun getDeviceTotalRAM(): Long {
-        val memoryInfo = getMemoryInfo()
-        return if (SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) {
-            memoryInfo.advertisedMem
-        } else {
-            memoryInfo.totalMem
+    internal val deviceTotalRAM: Long by lazy {
+        ActivityManager.MemoryInfo().let { info ->
+            (getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager).getMemoryInfo(info)
+            if (SDK_INT >= Build.VERSION_CODES.UPSIDE_DOWN_CAKE) info.advertisedMem else info.totalMem
         }
     }
 
-    @VisibleForTesting
-    internal fun getMemoryInfo(): ActivityManager.MemoryInfo {
-        val memoryInfo = ActivityManager.MemoryInfo()
-        val activityManager = getSystemService(Context.ACTIVITY_SERVICE) as ActivityManager
-        activityManager.getMemoryInfo(memoryInfo)
-
-        return memoryInfo
-    }
-
-    private fun deviceRamApproxMegabytes(): Long {
-        val deviceRamBytes = getMemoryInfo().totalMem
-        return deviceRamBytes.toRoundedMegabytes()
-    }
+    private fun deviceRamApproxMegabytes(): Long = deviceTotalRAM.toRoundedMegabytes()
 
     private fun Long.toRoundedMegabytes(): Long = (this / BYTES_TO_MEGABYTES_CONVERSION).roundToLong()
 

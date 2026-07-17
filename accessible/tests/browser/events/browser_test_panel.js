@@ -27,13 +27,31 @@ async function runTests(browser) {
   );
 
   await panelShown;
-
   ok(isAccessible(PopupNotifications.panel), "Popup panel is accessible");
+
+  const primaryButton = PopupNotifications.panel.querySelector(
+    ".popup-notification-primary-button"
+  );
+  const buttonLabel = primaryButton.shadowRoot.querySelector("label");
+  await BrowserTestUtils.waitForCondition(() => {
+    try {
+      return getAccessible(buttonLabel, [nsIAccessible])?.childCount > 0;
+    } catch {
+      return false;
+    }
+  }, "Primary button accessible label has text child");
+
   testAccessibleTree(PopupNotifications.panel, {
     ALERT: [
       { LABEL: [{ TEXT_LEAF: [] }] },
       { PUSHBUTTON: [] },
-      { PUSHBUTTON: [] },
+      {
+        TEXT_CONTAINER: [
+          {
+            PUSHBUTTON: [{ LABEL: [{ TEXT_LEAF: [] }] }],
+          },
+        ],
+      },
     ],
   });
   // Verify the popup panel is associated with the chrome window.

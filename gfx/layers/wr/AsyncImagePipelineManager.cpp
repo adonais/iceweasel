@@ -345,7 +345,13 @@ AsyncImagePipelineManager::UpdateWithoutExternalImage(
   }
 
   gfx::IntSize size = dSurf->GetSize();
-  wr::ImageDescriptor descriptor(size, map.mStride, dSurf->GetFormat());
+  auto format = wr::SurfaceFormatToImageFormat(dSurf->GetFormat());
+  if (NS_WARN_IF(!format)) {
+    dSurf->Unmap();
+    return Nothing();
+  }
+  wr::ImageDescriptor descriptor(size, map.mStride, *format,
+                                 wr::ToOpacityType(dSurf->GetFormat()));
 
   // Costly copy right here...
   wr::Vec<uint8_t> bytes;
@@ -460,10 +466,6 @@ void AsyncImagePipelineManager::ApplyAsyncImageForPipeline(
       float(aPipeline->mCurrentTexture->GetSize().width),
       float(aPipeline->mCurrentTexture->GetSize().height)};
   computedTransform.rotation = aPipeline->mRotation;
-  // We don't have a frame / per-frame key here, but we can use the pipeline id
-  // and the key kind to create a unique stable key.
-  computedTransform.key = wr::SpatialKey(
-      aPipelineId.mNamespace, aPipelineId.mHandle, wr::SpatialKeyKind::APZ);
   params.computed_transform = &computedTransform;
 
   Maybe<wr::WrSpatialId> referenceFrameId =

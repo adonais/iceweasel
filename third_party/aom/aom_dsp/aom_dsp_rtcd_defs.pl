@@ -530,6 +530,11 @@ specialize qw/aom_convolve_copy       neon                        sse2 avx2/;
 specialize qw/aom_convolve8_horiz     neon neon_dotprod neon_i8mm ssse3/, "$avx2_ssse3";
 specialize qw/aom_convolve8_vert      neon neon_dotprod neon_i8mm ssse3/, "$avx2_ssse3";
 
+if (aom_config("CONFIG_HIGHWAY") eq "yes") {
+  specialize qw/aom_convolve8_horiz     avx512/;
+  specialize qw/aom_convolve8_vert      avx512/;
+}
+
 add_proto qw/void aom_scaled_2d/, "const uint8_t *src, ptrdiff_t src_stride, uint8_t *dst, ptrdiff_t dst_stride, const InterpKernel *filter, int x0_q4, int x_step_q4, int y0_q4, int y_step_q4, int w, int h";
 specialize qw/aom_scaled_2d ssse3 neon neon_dotprod neon_i8mm/;
 

@@ -40,7 +40,7 @@ bool UnscaledFontGDI::GetFontFileData(FontFileDataOutput aDataCallback,
     }
   }
 
-  UniquePtr<uint8_t[]> fontData(new uint8_t[tableSize]);
+  auto fontData = MakeUnique<uint8_t[]>(tableSize);
 
   uint32_t sizeGot =
       ::GetFontData(dc.GetDC(), table, 0, fontData.get(), tableSize);
@@ -83,7 +83,7 @@ already_AddRefed<UnscaledFont> UnscaledFontGDI::CreateFromFontDescriptor(
   }
 
   const LOGFONT* logFont = reinterpret_cast<const LOGFONT*>(aData);
-  RefPtr<UnscaledFont> unscaledFont = new UnscaledFontGDI(*logFont);
+  RefPtr unscaledFont = MakeRefPtr<UnscaledFontGDI>(*logFont);
   return unscaledFont.forget();
 }
 

@@ -10,15 +10,15 @@
 
 namespace mozilla {
 
-#define LOG(msg, ...)                           \
-  MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug,   \
-          ("MFMediaStream=%p (%s), " msg, this, \
-           this->GetDescriptionName().get(), ##__VA_ARGS__))
+#define LOG(msg, ...)                                        \
+  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Debug,            \
+              "MFMediaStream={} ({}), " msg, fmt::ptr(this), \
+              this->GetDescriptionName().get(), ##__VA_ARGS__)
 
-#define LOGV(msg, ...)                          \
-  MOZ_LOG(gMFMediaEngineLog, LogLevel::Verbose, \
-          ("MFMediaStream=%p (%s), " msg, this, \
-           this->GetDescriptionName().get(), ##__VA_ARGS__))
+#define LOGV(msg, ...)                                       \
+  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Verbose,          \
+              "MFMediaStream={} ({}), " msg, fmt::ptr(this), \
+              this->GetDescriptionName().get(), ##__VA_ARGS__)
 
 using Microsoft::WRL::ComPtr;
 using Microsoft::WRL::MakeAndInitialize;
@@ -51,7 +51,7 @@ void MFMediaEngineVideoStream::SetKnowsCompositor(
       [self, knowCompositor = RefPtr<layers::KnowsCompositor>{aKnowsCompositor},
        this]() {
         mKnowsCompositor = knowCompositor;
-        LOG("Set SetKnowsCompositor=%p", mKnowsCompositor.get());
+        LOG("Set SetKnowsCompositor={}", fmt::ptr(mKnowsCompositor.get()));
         ResolvePendingPromisesIfNeeded();
       }));
 }
@@ -80,12 +80,12 @@ void MFMediaEngineVideoStream::SetDCompSurfaceHandle(HANDLE aDCompSurfaceHandle,
           MutexAutoLock lock(mMutex);
           if (aDCompSurfaceHandle != INVALID_HANDLE_VALUE &&
               aDisplay != mDisplay) {
-            LOG("Update display [%dx%d] -> [%dx%d]", mDisplay.Width(),
+            LOG("Update display [{}x{}] -> [{}x{}]", mDisplay.Width(),
                 mDisplay.Height(), aDisplay.Width(), aDisplay.Height());
             mDisplay = aDisplay;
           }
         }
-        LOG("Set DCompSurfaceHandle, handle=%p", mDCompSurfaceHandle);
+        LOG("Set DCompSurfaceHandle, handle={}", fmt::ptr(mDCompSurfaceHandle));
         ResolvePendingPromisesIfNeeded();
       }));
 }
@@ -183,8 +183,8 @@ HRESULT MFMediaEngineVideoStream::CreateMediaType(const TrackInfo& aInfo,
   const auto videoPrimaries = ToMFVideoPrimaries(videoInfo.mColorSpace);
   RETURN_IF_FAILED(mediaType->SetUINT32(MF_MT_VIDEO_PRIMARIES, videoPrimaries));
 
-  LOG("Created video type, subtype=%s, image=[%ux%u], display=[%ux%u], "
-      "rotation=%s, tranFuns=%s, primaries=%s, encrypted=%d",
+  LOG("Created video type, subtype={}, image=[{}x{}], display=[{}x{}], "
+      "rotation={}, tranFuns={}, primaries={}, encrypted={}",
       GUIDToStr(subType), imageWidth, imageHeight, displayWidth, displayHeight,
       MFVideoRotationFormatToStr(rotation),
       MFVideoTransferFunctionToStr(transFunc),
@@ -230,8 +230,8 @@ bool MFMediaEngineVideoStream::IsDCompImageReady() {
         mDCompSurfaceHandle, mDisplay, gfx::SurfaceFormat::B8G8R8A8,
         mKnowsCompositor);
     mNeedRecreateImage = false;
-    LOG("Created dcomp surface image, handle=%p, size=[%u,%u]",
-        mDCompSurfaceHandle, mDisplay.Width(), mDisplay.Height());
+    LOG("Created dcomp surface image, handle={}, size=[{},{}]",
+        fmt::ptr(mDCompSurfaceHandle), mDisplay.Width(), mDisplay.Height());
   }
   return true;
 }
@@ -251,8 +251,7 @@ RefPtr<MediaDataDecoder::DecodePromise> MFMediaEngineVideoStream::OutputData(
   MediaDataDecoder::DecodedData outputs;
   if (RefPtr<MediaData> outputData = OutputDataInternal()) {
     outputs.AppendElement(outputData);
-    LOGV("Output data [%" PRId64 ",%" PRId64 "]",
-         outputData->mTime.ToMicroseconds(),
+    LOGV("Output data [{},{}]", outputData->mTime.ToMicroseconds(),
          outputData->GetEndTime().ToMicroseconds());
   }
   if (ShouldDelayVideoDecodeBeforeDcompReady()) {
@@ -355,8 +354,7 @@ void MFMediaEngineVideoStream::ResolvePendingPromisesIfNeeded() {
     MediaDataDecoder::DecodedData outputs;
     while (RefPtr<MediaData> outputData = OutputDataInternal()) {
       outputs.AppendElement(outputData);
-      LOGV("Output data [%" PRId64 ",%" PRId64 "]",
-           outputData->mTime.ToMicroseconds(),
+      LOGV("Output data [{},{}]", outputData->mTime.ToMicroseconds(),
            outputData->GetEndTime().ToMicroseconds());
     }
     mVideoDecodeBeforeDcompPromise.Resolve(std::move(outputs), __func__);
@@ -369,8 +367,7 @@ void MFMediaEngineVideoStream::ResolvePendingPromisesIfNeeded() {
     MediaDataDecoder::DecodedData outputs;
     while (RefPtr<MediaData> outputData = OutputDataInternal()) {
       outputs.AppendElement(outputData);
-      LOGV("Output data [%" PRId64 ",%" PRId64 "]",
-           outputData->mTime.ToMicroseconds(),
+      LOGV("Output data [{},{}]", outputData->mTime.ToMicroseconds(),
            outputData->GetEndTime().ToMicroseconds());
     }
     mPendingDrainPromise.Resolve(std::move(outputs), __func__);

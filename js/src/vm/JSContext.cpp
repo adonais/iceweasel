@@ -517,7 +517,7 @@ static void PrintSingleError(FILE* file, JS::ConstUTF8CharsZ toStringResult,
 
   /* embedded newlines -- argh! */
   const char* ctmp;
-  while ((ctmp = strchr(message, '\n')) != 0) {
+  while ((ctmp = strchr(message, '\n')) != nullptr) {
     ctmp++;
     if (prefix) {
       fputs(prefix.get(), file);
@@ -1351,7 +1351,7 @@ void JSContext::setPendingException(HandleValue value,
   if (captureStack == ShouldCaptureStack::Always ||
       realm()->shouldCaptureStackForThrow()) {
     RootedObject stack(this);
-    if (!CaptureStack(this, &stack)) {
+    if (!CaptureStack(this, &stack, js::MAX_REPORTED_STACK_DEPTH)) {
       clearPendingException();
     }
     if (stack) {

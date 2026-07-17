@@ -24,6 +24,7 @@
 #include "api/crypto/crypto_options.h"
 #include "api/field_trials.h"
 #include "api/jsep.h"
+#include "api/media_types.h"
 #include "api/rtc_error.h"
 #include "api/rtp_headers.h"
 #include "api/rtp_parameters.h"
@@ -39,7 +40,6 @@
 #include "media/base/rid_description.h"
 #include "media/base/stream_params.h"
 #include "p2p/base/candidate_pair_interface.h"
-#include "p2p/base/ice_transport_internal.h"
 #include "p2p/base/p2p_constants.h"
 #include "p2p/base/packet_transport_internal.h"
 #include "p2p/dtls/dtls_transport_internal.h"
@@ -53,7 +53,6 @@
 #include "rtc_base/buffer.h"
 #include "rtc_base/byte_order.h"
 #include "rtc_base/checks.h"
-#include "rtc_base/network_route.h"
 #include "rtc_base/rtc_certificate.h"
 #include "rtc_base/socket.h"
 #include "rtc_base/ssl_identity.h"
@@ -120,7 +119,7 @@ class Traits {
   using Options = OptionsT;
 };
 
-class VoiceTraits : public Traits<webrtc::VoiceChannel,
+class VoiceTraits : public Traits<webrtc::BaseChannel,
                                   webrtc::FakeVoiceMediaSendChannel,
                                   webrtc::FakeVoiceMediaReceiveChannel,
                                   webrtc::VoiceMediaSendChannelInterface,
@@ -129,7 +128,7 @@ class VoiceTraits : public Traits<webrtc::VoiceChannel,
                                   webrtc::VoiceMediaInfo,
                                   webrtc::AudioOptions> {};
 
-class VideoTraits : public Traits<webrtc::VideoChannel,
+class VideoTraits : public Traits<webrtc::BaseChannel,
                                   webrtc::FakeVideoMediaSendChannel,
                                   webrtc::FakeVideoMediaReceiveChannel,
                                   webrtc::VideoMediaSendChannelInterface,
@@ -804,7 +803,7 @@ class ChannelTest : public ::testing::Test {
     EXPECT_TRUE(channel1_->SetRemoteContent(&content, SdpType::kOffer).ok());
     content.set_extmap_allow_mixed_enum(answer_enum);
     EXPECT_TRUE(channel1_->SetLocalContent(&content, SdpType::kAnswer).ok());
-    EXPECT_EQ(answer, media_send_channel1()->ExtmapAllowMixed());
+    EXPECT_EQ(answer, channel1_->media_send_channel()->ExtmapAllowMixed());
   }
 
   // Test that SetLocalContent and SetRemoteContent properly deals
@@ -1085,69 +1084,6 @@ class ChannelTest : public ::testing::Test {
       EXPECT_TRUE(media_receive_channel2_impl()->playout());
     }
     EXPECT_TRUE(media_send_channel1_impl()->sending());
-  }
-
-  // Tests that when the transport channel signals a candidate pair change
-  // event, the media channel will receive a call on the network route change.
-  void TestNetworkRouteChanges() {
-    static constexpr uint16_t kLocalNetId = 1;
-    static constexpr uint16_t kRemoteNetId = 2;
-    static constexpr int kLastPacketId = 100;
-    // Ipv4(20) + UDP(8).
-    static constexpr int kTransportOverheadPerPacket = 28;
-    static constexpr int kSrtpOverheadPerPacket = 10;
-
-    CreateChannels(DTLS, DTLS);
-    SendInitiate();
-
-    typename T::MediaSendChannel* media_send_channel1_impl =
-        this->media_send_channel1_impl();
-    ASSERT_TRUE(media_send_channel1_impl);
-
-    // Need to wait for the threads before calling
-    // `set_num_network_route_changes` because the network route would be set
-    // when creating the channel.
-    WaitForThreads();
-    media_send_channel1_impl->set_num_network_route_changes(0);
-    SendTask(network_thread_, [this] {
-      webrtc::NetworkRoute network_route;
-      // The transport channel becomes disconnected.
-      fake_rtp_dtls_transport1_->ice_transport()->NotifyNetworkRouteChanged(
-          std::optional<webrtc::NetworkRoute>(network_route));
-    });
-    WaitForThreads();
-    EXPECT_EQ(1, media_send_channel1_impl->num_network_route_changes());
-    EXPECT_FALSE(media_send_channel1_impl->last_network_route().connected);
-    media_send_channel1_impl->set_num_network_route_changes(0);
-
-    SendTask(network_thread_, [this] {
-      webrtc::NetworkRoute network_route;
-      network_route.connected = true;
-      network_route.local =
-          webrtc::RouteEndpoint::CreateWithNetworkId(kLocalNetId);
-      network_route.remote =
-          webrtc::RouteEndpoint::CreateWithNetworkId(kRemoteNetId);
-      network_route.last_sent_packet_id = kLastPacketId;
-      network_route.packet_overhead = kTransportOverheadPerPacket;
-      // The transport channel becomes connected.
-      fake_rtp_dtls_transport1_->ice_transport()->NotifyNetworkRouteChanged(
-
-          std::optional<webrtc::NetworkRoute>(network_route));
-    });
-    WaitForThreads();
-    EXPECT_EQ(1, media_send_channel1_impl->num_network_route_changes());
-    EXPECT_TRUE(media_send_channel1_impl->last_network_route().connected);
-    EXPECT_EQ(
-        kLocalNetId,
-        media_send_channel1_impl->last_network_route().local.network_id());
-    EXPECT_EQ(
-        kRemoteNetId,
-        media_send_channel1_impl->last_network_route().remote.network_id());
-    EXPECT_EQ(
-        kLastPacketId,
-        media_send_channel1_impl->last_network_route().last_sent_packet_id);
-    EXPECT_EQ(kTransportOverheadPerPacket + kSrtpOverheadPerPacket,
-              media_send_channel1_impl->transport_overhead_per_packet());
   }
 
   // Test setting up a call.
@@ -1522,8 +1458,9 @@ class ChannelTest : public ::testing::Test {
         channel1_->SetLocalContent(&local_media_content1_, SdpType::kOffer)
             .ok());
     EXPECT_EQ(media_send_channel1_impl()->max_bps(), -1);
-    VerifyMaxBitrate(media_send_channel1()->GetRtpSendParameters(kSsrc1),
-                     std::nullopt);
+    VerifyMaxBitrate(
+        channel1_->media_send_channel()->GetRtpSendParameters(kSsrc1),
+        std::nullopt);
   }
 
   // Test that when a channel gets new RtpTransport with a call to
@@ -1635,20 +1572,6 @@ class ChannelTest : public ::testing::Test {
     ProcessThreadQueue(webrtc::Thread::Current());
   }
 
-  // Accessors that return the standard VideoMedia{Send|Receive}ChannelInterface
-  typename T::MediaSendChannelInterface* media_send_channel1() {
-    return channel1_->media_send_channel();
-  }
-  typename T::MediaSendChannelInterface* media_send_channel2() {
-    return channel2_->media_send_channel();
-  }
-  typename T::MediaReceiveChannelInterface* media_receive_channel1() {
-    return channel1_->media_receive_channel();
-  }
-  typename T::MediaReceiveChannelInterface* media_receive_channel2() {
-    return channel2_->media_receive_channel();
-  }
-
   // Accessors that return the FakeMedia<type>SendChannel object.
   // Note that these depend on getting the object back that was
   // passed to the channel constructor.
@@ -1715,7 +1638,7 @@ class ChannelTest : public ::testing::Test {
 };
 
 template <>
-std::unique_ptr<webrtc::VoiceChannel> ChannelTest<VoiceTraits>::CreateChannel(
+std::unique_ptr<webrtc::BaseChannel> ChannelTest<VoiceTraits>::CreateChannel(
     webrtc::Thread* worker_thread,
     webrtc::Thread* network_thread,
     std::unique_ptr<webrtc::FakeVoiceMediaSendChannel> send_ch,
@@ -1723,10 +1646,10 @@ std::unique_ptr<webrtc::VoiceChannel> ChannelTest<VoiceTraits>::CreateChannel(
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
   webrtc::Thread* signaling_thread = webrtc::Thread::Current();
-  auto channel = std::make_unique<webrtc::VoiceChannel>(
+  auto channel = std::make_unique<webrtc::BaseChannel>(
       worker_thread, network_thread, signaling_thread, std::move(send_ch),
-      std::move(receive_ch), kAudioMid, (flags & DTLS) != 0,
-      webrtc::CryptoOptions(), &ssrc_generator_);
+      std::move(receive_ch), kAudioMid, webrtc::MediaType::AUDIO,
+      (flags & DTLS) != 0, webrtc::CryptoOptions(), &ssrc_generator_);
   SendTask(network_thread, [&]() {
     RTC_DCHECK_RUN_ON(channel->network_thread());
     channel->SetRtpTransport(rtp_transport);
@@ -1795,7 +1718,7 @@ class VoiceChannelWithEncryptedRtpHeaderExtensionsDoubleThreadTest
 
 // override to add NULL parameter
 template <>
-std::unique_ptr<webrtc::VideoChannel> ChannelTest<VideoTraits>::CreateChannel(
+std::unique_ptr<webrtc::BaseChannel> ChannelTest<VideoTraits>::CreateChannel(
     webrtc::Thread* worker_thread,
     webrtc::Thread* network_thread,
     std::unique_ptr<webrtc::FakeVideoMediaSendChannel> send_ch,
@@ -1803,10 +1726,10 @@ std::unique_ptr<webrtc::VideoChannel> ChannelTest<VideoTraits>::CreateChannel(
     webrtc::RtpTransportInternal* rtp_transport,
     int flags) {
   webrtc::Thread* signaling_thread = webrtc::Thread::Current();
-  auto channel = std::make_unique<webrtc::VideoChannel>(
+  auto channel = std::make_unique<webrtc::BaseChannel>(
       worker_thread, network_thread, signaling_thread, std::move(send_ch),
-      std::move(receive_ch), kVideoMid, (flags & DTLS) != 0,
-      webrtc::CryptoOptions(), &ssrc_generator_);
+      std::move(receive_ch), kVideoMid, webrtc::MediaType::VIDEO,
+      (flags & DTLS) != 0, webrtc::CryptoOptions(), &ssrc_generator_);
   SendTask(network_thread, [&]() {
     RTC_DCHECK_RUN_ON(channel->network_thread());
     channel->SetRtpTransport(rtp_transport);
@@ -1911,10 +1834,6 @@ TEST_F(VoiceChannelSingleThreadTest, TestPlayoutAndSendingStates) {
 
 TEST_F(VoiceChannelSingleThreadTest, TestMediaContentDirection) {
   Base::TestMediaContentDirection();
-}
-
-TEST_F(VoiceChannelSingleThreadTest, TestNetworkRouteChanges) {
-  Base::TestNetworkRouteChanges();
 }
 
 TEST_F(VoiceChannelSingleThreadTest, TestCallSetup) {
@@ -2079,10 +1998,6 @@ TEST_F(VoiceChannelDoubleThreadTest, TestMediaContentDirection) {
   Base::TestMediaContentDirection();
 }
 
-TEST_F(VoiceChannelDoubleThreadTest, TestNetworkRouteChanges) {
-  Base::TestNetworkRouteChanges();
-}
-
 TEST_F(VoiceChannelDoubleThreadTest, TestCallSetup) {
   Base::TestCallSetup();
 }
@@ -2212,10 +2127,6 @@ TEST_F(VideoChannelSingleThreadTest, TestPlayoutAndSendingStates) {
 
 TEST_F(VideoChannelSingleThreadTest, TestMediaContentDirection) {
   Base::TestMediaContentDirection();
-}
-
-TEST_F(VideoChannelSingleThreadTest, TestNetworkRouteChanges) {
-  Base::TestNetworkRouteChanges();
 }
 
 TEST_F(VideoChannelSingleThreadTest, TestCallSetup) {
@@ -2664,10 +2575,6 @@ TEST_F(VideoChannelDoubleThreadTest, TestPlayoutAndSendingStates) {
 
 TEST_F(VideoChannelDoubleThreadTest, TestMediaContentDirection) {
   Base::TestMediaContentDirection();
-}
-
-TEST_F(VideoChannelDoubleThreadTest, TestNetworkRouteChanges) {
-  Base::TestNetworkRouteChanges();
 }
 
 TEST_F(VideoChannelDoubleThreadTest, TestCallSetup) {

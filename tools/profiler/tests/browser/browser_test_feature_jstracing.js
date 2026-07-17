@@ -6,10 +6,7 @@
  * Test the JS Tracing feature.
  */
 add_task(async function test_profile_feature_jstracing() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   await ProfilerTestUtils.startProfiler({ features: ["tracing"] });
 

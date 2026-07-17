@@ -18,7 +18,7 @@ class JSDebugger final : public IJSDebugger {
   JSDebugger();
 
  private:
-  ~JSDebugger();
+  ~JSDebugger() = default;
 };
 
 }  // namespace jsdebugger

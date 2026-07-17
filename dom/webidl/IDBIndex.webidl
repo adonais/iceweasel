@@ -17,6 +17,12 @@ dictionary IDBIndexParameters {
     DOMString? locale = null;
 };
 
+dictionary IDBGetAllOptions {
+    any query = null;
+    [EnforceRange] unsigned long count;
+    IDBCursorDirection direction = "next";
+};
+
 [Exposed=(Window,Worker)]
 interface IDBIndex {
     [SetterThrows] attribute DOMString name;
@@ -45,11 +51,13 @@ interface IDBIndex {
     // with a BinaryName mapping to the same underlying implementation.
     // See also bug 1577227.
     [NewObject, Throws, Alias="mozGetAll"]
-    IDBRequest getAll(optional any query,
+    IDBRequest getAll(optional any queryOrOptions,
                       optional [EnforceRange] unsigned long count);
     [NewObject, Throws, Alias="mozGetAllKeys"]
-    IDBRequest getAllKeys(optional any query,
+    IDBRequest getAllKeys(optional any queryOrOptions,
                             optional [EnforceRange] unsigned long count);
+    [NewObject, Throws]
+    IDBRequest getAllRecords(optional IDBGetAllOptions options = {});
 
     [NewObject, Throws] IDBRequest count(optional any query);
 

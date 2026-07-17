@@ -37,20 +37,6 @@ class BookmarksTelemetryMiddlewareTest {
     }
 
     @Test
-    fun `GIVEN import file clicked from button, an import file button clicked event is recorded`() =
-        runTest {
-            val store = middleware.makeStore()
-
-            store.dispatch(ImportAction.ImportFileClicked.FromButton)
-
-            testScheduler.advanceUntilIdle()
-
-            val events = BookmarksManagement.importFromFileButtonClick.testGetValue() ?: emptyList()
-
-            assertEquals(1, events.size, "Expected 1 import file button clicked event, but got ${events.size}")
-        }
-
-    @Test
     fun `GIVEN import file clicked from menu, an import file button clicked event is recorded`() =
         runTest {
             val store = middleware.makeStore()

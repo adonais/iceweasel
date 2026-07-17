@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.DividerDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
@@ -46,8 +46,6 @@ import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
 import mozilla.components.compose.browser.toolbar.ui.InlineAutocompleteTextField
 import mozilla.components.concept.toolbar.AutocompleteResult
 import mozilla.components.ui.icons.R as iconsR
-
-private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(90.dp)
 
 /**
  * Sub-component of the [BrowserToolbar] responsible for allowing the user to edit the current
@@ -101,8 +99,8 @@ fun BrowserEditToolbar(
                     .fillMaxWidth()
                     .padding(all = 8.dp)
                     .height(48.dp)
-                    .clip(shape = ROUNDED_CORNER_SHAPE)
-                    .background(color = MaterialTheme.colorScheme.surfaceDim),
+                    .clip(shape = CircleShape)
+                    .background(color = MaterialTheme.colorScheme.surfaceContainerHighest),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 ActionContainer(

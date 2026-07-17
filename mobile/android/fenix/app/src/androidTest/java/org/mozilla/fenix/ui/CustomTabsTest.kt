@@ -241,7 +241,7 @@ class CustomTabsTest {
 
         customTabScreen(composeTestRule) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             waitForPageToLoad()
             verifyPDFReaderToolbarItems()
             verifyCustomTabCloseButton()

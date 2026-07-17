@@ -91,12 +91,12 @@ AVCodec* FFmpegDataEncoder<LIBAV_VER>::FindSoftwareEncoder(
       continue;
     }
 
-    FFMPEGV_LOG("Using preferred software codec %s", codec->name);
+    FFMPEGV_LOG("Using preferred software codec {}", codec->name);
     return codec;
   }
 
   if (fallbackCodec) {
-    FFMPEGV_LOG("Using fallback software codec %s", fallbackCodec->name);
+    FFMPEGV_LOG("Using fallback software codec {}", fallbackCodec->name);
   }
   return fallbackCodec;
 #else
@@ -152,12 +152,12 @@ AVCodec* FFmpegDataEncoder<LIBAV_VER>::FindHardwareEncoder(
       continue;
     }
 
-    FFMPEGV_LOG("Using preferred hardware codec %s", codec->name);
+    FFMPEGV_LOG("Using preferred hardware codec {}", codec->name);
     return codec;
   }
 
   if (fallbackCodec) {
-    FFMPEGV_LOG("Using fallback hardware codec %s", fallbackCodec->name);
+    FFMPEGV_LOG("Using fallback hardware codec {}", fallbackCodec->name);
   }
   return fallbackCodec;
 }
@@ -215,7 +215,7 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegDataEncoder<LIBAV_VER>::Encode(
     nsTArray<RefPtr<MediaData>>&& aSamples) {
   MOZ_ASSERT(!aSamples.IsEmpty());
 
-  FFMPEG_LOG("Encode: %zu samples", aSamples.Length());
+  FFMPEG_LOG("Encode: {} samples", aSamples.Length());
   return InvokeAsync(mTaskQueue, __func__,
                      [self = RefPtr<FFmpegDataEncoder<LIBAV_VER>>(this),
                       samples = std::move(aSamples)]() mutable {
@@ -253,7 +253,7 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegDataEncoder<
     LIBAV_VER>::ProcessEncode(nsTArray<RefPtr<MediaData>>&& aSamples) {
   MOZ_ASSERT(mTaskQueue->IsOnCurrentThread());
 
-  FFMPEG_LOG("ProcessEncode: %zu samples", aSamples.Length());
+  FFMPEG_LOG("ProcessEncode: {} samples", aSamples.Length());
 
 #if LIBAVCODEC_VERSION_MAJOR < 58
   // TODO(Bug 1868253): implement encode with avcodec_encode_video2().
@@ -265,7 +265,7 @@ RefPtr<MediaDataEncoder::EncodePromise> FFmpegDataEncoder<
     auto rv = EncodeInputWithModernAPIs(sample);
     if (rv.isErr()) {
       MediaResult e = rv.unwrapErr();
-      FFMPEG_LOG("%s", e.Description().get());
+      FFMPEG_LOG("{}", e.Description().get());
       return EncodePromise::CreateAndReject(e, __func__);
     }
     output.AppendElements(rv.unwrap());
@@ -331,7 +331,7 @@ FFmpegDataEncoder<LIBAV_VER>::ProcessDrain() {
   auto rv = DrainWithModernAPIs();
   if (rv.isErr()) {
     MediaResult e = rv.unwrapErr();
-    FFMPEG_LOG("%s", e.Description().get());
+    FFMPEG_LOG("{}", e.Description().get());
     return EncodePromise::CreateAndReject(rv.inspectErr(), __func__);
   }
   return EncodePromise::CreateAndResolve(rv.unwrap(), __func__);
@@ -357,12 +357,12 @@ void FFmpegDataEncoder<LIBAV_VER>::SetContextBitrate() {
     mCodecContext->rc_max_rate = AssertedCast<FFmpegBitRate>(mConfig.mBitrate);
     mCodecContext->rc_min_rate = AssertedCast<FFmpegBitRate>(mConfig.mBitrate);
     mCodecContext->bit_rate = AssertedCast<FFmpegBitRate>(mConfig.mBitrate);
-    FFMPEG_LOG("Encoding in CBR: %d", mConfig.mBitrate);
+    FFMPEG_LOG("Encoding in CBR: {}", mConfig.mBitrate);
   } else {
     mCodecContext->rc_max_rate = AssertedCast<FFmpegBitRate>(mConfig.mBitrate);
     mCodecContext->rc_min_rate = 0;
     mCodecContext->bit_rate = AssertedCast<FFmpegBitRate>(mConfig.mBitrate);
-    FFMPEG_LOG("Encoding in VBR: [%d;%d]", (int)mCodecContext->rc_min_rate,
+    FFMPEG_LOG("Encoding in VBR: [{};{}]", (int)mCodecContext->rc_min_rate,
                (int)mCodecContext->rc_max_rate);
   }
 }
@@ -516,7 +516,7 @@ FFmpegDataEncoder<LIBAV_VER>::EncodeWithModernAPIs() {
     mLib->av_packet_unref(pkt);
     if (r.isErr()) {
       MediaResult e = r.unwrapErr();
-      FFMPEG_LOG("%s", e.Description().get());
+      FFMPEG_LOG("{}", e.Description().get());
       return Err(e);
     }
 
@@ -529,7 +529,7 @@ FFmpegDataEncoder<LIBAV_VER>::EncodeWithModernAPIs() {
     output.AppendElement(std::move(d));
   }
 
-  FFMPEG_LOG("Got %zu encoded data", output.Length());
+  FFMPEG_LOG("Got {} encoded data", output.Length());
   return std::move(output);
 }
 
@@ -589,7 +589,7 @@ FFmpegDataEncoder<LIBAV_VER>::DrainWithModernAPIs() {
     mLib->av_packet_unref(pkt);
     if (r.isErr()) {
       MediaResult e = r.unwrapErr();
-      FFMPEG_LOG("%s", e.Description().get());
+      FFMPEG_LOG("{}", e.Description().get());
       return Err(e);
     }
 
@@ -602,7 +602,7 @@ FFmpegDataEncoder<LIBAV_VER>::DrainWithModernAPIs() {
     output.AppendElement(std::move(d));
   }
 
-  FFMPEG_LOG("Encoding successful, %zu packets", output.Length());
+  FFMPEG_LOG("Encoding successful, {} packets", output.Length());
 
   // TODO: Evaluate a better solution (Bug 1869466)
   // TODO: Only re-create AVCodecContext when avcodec_flush_buffers is
@@ -610,7 +610,7 @@ FFmpegDataEncoder<LIBAV_VER>::DrainWithModernAPIs() {
   ShutdownInternal();
   MediaResult r = InitEncoder();
   if (NS_FAILED(r.Code())) {
-    FFMPEG_LOG("%s", r.Description().get());
+    FFMPEG_LOG("{}", r.Description().get());
     return Err(r);
   }
 

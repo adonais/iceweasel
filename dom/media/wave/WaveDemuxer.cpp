@@ -4,8 +4,6 @@
 
 #include "WaveDemuxer.h"
 
-#include <inttypes.h>
-
 #include <algorithm>
 
 #include "BufferReader.h"
@@ -21,8 +19,9 @@ using mozilla::media::TimeUnit;
 
 namespace mozilla {
 
-#define LOG(msg, ...) \
-  MOZ_LOG(gMediaDemuxerLog, LogLevel::Debug, msg, ##__VA_ARGS__)
+#define LOG(msg, ...)                                                     \
+  MOZ_LOG_FMT(gMediaDemuxerLog, LogLevel::Debug, MOZ_LOG_EXPAND_ARGS msg, \
+              ##__VA_ARGS__)
 
 WAVDemuxer::WAVDemuxer(MediaResource* aSource) : mSource(aSource) {
   DDLINKCHILD("source", aSource);
@@ -171,8 +170,9 @@ bool WAVTrackDemuxer::Init() {
       mInfo->mChannels) {
     AudioConfig::ChannelLayout::ChannelMap defaultForChannelCount =
         AudioConfig::ChannelLayout(mInfo->mChannels).Map();
-    LOG(("Channel count of %" PRIu32
-         " and channel layout disagree, overriding channel map from %s to %s",
+    LOG(
+        ("Channel count of {} and channel layout disagree, overriding channel "
+         "map from {} to {}",
          mInfo->mChannels,
          AudioConfig::ChannelLayout::ChannelMapToString(mInfo->mChannelMap)
              .get(),
@@ -180,7 +180,7 @@ bool WAVTrackDemuxer::Init() {
              .get()));
     mInfo->mChannelMap = defaultForChannelCount;
   }
-  LOG(("WavDemuxer initialized: %s", mInfo->ToString().get()));
+  LOG(("WavDemuxer initialized: {}", mInfo->ToString().get()));
 
   return mInfo->mDuration.IsPositive();
 }
@@ -285,7 +285,7 @@ bool WAVTrackDemuxer::ListChunkParserInit(uint32_t aChunkSize) {
         mInfo->mTags.AppendElement(MetadataTag("name"_ns, val));
         break;
       default:
-        LOG(("Metadata key %08x not handled", id));
+        LOG(("Metadata key {:08x} not handled", id));
     }
 
     mHeaderParser.Reset();

@@ -45,6 +45,7 @@ dependencies {
     implementation project(':components:concept-fetch')
     implementation project(':components:service-merino-manifest')
     implementation project(':components:support-ktx')
+    implementation project(':components:support-utils')
 
     implementation libs.androidsvg
     implementation libs.androidx.annotation
@@ -53,7 +54,6 @@ dependencies {
     implementation libs.androidx.compose.ui
     implementation libs.androidx.core.ktx
     implementation libs.androidx.palette
-    implementation libs.disklrucache
     implementation libs.kotlinx.coroutines
 
     testImplementation project(':components:lib-fetch-httpurlconnection')

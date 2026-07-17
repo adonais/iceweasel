@@ -8,6 +8,12 @@ This also helps to breakdown the work for different reviewers.
 As it can be complex for newcomers, this documentation explains the
 various commands.
 
+.. note::
+
+   This page documents the Git workflow, which is the default. If you
+   prefer Jujutsu, see :ref:`Introduction to Jujutsu` for the equivalent
+   commands.
+
 In Phabricator, the stack can be seen in the `Revision Contents` section.
 The top of the stack (most recent change) is first in the list.
 

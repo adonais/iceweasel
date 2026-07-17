@@ -715,7 +715,7 @@ export class FxviewTabRowBase extends MozLitElement {
         iconSrc = "chrome://global/skin/icons/delete.svg";
         break;
       case "dismiss-button":
-        iconSrc = "chrome://global/skin/icons/close.svg";
+        iconSrc = "resource://content-accessible/close-12.svg";
         break;
       case "options-button":
         iconSrc = "chrome://global/skin/icons/more.svg";

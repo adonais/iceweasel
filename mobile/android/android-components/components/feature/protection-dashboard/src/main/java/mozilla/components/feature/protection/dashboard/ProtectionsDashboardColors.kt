@@ -18,18 +18,20 @@ import androidx.compose.ui.platform.LocalContext
  *
  * @param background The background color of the card.
  * @param textPrimary The primary text color.
+ * @param textSecondary The secondary text color for subtitles.
  * @param textAccent The accent text color for the tracker count.
  * @param chipBackground The background color of the data saved chip.
  * @param chipText The text color of the data saved chip.
  * @param progressBar The color of the progress bar in the tracker breakdown.
+ * @param gradientStart The start color of the header gradient.
+ * @param gradientEnd The end color of the header gradient.
  */
 internal data class ProtectionsDashboardColors(
-    val background: Color,
-    val textPrimary: Color,
-    val textAccent: Color,
     val chipBackground: Color,
     val chipText: Color,
     val progressBar: Color,
+    val gradientStart: Color,
+    val gradientEnd: Color,
 )
 
 @Composable
@@ -41,18 +43,6 @@ internal fun rememberProtectionsDashboardColors(): ProtectionsDashboardColors {
         context.obtainStyledAttributes(R.styleable.ProtectionsDashboard).let { attrs ->
             try {
                 ProtectionsDashboardColors(
-                    background = attrs.getRequiredColor(
-                        R.styleable.ProtectionsDashboard_mozacProtectionsDashboardBackground,
-                        "mozacProtectionsDashboardBackground",
-                    ),
-                    textPrimary = attrs.getRequiredColor(
-                        R.styleable.ProtectionsDashboard_mozacProtectionsDashboardTextPrimary,
-                        "mozacProtectionsDashboardTextPrimary",
-                    ),
-                    textAccent = attrs.getRequiredColor(
-                        R.styleable.ProtectionsDashboard_mozacProtectionsDashboardTextAccent,
-                        "mozacProtectionsDashboardTextAccent",
-                    ),
                     chipBackground = attrs.getRequiredColor(
                         R.styleable.ProtectionsDashboard_mozacProtectionsDashboardChipBackground,
                         "mozacProtectionsDashboardChipBackground",
@@ -64,6 +54,14 @@ internal fun rememberProtectionsDashboardColors(): ProtectionsDashboardColors {
                     progressBar = attrs.getRequiredColor(
                         R.styleable.ProtectionsDashboard_mozacProtectionsDashboardProgressBar,
                         "mozacProtectionsDashboardProgressBar",
+                    ),
+                    gradientStart = attrs.getRequiredColor(
+                        R.styleable.ProtectionsDashboard_mozacProtectionsDashboardGradientStart,
+                        "mozacProtectionsDashboardGradientStart",
+                    ),
+                    gradientEnd = attrs.getRequiredColor(
+                        R.styleable.ProtectionsDashboard_mozacProtectionsDashboardGradientEnd,
+                        "mozacProtectionsDashboardGradientEnd",
                     ),
                 )
             } finally {

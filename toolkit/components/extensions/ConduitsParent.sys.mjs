@@ -341,6 +341,15 @@ export class BroadcastConduit extends BaseConduit {
         (arg.frameId == null || remote.frameId === arg.frameId) &&
         remote.recv.includes(method),
 
+      // Target Messengers by extensionId and documentId (innerWindowId).
+      // Note: Messenger checks context.active before dispatching events,
+      // resulting in the desired filtering of events for non-matching windows.
+      // There is no filtering of innerWindowId at the Conduits layer.
+      frame: remote =>
+        remote.extensionId === arg.extensionId &&
+        remote.actor.manager.innerWindowId === arg.innerWindowId &&
+        remote.recv.includes(method),
+
       // Target Messengers by extensionId.
       extension: remote => remote.instanceId === arg.instanceId,
     };

@@ -436,11 +436,18 @@ async function activateSecondaryAction(aAction) {
     case kActionNever:
       if (notification.notification.secondaryActions.length > 1) {
         // "Always Block" is the first (and only) item in the menupopup.
+        await notification.secondaryButton.updateComplete;
         await Promise.all([
           BrowserTestUtils.waitForEvent(notification.menupopup, "popupshown"),
-          notification.menubutton.click(),
+          EventUtils.synthesizeMouseAtCenter(
+            notification.secondaryButton.chevronButtonEl,
+            {}
+          ),
         ]);
         notification.menupopup.querySelector("menuitem").click();
+        // menuitem.click() doesn't trigger XUL's auto-close. Hide explicitly so
+        // the reused menupopup is in a clean state if this panel is shown again.
+        notification.menupopup.hidePopup();
         return;
       }
       if (!notification.checkbox.checked) {
@@ -448,6 +455,7 @@ async function activateSecondaryAction(aAction) {
       }
     // fallthrough
     case kActionDeny:
+      await notification.secondaryButton.updateComplete;
       notification.secondaryButton.click();
       break;
     case kActionAlways:
@@ -706,7 +714,7 @@ async function promiseRequestDevice(
           args.aType,
           args.aBadDevice
         );
-        await EventUtils.synthesizeMouseAtCenter(
+        EventUtils.synthesizeMouseAtCenter(
           global.document.getElementById("gum"),
           {},
           content

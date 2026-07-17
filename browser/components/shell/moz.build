@@ -41,6 +41,10 @@ elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
     SOURCES += [
         "nsGNOMEShellService.cpp",
     ]
+    LOCAL_INCLUDES += [
+        "/widget",
+        "/widget/gtk",  # for nsWindow
+    ]
     if CONFIG["MOZ_ENABLE_DBUS"]:
         SOURCES += [
             "nsGNOMEShellDBusHelper.cpp",
@@ -69,6 +73,15 @@ elif CONFIG["OS_ARCH"] == "WINNT":
         "crypt32",
         "propsys",
     ]
+    FINAL_TARGET_FILES += ["content/blank.pdf", "content/confused_fox.pdf"]
+
+    MOZ_SRC_FILES += [
+        "WindowsSetDefaultAppCmdHandler.sys.mjs",
+    ]
+
+    XPCOM_MANIFESTS += [
+        "components.conf",
+    ]
 
 XPIDL_MODULE = "shellservice"
 
@@ -79,6 +92,7 @@ MOZ_SRC_FILES += [
     "HeadlessShell.sys.mjs",
     "ScreenshotChild.sys.mjs",
     "ShellService.sys.mjs",
+    "WindowsSetDefaultRedirect.sys.mjs",
 ]
 
 MOZ_SRC_FILES += [

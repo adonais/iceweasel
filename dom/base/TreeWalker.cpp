@@ -147,7 +147,7 @@ already_AddRefed<nsINode> TreeWalker::NextNode(ErrorResult& aResult) {
 
   nsCOMPtr<nsINode> node = mCurrentNode;
 
-  while (1) {
+  while (true) {
     nsINode* firstChild;
     while (filtered != NodeFilter_Binding::FILTER_REJECT &&
            (firstChild = node->GetFirstChild())) {
@@ -274,7 +274,7 @@ already_AddRefed<nsINode> TreeWalker::NextSiblingInternal(
     return nullptr;
   }
 
-  while (1) {
+  while (true) {
     nsINode* sibling =
         aReversed ? node->GetPreviousSibling() : node->GetNextSibling();
 

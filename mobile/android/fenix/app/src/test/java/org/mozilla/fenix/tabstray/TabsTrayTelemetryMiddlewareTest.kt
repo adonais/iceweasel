@@ -127,6 +127,15 @@ class TabsTrayTelemetryMiddlewareTest {
     }
 
     @Test
+    fun `WHEN the select all normal tabs button is clicked THEN the metric is reported`() {
+        assertNull(TabsTray.selectAllNormalTabs.testGetValue())
+
+        store.dispatch(TabsTrayAction.SelectAllNormalTabs)
+
+        assertNotNull(TabsTray.selectAllNormalTabs.testGetValue())
+    }
+
+    @Test
     fun `WHEN the delete all normal tabs button is clicked THEN the metric is reported`() {
         assertNull(TabsTray.closeAllTabs.testGetValue())
 
@@ -309,6 +318,21 @@ class TabsTrayTelemetryMiddlewareTest {
             tabs = mutableListOf(),
         )
         store.dispatch(TabGroupAction.DeleteConfirmed(mockGroup))
+
+        assertNotNull(TabsTray.tabGroupDeleted.testGetValue())
+    }
+
+    @Test
+    fun `WHEN closing the last tab and deleting the group is confirmed THEN the deletion metric is reported`() {
+        assertNull(TabsTray.tabGroupDeleted.testGetValue())
+
+        val mockGroup = TabsTrayItem.TabGroup(
+            id = "test group",
+            title = "Test",
+            theme = TabGroupTheme.default,
+            tabs = mutableListOf(),
+        )
+        store.dispatch(TabGroupAction.CloseTabAndDeleteGroupConfirmed(mockGroup))
 
         assertNotNull(TabsTray.tabGroupDeleted.testGetValue())
     }

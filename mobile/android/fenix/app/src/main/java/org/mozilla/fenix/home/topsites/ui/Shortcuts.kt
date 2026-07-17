@@ -30,6 +30,7 @@ internal fun Shortcuts(
     interactor: TopSiteInteractor,
     topSiteColors: TopSiteColors = TopSiteColors.colors(),
     showAddShortcut: Boolean = false,
+    onAddShortcutClicked: () -> Unit,
 ) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(minSize = TOP_SITES_ITEM_SIZE.dp),
@@ -68,7 +69,7 @@ internal fun Shortcuts(
             item {
                 AddShortcutItem(
                     topSiteColors = topSiteColors,
-                    onClick = {},
+                    onClick = onAddShortcutClicked,
                 )
             }
         }
@@ -86,6 +87,7 @@ private fun ShortcutsPreview(
                 topSites = FakeHomepagePreview.topSites(),
                 interactor = FakeHomepagePreview.topSitesInteractor,
                 showAddShortcut = showAddShortcut,
+                onAddShortcutClicked = {},
             )
         }
     }

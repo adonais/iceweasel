@@ -10,12 +10,14 @@
 
 #include "p2p/base/port.h"
 
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
 #include <list>
 #include <memory>
 #include <optional>
+#include <span>
 #include <string>
 #include <utility>
 #include <vector>
@@ -106,7 +108,7 @@ constexpr int kTiebreaker1 = 11111;
 constexpr int kTiebreaker2 = 22222;
 constexpr int kTiebreakerDefault = 44444;
 
-constexpr char kTestData[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
+constexpr uint8_t kTestData[] = "ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890";
 
 Candidate GetCandidate(Port* port) {
   RTC_DCHECK_GE(port->Candidates().size(), 1);
@@ -136,10 +138,8 @@ bool GetStunMessageFromBufferWriter(TestPort* port,
                                     const SocketAddress& addr,
                                     std::unique_ptr<IceMessage>* out_msg,
                                     std::string* out_username) {
-  return port->GetStunMessage(reinterpret_cast<const char*>(buf->Data()),
-                              buf->Length(), addr, out_msg, out_username);
+  return port->GetStunMessage(buf->DataView(), addr, out_msg, out_username);
 }
-
 void SendPingAndReceiveResponse(Connection* lconn,
                                 TestPort* lport,
                                 Connection* rconn,
@@ -243,9 +243,9 @@ class TestChannel {
   void OnPortComplete(Port* port) { complete_count_++; }
   void SetIceMode(IceMode ice_mode) { ice_mode_ = ice_mode; }
 
-  int SendData(const char* data, size_t len) {
+  int SendData(std::span<const uint8_t> data) {
     AsyncSocketPacketOptions options;
-    return conn_->Send(data, len, options);
+    return conn_->Send(data, options);
   }
 
   void OnUnknownAddress(PortInterface* port,
@@ -714,8 +714,7 @@ class PortTest : public ::testing::Test {
       if (send_after_disconnected) {
         // First SendData after disconnect should fail but will trigger
         // reconnect.
-        EXPECT_EQ(-1,
-                  ch1.SendData(kTestData, static_cast<int>(strlen(kTestData))));
+        EXPECT_EQ(-1, ch1.SendData(kTestData));
       }
 
       if (ping_after_disconnected) {
@@ -1108,8 +1107,7 @@ class FakePacketSocketFactory : public PacketSocketFactory {
       std::unique_ptr<AsyncPacketSocket> next_client_tcp_socket) {
     next_client_tcp_socket_ = std::move(next_client_tcp_socket);
   }
-  std::unique_ptr<webrtc::AsyncDnsResolverInterface> CreateAsyncDnsResolver()
-      override {
+  std::unique_ptr<AsyncDnsResolverInterface> CreateAsyncDnsResolver() override {
     return nullptr;
   }
 
@@ -1187,6 +1185,42 @@ class FakeAsyncListenSocket : public AsyncListenSocket {
 // Local -> XXXX
 TEST_F(PortTest, TestLocalToLocal) {
   TestLocalToLocal();
+}
+
+TEST_F(PortTest, TestNetworkSliceInitiallyDefault) {
+  std::unique_ptr<UDPPort> port = CreateUdpPort(kLocalAddr1);
+  port->PrepareAddress();
+
+  ASSERT_EQ(1U, port->Candidates().size());
+  EXPECT_EQ(NetworkSlice::NO_SLICE, port->Candidates()[0].network_slice());
+}
+
+TEST_F(PortTest, TestNetworkSliceInitiallySet) {
+  std::unique_ptr<UDPPort> port = CreateUdpPort(kLocalAddr1);
+  Network* network = const_cast<Network*>(port->Network());
+  network->set_network_slice(NetworkSlice::UNIFIED_COMMUNICATIONS);
+
+  port->PrepareAddress();
+  ASSERT_EQ(1U, port->Candidates().size());
+  EXPECT_EQ(NetworkSlice::UNIFIED_COMMUNICATIONS,
+            port->Candidates()[0].network_slice());
+}
+
+TEST_F(PortTest, TestNetworkSliceUpdate) {
+  std::unique_ptr<UDPPort> port = CreateUdpPort(kLocalAddr1);
+  Network* network = const_cast<Network*>(port->Network());
+  network->set_network_slice(NetworkSlice::NO_SLICE);
+
+  port->PrepareAddress();
+  ASSERT_EQ(1U, port->Candidates().size());
+  EXPECT_EQ(NetworkSlice::NO_SLICE, port->Candidates()[0].network_slice());
+
+  network->set_network_slice(NetworkSlice::UNIFIED_COMMUNICATIONS);
+  EXPECT_EQ(NetworkSlice::UNIFIED_COMMUNICATIONS,
+            port->Candidates()[0].network_slice());
+
+  network->set_network_slice(NetworkSlice::NO_SLICE);
+  EXPECT_EQ(NetworkSlice::NO_SLICE, port->Candidates()[0].network_slice());
 }
 
 TEST_F(PortTest, TestLocalToConeNat) {
@@ -1613,9 +1647,7 @@ TEST_F(PortTest, TestLoopbackCall) {
   lport->Reset();
   auto buf = std::make_unique<ByteBufferWriter>();
   WriteStunMessage(*modified_req, buf.get());
-  conn1->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
-      reinterpret_cast<const char*>(buf->Data()), buf->Length(),
-      /*packet_time_us=*/-1));
+  conn1->OnReadPacket(ReceivedIpPacket(buf->DataView(), SocketAddress()));
   ASSERT_THAT(
       WaitUntil([&] { return lport->last_stun_msg(); }, NotNull(),
                 {.timeout = kDefaultTimeout, .clock = &time_controller_}),
@@ -1997,9 +2029,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_ICE_CONTROLLED) == nullptr);
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USE_CANDIDATE) != nullptr);
   EXPECT_TRUE(msg->GetUInt32(STUN_ATTR_FINGERPRINT) != nullptr);
-  EXPECT_TRUE(StunMessage::ValidateFingerprint(
-      reinterpret_cast<const char*>(lport->last_stun_buf().data()),
-      lport->last_stun_buf().size()));
+  EXPECT_TRUE(StunMessage::ValidateFingerprint(lport->last_stun_buf()));
 
   // Request should not include ping count.
   ASSERT_TRUE(msg->GetUInt32(STUN_ATTR_RETRANSMIT_COUNT) == nullptr);
@@ -2033,9 +2063,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_EQ(StunMessage::IntegrityStatus::kIntegrityOk,
             msg->ValidateMessageIntegrity("rpass"));
   EXPECT_TRUE(msg->GetUInt32(STUN_ATTR_FINGERPRINT) != nullptr);
-  EXPECT_TRUE(StunMessage::ValidateFingerprint(
-      reinterpret_cast<const char*>(lport->last_stun_buf().data()),
-      lport->last_stun_buf().size()));
+  EXPECT_TRUE(StunMessage::ValidateFingerprint(lport->last_stun_buf()));
   // No USERNAME or PRIORITY in ICE responses.
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USERNAME) == nullptr);
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_PRIORITY) == nullptr);
@@ -2064,9 +2092,7 @@ TEST_F(PortTest, TestSendStunMessage) {
   EXPECT_EQ(StunMessage::IntegrityStatus::kIntegrityOk,
             msg->ValidateMessageIntegrity("rpass"));
   EXPECT_TRUE(msg->GetUInt32(STUN_ATTR_FINGERPRINT) != nullptr);
-  EXPECT_TRUE(StunMessage::ValidateFingerprint(
-      reinterpret_cast<const char*>(lport->last_stun_buf().data()),
-      lport->last_stun_buf().size()));
+  EXPECT_TRUE(StunMessage::ValidateFingerprint(lport->last_stun_buf()));
   // No USERNAME with ICE.
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_USERNAME) == nullptr);
   EXPECT_TRUE(msg->GetByteString(STUN_ATTR_PRIORITY) == nullptr);
@@ -2599,12 +2625,12 @@ TEST_F(PortTest,
 
   // Build ordinary message with valid ufrag/pass.
   in_msg = CreateStunMessageWithUsername(STUN_BINDING_REQUEST, "rfrag:lfrag");
-  in_msg->AddMessageIntegrity("rpass");
   // Add a couple attributes with ID in comprehension-required range.
   in_msg->AddAttribute(StunAttribute::CreateUInt32(0x7777));
   in_msg->AddAttribute(StunAttribute::CreateUInt32(0x4567));
   // ... And one outside the range.
   in_msg->AddAttribute(StunAttribute::CreateUInt32(0xdead));
+  in_msg->AddMessageIntegrity("rpass");
   in_msg->AddFingerprint();
   WriteStunMessage(*in_msg, buf.get());
   ASSERT_TRUE(GetStunMessageFromBufferWriter(port.get(), buf.get(), addr,
@@ -2658,13 +2684,13 @@ TEST_F(PortTest,
       IsRtcOk());
   auto modified_response = rport->last_stun_msg()->Clone();
   modified_response->AddAttribute(StunAttribute::CreateUInt32(0x7777));
+  modified_response->RemoveAttribute(STUN_ATTR_MESSAGE_INTEGRITY);
   modified_response->RemoveAttribute(STUN_ATTR_FINGERPRINT);
+  modified_response->AddMessageIntegrity("rpass");
   modified_response->AddFingerprint();
   ByteBufferWriter buf;
   WriteStunMessage(*modified_response, &buf);
-  lconn->OnReadPacket(ReceivedIpPacket::CreateFromLegacy(
-      reinterpret_cast<const char*>(buf.Data()), buf.Length(),
-      /*packet_time_us=*/-1));
+  lconn->OnReadPacket(ReceivedIpPacket(buf.DataView(), SocketAddress()));
   // Response should have been ignored, leaving us unwritable still.
   EXPECT_FALSE(lconn->writable());
 }
@@ -3114,10 +3140,9 @@ TEST_F(PortTest, TestWritableState) {
               IsRtcOk());
 
   // Data should be sendable before the connection is accepted.
-  char data[] = "abcd";
-  int data_size = std::ssize(data);
+  auto data = std::to_array<uint8_t>({'a', 'b', 'c', 'd', '\0'});
   AsyncSocketPacketOptions options;
-  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
+  EXPECT_EQ(static_cast<int>(data.size()), ch1.conn()->Send(data, options));
 
   // Accept the connection to return the binding response, transition to
   // writable, and allow data to be sent.
@@ -3127,7 +3152,7 @@ TEST_F(PortTest, TestWritableState) {
                 Eq(Connection::STATE_WRITABLE),
                 {.timeout = kDefaultTimeout, .clock = &time_controller_}),
       IsRtcOk());
-  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
+  EXPECT_EQ(static_cast<int>(data.size()), ch1.conn()->Send(data, options));
 
   // Ask the connection to update state as if enough time has passed to lose
   // full writability and 5 pings went unresponded to. We'll accomplish the
@@ -3142,7 +3167,7 @@ TEST_F(PortTest, TestWritableState) {
   EXPECT_EQ(Connection::STATE_WRITE_UNRELIABLE, ch1.conn()->write_state());
 
   // Data should be able to be sent in this state.
-  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
+  EXPECT_EQ(static_cast<int>(data.size()), ch1.conn()->Send(data, options));
 
   // And now allow the other side to process the pings and send binding
   // responses.
@@ -3162,7 +3187,7 @@ TEST_F(PortTest, TestWritableState) {
 
   // Even if the connection has timed out, the Connection shouldn't block
   // the sending of data.
-  EXPECT_EQ(data_size, ch1.conn()->Send(data, data_size, options));
+  EXPECT_EQ(static_cast<int>(data.size()), ch1.conn()->Send(data, options));
 
   ch1.Stop();
   ch2.Stop();
@@ -4049,6 +4074,32 @@ TEST_F(PortTest, TestAddConnectionWithSameAddress) {
   time_controller_.AdvanceTime(TimeDelta::Millis(300));
   EXPECT_TRUE(port->GetConnection(address) != nullptr);
 }
+
+// This is a COMPILE time check to ensure that the TurnPort class can be
+// subclassed properly.
+class TestPortWrapper : public TurnPort {
+  TestPortWrapper()
+      : TurnPort(args_,
+                 /*socket=*/nullptr,
+                 my_server_address_,
+                 credentials_,
+                 /*server_priority=*/1,
+                 /*tls_alpn_protocols=*/{"alpn"},
+                 /*tls_elliptic_curves=*/{"ecc"},
+                 /*customizer=*/nullptr,
+                 /*tls_cert_verifier=*/nullptr) {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+    SubscribeReadPacket([](PortInterface* port, const char* data, size_t size,
+                           const SocketAddress& addr) {});
+#pragma clang diagnostic pop
+  }
+
+ private:
+  PortParametersRef args_{.env = CreateTestEnvironment()};
+  ProtocolAddress my_server_address_{kLocalAddr1, PROTO_UDP};
+  RelayCredentials credentials_;
+};
 
 }  // namespace
 }  // namespace webrtc

@@ -9,7 +9,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from "fs";
-import { join } from "path";
+import { basename, join } from "path";
 
 // eslint-disable-next-line mozilla/reject-import-system-module-from-non-system
 import { ObjectUtils } from "../../../../modules/ObjectUtils.sys.mjs";
@@ -22,8 +22,7 @@ const WIDGETS_PATH = "../../../../content/widgets".split("/");
 const TOKEN_DIRS = [
   joinRelativePath("tokens", "base"),
   joinRelativePath("tokens", "components"),
-  joinRelativePath(...WIDGETS_PATH, "moz-badge"),
-  joinRelativePath(...WIDGETS_PATH, "moz-toggle"),
+  joinRelativePath(...WIDGETS_PATH),
 ];
 const FIGMA_VALUE_MAP = {
   Light: "/light",
@@ -91,12 +90,12 @@ function transformValue(val, tokenNames, figmaName) {
 function getTokenFiles(globalDirs) {
   let files = {};
   for (const group of globalDirs) {
-    const tokenFiles = readdirSync(group).filter(path =>
+    const tokenFiles = readdirSync(group, { recursive: true }).filter(path =>
       path.endsWith(".tokens.json")
     );
     for (const file of tokenFiles) {
       const path = join(group, file);
-      let [prop, remainder] = file.split(".", 2);
+      let [prop, remainder] = basename(file).split(".", 2);
       if (prop.startsWith("moz-")) {
         prop = prop.substring(4);
       }
@@ -200,6 +199,7 @@ function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
     if (tokenProp === "value") {
       let resolvedPath = path.filter(p => p !== "@base").join("/");
       let newValue = {};
+      let { nativeTheme } = tokens.value;
       for (const figmaVar in vars) {
         if (matchesFigmaVar(resolvedPath, figmaVar)) {
           const figmaName = figmaVar.slice(resolvedPath.length + 1);
@@ -223,6 +223,9 @@ function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
       if (Object.keys(newValue).length) {
         if (typeof newValue === "object") {
           let simplified = {};
+          if (nativeTheme) {
+            simplified.nativeTheme = nativeTheme;
+          }
           if (newValue.light && newValue.light === newValue.dark) {
             simplified.default = newValue.light;
           } else {
@@ -248,12 +251,17 @@ function walkUpdateNovaTokens(tokens, vars, tokenNames, path = []) {
         tokens.value = newValue;
       }
     } else {
-      tokens[tokenProp] = walkUpdateNovaTokens(
-        tokens[tokenProp],
-        vars,
-        tokenNames,
-        [...path, tokenProp]
-      );
+      try {
+        tokens[tokenProp] = walkUpdateNovaTokens(
+          tokens[tokenProp],
+          vars,
+          tokenNames,
+          [...path, tokenProp]
+        );
+      } catch (ex) {
+        console.error(`Error process token: ${[...path, tokenProp].join(".")}`);
+        throw ex;
+      }
     }
   }
   return tokens;

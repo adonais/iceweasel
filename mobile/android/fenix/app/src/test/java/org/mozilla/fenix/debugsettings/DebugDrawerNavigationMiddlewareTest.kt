@@ -125,6 +125,16 @@ class DebugDrawerNavigationMiddlewareTest {
         }
 
     @Test
+    fun `WHEN the distribution tools screen is the next destination THEN the distribution tools screen is navigated to`() =
+        runTest(testDispatcher) {
+            store.dispatch(DebugDrawerAction.NavigateTo.DistributionTools)
+
+            testDispatcher.scheduler.advanceUntilIdle()
+
+            verify { navController.navigate(DebugDrawerRoute.DistributionTools.route) }
+        }
+
+    @Test
     fun `WHEN the back button is pressed THEN the drawer should go back one screen`() =
         runTest(testDispatcher) {
             store.dispatch(DebugDrawerAction.OnBackPressed)

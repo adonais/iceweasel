@@ -258,12 +258,13 @@ tasks:
                           - -cx
                           - $let:
                                 extraArgs:
-                                    $if: 'tasks_for == "cron"'
-                                    then: '${cron.quoted_args}'
-                                    else:
-                                        $if: 'repository.project in ["autoland", "try"]'
-                                        then: '--no-verify'
-                                        else: ''
+                                    $switch:
+                                        'tasks_for == "cron"': '${cron.quoted_args}'
+                                        $default:
+                                            $switch:
+                                                'repository.project == "autoland"': '--no-verify'
+                                                'repository.project == "try"': '--no-verify --allow-parameter-override'
+                                                $default: ''
                             in:
                                 $if: 'tasks_for == "action"'
                                 then: >
@@ -406,6 +407,12 @@ tasks:
 
               in:
                   $let:
+                      repoType:
+                          $switch:
+                              'repoUrl == "https://github.com/mozilla/firefox-dev"': "dev"
+                              'repoUrl == "https://github.com/mozilla-releng/staging-firefox"': "dev"
+                              'repoUrl == "https://github.com/mozilla-firefox/firefox"': "prod"
+                              $default: null
                       shortRef:
                           $if: 'ref[:11] == "refs/heads/"'
                           then: {$eval: 'ref[11:]'}
@@ -413,12 +420,13 @@ tasks:
                   in:
                       $if: >
                         eventType in ["action", "cron"]
-                        || (eventType == "push" && shortRef == "main")
+                        || (eventType == "push" && repoType == "prod" && shortRef == "main")
+                        || (eventType == "push" && repoType == "dev")
                         || (isPullRequest && eventAction in ["opened", "reopened", "synchronize"])
                       then:
                           $let:
                               level:
-                                  $if: '(tasks_for == "action" || eventType in ["cron", "push"]) && repoUrl == "https://github.com/mozilla-firefox/firefox" && shortRef == "main"'
+                                  $if: '(tasks_for == "action" || eventType in ["cron", "push"]) && repoType == "prod" && shortRef == "main"'
                                   then: 3
                                   else: 1
                           in:
@@ -475,13 +483,13 @@ tasks:
                                       - $switch:
                                             'eventType == "push"':
                                                 - "tc-treeherder.v2.${project}.${headRev}"
-                                                - "index.${trustDomain}.v2.${project}.latest.taskgraph.decision"
+                                                - "index.${trustDomain}.v2.${project}.branch.${shortRef}.latest.taskgraph.decision"
                                                 - "index.${trustDomain}.v2.${project}.revision.${headRev}.taskgraph.decision"
                                             'tasks_for == "action"':
                                                 - "tc-treeherder.v2.${project}.${headRev}"
                                                 - "index.${trustDomain}.v2.${project}.revision.${headRev}.taskgraph.actions.${ownTaskId}"
                                             'eventType == "cron"':
-                                                - "index.${trustDomain}.v2.${project}.latest.taskgraph.decision-${cron.job_name}"
+                                                - "index.${trustDomain}.v2.${project}.branch.${shortRef}.latest.taskgraph.decision-${cron.job_name}"
                                                 - "index.${trustDomain}.v2.${project}.revision.${headRev}.taskgraph.decision-${cron.job_name}"
                                                 # list each cron task on this revision, so actions can find them
                                                 - 'index.${trustDomain}.v2.${project}.revision.${headRev}.cron.${ownTaskId}'
@@ -564,7 +572,13 @@ tasks:
                                       - bash
                                       - -cx
                                       - $let:
-                                            extraArgs: {$if: 'tasks_for == "cron"', then: '${cron.quoted_args}', else: ''}
+                                            extraArgs:
+                                                $switch:
+                                                    'tasks_for == "cron"': '${cron.quoted_args}'
+                                                    $default:
+                                                        $switch:
+                                                            'repoType == "dev"': '--allow-parameter-override'
+                                                            $default: ''
                                         in:
                                             $if: 'eventType == "action"'
                                             then: >

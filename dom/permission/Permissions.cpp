@@ -76,16 +76,16 @@ RefPtr<PermissionStatus> CreatePermissionStatus(
         return nullptr;
       }
 
-      return new MidiPermissionStatus(aGlobal, midiPerm.mSysex);
+      return MakeRefPtr<MidiPermissionStatus>(aGlobal, midiPerm.mSysex);
     }
     case PermissionName::Storage_access:
-      return new StorageAccessPermissionStatus(aGlobal);
+      return MakeRefPtr<StorageAccessPermissionStatus>(aGlobal);
     case PermissionName::Geolocation:
     case PermissionName::Notifications:
     case PermissionName::Push:
     case PermissionName::Persistent_storage:
     case PermissionName::Screen_wake_lock:
-      return new PermissionStatus(aGlobal, rootDesc.mName);
+      return MakeRefPtr<PermissionStatus>(aGlobal, rootDesc.mName);
     case PermissionName::Camera:
       if (!StaticPrefs::permissions_media_query_enabled()) {
         aRv.ThrowTypeError(
@@ -93,7 +93,7 @@ RefPtr<PermissionStatus> CreatePermissionStatus(
             "a valid value for enumeration PermissionName.");
         return nullptr;
       }
-      return new PermissionStatus(aGlobal, rootDesc.mName);
+      return MakeRefPtr<PermissionStatus>(aGlobal, rootDesc.mName);
     case PermissionName::Microphone:
       if (!StaticPrefs::permissions_media_query_enabled()) {
         aRv.ThrowTypeError(
@@ -101,7 +101,7 @@ RefPtr<PermissionStatus> CreatePermissionStatus(
             "not a valid value for enumeration PermissionName.");
         return nullptr;
       }
-      return new PermissionStatus(aGlobal, rootDesc.mName);
+      return MakeRefPtr<PermissionStatus>(aGlobal, rootDesc.mName);
     case PermissionName::Loopback_network:
       if (!StaticPrefs::network_lna_blocking()) {
         aRv.ThrowTypeError(
@@ -110,7 +110,7 @@ RefPtr<PermissionStatus> CreatePermissionStatus(
             "PermissionName.");
         return nullptr;
       }
-      return new PermissionStatus(aGlobal, rootDesc.mName);
+      return MakeRefPtr<PermissionStatus>(aGlobal, rootDesc.mName);
     case PermissionName::Local_network:
       if (!StaticPrefs::network_lna_blocking()) {
         aRv.ThrowTypeError(
@@ -118,7 +118,7 @@ RefPtr<PermissionStatus> CreatePermissionStatus(
             "is not a valid value for enumeration PermissionName.");
         return nullptr;
       }
-      return new PermissionStatus(aGlobal, rootDesc.mName);
+      return MakeRefPtr<PermissionStatus>(aGlobal, rootDesc.mName);
     default:
       MOZ_ASSERT_UNREACHABLE("Unhandled type");
       aRv.Throw(NS_ERROR_NOT_IMPLEMENTED);

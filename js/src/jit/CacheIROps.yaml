@@ -82,12 +82,6 @@
 # If there's an argument named 'result', the generated CacheIRWriter method will
 # return a new OperandId of this type.
 
-- name: ReturnFromIC
-  shared: false
-  transpile: true
-  cost_estimate: 1
-  args:
-
 - name: GuardToObject
   shared: true
   transpile: true
@@ -111,6 +105,13 @@
     input: ValId
 
 - name: GuardIsUndefined
+  shared: true
+  transpile: true
+  cost_estimate: 1
+  args:
+    input: ValId
+
+- name: GuardIsNotObject
   shared: true
   transpile: true
   cost_estimate: 1
@@ -502,13 +503,6 @@
     obj: ObjId
 
 - name: GuardIsNotArrayBufferMaybeShared
-  shared: true
-  transpile: true
-  cost_estimate: 1
-  args:
-    obj: ObjId
-
-- name: GuardIsTypedArray
   shared: true
   transpile: true
   cost_estimate: 1
@@ -3946,3 +3940,11 @@
   args:
     val: ValId
 #endif
+
+# This is a pseudo-op used by PBL to simplify dispatch. It is never generated,
+# but PBL will dispatch to it when the end of the CacheIR sequence is reached.
+- name: PblReturn
+  shared: true
+  transpile: false
+  cost_estimate: 1
+  args:

@@ -906,7 +906,12 @@ TextLeafPoint TextLeafPoint::FindLineStartSameRemoteAcc(
   if (aDirection == eDirPrevious) {
     --index;
   }
-  return TextLeafPoint(mAcc, lines->ElementAt(index));
+  int32_t offset = lines->ElementAt(index);
+  if (MOZ_UNLIKELY(offset < 0 || static_cast<uint32_t>(offset) >
+                                     nsAccUtils::TextLength(mAcc))) {
+    return TextLeafPoint();
+  }
+  return TextLeafPoint(mAcc, offset);
 }
 
 TextLeafPoint TextLeafPoint::FindLineStartSameAcc(
@@ -1633,7 +1638,8 @@ void TextLeafPoint::AddTextOffsetAttributes(AccAttributes* aAttrs) const {
 
   RemoteAccessible* acc = mAcc->AsRemote();
   MOZ_ASSERT(acc);
-  if (RequestDomainsIfInactive(CacheDomain::TextOffsetAttributes)) {
+  if (acc->Document()->RequestDomainsIfInactive(
+          CacheDomain::TextOffsetAttributes)) {
     return;
   }
   if (!acc->mCachedFields) {
@@ -1749,7 +1755,8 @@ TextLeafPoint TextLeafPoint::FindTextOffsetAttributeSameAcc(
 
   RemoteAccessible* acc = mAcc->AsRemote();
   MOZ_ASSERT(acc);
-  if (RequestDomainsIfInactive(CacheDomain::TextOffsetAttributes)) {
+  if (acc->Document()->RequestDomainsIfInactive(
+          CacheDomain::TextOffsetAttributes)) {
     return TextLeafPoint();
   }
   if (!acc->mCachedFields) {
@@ -2268,10 +2275,10 @@ LayoutDeviceIntRect TextLeafPoint::CharBounds() const {
     return bounds;
   }
 
-  if (RequestDomainsIfInactive(CacheDomain::TextBounds)) {
+  RemoteAccessible* remote = mAcc->AsRemote();
+  if (remote->Document()->RequestDomainsIfInactive(CacheDomain::TextBounds)) {
     return LayoutDeviceIntRect();
   }
-  RemoteAccessible* remote = mAcc->AsRemote();
   if (!remote->mCachedFields) {
     return LayoutDeviceIntRect();
   }

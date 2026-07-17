@@ -211,7 +211,7 @@ class ThreadTrampoline {
     auto* pack = static_cast<ThreadTrampoline<F, Args...>*>(aPack);
     pack->callMain(std::index_sequence_for<Args...>{});
     js_delete(pack);
-    return 0;
+    return {};
   }
 
   template <size_t... Indices>

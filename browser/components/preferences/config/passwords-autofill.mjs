@@ -187,6 +187,7 @@ const { ENABLED_AUTOFILL_ADDRESSES_PREF, ENABLED_AUTOFILL_CREDITCARDS_PREF } =
 const FORM_AUTOFILL_CONFIG = {
   payments: {
     l10nId: "payments-group",
+    iconSrc: "chrome://browser/skin/payment-methods-16.svg",
     headingLevel: 2,
     subcategory: "payment-methods-autofill credit-card-autofill",
     items: [
@@ -218,6 +219,7 @@ const FORM_AUTOFILL_CONFIG = {
   },
   addresses: {
     l10nId: "addresses-group",
+    iconSrc: "chrome://browser/skin/notification-icons/geo.svg",
     headingLevel: 2,
     subcategory: "addresses-autofill address-autofill",
     items: [

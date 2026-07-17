@@ -55,6 +55,7 @@ import mozilla.components.concept.engine.translate.TranslationError
 import mozilla.components.feature.downloads.DefaultFileSizeFormatter
 import mozilla.components.feature.downloads.FileSizeFormatter
 import org.mozilla.fenix.R
+import org.mozilla.fenix.compose.settings.SettingsSectionHeader
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -253,16 +254,13 @@ private fun shouldShowDownloadLanguagesHeader(
 
 @Composable
 private fun DownloadLanguagesHeader(title: String) {
-    Text(
+    SettingsSectionHeader(
         text = title,
         modifier = Modifier
             .fillMaxWidth()
             .padding(start = 72.dp, end = 16.dp)
-            .semantics { heading() }
             .defaultMinSize(minHeight = 36.dp)
             .wrapContentHeight(),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = FirefoxTheme.typography.headline8,
     )
 }
 

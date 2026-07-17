@@ -32,7 +32,6 @@ using namespace js::jit;
 //   GuardToInt32                   inputId 0, resultId 2
 //   GuardToInt32                   inputId 1, resultId 3
 //   CompareInt32Result             op JSOp::Lt, lhsId 2, rhsId 3
-//   ReturnFromIC
 class MOZ_RAII CacheIROpsJitSpewer {
   GenericPrinter& out_;
 
@@ -535,7 +534,6 @@ static const char* ArrayBufferViewKindName(ArrayBufferViewKind kind) {
 //   OP(GuardToInt32) ID(0) ID(2)
 //   OP(GuardToInt32) ID(1) ID(3)
 //   OP(CompareInt32Result) JSOP(Lt) ID(2) ID(3)
-//   OP(ReturnFromIC)
 //
 // The output is meant to be interpreted in the context of defined
 // preprocessor macros to reproduce the CacheIR bytecode.

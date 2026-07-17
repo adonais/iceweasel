@@ -90,6 +90,10 @@ PER_PROJECT_PARAMETERS = {
         "target_tasks_method": "mozilla_esr140_tasks",
         "release_type": "esr140",
     },
+    "mozilla-esr153": {
+        "target_tasks_method": "mozilla_esr153_tasks",
+        "release_type": "esr153",
+    },
     "pine": {
         "target_tasks_method": "pine_tasks",
         "release_type": "nightly-pine",
@@ -118,6 +122,11 @@ PER_PROJECT_PARAMETERS = {
         # TODO We'll eventually need to split this out based on tasks_for and
         # branch, but for now just use the pull request target_tasks_method.
         "target_tasks_method": "firefox_pull_request_tasks",
+    },
+    "firefox-dev": {
+        "enable_always_target": True,
+        "target_tasks_method": "try_tasks",
+        "release_type": "nightly",
     },
     "staging-firefox": {
         "target_tasks_method": "default",
@@ -155,17 +164,6 @@ def full_task_graph_to_manifests_by_task(full_task_json):
 
         manifests_by_task[label].extend(manifests)
     return manifests_by_task
-
-
-def try_syntax_from_message(message):
-    """
-    Parse the try syntax out of a commit message, returning '' if none is
-    found.
-    """
-    try_idx = message.find("try:")
-    if try_idx == -1:
-        return ""
-    return message[try_idx:].split("\n", 1)[0]
 
 
 def taskgraph_decision(options, parameters):
@@ -341,7 +339,6 @@ def get_decision_parameters(graph_config, options):
     parameters["build_number"] = 1
     parameters["version"] = get_version(product_dir)
     parameters["app_version"] = get_app_version(product_dir)
-    parameters["message"] = try_syntax_from_message(commit_message)
     parameters["next_version"] = None
     parameters["optimize_strategies"] = None
     parameters["optimize_target_tasks"] = True
@@ -401,16 +398,6 @@ def get_decision_parameters(graph_config, options):
     if "nightly" in parameters.get("target_tasks_method", ""):
         parameters["release_history"] = populate_release_history("Firefox", project)
 
-    if options.get("try_task_config_file"):
-        task_config_file = os.path.abspath(options.get("try_task_config_file"))
-    else:
-        # if try_task_config.json is present, load it
-        task_config_file = os.path.join(os.getcwd(), "try_task_config.json")
-
-    # load try settings
-    if "try" in project and options["tasks_for"] in ("hg-push", "github-push"):
-        set_try_config(parameters, task_config_file)
-
     if options.get("optimize_target_tasks") is not None:
         parameters["optimize_target_tasks"] = options["optimize_target_tasks"]
 
@@ -436,6 +423,29 @@ def get_decision_parameters(graph_config, options):
         find_object(graph_config["taskgraph"]["decision-parameters"])(
             graph_config, parameters
         )
+
+    # load extra parameters from file or note if able
+    if options.get("allow_parameter_override"):
+        note_ref = "refs/notes/decision-parameters"
+        if options.get("try_task_config_file"):
+            task_config_file = os.path.abspath(options.get("try_task_config_file"))
+        else:
+            task_config_file = os.path.join(os.getcwd(), "try_task_config.json")
+
+        if os.path.isfile(task_config_file):
+            set_try_config(parameters, task_config_file)
+            parameters["try_mode"] = "try_task_config"
+
+        elif note_params := repo.get_note(note_ref, parameters["head_repository"]):
+            try:
+                note_params = json.loads(note_params)
+                logger.info(
+                    f"Overriding parameters from {note_ref}:\n{json.dumps(note_params, indent=2)}"
+                )
+                parameters.update(note_params)
+                parameters["try_mode"] = "try_task_config"
+            except ValueError as e:
+                raise Exception(f"Failed to parse {note_ref} as JSON: {e}") from e
 
     result = Parameters(**parameters)
     result.check()
@@ -467,21 +477,18 @@ def get_existing_tasks(rebuild_kinds, parameters, graph_config):
 
 
 def set_try_config(parameters, task_config_file):
-    if os.path.isfile(task_config_file):
-        logger.info(f"using try tasks from {task_config_file}")
-        with open(task_config_file) as fh:
-            task_config = json.load(fh)
-        task_config_version = task_config.pop("version", 1)
-        if task_config_version == 1:
-            parameters["try_mode"] = "try_task_config"
-            parameters["try_task_config"] = task_config
-        elif task_config_version == 2:
-            parameters.update(task_config["parameters"])
-            parameters["try_mode"] = "try_task_config"
-        else:
-            raise Exception(
-                f"Unknown `try_task_config.json` version: {task_config_version}"
-            )
+    logger.info(f"using try tasks from {task_config_file}")
+    with open(task_config_file) as fh:
+        task_config = json.load(fh)
+    task_config_version = task_config.pop("version", 1)
+    if task_config_version == 1:
+        parameters["try_task_config"] = task_config
+    elif task_config_version == 2:
+        parameters.update(task_config["parameters"])
+    else:
+        raise Exception(
+            f"Unknown `try_task_config.json` version: {task_config_version}"
+        )
 
 
 def set_decision_indexes(decision_task_id, params, graph_config):

@@ -44,7 +44,7 @@ SVGElement::LengthInfo SVGViewportElement::sLengthInfo[4] = {
 // Implementation
 
 SVGViewportElement::SVGViewportElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGGraphicsElement(std::move(aNodeInfo)) {}
 
 //----------------------------------------------------------------------
@@ -229,10 +229,10 @@ gfxMatrix SVGViewportElement::ChildToUserSpaceTransform() const {
   }
   if (IsRootSVGSVGElement()) {
     const auto* svg = static_cast<const SVGSVGElement*>(this);
-    const SVGPoint& translate = svg->GetCurrentTranslate();
+    const Point& translate = svg->GetCurrentTranslate();
     float scale = svg->CurrentScale();
-    return ThebesMatrix(viewBox.PostScale(scale, scale)
-                            .PostTranslate(translate.GetX(), translate.GetY()));
+    return ThebesMatrix(
+        viewBox.PostScale(scale, scale).PostTranslate(translate));
   }
   // outer-<svg>, but inline in some other content:
   return ThebesMatrix(viewBox);

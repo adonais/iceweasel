@@ -112,6 +112,37 @@ class SlimLinkedListElement {
     return isFirst() ? nullptr : getPrevUnchecked();
   }
 
+  // Remove an element that is in one of the given lists. The element must be
+  // contained in one of the lists.
+  //
+  // Usage: elt->removeFromOneOf(list1, list2, ...)
+  template <typename... Lists>
+  void removeFromOneOf(Lists&... lists) {
+#ifdef DEBUG
+    bool found = (... || lists.contains(thisElement()));
+    MOZ_ASSERT(found, "element not found in any of the lists");
+#endif
+    auto removeFrom = [this](SlimLinkedList<T>& list) {
+      if (this == list.getFirst()) {
+        list.remove(thisElement());
+        return true;
+      }
+      return false;
+    };
+    // Scan through the lists. If this element is the first element of a list,
+    // remove it and short-circuit the scan, skipping the remaining lists. If it
+    // is not the head of any of the lists, fall back to a generic removal from
+    // any list. This is equivalent to the more terse:
+    //
+    // (... || (this == lsts.getFirst() && (lsts.remove(thisElement()), true)))
+    //
+    // but there's already too much magic here.
+    bool removed = (... || removeFrom(lists));
+    if (!removed) {
+      remove();
+    }
+  }
+
  private:
   ElementPtr getNextUnchecked() { return GetPtr(next_); }
   ConstElementPtr getNextUnchecked() const { return GetConstPtr(next_); };

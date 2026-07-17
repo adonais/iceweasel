@@ -108,10 +108,9 @@ media::DecodeSupportSet AgnosticDecoderModule::Supports(
       // something goes wrong with launching the RDD process.
       (AOMDecoder::IsAV1(mimeType) && IsAvailable(DecoderType::AV1)) ||
       (VPXDecoder::IsVPX(mimeType) && IsAvailable(DecoderType::VPX));
-  MOZ_LOG(
-      sPDMLog, LogLevel::Debug,
-      ("Agnostic decoder %s requested type '%s'",
-       supports ? "supports" : "rejects", PromiseFlatCString(mimeType).get()));
+  MOZ_LOG_FMT(
+      sPDMLog, LogLevel::Debug, "Agnostic decoder {} requested type '{}'",
+      supports ? "supports" : "rejects", PromiseFlatCString(mimeType).get());
   if (supports) {
     return media::DecodeSupport::SoftwareDecode;
   }

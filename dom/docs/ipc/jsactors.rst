@@ -385,15 +385,15 @@ In the ``JS*ACTORS`` objects, each key is the name of the actor pair (example: `
 
 The full list of registration parameters can be found:
 
-- for JSProcessActor in file :searchfox:`JSProcessActor.webidl <dom/chrome-webidl/JSProcessActor.webidl>` as ``WindowActorOptions``, ``ProcessActorSidedOptions`` and ``ProcessActorChildOptions``.
-- for JSWindowActor in file :searchfox:`JSWindowActor.webidl <dom/chrome-webidl/JSWindowActor.webidl>` as ``WindowActorOptions``, ``WindowActorSidedOptions`` and ``WindowActorChildOptions``.
+- for both kinds of actors in the file :searchfox:`JSActor.webidl <dom/chrome-webidl/JSActor.webidl>` as ``JSActorOptions`` and ``JSActorSidedOptions``.
+- for JSProcessActor in the file :searchfox:`JSProcessActor.webidl <dom/chrome-webidl/JSProcessActor.webidl>` as ``ProcessActorOptions`` and ``ProcessActorChildOptions``.
+- for JSWindowActor in the file :searchfox:`JSWindowActor.webidl <dom/chrome-webidl/JSWindowActor.webidl>` as ``WindowActorOptions`` and ``WindowActorChildOptions``.
 
 Here's an example ``JSWindowActor`` registration pulled from ``BrowserGlue.sys.mjs``:
 
 .. code-block:: javascript
 
    Plugin: {
-      kind: "JSWindowActor",
       parent: {
         esModuleURI: "resource:///actors/PluginParent.sys.mjs",
       },

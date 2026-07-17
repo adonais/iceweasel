@@ -9,7 +9,6 @@
 
 #include "mozilla/Array.h"
 #include "mozilla/MemoryReporting.h"
-#include "mozilla/StyleSheet.h"
 #include "nsIMemoryReporter.h"
 #include "nsIStyleSheetService.h"
 
@@ -17,6 +16,7 @@ class nsISimpleEnumerator;
 
 namespace mozilla {
 class PresShell;
+class StyleSheet;
 }  // namespace mozilla
 
 #define NS_STYLESHEETSERVICE_CID \

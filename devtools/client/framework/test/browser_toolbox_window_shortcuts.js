@@ -7,6 +7,16 @@ var Startup = Cc["@mozilla.org/devtools/startup-clh;1"].getService(
   Ci.nsISupports
 ).wrappedJSObject;
 var { Toolbox } = require("resource://devtools/client/framework/toolbox.js");
+const { PromiseTestUtils } = ChromeUtils.importESModule(
+  "resource://testing-common/PromiseTestUtils.sys.mjs"
+);
+
+// Closing the toolbox makes the performance panel try to stop the profiler;
+// when it's already running (MOZ_PROFILER_STARTUP=1) that request races the
+// connection teardown and rejects harmlessly. See bug 2044383.
+PromiseTestUtils.allowMatchingRejectionsGlobally(
+  /Connection closed, pending request to .*stopProfilerAndDiscardProfile/
+);
 
 var gToolbox,
   toolIDs,

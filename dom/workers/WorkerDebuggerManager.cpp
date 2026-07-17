@@ -74,7 +74,7 @@ class WorkerDebuggerEnumerator final : public nsSimpleEnumerator {
   explicit WorkerDebuggerEnumerator(
       const nsTArray<nsCOMPtr<nsIWorkerDebugger>>& aDebuggers)
       : mIndex(0) {
-    for (auto debugger : aDebuggers) {
+    for (const auto& debugger : aDebuggers) {
       bool isRemote;
       (void)debugger->GetIsRemote(&isRemote);
       if (!isRemote) {

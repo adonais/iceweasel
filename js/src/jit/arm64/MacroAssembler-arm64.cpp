@@ -167,7 +167,7 @@ void MacroAssemblerCompat::boxValue(Register type, Register src,
     Label upperBitsZeroed;
     Lsr(ARMRegister(scratch, 64), ARMRegister(src, 64),
         ARMRegister(scratch, 64));
-    Cbz(ARMRegister(scratch, 64), &upperBitsZeroed);
+    asMasm().branchTestPtr(Assembler::Zero, scratch, scratch, &upperBitsZeroed);
     breakpoint();
     bind(&upperBitsZeroed);
   }
@@ -256,7 +256,7 @@ BufferOffset MacroAssemblerCompat::movePatchablePtr(ImmPtr ptr, Register dest) {
   // Scratch space for generating the load instruction.
   //
   // allocLiteralLoadEntry() will use InsertIndexIntoTag() to store a temporary
-  // index to the corresponding PoolEntry in the instruction itself.
+  // index to the corresponding pool entry in the instruction itself.
   //
   // That index will be fixed up later when finishPool()
   // walks over all marked loads and calls PatchConstantPoolLoad().
@@ -282,7 +282,7 @@ BufferOffset MacroAssemblerCompat::movePatchablePtr(ImmWord ptr,
   // Scratch space for generating the load instruction.
   //
   // allocLiteralLoadEntry() will use InsertIndexIntoTag() to store a temporary
-  // index to the corresponding PoolEntry in the instruction itself.
+  // index to the corresponding pool entry in the instruction itself.
   //
   // That index will be fixed up later when finishPool()
   // walks over all marked loads and calls PatchConstantPoolLoad().
@@ -1650,6 +1650,9 @@ CodeOffset MacroAssembler::call(const Address& addr) {
 }
 
 void MacroAssembler::call(JitCode* c) {
+  // CodeFromJump doesn't support nop sequences.
+  AutoForbidNops afn(this);
+
   vixl::UseScratchRegisterScope temps(this);
   const ARMRegister scratch64 = temps.AcquireX();
   // This sync has been observed (and is expected) to be necessary.

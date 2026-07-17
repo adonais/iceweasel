@@ -20,6 +20,7 @@
 #include "mozilla/TimeStamp.h"             // for TimeStamp, TimeDuration
 #include "mozilla/dom/AnimationBinding.h"  // for AnimationPlayState
 #include "mozilla/dom/AnimationTimeline.h"
+#include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "nsCycleCollectionParticipant.h"
 
 struct JSContext;
@@ -61,6 +62,11 @@ class Animation : public DOMEventTargetHelper,
   virtual ~Animation();
 
  public:
+  enum class FromJS : bool {
+    No,
+    Yes,
+  };
+
   explicit Animation(nsIGlobalObject* aGlobal);
 
   // Constructs a copy of |aOther| with a new effect and timeline.
@@ -110,45 +116,55 @@ class Animation : public DOMEventTargetHelper,
   virtual void SetEffect(AnimationEffect* aEffect);
   void SetEffectNoUpdate(AnimationEffect* aEffect);
 
-  void SetTimeline(AnimationTimeline* aTimeline) {
-    // Can't refer to timeline by name from JS side.
-    const auto prevTimelineName = GetTimelineName();
-    SetTimeline(aTimeline, nullptr);
-    if (prevTimelineName) {
-      RemovedNamedTimelineReferenceFromJS(prevTimelineName);
-    }
-  }
-
   void RemovedNamedTimelineReferenceFromJS(const nsAtom* aName);
 
+  AnimationTimeline* GetTimelineFromJS() const {
+    auto* timeline = GetTimeline();
+    if (timeline && timeline->IsInactiveTimeline()) {
+      // See:
+      // https://github.com/w3c/csswg-drafts/issues/13807#issuecomment-4390005560
+      return nullptr;
+    }
+    return timeline;
+  }
+
+  virtual void TimelineWillSetFromJS() {}
+  virtual bool TimelineOverridenByJS() const { return false; }
+  void SetTimelineFromJS(AnimationTimeline* aTimeline);
   AnimationTimeline* GetTimeline() const { return mTimeline; }
-  void SetTimeline(AnimationTimeline* aTimeline, const nsAtom* aTimelineName);
-  void SetTimelineNoUpdate(AnimationTimeline* aTimeline,
-                           const nsAtom* aTimelineName);
+  // Timeline may be overriden through JS, any update from the CSS side
+  // will not take effect. Returns true if the timeline did update.
+  bool SetTimeline(AnimationTimeline* aTimeline, const nsAtom* aTimelineName,
+                   FromJS aFromJS);
+  bool SetTimelineNoUpdate(AnimationTimeline* aTimeline,
+                           const nsAtom* aTimelineName, FromJS aFromJS);
 
   const AnimationRange& GetTimelineRange() const { return mTimelineRange; }
   void SetTimelineRange(AnimationRange&& aRange);
   void SetTimelineRangeNoUpdate(AnimationRange&& aRange);
 
   Nullable<TimeDuration> GetStartTime() const { return mStartTime; }
-  Nullable<double> GetStartTimeAsDouble() const;
   void SetStartTime(const Nullable<TimeDuration>& aNewStartTime);
   const TimeStamp& GetPendingReadyTime() const { return mPendingReadyTime; }
   void SetPendingReadyTime(const TimeStamp& aReadyTime) {
     mPendingReadyTime = aReadyTime;
   }
-  virtual void SetStartTimeAsDouble(const Nullable<double>& aStartTime);
 
-  // This is deliberately _not_ called GetCurrentTime since that would clash
-  // with a macro defined in winbase.h
+  // Web IDL binding for `attribute CSSNumberish? startTime`.
+  void GetStartTime(Nullable<OwningCSSNumberish>& aRetVal) const;
+  virtual void SetStartTime(const Nullable<CSSNumberish>& aStartTime,
+                            ErrorResult& aRv);
+
+  // Web IDL binding for `attribute CSSNumberish? currentTime`.
+  void GetCurrentTime(Nullable<OwningCSSNumberish>& aRetVal) const;
+  void SetCurrentTime(const Nullable<CSSNumberish>& aCurrentTime,
+                      ErrorResult& aRv);
+
   Nullable<TimeDuration> GetCurrentTimeAsDuration() const {
     return GetCurrentTimeForHoldTime(mHoldTime);
   }
-  Nullable<double> GetCurrentTimeAsDouble() const;
   void SetCurrentTime(const TimeDuration& aSeekTime);
   void SetCurrentTimeNoUpdate(const TimeDuration& aSeekTime);
-  void SetCurrentTimeAsDouble(const Nullable<double>& aCurrentTime,
-                              ErrorResult& aRv);
 
   Nullable<double> GetOverallProgress() const;
 
@@ -445,10 +461,20 @@ class Animation : public DOMEventTargetHelper,
   DocGroup* GetDocGroup();
 
   void PostUpdate();
+  bool MakeReadyAndMaybeTrigger();
 
   void AutoAlignStartTime();
 
   const nsAtom* GetTimelineName() const { return mTimelineName; }
+
+  bool HasFiniteTimeline() const {
+    return mTimeline && !mTimeline->IsMonotonicallyIncreasing();
+  }
+
+  // True when CSSNumberish times for this animation are expressed as
+  // percentages, i.e. typed-OM is enabled and the animation is associated with
+  // a progress-based timeline.
+  bool AcceptsPercentageBasedTime() const;
 
  protected:
   void SilentlySetCurrentTime(const TimeDuration& aNewCurrentTime);
@@ -542,8 +568,9 @@ class Animation : public DOMEventTargetHelper,
   Document* GetRenderedDocument() const;
   Document* GetTimelineDocument() const;
 
-  bool HasFiniteTimeline() const {
-    return mTimeline && !mTimeline->IsMonotonicallyIncreasing();
+  bool HasFiniteActiveTimeline() const {
+    return mTimeline && !mTimeline->IsMonotonicallyIncreasing() &&
+           !mTimeline->IsInactiveTimeline();
   }
 
   RefPtr<AnimationTimeline> mTimeline;

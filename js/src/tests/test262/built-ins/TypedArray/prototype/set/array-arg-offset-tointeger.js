@@ -92,6 +92,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   sample = new TA(makeCtorArg([1, 2]));
   sample.set([42], { toString: function() {return 1;} });
   assert(compareArray(sample, [1, 42]), "toString");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

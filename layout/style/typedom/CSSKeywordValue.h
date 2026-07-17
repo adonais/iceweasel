@@ -6,6 +6,7 @@
 #define LAYOUT_STYLE_TYPEDOM_CSSKEYWORDVALUE_H_
 
 #include "js/TypeDecls.h"
+#include "mozilla/dom/CSSKeywordValueBindingFwd.h"
 #include "mozilla/dom/CSSStyleValue.h"
 #include "nsString.h"
 
@@ -28,6 +29,13 @@ class GlobalObject;
 class CSSKeywordValue final : public CSSStyleValue {
  public:
   CSSKeywordValue(nsCOMPtr<nsISupports> aParent, const nsACString& aValue);
+
+  static RefPtr<CSSKeywordValue> Create(nsCOMPtr<nsISupports> aParent,
+                                        const nsACString& aValue);
+
+  // https://drafts.css-houdini.org/css-typed-om-1/#rectify-a-keywordish-value
+  static RefPtr<CSSKeywordValue> Create(nsCOMPtr<nsISupports> aParent,
+                                        const CSSKeywordish& aKeywordish);
 
   static RefPtr<CSSKeywordValue> Create(nsCOMPtr<nsISupports> aParent,
                                         const StyleKeywordValue& aKeywordValue);

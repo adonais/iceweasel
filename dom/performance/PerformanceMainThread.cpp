@@ -347,6 +347,7 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
     while (mPendingEventTimingEntries.begin() != entriesToBeQueuedEnd) {
       RefPtr<PerformanceEventTiming> entry =
           mPendingEventTimingEntries.popFirst();
+      UpdateInteractionTelemetry(entry);
       if (entry->RawDuration().valueOr(0) >= kDefaultEventTimingMinDuration) {
         QueueEntry(entry);
       }
@@ -395,6 +396,48 @@ void PerformanceMainThread::DispatchPendingEventTimingEntries() {
         }
       }
     }
+  }
+}
+
+void PerformanceMainThread::UpdateInteractionTelemetry(
+    PerformanceEventTiming* aEntry) {
+  // PerformanceEventTiming allocates an entry for every trusted user-input
+  // event, including handler-less ones bounded by vsync. Filter them out
+  // so the inp* percentiles aren't dominated by no-op events.
+  const double rawDur = aEntry->RawDuration().valueOr(0.0);
+  if (rawDur < kInpEventDurationThreshold) {
+    return;
+  }
+  const uint32_t dur = static_cast<uint32_t>(
+      std::min<double>(rawDur, std::numeric_limits<uint32_t>::max()));
+  const EventMessage msg = aEntry->GetMessage();
+
+  switch (msg) {
+    case eKeyDown:
+    case eKeyPress:
+    case eKeyUp:
+      mInteractionTelemetry.keypressMaxDuration =
+          std::max(mInteractionTelemetry.keypressMaxDuration, dur);
+      break;
+    case ePointerClick:
+      mInteractionTelemetry.mouseClick =
+          std::max(mInteractionTelemetry.mouseClick, dur);
+      break;
+    default:
+      break;
+  }
+
+  if (aEntry->InteractionId() == 0) {
+    return;
+  }
+
+  mInteractionTelemetry.inpLongest =
+      std::max(mInteractionTelemetry.inpLongest, dur);
+
+  auto& durations = mInteractionTelemetry.interactionEventDurations;
+  if (durations.Length() < kMaxInteractionDurations) {
+    durations.InsertElementSorted(static_cast<uint16_t>(
+        std::min<uint32_t>(dur, std::numeric_limits<uint16_t>::max())));
   }
 }
 

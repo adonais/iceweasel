@@ -3,6 +3,8 @@ tags = "devtools"
 subsuite = "devtools"
 support-files = [
   "reload/*",
+  "local-mode/index.html",
+  "local-mode/folder/test.html",
   "browser_toolbox_options_disable_js.html",
   "browser_toolbox_options_disable_js_iframe.html",
   "browser_toolbox_options_disable_cache.sjs",
@@ -44,7 +46,6 @@ support-files = [
   "!/devtools/client/debugger/test/mochitest/shared-head.js",
   "!/devtools/client/inspector/test/shared-head.js",
   "!/devtools/client/shared/test/shared-head.js",
-  "!/devtools/client/shared/test/telemetry-test-helpers.js",
   "!/devtools/client/webconsole/test/browser/shared-head.js",
 ]
 prefs = ["security.allow_unsafe_parent_loads=true"] # This is far from ideal. Bug 1565279 covers removing this pref flip.
@@ -196,6 +197,8 @@ run-if = [
   "os != 'win'", # Content process killing throws on Window
 ]
 
+["browser_toolbox_measure_button_highlighter_destroy.js"]
+
 ["browser_toolbox_meatball.js"]
 skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 2034604
@@ -223,11 +226,19 @@ skip-if = [
 
 ["browser_toolbox_options_frames_button.js"]
 
+["browser_toolbox_options_local_mode.js"]
+
+["browser_toolbox_options_local_mode_notice.js"]
+
 ["browser_toolbox_options_multiple_tabs.js"]
 
 ["browser_toolbox_options_panel_toggle.js"]
 
 ["browser_toolbox_popups_debugging.js"]
+support-files = [
+  "doc_popups_debugging.html",
+  "doc_popups_debugging_popup.html",
+]
 
 ["browser_toolbox_races.js"]
 

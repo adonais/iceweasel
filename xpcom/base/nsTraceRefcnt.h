@@ -28,6 +28,8 @@ class nsTraceRefcnt {
    */
   static void StartLoggingClass(const char* aClass);
 
+  static void EarlyInit();
+
 #ifdef MOZ_ENABLE_FORKSERVER
   static void CloseLogFilesAfterFork();
   static void ReopenLogFilesAfterFork(const char* aProcType = nullptr);

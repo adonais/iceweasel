@@ -37,8 +37,6 @@
     <string name="secret_settings_category_features_title" translatable="false">Features</string>
     <string name="secret_settings_category_debug_title" translatable="false">Debug</string>
 
-    <!-- Label for the secret settings preference -->
-    <string name="preferences_debug_info" translatable="false">Secret Debug Info</string>
     <!-- Label for remote settings server preference -->
     <string name="preferences_debug_settings_remote_settings_server_label" translatable="false">Remote Settings Server (requires restart)</string>
     <!-- Label for Production server option -->
@@ -137,16 +135,12 @@
     <string name="preferences_debug_settings_remote_search_configuration" translatable="false">Enable Remote Search Configuration (requires restart)</string>
     <!-- Label for enabling Address Sync -->
     <string name="preferences_debug_settings_address_sync" translatable="false">Enable Address Sync for supported regions</string>
-    <!-- Label for enabling Settings Search-->
-    <string name="preferences_debug_settings_settings_search" translatable="false">Enable Settings Search</string>
     <!-- Label for enabling the DNS over HTTPS settings -->
     <string name="preferences_debug_settings_enable_doh_settings" translatable="false">Enable DNS over HTTPS settings</string>
     <!-- Label for enabling the persistent onboarding -->
     <string name="preferences_debug_settings_enable_persistent_onboarding" translatable="false">Show onboarding on each app cold open</string>
     <!-- Label for enabling Homepage Sports Widget -->
     <string name="preferences_debug_settings_homepage_sports_widget" translatable="false">Enable Homepage Sports Widget</string>
-    <!-- Label for enabling using Gecko's tracking protection database -->
-    <string name="preferences_settings_show_tracking_protection_dashboard" translatable="false">Show the tracking protection dashboard</string>
 
     <!-- Search Optimization Secret Settings -->
     <string name="preferences_debug_settings_search_optimization" translatable="false">Search Optimization Feature</string>
@@ -168,22 +162,14 @@
     <!-- Label for toggling the native android share sheet feature -->
     <string name="preferences_debug_settings_native_android_share_sheet" translatable="false">Enable Native Android Share Sheet</string>
 
-    <!-- Google Lens prototype related strings -->
-    <string name="preferences_debug_settings_google_lens_integration" translatable="false">Enable Google Lens Integration</string>
-    <!-- Lens image search button content description -->
-    <string name="lens_search_content_description">Search with image</string>
-    <!-- Content description for the gallery picker button in the Lens camera screen -->
-    <string name="content_description_gallery">Choose from gallery to send to Google Lens</string>
-    <!-- Content description for the shutter button in the Lens camera screen -->
-    <string name="content_description_take_photo">Take photo and send to Google Lens</string>`
-    <!-- Image context menu entry that sends the long-pressed image to Google Lens -->
-    <string name="context_menu_open_image_with_google_lens">Search with Google Lens</string>
-    <!-- Toast shown when the user denies the camera permission requested by the Lens camera screen -->
-    <string name="lens_camera_permission_denied">Permission denied</string>
+    <!--  Voice Search in Display Mode toolbar strings  -->
+    <!-- Label for toggling voice search visibility in the display-mode toolbar -->
+    <string name="preferences_debug_settings_show_voice_search_in_display_toolbar" translatable="false">Show Voice Search in Display Toolbar</string>
 
     <!-- Label for toggling the Tab Groups feature -->
     <string name="preferences_tab_groups_feature" translatable="false">Enable Tab Groups</string>
     <string name="preferences_tab_groups_drag_and_drop" translatable="false">Enable Tab Groups Drag and Drop</string>
+    <string name="preferences_tab_groups_onboarding" translatable="false">Enable Tab Groups Onboarding</string>
 
     <!-- Label for toggling the Tab Manager opening animation -->
     <string name="preferences_tab_manager_opening_animation" translatable="false">Enable Tab Manager opening animation</string>
@@ -215,13 +201,6 @@
 
     <!-- Content description (not visible, for screen readers etc.) used to announce [LinkTextView]. -->
     <string name="link_text_view_type_announcement" translatable="false">link</string>
-
-    <!-- Secret debug info strings -->
-    <string name="debug_info_region_home" translatable="false">Home region</string>
-    <string name="debug_info_region_current" translatable="false">Current region</string>
-    <string name="debug_info_distribution_id" translatable="false">Distribution ID</string>
-    <string name="debug_info_play_referrer" translatable="false">Play install referrer</string>
-    <string name="debug_info_run_query_provider_test" translatable="false">Run query provider test</string>
 
     <!-- Profiler settings -->
     <string name="preferences_start_profiler">Start Profiler</string>
@@ -266,6 +245,12 @@
     <string name="debug_drawer_sports_widget_tool_use_mock_server">Use mock World Cup server</string>
     <string name="debug_drawer_sports_widget_tool_mock_server_session">Mock server session</string>
     <string name="debug_drawer_sports_widget_tool_apply_session">Apply</string>
+
+    <!-- Debug drawer Distribution tools -->
+    <string name="debug_drawer_distribution_tools_title">Distribution Tools</string>
+    <string name="debug_drawer_distribution_id" translatable="false">Distribution ID</string>
+    <string name="debug_drawer_play_referrer" translatable="false">Play install referrer</string>
+    <string name="debug_drawer_run_query_provider_test" translatable="false">Run query provider test</string>
 
     <!-- Debug drawer "contextual feature recommendation" (CFR) tools -->
     <!-- The description of the reset CFR section in CFR Tools -->
@@ -339,41 +324,10 @@
     <string name="crash_debug_startup_crash_warning">This will start the startup crash activity in a new process and terminate the current process.</string>
 
     <!-- Firefox Labs -->
-    <!-- Firefox Labs is the name of a screen in Settings to allow users to learn about
-        experimental and in-development features, and turn those features on and off.
-        The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
-        in English. -->
-    <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox Labs</string>
-    <!-- Title text displayed in the banner at the top of the Firefox Labs screen. -->
-    <string name="firefox_labs_banner_title">Give our experimental features a try!</string>
-    <!-- Description text displayed in the banner at the top of the Firefox Labs screen. %s is the name of the app (for example "Firefox"). -->
-    <string name="firefox_labs_experimental_description">They’re in development and evolving, which could impact how %s works.</string>
-    <!-- Button text for restoring the default settings by turning off any experimental features in the Firefox Labs screen. -->
-    <string name="firefox_labs_restore_default_button_text">Restore Defaults</string>
-    <!-- Text displayed when no experimental features are available in the Firefox Labs screen. -->
-    <string name="firefox_labs_no_labs_available_description">No experimental features available</string>
     <!-- The name of an experimental feature displayed in theFirefox Labs screen. This features allows the user to open the homepage as a new tab. -->
     <string name="firefox_labs_homepage_as_a_new_tab">Homepage as a New Tab</string>
     <!-- The description of the "Homepage as a New Tab" feature in the Firefox Labs screen. -->
     <string name="firefox_labs_homepage_as_a_new_tab_description">With this feature enabled, Homepage will behave as a tab.</string>
-    <!-- The title used in a confirmation dialog when toggling on an experimental feature. -->
-    <string name="firefox_labs_enable_feature_dialog_title">Enable experimental feature?</string>
-    <!-- The title used in a confirmation dialog when toggling off an experimental feature. -->
-    <string name="firefox_labs_disable_feature_dialog_title">Disable experimental feature?</string>
-    <!-- The description that is displayed in the confirmation dialog for toggling on and off experimental features. -->
-    <string name="firefox_labs_enable_feature_dialog_message">Toggling this feature will restart %s.</string>
-    <!-- The text for the positive button in the dialog for toggling on and off experimental features. This prompts the user to confirm that they want to restart the app. -->
-    <string name="firefox_labs_dialog_restart_button">Restart</string>
-    <!-- The text for the negative button in the dialog for toggling on and off experimental features. -->
-    <string name="firefox_labs_dialog_cancel_button">Cancel</string>
-    <!-- The title used in a confirmation dialog when restoring the application to its defaults by turning off any experimental features. -->
-    <string name="firefox_labs_restore_defaults_dialog_title">Restore defaults?</string>
-    <!-- The description used in a confirmation dialog when restoring the application to its defaults by turning off any experimental features. -->
-    <string name="firefox_labs_restore_defaults_dialog_message">Resetting experimental features will restart %s.</string>
-    <!-- The link text shown when a feedback URL for a labs feature is available. The feedback URL page will allow users to provide opinions and suggestions. -->
-    <string name="firefox_labs_share_feedback">Share feedback</string>
-    <!-- Content description for the share feedback link on a labs feature. This text will be used by screen readers to provide more context on the feedback link. %s is the name of the labs feature. -->
-    <string name="firefox_labs_share_feedback_content_description">Share feedback for %s</string>
 
     <!-- Debug drawer tab group tools -->
     <!-- The title of the debug drawer tab to help populate tab groups-->
@@ -423,6 +377,8 @@
     <!-- Label for the secret settings preference to enable Import Bookmarks -->
     <string name="preferences_debug_settings_import_bookmarks">Enable Import Bookmarks</string>
 
-  <!-- Label for the secret settings preference to enable Import Passwords -->
-  <string name="preferences_debug_settings_import_passwords">Enable Import Passwords</string>
+    <!-- Label for the secret settings preference to enable Import Passwords -->
+    <string name="preferences_debug_settings_import_passwords">Enable Import Passwords</string>
+    <!--  Firefox brand name  -->
+    <string name="app_name_firefox" tools:ignore="BrandUsage">Firefox</string>
 </resources>

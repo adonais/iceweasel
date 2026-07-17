@@ -478,8 +478,8 @@ nsBaseFilePicker::GetDomFileOrDirectoryEnumerator(
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<nsBaseFilePickerEnumerator> retIter =
-      new nsBaseFilePickerEnumerator(global, iter, mMode);
+  auto retIter =
+      mozilla::MakeRefPtr<nsBaseFilePickerEnumerator>(global, iter, mMode);
   retIter.forget(aValue);
   return NS_OK;
 }

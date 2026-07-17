@@ -799,7 +799,7 @@ static void CheckLeavingBreakElement(nsINode* aNode, void* aClosure) {
 void mozInlineSpellWordUtil::NormalizeWord(nsAString& aWord) {
   nsAutoString result;
   ::NormalizeWord(aWord, 0, aWord.Length(), result);
-  aWord = result;
+  aWord = std::move(result);
 }
 
 void mozInlineSpellWordUtil::SoftText::AdjustBeginAndBuildText(

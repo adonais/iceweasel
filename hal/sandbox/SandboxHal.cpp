@@ -225,17 +225,17 @@ class HalParent : public PHalParent,
     // fullscreen.  We don't have that information currently.
 
     hal::LockScreenOrientation(aOrientation)
-        ->Then(
-            GetMainThreadSerialEventTarget(), __func__,
-            [aResolve](const GenericNonExclusivePromise::ResolveOrRejectValue&
-                           aValue) {
-              if (aValue.IsResolve()) {
-                MOZ_ASSERT(aValue.ResolveValue());
-                aResolve(NS_OK);
-                return;
-              }
-              aResolve(aValue.RejectValue());
-            });
+        ->Then(GetMainThreadSerialEventTarget(), __func__,
+               [aResolve = std::move(aResolve)](
+                   const GenericNonExclusivePromise::ResolveOrRejectValue&
+                       aValue) {
+                 if (aValue.IsResolve()) {
+                   MOZ_ASSERT(aValue.ResolveValue());
+                   aResolve(NS_OK);
+                   return;
+                 }
+                 aResolve(aValue.RejectValue());
+               });
     return IPC_OK();
   }
 

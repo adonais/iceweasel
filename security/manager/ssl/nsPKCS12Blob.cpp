@@ -287,7 +287,7 @@ SECItem* nsPKCS12Blob::nicknameCollision(SECItem* oldNick, PRBool* cancel,
   //       does) and come up with a reasonable nickname.  Alas, the NSS
   //       API limits our ability to produce a useful nickname without
   //       bugging the user.  :(
-  while (1) {
+  while (true) {
     // If we've gotten this far, that means there isn't a certificate
     // in the database that has the same subject name as the cert we're
     // trying to import.  So we need to come up with a "nickname" to

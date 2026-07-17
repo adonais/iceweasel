@@ -2875,7 +2875,7 @@ pref("font.size.monospace.x-math", 13);
 #if defined(ANDROID)
   // We use the bundled Charis SIL Compact as serif font for Firefox for Android
 
-  pref("font.name-list.emoji", "SamsungColorEmoji, Noto Color Emoji");
+  pref("font.name-list.emoji", "SamsungColorEmoji, Noto Color Emoji, Noto Color Emoji Flags");
 
   pref("font.name-list.serif.ar", "Noto Naskh Arabic, Noto Serif, Droid Serif");
   pref("font.name-list.sans-serif.ar", "Noto Naskh Arabic, Roboto, Google Sans, Droid Sans");
@@ -3936,7 +3936,6 @@ pref("devtools.debugger.features.windowless-service-workers", true);
 
 // Disable remote debugging protocol logging.
 pref("devtools.debugger.log", false);
-pref("devtools.debugger.log.verbose", false);
 
 pref("devtools.debugger.remote-port", 6000);
 pref("devtools.debugger.remote-websocket", false);
@@ -3979,6 +3978,13 @@ pref("dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled", false
 pref("dom.postMessage.sharedArrayBuffer.bypassCOOP_COEP.insecure.enabled", false, locked);
 #endif
 
+// Locked so end users cannot toggle SQLite encryption from about:config or
+// user.js. Enterprise policies (Preferences allowlist) and our keystore
+// auto-recovery use the unlock/setDefault/relock dance to override.
+// Defined in StaticPrefList.yaml; locked here because the YAML has no
+// "locked" attribute.
+pref("security.storage.encryption.sqlite.enabled", false, locked);
+
 // Preferences for the form autofill toolkit component.
 // The truthy values of "extensions.formautofill.addresses.available"
 // is "on" and "detect",
@@ -3990,8 +3996,11 @@ pref("extensions.formautofill.available", "detect");
 
 #if defined(NIGHTLY_BUILD) && !defined(ANDROID)
 pref("extensions.formautofill.addresses.supported", "on");
+// Use ML for address form field detection.
+pref("extensions.formautofill.useml", true);
 #else
 pref("extensions.formautofill.addresses.supported", "detect");
+pref("extensions.formautofill.useml", false);
 #endif
 pref("extensions.formautofill.addresses.enabled", true);
 pref("extensions.formautofill.addresses.capture.enabled", true);

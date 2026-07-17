@@ -42,7 +42,7 @@ use backdrop::{BackdropCaptureDataHandle, BackdropRenderDataHandle, BackdropRend
 use borders::{ImageBorderDataHandle, ImageBorderScratch, NormalBorderDataHandle, NormalBorderScratch};
 use gradient::{LinearGradientDataHandle, RadialGradientDataHandle, ConicGradientDataHandle};
 use image::{ImageDataHandle, ImageScratch, VisibleImageTile, YuvImageDataHandle};
-use line_dec::{LineDecorationDataHandle, LineDecorationScratch};
+use line_dec::LineDecorationDataHandle;
 use picture::PictureDataHandle;
 use rectangle::RectangleDataHandle;
 use text_run::{TextRunDataHandle, TextRunScratch};
@@ -814,24 +814,25 @@ pub struct PrimitiveInstance {
     /// All information and state related to clip(s) for this primitive
     pub clip_leaf_id: ClipLeafId,
 
-    /// Local-space rect of the primitive (origin + size). Carries both
-    /// the position and the per-instance size; the latter used to live
-    /// on `PrimTemplateCommonData.prim_size` but is per-instance now so
-    /// that the intern key can deduplicate across differently-sized
-    /// instances of the same prim shape.
-    pub prim_rect: LayoutRect,
+    /// Local-space rect of the primitive (origin + size), as authored by the
+    /// display list (not snapped to the device pixel grid). Carries both the
+    /// position and the per-instance size; the latter used to live on
+    /// `PrimTemplateCommonData.prim_size` but is per-instance now so that the
+    /// intern key can deduplicate across differently-sized instances of the
+    /// same prim shape.
+    pub unsnapped_prim_rect: LayoutRect,
 }
 
 impl PrimitiveInstance {
     pub fn new(
         kind: PrimitiveKind,
         clip_leaf_id: ClipLeafId,
-        prim_rect: LayoutRect,
+        unsnapped_prim_rect: LayoutRect,
     ) -> Self {
         PrimitiveInstance {
             kind,
             clip_leaf_id,
-            prim_rect,
+            unsnapped_prim_rect,
         }
     }
 
@@ -907,9 +908,6 @@ pub struct PrimitiveFrameScratch {
     /// visibility state, clip chain and clip-task index for each
     /// visible primitive.
     pub draws: Vec<PrimitiveDrawHeader>,
-
-    /// Per-frame scratch for LineDecoration primitives.
-    pub line_decoration: storage::Storage<LineDecorationScratch>,
 
     /// Per-frame scratch for NormalBorder primitives.
     pub normal_border: storage::Storage<NormalBorderScratch>,
@@ -993,7 +991,6 @@ impl Default for PrimitiveFrameScratch {
     fn default() -> Self {
         PrimitiveFrameScratch {
             draws: Vec::new(),
-            line_decoration: storage::Storage::new(0),
             normal_border: storage::Storage::new(0),
             backdrop_render: storage::Storage::new(0),
             pictures: storage::Storage::new(0),
@@ -1018,7 +1015,6 @@ impl Default for PrimitiveFrameScratch {
 impl PrimitiveFrameScratch {
     pub fn recycle(&mut self, recycler: &mut Recycler) {
         recycler.recycle_vec(&mut self.draws);
-        self.line_decoration.recycle(recycler);
         self.normal_border.recycle(recycler);
         self.backdrop_render.recycle(recycler);
         self.pictures.recycle(recycler);
@@ -1038,7 +1034,6 @@ impl PrimitiveFrameScratch {
     }
 
     pub fn begin_frame(&mut self) {
-        self.line_decoration.clear();
         self.normal_border.clear();
         self.backdrop_render.clear();
         self.pictures.clear();

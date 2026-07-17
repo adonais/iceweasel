@@ -119,6 +119,14 @@ add_task(async function toolbar_icon_status() {
     button.classList.contains("ipprotection-on"),
     "Toolbar icon should now show connected status"
   );
+  // Regression guard for bug 2034698: the on/off icons must come from a
+  // single shared sprite so swapping states doesn't trigger a fresh image
+  // decode (which used to cause a one-frame blank toolbar button).
+  let onImage = getComputedStyle(button).listStyleImage;
+  Assert.ok(
+    onImage.includes("ipprotection-states.svg#on"),
+    `On state should reference the sprite fragment, got: ${onImage}`
+  );
   let vpnOffPromise = BrowserTestUtils.waitForEvent(
     lazy.IPPProxyManager,
     "IPPProxyManager:StateChanged",
@@ -133,6 +141,11 @@ add_task(async function toolbar_icon_status() {
     !button.classList.contains("ipprotection-on"),
     "Toolbar icon should now show disconnected status"
   );
+  let offImage = getComputedStyle(button).listStyleImage;
+  Assert.ok(
+    offImage.includes("ipprotection-states.svg#off"),
+    `Off state should reference the sprite fragment, got: ${offImage}`
+  );
 
   cleanupService();
 
@@ -140,6 +153,45 @@ add_task(async function toolbar_icon_status() {
   let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
   EventUtils.synthesizeKey("KEY_Escape");
   await panelHiddenPromise;
+});
+
+/**
+ * Tests that the panel opens when the toolbar button is activated via the
+ * Enter or Space keys. Bug 2027922 — on macOS, native XUL toolbarbutton key
+ * handling does not fire `command` for Enter, so we rely on the explicit
+ * keypress handler in navigator-toolbox.js.
+ */
+add_task(async function toolbar_keyboard_activation() {
+  for (let key of ["KEY_Enter", " "]) {
+    let button = document.getElementById(IPProtectionWidget.WIDGET_ID);
+    Assert.ok(
+      BrowserTestUtils.isVisible(button),
+      "IP Protection widget should be visible"
+    );
+
+    button.setAttribute("tabindex", "-1");
+    button.focus();
+
+    let panelShownPromise = waitForPanelEvent(document, "popupshown");
+    let panelInitPromise = BrowserTestUtils.waitForEvent(
+      document,
+      "IPProtection:Init"
+    );
+    EventUtils.synthesizeKey(key, {}, window);
+    await Promise.all([panelShownPromise, panelInitPromise]);
+
+    Assert.equal(
+      button.getAttribute("open"),
+      "true",
+      `Panel should be open after pressing ${key}`
+    );
+
+    let panelHiddenPromise = waitForPanelEvent(document, "popuphidden");
+    EventUtils.synthesizeKey("KEY_Escape");
+    await panelHiddenPromise;
+
+    button.removeAttribute("tabindex");
+  }
 });
 
 /**

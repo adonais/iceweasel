@@ -2,11 +2,14 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "gc/PublicIterators.h"
+
 #include "gc/GCInternals.h"
 #include "gc/GCLock.h"
 #include "vm/Realm.h"
 #include "vm/Runtime.h"
 
+#include "gc/GC-inl.h"
 #include "gc/PrivateIterators-inl.h"
 
 using namespace js;
@@ -77,11 +80,10 @@ void js::IterateChunks(JSContext* cx, void* data,
                        const js::gc::AutoTraceSession& session) {
   AutoLockGC lock(cx->runtime());
 
-  for (auto chunk = cx->runtime()->gc.allNonEmptyChunks(lock); !chunk.done();
-       chunk.next()) {
+  cx->runtime()->gc.forEachNonEmptyChunk(lock, [&](ArenaChunk* chunk) {
     JS::AutoSuppressGCAnalysis nogc(cx);
     chunkCallback(cx->runtime(), data, chunk, session);
-  }
+  });
 }
 
 static void TraverseInnerLazyScriptsForLazyScript(

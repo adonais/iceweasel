@@ -623,10 +623,13 @@ struct UnusedGCThingSizes {
 };
 
 struct GCBufferStats {
-#define FOR_EACH_SIZE(MACRO)          \
-  MACRO(Other, MallocHeap, usedBytes) \
-  MACRO(Other, MallocHeap, freeBytes) \
-  MACRO(Other, MallocHeap, adminBytes)
+#define FOR_EACH_SIZE(MACRO)           \
+  MACRO(Other, MallocHeap, usedBytes)  \
+  MACRO(Other, MallocHeap, freeBytes)  \
+  MACRO(Other, MallocHeap, adminBytes) \
+  MACRO(Other, Ignore, totalChunks)    \
+  MACRO(Other, Ignore, freeRegions)    \
+  MACRO(Other, Ignore, largeAllocs)
 
   GCBufferStats() = default;
   GCBufferStats(GCBufferStats&& other) = default;
@@ -750,6 +753,11 @@ struct ZoneStats {
   mozilla::Maybe<StringsHashMap> allStrings;
   js::Vector<NotableStringInfo, 0, js::SystemAllocPolicy> notableStrings;
   bool isTotals = true;
+
+  // Set when string deduplication was stopped early due to a time budget.
+  // When true, |notableStrings| only reflects strings seen before the cutoff.
+  bool stringsDeduplicationTruncated = false;
+  size_t stringsTotalCount = 0;
 
 #undef FOR_EACH_SIZE
 };

@@ -21,7 +21,6 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -51,6 +50,7 @@ import mozilla.components.compose.base.menu.MenuItem.FixedItem.Level
 import mozilla.components.compose.base.text.Text
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
+import org.mozilla.fenix.compose.settings.SettingsSectionHeader
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
 import org.mozilla.fenix.theme.Theme
@@ -118,11 +118,9 @@ fun SearchEngineShortcuts(
 
 @Composable
 private fun Title(title: String) {
-    Text(
+    SettingsSectionHeader(
         text = title,
         modifier = Modifier.padding(horizontal = 16.dp),
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        style = FirefoxTheme.typography.headline8,
     )
 }
 

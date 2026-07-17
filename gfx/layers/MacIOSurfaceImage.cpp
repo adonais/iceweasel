@@ -304,8 +304,8 @@ already_AddRefed<MacIOSurface> MacIOSurfaceRecycleAllocator::Allocate(
     }
 #endif
 
-    return MakeAndAddRef<MacIOSurface>(surf, false, aYUVColorSpace,
-                                       aTransferFunction);
+    return MakeAndAddRef<MacIOSurface>(surf, aYUVColorSpace, aTransferFunction,
+                                       MacIOSurface::AllowAlpha::No);
   }
 
   // Time to decide if we are creating a single planar or bi-planar surface.
@@ -321,11 +321,13 @@ already_AddRefed<MacIOSurface> MacIOSurfaceRecycleAllocator::Allocate(
   if (aChromaSubsampling == gfx::ChromaSubsampling::HALF_WIDTH &&
       aColorDepth == gfx::ColorDepth::COLOR_8) {
     result = MacIOSurface::CreateSinglePlanarSurface(
-        aYSize, aYUVColorSpace, aTransferFunction, aColorRange);
+        aYSize, aYUVColorSpace, aTransferFunction, aColorRange,
+        MacIOSurface::AllowAlpha::Yes);
   } else {
     result = MacIOSurface::CreateBiPlanarSurface(
         aYSize, aCbCrSize, aChromaSubsampling, aYUVColorSpace,
-        aTransferFunction, aColorRange, aColorDepth);
+        aTransferFunction, aColorRange, aColorDepth,
+        MacIOSurface::AllowAlpha::Yes);
   }
 
   if (result &&

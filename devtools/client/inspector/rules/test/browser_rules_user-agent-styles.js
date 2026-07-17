@@ -132,7 +132,7 @@ async function userAgentStylesVisible(inspector, view) {
   ok(
     uaRules.some(rule => {
       const matchedSelectors = rule.matchedSelectorIndexes.map(
-        index => rule.selector.selectors[index]
+        index => rule.domRule.selectors[index]
       );
       return matchedSelectors.includes(":any-link");
     }),
@@ -141,7 +141,7 @@ async function userAgentStylesVisible(inspector, view) {
   ok(
     uaRules.some(rule => {
       const matchedSelectors = rule.matchedSelectorIndexes.map(
-        index => rule.selector.selectors[index]
+        index => rule.domRule.selectors[index]
       );
       return matchedSelectors.includes(":link");
     }),

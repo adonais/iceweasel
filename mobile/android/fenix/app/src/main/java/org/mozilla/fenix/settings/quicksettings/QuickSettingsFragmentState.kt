@@ -88,7 +88,7 @@ enum class WebsiteInfoUiValues(
     ),
     INSECURE(
         R.string.quick_settings_sheet_insecure_connection_2,
-        iconsR.drawable.mozac_ic_broken_lock,
+        iconsR.drawable.mozac_ic_lock_slash_critical_24,
     ),
     Document(
         R.string.quick_settings_sheet_local_page,

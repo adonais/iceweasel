@@ -3,6 +3,7 @@
 # file, You can obtain one at http://mozilla.org/MPL/2.0/.
 
 [DEFAULT]
+tags = "urlbar"
 support-files = [
   "head.js",
   "head-search_engine_default_id.js",

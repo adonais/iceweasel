@@ -30,10 +30,12 @@ namespace dom {
 
 class ContentList;
 class FormData;
+class HTMLButtonElement;
 class HTMLCollection;
 class HTMLElementOrLong;
 class HTMLOptionElementOrHTMLOptGroupElement;
 class HTMLSelectElement;
+class HTMLSelectedContentElement;
 
 /**
  * Implementation of &lt;select&gt;
@@ -71,9 +73,8 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
 
   using ConstraintValidation::GetValidationMessage;
 
-  explicit HTMLSelectElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-      FromParser aFromParser = NOT_FROM_PARSER);
+  explicit HTMLSelectElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
+                             FromParser aFromParser = NOT_FROM_PARSER);
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLSelectElement, select)
 
@@ -157,7 +158,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   // getting removed.
   using IgnoredOptionList = Span<RefPtr<HTMLOptionElement>>;
   HTMLOptionElement* GetSelectedOption(IgnoredOptionList = {}) const;
-  void SetSelectedIndex(int32_t aIdx) { SetSelectedIndexInternal(aIdx, true); }
+  void SetSelectedIndex(int32_t aIdx);
   void GetValue(nsAString& aValue) const;
   void SetValue(const nsAString& aValue);
 
@@ -190,7 +191,7 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   bool RestoreState(PresState* aState) override;
 
   // Overriden nsIFormControl methods
-  NS_IMETHOD Reset() override;
+  MOZ_CAN_RUN_SCRIPT NS_IMETHOD Reset() override;
   NS_IMETHOD SubmitNamesValues(FormData* aFormData) override;
 
   void FieldSetDisabledChanged(bool aNotify) override;
@@ -287,13 +288,48 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   }
   void GetAutofillState(nsAString& aState) { GetFormAutofillState(aState); }
 
+  HTMLButtonElement* GetFirstButton() const;
+
   void SetupShadowTree();
+  void GetSlotNameFor(const ShadowRoot&, const nsIContent&,
+                      nsAString&) const override;
+  void OnChildBeforeSlotted(ShadowRoot&, nsIContent&) override;
+  void OnChildUnslotted(ShadowRoot&, nsIContent&) override;
 
   // Returns the text node that has the selected <option>'s text.
   // Note that it might return null for printing.
   Text* GetSelectedContentText() const;
   void SelectedContentTextMightHaveChanged(bool aNotify = true,
                                            IgnoredOptionList = {});
+
+  // https://html.spec.whatwg.org/#selectedness-setting-algorithm
+  // NOTE: PR https://github.com/whatwg/html/pull/12263 rewrites this algorithm
+  // aIgnored: options to skip (for pre-removal handling where options are still
+  // in the list but about to be unbound).
+  void RunSelectednessSettingAlgorithm(bool aNotify = true,
+                                       bool aInsertionOrRemovalSteps = false,
+                                       IgnoredOptionList aIgnored = {});
+
+  // Queues a microtask to update all descendant selectedcontent elements.
+  // Multiple calls coalesce into a single update.
+  void ScheduleSelectedContentUpdate();
+  // Like ScheduleSelectedContentUpdate but uses AddScriptRunner instead of a
+  // microtask, so it fires in FIFO order with post-connection script runners.
+  // aForceUpdate: skips IsInComposedDoc and mSelectedContentUpdatePending
+  // guards. Used by spec algorithms (select.value, select.selectedIndex) that
+  // must update selectedcontent even on disconnected selects and must not be
+  // coalesced with deferred mutation-driven updates. Safe from re-entrance
+  // because JS setters cannot be called during UpdateDescendantSelectedContent.
+  void ScheduleSelectedContentUpdateScriptRunner(bool aForceUpdate = false);
+
+  // https://html.spec.whatwg.org/#update-a-select's-descendant-selectedcontent-elements
+  MOZ_CAN_RUN_SCRIPT void UpdateDescendantSelectedContentElements();
+  // https://html.spec.whatwg.org/#update-a-selectedcontent
+  MOZ_CAN_RUN_SCRIPT void UpdateSelectedContentElement(
+      HTMLSelectedContentElement* aSelectedContent);
+  // https://html.spec.whatwg.org/#clone-an-option-into-a-selectedcontent
+  MOZ_CAN_RUN_SCRIPT void CloneOptionIntoSelectedContent(
+      HTMLOptionElement* aOption, HTMLSelectedContentElement* aSelectedContent);
 
  protected:
   virtual ~HTMLSelectElement();
@@ -311,13 +347,6 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
    * @param aStartIndex the index to start with
    */
   void FindSelectedIndex(int32_t aStartIndex, bool aNotify);
-  /**
-   * Try to select an option if nothing is selected.
-   * @param aIgnore option elements to ignore for the computation, for removal
-   *                handling.
-   * @return true if something was selected, false otherwise
-   */
-  bool TrySelectSomething(bool aNotify, IgnoredOptionList aIgnore = {});
   /**
    * Called to trigger notifications of frames and fixing selected index
    *
@@ -436,6 +465,19 @@ class HTMLSelectElement final : public nsGenericHTMLFormControlElementWithState,
   bool mIsOpenInParentProcess : 1 = false;
   bool mButtonDown : 1 = false;
   bool mControlSelectMode : 1 = false;
+  /**
+   * True once a selectedcontent update has been scheduled (as a microtask or a
+   * script runner) but has not run yet. Used to coalesce multiple mutations
+   * into a single update.
+   */
+  bool mSelectedContentUpdatePending : 1 = false;
+  /**
+   * True while we are cloning the selected option into our descendant
+   * selectedcontent elements. Used to ignore the mutation observer
+   * notifications caused by that cloning, which would otherwise schedule a
+   * redundant update.
+   */
+  bool mIsUpdatingSelectedContent : 1 = false;
   /**
    * The temporary restore state in case we try to restore before parser is
    * done adding options

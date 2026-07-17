@@ -326,8 +326,6 @@ namespace jit {
   _(SetPropertyMegamorphicYesCache, js::jit::SetPropertyMegamorphic<true>)     \
   _(SetPropertySuper, js::SetPropertySuper)                                    \
   _(StartDynamicModuleImport, js::StartDynamicModuleImport)                    \
-  IF_SOURCE_PHASE_IMPORTS(                                                     \
-      _(StartDynamicModuleImportSource, js::StartDynamicModuleImportSource))   \
   _(StringBigIntGreaterThanOrEqual,                                            \
     js::jit::StringBigIntCompare<js::jit::ComparisonKind::GreaterThanOrEqual>) \
   _(StringBigIntLessThan,                                                      \

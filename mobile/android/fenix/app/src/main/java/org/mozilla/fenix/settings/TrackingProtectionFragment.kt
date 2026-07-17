@@ -26,7 +26,6 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.trackingprotection.TrackingProtectionMode
 import org.mozilla.fenix.utils.view.addToRadioGroup
@@ -111,9 +110,9 @@ class TrackingProtectionFragment : PreferenceFragmentCompat(), SystemInsetsPadde
         val preferenceTP =
             requirePreference<FenixSwitchPreference>(R.string.pref_key_tracking_protection)
 
-        preferenceTP.isChecked = requireContext().settings().shouldUseTrackingProtection
+        preferenceTP.isChecked = requireComponents.settings.shouldUseTrackingProtection
         preferenceTP.setOnPreferenceChangeListener<Boolean> { preference, trackingProtectionOn ->
-            preference.context.settings().shouldUseTrackingProtection =
+            preference.context.components.settings.shouldUseTrackingProtection =
                 trackingProtectionOn
             with(preference.context.components) {
                 val policy = core.trackingProtectionPolicyFactory.createTrackingProtectionPolicy()
@@ -387,14 +386,14 @@ class TrackingProtectionFragment : PreferenceFragmentCompat(), SystemInsetsPadde
     }
 
     private fun updateStrictOptionsVisibility() {
-        val isStrictSelected = requireContext().settings().useStrictTrackingProtection
+        val isStrictSelected = requireComponents.settings.useStrictTrackingProtection
         strictAllowListBaselineTrackingProtection.isVisible = isStrictSelected
         strictAllowListConvenienceTrackingProtection.isVisible = isStrictSelected
         strictAllowListTrackingProtectionSubheader.isVisible = isStrictSelected
     }
 
     private fun updateCustomOptionsVisibility() {
-        val isCustomSelected = requireContext().settings().useCustomTrackingProtection
+        val isCustomSelected = requireComponents.settings.useCustomTrackingProtection
         customCookies.isVisible = isCustomSelected
         customCookiesSelect.isVisible = isCustomSelected && customCookies.isChecked
         customTracking.isVisible = isCustomSelected
@@ -410,9 +409,9 @@ class TrackingProtectionFragment : PreferenceFragmentCompat(), SystemInsetsPadde
     }
 
     private fun updateFingerprintingProtection() {
-        val isStandardSelected = requireContext().settings().useStandardTrackingProtection
-        val isStrictSelected = requireContext().settings().useStrictTrackingProtection
-        val isCustomSelected = requireContext().settings().useCustomTrackingProtection
+        val isStandardSelected = requireComponents.settings.useStandardTrackingProtection
+        val isStrictSelected = requireComponents.settings.useStrictTrackingProtection
+        val isCustomSelected = requireComponents.settings.useCustomTrackingProtection
 
         context?.components?.let {
             if (isCustomSelected) {
@@ -491,10 +490,10 @@ class TrackingProtectionFragment : PreferenceFragmentCompat(), SystemInsetsPadde
     internal fun onDialogConfirm(isStrictTrackingMode: Boolean, dialog: DialogInterface) {
         if (isStrictTrackingMode) {
             strictAllowListBaselineTrackingProtection.isChecked = false
-            requireContext().settings().strictAllowListBaselineTrackingProtection = false
+            requireComponents.settings.strictAllowListBaselineTrackingProtection = false
         } else {
             customAllowListBaselineTrackingProtection.isChecked = false
-            requireContext().settings().customAllowListBaselineTrackingProtection = false
+            requireComponents.settings.customAllowListBaselineTrackingProtection = false
         }
         updateTrackingProtectionPolicy()
         dialog.dismiss()
@@ -511,10 +510,10 @@ class TrackingProtectionFragment : PreferenceFragmentCompat(), SystemInsetsPadde
     internal fun onDialogCancel(isStrictTrackingMode: Boolean, dialog: DialogInterface) {
         if (isStrictTrackingMode) {
             strictAllowListBaselineTrackingProtection.isChecked = true
-            requireContext().settings().strictAllowListBaselineTrackingProtection = true
+            requireComponents.settings.strictAllowListBaselineTrackingProtection = true
         } else {
             customAllowListBaselineTrackingProtection.isChecked = true
-            requireContext().settings().customAllowListBaselineTrackingProtection = true
+            requireComponents.settings.customAllowListBaselineTrackingProtection = true
         }
         updateTrackingProtectionPolicy()
         dialog.dismiss()

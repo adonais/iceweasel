@@ -12,4 +12,9 @@ class TabsTrayConfigTest {
     fun `WHEN config is created THEN tab groups drag and drop flag defaults to false`() {
         assertFalse(TabsTrayState.TabsTrayConfig().tabGroupsDragAndDropEnabled)
     }
+
+    @Test
+    fun `WHEN config is created THEN tab groups onboarding flag defaults to false`() {
+        assertFalse(TabsTrayState.TabsTrayConfig().tabGroupsOnboardingEnabled)
+    }
 }

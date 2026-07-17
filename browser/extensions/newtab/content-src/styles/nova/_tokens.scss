@@ -18,19 +18,19 @@
 :root.nova-tokens {
   /** background-color **/
   --background-color-box: light-dark(var(--color-white), var(--color-gray-70));
-  --background-color-box-info: light-dark(var(--color-gray-15), var(--color-gray-60));
-  --background-color-canvas: light-dark(var(--color-gray-05), var(--color-gray-85));
+  --background-color-box-info: light-dark(var(--color-gray-15), var(--color-gray-65));
+  --background-color-canvas: light-dark(var(--color-gray-0), var(--color-gray-90));
   --background-color-critical: light-dark(var(--color-red-10), var(--color-red-70));
   --background-color-information: light-dark(var(--color-violet-10), var(--color-violet-70));
   --background-color-success: light-dark(var(--color-green-10), var(--color-green-70));
   --background-color-warning: light-dark(var(--color-yellow-10), var(--color-yellow-70));
 
   /** border **/
-  --border-color: light-dark(var(--color-gray-30), var(--color-gray-50));
-  --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-60));
+  --border-color: light-dark(var(--color-gray-30), var(--color-gray-45));
+  --border-color-deemphasized: light-dark(var(--color-gray-20), var(--color-gray-55));
   --border-color-error: light-dark(var(--color-red-50), var(--color-red-20));
-  --border-color-interactive: var(--color-gray-40);
-  --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-50));
+  --border-color-interactive: light-dark(var(--color-gray-35), var(--color-gray-45));
+  --border-color-interactive-disabled: light-dark(var(--color-gray-25), var(--color-gray-60));
   --border-color-transparent: transparent;
   --border-radius-large: 12px;
   --border-radius-xlarge: 16px;
@@ -46,12 +46,12 @@
 
   /* TODO Bug 1821203 - Gray use needs to be consolidated */
   --button-background-color: transparent;
-  --button-background-color-hover: light-dark(var(--color-violet-desaturated-10), var(--color-violet-desaturated-50));
-  --button-background-color-active: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-60));
+  --button-background-color-hover: light-dark(var(--color-violet-desaturated-20), var(--color-violet-desaturated-50));
+  --button-background-color-active: light-dark(var(--color-violet-desaturated-30), var(--color-violet-desaturated-40));
   --button-background-color-disabled: var(--button-background-color);
-  --button-background-color-destructive: light-dark(var(--color-red-50), var(--color-red-20));
-  --button-background-color-destructive-hover: light-dark(var(--color-red-60), var(--color-red-30));
-  --button-background-color-destructive-active: light-dark(var(--color-red-70), var(--color-red-40));
+  --button-background-color-destructive: light-dark(var(--color-red-50), var(--color-red-30));
+  --button-background-color-destructive-hover: light-dark(var(--color-red-60), var(--color-red-20));
+  --button-background-color-destructive-active: light-dark(var(--color-red-70), var(--color-red-10));
   --button-background-color-ghost: var(--button-background-color);
   --button-background-color-ghost-disabled: var(--button-background-color-ghost);
   --button-background-color-ghost-selected: var(--button-background-color-selected);
@@ -82,19 +82,21 @@
   --button-text-color-menu-hover: light-dark(var(--button-text-color-ghost-hover), var(--button-text-color-hover));
   --button-text-color-menu-active: light-dark(var(--button-text-color-ghost-active), var(--button-text-color-active));
   --button-text-color-menu-disabled: light-dark(var(--button-text-color-ghost-disabled), var(--button-text-color-disabled));
+  --button-text-color-menu-selected: light-dark(var(--button-text-color-ghost-selected), var(--button-text-color-selected));
   --button-text-color-primary: light-dark(var(--color-white), var(--color-gray-70));
   --button-text-color-primary-active: var(--button-text-color-primary);
   --button-text-color-selected: light-dark(var(--button-text-color), var(--background-color-canvas));
 
   /** card **/
-  --card-border-color: light-dark(rgba(255, 255, 255, 10%), rgba(255, 255, 255, 6%));
+  --card-border-color: light-dark(rgba(0, 0, 0, 6%), rgba(255, 255, 255, 4%));
   --card-border-radius: var(--border-radius-xlarge);
+  --card-gap: var(--space-medium);
 
   /** color **/
   --color-accent-attention: light-dark(var(--color-green-40), var(--color-green-30));
-  --color-accent-primary: light-dark(var(--color-violet-50), var(--color-violet-20));
-  --color-accent-primary-hover: light-dark(var(--color-violet-60), var(--color-violet-30));
-  --color-accent-primary-active: light-dark(var(--color-violet-70), var(--color-violet-40));
+  --color-accent-primary: light-dark(var(--color-violet-50), var(--color-violet-30));
+  --color-accent-primary-hover: light-dark(var(--color-violet-60), var(--color-violet-20));
+  --color-accent-primary-active: light-dark(var(--color-violet-70), var(--color-violet-10));
   --color-accent-primary-selected: var(--button-background-color-primary-active);
   --color-blue-0: #ECF3F8;
   --color-blue-10: #C5EAFE;
@@ -117,7 +119,6 @@
   --color-cyan-80: #002D38;
   --color-cyan-90: #011C23;
   --color-gray-0: #FCFBFF;
-  --color-gray-05: #F7F6FB;
   --color-gray-10: #EFEDF2;
   --color-gray-15: #E3E2E7;
   --color-gray-20: #D6D5DA;
@@ -175,9 +176,6 @@
   --color-purple-70: #4F216B;
   --color-purple-80: #311842;
   --color-purple-90: #1A1220;
-  --color-purple-desaturated-30: #C0A7D4;
-  --color-purple-desaturated-50: #816297;
-  --color-purple-desaturated-60: #624677;
   --color-red-0: #FCF2F3;
   --color-red-10: #FFD9DF;
   --color-red-20: #FFB6BF;
@@ -231,11 +229,13 @@
   --icon-size-large: var(--size-item-medium);
   --icon-size-xlarge: var(--size-item-large);
 
+  /** input **/
+  --input-text-border-radius: var(--border-radius-large);
+
   /** link **/
   --link-color: var(--color-accent-primary);
   --link-color-hover: var(--color-accent-primary-hover);
   --link-color-active: var(--color-accent-primary-active);
-  --link-color-visited: var(--link-color);
 
   /** page **/
   --page-main-content-width: 664px;
@@ -244,6 +244,7 @@
   --panel-background-color: var(--background-color-box);
   --panel-border-color: light-dark(var(--color-gray-10), var(--color-gray-60));
   --panel-border-radius: 16px;
+  --panel-menuitem-border-radius: var(--border-radius-xxlarge);
   --panel-padding: var(--panel-padding-block);
   --panel-padding-block: 8px;
   --panel-text-color: var(--text-color);
@@ -263,9 +264,9 @@
 
   /** text-color **/
   --text-color: light-dark(var(--color-violet-desaturated-90), var(--color-violet-desaturated-0));
-  --text-color-disabled: light-dark(rgba(21, 20, 26, 40%), rgba(251, 251, 254, 40%));
+  --text-color-disabled: light-dark(rgba(24, 14, 48, 40%), rgba(242, 240, 248, 40%));
   --text-color-accent-primary-selected: light-dark(var(--color-white), var(--color-gray-55));
-  --text-color-deemphasized: light-dark(rgba(20, 9, 43, 70%), rgba(242, 240, 248, 70%));
+  --text-color-deemphasized: light-dark(rgba(24, 14, 48, 70%), rgba(242, 240, 248, 70%));
   --text-color-error: light-dark(var(--color-red-50), var(--color-red-20));
 
   /** toolbar **/
@@ -291,11 +292,13 @@
   --toolbarbutton-outline-offset: -1px;
   --toolbarbutton-padding-inner-touch-narrow: 0;
 
-  /** toolbarseparator **/
-  --toolbarseparator-color: color-mix(in srgb, currentColor 60%, transparent);
-
   /** toolbox **/
+  --toolbox-background-color-gradient-leading: light-dark(var(--color-violet-10), var(--color-violet-desaturated-70));
+  --toolbox-background-color-gradient-trailing: light-dark(var(--color-orange-10), var(--color-orange-70));
   --toolbox-background-color-inactive: transparent;
+
+  /* This gradient is only used for Nova */
+  --toolbox-background-gradient: linear-gradient(96deg, color-mix(var(--toolbox-background-color-gradient-leading) 50%, transparent) 39.84%, color-mix(var(--toolbox-background-color-gradient-trailing) 50%, transparent) 101.72%);
   --toolbox-text-color: var(--text-color);
   --toolbox-text-color-inactive: var(--text-color-deemphasized);
 }
@@ -360,6 +363,7 @@
     --button-text-color-menu-hover: var(--button-text-color-primary);
     --button-text-color-menu-active: var(--button-text-color-primary-active);
     --button-text-color-menu-disabled: var(--button-text-color-primary-disabled);
+    --button-text-color-menu-selected: var(--button-text-color-primary-selected);
     --button-text-color-primary: ButtonFace;
     --button-text-color-primary-active: var(--button-text-color-primary-hover);
     --button-text-color-selected: SelectedItemText;
@@ -384,7 +388,6 @@
     --link-color: LinkText;
     --link-color-hover: LinkText;
     --link-color-active: ActiveText;
-    --link-color-visited: VisitedText;
 
     /** panel **/
     --panel-border-color: var(--border-color);
@@ -414,5 +417,12 @@
     --toolbarbutton-outline-color: var(--button-border-color);
     --toolbarbutton-outline-color-hover: var(--button-border-color-hover);
     --toolbarbutton-outline-color-active: var(--button-border-color-active);
+
+    /** toolbox **/
+    --toolbox-background-color-gradient-leading: Canvas;
+    --toolbox-background-color-gradient-trailing: Canvas;
+
+    /* This gradient is only used for Nova */
+    --toolbox-background-gradient: image(transparent);
   }
 }

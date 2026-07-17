@@ -73,7 +73,7 @@ class MediaSourceDecoder : public MediaDecoder,
   void NotifyDataArrived();
 
  private:
-  MediaDecoderStateMachineBase* CreateStateMachine(
+  already_AddRefed<MediaDecoderStateMachineBase> CreateStateMachine(
       bool aDisableExternalEngine) override;
 
   template <typename IntervalType>

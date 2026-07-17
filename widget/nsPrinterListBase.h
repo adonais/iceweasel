@@ -35,6 +35,9 @@ class nsPrinterListBase : public nsIPrinterList {
     nsString mName;
     // CUPS only: Handle to owned cups_dest_t.
     void* mCupsHandle = nullptr;
+    // UI sort hint: true means the print UI sorts this printer below those
+    // for which it is false. See nsIPrinter.idl sortAfterLocal for rationale.
+    bool mSortAfterLocal = false;
   };
 
   // Called off the main thread, collect information to create an appropriate

@@ -24,7 +24,7 @@ class nsTextNode : public mozilla::dom::Text {
   }
 
  public:
-  explicit nsTextNode(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit nsTextNode(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : mozilla::dom::Text(std::move(aNodeInfo)) {
     Init();
   }

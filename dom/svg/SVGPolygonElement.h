@@ -8,7 +8,7 @@
 #include "SVGPolyElement.h"
 
 nsresult NS_NewSVGPolygonElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -17,11 +17,11 @@ using SVGPolygonElementBase = SVGPolyElement;
 class SVGPolygonElement final : public SVGPolygonElementBase {
  protected:
   explicit SVGPolygonElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
   friend nsresult(::NS_NewSVGPolygonElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  public:
   // SVGGeometryElement methods:

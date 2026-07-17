@@ -16,6 +16,8 @@
     <string name="content_description_normal_browsing">Normal browsing</string>
     <!-- Placeholder text shown in the search bar before a user enters text for the default engine -->
     <string name="search_hint">Search or enter address</string>
+    <!-- Shorter placeholder text shown in the search bar when an additional action (voice search) is rendered alongside the hint. -->
+    <string name="search_hint_short">Search</string>
     <!-- Placeholder text shown in the search bar before a user enters text for a general engine -->
     <string name="search_hint_general_engine">Search the web</string>
     <!-- Placeholder text shown in search bar when using history search -->
@@ -389,6 +391,8 @@
     <string name="search_suggestions_delete_history_item_snackbar">Deleted %1$s from history</string>
     <!-- Content description (not visible, for screen readers etc.): Button shown near a history search result allowing to delete it from browsing history. -->
     <string name="mozac_browser_awesomebar_remove_suggestion" tools:ignore="UnusedResources">Delete this history entry</string>
+    <!-- Button in the app links prompt that keeps the user in the browser instead of opening the external app. %1$s is the name of the app (for example "Firefox"). -->
+    <string name="applinks_prompt_negative_button">Stay in %1$s</string>
 
     <!-- Home onboarding -->
     <!-- Content description (not visible, for screen readers etc.): Close button for the home onboarding dialog -->
@@ -981,6 +985,8 @@
     <string name="customize_toggle_pocket_sponsored">Sponsored stories</string>
     <!-- Title for the opening wallpaper settings screen -->
     <string name="customize_wallpapers">Wallpapers</string>
+    <!-- Label for the menu item that opens the wallpaper settings screen. -->
+    <string name="browser_menu_change_wallpaper">Change wallpaper</string>
     <!-- Title for the customize home screen section with sponsored shortcuts. -->
     <string name="customize_toggle_contile">Sponsored shortcuts</string>
     <!-- Title for the customize home screen section that toggles the Homepage sports widget. -->
@@ -1429,6 +1435,8 @@
     <string name="tab_manager_search_bar_placeholder">Search your tabs</string>
     <!-- Text shown in the menu to view recently closed tabs -->
     <string name="tab_tray_menu_recently_closed">Recently closed tabs</string>
+    <!-- Text shown in the menu to select all tabs. -->
+    <string name="tab_tray_menu_select_all_tabs">Select all</string>
     <!-- Text shown in the menu to view account settings -->
     <string name="tab_tray_menu_account_settings">Account settings</string>
     <!-- Text shown in the menu to view tab settings -->
@@ -1491,6 +1499,14 @@
     <string name="pwa_site_controls_title_private">%1$s (Private Mode)</string>
     <!-- Content description (not visible, for screen readers etc.) for the button to open the Tab Search feature to search through tabs. -->
     <string name="tab_manager_open_tab_search">Open tab search</string>
+    <!-- Title for introducing tab groups via an onboarding card shown in the tab manager. -->
+    <string name="tab_group_onboarding_item_title">Create a tab group</string>
+    <!-- Description for tab groups onboarding shown in the tab manager when in grid view. -->
+    <string name="tab_group_onboarding_grid_item_description">Drag one tab onto another to group them.</string>
+    <!-- Description for tab groups onboarding shown in the tab manager when in list view. -->
+    <string name="tab_group_onboarding_list_item_description">Select multiple tabs to create a group.</string>
+    <!-- Content description (accessibility label) for button to dismiss the tab group onboarding item. -->
+    <string name="tab_group_onboarding_item_dismiss_content_description">Dismiss tab group onboarding</string>
     <!-- The header text displayed on the tab groups page when no tab groups are open -->
     <string name="tab_manager_empty_tab_groups_page_header">Try tab groups for less scrolling, more doing</string>
     <!-- The description displayed on the tab groups page when no tab groups are open -->
@@ -1572,8 +1588,6 @@
   <string name="tab_group_color_pink">Pink</string>
   <!-- Tab group color: Purple -->
   <string name="tab_group_color_purple">Purple</string>
-  <!-- Tab group color: Violet -->
-  <string name="tab_group_color_violet">Violet</string>
   <!-- Tab group color: Blue -->
   <string name="tab_group_color_blue">Blue</string>
   <!-- Tab group color: Cyan -->
@@ -1794,8 +1808,8 @@
     <string name="webcompat_reporter_choose_reason_2">Choose a reason</string>
     <!-- The error message of the dropdown, prompting the user to select a high-level reason why the site is broken. -->
     <string name="webcompat_reporter_choose_reason_error">Please choose a reason</string>
-    <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
-    <string name="webcompat_reporter_label_description">Describe the problem (optional)</string>
+  <!-- The label/title of an optional field in the Web Compat Reporter feature for adding additional information. -->
+    <string name="webcompat_reporter_label_description_2">Describe the problem in detail to help us investigate the issue (optional)</string>
     <!-- The button text for navigating away from the feature to provide more information on the broken site's bug report. -->
     <string name="webcompat_reporter_add_more_info">Add more info</string>
     <!-- The button text for the cancel button to leave the Web Compat Reporter feature. -->
@@ -1804,18 +1818,22 @@
     <string name="webcompat_reporter_send">Send</string>
     <!-- Text for a snackbar to confirm the successful submission of a WebCompat report. -->
     <string name="webcompat_reporter_success_snackbar_text_2">Report sent</string>
-    <!-- Placeholder text for the description field to prompt the user on what they should type. -->
-    <string name="webcompat_reporter_problem_description_placeholder_text">What happened? What should have happened?</string>
+  <!-- Placeholder text for the description field to prompt the user on what they should type. -->
+    <string name="webcompat_reporter_problem_description_placeholder_text_2">What happened? What did you expect to happen? Please provide steps to reproduce the issue.</string>
     <!-- Label of the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. -->
-    <string name="webcompat_reporter_etp_checkbox_text">Send URLs blocked by tracking protection</string>
-    <!-- Description text for the checkbox on the “Report broken site” screen for sending URLS blocked by Enhanced Tracking Protection. It informs the user when checked, the report will include the list of URLs that were blocked by Enhanced Tracking Protection on the current page.-->
-    <string name="webcompat_reporter_etp_checkbox_description">Enhanced Tracking Protection may block trackers and scripts that some websites need to work properly.</string>
+    <string name="webcompat_reporter_etp_checkbox_text_2">Send list of items blocked by tracking protection</string>
     <!-- The button text for the preview report button to view a preview of the report. -->
     <string name="webcompat_reporter_preview_report">Preview Report</string>
     <!-- The title shown at the top of the WebCompat Report preview panel. This appears after the user taps the “Preview” button before sending a report. -->
     <string name="webcompat_reporter_preview_bottom_sheet_header">Report Preview</string>
     <!-- Label for the “Send” button shown in the WebCompat Report preview panel, which the user taps to submit the report. -->
     <string name="webcompat_reporter_preview_bottom_sheet_send">Send</string>
+    <!-- Title for the Edit URL confirmation dialog in the WebCompatReporter-->
+    <string name="webcompat_reporter_edit_url_dialog_title">Edit website URL</string>
+    <!-- Text shown on the save button for the Edit URL confirmation dialog in the WebCompatReporter. -->
+    <string name="webcompat_reporter_edit_url_dialog_save">Save</string>
+    <!-- Text shown on the dismiss button for the Edit URL confirmation dialog in the WebCompatReporter.-->
+    <string name="webcompat_reporter_edit_url_dialog_dismiss">Dismiss</string>
 
     <!-- These reason strings are dropdown options on a WebCompat reporter form, indicating what is broken on the site. -->
     <!-- Broken site reason text for site doesn’t load -->
@@ -1837,7 +1855,7 @@
     <!-- Broken site reason text for something else -->
     <string name="webcompat_reporter_reason_other">Something else</string>
 
-    <!-- Crashes -->
+  <!-- Crashes -->
     <!-- Title text displayed on the tab crash page. %1$s is the name of the app (for example "Firefox"). -->
     <string name="tab_crash_title_2">Sorry. %1$s can’t load that page.</string>
     <!-- Send crash report checkbox text on the tab crash page -->
@@ -2375,9 +2393,9 @@
 
     <!-- Trackers blocked card on homepage -->
     <!-- Text shown on the trackers blocked card. %d is the number of trackers blocked. -->
-    <plurals name="trackers_blocked_count">
-        <item quantity="one">%d Tracker blocked</item>
-        <item quantity="other">%d Trackers blocked</item>
+    <plurals name="trackers_blocked_count_2">
+        <item quantity="one">%d tracker blocked</item>
+        <item quantity="other">%d trackers blocked</item>
     </plurals>
     <!-- Text shown on the trackers blocked card when no trackers have been blocked yet -->
     <string name="trackers_blocked_empty">You’re protected</string>
@@ -2754,6 +2772,8 @@
     <string name="saved_logins_sort_strategy_last_used">Last used</string>
     <!-- Content description (not visible, for screen readers etc.) -->
     <string name="saved_logins_menu_dropdown_chevron_icon_content_description_2">Sort passwords menu</string>
+    <!-- Label for button to import passwords from file. -->
+    <string name="passwords_import_menu_button">Import from file</string>
 
     <!-- Email Masks -->
     <!-- Title for the Email Masks in the settings menu -->
@@ -2780,7 +2800,9 @@
     <string name="ip_protection_title">VPN</string>
     <!-- Label for the browser VPN toggle on the settings screen -->
     <string name="ip_protection_toggle_label">VPN</string>
-    <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
+    <!-- Content description for the browser VPN settings screen top bar back button -->
+    <string name="ip_protection_navigate_back_button_content_description">Navigate back</string>
+  <!-- Headline for the browser VPN promo card. %s is the name of the app (for example "Firefox"). -->
     <string name="ip_protection_promo_headline">%s’s built-in VPN</string>
     <!-- Body text for the browser VPN promo card . %s is a learn more link using ip_protection_learn_more as text.-->
     <string name="ip_protection_promo_body_2">Browse with extra protection by hiding your location, even on public Wi-Fi. %s</string>
@@ -2827,6 +2849,8 @@
     <string name="ip_protection_toolbar_pill_description">VPN is active.</string>
     <!-- Label for the button that starts the browser VPN authentication or authorization flow on the settings screen -->
     <string name="ip_protection_get_started">Get started</string>
+    <!-- Label for the "connecting" state of the button that starts the browser VPN authentication or authorization flow on the settings screen -->
+    <string name="ip_protection_connecting">Connecting…</string>
     <!-- Headline for the browser VPN onboarding card. %s is the name of the app (for example "Firefox"). -->
     <string name="ip_protection_onboarding_card_headline">Try %s’s built-in VPN</string>
     <!-- The body of the VPN onboarding card.
@@ -2835,6 +2859,12 @@
     <string name="ip_protection_onboarding_body">%1$s by hiding your location, even on public Wi-Fi. Get %2$d GB free every month.</string>
     <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
     <string name="ip_protection_onboarding_body_link">Browse with extra protection</string>
+    <!-- The body of the VPN onboarding card for a promotion that provides unlimited data bandwidth for a certain time.
+      %1$s is a localized date (for example "Jun 9") indicating the end of the promotional period.
+      %2$s is a link using ip_protection_onboarding_body_link_promo (“Learn more”) as text. It links to a support article about VPN on Firefox. -->
+    <string name="ip_protection_onboarding_body_promo">Turn it on to make your browsing more private and harder to trace. Try it now to get unlimited bandwidth through %1$s. %2$s</string>
+    <!-- Used as text for a link in ip_protection_onboarding_body. Make sure to adapt capitalization if the link is in the middle of the sentence. -->
+    <string name="ip_protection_onboarding_body_link_promo">Learn more</string>
     <!-- Label for the dismiss button on the onboarding bottom sheet. -->
     <string name="ip_protection_onboarding_not_now_button">Not now</string>
     <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN connection error -->
@@ -2842,6 +2872,8 @@
     <!-- Snackbar (in-app pop-up notification) text to signal the browser VPN has reached the monthly data limit.
         %1$d is the total monthly allowance in GB (for example "50"). -->
     <string name="ip_protection_data_limit_reached_snackbar">%1$d GB of VPN data used. Access will reset next month.</string>
+    <!-- Snackbar (in-app pop-up notification) action button text that takes the user to the VPN settings screen. -->
+    <string name="ip_protection_data_limit_reached_snackbar_action">Settings</string>
 
     <!-- Autofill -->
     <!-- Preference and title for managing the autofill settings -->
@@ -2993,8 +3025,6 @@
     <string name="addresses_save_button">Save</string>
     <!-- The text for the "Cancel" button for cancelling adding, updating or deleting an address -->
     <string name="addresses_cancel_button">Cancel</string>
-    <!-- The text for the "Delete address" button for deleting an address -->
-    <string name="addressess_delete_address_button">Delete address</string>
     <!-- The title for the "Delete address" confirmation dialog -->
     <string name="addressess_confirm_dialog_message_2">Delete this address?</string>
     <!-- The text for the positive button on "Delete address" dialog -->
@@ -3138,8 +3168,14 @@
     <string name="homepage_shortcuts_show_all_content_description">Show all shortcuts</string>
     <!-- Label for the "Add shortcut" button displayed as a tile. -->
     <string name="homepage_shortcuts_add_shortcut">Add shortcut</string>
+    <!-- Title for the "Add to homepage" bottom sheet. -->
+    <string name="homepage_shortcuts_add_to_homepage">Add to homepage</string>
+    <!-- Label for the "Add website" button in the "Add to homepage" bottom sheet. -->
+    <string name="homepage_shortcuts_add_website">Add website</string>
     <!-- Title text for the "Enter a Website URL" dialog for adding a shortcut. -->
     <string name="homepage_shortcuts_add_website_title">Enter a Website URL</string>
+    <!-- Title for the "Popular sites" section in the "Add to homepage" bottom sheet. -->
+    <string name="homepage_shortcuts_popular_sites">Popular sites</string>
     <!-- Title text displayed in the dialog when shortcuts limit is reached. -->
     <string name="shortcut_max_limit_title">Shortcut limit reached</string>
     <!-- Content description text displayed in the dialog when shortcut limit is reached. -->
@@ -3474,8 +3510,15 @@
     <!-- Title text for the protection panel banner when tracking protection is enabled.
         %s is the name of the app (for example "Firefox"). -->
     <string name="protection_panel_banner_protected_title">%s is on guard</string>
-    <!-- Description text for the protection panel banner when tracking protection is enabled. -->
-    <string name="protection_panel_banner_protected_description">You’re protected. If we spot something, we’ll let you know.</string>
+    <!-- Description text for the protection panel banner when privacy dashboard is enabled.
+        %1$d is the number of trackers blocked. -->
+    <plurals name="protection_panel_banner_protected_blocked_trackers_description">
+        <item quantity="one">%1$d tracker blocked on this site.</item>
+        <item quantity="other">%1$d trackers blocked on this site.</item>
+    </plurals>
+    <!-- Description text for the protection panel banner when privacy dashboard is enabled.
+          and there are no trackers blocked.-->
+    <string name="protection_panel_banner_protected_no_blocked_trackers_description">You’re protected.</string>
     <!-- Label text for the Enhanced Tracking Protection toggle. -->
     <string name="protection_panel_etp_toggle_label">Enhanced Tracking Protection</string>
     <!-- Toggle if Enhanced Tracking Protection is turned on -->
@@ -3489,8 +3532,6 @@
     <!-- Text for displaying the total number of trackers blocked in the protection panel.
         %d is a placeholder for the number of trackers blocked. -->
     <string name="protection_panel_num_trackers_blocked">Trackers blocked: %d</string>
-    <!-- Text for when no trackers have been blocked. -->
-    <string name="protection_panel_no_trackers_blocked">No trackers found</string>
     <!-- Text for when tracking protection is disabled and no trackers are blocked. -->
     <string name="protection_panel_etp_disabled_no_trackers_blocked">Trackers aren’t blocked</string>
     <!-- Link text to navigate to privacy and security settings from the protection panel. -->
@@ -3498,12 +3539,47 @@
     <!-- Title text for the protection panel permissions section. -->
     <string name="protection_panel_permissions_title">Permissions</string>
     <!-- Text for displaying the total number of trackers blocked in the trackers blocked panel.
-        %d is a placeholder for the number of trackers blocked. -->
-    <string name="trackers_blocked_panel_total_num_trackers_blocked">Trackers blocked: %d</string>
-    <!-- Text for displaying the number of trackers blocked for a specific tracker category in the trackers blocked panel.
-        %s is a placeholder for the name of the tracker category.
-        %d is a placeholder for the number of trackers blocked. -->
-    <string name="trackers_blocked_panel_categorical_num_trackers_blocked">%s: %d</string>
+        %1$d is a placeholder for the number of trackers blocked. -->
+    <plurals name="trackers_blocked_panel_total_num_trackers_blocked_2">
+        <item quantity="one">%1$d tracker blocked on this site</item>
+        <item quantity="other">%1$d trackers blocked on this site</item>
+    </plurals>
+    <!-- Text for displaying in the trackers blocked panel the total number of blocked social media trackers.
+        %1$d is a placeholder for the number of social media trackers blocked. -->
+    <plurals name="trackers_blocked_panel_num_social_media_trackers">
+        <item quantity="one">%1$d social media tracker</item>
+        <item quantity="other">%1$d social media trackers</item>
+    </plurals>
+    <!-- Text for displaying in the trackers blocked panel the total number of blocked cross-site tracking cookies.
+        %1$d is a placeholder for the number of cross-site tracking cookies blocked. -->
+    <plurals name="trackers_blocked_panel_num_cross_site_cookies">
+        <item quantity="one">%1$d cross-site tracking cookie</item>
+        <item quantity="other">%1$d cross-site tracking cookies</item>
+    </plurals>
+    <!-- Text for displaying in the trackers blocked panel the total number of blocked cryptomining scripts.
+        %1$d is a placeholder for the number of cryptominers blocked. -->
+    <plurals name="trackers_blocked_panel_num_cryptominers">
+        <item quantity="one">%1$d cryptominer</item>
+        <item quantity="other">%1$d cryptominers</item>
+    </plurals>
+    <!-- Text for displaying in the trackers blocked panel the total number of blocked fingerprinter scripts.
+        %1$d is a placeholder for the number of fingerprinters blocked. -->
+    <plurals name="trackers_blocked_panel_num_fingerprinters">
+        <item quantity="one">%1$d fingerprinter</item>
+        <item quantity="other">%1$d fingerprinters</item>
+    </plurals>
+    <!-- Text for displaying in the trackers blocked panel the total number of blocked generic tracking scripts.
+        %1$d is a placeholder for the number of trackers blocked. -->
+    <plurals name="trackers_blocked_panel_num_trackers_2">
+        <item quantity="one">%1$d tracking content</item>
+        <item quantity="other">%1$d tracking content</item>
+    </plurals>
+    <!-- Text for displaying the number of trackers blocked this week in the trackers blocked panel.
+        %1$d is a placeholder for the number of trackers blocked this week. -->
+    <plurals name="trackers_blocked_panel_num_trackers_blocked_this_week_2">
+        <item quantity="one">%1$d tracker blocked this week</item>
+        <item quantity="other">%1$d trackers blocked this week</item>
+    </plurals>
     <!-- Description text for a dialog confirming whether the user wants to delete all data for current site.
         %s is a placeholder for the base domain of website. -->
     <string name="clear_site_data_dialog_description"><![CDATA[Removing cookies and site data for <b>%s</b> might log you out of websites and clear shopping carts.]]></string>
@@ -4134,4 +4210,61 @@
     <string name="privacy_notice_updated_homepage_message_privacy_notice" tools:ignore="UnusedResources">Privacy Notice</string>
     <!-- The second active link used in privacy_notice_updated_homepage_message -->
     <string name="privacy_notice_updated_homepage_message_learn_more" tools:ignore="UnusedResources">Learn more</string>
+
+    <!-- Google Lens prototype related strings -->
+    <string name="preferences_debug_settings_google_lens_integration">Enable Google Lens Integration</string>
+    <!-- Lens image search button content description -->
+    <string name="lens_search_content_description">Search with image</string>
+    <!-- Content description for the gallery picker button in the Lens camera screen -->
+    <string name="content_description_gallery">Choose from gallery to send to Google Lens</string>
+    <!-- Content description for the shutter button in the Lens camera screen -->
+    <string name="content_description_take_photo">Take photo and send to Google Lens</string>`
+    <!-- Image context menu entry that sends the long-pressed image to Google Lens -->
+    <string name="context_menu_open_image_with_google_lens">Search with Google Lens</string>
+    <!-- Toast shown when the user denies the camera permission requested by the Lens camera screen -->
+    <string name="lens_camera_permission_denied">Permission denied</string>
+    <!-- Title for the Google Lens AI feature toggle -->
+    <string name="ai_controls_google_lens_title">Google Lens</string>
+    <!-- Description for the Google Lens AI feature toggle -->
+    <string name="ai_controls_google_lens_description">Sends images and photos to Google for visual search.</string>
+    <!-- Content description for the Google Lens half of the camera mode toggle -->
+    <string name="lens_camera_mode_lens">Google Lens</string>
+    <!-- Content description for the QR scanner half of the camera mode toggle -->
+    <string name="lens_camera_mode_qr">QR scanner</string>
+    <!-- Toast shown when the user picks an image from the gallery in QR mode but no QR code is found in it -->
+    <string name="lens_camera_qr_no_code_found">No QR code found in image</string>
+
+    <!-- Firefox Labs -->
+    <!-- Firefox Labs is the name of a screen in Settings to allow users to learn about
+    experimental and in-development features, and turn those features on and off.
+    The "Labs" portion can be localized, "Firefox" must be treated as a brand and kept
+    in English. -->
+    <string name="firefox_labs_title" tools:ignore="BrandUsage">Firefox Labs</string>
+    <!-- Banner title text on the Firefox Labs screen. -->
+    <string name="firefox_labs_banner_title_2">Try our experimental features!</string>
+    <!-- Banner description text on the Firefox Labs screen. Provides information on what Firefox Labs does. %s is the name of the app (for example "Firefox Nightly").
+    Text will appear under the Firefox Labs banner title. -->
+    <string name="firefox_labs_experimental_description">They’re in development and evolving which could impact how %s works.</string>
+    <!-- The link text shown when a feedback URL for a Firefox Labs feature is available. The feedback URL page will allow users to provide opinions and suggestions. -->
+    <string name="firefox_labs_share_feedback">Share feedback</string>
+    <!-- Content description for the share feedback link on a Firefox Labs feature. This text will be used by screen readers to provide more context on the feedback link. %s is the name of the Firefox Labs feature. -->
+    <string name="firefox_labs_share_feedback_content_description">Share feedback for %s.</string>
+    <!-- Button text on the Firefox Labs screen for restoring all toggles back to the default settings. The button will turn off any experimental features. -->
+    <string name="firefox_labs_restore_default_button_text">Restore defaults</string>
+    <!-- The title used in a confirmation dialog on the Firefox Labs screen when toggling "on" or "off" an experimental feature that requires a restart. -->
+    <string name="firefox_labs_feature_dialog_title">Restart required</string>
+    <!-- The text on the dialog on the Firefox Labs screen for the positive button when toggling "on" and "off" experimental features. This prompts the user to confirm that they want to restart the app. -->
+    <string name="firefox_labs_dialog_restart_button">Restart</string>
+    <!-- The text on the dialog on the Firefox Labs screen for the negative button when toggling "on" and "off" experimental features. This is used to cancel the action and return to the previous screen. -->
+    <string name="firefox_labs_dialog_cancel_button">Cancel</string>
+    <!-- The title used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. -->
+    <string name="firefox_labs_restore_defaults_dialog_title">Restart required</string>
+    <!-- The description used in a confirmation dialog on the Firefox Labs screen when restoring the application to its defaults by turning "off" any experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+    <string name="firefox_labs_restore_defaults_dialog_message">To restore defaults, restart %s.</string>
+    <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "on" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+    <string name="firefox_labs_feature_enable_dialog_message">To turn on this feature, restart %s.</string>
+    <!-- The description text that is displayed in the confirmation dialog on the Firefox Labs screen for toggling "off" experimental features. %s is the name of the app (for example "Firefox Nightly") -->
+    <string name="firefox_labs_feature_disable_dialog_message">To turn off this feature, restart %s.</string>
+    <!-- Text displayed on the Firefox Labs screen when there are no Labs experimental features present. -->
+    <string name="firefox_labs_no_labs_available_description">No experimental features to try right now</string>
 </resources>

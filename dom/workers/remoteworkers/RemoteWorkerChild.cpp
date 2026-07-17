@@ -280,6 +280,9 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
                                       getter_AddRefs(info.mCookieJarSettings));
   info.mCookieJarSettingsArgs = aData.cookieJarSettings();
   info.mIsOn3PCBExceptionList = aData.isOn3PCBExceptionList();
+  info.mLanguageOverrideLocale = aData.languageOverrideLocale();
+  info.mLanguageOverride = aData.languageOverride().Clone();
+  info.mTimezoneOverride = aData.timezoneOverride();
   info.mSecureContext = aData.isSecureContext()
                             ? WorkerLoadInfo::eSecureContext
                             : WorkerLoadInfo::eInsecureContext;
@@ -310,6 +313,17 @@ nsresult RemoteWorkerChild::ExecWorkerOnMainThread(
         }
         info.mCSPContext = ctx.unwrap();
       }
+    }
+  }
+
+  // Extract IP address space from clientInfo for all worker types
+  // (shared and service workers) for Local Network Access checks.
+  if (clientInfo.isSome()) {
+    Maybe<mozilla::ipc::PolicyContainerArgs> policyContainerArgs =
+        clientInfo.ref().GetPolicyContainerArgs();
+    if (policyContainerArgs.isSome()) {
+      info.mIPAddressSpace =
+          static_cast<uint16_t>(policyContainerArgs->ipAddressSpace());
     }
   }
 

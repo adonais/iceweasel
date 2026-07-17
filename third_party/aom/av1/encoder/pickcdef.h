@@ -218,7 +218,8 @@ void av1_cdef_dealloc_data(CdefSearchCtx *cdef_search_ctx);
 
 void av1_cdef_mse_calc_block(CdefSearchCtx *cdef_search_ctx,
                              struct aom_internal_error_info *error_info,
-                             int fbr, int fbc, int sb_count);
+                             int fbr, int fbc, int sb_count,
+                             int adaptive_cdef_mode);
 /*!\endcond */
 
 /*!\brief AV1 CDEF parameter search

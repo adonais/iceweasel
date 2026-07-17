@@ -115,7 +115,7 @@ void VideoSegment::AppendFrame(const VideoChunk& aChunk,
   chunk->mFrame.TakeFrom(&frame);
 }
 
-void VideoSegment::AppendFrame(already_AddRefed<Image>&& aImage,
+void VideoSegment::AppendFrame(already_AddRefed<Image> aImage,
                                const IntSize& aIntrinsicSize,
                                const PrincipalHandle& aPrincipalHandle,
                                bool aForceBlack, TimeStamp aTimeStamp,
@@ -133,7 +133,7 @@ void VideoSegment::AppendFrame(already_AddRefed<Image>&& aImage,
 }
 
 void VideoSegment::AppendWebrtcRemoteFrame(
-    already_AddRefed<Image>&& aImage, const IntSize& aIntrinsicSize,
+    already_AddRefed<Image> aImage, const IntSize& aIntrinsicSize,
     const PrincipalHandle& aPrincipalHandle, bool aForceBlack,
     TimeStamp aTimeStamp, media::TimeUnit aProcessingDuration,
     uint32_t aRtpTimestamp, int64_t aWebrtcCaptureTimeNtp,
@@ -156,7 +156,7 @@ void VideoSegment::AppendWebrtcRemoteFrame(
 }
 
 void VideoSegment::AppendWebrtcLocalFrame(
-    already_AddRefed<Image>&& aImage, const IntSize& aIntrinsicSize,
+    already_AddRefed<Image> aImage, const IntSize& aIntrinsicSize,
     const PrincipalHandle& aPrincipalHandle, bool aForceBlack,
     TimeStamp aTimeStamp, TimeStamp aWebrtcCaptureTime) {
   VideoChunk* chunk = AppendChunk(0);

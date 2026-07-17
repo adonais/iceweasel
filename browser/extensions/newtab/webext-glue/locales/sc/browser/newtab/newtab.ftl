@@ -31,6 +31,80 @@ newtab-card-dismiss-button =
     .title = Iscarta
     .aria-label = Iscarta
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-windows =
+    .label = Ventanas noas
+home-homepage-new-tabs =
+    .label = Ischedas noas
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = Indiritzos de sitos web
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-results =
+    .label = Nissunu situ web galu agiuntu.
+home-custom-homepage-delete-address-button =
+    .aria-label = Cantzella s’indiritzu
+    .title = Cantzella s’indiritzu
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with-prompt =
+    .label = Sostitui cun
+
+## Firefox Home content
+
+home-prefs-firefox-logo-header =
+    .label = logo de { -brand-short-name }
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } riga
+           *[other] { $num } rigas
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Estensione ({ $extension })
+home-restore-defaults-srd =
+    .label = Recùpera valores predefinidos
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (predefinidu)
+home-mode-choice-custom-srd =
+    .label = URL personalizados…
+home-mode-choice-blank-srd =
+    .label = Pàgina in biancu
+home-prefs-shortcuts-header-srd =
+    .label = Curtzadòrgios
+home-prefs-shortcuts-select =
+    .aria-label = Curtzadòrgios
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Curtzadòrgios patrotzinados
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Istòrias patrotzinadas
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Pàginas bisitadas
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Sinnalibros
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Iscarrigamentos reghentes
+home-prefs-recent-activity-header-srd =
+    .label = Atividade reghente
+home-prefs-recent-activity-select =
+    .aria-label = Atividade reghente
+home-prefs-weather-header-srd =
+    .label = Tempus
+home-prefs-support-firefox-header-srd =
+    .label = Agiuda a { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = Iscoberi comente
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -148,6 +222,8 @@ newtab-menu-report = Sinnala
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Bloca
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Àteras informatziones
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Non sigas prus s’argumentu
@@ -686,8 +762,6 @@ newtab-widget-lists-button-add-item = Agiunghe un’elementu
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Agiunghe un’elementu
     .aria-label = Agiunghe un’elementu
-newtab-widget-lists-input-add-an-item =
-    .placeholder = Agiunghe un’elementu
 newtab-widget-lists-input-error = Include testu pro agiùnghere un’elementu.
 newtab-widget-lists-input-menu-open-link = Aberi su ligòngiu
 newtab-widget-lists-input-menu-move-up = Move in artu
@@ -705,9 +779,6 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = Lista noa
     .aria-label = Modifica su nòmine de sa lista
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Lista noa
 newtab-widget-section-title = Widgets
 newtab-widget-menu-hide = Cua su widget
 # Tooltip for hide all widgets button

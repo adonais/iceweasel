@@ -122,6 +122,14 @@ void APZCTreeManagerChild::SetLongTapEnabled(bool aTapGestureEnabled) {
   SendSetLongTapEnabled(aTapGestureEnabled);
 }
 
+void APZCTreeManagerChild::NotifyApzAwareListenerAdded(
+    const ScrollableLayerGuid& aGuid) {
+  MOZ_ASSERT(NS_IsMainThread());
+  if (CanSend()) {
+    SendNotifyApzAwareListenerAdded(aGuid);
+  }
+}
+
 APZInputBridge* APZCTreeManagerChild::InputBridge() {
   MOZ_ASSERT(XRE_IsParentProcess());
   MOZ_ASSERT(mInputBridge);

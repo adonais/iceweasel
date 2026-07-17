@@ -48,9 +48,10 @@ namespace mozilla {
 class TransportFlow final : public nsISupports {
  public:
   TransportFlow()
-      : id_("(anonymous)"), layers_(new std::deque<TransportLayer*>) {}
+      : id_("(anonymous)"),
+        layers_(MakeUnique<std::deque<TransportLayer*>>()) {}
   explicit TransportFlow(const std::string id)
-      : id_(id), layers_(new std::deque<TransportLayer*>) {}
+      : id_(id), layers_(MakeUnique<std::deque<TransportLayer*>>()) {}
 
   const std::string& id() const { return id_; }
 

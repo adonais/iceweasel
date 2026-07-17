@@ -712,7 +712,7 @@ bool nsIPrintSettings::IsPageSkipped(int32_t aPageNum,
 }
 
 nsresult nsPrintSettings::_Clone(nsIPrintSettings** _retval) {
-  RefPtr<nsPrintSettings> printSettings = new nsPrintSettings(*this);
+  auto printSettings = MakeRefPtr<nsPrintSettings>(*this);
   printSettings.forget(_retval);
   return NS_OK;
 }

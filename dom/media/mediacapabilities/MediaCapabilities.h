@@ -57,7 +57,7 @@ class Promise;
 class MediaCapabilities final : public nsISupports, public nsWrapperCache {
  public:
   // Ref counting and cycle collection
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(MediaCapabilities)
 
   using CapabilitiesPromise =

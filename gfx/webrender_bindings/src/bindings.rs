@@ -480,7 +480,6 @@ pub enum WrAnimationType {
 pub struct WrAnimationProperty {
     effect_type: WrAnimationType,
     id: u64,
-    key: SpatialTreeItemKey,
 }
 
 /// cbindgen:derive-eq=false
@@ -508,13 +507,11 @@ pub struct WrComputedTransformData {
     pub scale_from: LayoutSize,
     pub vertical_flip: bool,
     pub rotation: WrRotation,
-    pub key: SpatialTreeItemKey,
 }
 
 #[repr(C)]
 pub struct WrTransformInfo {
     pub transform: LayoutTransform,
-    pub key: SpatialTreeItemKey,
 }
 
 fn get_proc_address(glcontext_ptr: *mut c_void, name: &str) -> *const c_void {
@@ -3039,7 +3036,6 @@ pub extern "C" fn wr_dp_push_stacking_context(
     filter_datas: *const WrFilterData,
     filter_datas_count: usize,
     glyph_raster_space: RasterSpace,
-    sc_origin_key: SpatialTreeItemKey,
 ) -> WrSpatialId {
     debug_assert!(unsafe { !is_in_render_thread() });
 
@@ -3062,7 +3058,7 @@ pub extern "C" fn wr_dp_push_stacking_context(
         .collect();
 
     let transform_ref = unsafe { transform.as_ref() };
-    let mut transform_binding = transform_ref.map(|info| (PropertyBinding::Value(info.transform), info.key));
+    let mut transform_binding = transform_ref.map(|info| PropertyBinding::Value(info.transform));
 
     let computed_ref = unsafe { params.computed_transform.as_ref() };
     let opacity_ref = unsafe { params.opacity.as_ref() };
@@ -3086,15 +3082,12 @@ pub extern "C" fn wr_dp_push_stacking_context(
                 has_opacity_animation = true;
             },
             WrAnimationType::Transform => {
-                transform_binding = Some((
-                    PropertyBinding::Binding(
-                        PropertyBindingKey::new(anim.id),
-                        // Same as above opacity case.
-                        transform_ref
-                            .map(|info| info.transform)
-                            .unwrap_or_else(LayoutTransform::identity),
-                    ),
-                    anim.key,
+                transform_binding = Some(PropertyBinding::Binding(
+                    PropertyBindingKey::new(anim.id),
+                    // Same as above opacity case.
+                    transform_ref
+                        .map(|info| info.transform)
+                        .unwrap_or_else(LayoutTransform::identity),
                 ));
             },
             _ => unreachable!("{:?} should not create a stacking context", anim.effect_type),
@@ -3136,9 +3129,8 @@ pub extern "C" fn wr_dp_push_stacking_context(
             bounds.min,
             wr_spatial_id,
             params.transform_style,
-            transform_binding.0,
+            transform_binding,
             reference_frame_kind,
-            transform_binding.1,
         );
 
         result.id = wr_spatial_id.0;
@@ -3156,16 +3148,11 @@ pub extern "C" fn wr_dp_push_stacking_context(
             Some(data.scale_from),
             data.vertical_flip,
             rotation,
-            data.key,
         );
 
         result.id = wr_spatial_id.0;
         assert_ne!(wr_spatial_id.0, 0);
     } else if bounds.min != LayoutPoint::zero() {
-        assert!(
-            sc_origin_key != SpatialTreeItemKey::default(),
-            "sc_origin_key must be set when stacking context has non-zero origin"
-        );
         // Inherit the stacking context's transform style so this translate-only
         // reference frame doesn't introduce a 3D flattening boundary for
         // preserve-3d contexts.
@@ -3179,7 +3166,6 @@ pub extern "C" fn wr_dp_push_stacking_context(
                 should_snap: false,
                 paired_with_perspective: false,
             },
-            sc_origin_key,
         );
         result.id = wr_spatial_id.0;
         assert_ne!(wr_spatial_id.0, 0);
@@ -3296,7 +3282,6 @@ pub extern "C" fn wr_dp_define_sticky_frame(
     vertical_bounds: StickyOffsetBounds,
     horizontal_bounds: StickyOffsetBounds,
     applied_offset: LayoutVector2D,
-    key: SpatialTreeItemKey,
     animation: *const WrAnimationProperty,
 ) -> WrSpatialId {
     assert!(unsafe { is_in_main_thread() });
@@ -3322,7 +3307,6 @@ pub extern "C" fn wr_dp_define_sticky_frame(
         vertical_bounds,
         horizontal_bounds,
         applied_offset,
-        key,
         transform,
     );
 
@@ -3339,7 +3323,6 @@ pub extern "C" fn wr_dp_define_scroll_layer(
     scroll_offset: LayoutVector2D,
     scroll_offset_generation: APZScrollGeneration,
     has_scroll_linked_effect: HasScrollLinkedEffect,
-    key: SpatialTreeItemKey,
 ) -> WrSpatialId {
     assert!(unsafe { is_in_main_thread() });
 
@@ -3351,7 +3334,6 @@ pub extern "C" fn wr_dp_define_scroll_layer(
         scroll_offset,
         scroll_offset_generation,
         has_scroll_linked_effect,
-        key,
     );
 
     WrSpatialId::from_webrender(space_and_clip)

@@ -290,6 +290,27 @@ SecretDecoderRing::AsyncDecryptStrings(
 }
 
 NS_IMETHODIMP
+SecretDecoderRing::Login(const nsACString& password, bool* success) {
+  *success = false;
+  UniquePK11SlotInfo slot(PK11_GetInternalKeySlot());
+  if (!slot) {
+    return NS_ERROR_FAILURE;
+  }
+  SECStatus srv =
+      PK11_CheckUserPassword(slot.get(), PromiseFlatCString(password).get());
+  if (srv != SECSuccess) {
+    PRErrorCode error = PR_GetError();
+    if (error != SEC_ERROR_BAD_PASSWORD) {
+      // If the error is not due to a bad password, raise an exception.
+      return mozilla::psm::GetXPCOMFromNSSError(error);
+    }
+  } else {
+    *success = true;
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 SecretDecoderRing::Logout() {
   PK11_LogoutAll();
   nsCOMPtr<nsINSSComponent> nssComponent(do_GetService(NS_NSSCOMPONENT_CID));
@@ -307,8 +328,7 @@ SecretDecoderRing::LogoutAndTeardown() {
     return NS_ERROR_NOT_AVAILABLE;
   }
 
-  // LogoutAuthenticatedPK11 also clears the SSL caches.
-  nsresult rv = nssComponent->LogoutAuthenticatedPK11();
+  nsresult rv = nssComponent->ClearTLSCacheAndCancelAllConnections();
   if (NS_FAILED(rv)) {
     return rv;
   }

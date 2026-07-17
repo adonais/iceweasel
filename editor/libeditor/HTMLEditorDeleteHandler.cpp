@@ -27,9 +27,11 @@
 #include "mozilla/Logging.h"
 #include "mozilla/Maybe.h"
 #include "mozilla/OwningNonNull.h"
+#include "mozilla/PresShell.h"
 #include "mozilla/SelectionState.h"
 #include "mozilla/StaticPrefs_editor.h"  // for StaticPrefs::editor_*
 #include "mozilla/dom/AncestorIterator.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"  // for Element::IsContentEditablePlainTextOnly
 #include "mozilla/dom/HTMLBRElement.h"
@@ -48,6 +50,7 @@
 #include "nsStringFwd.h"
 #include "nsStyleConsts.h"  // for StyleWhiteSpace
 #include "nsTArray.h"
+#include "nsTextNode.h"
 
 // NOTE: This file was split from:
 //   https://searchfox.org/mozilla-central/rev/c409dd9235c133ab41eba635f906aa16e050c197/editor/libeditor/HTMLEditSubActionHandler.cpp
@@ -521,6 +524,76 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleDeleteSelection(
   MOZ_ASSERT(aStripWrappers == nsIEditor::eStrip ||
              aStripWrappers == nsIEditor::eNoStrip);
 
+  if (RefPtr<EditContext> editContext = GetEditContext()) {
+    MOZ_ASSERT(
+        GetTopLevelEditSubAction() == EditSubAction::eDeleteSelectedContent,
+        "Should not reach here if deletion is for preparing to insert text.");
+    // https://github.com/w3c/edit-context/issues/88
+    uint32_t selectionStart =
+        std::min(editContext->SelectionStart(),
+                 static_cast<uint32_t>(editContext->TextLength()));
+    uint32_t selectionEnd =
+        std::min(editContext->SelectionEnd(),
+                 static_cast<uint32_t>(editContext->TextLength()));
+    if (selectionStart != selectionEnd) {
+      // Selection is not collapsed, so we just delete it
+      editContext->UpdateTextAndFireEvent(selectionStart, selectionEnd, u""_ns);
+      if (NS_WARN_IF(Destroyed())) {
+        return Err(NS_ERROR_EDITOR_DESTROYED);
+      }
+      if (editContext != GetEditContext()) {
+        // textupdate handler deactivated this EditContext
+        return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+      }
+      return EditActionResult::HandledResult();
+    }
+    RefPtr<PresShell> presShell = GetPresShell();
+    if (NS_WARN_IF(!presShell)) {
+      return Err(NS_ERROR_FAILURE);
+    }
+    // Do reflow now to ensure text frame is up to date.
+    presShell->FlushPendingNotifications(FlushType::Layout);
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (NS_WARN_IF(editContext != GetEditContext())) {
+      // EditContext was deactivated by reflow
+      return Err(NS_ERROR_FAILURE);
+    }
+    RefPtr<nsTextNode> text = &editContext->TextNode();
+    if (NS_WARN_IF(!text->GetPrimaryFrame())) {
+      // If text node hasn't been framed yet, ExtendAnchorFocusRangeFor won't
+      // work.
+      return Err(NS_ERROR_FAILURE);
+    }
+    AutoDeleteRangesHandler deleteHandler;
+    EditorDOMPoint point;
+    point.Set(text, selectionStart);
+    LimitersAndCaretData limitersAndCaretData;
+    limitersAndCaretData.mAncestorLimiter = text->GetParentElement();
+    AutoClonedSelectionRangeArray rangeArray(point, limitersAndCaretData);
+    RefPtr<Element> textContainer = &editContext->TextContainer();
+    nsresult rv = deleteHandler.ComputeRangesToDelete(
+        *this, aDirectionAndAmount, rangeArray, *textContainer);
+    NS_ENSURE_SUCCESS(rv, Err(rv));
+    EditorDOMPoint deletionStart =
+        rangeArray.GetFirstRangeStartPoint<EditorDOMPoint>();
+    EditorDOMPoint deletionEnd =
+        rangeArray.GetFirstRangeEndPoint<EditorDOMPoint>();
+    MOZ_ASSERT(deletionStart.GetContainer() == text);
+    MOZ_ASSERT(deletionEnd.GetContainer() == text);
+    editContext->UpdateTextAndFireEvent(deletionStart.Offset(),
+                                        deletionEnd.Offset(), u""_ns);
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (editContext != GetEditContext()) {
+      // textupdate handler deactivated this EditContext
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+    return EditActionResult::HandledResult();
+  }
+
   if (MOZ_UNLIKELY(!SelectionRef().RangeCount())) {
     return Err(NS_ERROR_EDITOR_NO_EDITABLE_RANGE);
   }
@@ -802,6 +875,13 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
   MOZ_ASSERT(aHTMLEditor.IsEditActionDataAvailable());
   MOZ_ASSERT(!aRangesToDelete.Ranges().IsEmpty());
 
+  // Don't modify Selection while computing the target ranges. Otherwise, only
+  // us would dispatch `selectionchange` event when the editing host is for
+  // EditContext.
+  SelectionChangeGuard guard;
+  const auto assertNoSelectionChange =
+      MakeScopeExit([&]() { MOZ_ASSERT(!guard.Changed(0)); });
+
   mOriginalDirectionAndAmount = aDirectionAndAmount;
   mOriginalStripWrappers = nsIEditor::eNoStrip;
 
@@ -936,17 +1016,12 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
           if (NS_WARN_IF(!newCaretPosition.IsSet())) {
             return NS_ERROR_FAILURE;
           }
-          AutoHideSelectionChanges blockSelectionListeners(
-              aHTMLEditor.SelectionRef());
-          nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPosition);
-          if (MOZ_UNLIKELY(NS_FAILED(rv))) {
-            NS_WARNING("EditorBase::CollapseSelectionTo() failed");
+          nsresult rv = aRangesToDelete.Collapse(newCaretPosition);
+          if (NS_FAILED(rv)) {
+            NS_WARNING("AutoClonedSelectionRangeArray::Collapse() failed");
             return NS_ERROR_FAILURE;
           }
-          if (NS_WARN_IF(!aHTMLEditor.SelectionRef().RangeCount())) {
-            return NS_ERROR_UNEXPECTED;
-          }
-          aRangesToDelete.Initialize(aHTMLEditor.SelectionRef());
+          MOZ_ASSERT(!aRangesToDelete.Ranges().IsEmpty());
           AutoDeleteRangesHandler anotherHandler(this);
           rv = anotherHandler.ComputeRangesToDelete(
               aHTMLEditor, aDirectionAndAmount, aRangesToDelete, aEditingHost);
@@ -954,17 +1029,6 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDelete(
               NS_SUCCEEDED(rv),
               "Recursive AutoDeleteRangesHandler::ComputeRangesToDelete() "
               "failed");
-
-          rv = aHTMLEditor.CollapseSelectionTo(caretPoint);
-          if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-            NS_WARNING(
-                "EditorBase::CollapseSelectionTo() caused destroying the "
-                "editor");
-            return NS_ERROR_EDITOR_DESTROYED;
-          }
-          NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                               "EditorBase::CollapseSelectionTo() failed to "
-                               "restore original selection, but ignored");
 
           MOZ_ASSERT(aRangesToDelete.Ranges().Length() == 1);
           // If the range is collapsed, there is no content which should
@@ -1361,11 +1425,6 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
   const auto MaybeComputeRangeBetweenCaretAndBlockBoundary =
       [&](const EditorRawDOMPoint& aAtBlockBoundary,
           const OwningNonNull<nsRange>& aOutRange) MOZ_NEVER_INLINE_DEBUG {
-        nsFrameSelection* const frameSelection =
-            aHTMLEditor.SelectionRef().GetFrameSelection();
-        if (NS_WARN_IF(!frameSelection)) {
-          return NS_ERROR_NOT_AVAILABLE;
-        }
         // If the range is collapsed, we don't need to delete anything.
         if (aAtBlockBoundary == aWSRunScannerAtCaret.ScanStartRef()) {
           return NS_SUCCESS_DOM_NO_OPERATION;
@@ -1392,7 +1451,7 @@ HTMLEditor::AutoDeleteRangesHandler::ComputeRangesToDeleteAroundCollapsedRanges(
                 : EditorRawDOMRange(aWSRunScannerAtCaret.ScanStartRef(),
                                     aAtBlockBoundary);
         AutoClonedSelectionRangeArray rangesToDelete(
-            rangeToDelete, LimitersAndCaretData(*frameSelection));
+            rangeToDelete, aHTMLEditor.SelectionLimitersAndCaretData());
         nsresult rv = ComputeRangesToDeleteNonCollapsedRanges(
             aHTMLEditor, aDirectionAndAmount, rangesToDelete,
             SelectionWasCollapsed::Yes, aEditingHost);
@@ -1594,11 +1653,6 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
       [&](const EditorRawDOMPoint& aAtBlockBoundary)
           MOZ_CAN_RUN_SCRIPT MOZ_NEVER_INLINE_DEBUG
       -> Result<EditActionResult, nsresult> {
-    nsFrameSelection* const frameSelection =
-        aHTMLEditor.SelectionRef().GetFrameSelection();
-    if (NS_WARN_IF(!frameSelection)) {
-      return Err(NS_ERROR_NOT_AVAILABLE);
-    }
     // If the range is collapsed, we don't need to delete anything.
     if (aAtBlockBoundary == aWSRunScannerAtCaret.ScanStartRef()) {
       return EditActionResult::IgnoredResult();
@@ -1625,7 +1679,7 @@ HTMLEditor::AutoDeleteRangesHandler::HandleDeleteAroundCollapsedRanges(
             : EditorRawDOMRange(aWSRunScannerAtCaret.ScanStartRef(),
                                 aAtBlockBoundary);
     AutoClonedSelectionRangeArray rangesToDelete(
-        rangeToDelete, LimitersAndCaretData(*frameSelection));
+        rangeToDelete, aHTMLEditor.SelectionLimitersAndCaretData());
     Result<EditActionResult, nsresult> result = HandleDeleteNonCollapsedRanges(
         aHTMLEditor, aDirectionAndAmount, nsIEditor::eStrip, rangesToDelete,
         SelectionWasCollapsed::Yes, aEditingHost);
@@ -2504,8 +2558,6 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
     return NS_OK;
   }
 
-  AutoHideSelectionChanges hideSelectionChanges(aHTMLEditor.SelectionRef());
-
   // If it's ignored, it didn't modify the DOM tree.  In this case, user must
   // want to delete nearest leaf node in the other block element.
   // TODO: We need to consider this before calling ComputeRangesToDelete() for
@@ -2520,54 +2572,30 @@ nsresult HTMLEditor::AutoDeleteRangesHandler::AutoBlockElementsJoiner::
       aRangeToDelete.EndRef() == newCaretPoint.ToRawRangeBoundary()) {
     return NS_OK;
   }
-  // TODO: Stop modifying the `Selection` for computing the target ranges.
-  nsresult rv = aHTMLEditor.CollapseSelectionTo(newCaretPoint);
-  if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
-    NS_WARNING(
-        "EditorBase::CollapseSelectionTo() caused destroying the editor");
-    return NS_ERROR_EDITOR_DESTROYED;
+  AutoClonedSelectionRangeArray rangeArray(
+      newCaretPoint, aHTMLEditor.SelectionLimitersAndCaretData());
+  if (!rangeArray.GetAncestorLimiter()) {
+    rangeArray.SetAncestorLimiter(aHTMLEditor.FindSelectionRoot(aEditingHost));
   }
-  NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
-                       "EditorBase::CollapseSelectionTo() failed");
+  AutoDeleteRangesHandler anotherHandler(mDeleteRangesHandlerConst);
+  nsresult rv = anotherHandler.ComputeRangesToDelete(
+      aHTMLEditor, aDirectionAndAmount, rangeArray, aEditingHost);
   if (NS_SUCCEEDED(rv)) {
-    AutoClonedSelectionRangeArray rangeArray(aHTMLEditor.SelectionRef());
-    if (!rangeArray.GetAncestorLimiter()) {
-      rangeArray.SetAncestorLimiter(
-          aHTMLEditor.FindSelectionRoot(aEditingHost));
-    }
-    AutoDeleteRangesHandler anotherHandler(mDeleteRangesHandlerConst);
-    rv = anotherHandler.ComputeRangesToDelete(aHTMLEditor, aDirectionAndAmount,
-                                              rangeArray, aEditingHost);
-    if (NS_SUCCEEDED(rv)) {
-      if (MOZ_LIKELY(!rangeArray.Ranges().IsEmpty())) {
-        MOZ_ASSERT(rangeArray.Ranges().Length() == 1);
-        aRangeToDelete.SetStartAndEnd(rangeArray.FirstRangeRef()->StartRef(),
-                                      rangeArray.FirstRangeRef()->EndRef());
-      } else {
-        NS_WARNING(
-            "Recursive AutoDeleteRangesHandler::ComputeRangesToDelete() "
-            "returned no range");
-        rv = NS_ERROR_FAILURE;
-      }
+    if (MOZ_LIKELY(!rangeArray.Ranges().IsEmpty())) {
+      MOZ_ASSERT(rangeArray.Ranges().Length() == 1);
+      aRangeToDelete.SetStartAndEnd(rangeArray.FirstRangeRef()->StartRef(),
+                                    rangeArray.FirstRangeRef()->EndRef());
     } else {
       NS_WARNING(
-          "Recursive AutoDeleteRangesHandler::ComputeRangesToDelete() failed");
+          "Recursive AutoDeleteRangesHandler::ComputeRangesToDelete() "
+          "returned no range");
+      rv = NS_ERROR_FAILURE;
     }
-  }
-  // Restore selection.
-  nsresult rvCollapsingSelectionTo =
-      aHTMLEditor.CollapseSelectionTo(aCaretPoint);
-  if (MOZ_UNLIKELY(rvCollapsingSelectionTo == NS_ERROR_EDITOR_DESTROYED)) {
+  } else {
     NS_WARNING(
-        "EditorBase::CollapseSelectionTo() caused destroying the editor");
-    return NS_ERROR_EDITOR_DESTROYED;
+        "Recursive AutoDeleteRangesHandler::ComputeRangesToDelete() failed");
   }
-  NS_WARNING_ASSERTION(
-      NS_SUCCEEDED(rvCollapsingSelectionTo),
-      "EditorBase::CollapseSelectionTo() failed to restore caret position");
-  return NS_SUCCEEDED(rv) && NS_SUCCEEDED(rvCollapsingSelectionTo)
-             ? NS_OK
-             : NS_ERROR_FAILURE;
+  return NS_SUCCEEDED(rv) ? NS_OK : NS_ERROR_FAILURE;
 }
 
 Result<EditActionResult, nsresult> HTMLEditor::AutoDeleteRangesHandler::

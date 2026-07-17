@@ -31,6 +31,123 @@ newtab-card-dismiss-button =
     .title = ปิด
     .aria-label = ปิด
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-title =
+    .label = หน้าแรก
+home-homepage-new-windows =
+    .label = หน้าต่างใหม่
+home-homepage-new-tabs =
+    .label = แท็บใหม่
+# This option leads to the "Custom Homepage" subpage
+home-homepage-custom-homepage-button =
+    .label = เลือกไซต์ที่ต้องการ
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = ที่อยู่เว็บไซต์
+home-custom-homepage-address =
+    .placeholder = ป้อนที่อยู่
+home-custom-homepage-address-button =
+    .label = เพิ่มที่อยู่
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-results =
+    .label = ยังไม่ได้เพิ่มเว็บไซต์ใด
+home-custom-homepage-delete-address-button =
+    .aria-label = ลบที่อยู่
+    .title = ลบที่อยู่
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with-prompt =
+    .label = แทนที่ด้วย
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-current-pages-button =
+    .label = หน้าที่เปิดปัจจุบัน
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-bookmarks-button =
+    .label = ที่คั่นหน้า…
+
+## Firefox Home content
+
+home-prefs-content-header =
+    .label = { -firefox-home-brand-name }
+home-prefs-search-header2 =
+    .label = ค้นหา
+home-prefs-stories-header2 =
+    .label = เรื่องราว
+    .description = เนื้อหาคัดสรรพิเศษโดยผลิตภัณฑ์ตระกูล { -brand-product-name }
+home-prefs-widgets-header =
+    .label = วิดเจ็ต
+# Lists is a widget on New Tab, similar to a to-do widget
+home-prefs-lists-header =
+    .label = รายการ
+# Timer is a widget on New Tab, similar to the Pomodoro timer.
+home-prefs-timer-header =
+    .label = ตัวจับเวลา
+# Sports is a widget on New Tab showing sports scores and schedules.
+home-prefs-sports-widget-header =
+    .label = กีฬา
+# Clock is a widget on New Tab that displays time zones around the world.
+home-prefs-clocks-header =
+    .label = นาฬิกา
+home-prefs-mission-message2 =
+    .message = ผู้สนับสนุนของเราสนับสนุนภารกิจที่จะสร้างเว็บที่ดีขึ้น
+home-prefs-manage-topics-link2 =
+    .label = จัดการหัวข้อ
+home-prefs-choose-wallpaper-link2 =
+    .label = เลือกวอลล์เปเปอร์
+home-prefs-firefox-logo-header =
+    .label = โลโก้ { -brand-short-name }
+# Informational message bar that appears in the Firefox Home section when the options are disabled.
+# The user must select Firefox Home as their homepage for either new tabs or new windows to enable
+# the features in settings.
+home-prefs-firefox-home-disabled-notice =
+    .message = เพื่อใช้คุณลักษณะเหล่านี้ ให้ตั้งค่าแท็บใหม่หรือหน้าต่างใหม่เป็น { -firefox-home-brand-name }
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label = { $num } แถว
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = ส่วนขยาย ({ $extension })
+home-restore-defaults-srd =
+    .label = เรียกคืนค่าเริ่มต้น
+    .accesskey = ร
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (ค่าเริ่มต้น)
+home-mode-choice-custom-srd =
+    .label = URL กำหนดเอง…
+home-mode-choice-blank-srd =
+    .label = หน้าว่าง
+home-prefs-shortcuts-header-srd =
+    .label = ทางลัด
+home-prefs-shortcuts-select =
+    .aria-label = ทางลัด
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = ทางลัดที่ได้รับการสนับสนุน
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = เรื่องราวที่ได้รับการสนับสนุน
+home-prefs-highlights-option-visited-pages-srd =
+    .label = หน้าที่เยี่ยมชมแล้ว
+home-prefs-highlights-options-bookmarks-srd =
+    .label = ที่คั่นหน้า
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = การดาวน์โหลดล่าสุด
+home-prefs-recent-activity-header-srd =
+    .label = กิจกรรมล่าสุด
+home-prefs-recent-activity-select =
+    .aria-label = กิจกรรมล่าสุด
+home-prefs-weather-header-srd =
+    .label = พยากรณ์อากาศ
+home-prefs-support-firefox-header-srd =
+    .label = ร่วมสนับสนุน { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = ค้นหาว่าทำอย่างไร
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -151,6 +268,8 @@ newtab-menu-section-block = ปิดกั้น
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow-topic = เลิกติดตาม
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = เรียนรู้เพิ่มเติม
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = เลิกติดตามหัวข้อ
@@ -369,6 +488,8 @@ newtab-custom-widget-sports-toggle =
     .label = ฟุตบอลโลก
 newtab-custom-widget-clock-toggle =
     .label = นาฬิกา
+newtab-custom-widget-sports-toggle2 =
+    .label = กีฬา
 newtab-custom-widget-section-title = วิดเจ็ต
 newtab-custom-widget-section-toggle =
     .label = วิดเจ็ต
@@ -754,8 +875,6 @@ newtab-widget-lists-button-add-item = เพิ่มงาน
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = เพิ่มงาน
     .aria-label = เพิ่มงาน
-newtab-widget-lists-input-add-an-item =
-    .placeholder = เพิ่มงาน
 newtab-widget-lists-input-error = โปรดระบุข้อความเพื่อเพิ่มงาน
 newtab-widget-lists-input-menu-open-link = เปิดลิงก์
 newtab-widget-lists-input-menu-move-up = เลื่อนขึ้น
@@ -764,6 +883,9 @@ newtab-widget-lists-input-menu-delete = ลบ
 newtab-widget-lists-input-menu-edit = แก้ไข
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = แก้ไขรายการ
+newtab-widget-lists-edit-clear =
+    .aria-label = ยกเลิก
+    .title = ยกเลิก
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + สร้างรายการใหม่
@@ -780,14 +902,18 @@ newtab-widget-lists-name-placeholder-checklist2 =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = รายการใหม่
     .aria-label = แก้ไขชื่อรายการ
-newtab-widget-lists-name-placeholder-checklist =
-    .placeholder = รายการตรวจสอบ
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = รายการใหม่
 newtab-widget-section-title = วิดเจ็ต
 newtab-widget-menu-hide = ซ่อนวิดเจ็ต
 newtab-widget-menu-change-size = เปลี่ยนขนาด
+# Parent label for a submenu in the widget menu that reorders the widget
+# among its siblings. "Left" and "Right" appear as items inside this submenu.
+newtab-widget-menu-move = ย้าย
+# Submenu item under "Move"; moves the widget one position to the left.
+# RTL locales should translate this as "Right".
+newtab-widget-menu-move-left = ซ้าย
+# Submenu item under "Move"; moves the widget one position to the right.
+# RTL locales should translate this as "Left".
+newtab-widget-menu-move-right = ขวา
 newtab-widget-size-small = เล็ก
 newtab-widget-size-medium = ปานกลาง
 newtab-widget-size-large = ใหญ่
@@ -804,10 +930,21 @@ newtab-widget-section-minimize =
 newtab-widget-section-menu-button =
     .title = เมนูวิดเจ็ต
     .aria-label = เปิดเมนูวิดเจ็ต
+newtab-widget-add-widgets-button =
+    .aria-label = เพิ่มวิดเจ็ต
+    .title = เพิ่มวิดเจ็ต
 newtab-widget-section-menu-manage = จัดการวิดเจ็ต
 newtab-widget-section-menu-hide-all = ซ่อนวิดเจ็ต
 newtab-widget-section-menu-learn-more = เรียนรู้เพิ่มเติม
 newtab-widget-section-feedback = บอกเราว่าคุณคิดอย่างไร
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = แสดงวิดเจ็ตเพิ่มขึ้น
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = แสดงวิดเจ็ตน้อยลง
 newtab-widget-lists-name-default = รายการตรวจสอบ
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -838,6 +975,9 @@ newtab-daily-briefing-card-timestamp = อัปเดตเมื่อ { $minu
 newtab-widget-message-title = มีสมาธิด้วยรายการสิ่งที่ต้องทำและตัวจับเวลาในตัว
 # to-dos stands for "things to do".
 newtab-widget-message-copy = ตั้งแต่เตือนความจำด่วน ๆ ไปจนถึงสิ่งที่ต้องทำในแต่ละวัน ช่วงเวลาโฟกัสไปจนถึงช่วงเวลาพัก ให้คุณอยู่กับงานและตรงเวลาเสมอ
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = จุดเดียวสำหรับการโฟกัส การพยากรณ์ และอื่น ๆ
+newtab-widget-message-focus-forecasts-body = ทำให้วันของคุณราบรื่นด้วยวิดเจ็ตใน { -brand-product-name } ตรวจสอบพยากรณ์อากาศ จดจ่ออยู่กับงาน หรือติดตามเวลาทั่วโลก
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -885,9 +1025,10 @@ newtab-widget-timer-celebration-message-focus = พักสักหน่อ�
 # Message shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-message-break = พร้อมที่จะโฟกัสหรือยัง?
 
-## Sports widget
+##
 
 newtab-sports-widget-menu-follow-teams = ติดตามทีม
+newtab-sports-widget-menu-view-schedule = ดูตารางการแข่ง
 newtab-sports-widget-menu-view-upcoming = ดูสิ่งที่กำลังจะมาถึง
 newtab-sports-widget-menu-view-results = ดูผลการแข่ง
 # Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
@@ -912,9 +1053,63 @@ newtab-sports-widget-search-country =
     .placeholder = ค้นหาประเทศ
     .aria-label = ค้นหาประเทศ
 newtab-sports-widget-cancel = ยกเลิก
+newtab-sports-widget-back-button =
+    .aria-label = ย้อนกลับ
 newtab-sports-widget-done-button =
     .label = เสร็จสิ้น
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (ถูกคัดออก)
+newtab-sports-widget-view-all =
+    .label = ดูทั้งหมด
+newtab-sports-widget-show-less =
+    .label = แสดงน้อยลง
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = เฉพาะทีมที่ติดตาม
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = ดู
+    .title = ดูสด
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = ดูสด
+    .title = ดูสด
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = ปิด
+    .title = ปิด
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = ฟรี
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = ทดลองใช้ฟรี
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = ฟรีและเสียค่าใช้จ่าย
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = เสียค่าใช้จ่าย
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = เฉพาะบางเกมเท่านั้น
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = มีให้บริการในภูมิภาคของคุณ
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = ภูมิภาคอื่น ๆ
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = เปิดสตรีม
+    .title = เปิดสตรีม
 newtab-sports-widget-group-stage = รอบแบ่งกลุ่ม
+newtab-sports-widget-group-a = กลุ่ม A
+newtab-sports-widget-group-b = กลุ่ม B
+newtab-sports-widget-group-c = กลุ่ม C
+newtab-sports-widget-group-d = กลุ่ม D
+newtab-sports-widget-group-e = กลุ่ม E
+newtab-sports-widget-group-f = กลุ่ม F
+newtab-sports-widget-group-g = กลุ่ม G
+newtab-sports-widget-group-h = กลุ่ม H
+newtab-sports-widget-group-i = กลุ่ม I
+newtab-sports-widget-group-j = กลุ่ม J
+newtab-sports-widget-group-k = กลุ่ม K
+newtab-sports-widget-group-l = กลุ่ม L
 newtab-sports-widget-round-32 = รอบ 32 ทีม
 newtab-sports-widget-round-16 = รอบ 16 ทีม
 newtab-sports-widget-quarter-finals = รอบก่อนรองชนะเลิศ
@@ -926,6 +1121,8 @@ newtab-custom-widget-live-refresh =
 # Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
 newtab-sports-widget-key-dates = วันสำคัญ
 newtab-sports-widget-upcoming = กำลังจะมาถึง
+# Used for a match currently ongoing
+newtab-sports-widget-now = ตอนนี้
 newtab-sports-widget-results = ผลลัพธ์
 newtab-sports-widget-semi-finals = รอบรองชนะเลิศ
 newtab-sports-widget-bronze-finals = รอบชิงเหรียญทองแดง
@@ -950,6 +1147,110 @@ newtab-sports-widget-third-place = อันดับสาม
 newtab-sports-widget-runner-up = รองชนะเลิศ
 newtab-sports-widget-champions = ผู้ชนะเลิศ
 newtab-sports-widget-world-cup-champions = แชมป์ฟุตบอลโลก 2026
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = หมดเวลา
+newtab-sports-widget-match-halftime = ช่วงพักครึ่ง
+newtab-sports-widget-match-extra-time = ช่วงต่อเวลา
+newtab-sports-widget-match-penalties = ช่วงยิงจุดโทษ
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = พบกับ
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = ไม่พลาดรายละเอียดการแข่งขันที่จะเกิดขึ้น
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = ก่อนหน้า
+    .title = ก่อนหน้า
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = ถัดไป
+    .title = ถัดไป
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = การแข่งขันสด { $index } จากทั้งหมด { $total }
+    .title = การแข่งขันสด { $index } จากทั้งหมด { $total }
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } พบกับ { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) พบกับ { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = สด: { $homeTeam }, { $homeScore } พบกับ { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } พบกับ { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } พบกับ { $awayTeam }, ล่าช้า
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } พบกับ { $awayTeam }, เลื่อนออกไป
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } พบกับ { $awayTeam }, พักการแข่งขัน
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } พบกับ { $awayTeam }, ถูกยกเลิก
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = บอสเนียและเฮอร์เซโกวีนา
+newtab-sports-widget-team-name-label-civ =
+    .label = ไอวอรีโคสต์
+newtab-sports-widget-team-name-label-cod =
+    .label = สาธารณรัฐประชาธิปไตยคองโก
+newtab-sports-widget-team-name-label-eng =
+    .label = อังกฤษ
+newtab-sports-widget-team-name-label-sco =
+    .label = สกอตแลนด์
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = ยังไม่ได้กำหนด
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = เริ่มฉลองฟุตบอลโลกด้วยรูปพื้นหลังใหม่
+newtab-sports-widget-message-wallpapers-body = เติมพลังความคึกคักในวันแข่งขันให้กับเบราว์เซอร์ของคุณสำหรับทัวร์นาเมนต์นี้
+newtab-sports-widget-message-wallpapers-cta = เลือกรูปพื้นหลัง
+newtab-sports-widget-message-add-widgets-cta =
+    .label = เพิ่มวิดเจ็ต
+newtab-sports-widget-message-day-in-play-title = เติมความสนุกสนานให้วันของคุณด้วยวิดเจ็ต { -brand-product-name }
+newtab-sports-widget-message-day-in-play-body = ติดตามการแข่งขันฟุตบอลโลก จดจ่ออยู่กับงาน ติดตามเวลาทั่วโลก และอื่น ๆ อีกมากมาย
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = สำรวจวิดเจ็ต
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1011,6 +1312,19 @@ newtab-clock-widget-button-save = บันทึก
 newtab-clock-widget-button-remove-clock =
     .title = เอานาฬิกาออก
     .aria-label = เอานาฬิกาออก
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, ชื่อเล่น: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = เพิ่มนาฬิกา
 newtab-clock-widget-edit-clock-form =
@@ -1020,6 +1334,10 @@ newtab-clock-widget-edit-clock-form =
 # It means "results of the search", not "search within the results".
 newtab-clock-widget-search-results =
     .aria-label = ผลการค้นหา
+# Shown in place of the search results when the user's query does not match any
+# supported city — e.g. typing a misspelled name or a place not in the IANA
+# time zone list.
+newtab-clock-widget-search-no-results = ไม่มีที่ตรงกัน
 # "Open menu for clock" is an icon-only button in the widget toolbar — the
 # attributes are consumed as tooltip/screen-reader label only. The button
 # never renders visible text.

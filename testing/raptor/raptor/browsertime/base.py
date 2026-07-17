@@ -31,6 +31,7 @@ BROWSERTIME_PAGELOAD_OUTPUT_TIMEOUT = 120  # 2 minutes
 BROWSERTIME_BENCHMARK_OUTPUT_TIMEOUT = (
     None  # Disable output timeout for benchmark tests
 )
+BROWSERTIME_MAX_ATTEMPTS = 3
 
 
 class Browsertime(Perftest, metaclass=ABCMeta):
@@ -527,6 +528,8 @@ class Browsertime(Perftest, metaclass=ABCMeta):
         for var, val in self.config.get("environment", {}).items():
             browsertime_options.extend(["--firefox.env", f"{var}={val}"])
 
+        browsertime_options.extend(["--firefox.env", "MOZ_REMOTE_SETTINGS_DEVTOOLS=1"])
+
         # Parse the test commands (if any) from the test manifest
         cmds = evaluate_list_from_string(test.get("test_cmds", "[]"))
         parsed_cmds = [":::".join([str(i) for i in item]) for item in cmds if item]
@@ -987,6 +990,7 @@ class Browsertime(Perftest, metaclass=ABCMeta):
         env = dict(os.environ)
         env["PYTHON"] = sys.executable
         env["MINIDUMP_SAVE_PATH"] = str(self.crash_directory)
+        env["MOZ_REMOTE_SETTINGS_DEVTOOLS"] = "1"
         if self.browsertime_video and self.browsertime_ffmpeg:
             ffmpeg_dir = os.path.dirname(os.path.abspath(self.browsertime_ffmpeg))
             old_path = env.setdefault("PATH", "")
@@ -1092,32 +1096,61 @@ class Browsertime(Perftest, metaclass=ABCMeta):
                 else:
                     cmd.extend(["--android.usbPowerTesting", "true"])
 
-            mozprocess.run_and_wait(
-                cmd,
-                output_line_handler=_create_line_handler(),
-                env=env,
-                timeout=proc_timeout,
-                timeout_handler=timeout_handler,
-                output_timeout=output_timeout,
-                output_timeout_handler=output_timeout_handler,
-                text=False,
-            )
+            is_browsertime_process_completed = False
+            browsertime_process_attempt_count = 1
 
-            if self.output_timed_out:
-                self.get_failure_screenshot()
-                raise Exception(
-                    f"Browsertime process timed out after waiting {output_timeout} seconds "
-                    "for output"
+            while (
+                not is_browsertime_process_completed
+                and browsertime_process_attempt_count <= BROWSERTIME_MAX_ATTEMPTS
+            ):
+                LOG.info(
+                    f"Running browsertime process, attempt {browsertime_process_attempt_count}/{BROWSERTIME_MAX_ATTEMPTS}"
                 )
-            if self.timed_out:
-                self.get_failure_screenshot()
-                raise Exception(
-                    f"Browsertime process timed out after {proc_timeout} seconds"
+                self.browsertime_failure = ""
+                browsertime_mozprocess = mozprocess.run_and_wait(
+                    cmd,
+                    output_line_handler=_create_line_handler(),
+                    env=env,
+                    timeout=proc_timeout,
+                    timeout_handler=timeout_handler,
+                    output_timeout=output_timeout,
+                    output_timeout_handler=output_timeout_handler,
+                    text=False,
                 )
 
-            if self.browsertime_failure:
-                self.get_failure_screenshot()
-                raise Exception(self.browsertime_failure)
+                if self.output_timed_out:
+                    self.get_failure_screenshot()
+                    raise Exception(
+                        f"Browsertime process timed out after waiting {output_timeout} seconds "
+                        "for output"
+                    )
+                if self.timed_out:
+                    self.get_failure_screenshot()
+                    raise Exception(
+                        f"Browsertime process timed out after {proc_timeout} seconds"
+                    )
+
+                if self.browsertime_failure:
+                    self.get_failure_screenshot()
+
+                if browsertime_mozprocess.returncode != 0:
+                    browsertime_process_attempt_count += 1
+
+                    if browsertime_process_attempt_count <= BROWSERTIME_MAX_ATTEMPTS:
+                        self.browsertime_failure = f"Browsertime process exited with code {browsertime_mozprocess.returncode}"
+                        LOG.warning(
+                            f"Browsertime process exited with code "
+                            f"{browsertime_mozprocess.returncode}, retrying..."
+                        )
+                        continue
+                    else:
+                        self.get_failure_screenshot()
+                        raise Exception(self.browsertime_failure)
+
+                else:
+                    is_browsertime_process_completed = True
+                    LOG.info("Browsertime process completed successfully")
+                    break
 
             # We've run the main browsertime process, now we need to run the
             # browsertime one more time if the profiler wasn't enabled already

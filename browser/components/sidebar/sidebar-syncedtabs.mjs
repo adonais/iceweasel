@@ -298,7 +298,7 @@ class SyncedTabsInSidebar extends SidebarPage {
       .heading=${deviceName}
       .iconSrc=${this.getDeviceIconSrc(deviceType)}
       class=${deviceType}
-      @keydown=${e => this.treeView.handleCardKeydown(e)}
+      @keydown=${this.keydownHandler}
     >
       <sidebar-tab-list
         compactRows

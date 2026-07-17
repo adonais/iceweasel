@@ -34,7 +34,7 @@ describe("setting-pane", () => {
     ok(pageHeader, "There is a page header");
     is(
       pageHeader.dataset.l10nId,
-      "containers-section-header",
+      "containers-section-header2",
       "Page header has its l10nId"
     );
     let heading = pageHeader.headingEl;
@@ -96,7 +96,7 @@ describe("setting-pane", () => {
 
     is(
       breadcrumbs[1].dataset.l10nId,
-      "containers-section-header",
+      "containers-section-header2",
       "Second breadcrumb has the sub-pane l10nId"
     );
     is(

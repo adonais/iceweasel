@@ -370,7 +370,7 @@ class Trace {
   EmitResult AdvanceCurrentPositionInTrace(int by, Compiler* compiler);
   const Trace* next() const { return next_; }
 
-  class ConstIterator final {
+  class V8_GSL_POINTER ConstIterator final {
    public:
     ConstIterator& operator++() {
       trace_ = trace_->next();
@@ -515,7 +515,7 @@ class FrequencyCollator {
   int total_samples_;
 };
 
-class Compiler {
+class V8_EXPORT_PRIVATE Compiler {
  public:
   Compiler(Isolate* isolate, Zone* zone, int capture_count, Flags flags,
            bool is_one_byte);

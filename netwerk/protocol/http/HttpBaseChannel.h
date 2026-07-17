@@ -161,6 +161,10 @@ class HttpBaseChannel : public nsHashPropertyBag,
   NS_IMETHOD GetBlockAuthPrompt(bool* aValue) override;
   NS_IMETHOD SetBlockAuthPrompt(bool aValue) override;
   NS_IMETHOD GetCanceled(bool* aCanceled) override;
+  NS_IMETHOD GetParentProcessChannelHandle(
+      mozilla::dom::ParentProcessChannelHandle** aValue) override;
+  NS_IMETHOD SetParentProcessChannelHandle(
+      mozilla::dom::ParentProcessChannelHandle* aValue) override;
 
   // nsIEncodedChannel
   NS_IMETHOD GetApplyConversion(bool* value) override;
@@ -746,6 +750,8 @@ class HttpBaseChannel : public nsHashPropertyBag,
 
   RefPtr<OpaqueResponseBlocker> mORB;
 
+  RefPtr<mozilla::dom::ParentProcessChannelHandle> mParentProcessChannelHandle;
+
  private:
   // Proxy release all members above on main thread.
   void ReleaseMainThreadOnlyReferences();
@@ -928,6 +934,12 @@ class HttpBaseChannel : public nsHashPropertyBag,
     (uint32_t, ResponseTimeoutEnabled, 1),
     // A flag that should be false only if a cross-domain redirect occurred
     (uint32_t, AllRedirectsSameOrigin, 1),
+
+    // Like AllRedirectsSameOrigin, but internal redirects (e.g. a service
+    // worker substituting a response from a different URL) do not count as
+    // cross-origin. Used for canvas/CSS/media tainting, which must only treat a
+    // real cross-origin *network* redirect as a trust-boundary crossing.
+    (uint32_t, AllRedirectsSameOriginIgnoringInternal, 1),
 
     // Is 1 if no redirects have occured or if all redirects
     // pass the Resource Timing timing-allow-check

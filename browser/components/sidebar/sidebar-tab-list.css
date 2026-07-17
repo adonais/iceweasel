@@ -22,7 +22,6 @@ sidebar-tab-row {
     outline-offset: var(--focus-outline-inset);
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("browser.nova.enabled") {
     border-radius: var(--border-radius-medium);
   }

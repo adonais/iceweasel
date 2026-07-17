@@ -8,6 +8,7 @@
 #include "AndroidRect.h"
 #include "KeyEvent.h"
 #include "PuppetWidget.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIContent.h"
 #include "nsITransferable.h"
 #include "nsStringStream.h"
@@ -1641,8 +1642,8 @@ void GeckoEditableSupport::SetOnBrowserChild(dom::BrowserChild* aBrowserChild) {
   // We expect the existing TextEventDispatcherListener to be a
   // GeckoEditableSupport object, so we perform a sanity check to make
   // sure, by comparing their respective vtable pointers.
-  const RefPtr<widget::GeckoEditableSupport> dummy =
-      new widget::GeckoEditableSupport(/* child */ nullptr);
+  const auto dummy =
+      MakeRefPtr<widget::GeckoEditableSupport>(/* child */ nullptr);
   NS_ENSURE_TRUE_VOID(*reinterpret_cast<const uintptr_t*>(listener.get()) ==
                       *reinterpret_cast<const uintptr_t*>(dummy.get()));
 

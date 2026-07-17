@@ -15,6 +15,7 @@ support-files = [
   "html_zstd-test-page.html",
   "html_image-tooltip-test-page.html",
   "html_cache-test-page.html",
+  "html_cache-test-page-js.html",
   "html_cors-test-page.html",
   "html_csp-frame-test-page.html",
   "html_csp-resend-test-page.html",
@@ -69,6 +70,8 @@ support-files = [
   "html_image-cache.html",
   "html_script-cache.html",
   "html_stylesheet-cache.html",
+  "js_cache-test.js",
+  "js_cache-test2.js",
   "js_worker-test.js",
   "js_worker-test2.js",
   "network-overrides-test-helpers.js",
@@ -106,7 +109,6 @@ support-files = [
   "xhr_original.js",
   "!/devtools/client/debugger/test/mochitest/shared-head.js",
   "!/devtools/client/shared/test/shared-head.js",
-  "!/devtools/client/shared/test/telemetry-test-helpers.js",
   "!/devtools/client/webconsole/test/browser/shared-head.js",
 ]
 
@@ -129,6 +131,8 @@ skip-if = [
 fail-if = [
   "a11y_checks", # Bug 1849028 clicked element may not be focusable and/or labeled
 ]
+
+["browser_net_overrides_with_styleeditor.js"]
 
 ["browser_net_pane-collapse.js"]
 
@@ -170,9 +174,9 @@ skip-if = [
 
 ["browser_net_req-resp-bodies.js"]
 
-["browser_net_requests_with_empty_response.js"]
-
 ["browser_net_requests-keep-alive.js"]
+
+["browser_net_requests_with_empty_response.js"]
 
 ["browser_net_response_CORS_blocked.js"]
 
@@ -246,6 +250,8 @@ skip-if = [
 ["browser_net_sort-reset.js"]
 
 ["browser_net_sse-basic.js"]
+
+["browser_net_stacktraces-cached.js"]
 
 ["browser_net_stacktraces-no-chrome-frames.js"]
 

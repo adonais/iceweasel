@@ -5,11 +5,12 @@
 #ifndef DOM_SVG_DOMSVGANIMATEDBOOLEAN_H_
 #define DOM_SVG_DOMSVGANIMATEDBOOLEAN_H_
 
-#include "SVGAnimatedBoolean.h"
 #include "mozilla/dom/SVGElement.h"
 #include "nsWrapperCache.h"
 
-namespace mozilla::dom {
+namespace mozilla {
+class SVGAnimatedBoolean;
+namespace dom {
 
 class DOMSVGAnimatedBoolean final : public nsWrapperCache {
   NS_INLINE_DECL_CYCLE_COLLECTING_NATIVE_REFCOUNTING(DOMSVGAnimatedBoolean)
@@ -22,12 +23,9 @@ class DOMSVGAnimatedBoolean final : public nsWrapperCache {
   SVGElement* GetParentObject() const { return mSVGElement; }
   JSObject* WrapObject(JSContext* aCx,
                        JS::Handle<JSObject*> aGivenProto) override;
-  bool BaseVal() const { return mVal->GetBaseValue(); }
-  void SetBaseVal(bool aValue) { mVal->SetBaseValue(aValue, mSVGElement); }
-  bool AnimVal() const {
-    mSVGElement->FlushAnimations();
-    return mVal->GetAnimValue();
-  }
+  bool BaseVal() const;
+  void SetBaseVal(bool aValue);
+  bool AnimVal() const;
 
  protected:
   ~DOMSVGAnimatedBoolean();
@@ -36,6 +34,7 @@ class DOMSVGAnimatedBoolean final : public nsWrapperCache {
   RefPtr<SVGElement> mSVGElement;
 };
 
-}  // namespace mozilla::dom
+}  // namespace dom
+}  // namespace mozilla
 
 #endif  // DOM_SVG_DOMSVGANIMATEDBOOLEAN_H_

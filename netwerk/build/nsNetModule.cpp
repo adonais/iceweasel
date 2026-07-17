@@ -74,15 +74,16 @@ NS_IMPL_COMPONENT_FACTORY(net::nsHttpsHandler) {
 #include "WebSocketChannel.h"
 #include "WebSocketChannelChild.h"
 namespace mozilla::net {
-static BaseWebSocketChannel* WebSocketChannelConstructor(bool aSecure) {
+static already_AddRefed<BaseWebSocketChannel> WebSocketChannelConstructor(
+    bool aSecure) {
   if (IsNeckoChild()) {
-    return new WebSocketChannelChild(aSecure);
+    return MakeAndAddRef<WebSocketChannelChild>(aSecure);
   }
 
   if (aSecure) {
-    return new WebSocketSSLChannel;
+    return MakeAndAddRef<WebSocketSSLChannel>();
   }
-  return new WebSocketChannel;
+  return MakeAndAddRef<WebSocketChannel>();
 }
 
 #define WEB_SOCKET_HANDLER_CONSTRUCTOR(type, secure)          \

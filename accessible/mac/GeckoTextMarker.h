@@ -117,8 +117,10 @@ class GeckoTextMarkerRange final {
 
   /**
    * Set the current range as the DOM selection.
+   * Set DOM focus if `aSetFocus` is true, otherwise
+   * leave DOM focus unaltered.
    */
-  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Select() const;
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY void Select(bool aSetFocus) const;
 
   /**
    * Crops the range if it overlaps the given accessible element boundaries.

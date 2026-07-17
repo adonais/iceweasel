@@ -160,7 +160,7 @@ class TextSelectionTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             waitForPageToLoad()
             longClickPageObject(composeTestRule, itemContainingText("Crossing"))
             clickContextMenuItem("Select all")
@@ -190,7 +190,7 @@ class TextSelectionTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             longClickPageObject(composeTestRule, itemContainingText("Crossing"))
             clickContextMenuItem("Copy")
         }.openNavigationToolbar {
@@ -213,7 +213,7 @@ class TextSelectionTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             longClickPageObject(composeTestRule, itemContainingText("Crossing"))
         }.clickShareSelectedText {
             verifyAndroidShareLayout()
@@ -230,7 +230,7 @@ class TextSelectionTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             longClickPageObject(composeTestRule, itemContainingText("Crossing"))
             clickContextMenuItem("Search")
             verifyUrl("Crossing")
@@ -250,7 +250,7 @@ class TextSelectionTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             longClickPageObject(composeTestRule, itemContainingText("Crossing"))
             clickContextMenuItem("Private Search")
             verifyUrl("Crossing")

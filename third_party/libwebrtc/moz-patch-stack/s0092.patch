@@ -1,30 +1,27 @@
-From: Byron Campen <docfaraday@gmail.com>
-Date: Thu, 25 Jul 2024 10:07:00 -0500
-Subject: Bug 1909234 - (fix-4fec6f9c67dc) Hollow out the new ssl_adapter lib.
- r?mjf
+From: Andreas Pehrson <apehrson@mozilla.com>
+Date: Thu, 29 Aug 2024 08:31:00 +0000
+Subject: Bug 1914837 - Always initialize DesktopCapturer::pid.
+ r=webrtc-reviewers,ng
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ee2f06666bcc6d22c4d7c93b78fb52d28452d055
+This member is patched on top of libwebrtc. New backends could be added from
+under us. It needs to be initialized.
+
+Differential Revision: https://phabricator.services.mozilla.com/D220265
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/fdf5b0a81b0c0e87d31c5963091681a0e5960678
 ---
- rtc_base/BUILD.gn | 2 ++
- 1 file changed, 2 insertions(+)
+ modules/desktop_capture/desktop_capturer.h | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 38d679e043..faa4da32ca 100644
---- a/rtc_base/BUILD.gn
-+++ b/rtc_base/BUILD.gn
-@@ -1728,6 +1728,7 @@ if (!build_with_mozilla) {
- }
+diff --git a/modules/desktop_capture/desktop_capturer.h b/modules/desktop_capture/desktop_capturer.h
+index 0e32474543..c85d0eba7a 100644
+--- a/modules/desktop_capture/desktop_capturer.h
++++ b/modules/desktop_capture/desktop_capturer.h
+@@ -80,7 +80,7 @@ class RTC_EXPORT DesktopCapturer {
+   struct Source {
+     // The unique id to represent a Source of current DesktopCapturer.
+     SourceId id;
+-    pid_t pid;
++    pid_t pid = 0;
  
- rtc_library("ssl_adapter") {
-+if (!build_with_mozilla) {
-   visibility = [ "*" ]
-   sources = [
-     "openssl_adapter.cc",
-@@ -1777,6 +1778,7 @@ rtc_library("ssl_adapter") {
-     configs += [ "..:external_ssl_library" ]
-   }
- }
-+}
- 
- rtc_source_set("gtest_prod") {
-   sources = [ "gtest_prod_util.h" ]
+     // Title of the window or screen in UTF-8 encoding, maybe empty. This field
+     // should not be used to identify a source.

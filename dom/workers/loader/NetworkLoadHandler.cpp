@@ -353,22 +353,25 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
 
     auto mimeTypeUTF16 = NS_ConvertUTF8toUTF16(mimeType);
     if (!nsContentUtils::IsJavascriptMIMEType(mimeTypeUTF16)) {
-      // JSON is allowed as a non-toplevel.
+      // JSON is only allowed for non-toplevel JSON module imports, not for
+      // classic importScripts() or the top-level worker script.
       if (!((!loadContext->IsTopLevel() &&
+             loadContext->mRequest->IsModuleRequest() &&
+             loadContext->mRequest->AsModuleRequest()->mModuleType ==
+                 JS::ModuleType::JSON &&
              nsContentUtils::IsJsonMimeType(mimeTypeUTF16))
 #ifdef NIGHTLY_BUILD
             // Allow wasm modules.
             || (StaticPrefs::
                     javascript_options_experimental_wasm_esm_integration() &&
                 nsContentUtils::HasWasmMimeTypeEssence(mimeTypeUTF16))
+#endif
             // Allow non-toplevel text modules
             || (JS::Prefs::experimental_import_text() &&
                 !loadContext->IsTopLevel() &&
                 loadContext->mRequest->IsModuleRequest() &&
                 loadContext->mRequest->AsModuleRequest()->mModuleType ==
-                    JS::ModuleType::Text)
-#endif
-                )) {
+                    JS::ModuleType::Text))) {
         const nsCString& scope = mWorkerRef->Private()
                                      ->GetServiceWorkerRegistrationDescriptor()
                                      .Scope();
@@ -413,8 +416,13 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
   ir->SetPrincipalInfo(std::move(principalInfo));
   ir->Headers()->FillResponseHeaders(channel);
 
+  RefPtr<CacheCreator> cacheCreator = mRequestHandle->GetCacheCreator();
+  if (NS_WARN_IF(!cacheCreator)) {
+    return NS_ERROR_FAILURE;
+  }
+
   RefPtr<mozilla::dom::Response> response = new mozilla::dom::Response(
-      mRequestHandle->GetCacheCreator()->Global(), std::move(ir), nullptr);
+      cacheCreator->Global(), std::move(ir), nullptr);
 
   mozilla::dom::RequestOrUTF8String request;
 
@@ -428,8 +436,7 @@ nsresult NetworkLoadHandler::PrepareForRequest(nsIRequest* aRequest) {
 
   ErrorResult error;
   RefPtr<Promise> cachePromise =
-      mRequestHandle->GetCacheCreator()->Cache_()->Put(jsapi.cx(), request,
-                                                       *response, error);
+      cacheCreator->Cache_()->Put(jsapi.cx(), request, *response, error);
   error.WouldReportJSException();
   if (NS_WARN_IF(error.Failed())) {
     return error.StealNSResult();

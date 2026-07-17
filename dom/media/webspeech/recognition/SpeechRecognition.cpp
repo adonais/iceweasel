@@ -69,7 +69,7 @@ LogModule* GetSpeechRecognitionLog() {
   return sLog;
 }
 #define SR_LOG(...) \
-  MOZ_LOG(GetSpeechRecognitionLog(), mozilla::LogLevel::Debug, (__VA_ARGS__))
+  MOZ_LOG_FMT(GetSpeechRecognitionLog(), mozilla::LogLevel::Debug, __VA_ARGS__)
 
 namespace {
 class SpeechRecognitionShutdownBlocker : public media::ShutdownBlocker {
@@ -190,7 +190,7 @@ bool SpeechRecognition::StateBetween(FSMState begin, FSMState end) {
 
 void SpeechRecognition::SetState(FSMState state) {
   mCurrentState = state;
-  SR_LOG("Transitioned to state %s", GetName(mCurrentState));
+  SR_LOG("Transitioned to state {}", GetName(mCurrentState));
 }
 
 JSObject* SpeechRecognition::WrapObject(JSContext* aCx,
@@ -211,7 +211,7 @@ already_AddRefed<SpeechRecognition> SpeechRecognition::Constructor(
 }
 
 void SpeechRecognition::ProcessEvent(SpeechEvent* aEvent) {
-  SR_LOG("Processing %s, current state is %s", GetName(aEvent),
+  SR_LOG("Processing {}, current state is {}", GetName(aEvent),
          GetName(mCurrentState));
 
   if (mAborted && aEvent->mType != EVENT_ABORT) {
@@ -266,7 +266,7 @@ void SpeechRecognition::Transition(SpeechEvent* aEvent) {
           DoNothing(aEvent);
           break;
         case EVENT_START:
-          SR_LOG("STATE_STARTING: Unhandled event %s", GetName(aEvent));
+          SR_LOG("STATE_STARTING: Unhandled event {}", GetName(aEvent));
           MOZ_CRASH();
         default:
           MOZ_CRASH("Invalid event");
@@ -292,7 +292,8 @@ void SpeechRecognition::Transition(SpeechEvent* aEvent) {
           AbortError(aEvent);
           break;
         case EVENT_START:
-          SR_LOG("STATE_ESTIMATING: Unhandled event %d", aEvent->mType);
+          SR_LOG("STATE_ESTIMATING: Unhandled event {}",
+                 static_cast<int>(aEvent->mType));
           MOZ_CRASH();
         default:
           MOZ_CRASH("Invalid event");
@@ -318,7 +319,7 @@ void SpeechRecognition::Transition(SpeechEvent* aEvent) {
           DoNothing(aEvent);
           break;
         case EVENT_START:
-          SR_LOG("STATE_STARTING: Unhandled event %s", GetName(aEvent));
+          SR_LOG("STATE_STARTING: Unhandled event {}", GetName(aEvent));
           MOZ_CRASH();
         default:
           MOZ_CRASH("Invalid event");
@@ -344,7 +345,7 @@ void SpeechRecognition::Transition(SpeechEvent* aEvent) {
           DoNothing(aEvent);
           break;
         case EVENT_START:
-          SR_LOG("STATE_RECOGNIZING: Unhandled aEvent %s", GetName(aEvent));
+          SR_LOG("STATE_RECOGNIZING: Unhandled aEvent {}", GetName(aEvent));
           MOZ_CRASH();
         default:
           MOZ_CRASH("Invalid event");
@@ -370,7 +371,7 @@ void SpeechRecognition::Transition(SpeechEvent* aEvent) {
           break;
         case EVENT_START:
         case EVENT_RECOGNITIONSERVICE_INTERMEDIATE_RESULT:
-          SR_LOG("STATE_WAITING_FOR_RESULT: Unhandled aEvent %s",
+          SR_LOG("STATE_WAITING_FOR_RESULT: Unhandled aEvent {}",
                  GetName(aEvent));
           MOZ_CRASH();
         default:
@@ -389,7 +390,7 @@ void SpeechRecognition::Transition(SpeechEvent* aEvent) {
           DoNothing(aEvent);
           break;
         case EVENT_START:
-          SR_LOG("STATE_ABORTING: Unhandled aEvent %s", GetName(aEvent));
+          SR_LOG("STATE_ABORTING: Unhandled aEvent {}", GetName(aEvent));
           MOZ_CRASH();
         default:
           MOZ_CRASH("Invalid event");

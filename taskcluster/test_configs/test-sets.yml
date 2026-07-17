@@ -110,6 +110,7 @@ browsertime:
     - browsertime-responsiveness
     - browsertime-regression-tests
     - browsertime-upload
+    - browsertime-speculation-rules
     - browsertime-speculative
     - browsertime-throttled
     - browsertime-pageload-benchmark
@@ -458,6 +459,7 @@ macosx1500-64-tests:
 
 macosx1500-aarch64-tests:
     - cppunittest
+    - firefox-ui-functional
     - jsreftest
     - marionette-integration
     - marionette-unittest
@@ -484,6 +486,13 @@ macosx1500-aarch64-tests:
     - test-verify-gpu
     - test-verify-wpt
     - web-platform-tests
+    - web-platform-tests-canvas
+    - web-platform-tests-crashtest
+    - web-platform-tests-eme
+    - web-platform-tests-print-reftest
+    - web-platform-tests-reftest
+    - web-platform-tests-wdspec
+    - web-platform-tests-webcodecs
     - xpcshell
 
 # Test set for ARM64 VMs (VirtualMac2,1). No GPU, no display, no perf hardware.
@@ -495,23 +504,20 @@ macosx1500-aarch64-tests:
 # Suites can be re-added as headless support improves.
 macosx1500-aarch64-vms-tests:
     - cppunittest
+    - crashtest
     - jittest
     - jsreftest
+    - marionette-integration
+    - marionette-unittest
+    - mochitest-chrome
+    - mochitest-plain
+    - mochitest-remote
     - telemetry-tests-client
     - xpcshell
 
 macosx1470-64-tests:
     - cppunittest
-    - crashtest
-    - firefox-ui-functional
     - gtest
-    - web-platform-tests-canvas
-    - web-platform-tests-crashtest
-    - web-platform-tests-eme
-    - web-platform-tests-print-reftest
-    - web-platform-tests-reftest
-    - web-platform-tests-wdspec
-    - web-platform-tests-webcodecs
 
 macosx1015-64-qr-tests:
     - cppunittest

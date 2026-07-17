@@ -25,13 +25,13 @@
       return static_cast<mozilla::LogModule*>(log); \
     }
 
-#  define MOZ_MTLOG(level, b)                                      \
-    do {                                                           \
-      if (MOZ_LOG_TEST(getLogModule(), level)) {                   \
-        std::stringstream str;                                     \
-        str << b;                                                  \
-        MOZ_LOG(getLogModule(), level, ("%s", str.str().c_str())); \
-      }                                                            \
+#  define MOZ_MTLOG(level, b)                                        \
+    do {                                                             \
+      if (MOZ_LOG_TEST(getLogModule(), level)) {                     \
+        std::stringstream str;                                       \
+        str << b;                                                    \
+        MOZ_LOG_FMT(getLogModule(), level, "{}", str.str().c_str()); \
+      }                                                              \
     } while (0)
 #else
 // When building mtransport outside of XUL, for example in stand-alone gtests,

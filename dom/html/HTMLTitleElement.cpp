@@ -15,7 +15,7 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(Title)
 namespace mozilla::dom {
 
 HTMLTitleElement::HTMLTitleElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {
   AddMutationObserver(this);
 }

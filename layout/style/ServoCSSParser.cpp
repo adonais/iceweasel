@@ -20,6 +20,11 @@ bool ServoCSSParser::IsValidCSSColor(const nsACString& aValue) {
 }
 
 /* static */
+bool ServoCSSParser::IsValidCSSImage(const nsACString& aValue) {
+  return Servo_IsValidCSSImage(&aValue);
+}
+
+/* static */
 bool ServoCSSParser::ComputeColor(const StylePerDocumentStyleData* aStyleData,
                                   nscolor aCurrentColor,
                                   const nsACString& aValue,
@@ -74,6 +79,15 @@ already_AddRefed<StyleLockedDeclarationBlock> ServoCSSParser::ParseProperty(
 bool ServoCSSParser::ParseEasing(const nsACString& aValue,
                                  StyleComputedTimingFunction& aResult) {
   return Servo_ParseEasing(&aValue, &aResult);
+}
+
+/* static */
+bool ServoCSSParser::ParseAndComputeViewTimelineInset(
+    const nsACString& aValue, const Element* aSubject,
+    const ComputedStyle* aStyle, const StylePerDocumentStyleData* aRawData,
+    StyleViewTimelineInset& aResult) {
+  return Servo_ParseAndComputeViewTimelineInset(&aValue, aSubject, aStyle,
+                                                aRawData, &aResult);
 }
 
 /* static */

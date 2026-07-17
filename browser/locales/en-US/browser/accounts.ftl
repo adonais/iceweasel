@@ -31,7 +31,7 @@ account-manage-devices-titlecase = Manage Devices…
 ## and the Sync account is unverified. Redirects to the Sync preferences page.
 
 account-send-tab-to-device-verify-status = Account Not Verified
-account-send-tab-to-device-verify = Verify Your Account…
+account-send-tab-to-device-verify2 = Verify Your Account
 
 ## These strings are used in a notification shown when a new device joins the Firefox account.
 

@@ -42,6 +42,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/StorageAccess.h"
+#include "mozilla/dom/AudioSession.h"
 #include "mozilla/dom/Clipboard.h"
 #include "mozilla/dom/ContentChild.h"
 #include "mozilla/dom/CredentialsContainer.h"
@@ -153,6 +154,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(Navigator)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mServiceWorkerContainer)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMediaCapabilities)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mMediaSession)
+  NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAudioSession)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mAddonManager)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mWebGpu)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mLocks)
@@ -240,6 +242,8 @@ void Navigator::Invalidate() {
     mMediaSession->Shutdown();
     mMediaSession = nullptr;
   }
+
+  mAudioSession = nullptr;
 
   mAddonManager = nullptr;
 
@@ -2282,6 +2286,13 @@ dom::MediaSession* Navigator::MediaSession() {
     mMediaSession = new dom::MediaSession(GetWindow());
   }
   return mMediaSession;
+}
+
+dom::AudioSession* Navigator::AudioSession() {
+  if (!mAudioSession) {
+    mAudioSession = new dom::AudioSession(GetWindow());
+  }
+  return mAudioSession;
 }
 
 bool Navigator::HasCreatedMediaSession() const {

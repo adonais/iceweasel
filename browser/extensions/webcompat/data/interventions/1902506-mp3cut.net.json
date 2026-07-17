@@ -1,7 +1,7 @@
 {
   "label": "mp3cut.net",
   "bugs": {
-    "1909448": {
+    "1902506": {
       "issue": "blocked-content",
       "matches": ["*://mp3cut.net/*"]
     }

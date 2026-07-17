@@ -97,14 +97,6 @@ const animationsSpec = generateActorSpec({
       },
       response: {},
     },
-    // @backward-compat { version 151 } setPlaybackRates can be removed once 151 is in release
-    setPlaybackRates: {
-      request: {
-        players: Arg(0, "array:animationplayer"),
-        rate: Arg(1, "number"),
-      },
-      response: {},
-    },
   },
 });
 

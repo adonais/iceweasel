@@ -116,6 +116,9 @@ BufferOffset Assembler::emitExtendedJumpTable() {
     return BufferOffset();
   }
 
+  // Prevent nop sequences in the jump table.
+  AutoForbidNops afn(this);
+
   armbuffer_.flushPool();
   armbuffer_.align(SizeOfJumpTableEntry);
 
@@ -200,20 +203,17 @@ void Assembler::executableCopy(uint8_t* buffer) {
 }
 
 BufferOffset Assembler::immPool(ARMRegister dest, uint8_t* value,
-                                vixl::LoadLiteralOp op, const LiteralDoc& doc,
-                                ARMBuffer::PoolEntry* pe) {
+                                vixl::LoadLiteralOp op, const LiteralDoc& doc) {
   uint32_t inst = op | Rt(dest);
   const size_t numInst = 1;
   const unsigned sizeOfPoolEntryInBytes = 4;
   const unsigned numPoolEntries = sizeof(value) / sizeOfPoolEntryInBytes;
   return allocLiteralLoadEntry(numInst, numPoolEntries, (uint8_t*)&inst, value,
-                               doc, pe);
+                               doc);
 }
 
-BufferOffset Assembler::immPool64(ARMRegister dest, uint64_t value,
-                                  ARMBuffer::PoolEntry* pe) {
-  return immPool(dest, (uint8_t*)&value, vixl::LDR_x_lit, LiteralDoc(value),
-                 pe);
+BufferOffset Assembler::immPool64(ARMRegister dest, uint64_t value) {
+  return immPool(dest, (uint8_t*)&value, vixl::LDR_x_lit, LiteralDoc(value));
 }
 
 BufferOffset Assembler::fImmPool(ARMFPRegister dest, uint8_t* value,

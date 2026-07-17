@@ -49,7 +49,7 @@ skip-if = [
 
 ["browser_InlineSpellChecker.js"]
 
-["browser_LayoutUtils.js"]
+["browser_toTopLevelWidgetRect.js"]
 
 ["browser_Troubleshoot.js"]
 skip-if = [

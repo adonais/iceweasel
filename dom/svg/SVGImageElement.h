@@ -14,7 +14,7 @@
 #include "nsImageLoadingContent.h"
 
 nsresult NS_NewSVGImageElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla {
 class SVGImageFrame;
@@ -29,14 +29,13 @@ class SVGImageElement final : public SVGImageElementBase,
   friend class mozilla::SVGImageFrame;
 
  protected:
-  explicit SVGImageElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit SVGImageElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   virtual ~SVGImageElement();
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;
   friend nsresult(::NS_NewSVGImageElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  public:
   // interfaces:

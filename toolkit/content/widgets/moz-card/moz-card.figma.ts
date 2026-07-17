@@ -10,10 +10,7 @@ figma.connect(
         Slot: "slot",
         Accordion: "accordion",
       }),
-      heading: figma.boolean("Show heading", {
-        true: figma.string("Heading"),
-        false: undefined,
-      }),
+      heading: figma.string("Heading"),
       slot: figma.instance("Slot"),
       expanded: figma.boolean("Expanded"),
       iconSrc: figma.boolean("Show icon", {

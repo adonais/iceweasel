@@ -45,7 +45,7 @@ import org.mozilla.fenix.compose.list.RadioButtonListItem
 import org.mozilla.fenix.compose.list.SwitchListItem
 import org.mozilla.fenix.compose.list.TextListItem
 import org.mozilla.fenix.compose.settings.SettingsSectionHeader
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.settingssearch.PreferenceFileInformation
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchItem
 import org.mozilla.fenix.settings.settingssearch.SettingsSearchProvider
@@ -468,7 +468,7 @@ object DataChoicesSearchProvider : SettingsSearchProvider {
                     key = DataChoicesSectionKey.CRASH_REPORTS,
                 ),
             )
-            if (context.settings().hasMadeMarketingTelemetrySelection) {
+            if (context.components.settings.hasMadeMarketingTelemetrySelection) {
                 add(
                     buildSearchItem(
                         context = context,

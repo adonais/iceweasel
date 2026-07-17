@@ -12,6 +12,8 @@ prefs = [
   "accessibility.tagged_pdf_output.enabled=true",
 ]
 
+["browser_a11yLifecycle.js"]
+
 ["browser_outline.js"]
 
 ["browser_structTree.js"]

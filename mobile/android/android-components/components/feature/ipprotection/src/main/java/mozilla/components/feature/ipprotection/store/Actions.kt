@@ -39,14 +39,20 @@ sealed class IPProtectionAction : Action {
     object Toggle : IPProtectionAction()
 
     /**
-     * Reports that the account is ready to be used.
-     */
-    data class AccountReady(val firstEnrollment: Boolean) : IPProtectionAction()
-
-    /**
      * Reports that the proxy-active status has been shown to the user.
      */
     data object ProxyActiveShown : IPProtectionAction()
+
+    /**
+     * Reports that the most recent activate or deactivate request failed.
+     */
+    object ToggleFailed : IPProtectionAction()
+
+    /**
+     * Checks if an account has already been entitled. If so, this will lead to a token exchange that gives us a new
+     * refresh token with increased scopes. If not, we do nothing.
+     */
+    object CheckAccount : IPProtectionAction()
 }
 
 /**
@@ -59,9 +65,23 @@ internal sealed class InternalAction : IPProtectionAction() {
     data class AccountManagerStateChanged(val status: AccountStatus) : InternalAction()
 
     /**
-     * Reports when an enrollment has already happened to the IP protection engine.
+     * Reports that the account is ready to be used.
      */
-    data class FirstEnrollmentChanged(val isFirstEnrollment: Boolean) : InternalAction()
+    object AccountReadyForEnrollment : InternalAction()
+
+    /**
+     * Reports that the enrollment of the user has finished. They are now either entitled to use
+     * IP protection feature or it errored out and they should try again.
+     *
+     * @property success Whether enrollment was successful or not.
+     */
+    data class FinishingEnrollment(val success: Boolean) : InternalAction()
+
+    /**
+     * Reports that the authentication flow has finished. It could have finished automatically via
+     * successful authentication/authorization, or it could have been interrupted (canceled).
+     */
+    object FinishingAuthFlow : InternalAction()
 
     /**
      * Reports a change in whether the user qualifies for IP Protection.
@@ -72,4 +92,9 @@ internal sealed class InternalAction : IPProtectionAction() {
      * Reports a change in new service state that happen from IP Protection.
      */
     data class UpdateServiceState(val serviceState: ServiceState) : InternalAction()
+
+    /**
+     * Puts the auth flow into an intermediary state while an incomplete authentication is occurring.
+     */
+    data class AwaitingAuth(val status: AccountStatus) : InternalAction()
 }

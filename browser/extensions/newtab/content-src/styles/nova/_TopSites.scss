@@ -60,22 +60,32 @@
     align-self: end;
     box-shadow: var(--card-box-shadow);
     border: var(--border-width) solid var(--button-border-color-ghost);
-    transition: width 100ms ease-out, height 100ms ease-out;
+
+    @media (prefers-reduced-motion: no-preference) {
+      transition: width 100ms ease-out, height 100ms ease-out;
+    }
   }
 
   &:is(:hover, :focus-within, .active) {
     .tile {
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-      width: var(--col-width);
-      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
-      height: var(--col-width);
+      // Only expand the tile on hover for users without a reduced-motion preference
+      @media (prefers-reduced-motion: no-preference) {
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        width: var(--col-width);
+        /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+        height: var(--col-width);
+      }
+
       border-color: var(--button-border-color-ghost-hover);
     }
 
     .icon-pin-small,
     .context-menu-button {
       opacity: 1;
-      transition: opacity 100ms ease-out 50ms;
+
+      @media (prefers-reduced-motion: no-preference) {
+        transition: opacity 100ms ease-out 50ms;
+      }
     }
   }
 
@@ -158,6 +168,20 @@
       /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
       width: calc(var(--col-width) + 8px);
     }
+  }
+}
+
+// Under reduced motion the tile never expands, so reposition the pin and
+// context menu relative to its smaller resting size.
+@media (prefers-reduced-motion: reduce) {
+  .nova-enabled .top-site-outer .context-menu-button {
+    inset-inline-end: calc(var(--space-xsmall) + var(--space-xxsmall) / 2);
+    inset-block-start: var(--space-small);
+  }
+
+  .nova-enabled .top-site-outer .icon-pin-small {
+    inset-block-start: calc(var(--space-medium) + var(--space-xxsmall));
+    inset-inline-start: var(--space-small);
   }
 }
 

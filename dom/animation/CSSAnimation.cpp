@@ -25,13 +25,17 @@ void CSSAnimation::SetEffect(AnimationEffect* aEffect) {
   AddOverriddenProperties(CSSAnimationProperties::Effect);
 }
 
-void CSSAnimation::SetStartTimeAsDouble(const Nullable<double>& aStartTime) {
+void CSSAnimation::SetStartTime(const Nullable<CSSNumberish>& aStartTime,
+                                ErrorResult& aRv) {
   // Note that we always compare with the paused state since for the purposes
   // of determining if play control is being overridden or not, we want to
   // treat the finished state as running.
   bool wasPaused = PlayState() == AnimationPlayState::Paused;
 
-  Animation::SetStartTimeAsDouble(aStartTime);
+  Animation::SetStartTime(aStartTime, aRv);
+  if (aRv.Failed()) {
+    return;
+  }
 
   bool isPaused = PlayState() == AnimationPlayState::Paused;
 
@@ -46,8 +50,8 @@ mozilla::dom::Promise* CSSAnimation::GetReady(ErrorResult& aRv) {
 }
 
 void CSSAnimation::Reverse(ErrorResult& aRv) {
-  // As with CSSAnimation::SetStartTimeAsDouble, we're really only interested in
-  // the paused state.
+  // As with CSSAnimation::SetStartTime, we're really only interested in the
+  // paused state.
   bool wasPaused = PlayState() == AnimationPlayState::Paused;
 
   Animation::Reverse(aRv);

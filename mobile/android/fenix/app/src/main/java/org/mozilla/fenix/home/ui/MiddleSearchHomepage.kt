@@ -55,6 +55,7 @@ private const val BOTTOM_PADDING = 47
  * @param interactor [HomepageInteractor] for interactions with the homepage UI.
  * @param onMiddleSearchBarVisibilityChanged Invoked when the middle search is shown/hidden.
  * @param onTopSitesItemBound Invoked during the composition of a top site item.
+ * @param onAddShortcutClicked Invoked when the user clicks on the "Add shortcut" tile.
  * @param navigationBarContent Optional composable rendered at the bottom of the homepage when the
  * toolbar is positioned at the top. When the toolbar is at the bottom, the navigation bar is
  * rendered by [HomeToolbarComposable] instead and this content is not shown.
@@ -66,6 +67,7 @@ internal fun MiddleSearchHomepage(
     interactor: HomepageInteractor,
     onMiddleSearchBarVisibilityChanged: (isVisible: Boolean) -> Unit,
     onTopSitesItemBound: () -> Unit,
+    onAddShortcutClicked: () -> Unit,
     navigationBarContent: (@Composable () -> Unit)? = null,
 ) {
     val scrollState = rememberScrollState()
@@ -116,6 +118,7 @@ internal fun MiddleSearchHomepage(
                                     topSiteColors = topSiteColors,
                                     interactor = interactor,
                                     onTopSitesItemBound = onTopSitesItemBound,
+                                    onAddShortcutClicked = onAddShortcutClicked,
                                 )
                             }
 
@@ -200,7 +203,8 @@ private fun MiddleSearchHomepagePreview() {
                 showPocketStoriesCarousel = true,
                 showCollections = true,
                 showPrivacyReport = true,
-                showLongfoxEntryPoint = true,
+                longfoxEnabled = true,
+                showLongfoxAnimation = true,
                 trackersBlockedCount = 754,
                 sportsWidgetState = SportsWidgetState(),
                 headerState = HeaderState.Normal(
@@ -225,6 +229,7 @@ private fun MiddleSearchHomepagePreview() {
             ),
             interactor = FakeHomepagePreview.homepageInteractor,
             onTopSitesItemBound = {},
+            onAddShortcutClicked = {},
             onMiddleSearchBarVisibilityChanged = {},
         )
     }

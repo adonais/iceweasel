@@ -439,11 +439,71 @@ sftk_SetContextByType(SFTKSession *session, SFTKContextType type,
 }
 
 /*
+ * Atomically install a freshly-initialized context onto a session, used
+ * by every C_...Init function. The bucket lock makes the "is the slot
+ * empty?" check and the assignment a single critical section, closing
+ * the race where two threads concurrently entering an Init each pass
+ * the unlocked check in sftk_InitGeneric, allocate a context, and then
+ * one overwrites the other's pointer (leaking the loser's context).
+ *
+ * On CKR_OPERATION_ACTIVE the caller retains ownership of `context` and
+ * must free it (typically via sftk_FreeContext).
+ */
+CK_RV
+sftk_InstallContext(SFTKSession *session, SFTKContextType type,
+                    SFTKSessionContext *context)
+{
+    SFTKSlot *slot = sftk_SlotFromSession(session);
+    PRLock *lock = SFTK_SESSION_LOCK(slot, session->handle);
+    CK_RV crv;
+
+    PR_Lock(lock);
+    if (sftk_ReturnContextByType(session, type) != NULL) {
+        crv = CKR_OPERATION_ACTIVE;
+    } else {
+        sftk_SetContextByType(session, type, context);
+        crv = CKR_OK;
+    }
+    PR_Unlock(lock);
+    return crv;
+}
+
+/* Pair to sftk_InstallContext. Atomically detach whatever context is
+ * stored on the session for `type` and free it. Holding the session
+ * bucket lock for the detach ensures that a concurrent
+ * sftk_InstallContext sees either the old context still in place
+ * (yielding CKR_OPERATION_ACTIVE) or the slot already NULL (allowing
+ * its install to succeed), never a transient stale pointer. */
+void
+sftk_UninstallContext(SFTKSession *session, SFTKContextType type)
+{
+    SFTKSlot *slot = sftk_SlotFromSession(session);
+    PRLock *lock = SFTK_SESSION_LOCK(slot, session->handle);
+    SFTKSessionContext *context;
+
+    PR_Lock(lock);
+    context = sftk_ReturnContextByType(session, type);
+    sftk_SetContextByType(session, type, NULL);
+    /* Read isFIPS while still under the lock so the write to
+     * session->lastOpWasFIPS reflects the context being torn down,
+     * not one a concurrent installer might race in afterwards. */
+    if (context) {
+        session->lastOpWasFIPS = context->isFIPS;
+    }
+    PR_Unlock(lock);
+    if (context) {
+        sftk_FreeContext(context);
+    }
+}
+
+/*
  * code to grab the context. Needed by every C_XXXUpdate, C_XXXFinal,
- * and C_XXX function. The function takes a session handle, the context type,
- * and wether or not the session needs to be multipart. It returns the context,
- * and optionally returns the session pointer (if sessionPtr != NULL) if session
- * pointer is returned, the caller is responsible for freeing it.
+ * and C_XXX function. The function takes a session handle, the context
+ * type, and whether or not the session needs to be multipart. It
+ * returns the context and the session pointer; the caller is
+ * responsible for freeing the session. If the caller doesn't need
+ * a context lookup (e.g. it already holds a session reference), it
+ * should call sftk_ReturnContextByType directly.
  */
 CK_RV
 sftk_GetContext(CK_SESSION_HANDLE handle, SFTKSessionContext **contextPtr,
@@ -452,6 +512,7 @@ sftk_GetContext(CK_SESSION_HANDLE handle, SFTKSessionContext **contextPtr,
     SFTKSession *session;
     SFTKSessionContext *context;
 
+    PORT_Assert(sessionPtr != NULL);
     session = sftk_SessionFromHandle(handle);
     if (session == NULL)
         return CKR_SESSION_HANDLE_INVALID;
@@ -462,24 +523,18 @@ sftk_GetContext(CK_SESSION_HANDLE handle, SFTKSessionContext **contextPtr,
         return CKR_OPERATION_NOT_INITIALIZED;
     }
     *contextPtr = context;
-    if (sessionPtr != NULL) {
-        *sessionPtr = session;
-    } else {
-        sftk_FreeSession(session);
-    }
+    *sessionPtr = session;
     return CKR_OK;
 }
 
-/** Terminate operation (in the PKCS#11 spec sense).
- *  Intuitive name for FreeContext/SetNullContext pair.
- */
+/* Terminate operation (in the PKCS#11 spec sense). Thin wrapper over
+ * sftk_UninstallContext: the install/uninstall pair takes the slot
+ * lock, frees whatever is currently installed for `ctype`, and reads
+ * context->isFIPS into session->lastOpWasFIPS under the lock. */
 void
-sftk_TerminateOp(SFTKSession *session, SFTKContextType ctype,
-                 SFTKSessionContext *context)
+sftk_TerminateOp(SFTKSession *session, SFTKContextType ctype)
 {
-    session->lastOpWasFIPS = context->isFIPS;
-    sftk_FreeContext(context);
-    sftk_SetContextByType(session, ctype, NULL);
+    sftk_UninstallContext(session, ctype);
 }
 
 /*
@@ -1533,9 +1588,12 @@ sftk_CryptInit(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
         sftk_FreeSession(session);
         return crv;
     }
-    sftk_SetContextByType(session, contextType, context);
+    crv = sftk_InstallContext(session, contextType, context);
+    if (crv != CKR_OK) {
+        sftk_FreeContext(context);
+    }
     sftk_FreeSession(session);
-    return CKR_OK;
+    return crv;
 }
 
 /* NSC_EncryptInit initializes an encryption operation. */
@@ -1554,6 +1612,7 @@ NSC_EncryptUpdate(CK_SESSION_HANDLE hSession,
                   CK_BYTE_PTR pPart, CK_ULONG ulPartLen, CK_BYTE_PTR pEncryptedPart,
                   CK_ULONG_PTR pulEncryptedPartLen)
 {
+    SFTKSession *session;
     SFTKSessionContext *context;
     unsigned int outlen, i;
     unsigned int padoutlen = 0;
@@ -1563,8 +1622,9 @@ NSC_EncryptUpdate(CK_SESSION_HANDLE hSession,
 
     CHECK_FORK();
 
-    /* make sure we're legal */
-    crv = sftk_GetContext(hSession, &context, SFTK_ENCRYPT, PR_TRUE, NULL);
+    /* Hold the session reference for the duration of the context deref;
+     * see comment on NSC_DigestUpdate. */
+    crv = sftk_GetContext(hSession, &context, SFTK_ENCRYPT, PR_TRUE, &session);
     if (crv != CKR_OK)
         return crv;
 
@@ -1574,10 +1634,10 @@ NSC_EncryptUpdate(CK_SESSION_HANDLE hSession,
             CK_ULONG blocksToSend = totalDataAvailable / context->blockSize;
 
             *pulEncryptedPartLen = blocksToSend * context->blockSize;
-            return CKR_OK;
+            goto finish;
         }
         *pulEncryptedPartLen = ulPartLen;
-        return CKR_OK;
+        goto finish;
     }
 
     /* do padding */
@@ -1595,14 +1655,15 @@ NSC_EncryptUpdate(CK_SESSION_HANDLE hSession,
             /* not enough data to encrypt yet? then return */
             if (context->padDataLength != context->blockSize) {
                 *pulEncryptedPartLen = 0;
-                return CKR_OK;
+                goto finish;
             }
             /* encrypt the current padded data */
             rv = (*context->update)(context->cipherInfo, pEncryptedPart,
                                     &padoutlen, maxout, context->padBuf,
                                     context->blockSize);
             if (rv != SECSuccess) {
-                return sftk_MapCryptError(PORT_GetError());
+                crv = sftk_MapCryptError(PORT_GetError());
+                goto finish;
             }
             pEncryptedPart += padoutlen;
             maxout -= padoutlen;
@@ -1618,7 +1679,7 @@ NSC_EncryptUpdate(CK_SESSION_HANDLE hSession,
         /* if we've exhausted our new buffer, we're done */
         if (ulPartLen == 0) {
             *pulEncryptedPartLen = padoutlen;
-            return CKR_OK;
+            goto finish;
         }
     }
 
@@ -1626,10 +1687,13 @@ NSC_EncryptUpdate(CK_SESSION_HANDLE hSession,
     rv = (*context->update)(context->cipherInfo, pEncryptedPart,
                             &outlen, maxout, pPart, ulPartLen);
     if (rv != SECSuccess) {
-        return sftk_MapCryptError(PORT_GetError());
+        crv = sftk_MapCryptError(PORT_GetError());
+        goto finish;
     }
     *pulEncryptedPartLen = (CK_ULONG)(outlen + padoutlen);
-    return CKR_OK;
+finish:
+    sftk_FreeSession(session);
+    return crv;
 }
 
 /* NSC_EncryptFinal finishes a multiple-part encryption operation. */
@@ -1677,7 +1741,7 @@ NSC_EncryptFinal(CK_SESSION_HANDLE hSession,
 
 finish:
     if (contextFinished)
-        sftk_TerminateOp(session, SFTK_ENCRYPT, context);
+        sftk_TerminateOp(session, SFTK_ENCRYPT);
     sftk_FreeSession(session);
     return (rv == SECSuccess) ? CKR_OK : sftk_MapCryptError(PORT_GetError());
 }
@@ -1760,7 +1824,7 @@ NSC_Encrypt(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pData,
     if (pText.data != pData)
         PORT_ZFree(pText.data, pText.len);
 fail:
-    sftk_TerminateOp(session, SFTK_ENCRYPT, context);
+    sftk_TerminateOp(session, SFTK_ENCRYPT);
 done:
     sftk_FreeSession(session);
     if (crv == CKR_OK) {
@@ -1789,6 +1853,7 @@ NSC_DecryptUpdate(CK_SESSION_HANDLE hSession,
                   CK_BYTE_PTR pEncryptedPart, CK_ULONG ulEncryptedPartLen,
                   CK_BYTE_PTR pPart, CK_ULONG_PTR pulPartLen)
 {
+    SFTKSession *session;
     SFTKSessionContext *context;
     unsigned int padoutlen = 0;
     unsigned int outlen;
@@ -1798,8 +1863,9 @@ NSC_DecryptUpdate(CK_SESSION_HANDLE hSession,
 
     CHECK_FORK();
 
-    /* make sure we're legal */
-    crv = sftk_GetContext(hSession, &context, SFTK_DECRYPT, PR_TRUE, NULL);
+    /* Hold the session reference for the duration of the context deref;
+     * see comment on NSC_DigestUpdate. */
+    crv = sftk_GetContext(hSession, &context, SFTK_DECRYPT, PR_TRUE, &session);
     if (crv != CKR_OK)
         return crv;
 
@@ -1816,7 +1882,8 @@ NSC_DecryptUpdate(CK_SESSION_HANDLE hSession,
          */
         if ((ulEncryptedPartLen == 0) ||
             (ulEncryptedPartLen % context->blockSize) != 0) {
-            return CKR_ENCRYPTED_DATA_LEN_RANGE;
+            crv = CKR_ENCRYPTED_DATA_LEN_RANGE;
+            goto finish;
         }
     }
 
@@ -1824,14 +1891,14 @@ NSC_DecryptUpdate(CK_SESSION_HANDLE hSession,
         if (context->doPad) {
             *pulPartLen =
                 ulEncryptedPartLen + context->padDataLength - context->blockSize;
-            return CKR_OK;
+            goto finish;
         }
         /* for stream ciphers there is are no constraints on ulEncryptedPartLen.
          * for block ciphers, it must be a multiple of blockSize. The error is
          * detected when this function is called again do decrypt the output.
          */
         *pulPartLen = ulEncryptedPartLen;
-        return CKR_OK;
+        goto finish;
     }
 
     if (context->doPad) {
@@ -1839,8 +1906,10 @@ NSC_DecryptUpdate(CK_SESSION_HANDLE hSession,
         if (context->padDataLength != 0) {
             rv = (*context->update)(context->cipherInfo, pPart, &padoutlen,
                                     maxout, context->padBuf, context->blockSize);
-            if (rv != SECSuccess)
-                return sftk_MapDecryptError(PORT_GetError());
+            if (rv != SECSuccess) {
+                crv = sftk_MapDecryptError(PORT_GetError());
+                goto finish;
+            }
             pPart += padoutlen;
             maxout -= padoutlen;
         }
@@ -1855,10 +1924,13 @@ NSC_DecryptUpdate(CK_SESSION_HANDLE hSession,
     rv = (*context->update)(context->cipherInfo, pPart, &outlen,
                             maxout, pEncryptedPart, ulEncryptedPartLen);
     if (rv != SECSuccess) {
-        return sftk_MapDecryptError(PORT_GetError());
+        crv = sftk_MapDecryptError(PORT_GetError());
+        goto finish;
     }
     *pulPartLen = (CK_ULONG)(outlen + padoutlen);
-    return CKR_OK;
+finish:
+    sftk_FreeSession(session);
+    return crv;
 }
 
 /* NSC_DecryptFinal finishes a multiple-part decryption operation. */
@@ -1908,7 +1980,7 @@ NSC_DecryptFinal(CK_SESSION_HANDLE hSession,
         }
     }
 
-    sftk_TerminateOp(session, SFTK_DECRYPT, context);
+    sftk_TerminateOp(session, SFTK_DECRYPT);
 finish:
     sftk_FreeSession(session);
     return crv;
@@ -1977,7 +2049,7 @@ NSC_Decrypt(CK_SESSION_HANDLE hSession,
             *pulDataLen = (CK_ULONG)outlen;
         }
     }
-    sftk_TerminateOp(session, SFTK_DECRYPT, context);
+    sftk_TerminateOp(session, SFTK_DECRYPT);
 done:
     sftk_FreeSession(session);
     return crv;
@@ -2048,9 +2120,12 @@ NSC_DigestInit(CK_SESSION_HANDLE hSession,
         sftk_FreeSession(session);
         return crv;
     }
-    sftk_SetContextByType(session, SFTK_HASH, context);
+    crv = sftk_InstallContext(session, SFTK_HASH, context);
+    if (crv != CKR_OK) {
+        sftk_FreeContext(context);
+    }
     sftk_FreeSession(session);
-    return CKR_OK;
+    return crv;
 }
 
 /* NSC_Digest digests data in a single part. */
@@ -2092,7 +2167,7 @@ NSC_Digest(CK_SESSION_HANDLE hSession,
     (*context->end)(context->cipherInfo, pDigest, &digestLen, maxout);
     *pulDigestLen = digestLen;
 
-    sftk_TerminateOp(session, SFTK_HASH, context);
+    sftk_TerminateOp(session, SFTK_HASH);
 finish:
     sftk_FreeSession(session);
     return CKR_OK;
@@ -2103,13 +2178,17 @@ CK_RV
 NSC_DigestUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart,
                  CK_ULONG ulPartLen)
 {
+    SFTKSession *session;
     SFTKSessionContext *context;
     CK_RV crv;
 
     CHECK_FORK();
 
-    /* make sure we're legal */
-    crv = sftk_GetContext(hSession, &context, SFTK_HASH, PR_TRUE, NULL);
+    /* Hold the session reference for the duration of the context deref:
+     * without it, a concurrent NSC_CloseSession could drive refCount to 0
+     * inside sftk_GetContext, destroying the session (and freeing the
+     * context) before we touch context->hashUpdate. */
+    crv = sftk_GetContext(hSession, &context, SFTK_HASH, PR_TRUE, &session);
     if (crv != CKR_OK)
         return crv;
 
@@ -2124,6 +2203,7 @@ NSC_DigestUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart,
 #endif
     (*context->hashUpdate)(context->cipherInfo, pPart, ulPartLen);
 
+    sftk_FreeSession(session);
     return CKR_OK;
 }
 
@@ -2148,7 +2228,7 @@ NSC_DigestFinal(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pDigest,
     if (pDigest != NULL) {
         (*context->end)(context->cipherInfo, pDigest, &digestLen, maxout);
         *pulDigestLen = digestLen;
-        sftk_TerminateOp(session, SFTK_HASH, context);
+        sftk_TerminateOp(session, SFTK_HASH);
     } else {
         *pulDigestLen = context->maxLen;
     }
@@ -2429,6 +2509,7 @@ sftk_InitCBCMac(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
     unsigned char ivBlock[SFTK_MAX_BLOCK_SIZE];
     unsigned char k2[SFTK_MAX_BLOCK_SIZE];
     unsigned char k3[SFTK_MAX_BLOCK_SIZE];
+    SFTKSession *session;
     SFTKSessionContext *context;
     CK_RV crv;
     unsigned int blockSize;
@@ -2591,7 +2672,9 @@ sftk_InitCBCMac(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
                          keyUsage, contextType, PR_TRUE);
     if (crv != CKR_OK)
         goto fail;
-    crv = sftk_GetContext(hSession, &context, contextType, PR_TRUE, NULL);
+    /* Hold the session reference for the duration of the context writes;
+     * see comment on NSC_DigestUpdate. */
+    crv = sftk_GetContext(hSession, &context, contextType, PR_TRUE, &session);
 
     /* this shouldn't happen! */
     PORT_Assert(crv == CKR_OK);
@@ -2609,6 +2692,7 @@ sftk_InitCBCMac(CK_SESSION_HANDLE hSession, CK_MECHANISM_PTR pMechanism,
         /* get rid of the temp key now that the context has been created */
         NSC_DestroyObject(hSession, hKey);
     }
+    sftk_FreeSession(session);
     return CKR_OK;
 fail:
     if (isXCBC) {
@@ -3419,9 +3503,14 @@ NSC_SignInit(CK_SESSION_HANDLE hSession,
         sftk_FreeSession(session);
         return crv;
     }
-    sftk_SetContextByType(session, SFTK_SIGN, context);
+    /* At this point info/pinfo (if allocated) are linked into
+     * context->cipherInfo and will be freed via sftk_FreeContext. */
+    crv = sftk_InstallContext(session, SFTK_SIGN, context);
+    if (crv != CKR_OK) {
+        sftk_FreeContext(context);
+    }
     sftk_FreeSession(session);
-    return CKR_OK;
+    return crv;
 }
 
 /** MAC one block of data by block cipher
@@ -3525,7 +3614,7 @@ sftk_MACUpdate(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pPart,
     goto cleanup;
 
 terminate:
-    sftk_TerminateOp(session, type, context);
+    sftk_TerminateOp(session, type);
 cleanup:
     sftk_FreeSession(session);
     return crv;
@@ -3585,7 +3674,7 @@ NSC_SessionCancel(CK_SESSION_HANDLE hSession, CK_FLAGS flags)
                 gcrv = CKR_OPERATION_CANCEL_FAILED;
                 continue;
             }
-            sftk_TerminateOp(session, sftk_session_flags[i].type, context);
+            sftk_TerminateOp(session, sftk_session_flags[i].type);
         }
     }
     if (flags & CKF_FIND_OBJECTS) {
@@ -3649,7 +3738,7 @@ NSC_SignFinal(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pSignature,
             PORT_Memcpy(pSignature, context->macBuf, outlen);
     }
 
-    sftk_TerminateOp(session, SFTK_SIGN, context);
+    sftk_TerminateOp(session, SFTK_SIGN);
 finish:
     *pulSignatureLen = outlen;
     sftk_FreeSession(session);
@@ -3699,7 +3788,7 @@ NSC_Sign(CK_SESSION_HANDLE hSession,
         *pulSignatureLen = (CK_ULONG)outlen;
         /*  "too small" here is certainly continuable */
         if (crv != CKR_BUFFER_TOO_SMALL)
-            sftk_TerminateOp(session, SFTK_SIGN, context);
+            sftk_TerminateOp(session, SFTK_SIGN);
     } /* single-part */
 
 finish:
@@ -4142,9 +4231,14 @@ NSC_VerifyInit(CK_SESSION_HANDLE hSession,
         sftk_FreeSession(session);
         return crv;
     }
-    sftk_SetContextByType(session, SFTK_VERIFY, context);
+    /* At this point info/pinfo (if allocated) are linked into
+     * context->cipherInfo and will be freed via sftk_FreeContext. */
+    crv = sftk_InstallContext(session, SFTK_VERIFY, context);
+    if (crv != CKR_OK) {
+        sftk_FreeContext(context);
+    }
     sftk_FreeSession(session);
-    return CKR_OK;
+    return crv;
 }
 
 /* NSC_Verify verifies a signature in a single-part operation,
@@ -4176,7 +4270,7 @@ NSC_Verify(CK_SESSION_HANDLE hSession, CK_BYTE_PTR pData,
                                              ulSignatureLen, pData, ulDataLen))
             crv = sftk_MapCryptError(PORT_GetError());
 
-        sftk_TerminateOp(session, SFTK_VERIFY, context);
+        sftk_TerminateOp(session, SFTK_VERIFY);
     }
     sftk_FreeSession(session);
     return crv;
@@ -4233,7 +4327,7 @@ NSC_VerifyFinal(CK_SESSION_HANDLE hSession,
             crv = CKR_SIGNATURE_INVALID;
     }
 
-    sftk_TerminateOp(session, SFTK_VERIFY, context);
+    sftk_TerminateOp(session, SFTK_VERIFY);
     sftk_FreeSession(session);
     return crv;
 }
@@ -4271,7 +4365,7 @@ NSC_VerifySignatureInit(CK_SESSION_HANDLE hSession,
     tmpItem.len = ulSignatureLen;
     context->signature = SECITEM_DupItem(&tmpItem);
     if (!context->signature) {
-        sftk_TerminateOp(session, SFTK_VERIFY, context);
+        sftk_TerminateOp(session, SFTK_VERIFY);
         sftk_FreeSession(session);
         return CKR_HOST_MEMORY;
     }
@@ -4447,9 +4541,12 @@ NSC_VerifyRecoverInit(CK_SESSION_HANDLE hSession,
         sftk_FreeSession(session);
         return crv;
     }
-    sftk_SetContextByType(session, SFTK_VERIFY_RECOVER, context);
+    crv = sftk_InstallContext(session, SFTK_VERIFY_RECOVER, context);
+    if (crv != CKR_OK) {
+        sftk_FreeContext(context);
+    }
     sftk_FreeSession(session);
-    return CKR_OK;
+    return crv;
 }
 
 /* NSC_VerifyRecover verifies a signature in a single-part operation,
@@ -4486,7 +4583,7 @@ NSC_VerifyRecover(CK_SESSION_HANDLE hSession,
                             pSignature, ulSignatureLen);
     *pulDataLen = (CK_ULONG)outlen;
 
-    sftk_TerminateOp(session, SFTK_VERIFY_RECOVER, context);
+    sftk_TerminateOp(session, SFTK_VERIFY_RECOVER);
 finish:
     sftk_FreeSession(session);
     return (rv == SECSuccess) ? CKR_OK : sftk_MapVerifyError(PORT_GetError());
@@ -7156,10 +7253,14 @@ NSC_WrapKey(CK_SESSION_HANDLE hSession,
             pText.data = (unsigned char *)attribute->attrib.pValue;
             pText.len = attribute->attrib.ulValueLen;
 
-            /* Find out if this is a block cipher. */
-            crv = sftk_GetContext(hSession, &context, SFTK_ENCRYPT, PR_FALSE, NULL);
-            if (crv != CKR_OK || !context) {
+            /* Find out if this is a block cipher. The context was just
+             * installed by sftk_CryptInit above, so we already hold a
+             * session reference and the context's type is SFTK_ENCRYPT
+             * by construction. */
+            context = sftk_ReturnContextByType(session, SFTK_ENCRYPT);
+            if (!context) {
                 sftk_FreeAttribute(attribute);
+                crv = CKR_OPERATION_NOT_INITIALIZED;
                 break;
             }
             if (context->blockSize > 1) {
@@ -7187,13 +7288,7 @@ NSC_WrapKey(CK_SESSION_HANDLE hSession,
             /* always force a finalize, both on errors and when
              * we are just getting the size */
             if (crv != CKR_OK || pWrappedKey == NULL) {
-                CK_RV lcrv;
-                lcrv = sftk_GetContext(hSession, &context,
-                                       SFTK_ENCRYPT, PR_FALSE, NULL);
-                sftk_SetContextByType(session, SFTK_ENCRYPT, NULL);
-                if (lcrv == CKR_OK && context) {
-                    sftk_FreeContext(context);
-                }
+                sftk_UninstallContext(session, SFTK_ENCRYPT);
             }
 
             if (pText.data != (unsigned char *)attribute->attrib.pValue)
@@ -7204,7 +7299,6 @@ NSC_WrapKey(CK_SESSION_HANDLE hSession,
 
         case CKO_PRIVATE_KEY: {
             SECItem *bpki = sftk_PackagePrivateKey(key, &crv);
-            SFTKSessionContext *context = NULL;
 
             if (!bpki) {
                 break;
@@ -7222,13 +7316,7 @@ NSC_WrapKey(CK_SESSION_HANDLE hSession,
                               pWrappedKey, pulWrappedKeyLen);
             /* always force a finalize */
             if (crv != CKR_OK || pWrappedKey == NULL) {
-                CK_RV lcrv;
-                lcrv = sftk_GetContext(hSession, &context,
-                                       SFTK_ENCRYPT, PR_FALSE, NULL);
-                sftk_SetContextByType(session, SFTK_ENCRYPT, NULL);
-                if (lcrv == CKR_OK && context) {
-                    sftk_FreeContext(context);
-                }
+                sftk_UninstallContext(session, SFTK_ENCRYPT);
             }
             SECITEM_ZfreeItem(bpki, PR_TRUE);
             break;
@@ -8614,10 +8702,10 @@ NSC_DeriveKey(CK_SESSION_HANDLE hSession,
     }
 
     sourceKey = sftk_ObjectFromHandle(hBaseKey, session);
-    sftk_FreeSession(session);
     /* is this eventually succeeds, lastOpWasFIPS will be set the resulting key's
      * FIPS state below. */
     session->lastOpWasFIPS = PR_FALSE;
+    sftk_FreeSession(session);
     if (sourceKey == NULL) {
         sftk_FreeObject(key);
         return CKR_KEY_HANDLE_INVALID;
@@ -10207,11 +10295,7 @@ NSC_SetOperationState(CK_SESSION_HANDLE hSession,
         session = sftk_SessionFromHandle(hSession);
         if (session == NULL)
             return CKR_SESSION_HANDLE_INVALID;
-        context = sftk_ReturnContextByType(session, type);
-        sftk_SetContextByType(session, type, NULL);
-        if (context) {
-            sftk_FreeContext(context);
-        }
+        sftk_UninstallContext(session, type);
         pOperationState += sizeof(SFTKContextType);
         sftk_Decrement(ulOperationStateLen, sizeof(SFTKContextType));
 
@@ -10227,10 +10311,14 @@ NSC_SetOperationState(CK_SESSION_HANDLE hSession,
                 crv = NSC_DigestInit(hSession, &mech);
                 if (crv != CKR_OK)
                     break;
-                crv = sftk_GetContext(hSession, &context, SFTK_HASH, PR_TRUE,
-                                      NULL);
-                if (crv != CKR_OK)
+                /* NSC_DigestInit just installed a SFTK_HASH context on
+                 * this session; the outer session reference keeps it
+                 * alive across the load below. */
+                context = sftk_ReturnContextByType(session, SFTK_HASH);
+                if (context == NULL || context->type != SFTK_HASH) {
+                    crv = CKR_OPERATION_NOT_INITIALIZED;
                     break;
+                }
                 if (context->cipherInfoLen == 0) {
                     crv = CKR_SAVED_STATE_INVALID;
                     break;

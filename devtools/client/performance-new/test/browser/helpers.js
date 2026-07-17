@@ -233,7 +233,7 @@ async function _toggleOpenProfilerPopup(window) {
   const popupShown = waitForProfilerPopupEvent(window, "popupshown");
 
   info("> Trigger a click on the profiler button dropmarker.");
-  await EventUtils.synthesizeMouseAtCenter(profilerDropmarker, {}, window);
+  EventUtils.synthesizeMouseAtCenter(profilerDropmarker, {}, window);
 
   if (profilerDropmarker.getAttribute("open") !== "true") {
     throw new Error(

@@ -16,9 +16,9 @@
 
 extern mozilla::LazyLogModule gTextTrackLog;
 
-#define LOG(msg, ...)                     \
-  MOZ_LOG(gTextTrackLog, LogLevel::Debug, \
-          ("TextTrackCue=%p, " msg, this, ##__VA_ARGS__))
+#define LOG(msg, ...)                                                  \
+  MOZ_LOG_FMT(gTextTrackLog, LogLevel::Debug, "TextTrackCue={}, " msg, \
+              fmt::ptr(this), ##__VA_ARGS__)
 
 namespace mozilla::dom {
 
@@ -246,7 +246,7 @@ void TextTrackCue::SetActive(bool aActive) {
     return;
   }
 
-  LOG("TextTrackCue, SetActive=%d", aActive);
+  LOG("TextTrackCue, SetActive={}", aActive);
   mActive = aActive;
   mDisplayState = mActive ? mDisplayState : nullptr;
   if (mTrack) {

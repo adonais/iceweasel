@@ -129,6 +129,8 @@ export default class BandwidthUsageCustomElement extends MozLitElement {
             max=${this.maxGB}
             value=${parseFloat(this.bandwidthUsedGB.toFixed(1))}
             percent=${this.bandwidthPercent}
+            aria-labelledby="bandwidth-header"
+            aria-describedby="progress-description"
           ></progress>
           <div id="min-progress"></div>
         </div>

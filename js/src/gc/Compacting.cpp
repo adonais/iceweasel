@@ -453,12 +453,13 @@ MovingTracer::MovingTracer(JSRuntime* rt)
                         JS::WeakMapTraceAction::TraceKeysAndValues) {}
 
 template <typename T>
-inline void MovingTracer::onEdge(T** thingp, const char* name) {
+inline bool MovingTracer::onEdge(T** thingp, const char* name) {
   T* thing = *thingp;
   if (thing && IsForwarded(thing)) {
     MOZ_ASSERT(thing->runtimeFromAnyThread() == runtime());
     *thingp = Forwarded(thing);
   }
+  return true;
 }
 
 void GCRuntime::sweepZoneAfterCompacting(MovingTracer* trc, Zone* zone) {
@@ -783,7 +784,6 @@ void GCRuntime::updateZonePointersToRelocatedCells(Zone* zone) {
   MovingTracer trc(rt);
 
   zone->fixupAfterMovingGC();
-  zone->fixupScriptMapsAfterMovingGC(&trc);
 
   // Fixup compartment global pointers as these get accessed during marking.
   for (CompartmentsInZoneIter comp(zone); !comp.done(); comp.next()) {
@@ -821,8 +821,6 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
 
   Zone::fixupAllCrossCompartmentWrappersAfterMovingGC(&trc);
 
-  rt->geckoProfiler().fixupStringsMapAfterMovingGC();
-
   // Mark roots to update them.
 
   traceRuntimeForMajorGC(&trc, session);
@@ -844,10 +842,6 @@ void GCRuntime::updateRuntimePointersToRelocatedCells(AutoGCSession& session) {
   jit::JitRuntime::TraceWeakJitcodeGlobalTable(rt, &trc);
   for (JS::detail::WeakCacheBase* cache : weakCaches()) {
     cache->traceWeak(&trc, JS::detail::WeakCacheBase::DontLock);
-  }
-
-  if (rt->hasJitRuntime() && rt->jitRuntime()->hasInterpreterEntryMap()) {
-    rt->jitRuntime()->getInterpreterEntryMap()->updateScriptsAfterMovingGC();
   }
 
   // Type inference may put more blocks here to free.

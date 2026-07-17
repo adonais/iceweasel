@@ -8,8 +8,11 @@
 #include "mozilla/CheckedInt.h"
 #include "mozilla/TextUtils.h"
 
+#include <algorithm>
+
 #include "jsapi.h"
 
+#include "builtin/SelfHostingDefines.h"
 #include "frontend/FrontendContext.h"  // AutoReportFrontendContext
 #include "frontend/TokenStream.h"
 #include "irregexp/RegExpAPI.h"
@@ -28,6 +31,7 @@
 #include "vm/EnvironmentObject-inl.h"
 #include "vm/GeckoProfiler-inl.h"
 #include "vm/JSObject-inl.h"
+#include "vm/NativeObject-inl.h"
 #include "vm/ObjectOperations-inl.h"
 #include "vm/PlainObject-inl.h"
 
@@ -2463,8 +2467,8 @@ bool js::RegExpGetSubstitution(JSContext* cx, Handle<ArrayObject*> matchResult,
 
   // Step 10 (reordered).
   uint32_t matchResultLength = matchResult->length();
-  MOZ_ASSERT(matchResultLength > 0);
-  MOZ_ASSERT(matchResultLength == matchResult->getDenseInitializedLength());
+  MOZ_RELEASE_ASSERT(matchResultLength > 0);
+  MOZ_RELEASE_ASSERT(IsPackedArray(matchResult));
 
   const Value& matchedValue = matchResult->getDenseElement(0);
   Rooted<JSLinearString*> matched(cx,
@@ -2481,7 +2485,9 @@ bool js::RegExpGetSubstitution(JSContext* cx, Handle<ArrayObject*> matchResult,
   // Step 6.
   MOZ_ASSERT(position <= string->length());
 
-  uint32_t nCaptures = matchResultLength - 1;
+  // String substitutions can only reference $1 through $99.
+  uint32_t nCaptures = std::min<uint32_t>(matchResultLength - 1,
+                                          REGEXP_MAX_SUBSTITUTION_CAPTURES);
   Rooted<CapturesVector> captures(cx, CapturesVector(cx));
   if (!captures.reserve(nCaptures)) {
     return false;

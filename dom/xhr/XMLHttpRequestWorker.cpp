@@ -456,7 +456,7 @@ class EventRunnable final : public MainThreadProxyRunnable {
         mReadyState(0),
         mUploadEvent(aUploadEvent),
         mProgressEvent(false),
-        mLengthComputable(0),
+        mLengthComputable(false),
         mStatusResult(NS_OK),
         mErrorDetail(NS_OK),
         mScopeObj(RootingCx(), aScopeObj) {}
@@ -765,6 +765,8 @@ bool Proxy::Init(WorkerPrivate* aWorkerPrivate) {
 
   mXHR->SetParameters(mMozAnon, mMozSystem);
   mXHR->SetClientInfoAndController(mClientInfo, mController);
+  mXHR->SetAssociatedBrowsingContextID(
+      aWorkerPrivate->AssociatedBrowsingContextID());
 
   ErrorResult rv;
   mXHRUpload = mXHR->GetUpload(rv);

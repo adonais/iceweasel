@@ -134,7 +134,7 @@ class nsWindow final : public nsIWidget {
   static already_AddRefed<nsWindow> From(nsPIDOMWindowOuter* aDOMWindow);
   static already_AddRefed<nsWindow> From(nsIWidget* aWidget);
 
-  void SetIOSView(already_AddRefed<mozilla::widget::IOSView>&& aView) {
+  void SetIOSView(already_AddRefed<mozilla::widget::IOSView> aView) {
     mIOSView = aView;
   }
   mozilla::widget::IOSView* GetIOSView() const { return mIOSView; }

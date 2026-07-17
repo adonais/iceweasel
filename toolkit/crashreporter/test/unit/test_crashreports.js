@@ -80,6 +80,25 @@ function clear_crash_dirs() {
   }
 }
 
+/**
+ * Removes every file directly under the crash reports root (`reportsDir`)
+ * without descending into subdirectories. Used to clean InstallTime markers
+ * to ensure stable conditions.
+ */
+function clear_reports_dir() {
+  const dir = CrashReports.reportsDir;
+  if (!dir.exists() || !dir.isDirectory()) {
+    return;
+  }
+  let entries = dir.directoryEntries;
+  while (entries.hasMoreElements()) {
+    let entry = entries.nextFile;
+    if (entry.isFile()) {
+      entry.remove(false);
+    }
+  }
+}
+
 add_setup(async function () {
   do_get_profile();
   Services.prefs.setCharPref(
@@ -87,6 +106,8 @@ add_setup(async function () {
     "https://example.com/report"
   );
   registerCleanupFunction(() => {
+    clear_reports_dir();
+    clear_crash_dirs();
     Services.prefs.clearUserPref("breakpad.reportURL");
   });
 
@@ -217,4 +238,111 @@ add_task(async function test_getReports_nohttp() {
       "https://example.com/report"
     );
   }
+});
+
+// `pruneInstallTimeFiles` only deletes `InstallTime*` files older than the
+// supplied threshold and ignores everything else in the directory.
+add_task(async function test_pruneInstallTimeFiles() {
+  clear_crash_dirs();
+  clear_reports_dir();
+  const now = Date.now();
+  const old = now - 365 * 24 * 60 * 60 * 1000; // 1 year ago
+  const recent = now - 10 * 60 * 1000; // 10 minutes ago
+
+  const oldInstall = _create_file(
+    CrashReports.reportsDir,
+    "InstallTime20200101000000",
+    old
+  );
+  const recentInstall = _create_file(
+    CrashReports.reportsDir,
+    "InstallTime20240101000000",
+    recent
+  );
+  const unrelated = _create_file(CrashReports.reportsDir, "foo.txt", old);
+
+  await CrashReports.pruneInstallTimeFiles(30 * 24 * 60 * 60 * 1000); // 30 days
+
+  Assert.ok(!oldInstall.exists(), "Old InstallTime file was removed");
+  Assert.ok(recentInstall.exists(), "Recent InstallTime file was preserved");
+  Assert.ok(unrelated.exists(), "Non-InstallTime file was preserved");
+});
+
+// `pruneInstallTimeFiles` is a no-op when the crash reports directory does
+// not exist (fresh profile case).
+add_task(async function test_pruneInstallTimeFiles_missingDir() {
+  const savedReportsDir = CrashReports.reportsDir;
+  const missingDir = savedReportsDir.clone();
+  missingDir.append("nonexistent-subdir");
+
+  CrashReports.reportsDir = missingDir;
+  try {
+    await CrashReports.pruneInstallTimeFiles(30 * 24 * 60 * 60 * 1000);
+  } finally {
+    CrashReports.reportsDir = savedReportsDir;
+  }
+});
+
+// `deletePendingReport` removes the `.dmp`, `.extra`, `.dmp.ignore`, and
+// `.memory.json.gz` files belonging to a single crash, leaving siblings
+// belonging to other crashes alone.
+add_task(async function test_deletePendingReport() {
+  clear_crash_dirs();
+  const targetId = "00000001-1111-2222-3333-444444444444";
+  const otherId = "00000002-1111-2222-3333-444444444444";
+
+  const [targetDmp, targetExtra, targetIgnore] = _create_pending_base(
+    targetId,
+    Date.now(),
+    /*ignored*/ true
+  );
+  const targetMemory = _create_file(
+    CrashReports.pendingDir,
+    targetId + ".memory.json.gz",
+    Date.now()
+  );
+  const [otherDmp, otherExtra] = create_pending_files(otherId);
+
+  await CrashReports.deletePendingReport(targetId);
+
+  Assert.ok(!targetDmp.exists(), ".dmp was removed");
+  Assert.ok(!targetExtra.exists(), ".extra was removed");
+  Assert.ok(!targetIgnore.exists(), ".dmp.ignore was removed");
+  Assert.ok(!targetMemory.exists(), ".memory.json.gz was removed");
+  Assert.ok(otherDmp.exists(), "untargeted .dmp is preserved");
+  Assert.ok(otherExtra.exists(), "untargeted .extra is preserved");
+});
+
+// `deletePendingReport` tolerates the optional companion files being absent.
+add_task(async function test_deletePendingReport_partial() {
+  clear_crash_dirs();
+  const id = "00000001-1111-2222-3333-444444444444";
+  const [dmp, extra] = create_pending_files(id);
+
+  await CrashReports.deletePendingReport(id);
+
+  Assert.ok(!dmp.exists());
+  Assert.ok(!extra.exists());
+});
+
+// `deleteSubmittedReport` removes only the targeted `bp-<id>.txt`.
+add_task(async function test_deleteSubmittedReport() {
+  clear_crash_dirs();
+  const a = create_submitted_file("00000001-1111-2222-3333-444444444444");
+  const b = create_submitted_file("00000002-1111-2222-3333-444444444444");
+
+  await CrashReports.deleteSubmittedReport(
+    "bp-00000001-1111-2222-3333-444444444444"
+  );
+
+  Assert.ok(!a.exists(), "targeted bp-*.txt was removed");
+  Assert.ok(b.exists(), "untargeted bp-*.txt was preserved");
+});
+
+// `deleteSubmittedReport` tolerates the file already being absent.
+add_task(async function test_deleteSubmittedReport_missing() {
+  clear_crash_dirs();
+  await CrashReports.deleteSubmittedReport(
+    "bp-ffffffff-ffff-ffff-ffff-ffffffffffff"
+  );
 });

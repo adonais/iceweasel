@@ -189,7 +189,7 @@ bool TRR::MaybeBlockRequest() {
       return true;
     }
 
-    if (TRRService::Get()->IsExcludedFromTRR(mHost)) {
+    if (TRRService::Get()->IsExcludedFromTRR(mHost, mRec->mEffectiveTRRMode)) {
       RecordReason(TRRSkippedReason::TRR_EXCLUDED);
       return true;
     }

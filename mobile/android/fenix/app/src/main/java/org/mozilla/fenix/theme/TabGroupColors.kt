@@ -21,7 +21,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.theme.ContainerColorStack
-import mozilla.components.ui.colors.PhotonColors
+import mozilla.components.ui.colors.NovaColors
 
 /**
  * Represents the complete palette of colors available for tab groups.
@@ -32,7 +32,6 @@ data class TabGroupColorPalette(
     val red: TabGroupColors,
     val pink: TabGroupColors,
     val purple: TabGroupColors,
-    val violet: TabGroupColors,
     val blue: TabGroupColors,
     val cyan: TabGroupColors,
     val green: TabGroupColors,
@@ -40,29 +39,27 @@ data class TabGroupColorPalette(
 ) {
     companion object {
         val lightPalette = TabGroupColorPalette(
-            yellow = TabGroupColors(primary = Color(0xFFC15727), onPrimary = PhotonColors.LightGrey05),
-            orange = TabGroupColors(primary = PhotonColors.Orange70, onPrimary = PhotonColors.LightGrey05),
-            red = TabGroupColors(primary = PhotonColors.Red70, onPrimary = PhotonColors.LightGrey05),
-            pink = TabGroupColors(primary = PhotonColors.Pink70, onPrimary = PhotonColors.LightGrey05),
-            purple = TabGroupColors(primary = PhotonColors.Purple60, onPrimary = PhotonColors.LightGrey05),
-            violet = TabGroupColors(primary = PhotonColors.Violet60, onPrimary = PhotonColors.LightGrey05),
-            blue = TabGroupColors(primary = PhotonColors.Blue50, onPrimary = PhotonColors.LightGrey05),
-            cyan = TabGroupColors(primary = Color(0xFF008383), onPrimary = PhotonColors.LightGrey05),
-            green = TabGroupColors(primary = Color(0xFF108307), onPrimary = PhotonColors.LightGrey05),
-            grey = TabGroupColors(primary = PhotonColors.DarkGrey10, onPrimary = PhotonColors.LightGrey05),
+            yellow = TabGroupColors(primary = NovaColors.Yellow50, onPrimary = NovaColors.White),
+            orange = TabGroupColors(primary = NovaColors.Orange50, onPrimary = NovaColors.White),
+            red = TabGroupColors(primary = NovaColors.Red50, onPrimary = NovaColors.White),
+            pink = TabGroupColors(primary = NovaColors.Pink50, onPrimary = NovaColors.White),
+            purple = TabGroupColors(primary = NovaColors.Violet50, onPrimary = NovaColors.White),
+            blue = TabGroupColors(primary = NovaColors.Blue50, onPrimary = NovaColors.White),
+            cyan = TabGroupColors(primary = NovaColors.Cyan50, onPrimary = NovaColors.White),
+            green = TabGroupColors(primary = NovaColors.Green50, onPrimary = NovaColors.White),
+            grey = TabGroupColors(primary = NovaColors.Gray50, onPrimary = NovaColors.White),
         )
 
         val darkPalette = TabGroupColorPalette(
-            yellow = TabGroupColors(primary = PhotonColors.Yellow05, onPrimary = PhotonColors.DarkGrey90),
-            orange = TabGroupColors(primary = PhotonColors.Orange10, onPrimary = PhotonColors.DarkGrey90),
-            red = TabGroupColors(primary = PhotonColors.Red10, onPrimary = PhotonColors.DarkGrey90),
-            pink = TabGroupColors(primary = PhotonColors.Pink10, onPrimary = PhotonColors.DarkGrey90),
-            purple = TabGroupColors(primary = PhotonColors.Purple10, onPrimary = PhotonColors.DarkGrey90),
-            violet = TabGroupColors(primary = PhotonColors.Violet10, onPrimary = PhotonColors.DarkGrey90),
-            blue = TabGroupColors(primary = PhotonColors.Blue05, onPrimary = PhotonColors.DarkGrey90),
-            cyan = TabGroupColors(primary = PhotonColors.Green20, onPrimary = PhotonColors.DarkGrey90),
-            green = TabGroupColors(primary = Color(0xFFC6EBBD), onPrimary = PhotonColors.DarkGrey90),
-            grey = TabGroupColors(primary = PhotonColors.LightGrey20, onPrimary = PhotonColors.DarkGrey90),
+            yellow = TabGroupColors(primary = NovaColors.Yellow10, onPrimary = NovaColors.Yellow60),
+            orange = TabGroupColors(primary = NovaColors.Orange10, onPrimary = NovaColors.Orange60),
+            red = TabGroupColors(primary = NovaColors.Red10, onPrimary = NovaColors.Red60),
+            pink = TabGroupColors(primary = NovaColors.Pink10, onPrimary = NovaColors.Pink60),
+            purple = TabGroupColors(primary = NovaColors.Violet10, onPrimary = NovaColors.Violet60),
+            blue = TabGroupColors(primary = NovaColors.Blue10, onPrimary = NovaColors.Blue60),
+            cyan = TabGroupColors(primary = NovaColors.Cyan10, onPrimary = NovaColors.Cyan60),
+            green = TabGroupColors(primary = NovaColors.Green10, onPrimary = NovaColors.Green60),
+            grey = TabGroupColors(primary = NovaColors.Gray20, onPrimary = NovaColors.Gray55),
         )
 
         val privatePalette = darkPalette
@@ -142,34 +139,34 @@ private fun TabGroupColorsGrid(theme: Theme) {
                 ContainerColorStack(
                     color1 = tabColors.purple.primary,
                     color2 = tabColors.purple.onPrimary,
-                    color3 = tabColors.violet.primary,
-                    color4 = tabColors.violet.onPrimary,
+                    color3 = tabColors.blue.primary,
+                    color4 = tabColors.blue.onPrimary,
                     color1Name = "Purple",
                     color2Name = "onPurple",
-                    color3Name = "Violet",
-                    color4Name = "onViolet",
+                    color3Name = "Blue",
+                    color4Name = "onBlue",
                 )
 
                 ContainerColorStack(
-                    color1 = tabColors.blue.primary,
-                    color2 = tabColors.blue.onPrimary,
-                    color3 = tabColors.cyan.primary,
-                    color4 = tabColors.cyan.onPrimary,
-                    color1Name = "Blue",
-                    color2Name = "onBlue",
-                    color3Name = "Cyan",
-                    color4Name = "onCyan",
+                    color1 = tabColors.cyan.primary,
+                    color2 = tabColors.cyan.onPrimary,
+                    color3 = tabColors.green.primary,
+                    color4 = tabColors.green.onPrimary,
+                    color1Name = "Cyan",
+                    color2Name = "onCyan",
+                    color3Name = "Green",
+                    color4Name = "onGreen",
                 )
 
                 ContainerColorStack(
-                    color1 = tabColors.green.primary,
-                    color2 = tabColors.green.onPrimary,
-                    color3 = tabColors.grey.primary,
-                    color4 = tabColors.grey.onPrimary,
-                    color1Name = "Green",
-                    color2Name = "onGreen",
-                    color3Name = "Grey",
-                    color4Name = "onGrey",
+                    color1 = tabColors.grey.primary,
+                    color2 = tabColors.grey.onPrimary,
+                    color3 = Color.Transparent,
+                    color4 = Color.Transparent,
+                    color1Name = "Grey",
+                    color2Name = "onGrey",
+                    color3Name = "",
+                    color4Name = "",
                 )
             }
         }

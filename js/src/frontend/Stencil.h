@@ -554,9 +554,7 @@ class StencilModuleRequest {
       Vector<StencilModuleImportAttribute, 0, js::SystemAllocPolicy>;
   ImportAttributeVector attributes;
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   js::ImportPhase phase = ImportPhase::Evaluation;
-#endif
 
   // For XDR only.
   StencilModuleRequest() = default;
@@ -568,12 +566,8 @@ class StencilModuleRequest {
 
   StencilModuleRequest(const StencilModuleRequest& other)
       : specifier(other.specifier),
-        firstUnsupportedAttributeKey(other.firstUnsupportedAttributeKey)
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-        ,
-        phase(other.phase)
-#endif
-  {
+        firstUnsupportedAttributeKey(other.firstUnsupportedAttributeKey),
+        phase(other.phase) {
     AutoEnterOOMUnsafeRegion oomUnsafe;
     if (!attributes.appendAll(other.attributes)) {
       oomUnsafe.crash("StencilModuleRequest::StencilModuleRequest");
@@ -583,21 +577,14 @@ class StencilModuleRequest {
   StencilModuleRequest(StencilModuleRequest&& other) noexcept
       : specifier(other.specifier),
         firstUnsupportedAttributeKey(other.firstUnsupportedAttributeKey),
-        attributes(std::move(other.attributes))
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-        ,
-        phase(other.phase)
-#endif
-  {
-  }
+        attributes(std::move(other.attributes)),
+        phase(other.phase) {}
 
   StencilModuleRequest& operator=(StencilModuleRequest&& other) noexcept {
     specifier = other.specifier;
     firstUnsupportedAttributeKey = other.firstUnsupportedAttributeKey;
     attributes = std::move(other.attributes);
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     phase = other.phase;
-#endif
     return *this;
   }
 
@@ -605,11 +592,7 @@ class StencilModuleRequest {
     size_t attrLen = attributes.length();
     if (specifier != other.specifier ||
         firstUnsupportedAttributeKey != other.firstUnsupportedAttributeKey ||
-        attrLen != other.attributes.length()
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-        || phase != other.phase
-#endif
-    ) {
+        attrLen != other.attributes.length() || phase != other.phase) {
       return false;
     }
 
@@ -641,9 +624,7 @@ struct StencilModuleRequestHasher {
     }
     hash = mozilla::AddToHash(hash,
                               TaggedParserAtomIndexHasher::hash(l.specifier));
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     hash = mozilla::AddToHash(hash, l.phase);
-#endif
     return hash;
   }
 

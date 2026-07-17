@@ -53,8 +53,7 @@ already_AddRefed<Event> RTCTransformEventRunnable::BuildEvent(
   // Set transformer.[[readable]] to readable.
 
   // Set transformer.[[writable]] to writable.
-  RefPtr<RTCRtpScriptTransformer> transformer =
-      new RTCRtpScriptTransformer(aGlobal);
+  RefPtr transformer = MakeRefPtr<RTCRtpScriptTransformer>(aGlobal);
   nsresult nrv = transformer->Init(aCx, aTransformerOptions,
                                    GetCurrentThreadWorkerPrivate(), mProxy);
   if (NS_WARN_IF(NS_FAILED(nrv))) {

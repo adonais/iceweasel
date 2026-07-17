@@ -626,7 +626,7 @@ class EventListenerManager final : public EventListenerManagerBase {
   EventMessage GetEventMessageAndAtomForListener(const nsAString& aType,
                                                  nsAtom** aAtom);
 
-  void ProcessApzAwareEventListenerAdd();
+  void ProcessApzAwareEventListenerAdd(nsAtom* aEvent);
 
   /**
    * Compile the "inline" event listener for aListener.  The

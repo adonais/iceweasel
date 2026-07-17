@@ -802,51 +802,74 @@ fn unzip_buffer(buf: &[u8], dest_dir: &Path) -> WebDriverResult<()> {
     let mut zip = zip::ZipArchive::new(reader)
         .map_err(|_| WebDriverError::new(ErrorStatus::UnknownError, "Failed to unzip profile"))?;
 
-    for i in 0..zip.len() {
-        let mut file = zip.by_index(i).map_err(|_| {
-            WebDriverError::new(
-                ErrorStatus::UnknownError,
-                "Processing profile zip file failed",
-            )
-        })?;
-        let unzip_path = {
-            let name = file.name();
-            let is_dir = name.ends_with('/');
-            let rel_path = Path::new(name);
+    let mut extracted_files: Vec<PathBuf> = Vec::new();
+    let mut created_dirs: Vec<PathBuf> = Vec::new();
+
+    let result = (|| {
+        for i in 0..zip.len() {
+            let mut file = zip.by_index(i).map_err(|_| {
+                WebDriverError::new(
+                    ErrorStatus::UnknownError,
+                    "Processing profile zip file failed",
+                )
+            })?;
+
+            if file.is_symlink() {
+                return Err(WebDriverError::new(
+                    ErrorStatus::UnknownError,
+                    format!("Zip entry '{}' is a symbolic link", file.name()),
+                ));
+            }
+
+            let rel_path = file.enclosed_name().ok_or_else(|| {
+                WebDriverError::new(
+                    ErrorStatus::UnknownError,
+                    format!(
+                        "Zip entry '{}' has an invalid or traversal path",
+                        file.name()
+                    ),
+                )
+            })?;
+
+            let is_dir = file.is_dir();
             let dest_path = dest_dir.join(rel_path);
 
-            {
-                let create_dir = if is_dir {
-                    Some(dest_path.as_path())
-                } else {
-                    dest_path.parent()
-                };
-                if let Some(dir) = create_dir
-                    && !dir.exists()
-                {
-                    debug!("Creating profile directory tree {}", dir.to_string_lossy());
-                    fs::create_dir_all(dir)?;
-                }
-            }
-
-            if is_dir {
-                None
+            let create_dir = if is_dir {
+                Some(dest_path.as_path())
             } else {
-                Some(dest_path)
-            }
-        };
+                dest_path.parent()
+            };
 
-        if let Some(unzip_path) = unzip_path {
-            debug!("Extracting profile to {}", unzip_path.to_string_lossy());
-            let dest = fs::File::create(unzip_path)?;
-            if file.size() > 0 {
-                let mut writer = BufWriter::new(dest);
-                io::copy(&mut file, &mut writer)?;
+            if let Some(dir) = create_dir
+                && !dir.exists()
+            {
+                fs::create_dir_all(dir)?;
+                created_dirs.push(dir.to_path_buf());
             }
+
+            if !is_dir {
+                let dest = fs::File::create(&dest_path)?;
+                if file.size() > 0 {
+                    let mut writer = BufWriter::new(dest);
+                    io::copy(&mut file, &mut writer)?;
+                }
+                extracted_files.push(dest_path);
+            }
+        }
+
+        Ok(())
+    })();
+
+    if result.is_err() {
+        for file in &extracted_files {
+            let _ = fs::remove_file(file);
+        }
+        for dir in created_dirs.iter().rev() {
+            let _ = fs::remove_dir(dir);
         }
     }
 
-    Ok(())
+    result
 }
 
 #[cfg(test)]

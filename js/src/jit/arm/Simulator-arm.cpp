@@ -1093,7 +1093,7 @@ void Simulator::setLastDebuggerInput(char* input) {
 
 /* static */
 void SimulatorProcess::FlushICache(void* start_addr, size_t size) {
-  JitSpewCont(JitSpew_CacheFlush, "[%p %zx]", start_addr, size);
+  JitSpew(JitSpew_CacheFlush, "[%p %zx]", start_addr, size);
   if (!ICacheCheckingDisableCount) {
     AutoLockSimulatorCache als;
     js::jit::FlushICacheLocked(icache(), start_addr, size);

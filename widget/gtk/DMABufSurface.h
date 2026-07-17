@@ -227,7 +227,7 @@ class DMABufSurface {
 
 #ifdef MOZ_LOGGING
   virtual void Clear(unsigned int aValue) {};
-  virtual void DumpToFile(const char* pFile) {};
+  virtual void DumpToFile(const char* pFile) = 0;
 #endif
 
 #ifdef MOZ_WAYLAND
@@ -499,6 +499,10 @@ class DMABufSurfaceYUV final : public DMABufSurface {
 
 #ifdef MOZ_WAYLAND
   wl_buffer* CreateWlBuffer() override;
+#endif
+
+#ifdef MOZ_LOGGING
+  void DumpToFile(const char* pFile) override;
 #endif
 
  private:

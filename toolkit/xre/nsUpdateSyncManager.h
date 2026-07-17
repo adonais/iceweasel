@@ -8,6 +8,7 @@
 #include "mozilla/AlreadyAddRefed.h"
 #include "nsIObserver.h"
 #include "nsIUpdateService.h"
+#include "nsString.h"
 #include "MultiInstanceLock.h"
 
 // The update sync manager is responsible for making sure that only one
@@ -42,6 +43,7 @@ class nsUpdateSyncManager final : public nsIUpdateSyncManager,
   void ReleaseLock();
 
   mozilla::MultiInstLockHandle mLock = MULTI_INSTANCE_LOCK_HANDLE_ERROR;
+  nsCString mLockFilePath;
 };
 
 #endif  // nsUpdateSyncManager_h_

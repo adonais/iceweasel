@@ -43,7 +43,7 @@ class Clients final : public nsISupports, public nsWrapperCache {
 
   already_AddRefed<Promise> Claim(ErrorResult& aRv);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Clients)
 };
 

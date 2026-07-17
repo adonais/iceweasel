@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 import { RootBiDiModule } from "chrome://remote/content/webdriver-bidi/modules/RootBiDiModule.sys.mjs";
+import { SessionDataCategory } from "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs";
 
 const lazy = {};
 
@@ -57,13 +58,13 @@ const NULL = Symbol("NULL");
 // Apply here only the configurations that will be initialized in the parent process,
 // except from `viewport-override` which is handled separately.
 const CONFIGURATIONS_TO_APPLY = [
-  "download-behavior-override",
-  "locale-override",
-  "network-conditions",
-  "screen-orientation-override",
-  "screen-settings-override",
-  "timezone-override",
-  "user-agent-override",
+  SessionDataCategory.DownloadBehaviorOverride,
+  SessionDataCategory.LocaleOverride,
+  SessionDataCategory.NetworkConditions,
+  SessionDataCategory.ScreenOrientationOverride,
+  SessionDataCategory.ScreenSettingsOverride,
+  SessionDataCategory.TimezoneOverride,
+  SessionDataCategory.UserAgentOverride,
 ];
 
 /**
@@ -98,8 +99,8 @@ class _ConfigurationModule extends RootBiDiModule {
       // User agent override also supports a global setting.
       // see https://www.w3.org/TR/webdriver-bidi/#command-emulation-setUserAgentOverride.
       if (
-        configuration === "user-agent-override" ||
-        configuration === "download-behavior-override"
+        configuration === SessionDataCategory.UserAgentOverride ||
+        configuration === SessionDataCategory.DownloadBehaviorOverride
       ) {
         this.#configurationMap[configuration][lazy.ContextDescriptorType.All] =
           null;
@@ -126,7 +127,7 @@ class _ConfigurationModule extends RootBiDiModule {
 
       const sessionData = this.messageHandler.sessionData.getSessionData(
         "_configuration",
-        "viewport-override",
+        SessionDataCategory.ViewportOverride,
         {
           type: lazy.ContextDescriptorType.UserContext,
           id: userContextId === null ? 0 : parseInt(userContextId),
@@ -215,12 +216,12 @@ class _ConfigurationModule extends RootBiDiModule {
     for (const { category, contextDescriptor, value } of sessionDataItems) {
       if (
         !CONFIGURATIONS_TO_APPLY.includes(category) &&
-        category !== "viewport-override"
+        category !== SessionDataCategory.ViewportOverride
       ) {
         continue;
       }
 
-      if (category === "viewport-override") {
+      if (category === SessionDataCategory.ViewportOverride) {
         if (value.devicePixelRatio !== undefined) {
           devicePixelRatioOverride = value.devicePixelRatio;
         }
@@ -241,7 +242,7 @@ class _ConfigurationModule extends RootBiDiModule {
     // Now from these items we have to choose the one that would take precedence.
     // The order is the user context item supersedes the global one, and the browsing context supersedes the user context item.
     const downloadBehaviorOverride = this.#findCorrectConfigurationValue(
-      configurationMap["download-behavior-override"],
+      configurationMap[SessionDataCategory.DownloadBehaviorOverride],
       "object"
     );
     if (downloadBehaviorOverride !== null) {
@@ -252,7 +253,7 @@ class _ConfigurationModule extends RootBiDiModule {
     }
 
     const localeOverride = this.#findCorrectConfigurationValue(
-      configurationMap["locale-override"],
+      configurationMap[SessionDataCategory.LocaleOverride],
       "string"
     );
     if (localeOverride !== null) {
@@ -263,7 +264,7 @@ class _ConfigurationModule extends RootBiDiModule {
     }
 
     const networkConditions = this.#findCorrectConfigurationValue(
-      configurationMap["network-conditions"],
+      configurationMap[SessionDataCategory.NetworkConditions],
       "object"
     );
     if (networkConditions !== null) {
@@ -274,7 +275,7 @@ class _ConfigurationModule extends RootBiDiModule {
     }
 
     const screenOrientationOverride = this.#findCorrectConfigurationValue(
-      configurationMap["screen-orientation-override"],
+      configurationMap[SessionDataCategory.ScreenOrientationOverride],
       "object"
     );
     if (screenOrientationOverride !== null) {
@@ -285,7 +286,7 @@ class _ConfigurationModule extends RootBiDiModule {
     }
 
     const screenSettingsOverride = this.#findCorrectConfigurationValue(
-      configurationMap["screen-settings-override"],
+      configurationMap[SessionDataCategory.ScreenSettingsOverride],
       "object"
     );
     if (screenSettingsOverride !== null) {
@@ -296,7 +297,7 @@ class _ConfigurationModule extends RootBiDiModule {
     }
 
     const timezoneOverride = this.#findCorrectConfigurationValue(
-      configurationMap["timezone-override"],
+      configurationMap[SessionDataCategory.TimezoneOverride],
       "string"
     );
     if (timezoneOverride !== null) {
@@ -307,7 +308,7 @@ class _ConfigurationModule extends RootBiDiModule {
     }
 
     const userAgentOverride = this.#findCorrectConfigurationValue(
-      configurationMap["user-agent-override"],
+      configurationMap[SessionDataCategory.UserAgentOverride],
       "string"
     );
     if (userAgentOverride !== null) {
@@ -332,6 +333,8 @@ class _ConfigurationModule extends RootBiDiModule {
    * @param {bool} options.async
    * @param {string} options.category
    * @param {Array<string>|null} options.contextIds
+   * @param {string} [options.moduleName="_configuration"]
+   *     The module name to use when writing session data.
    * @param {boolean} options.supportsGlobalConfiguration
    * @param {*} options.resetValue
    * @param {Array<string>|null} options.userContextIds
@@ -342,6 +345,7 @@ class _ConfigurationModule extends RootBiDiModule {
       async: isAsync,
       category,
       contextIds = NULL,
+      moduleName = "_configuration",
       resetValue,
       supportsGlobalConfiguration,
       userContextIds = NULL,
@@ -369,6 +373,7 @@ class _ConfigurationModule extends RootBiDiModule {
       category,
       hasContextConfiguration,
       hasGlobalConfiguration,
+      moduleName,
       navigables,
       resetValue,
       userContexts,
@@ -444,21 +449,21 @@ class _ConfigurationModule extends RootBiDiModule {
 
   #applyConfigurationForCategory(category, commandArgs) {
     switch (category) {
-      case "download-behavior-override":
+      case SessionDataCategory.DownloadBehaviorOverride:
         return lazy.setDownloadFolderOverrideForBrowsingContext(commandArgs);
-      case "geolocation-override":
+      case SessionDataCategory.GeolocationOverride:
         return this.#applyGeolocationOverride(commandArgs);
-      case "locale-override":
+      case SessionDataCategory.LocaleOverride:
         return this.#applyLocaleOverride(commandArgs);
-      case "network-conditions":
+      case SessionDataCategory.NetworkConditions:
         return lazy.setNetworkConditionsForBrowsingContext(commandArgs);
-      case "screen-orientation-override":
+      case SessionDataCategory.ScreenOrientationOverride:
         return lazy.setScreenOrientationOverrideForBrowsingContext(commandArgs);
-      case "screen-settings-override":
+      case SessionDataCategory.ScreenSettingsOverride:
         return lazy.setScreenSettingsOverrideForBrowsingContext(commandArgs);
-      case "timezone-override":
+      case SessionDataCategory.TimezoneOverride:
         return this.#applyTimezoneOverride(commandArgs);
-      case "user-agent-override":
+      case SessionDataCategory.UserAgentOverride:
         return lazy.setUserAgentOverrideForBrowsingContext(commandArgs);
       default:
         return undefined;
@@ -533,6 +538,7 @@ class _ConfigurationModule extends RootBiDiModule {
       hasContextConfiguration,
       hasGlobalConfiguration,
       hasUserContextConfiguration,
+      moduleName,
       navigables,
       resetValue,
       userContexts,
@@ -545,7 +551,7 @@ class _ConfigurationModule extends RootBiDiModule {
       for (const userContext of userContexts) {
         sessionDataItems.push(
           ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
-            "_configuration",
+            moduleName,
             category,
             {
               type: lazy.ContextDescriptorType.UserContext,
@@ -560,7 +566,7 @@ class _ConfigurationModule extends RootBiDiModule {
       for (const navigable of navigables) {
         sessionDataItems.push(
           ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
-            "_configuration",
+            moduleName,
             category,
             {
               type: lazy.ContextDescriptorType.TopBrowsingContext,
@@ -574,7 +580,7 @@ class _ConfigurationModule extends RootBiDiModule {
     } else if (hasGlobalConfiguration) {
       sessionDataItems.push(
         ...this.messageHandler.sessionData.generateSessionDataItemUpdate(
-          "_configuration",
+          moduleName,
           category,
           {
             type: lazy.ContextDescriptorType.All,

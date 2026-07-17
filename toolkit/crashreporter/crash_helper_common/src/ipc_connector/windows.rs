@@ -43,8 +43,8 @@ pub type AncillaryData = OwnedHandle;
 
 pub const CONNECTOR_ANCILLARY_DATA_LEN: usize = 1;
 
-const INVALID_ANCILLARY_DATA: HANDLE = 0;
-const HANDLE_SIZE: usize = size_of::<HANDLE>();
+const INVALID_ANCILLARY_DATA: usize = 0;
+const HANDLE_SIZE: usize = size_of::<usize>();
 const MAX_HANDLES_PER_MESSAGE: usize = 2;
 
 // We encode handles at the beginning of every transmitted message. This
@@ -59,7 +59,7 @@ fn extract_buffer_and_handle(buffer: Vec<u8>) -> Result<(Vec<u8>, Vec<OwnedHandl
         let Ok(handle_bytes) = handle_bytes else {
             return Err(IPCError::InvalidAncillary);
         };
-        match HANDLE::from_ne_bytes(handle_bytes) {
+        match usize::from_ne_bytes(handle_bytes) {
             INVALID_ANCILLARY_DATA => {}
             handle => handles.push(unsafe { OwnedHandle::from_raw_handle(handle as RawHandle) }),
         };
@@ -76,6 +76,10 @@ pub type IPCConnectorKey = usize;
 pub struct RawIPCConnector {
     pub handle: HANDLE,
 }
+
+// SAFETY: Windows HANDLEs are safe to send and share across threads.
+unsafe impl Send for RawIPCConnector {}
+unsafe impl Sync for RawIPCConnector {}
 
 pub struct IPCConnector {
     /// A connected pipe handle
@@ -286,7 +290,7 @@ impl IPCConnector {
 
         for handle in ancillary_data.into_iter() {
             let handle = self.clone_handle(handle)?;
-            buffer.put_slice(&handle.to_ne_bytes());
+            buffer.put_slice(&(handle as usize).to_ne_bytes());
         }
         for _i in handles_len..MAX_HANDLES_PER_MESSAGE {
             buffer.put_slice(&INVALID_ANCILLARY_DATA.to_ne_bytes());
@@ -341,7 +345,7 @@ impl IPCConnector {
         let Some(dst_process) = self.process.as_ref() else {
             return Err(PlatformError::MissingProcessHandle);
         };
-        let mut dst_handle: HANDLE = INVALID_ANCILLARY_DATA;
+        let mut dst_handle: HANDLE = null_mut();
         let res = unsafe {
             DuplicateHandle(
                 GetCurrentProcess(),

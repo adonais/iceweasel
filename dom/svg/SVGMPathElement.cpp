@@ -48,7 +48,7 @@ NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(SVGMPathElement,
 
 // Constructor
 SVGMPathElement::SVGMPathElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGMPathElementBase(std::move(aNodeInfo)) {}
 
 //----------------------------------------------------------------------

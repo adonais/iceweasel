@@ -104,7 +104,7 @@ add_task(async function test_open_new_window_after_install() {
 
   await BrowserTestUtils.withNewTab("about:addons", async browser => {
     await BrowserTestUtils.synthesizeMouseAtCenter(
-      "categories-box button[name=extension]",
+      "categories-box moz-page-nav-button[view=extension]",
       {},
       browser
     );
@@ -196,8 +196,8 @@ add_task(async function test_open_new_private_window_after_install() {
   );
 
   is(
-    Services.prefs.getStringPref("sidebar.main.tools"),
-    "aichat,syncedtabs,history,bookmarks",
+    Services.prefs.getStringPref("sidebar.main.tools").split(",").sort().join(),
+    "aichat,bookmarks,history,opentabs,syncedtabs",
     "Extension is not in the main tools pref"
   );
 
@@ -253,8 +253,8 @@ add_task(async function test_customize_sidebar_extensions() {
   );
 
   is(
-    Services.prefs.getStringPref("sidebar.main.tools"),
-    "aichat,syncedtabs,history,bookmarks",
+    Services.prefs.getStringPref("sidebar.main.tools").split(",").sort().join(),
+    "aichat,bookmarks,history,opentabs,syncedtabs",
     "Extension is not in the main tools pref"
   );
   // Test reloading an extension
@@ -277,8 +277,8 @@ add_task(async function test_customize_sidebar_extensions() {
   );
 
   is(
-    Services.prefs.getStringPref("sidebar.main.tools"),
-    "aichat,syncedtabs,history,bookmarks",
+    Services.prefs.getStringPref("sidebar.main.tools").split(",").sort().join(),
+    "aichat,bookmarks,history,opentabs,syncedtabs",
     "Extension is still not in the main tools pref"
   );
 

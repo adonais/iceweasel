@@ -55,8 +55,7 @@ AccessibleData DocAccessibleChild::SerializeAcc(LocalAccessible* aAcc) {
   // push the cache again for moves.
   if (!aAcc->Document()->IsAccessibleBeingMoved(aAcc)) {
     fields = aAcc->BundleFieldsForCache(
-        nsAccessibilityService::GetActiveCacheDomains(),
-        CacheUpdateType::Initial);
+        aAcc->Document()->EffectiveCacheDomains(), CacheUpdateType::Initial);
     if (fields->Count() == 0) {
       fields = nullptr;
     }

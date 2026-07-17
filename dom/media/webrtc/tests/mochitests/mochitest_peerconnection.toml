@@ -164,8 +164,6 @@ skip-if = [
 ["test_peerConnection_basicScreenshare.html"]
 skip-if = [
   "os == 'android'", # no screenshare on android
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64'", # Bug 1929420
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1929420
   "os == 'win' && os_version == '11.26200' && arch == 'x86' && debug", # Bug 2028636
   "os == 'win' && os_version == '11.26200' && arch == 'x86_64' && debug", # Bug 2028636
 ]
@@ -177,9 +175,6 @@ skip-if = [
 ["test_peerConnection_basicWindowshare.html"]
 skip-if = [
   "os == 'android'", # no screenshare on android
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && debug", # Bug 1929420
-  "os == 'mac' && os_version == '14.70' && arch == 'x86_64' && opt && socketprocess_e10s", # Bug 1929420
-  "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1929420
 ]
 
 ["test_peerConnection_bug822674.html"]

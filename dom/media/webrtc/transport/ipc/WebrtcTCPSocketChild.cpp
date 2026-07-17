@@ -16,7 +16,7 @@ namespace mozilla::net {
 
 mozilla::ipc::IPCResult WebrtcTCPSocketChild::RecvOnClose(
     const nsresult& aReason) {
-  LOG(("WebrtcTCPSocketChild::RecvOnClose %p\n", this));
+  LOG("WebrtcTCPSocketChild::RecvOnClose {}\n", fmt::ptr(this));
 
   MOZ_ASSERT(mProxyCallbacks, "webrtc TCP callbacks should be non-null");
   mProxyCallbacks->OnClose(aReason);
@@ -27,7 +27,7 @@ mozilla::ipc::IPCResult WebrtcTCPSocketChild::RecvOnClose(
 
 mozilla::ipc::IPCResult WebrtcTCPSocketChild::RecvOnConnected(
     const nsACString& aProxyType) {
-  LOG(("WebrtcTCPSocketChild::RecvOnConnected %p\n", this));
+  LOG("WebrtcTCPSocketChild::RecvOnConnected {}\n", fmt::ptr(this));
 
   MOZ_ASSERT(mProxyCallbacks, "webrtc TCP callbacks should be non-null");
   mProxyCallbacks->OnConnected(aProxyType);
@@ -37,7 +37,7 @@ mozilla::ipc::IPCResult WebrtcTCPSocketChild::RecvOnConnected(
 
 mozilla::ipc::IPCResult WebrtcTCPSocketChild::RecvOnRead(
     nsTArray<uint8_t>&& aReadData) {
-  LOG(("WebrtcTCPSocketChild::RecvOnRead %p\n", this));
+  LOG("WebrtcTCPSocketChild::RecvOnRead {}\n", fmt::ptr(this));
 
   MOZ_ASSERT(mProxyCallbacks, "webrtc TCP callbacks should be non-null");
   mProxyCallbacks->OnRead(std::move(aReadData));
@@ -48,19 +48,19 @@ mozilla::ipc::IPCResult WebrtcTCPSocketChild::RecvOnRead(
 WebrtcTCPSocketChild::WebrtcTCPSocketChild(
     WebrtcTCPSocketCallback* aProxyCallbacks)
     : mProxyCallbacks(aProxyCallbacks) {
-  LOG(("WebrtcTCPSocketChild::WebrtcTCPSocketChild %p\n", this));
+  LOG("WebrtcTCPSocketChild::WebrtcTCPSocketChild {}\n", fmt::ptr(this));
 }
 
 WebrtcTCPSocketChild::~WebrtcTCPSocketChild() {
-  LOG(("WebrtcTCPSocketChild::~WebrtcTCPSocketChild %p\n", this));
+  LOG("WebrtcTCPSocketChild::~WebrtcTCPSocketChild {}\n", fmt::ptr(this));
 }
 
 void WebrtcTCPSocketChild::AsyncOpen(
     const nsACString& aHost, const int& aPort, const nsACString& aLocalAddress,
     const int& aLocalPort, bool aUseTls,
     const std::shared_ptr<NrSocketProxyConfig>& aProxyConfig) {
-  LOG(("WebrtcTCPSocketChild::AsyncOpen %p %s:%d\n", this,
-       PromiseFlatCString(aHost).get(), aPort));
+  LOG("WebrtcTCPSocketChild::AsyncOpen {} {}:{}\n", fmt::ptr(this),
+      PromiseFlatCString(aHost).get(), aPort);
 
   MOZ_ASSERT(NS_IsMainThread(), "not main thread");
 

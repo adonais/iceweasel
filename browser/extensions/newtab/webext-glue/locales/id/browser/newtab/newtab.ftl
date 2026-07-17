@@ -28,6 +28,58 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Tab baru
+
+## Firefox Home content
+
+home-prefs-firefox-logo-header =
+    .label = Logo { -brand-short-name }
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label = { $num } baris
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Ekstensi ({ $extension })
+home-restore-defaults-srd =
+    .label = Pulihkan Bawaan
+    .accesskey = B
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (Baku)
+home-mode-choice-custom-srd =
+    .label = URL Ubahsuai…
+home-mode-choice-blank-srd =
+    .label = Laman Kosong
+home-prefs-shortcuts-header-srd =
+    .label = Pintasan
+home-prefs-shortcuts-select =
+    .aria-label = Pintasan
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Pintasan bersponsor
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Konten Sponsor
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Laman yang Dikunjungi
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Markah
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Unduhan Terbaru
+home-prefs-recent-activity-header-srd =
+    .label = Aktivitas terbaru
+home-prefs-recent-activity-select =
+    .aria-label = Aktivitas terbaru
+home-prefs-weather-header-srd =
+    .label = Cuaca
+home-prefs-support-firefox-header-srd =
+    .label = Dukung { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = Cari tahu bagaimana
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -140,6 +192,8 @@ newtab-menu-report = Laporkan
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Blokir
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Pelajari lebih lanjut
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Berhenti Mengikuti Topik
@@ -639,9 +693,6 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = Daftar baru
     .aria-label = Sunting nama daftar
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Daftar baru
 
 ## Strings introduced by the Nova redesign of the Timer widget
 

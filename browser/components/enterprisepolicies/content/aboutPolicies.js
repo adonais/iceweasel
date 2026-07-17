@@ -408,7 +408,7 @@ function show(button) {
   content.hidden = false;
 
   let title = document.getElementById("sectionTitle");
-  title.textContent = button.textContent;
+  title.textContent = button.textContent.trim();
   location.hash = category;
   restoreScrollPosition(category);
 }

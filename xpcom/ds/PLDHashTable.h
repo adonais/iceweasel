@@ -502,6 +502,13 @@ class PLDHashTable {
   // ClearAndPrepareForLength(kDefaultInitialLength).
   void Clear();
 
+  // Removes all entries from the table but keeps the entry storage allocated,
+  // so the table retains its current capacity. Use this instead of Clear()
+  // when the table is about to be re-populated and the repeated free/realloc
+  // of the entry store would be wasteful (e.g. a cache that is invalidated and
+  // rebuilt frequently). Unlike Clear(), the capacity is never reduced.
+  void ClearAndRetainStorage();
+
   // This function clears the table's contents and frees its entry storage,
   // leaving it in a empty state ready to be used again. Afterwards, when the
   // first element is added the entry storage that gets allocated will have a

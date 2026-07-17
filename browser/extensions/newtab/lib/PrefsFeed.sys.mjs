@@ -22,6 +22,7 @@ import {
   PREF_DEFAULT_VALUE_TOPSTORIES_ENABLED,
   PREF_DEFAULT_VALUE_TOPSITES_ENABLED,
 } from "resource://newtab/lib/ActivityStream.sys.mjs";
+import { WIDGET_REGISTRY } from "resource://newtab/common/WidgetsRegistry.mjs";
 
 // eslint-disable-next-line mozilla/use-static-import
 const { AppConstants } = ChromeUtils.importESModule(
@@ -288,6 +289,24 @@ export class PrefsFeed {
         "newtabWallpapers.initialWallpaper",
         valueObj.wallpaper.initialWallpaper
       );
+    }
+
+    // Override per-widget default enabled values from widgetsSettings. Writing
+    // to the default branch lets a trainhop flip a widget's default (e.g. ship
+    // it off) while an explicit user toggle (user branch) still wins. Toggle
+    // VISIBILITY is handled separately by the widgetsSettings.*Visible terms in
+    // WidgetsRegistry — this only affects the on/off default value.
+    if (valueObj.widgetsSettings) {
+      const defaultBranch = Services.prefs.getDefaultBranch(
+        this._prefs._branchStr
+      );
+      for (const widget of WIDGET_REGISTRY) {
+        const value =
+          valueObj.widgetsSettings[widget.widgetsSettingsEnabledKey];
+        if (typeof value === "boolean") {
+          defaultBranch.setBoolPref(widget.enabledPref, value);
+        }
+      }
     }
 
     return valueObj;

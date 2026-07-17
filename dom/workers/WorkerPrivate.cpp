@@ -64,6 +64,7 @@
 #include "mozilla/dom/MessageEventBinding.h"
 #include "mozilla/dom/MessagePort.h"
 #include "mozilla/dom/MessagePortBinding.h"
+#include "mozilla/dom/Navigator.h"
 #include "mozilla/dom/PRemoteWorkerDebuggerParent.h"
 #include "mozilla/dom/Performance.h"
 #include "mozilla/dom/PerformanceStorageWorker.h"
@@ -743,6 +744,22 @@ class UpdateContextOptionsRunnable final : public WorkerControlRunnable {
   }
 };
 
+class UpdateTimezoneOverrideRunnable final : public WorkerThreadRunnable {
+  nsString mTimezone;
+
+ public:
+  UpdateTimezoneOverrideRunnable(WorkerPrivate* aWorkerPrivate,
+                                 const nsAString& aTimezone)
+      : WorkerThreadRunnable("UpdateTimezoneOverrideRunnable"),
+        mTimezone(aTimezone) {}
+
+  virtual bool WorkerRun(JSContext* aCx,
+                         WorkerPrivate* aWorkerPrivate) override {
+    aWorkerPrivate->UpdateTimezoneOverrideInternal(aCx, mTimezone);
+    return true;
+  }
+};
+
 class UpdateLanguagesRunnable final : public WorkerThreadRunnable {
   nsTArray<nsString> mLanguages;
 
@@ -755,6 +772,26 @@ class UpdateLanguagesRunnable final : public WorkerThreadRunnable {
   virtual bool WorkerRun(JSContext* aCx,
                          WorkerPrivate* aWorkerPrivate) override {
     aWorkerPrivate->UpdateLanguagesInternal(mLanguages);
+    return true;
+  }
+};
+
+class UpdateLanguageOverrideRunnable final : public WorkerThreadRunnable {
+  nsCString mLanguageOverride;
+  CopyableTArray<nsString> mResolvedLanguages;
+
+ public:
+  UpdateLanguageOverrideRunnable(WorkerPrivate* aWorkerPrivate,
+                                 const nsACString& aLanguageOverride,
+                                 const nsTArray<nsString>& aResolvedLanguages)
+      : WorkerThreadRunnable("UpdateLanguageOverrideRunnable"),
+        mLanguageOverride(aLanguageOverride),
+        mResolvedLanguages(aResolvedLanguages) {}
+
+  virtual bool WorkerRun(JSContext* aCx,
+                         WorkerPrivate* aWorkerPrivate) override {
+    aWorkerPrivate->UpdateLanguageOverrideInternal(mLanguageOverride,
+                                                   mResolvedLanguages);
     return true;
   }
 };
@@ -1493,15 +1530,23 @@ bool WorkerPrivate::IsFrozen() const {
   return mParentFrozen;
 }
 
-void WorkerPrivate::StoreCSPOnClient() {
+void WorkerPrivate::StorePolicyContainerArgsOnClient() {
   auto data = mWorkerThreadAccessible.Access();
   MOZ_ASSERT(data->mScope);
+  auto& clientSource = data->mScope->MutableClientSourceRef();
+
+  mozilla::ipc::PolicyContainerArgs policyContainerArgs;
+
   if (mLoadInfo.mCSPContext) {
-    mozilla::ipc::PolicyContainerArgs policyContainerArgs;
     policyContainerArgs.csp() = Some(mLoadInfo.mCSPContext->CSPInfo());
-    data->mScope->MutableClientSourceRef().SetPolicyContainerArgs(
-        policyContainerArgs);
   }
+
+  policyContainerArgs.ipAddressSpace() =
+      static_cast<nsILoadInfo::IPAddressSpace>(mLoadInfo.mIPAddressSpace);
+  // TODO(Bug 2017654): Check if integrity policy args need to be propagated
+  // to workers as well. Currently not set explicitly here.
+
+  clientSource.SetPolicyContainerArgs(policyContainerArgs);
 }
 
 void WorkerPrivate::UpdateReferrerInfoFromHeader(
@@ -2343,6 +2388,29 @@ void WorkerPrivate::UpdateLanguages(const nsTArray<nsString>& aLanguages) {
   }
 }
 
+void WorkerPrivate::UpdateLanguageOverride(
+    const nsACString& aLanguageOverride,
+    const nsTArray<nsString>& aResolvedLanguages) {
+  AssertIsOnParentThread();
+
+  RefPtr<UpdateLanguageOverrideRunnable> runnable =
+      new UpdateLanguageOverrideRunnable(this, aLanguageOverride,
+                                         aResolvedLanguages);
+  if (!runnable->Dispatch(this)) {
+    NS_WARNING("Failed to update worker language override!");
+  }
+}
+
+void WorkerPrivate::UpdateTimezoneOverride(const nsAString& aTimezone) {
+  AssertIsOnParentThread();
+
+  RefPtr<UpdateTimezoneOverrideRunnable> runnable =
+      new UpdateTimezoneOverrideRunnable(this, aTimezone);
+  if (!runnable->Dispatch(this)) {
+    NS_WARNING("Failed to update worker timezone override!");
+  }
+}
+
 void WorkerPrivate::UpdateJSWorkerMemoryParameter(JSGCParamKey aKey,
                                                   Maybe<uint32_t> aValue) {
   AssertIsOnParentThread();
@@ -2853,17 +2921,21 @@ WorkerPrivate::WorkerPrivate(
       JS::RealmOptions& chromeRealmOptions = mJSSettings.chromeRealmOptions;
       JS::RealmOptions& contentRealmOptions = mJSSettings.contentRealmOptions;
 
+      const nsCString& languageOverride = mLoadInfo.mLanguageOverrideLocale;
+      const nsAString& timezoneOverride = mLoadInfo.mTimezoneOverride;
+
       xpc::InitGlobalObjectOptions(
           chromeRealmOptions, UsesSystemPrincipal(), mIsSecureContext,
           ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC),
           ShouldResistFingerprinting(RFPTarget::JSMathFdlibm),
-          ShouldResistFingerprinting(RFPTarget::JSLocale), ""_ns, u""_ns);
+          ShouldResistFingerprinting(RFPTarget::JSLocale), languageOverride,
+          timezoneOverride);
       xpc::InitGlobalObjectOptions(
           contentRealmOptions, UsesSystemPrincipal(), mIsSecureContext,
           ShouldResistFingerprinting(RFPTarget::JSDateTimeUTC),
           ShouldResistFingerprinting(RFPTarget::JSMathFdlibm),
-          ShouldResistFingerprinting(RFPTarget::JSLocale), ""_ns, u""_ns);
-
+          ShouldResistFingerprinting(RFPTarget::JSLocale), languageOverride,
+          timezoneOverride);
       // Check if it's a privileged addon executing in order to allow access
       // to SharedArrayBuffer
       if (mLoadInfo.mPrincipal) {
@@ -3318,6 +3390,8 @@ nsresult WorkerPrivate::GetLoadInfo(
     loadInfo.mWindowID = aParent->WindowID();
     loadInfo.mAssociatedBrowsingContextID =
         aParent->AssociatedBrowsingContextID();
+    loadInfo.mLanguageOverrideLocale = aParent->GetLanguageOverrideLocale();
+    loadInfo.mLanguageOverride = aParent->GetLanguageOverride().Clone();
     loadInfo.mStorageAccess = aParent->StorageAccess();
     loadInfo.mUseRegularPrincipal = aParent->UseRegularPrincipal();
     loadInfo.mUsingStorageAccess = aParent->UsingStorageAccess();
@@ -3337,6 +3411,8 @@ nsresult WorkerPrivate::GetLoadInfo(
     loadInfo.mParentController = aParent->GlobalScope()->GetController();
     loadInfo.mWatchedByDevTools = aParent->IsWatchedByDevTools();
     loadInfo.mIsOn3PCBExceptionList = aParent->IsOn3PCBExceptionList();
+    loadInfo.mIPAddressSpace = aParent->mLoadInfo.mIPAddressSpace;
+    loadInfo.mTimezoneOverride = aParent->TimezoneOverride();
   } else {
     AssertIsOnMainThread();
 
@@ -3476,6 +3552,21 @@ nsresult WorkerPrivate::GetLoadInfo(
       loadInfo.mWindowID = globalWindow->WindowID();
       loadInfo.mAssociatedBrowsingContextID =
           globalWindow->GetBrowsingContext()->Id();
+      const nsCString& languageOverride =
+          globalWindow->GetBrowsingContext()->Top()->GetLanguageOverride();
+      if (!languageOverride.IsEmpty()) {
+        loadInfo.mLanguageOverrideLocale = languageOverride;
+        Navigator::GetAcceptLanguages(loadInfo.mLanguageOverride,
+                                      &languageOverride);
+      }
+
+      // Inherit the document's IP address space for Local Network Access
+      // checks in workers.
+      if (document->GetPolicyContainer()) {
+        loadInfo.mIPAddressSpace = static_cast<uint16_t>(
+            PolicyContainer::Cast(document->GetPolicyContainer())
+                ->GetIPAddressSpace());
+      }
       loadInfo.mStorageAccess = StorageAllowedForWindow(globalWindow);
       loadInfo.mUseRegularPrincipal = document->UseRegularPrincipal();
       loadInfo.mUsingStorageAccess = document->UsingStorageAccess();
@@ -3487,6 +3578,8 @@ nsresult WorkerPrivate::GetLoadInfo(
       loadInfo.mOverriddenFingerprintingSettings =
           document->GetOverriddenFingerprintingSettings();
       loadInfo.mIsOn3PCBExceptionList = document->IsOn3PCBExceptionList();
+      loadInfo.mTimezoneOverride =
+          browsingContext->Top()->GetTimezoneOverride();
 
       // This is an hack to deny the storage-access-permission for workers of
       // sub-iframes.
@@ -6060,6 +6153,69 @@ void WorkerPrivate::UpdateContextOptionsInternal(
 
   for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
     data->mChildWorkers[index]->UpdateContextOptions(aContextOptions);
+  }
+}
+
+void WorkerPrivate::UpdateLanguageOverrideInternal(
+    const nsCString& aLanguageOverride,
+    const nsTArray<nsString>& aResolvedLanguages) {
+  mLoadInfo.mLanguageOverrideLocale = aLanguageOverride;
+  if (aLanguageOverride.IsEmpty()) {
+    mLoadInfo.mLanguageOverride.Clear();
+  } else {
+    mLoadInfo.mLanguageOverride = aResolvedLanguages.Clone();
+  }
+
+  WorkerGlobalScope* globalScope = GlobalScope();
+  if (globalScope) {
+    JSObject* global = globalScope->GetGlobalJSObject();
+    if (global) {
+      JS::Realm* realm = JS::GetObjectRealmOrNull(global);
+      if (realm) {
+        if (aLanguageOverride.IsEmpty()) {
+          JS::SetRealmLocaleOverride(realm, nullptr);
+        } else {
+          JS::SetRealmLocaleOverride(realm, aLanguageOverride.get());
+        }
+      }
+    }
+
+    if (RefPtr<WorkerNavigator> nav = globalScope->GetExistingNavigator()) {
+      nav->SetLanguages(aResolvedLanguages);
+    }
+  }
+
+  auto data = mWorkerThreadAccessible.Access();
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->UpdateLanguageOverride(aLanguageOverride,
+                                                       aResolvedLanguages);
+  }
+}
+
+void WorkerPrivate::UpdateTimezoneOverrideInternal(JSContext* aCx,
+                                                   const nsAString& aTimezone) {
+  auto data = mWorkerThreadAccessible.Access();
+
+  WorkerGlobalScope* globalScope = GlobalScope();
+  if (globalScope) {
+    JSObject* global = globalScope->GetGlobalJSObject();
+    if (global) {
+      JS::Realm* realm = JS::GetObjectRealmOrNull(global);
+      if (realm) {
+        if (aTimezone.IsEmpty()) {
+          JS::SetRealmTimezoneOverride(realm, nullptr);
+        } else {
+          JS::SetRealmTimezoneOverride(realm,
+                                       NS_ConvertUTF16toUTF8(aTimezone).get());
+        }
+      }
+    }
+  }
+
+  mLoadInfo.mTimezoneOverride = aTimezone;
+
+  for (uint32_t index = 0; index < data->mChildWorkers.Length(); index++) {
+    data->mChildWorkers[index]->UpdateTimezoneOverride(aTimezone);
   }
 }
 

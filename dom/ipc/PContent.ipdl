@@ -154,6 +154,7 @@ using mozilla::dom::MediaControlAction from "mozilla/dom/MediaControlKeySource.h
 using mozilla::dom::MediaPlaybackState from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::MediaAudibleState from "mozilla/dom/MediaPlaybackStatus.h";
 using mozilla::dom::ControlType from "mozilla/dom/MediaPlaybackStatus.h";
+using mozilla::dom::AudioSessionType from "mozilla/dom/AudioSessionBinding.h";
 using mozilla::dom::MediaMetadataBase from "mozilla/dom/MediaMetadata.h";
 using mozilla::dom::MediaSessionAction from "mozilla/dom/MediaSessionBinding.h";
 using mozilla::dom::MediaSessionPlaybackState from "mozilla/dom/MediaSessionBinding.h";
@@ -176,7 +177,6 @@ using mozilla::dom::PerformanceTimingData from "mozilla/dom/PerformanceTiming.h"
 using mozilla::dom::MaybeFeaturePolicyInfo from "mozilla/dom/FeaturePolicy.h";
 using mozilla::dom::Wireframe from "mozilla/dom/DocumentBinding.h";
 using mozilla::PerfStats::MetricMask from "mozilla/PerfStats.h";
-[RefCounted] using class nsIX509Cert from "nsIX509Cert.h";
 using nsIDNSService::ResolverMode from "nsIDNSService.h";
 using mozilla::dom::UserActivation::Modifiers from "mozilla/dom/UserActivation.h";
 using mozilla::dom::PrivateAttributionImpressionType from "mozilla/dom/PrivateAttributionIPCUtils.h";
@@ -1029,8 +1029,7 @@ child:
     async InitSandboxTesting(Endpoint<PSandboxTestingChild> aEndpoint);
 #endif
 
-    async LoadURI(MaybeDiscardedBrowsingContext aContext, nsDocShellLoadState aLoadState, bool aSetNavigating)
-        returns (bool aSuccess);
+    async LoadURI(MaybeDiscardedBrowsingContext aContext, nsDocShellLoadState aLoadState, bool aSetNavigating);
 
     async InternalLoad(nsDocShellLoadState aLoadState);
 
@@ -1065,7 +1064,8 @@ child:
 
     async HistoryCommitIndexAndLength(MaybeDiscardedBrowsingContext aContext,
                                       uint32_t aIndex, uint32_t aLength,
-                                      nsID aChangeID);
+                                      nsID aChangeID,
+                                      NavigationEntriesTruncation[] aTruncations);
 
     async GetLayoutHistoryState(MaybeDiscardedBrowsingContext aContext)
         returns (nullable nsILayoutHistoryState aState, Wireframe? aWireframe);
@@ -1077,11 +1077,11 @@ child:
     // the `PermitUnloadResult` enum. If `aStartingAt` is an in-process, top-level
     // browsing context, then a "navigate" event will also be dispatched.
     // See https://html.spec.whatwg.org/#preventing-navigation:fire-a-traverse-navigate-event
-    async DispatchBeforeUnloadToSubtree(MaybeDiscardedBrowsingContext aStartingAt, SessionHistoryInfo? info)
+    async DispatchBeforeUnloadToSubtree(MaybeDiscardedBrowsingContext aStartingAt, nsDocShellLoadState? info)
         returns (PermitUnloadResult result);
 
     // Only dispatches "navigate" to the traversable. Used in case we don't want to dispatch beforeunload.
-    async DispatchNavigateToTraversable(MaybeDiscardedBrowsingContext aTraversable, SessionHistoryInfo? info)
+    async DispatchNavigateToTraversable(MaybeDiscardedBrowsingContext aTraversable, nsDocShellLoadState info)
         returns (PermitUnloadResult result);
 
     // Update the cached list of codec supported in the given process.
@@ -1182,8 +1182,8 @@ parent:
     async StartVisitedQueries(nullable nsIURI[] uri);
     async SetURITitle(nullable nsIURI uri, nsString title);
 
-    async LoadURIExternal(nullable nsIURI uri,
-                          nullable nsIPrincipal triggeringPrincipal,
+    async LoadURIExternal(nsIURI uri,
+                          nsIPrincipal triggeringPrincipal,
                           nullable nsIPrincipal redirectPrincipal,
                           MaybeDiscardedBrowsingContext browsingContext,
                           bool wasExternallyTriggered,
@@ -1220,7 +1220,6 @@ parent:
                              nsString aContentDispositionFilename,
                              bool aForceSave,
                              int64_t aContentLength,
-                             bool aWasFileChannel,
                              nullable nsIURI aReferrer,
                              MaybeDiscardedBrowsingContext aContext);
 
@@ -1247,6 +1246,16 @@ parent:
     sync GetClipboard(nsCString[] aTypes, ClipboardType aWhichClipboard,
                       MaybeDiscardedWindowContext aRequestingWindowContext)
         returns (IPCTransferableDataOrError transferableDataOrError);
+
+    // Given a list of supported types, returns the clipboard data for the
+    // first type that matches if the data byte size <= aThreshold.
+    // aRequestingWindowContext is the window that is requesting the clipboard,
+    // which is used for content analysis.
+    async GetClipboardDataIfSmallerThan(nsCString[] aTypes,
+                                        uint64_t aThreshold,
+                                        ClipboardType aWhichClipboard,
+                                        MaybeDiscardedWindowContext aRequestingWindowContext)
+        returns (IPCTransferableDataOrError aResult);
 
     // Requests getting data from clipboard.
     async GetClipboardDataSnapshot(nsCString[] aTypes, ClipboardType aWhichClipboard,
@@ -1557,6 +1566,12 @@ parent:
      */
     sync GetHyphDict(nullable nsIURI aURI) returns (ReadOnlySharedMemoryHandle aHandle);
 
+    /**
+     * Clear out the ContentParent's reference to a ParentProcessChannelHandle
+     * which no longer has outstanding references from the content process.
+     */
+    async DropParentProcessChannelHandle(nsID aUuid);
+
     async CreateWindow(PBrowser aThisTab,
                        MaybeDiscardedBrowsingContext aParent,
                        PBrowser aNewTab,
@@ -1575,23 +1590,6 @@ parent:
                        bool aUserActivation,
                        bool aTextDirectiveUserActivation)
         returns (CreatedWindowInfo window);
-
-    async CreateWindowInDifferentProcess(
-      PBrowser aThisTab,
-      MaybeDiscardedBrowsingContext aParent,
-      uint32_t aChromeFlags,
-      bool aCalledFromJS,
-      bool aTopLevelCreatedByContent,
-      nullable nsIURI aURIToLoad,
-      nsCString aFeatures,
-      Modifiers aModifiers,
-      nsString aName,
-      nullable nsIPrincipal aTriggeringPrincipal,
-      nullable nsIPolicyContainer aPolicyContainer,
-      nullable nsIReferrerInfo aReferrerInfo,
-      OriginAttributes aOriginAttributes,
-      bool aUserActivation,
-      bool aTextDirectiveUserActivation);
 
      async GetFilesRequest(nsID aID, nsString[] aDirectories, bool aRecursiveFlag);
      async DeleteGetFilesRequest(nsID aID);
@@ -1619,14 +1617,6 @@ parent:
     async AddMemoryReport(MemoryReport aReport);
 
     async BHRThreadHang(HangDetails aHangDetails);
-
-    /*
-     * Adds a certificate exception for the given hostname and port.
-     */
-    async AddCertException(nullable nsIX509Cert aCert, nsCString aHostName,
-                           int32_t aPort, OriginAttributes aOriginAttributes,
-                           bool aIsTemporary)
-          returns (nsresult success);
 
     /*
      * Determines whether storage access can be granted automatically by the
@@ -1680,7 +1670,8 @@ parent:
     */
     async NotifyMediaAudibleChanged(MaybeDiscardedBrowsingContext aContext,
                                     MediaAudibleState aState,
-                                    ControlType aType);
+                                    ControlType aType,
+                                    AudioSessionType aSessionType);
 
    /**
     * When media enabled or disabled the Picture-in-Picture mode, we have to

@@ -125,6 +125,33 @@ add_task(async function test_smartbar_cta_search_engines_list() {
   await BrowserTestUtils.closeWindow(win);
 });
 
+add_task(async function test_search_with_overrides_chat_intent() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  // Trigger 'chat' intent
+  const query = "tell me a joke";
+  // Spaces are encoded as "+" in the search submission query string.
+  const expectedQuery = "q=tell+me+a+joke";
+
+  await stubLoadURL(browser, { captureURL: true });
+  await typeInSmartbar(browser, query);
+  await waitForSmartbarAction(browser, "chat");
+  await selectSmartbarSearchEngine(browser);
+
+  const searchResult = await getStubLoadURLResult(browser);
+  Assert.ok(
+    searchResult.called,
+    "Selecting a search engine should run a search even when intent is 'chat'"
+  );
+  Assert.ok(
+    searchResult.url.includes(expectedQuery),
+    `Search URL should contain "${expectedQuery}": ${searchResult.url}`
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
 add_task(async function test_smartbar_cta_intent() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;

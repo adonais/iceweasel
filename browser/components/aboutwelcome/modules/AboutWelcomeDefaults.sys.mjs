@@ -1051,116 +1051,6 @@ const MR_ABOUT_WELCOME_DEFAULT = {
       },
     },
     {
-      id: "AW_EASY_SETUP_ONLY_IMPORT",
-      targeting:
-        "(!doesAppNeedPin || (unhandledCampaignAction == 'PIN_FIREFOX_TO_TASKBAR') || (unhandledCampaignAction == 'PIN_AND_DEFAULT')) && (!'browser.shell.checkDefaultBrowser'|preferenceValue || isDefaultBrowser || (unhandledCampaignAction == 'SET_DEFAULT_BROWSER') || (unhandledCampaignAction == 'PIN_AND_DEFAULT'))",
-      content: {
-        fullscreen: true,
-        position: "split",
-        split_narrow_bkg_position: "-60px",
-        image_alt_text: {
-          string_id: "mr2022-onboarding-default-image-alt",
-        },
-        background:
-          "url('chrome://activity-stream/content/data/content/assets/br-set-default-fox-heart.svg') var(--mr-secondary-position) no-repeat light-dark(rgba(252, 245, 240, 1), rgba(33, 3, 64, 1))",
-        progress_bar: true,
-        logo: {},
-        title: {
-          string_id: "onboarding-refresh-pin-set-default-title",
-        },
-        subtitle: {
-          string_id: "onboarding-refresh-pin-set-default-subtitle",
-        },
-        tiles: {
-          type: "multiselect",
-          data: [
-            {
-              id: "checkbox-1",
-              defaultValue: true,
-              label: {
-                string_id: "mr2022-onboarding-easy-setup-import-checkbox-label",
-              },
-              uncheckedAction: {
-                type: "MULTI_ACTION",
-                data: {
-                  actions: [
-                    {
-                      type: "SET_PREF",
-                      data: {
-                        pref: {
-                          name: "showEmbeddedImport",
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-              checkedAction: {
-                type: "MULTI_ACTION",
-                data: {
-                  actions: [
-                    {
-                      type: "SET_PREF",
-                      data: {
-                        pref: {
-                          name: "showEmbeddedImport",
-                          value: true,
-                        },
-                      },
-                    },
-                  ],
-                },
-              },
-            },
-          ],
-        },
-        primary_button: {
-          label: {
-            string_id: "mr2022-onboarding-easy-setup-primary-button-label",
-          },
-          action: {
-            type: "MULTI_ACTION",
-            collectSelect: true,
-            navigate: true,
-            data: {
-              actions: [],
-            },
-          },
-        },
-        secondary_button: {
-          label: {
-            string_id: "mr2022-onboarding-secondary-skip-button-label",
-          },
-          action: {
-            navigate: true,
-          },
-          has_arrow_icon: true,
-        },
-        secondary_button_top: [
-          {
-            label: { string_id: "mr1-onboarding-sign-in-button-label" },
-            action: {
-              data: { entrypoint: "activity-stream-firstrun", where: "tab" },
-              type: "SHOW_FIREFOX_ACCOUNTS",
-              addFlowParams: true,
-            },
-            targeting: "!isFxASignedIn",
-          },
-          {
-            label: { string_id: "restore-from-backup-secondary-top-button" },
-            action: {
-              type: "SET_PREF",
-              data: {
-                pref: { name: "showRestoreFromBackup", value: true },
-              },
-              navigate: true,
-            },
-            targeting: "backupRestoreEnabled",
-          },
-        ],
-      },
-    },
-    {
       id: "AW_BACKUP_RESTORE_EMBEDDED_NO_BACKUP_FOUND",
       targeting:
         "backupRestoreEnabled && 'messaging-system-action.showRestoreFromBackup' |preferenceValue == true",
@@ -1540,14 +1430,6 @@ function prepareMobileDownload(content) {
       string_id: "mr2022-onboarding-no-mobile-download-cta-text",
     };
   }
-  // Update CN specific QRCode url
-  if (lazy.BrowserUtils.isChinaRepack()) {
-    mobileContent.hero_image.url = `${mobileContent.hero_image.url.slice(
-      0,
-      mobileContent.hero_image.url.indexOf(".svg")
-    )}-cn.svg`;
-  }
-
   return content;
 }
 

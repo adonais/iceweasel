@@ -158,11 +158,19 @@ data class GameState(
     }
 
     /**
-     * Handles swipe input by changing direction.
-     * The fox cannot reverse, so opposite directions are ignored.
-     * @param swipeDirection The direction of the swipe gesture
+     * Handles a swipe gesture vector by picking the dominant axis. Swipes shorter than
+     * minDistance along both axes are ignored, as are swipes that would reverse direction
+     * (the fox cannot reverse).
      */
-    fun onSwipe(swipeDirection: Direction): GameState {
+    fun onSwipeGesture(dx: Float, dy: Float, minDistance: Float): GameState {
+        val absDx = kotlin.math.abs(dx)
+        val absDy = kotlin.math.abs(dy)
+        if (maxOf(absDx, absDy) < minDistance) return this
+        val swipeDirection = if (absDx > absDy) {
+            if (dx > 0) RIGHT else LEFT
+        } else {
+            if (dy > 0) DOWN else UP
+        }
         val canChange = when (swipeDirection) {
             UP -> direction != DOWN
             DOWN -> direction != UP

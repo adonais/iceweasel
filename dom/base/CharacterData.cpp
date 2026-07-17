@@ -31,7 +31,7 @@
 
 namespace mozilla::dom {
 
-CharacterData::CharacterData(already_AddRefed<dom::NodeInfo>&& aNodeInfo)
+CharacterData::CharacterData(already_AddRefed<dom::NodeInfo> aNodeInfo)
     : nsIContent(std::move(aNodeInfo)) {
   MOZ_ASSERT(mNodeInfo->NodeType() == TEXT_NODE ||
                  mNodeInfo->NodeType() == CDATA_SECTION_NODE ||

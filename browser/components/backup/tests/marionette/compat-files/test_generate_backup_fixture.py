@@ -134,7 +134,7 @@ class GenerateTestBackup(BackupTestBase):
 
             let [prefix, version, outerResolve] = arguments;
             (async () => {
-                Services.logins.removeAllLogins();
+                await Services.logins.removeAllLoginsAsync();
                 const nsLoginInfo = new Components.Constructor(
                     "@mozilla.org/login-manager/loginInfo;1",
                     Ci.nsILoginInfo,

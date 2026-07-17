@@ -34,7 +34,7 @@ class SimpleContentList;
 }  // namespace mozilla::dom
 
 class nsDOMMutationRecord final : public nsISupports, public nsWrapperCache {
-  virtual ~nsDOMMutationRecord();
+  ~nsDOMMutationRecord();
 
  public:
   using AnimationArray = nsTArray<RefPtr<mozilla::dom::Animation>>;
@@ -44,12 +44,12 @@ class nsDOMMutationRecord final : public nsISupports, public nsWrapperCache {
 
   nsISupports* GetParentObject() const { return mOwner; }
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override {
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override {
     return mozilla::dom::MutationRecord_Binding::Wrap(aCx, this, aGivenProto);
   }
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(nsDOMMutationRecord)
 
   void GetType(mozilla::dom::DOMString& aRetVal) const {
@@ -267,7 +267,7 @@ class nsMutationReceiverBase : public nsStubAnimationObserver {
 
 class nsMutationReceiver : public nsMutationReceiverBase {
  protected:
-  virtual ~nsMutationReceiver() { Disconnect(false); }
+  ~nsMutationReceiver() { Disconnect(false); }
 
  public:
   static nsMutationReceiver* Create(nsINode* aTarget,
@@ -403,7 +403,7 @@ class nsDOMMutationObserver final : public nsISupports, public nsWrapperCache {
         mWaitingForRun(false),
         mMergeAttributeRecords(false),
         mId(++sCount) {}
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(nsDOMMutationObserver)
   NS_INLINE_DECL_STATIC_IID(NS_DOM_MUTATION_OBSERVER_IID)
 

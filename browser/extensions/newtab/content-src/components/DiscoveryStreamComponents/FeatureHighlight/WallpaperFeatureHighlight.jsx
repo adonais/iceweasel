@@ -33,10 +33,28 @@ export function WallpaperFeatureHighlight({
 
   // Extract the strings and feature ID from OMC
   const { messageData } = useSelector(state => state.Messages);
+  const isWorldCup =
+    isNova &&
+    messageData?.content?.messageType === "WorldCupWallpaperHighlight";
+
+  const novaHighlightImage = isWorldCup
+    ? "chrome://newtab/content/data/content/assets/highlights/wallpaper-callout.png"
+    : "chrome://newtab/content/data/content/assets/highlights/firefox-mascot-prop-paintbucket-rgb.svg";
+  const novaImgWidth = isWorldCup ? "319" : "207";
+  const novaImgHeight = isWorldCup ? "204" : "156";
+  const novaTitleL10nId = isWorldCup
+    ? "newtab-sports-widget-message-wallpapers-title"
+    : "newtab-wallpaper-feature-highlight-title";
+  const novaSubtitleL10nId = isWorldCup
+    ? "newtab-sports-widget-message-wallpapers-body"
+    : "newtab-wallpaper-feature-highlight-subtitle";
+  const novaCtaL10nId = isWorldCup
+    ? "newtab-sports-widget-message-wallpapers-cta"
+    : "newtab-wallpaper-feature-highlight-cta";
 
   return (
     <div
-      className={`wallpaper-feature-highlight ${messageData.content?.darkModeDismiss ? "is-inverted-dark-dismiss-button" : ""}`}
+      className={`wallpaper-feature-highlight ${isWorldCup ? "world-cup-variant" : ""} ${messageData.content?.darkModeDismiss ? "is-inverted-dark-dismiss-button" : ""}`}
     >
       <FeatureHighlight
         position={position}
@@ -57,7 +75,7 @@ export function WallpaperFeatureHighlight({
                 srcSet={
                   messageData.content?.darkModeImageURL ||
                   (isNova
-                    ? "chrome://newtab/content/data/content/assets/highlights/firefox-mascot-prop-paintbucket-rgb.svg"
+                    ? novaHighlightImage
                     : "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg")
                 }
                 media="(prefers-color-scheme: dark)"
@@ -66,14 +84,14 @@ export function WallpaperFeatureHighlight({
                 srcSet={
                   messageData.content?.imageURL ||
                   (isNova
-                    ? "chrome://newtab/content/data/content/assets/highlights/firefox-mascot-prop-paintbucket-rgb.svg"
+                    ? novaHighlightImage
                     : "chrome://newtab/content/data/content/assets/highlights/omc-newtab-wallpapers.svg")
                 }
                 media="(prefers-color-scheme: light)"
               />
               <img
-                width={isNova ? "207" : "320"}
-                height={isNova ? "156" : "195"}
+                width={isNova ? novaImgWidth : "320"}
+                height={isNova ? novaImgHeight : "195"}
                 alt=""
               />
             </picture>
@@ -85,7 +103,7 @@ export function WallpaperFeatureHighlight({
                   className="title"
                   data-l10n-id={
                     isNova
-                      ? "newtab-wallpaper-feature-highlight-title"
+                      ? novaTitleL10nId
                       : messageData.content.title ||
                         "newtab-new-user-custom-wallpaper-title"
                   }
@@ -98,7 +116,7 @@ export function WallpaperFeatureHighlight({
                   className="subtitle"
                   data-l10n-id={
                     isNova
-                      ? "newtab-wallpaper-feature-highlight-subtitle"
+                      ? novaSubtitleL10nId
                       : messageData.content.subtitle ||
                         "newtab-new-user-custom-wallpaper-subtitle"
                   }
@@ -118,7 +136,7 @@ export function WallpaperFeatureHighlight({
                   onClick={() => onToggleClick("open-customize-menu")}
                   data-l10n-id={
                     isNova
-                      ? "newtab-wallpaper-feature-highlight-cta"
+                      ? novaCtaL10nId
                       : messageData.content.cta ||
                         "newtab-new-user-custom-wallpaper-cta"
                   }

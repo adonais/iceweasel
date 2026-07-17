@@ -31,6 +31,9 @@
 #  include <sys/ioccom.h>
 #endif
 #include <sys/ioctl.h>
+#ifdef MOZ_LOGGING
+#  include "gfxUtils.h"
+#endif
 
 // DMABufDevice defines its own version of this which collides with the
 // official version in drm_fourcc.h
@@ -1470,6 +1473,14 @@ nsresult DMABufSurface::BuildSurfaceDescriptorBuffer(
 }
 
 #ifdef MOZ_LOGGING
+// Universal OpenGL version but needs GL/textures.
+void DMABufSurfaceRGBA::DumpToFile(const char* aFile) {
+  RefPtr<gfx::DataSourceSurface> surf = GetAsSourceSurface();
+  gfxUtils::WriteAsPNG(surf, aFile);
+}
+
+#  if 0
+// A direct mapping version without GL.
 void DMABufSurfaceRGBA::DumpToFile(const char* pFile) {
   uint32_t stride;
 
@@ -1492,6 +1503,7 @@ void DMABufSurfaceRGBA::DumpToFile(const char* pFile) {
     cairo_surface_write_to_png(surface, pFile);
   }
 }
+#  endif
 #endif
 
 #if 0
@@ -1572,7 +1584,7 @@ gfx::SurfaceFormat DMABufSurfaceRGBA::GetFormat() {
 already_AddRefed<DMABufSurfaceRGBA> DMABufSurfaceRGBA::CreateDMABufSurface(
     mozilla::gl::GLContext* aGLContext, int aWidth, int aHeight,
     int aDMABufSurfaceFlags, RefPtr<mozilla::widget::DRMFormat> aFormat) {
-  RefPtr<DMABufSurfaceRGBA> surf = new DMABufSurfaceRGBA();
+  auto surf = MakeRefPtr<DMABufSurfaceRGBA>();
   if (!surf->Create(aGLContext, aWidth, aHeight, aDMABufSurfaceFlags,
                     aFormat)) {
     return nullptr;
@@ -1584,7 +1596,7 @@ already_AddRefed<DMABufSurface> DMABufSurfaceRGBA::CreateDMABufSurface(
     RefPtr<mozilla::gfx::FileHandleWrapper>&& aFd,
     const mozilla::webgpu::ffi::WGPUDMABufInfo& aDMABufInfo, int aWidth,
     int aHeight) {
-  RefPtr<DMABufSurfaceRGBA> surf = new DMABufSurfaceRGBA();
+  auto surf = MakeRefPtr<DMABufSurfaceRGBA>();
   if (!surf->Create(std::move(aFd), aDMABufInfo, aWidth, aHeight)) {
     return nullptr;
   }
@@ -1593,7 +1605,7 @@ already_AddRefed<DMABufSurface> DMABufSurfaceRGBA::CreateDMABufSurface(
 
 already_AddRefed<DMABufSurfaceYUV> DMABufSurfaceYUV::CreateYUVSurface(
     const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth, int aHeight) {
-  RefPtr<DMABufSurfaceYUV> surf = new DMABufSurfaceYUV();
+  auto surf = MakeRefPtr<DMABufSurfaceYUV>();
   LOGDMABUFS("[%p] DMABufSurfaceYUV::CreateYUVSurface() UID %d from desc\n",
              surf.get(), surf->GetUID());
   if (!surf->UpdateYUVData(aDesc, aWidth, aHeight, /* aCopy */ false)) {
@@ -1604,7 +1616,7 @@ already_AddRefed<DMABufSurfaceYUV> DMABufSurfaceYUV::CreateYUVSurface(
 
 already_AddRefed<DMABufSurfaceYUV> DMABufSurfaceYUV::CopyYUVSurface(
     const VADRMPRIMESurfaceDescriptor& aDesc, int aWidth, int aHeight) {
-  RefPtr<DMABufSurfaceYUV> surf = new DMABufSurfaceYUV();
+  auto surf = MakeRefPtr<DMABufSurfaceYUV>();
   LOGDMABUFS("[%p] DMABufSurfaceYUV::CreateYUVSurfaceCopy() UID %d from desc\n",
              surf.get(), surf->GetUID());
   if (!surf->UpdateYUVData(aDesc, aWidth, aHeight, /* aCopy */ true)) {
@@ -2188,13 +2200,16 @@ bool DMABufSurfaceYUV::CreateTexture(GLContext* aGLContext, int aPlane) {
                  GetFOURCCFormat() == VA_FOURCC_P016) {
         swappedFormat = wasGR ? DRM_FORMAT_RG1616 : DRM_FORMAT_GR1616;
       }
-      mDrmFormats[aPlane] = static_cast<int>(swappedFormat);
-
-      egl->mLib->fQueryDmaBufModifiersEXT(egl->mDisplay, mDrmFormats[aPlane], 0,
-                                          nullptr, nullptr, &modifierCount);
-      int bits = GetFOURCCFormat() == VA_FOURCC_NV12 ? 8 : 16;
-      LOGDMABUF("  EGL DMA-BUF import: swapped plane 1 to %s%d%d",
-                wasGR ? "RG" : "GR", bits, bits);
+      EGLint swappedModifierCount = 0;
+      egl->mLib->fQueryDmaBufModifiersEXT(
+          egl->mDisplay, static_cast<EGLint>(swappedFormat), 0, nullptr,
+          nullptr, &swappedModifierCount);
+      if (swappedModifierCount > 0) {
+        mDrmFormats[aPlane] = static_cast<int>(swappedFormat);
+        int bits = GetFOURCCFormat() == VA_FOURCC_NV12 ? 8 : 16;
+        LOGDMABUF("  EGL DMA-BUF import: swapped plane 1 to %s%d%d",
+                  wasGR ? "RG" : "GR", bits, bits);
+      }
     }
   }
 
@@ -2592,9 +2607,9 @@ void DMABufSurfaceYUV::ClearPlane(int aPlane) {
          mMappedRegionStride[aPlane] * mHeight[aPlane]);
   Unmap(aPlane);
 }
+#endif
 
-#  include "gfxUtils.h"
-
+#ifdef MOZ_LOGGING
 void DMABufSurfaceYUV::DumpToFile(const char* aFile) {
   RefPtr<gfx::DataSourceSurface> surf = GetAsSourceSurface();
   gfxUtils::WriteAsPNG(surf, aFile);

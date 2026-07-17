@@ -26,6 +26,8 @@ using BuiltinModuleFuncIdVector =
 
 enum class NameContext { Standalone, BeforeLocation };
 
+using ModuleHash = uint8_t[8];
+
 // wasm::CodeMetadata contains metadata whose lifetime ends at the same time
 // that the lifetime of wasm::Code ends.  This encompasses a wide variety of
 // uses.  In practice that means metadata needed for any and all aspects of
@@ -33,8 +35,6 @@ enum class NameContext { Standalone, BeforeLocation };
 // belongs to, and is kept alive by, wasm::Code.  Note also that wasm::Code is
 // in turn kept alive by wasm::Instance(s), hence this metadata will be kept
 // alive as long as any instance for it exists.
-
-using ModuleHash = uint8_t[8];
 
 struct CodeMetadata : public ShareableBase<CodeMetadata> {
   // NOTE: if you add, remove, rename or reorder fields here, be sure to
@@ -168,6 +168,10 @@ struct CodeMetadata : public ShareableBase<CodeMetadata> {
   // functionality, using special opcodes. Otherwise, it has the same rules
   // as wasm modules and so it does not get a new ModuleKind.
   bool isBuiltinModule() const { return features().isBuiltinModule; }
+  // All builtin modules are self-hosted, but not all self-hosted modules are
+  // builtin modules. JS-PI and WebAssembly.Function also produce self-hosted
+  // modules without the builtin module flag.
+  bool isSelfHostedModule() const { return scriptedCaller().isSelfHosted(); }
 
 #define WASM_FEATURE(NAME, SHORT_NAME, ...) \
   bool SHORT_NAME##Enabled() const { return features().SHORT_NAME; }
@@ -472,6 +476,10 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
                       bool declareForRef = false,
                       mozilla::Maybe<CacheableName>&& optionalExportedName =
                           mozilla::Nothing());
+  bool addDefinedFuncWithType(uint32_t funcTypeIndex,
+                              bool declareForRef = false,
+                              mozilla::Maybe<CacheableName>&&
+                                  optionalExportedName = mozilla::Nothing());
   bool addImportedFunc(ValTypeVector&& params, ValTypeVector&& results,
                        CacheableName&& importModName,
                        CacheableName&& importFieldName);
@@ -483,6 +491,15 @@ struct ModuleMetadata : public ShareableBase<ModuleMetadata> {
     return codeMeta->prepareForCompile(mode);
   }
   bool isPreparedForCompile() const { return codeMeta->isPreparedForCompile(); }
+
+  mozilla::Maybe<const Export&> getExport(const CacheableName& name) const {
+    for (const Export& exp : exports) {
+      if (exp.fieldName().utf8Bytes() == name.utf8Bytes()) {
+        return mozilla::SomeRef(exp);
+      }
+    }
+    return mozilla::Nothing();
+  }
 
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
 };

@@ -1133,9 +1133,7 @@ restart:
 
     // These affect visible names in this code, or in other code.
     case ParseNodeKind::ImportDecl:
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::ImportSourceDecl:
-#endif
     case ParseNodeKind::ExportFromStmt:
     case ParseNodeKind::ExportDefaultStmt:
       MOZ_ASSERT(pn->is<BinaryNode>());
@@ -1149,9 +1147,7 @@ restart:
       return true;
 
     case ParseNodeKind::CallImportExpr:
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::CallImportSourceExpr:
-#endif
     case ParseNodeKind::CallImportSpec:
       MOZ_ASSERT(pn->is<BinaryNode>());
       *answer = true;
@@ -1693,6 +1689,27 @@ bool BytecodeEmitter::emitPropLHS(PropertyAccess* prop) {
     pndot = &pnup->as<PropertyAccess>();
   }
   return true;
+}
+
+bool BytecodeEmitter::emitArgumentsLength() {
+  if (sc->isFunctionBox() &&
+      sc->asFunctionBox()->isEligibleForArgumentsLength() &&
+      !sc->asFunctionBox()->needsArgsObj()) {
+    return emit1(JSOp::ArgumentsLength);
+  }
+
+  PropOpEmitter poe(this, PropOpEmitter::Kind::Get,
+                    PropOpEmitter::ObjKind::Other);
+  if (!poe.prepareForObj()) {
+    return false;
+  }
+
+  NameOpEmitter noe(this, TaggedParserAtomIndex::WellKnown::arguments(),
+                    NameOpEmitter::Kind::Get);
+  if (!noe.emitGet()) {
+    return false;
+  }
+  return poe.emitGet(TaggedParserAtomIndex::WellKnown::length());
 }
 
 bool BytecodeEmitter::emitPropIncDec(UnaryNode* incDec, ValueUsage valueUsage) {
@@ -8046,7 +8063,17 @@ bool BytecodeEmitter::emitOptionalCalleeAndThis(ParseNode* callee,
       }
       break;
     }
-    case ParseNodeKind::ArgumentsLength:
+    case ParseNodeKind::ArgumentsLength: {
+      MOZ_ASSERT(emitterMode != BytecodeEmitter::SelfHosting);
+      if (!cone.prepareForOtherCallee()) {
+        return false;
+      }
+      if (!emitArgumentsLength()) {
+        //          [stack] ARGUMENTS_LENGTH
+        return false;
+      }
+      break;
+    }
     case ParseNodeKind::DotExpr: {
       MOZ_ASSERT(emitterMode != BytecodeEmitter::SelfHosting);
       PropertyAccess* prop = &callee->as<PropertyAccess>();
@@ -8145,7 +8172,17 @@ bool BytecodeEmitter::emitCalleeAndThis(ParseNode* callee, CallNode* maybeCall,
       }
       break;
     }
-    case ParseNodeKind::ArgumentsLength:
+    case ParseNodeKind::ArgumentsLength: {
+      MOZ_ASSERT(emitterMode != BytecodeEmitter::SelfHosting);
+      if (!cone.prepareForOtherCallee()) {
+        return false;
+      }
+      if (!emitArgumentsLength()) {
+        //          [stack] ARGUMENTS_LENGTH
+        return false;
+      }
+      break;
+    }
     case ParseNodeKind::DotExpr: {
       MOZ_ASSERT(emitterMode != BytecodeEmitter::SelfHosting);
       PropertyAccess* prop = &callee->as<PropertyAccess>();
@@ -8928,7 +8965,15 @@ bool BytecodeEmitter::emitOptionalTree(
       }
       break;
     }
-    case ParseNodeKind::ArgumentsLength:
+    case ParseNodeKind::ArgumentsLength: {
+      // Emit via emitArgumentsLength to handle elided arguments bindings;
+      // emitOptionalDotExpression would instead emit a plain GetName of
+      // |arguments|.
+      if (!emitArgumentsLength()) {
+        return false;
+      }
+      break;
+    }
     case ParseNodeKind::DotExpr: {
       PropertyAccess* prop = &pn->as<PropertyAccess>();
       bool isSuper = prop->isSuper();
@@ -9013,11 +9058,8 @@ bool BytecodeEmitter::emitOptionalTree(
                                 kind == ParseNodeKind::ImportMetaExpr;
 
       bool isCallExpression = kind == ParseNodeKind::SetThis ||
-                              kind == ParseNodeKind::CallImportExpr
-#  ifdef ENABLE_SOURCE_PHASE_IMPORTS
-                              || kind == ParseNodeKind::CallImportSourceExpr
-#  endif
-          ;
+                              kind == ParseNodeKind::CallImportExpr ||
+                              kind == ParseNodeKind::CallImportSourceExpr;
 
       MOZ_ASSERT(isMemberExpression || isCallExpression,
                  "Unknown ParseNodeKind for OptionalChain");
@@ -12827,27 +12869,8 @@ bool BytecodeEmitter::emitTree(
     }
 
     case ParseNodeKind::ArgumentsLength: {
-      if (sc->isFunctionBox() &&
-          sc->asFunctionBox()->isEligibleForArgumentsLength() &&
-          !sc->asFunctionBox()->needsArgsObj()) {
-        if (!emit1(JSOp::ArgumentsLength)) {
-          return false;
-        }
-      } else {
-        PropOpEmitter poe(this, PropOpEmitter::Kind::Get,
-                          PropOpEmitter::ObjKind::Other);
-        if (!poe.prepareForObj()) {
-          return false;
-        }
-
-        NameOpEmitter noe(this, TaggedParserAtomIndex::WellKnown::arguments(),
-                          NameOpEmitter::Kind::Get);
-        if (!noe.emitGet()) {
-          return false;
-        }
-        if (!poe.emitGet(TaggedParserAtomIndex::WellKnown::length())) {
-          return false;
-        }
+      if (!emitArgumentsLength()) {
+        return false;
       }
       break;
     }
@@ -12928,11 +12951,9 @@ bool BytecodeEmitter::emitTree(
       MOZ_ASSERT(sc->isModuleContext());
       break;
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::ImportSourceDecl:
       MOZ_ASSERT(sc->isModuleContext());
       break;
-#endif
 
     case ParseNodeKind::ExportStmt: {
       MOZ_ASSERT(sc->isModuleContext());
@@ -13101,14 +13122,13 @@ bool BytecodeEmitter::emitTree(
         }
       }
 
-      if (!emit1(JSOp::DynamicImport)) {
+      if (!emit2(JSOp::DynamicImport, uint8_t(ImportPhase::Evaluation))) {
         return false;
       }
 
       break;
     }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     case ParseNodeKind::CallImportSourceExpr: {
       BinaryNode* spec = &pn->as<BinaryNode>().right()->as<BinaryNode>();
 
@@ -13120,12 +13140,16 @@ bool BytecodeEmitter::emitTree(
       // import.source does not have an options parameter
       MOZ_ASSERT(spec->right()->isKind(ParseNodeKind::PosHolder));
 
-      if (!emit1(JSOp::DynamicImportSource)) {
+      if (!emit1(JSOp::Undefined)) {
+        //          [stack] specifier undefined
+        return false;
+      }
+
+      if (!emit2(JSOp::DynamicImport, uint8_t(ImportPhase::Source))) {
         return false;
       }
       break;
     }
-#endif
 
     case ParseNodeKind::SetThis:
       if (!emitSetThis(&pn->as<BinaryNode>())) {

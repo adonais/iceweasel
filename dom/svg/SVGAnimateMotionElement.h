@@ -9,19 +9,19 @@
 #include "mozilla/dom/SVGAnimationElement.h"
 
 nsresult NS_NewSVGAnimateMotionElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
 class SVGAnimateMotionElement final : public SVGAnimationElement {
  protected:
   explicit SVGAnimateMotionElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   SVGMotionSMILAnimationFunction mAnimationFunction;
   friend nsresult(::NS_NewSVGAnimateMotionElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;

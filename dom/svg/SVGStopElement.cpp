@@ -21,7 +21,7 @@ SVGElement::NumberInfo SVGStopElement::sNumberInfo = {nsGkAtoms::offset, 0};
 // Implementation
 
 SVGStopElement::SVGStopElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGStopElementBase(std::move(aNodeInfo)) {}
 
 //----------------------------------------------------------------------

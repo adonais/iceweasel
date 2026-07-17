@@ -74,7 +74,6 @@ add_task(async function test_site_exclusion_toggle_with_siteData() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
     isProtectionEnabled: false,
@@ -129,7 +128,6 @@ add_task(async function test_site_exclusion_toggle_no_siteData() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
     isProtectionEnabled: false,
@@ -155,7 +153,6 @@ add_task(async function test_site_exclusion_VPN_error() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
     isProtectionEnabled: true,
@@ -206,7 +203,6 @@ add_task(async function test_site_exclusion_toggle_pressed_isExclusion() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
     isProtectionEnabled: true,
@@ -273,7 +269,6 @@ add_task(
     setupService({
       isReady: true,
     });
-    await IPPFxaAuthProvider.checkForUpgrade();
 
     let setExclusionSpy = sandbox.spy(IPPExceptionsManager, "setExclusion");
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
@@ -376,7 +371,6 @@ add_task(
     setupService({
       isReady: true,
     });
-    await IPPFxaAuthProvider.checkForUpgrade();
 
     sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
@@ -470,7 +464,6 @@ add_task(async function test_site_exclusion_updates_on_navigation_same_tab() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
@@ -558,7 +551,6 @@ add_task(async function test_site_exclusion_updates_on_tab_switch() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   sandbox.stub(IPPProxyManager, "state").value(IPPProxyStates.ACTIVE);
 
@@ -695,7 +687,6 @@ add_task(async function test_site_exclusion_toggle_privileged_page() {
   setupService({
     isReady: true,
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let panel = IPProtection.getPanel(window);
   sandbox.stub(panel, "_isPrivilegedPage").returns(true);

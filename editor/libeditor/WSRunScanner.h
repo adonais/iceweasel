@@ -659,7 +659,7 @@ class MOZ_STACK_CLASS WSScanResult final {
     }
     return aStream << ", mContent: " << aResult.mContent
                    << ", mEditingHost: " << aResult.mEditingHost
-                   << "< mIgnoredLineBreak: " << aResult.mIgnoredLineBreak
+                   << ", mIgnoredLineBreak: " << aResult.mIgnoredLineBreak
                    << ", mOffset: " << aResult.mOffset
                    << ", mDirection: " << aResult.mDirection << " }";
   }

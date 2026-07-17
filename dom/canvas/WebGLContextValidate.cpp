@@ -493,6 +493,13 @@ bool WebGLContext::InitAndValidateGL(FailureReason* const out_failReason) {
     gl->fEnable(LOCAL_GL_TEXTURE_CUBE_MAP_SEAMLESS);
   }
 
+  if (!gl->IsGLES() && gl->ShadingLanguageVersion() < 150) {
+    const nsPrintfCString reason("GL_SHADING_LANGUAGE_VERSION: %u < 150!",
+                                 gl->ShadingLanguageVersion());
+    *out_failReason = {"FEATURE_FAILURE_WEBGL_GLSL_VERSION", reason};
+    return false;
+  }
+
   // initialize shader translator
   if (!sh::Initialize()) {
     *out_failReason = {"FEATURE_FAILURE_WEBGL_GLSL",

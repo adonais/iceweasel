@@ -1,3 +1,5 @@
+// |jit-test| allow-oom
+
 function test() {
   var f = function() { return arguments; };
   var template = new Array(9000).fill(0);

@@ -898,7 +898,6 @@ slow_script_warning:
         description: >
           The kind of script URL that hung.
         type: string
-    telemetry_mirror: Slow_script_warning_Shown_Browser
 
   shown_content:
     type: event
@@ -935,7 +934,6 @@ slow_script_warning:
         description: >
           How long the notification was up (ms).
         type: string
-    telemetry_mirror: Slow_script_warning_Shown_Content
     no_lint:
       - COMMON_PREFIX
 
@@ -955,7 +953,6 @@ slow_script_warning:
     notification_emails:
       - perf-telemetry-alerts@mozilla.com
     expires: never
-    telemetry_mirror: SLOW_SCRIPT_NOTIFY_DELAY
 
 script.preloader:
   mainthread_recompile:

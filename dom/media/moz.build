@@ -129,6 +129,7 @@ XPIDL_SOURCES += [
     "nsIAudioDeviceInfo.idl",
     "nsIMediaDevice.idl",
     "nsIMediaManager.idl",
+    "nsIMediaPictureInPictureProvider.idl",
 ]
 
 XPIDL_MODULE = "dom_media"
@@ -240,6 +241,7 @@ if not CONFIG["MOZ_WEBRTC"]:
 
 EXPORTS.mozilla.dom += [
     "AudioDeviceInfo.h",
+    "AudioSession.h",
     "AudioStreamTrack.h",
     "AudioTrack.h",
     "AudioTrackList.h",
@@ -249,6 +251,8 @@ EXPORTS.mozilla.dom += [
     "MediaDevices.h",
     "MediaStreamError.h",
     "MediaStreamTrack.h",
+    "PictureInPictureService.h",
+    "PictureInPictureWindow.h",
     "UnboundedMPSCQueue.h",
     "VideoPlaybackQuality.h",
     "VideoStreamTrack.h",
@@ -270,6 +274,7 @@ UNIFIED_SOURCES += [
     "AudioInputSource.cpp",
     "AudioRingBuffer.cpp",
     "AudioSegment.cpp",
+    "AudioSession.cpp",
     "AudioStream.cpp",
     "AudioStreamTrack.cpp",
     "AudioTrack.cpp",
@@ -322,6 +327,8 @@ UNIFIED_SOURCES += [
     "MediaTrackList.cpp",
     "MediaTrackListener.cpp",
     "MemoryBlockCache.cpp",
+    "PictureInPictureService.cpp",
+    "PictureInPictureWindow.cpp",
     "QueueObject.cpp",
     "ReaderProxy.cpp",
     "SeekJob.cpp",

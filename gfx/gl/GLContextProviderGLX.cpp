@@ -551,7 +551,7 @@ GLContextGLX::GLContextGLX(const GLContextDesc& desc,
                            bool aDoubleBuffered, Drawable aOwnedPixmap)
     : GLContext(desc, nullptr),
       mContext(aContext),
-      mDisplay(aDisplay),
+      mDisplay(std::move(aDisplay)),
       mDrawable(aDrawable),
       mOwnedPixmap(aOwnedPixmap),
       mDoubleBuffered(aDoubleBuffered),

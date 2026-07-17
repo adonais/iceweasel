@@ -13,13 +13,13 @@ use super::crash_generation::get_auxv_info;
 
 use anyhow::{bail, Result};
 use cfg_if::cfg_if;
-use crash_helper_common::{BreakpadChar, BreakpadData, BreakpadString, Pid};
+use crash_helper_common::{BreakpadChar, BreakpadData, BreakpadString, ExtraCrashData, Pid};
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use minidump_writer::minidump_writer::DirectAuxvDumpInfo;
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use std::os::fd::{FromRawFd, OwnedFd};
 use std::{
-    ffi::{c_char, c_void, OsString},
+    ffi::{c_void, OsString},
     ptr::NonNull,
     sync::Mutex,
 };
@@ -30,7 +30,7 @@ type BreakpadInitType = *const u16;
 type NativeProcessId = windows_sys::Win32::Foundation::HANDLE;
 
 #[cfg(target_os = "macos")]
-type BreakpadInitType = *const c_char;
+type BreakpadInitType = *const crate::c_char;
 #[cfg(target_os = "macos")]
 type NativeProcessId = u32;
 
@@ -69,8 +69,12 @@ impl BreakpadProcessId {
 // when we need it to avoid the warning.
 #[repr(C)]
 pub struct BreakpadContext {
-    callback:
-        unsafe extern "C" fn(*const c_void, BreakpadProcessId, *const c_char, *const BreakpadChar),
+    callback: unsafe extern "C" fn(
+        *const c_void,
+        BreakpadProcessId,
+        Option<&ExtraCrashData>,
+        *const BreakpadChar,
+    ),
     generator: *const Mutex<CrashGenerator>,
 }
 
@@ -123,7 +127,7 @@ impl BreakpadCrashGenerator {
         finalize_callback: unsafe extern "C" fn(
             *const c_void,
             BreakpadProcessId,
-            *const c_char,
+            Option<&ExtraCrashData>,
             *const BreakpadChar,
         ),
     ) -> Result<BreakpadCrashGenerator> {

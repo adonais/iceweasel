@@ -12,18 +12,16 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.ReadOnlyComposable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.platform.testTag
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.selected
 import androidx.compose.ui.semantics.semantics
@@ -31,10 +29,10 @@ import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.LayoutDirection
 import androidx.compose.ui.unit.dp
 import mozilla.components.compose.base.RadioCheckmark
-import mozilla.components.compose.base.button.IconButton
 import mozilla.components.support.base.utils.MAX_URI_LENGTH
 import org.mozilla.fenix.R
 import org.mozilla.fenix.compose.DismissibleItemBackground
@@ -48,10 +46,13 @@ import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.data.createTab
 import org.mozilla.fenix.theme.FirefoxTheme
 import mozilla.components.browser.tabstray.R as tabstrayR
-import mozilla.components.ui.icons.R as iconsR
 
 private val ThumbnailWidth = 78.dp
 private val ThumbnailHeight = 68.dp
+internal val TabListItemHeight: Dp
+    @Composable
+    @ReadOnlyComposable
+    get() = ThumbnailHeight + FirefoxTheme.layout.space.static100 * 2
 
 /**
  * List item used to display a tab that supports clicks,
@@ -195,22 +196,15 @@ private fun TabListIcon(
     tab: TabsTrayItem.Tab,
 ) {
     if (!selectionState.multiSelectEnabled) {
-        IconButton(
-            onClick = { onCloseClick(tab) },
+        ListItemDismissButton(
             contentDescription = stringResource(
                 id = R.string.close_tab_title,
                 tab.title,
             ),
             modifier = Modifier
-                .size(size = 48.dp)
                 .testTag(TabsTrayTestTag.TAB_ITEM_CLOSE),
-        ) {
-            Icon(
-                painter = painterResource(id = iconsR.drawable.mozac_ic_cross_24),
-                contentDescription = null,
-                tint = MaterialTheme.colorScheme.secondary,
-            )
-        }
+            onClick = { onCloseClick(tab) },
+        )
     } else {
         RadioCheckmark(
             isSelected = selectionState.isSelected,
@@ -234,7 +228,7 @@ private fun Thumbnail(
                 height = ThumbnailHeight,
             )
             .testTag(TabsTrayTestTag.TAB_ITEM_THUMBNAIL),
-        shape = RoundedCornerShape(size = 4.dp),
+        shape = MaterialTheme.shapes.extraSmall,
         border = tablistItemThumbnailBorder,
         contentDescription = stringResource(id = tabstrayR.string.mozac_browser_tabstray_open_tab),
     )

@@ -56,6 +56,7 @@ object TestHelper {
 
     val appContext: Context = InstrumentationRegistry.getInstrumentation().targetContext
     val appName = appContext.appName
+    val shortAppName = getStringResource(R.string.app_name_firefox)
     var mDevice: UiDevice = UiDevice.getInstance(InstrumentationRegistry.getInstrumentation())
     val packageName: String = appContext.packageName
 

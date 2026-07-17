@@ -44,7 +44,11 @@
         "value": "color-mix(in srgb, currentColor 11%, transparent)"
       },
       "selected": {
-        "value": "var(--toolbar-background-color)"
+        "value": {
+          "light": "{color.white.@base}",
+          "dark": "rgba(106, 106, 120, 0.7)",
+          "nativeTheme": "var(--toolbar-background-color)"
+        }
       }
     }
   },
@@ -132,7 +136,11 @@
       }
     },
     "textcolor": {
-      "value": "var(--toolbar-text-color)"
+      "value": {
+        "light": "rgb(21, 20, 26)",
+        "dark": "{color.white.@base}",
+        "nativeTheme": "var(--toolbar-text-color)"
+      }
     }
   },
   "vertical": {
@@ -424,7 +432,7 @@
       "@base": {
         "value": {
           "light": "{color.gray.55}",
-          "dark": "{color.gray.05}"
+          "dark": "{color.gray.0}"
         }
       },
       "text": {
@@ -449,7 +457,7 @@
       },
       "invert": {
         "value": {
-          "light": "{color.gray.05}",
+          "light": "{color.gray.0}",
           "dark": "{color.gray.55}"
         }
       }

@@ -485,7 +485,7 @@ void TableRowsCollection::NodeWillBeDestroyed(nsINode* aNode) {
 /* --------------------------- HTMLTableElement ---------------------------- */
 
 HTMLTableElement::HTMLTableElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {
   SetHasWeirdParserInsertionMode();
 }

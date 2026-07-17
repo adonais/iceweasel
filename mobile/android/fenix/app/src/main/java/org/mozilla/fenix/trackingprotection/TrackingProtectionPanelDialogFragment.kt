@@ -47,7 +47,6 @@ import org.mozilla.fenix.databinding.FragmentTrackingProtectionBinding
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.openToBrowser
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.SupportUtils
 import com.google.android.material.R as materialR
 
@@ -102,7 +101,7 @@ class TrackingProtectionPanelDialogFragment : AppCompatDialogFragment(), UserInt
             )
         }
         trackingProtectionInteractor = TrackingProtectionPanelInteractor(
-            context = requireContext(),
+            components = requireComponents,
             fragment = this,
             store = protectionsStore,
             scope = viewLifecycleOwner.lifecycleScope,
@@ -118,7 +117,7 @@ class TrackingProtectionPanelDialogFragment : AppCompatDialogFragment(), UserInt
         trackingProtectionView =
             TrackingProtectionPanelView(
                 containerView = binding.fragmentTp,
-                settings = requireContext().settings(),
+                settings = requireComponents.settings,
                 interactor = trackingProtectionInteractor,
             )
         tab?.let { updateTrackers(it) }

@@ -46,6 +46,7 @@
 #include "nsIWebBrowserPersist.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsQueryObject.h"
 #include "nsRange.h"
 #include "nsServiceManagerUtils.h"

@@ -30,6 +30,7 @@
 #include "absl/strings/string_view.h"
 #include "api/candidate.h"
 #include "api/crypto/crypto_options.h"
+#include "api/data_channel_interface.h"
 #include "api/dtmf_sender_interface.h"
 #include "api/jsep.h"
 #include "api/make_ref_counted.h"
@@ -61,22 +62,22 @@
 #include "media/base/codec.h"
 #include "media/base/media_constants.h"
 #include "media/base/stream_params.h"
+#include "p2p/base/p2p_constants.h"
 #include "p2p/base/port.h"
 #include "p2p/base/port_allocator.h"
 #include "p2p/base/transport_description.h"
 #include "p2p/base/transport_info.h"
-#include "p2p/test/test_stun_server.h"
+#include "p2p/dtls/dtls_transport_internal.h"
 #include "p2p/test/test_turn_server.h"
 #include "pc/media_session.h"
 #include "pc/peer_connection.h"
 #include "pc/peer_connection_factory.h"
+#include "pc/sctp_transport.h"
 #include "pc/session_description.h"
 #include "pc/test/fake_periodic_video_source.h"
 #include "pc/test/integration_test_helpers.h"
 #include "pc/test/mock_peer_connection_observers.h"
-#include "rtc_base/fake_clock.h"
 #include "rtc_base/fake_mdns_responder.h"
-#include "rtc_base/fake_network.h"
 #include "rtc_base/firewall_socket_server.h"
 #include "rtc_base/logging.h"
 #include "rtc_base/net_helper.h"
@@ -89,6 +90,7 @@
 #include "rtc_base/system/plan_b_only.h"
 #include "rtc_base/task_queue_for_test.h"
 #include "rtc_base/test_certificate_verifier.h"
+#include "rtc_base/thread.h"
 #include "rtc_base/virtual_socket_server.h"
 #include "system_wrappers/include/metrics.h"
 #include "test/gmock.h"
@@ -112,6 +114,7 @@ using ::testing::NiceMock;
 using ::testing::Not;
 using ::testing::NotNull;
 using ::testing::Return;
+using ::testing::SizeIs;
 using ::testing::WithParamInterface;
 
 class PeerConnectionIntegrationTest : public PeerConnectionIntegrationBaseTest,
@@ -121,29 +124,13 @@ class PeerConnectionIntegrationTest : public PeerConnectionIntegrationBaseTest,
       : PeerConnectionIntegrationBaseTest(GetParam()) {}
 };
 
-// Fake clock must be set before threads are started to prevent race on
-// Set/GetClockForTesting().
-// To achieve that, multiple inheritance is used as a mixin pattern
-// where order of construction is finely controlled.
-// This also ensures peerconnection is closed before switching back to non-fake
-// clock, avoiding other races and DCHECK failures such as in rtp_sender.cc.
-class FakeClockForTest : public ScopedFakeClock {
- protected:
-  FakeClockForTest() {
-    // Some things use a time of "0" as a special value, so we need to start out
-    // the fake clock at a nonzero time.
-    // TODO(deadbeef): Fix this.
-    AdvanceTime(TimeDelta::Seconds(1));
-  }
-
-  // Explicit handle.
-  ScopedFakeClock& FakeClock() { return *this; }
-};
-
-// Ensure FakeClockForTest is constructed first (see class for rationale).
 class PeerConnectionIntegrationTestWithFakeClock
-    : public FakeClockForTest,
-      public PeerConnectionIntegrationTest {};
+    : public PeerConnectionIntegrationTestWithSimulatedTime,
+      public WithParamInterface<SdpSemantics> {
+ protected:
+  PeerConnectionIntegrationTestWithFakeClock()
+      : PeerConnectionIntegrationTestWithSimulatedTime(GetParam()) {}
+};
 
 class PeerConnectionIntegrationTestPlanB
     : public PeerConnectionIntegrationBaseTest {
@@ -325,7 +312,8 @@ class DummyDtmfObserver : public DtmfSenderObserverInterface {
   DummyDtmfObserver() : completed_(false) {}
 
   // Implements DtmfSenderObserverInterface.
-  void OnToneChange(const std::string& tone) override {
+  void OnToneChange(const std::string& tone,
+                    const std::string& /* tone_buffer */) override {
     tones_.push_back(tone);
     if (tone.empty()) {
       completed_ = true;
@@ -2056,68 +2044,14 @@ TEST_P(PeerConnectionIntegrationTest,
 
 // Test that firewalling the ICE connection causes the clients to identify the
 // disconnected state and then removing the firewall causes them to reconnect.
-class PeerConnectionIntegrationIceStatesTest
-    : public PeerConnectionIntegrationBaseTest,
-      public WithParamInterface<
-          std::tuple<SdpSemantics, std::tuple<std::string, uint32_t>>> {
- protected:
-  PeerConnectionIntegrationIceStatesTest()
-      : PeerConnectionIntegrationBaseTest(std::get<0>(GetParam())) {
-    port_allocator_flags_ = std::get<1>(std::get<1>(GetParam()));
-  }
 
-  void StartStunServer(const SocketAddress& server_address) {
-    stun_server_ = TestStunServer::Create(env_, server_address, *firewall(),
-                                          *network_thread());
-  }
+using PeerConnectionIntegrationIceStatesTest =
+    PeerConnectionIntegrationIceStatesTestBase<
+        PeerConnectionIntegrationBaseTest>;
 
-  bool TestIPv6() {
-    return (port_allocator_flags_ & PORTALLOCATOR_ENABLE_IPV6);
-  }
-
-  std::vector<SocketAddress> CallerAddresses() {
-    std::vector<SocketAddress> addresses;
-    addresses.push_back(SocketAddress("1.1.1.1", 0));
-    if (TestIPv6()) {
-      addresses.push_back(SocketAddress("1111:0:a:b:c:d:e:f", 0));
-    }
-    return addresses;
-  }
-
-  std::vector<SocketAddress> CalleeAddresses() {
-    std::vector<SocketAddress> addresses;
-    addresses.push_back(SocketAddress("2.2.2.2", 0));
-    if (TestIPv6()) {
-      addresses.push_back(SocketAddress("2222:0:a:b:c:d:e:f", 0));
-    }
-    return addresses;
-  }
-
-  void SetUpNetworkInterfaces() {
-    // Remove the default interfaces added by the test infrastructure.
-    caller()->network_manager()->RemoveInterface(kDefaultLocalAddress);
-    callee()->network_manager()->RemoveInterface(kDefaultLocalAddress);
-
-    // Add network addresses for test.
-    for (const auto& caller_address : CallerAddresses()) {
-      caller()->network_manager()->AddInterface(caller_address);
-    }
-    for (const auto& callee_address : CalleeAddresses()) {
-      callee()->network_manager()->AddInterface(callee_address);
-    }
-  }
-
-  uint32_t port_allocator_flags() const { return port_allocator_flags_; }
-
- private:
-  uint32_t port_allocator_flags_;
-  TestStunServer::StunServerPtr stun_server_;
-};
-
-// Ensure FakeClockForTest is constructed first (see class for rationale).
-class PeerConnectionIntegrationIceStatesTestWithFakeClock
-    : public FakeClockForTest,
-      public PeerConnectionIntegrationIceStatesTest {};
+using PeerConnectionIntegrationIceStatesTestWithFakeClock =
+    PeerConnectionIntegrationIceStatesTestBase<
+        PeerConnectionIntegrationTestWithSimulatedTime>;
 
 #if !defined(THREAD_SANITIZER)
 // This test provokes TSAN errors. bugs.webrtc.org/11282
@@ -2144,11 +2078,12 @@ TEST_P(PeerConnectionIntegrationIceStatesTestWithFakeClock,
   // peer should consider the other side to have rejected the connection. This
   // is signaled by the state transitioning to "failed".
   constexpr TimeDelta kConsentTimeout = TimeDelta::Millis(30000);
-  ScopedFakeClock& fake_clock = FakeClock();
   ASSERT_THAT(
       WaitUntil([&] { return caller()->standardized_ice_connection_state(); },
                 Eq(PeerConnectionInterface::kIceConnectionFailed),
-                {.timeout = kConsentTimeout, .clock = &fake_clock}),
+                {.timeout = kConsentTimeout,
+                 .polling_interval = TimeDelta::Millis(100),
+                 .clock = time_controller_.get()}),
       IsRtcOk());
 }
 
@@ -2653,7 +2588,7 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
   caller()->CreateAndSetAndSignalOffer();
   EXPECT_THAT(WaitUntil([&] { return DtlsConnected(); }, IsTrue(),
                         {.timeout = TimeDelta::Millis(total_connection_time_ms),
-                         .clock = &FakeClock()}),
+                         .clock = time_controller_.get()}),
               IsRtcOk());
   // Closing the PeerConnections destroys the ports before the ScopedFakeClock.
   // If this is not done a DCHECK can be hit in ports.cc, because a large
@@ -2669,7 +2604,7 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
 
   // Call getStats, assert there are no candidates.
   scoped_refptr<const RTCStatsReport> first_report =
-      caller()->NewGetStats(run_loop());
+      caller()->NewGetStats({.clock = time_controller_.get()});
   ASSERT_TRUE(first_report);
   auto first_candidate_stats =
       first_report->GetStatsOfType<RTCLocalIceCandidateStats>();
@@ -2680,7 +2615,7 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
   caller()->CreateAndSetAndSignalOffer();
   // Call getStats again, assert there are candidates now.
   scoped_refptr<const RTCStatsReport> second_report =
-      caller()->NewGetStats(run_loop());
+      caller()->NewGetStats({.clock = time_controller_.get()});
   ASSERT_TRUE(second_report);
   auto second_candidate_stats =
       second_report->GetStatsOfType<RTCLocalIceCandidateStats>();
@@ -2701,12 +2636,12 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
   // signalled.
   caller()->CreateAndSetAndSignalOffer();
   ASSERT_THAT(WaitUntil([&] { return caller()->IceGatheringStateComplete(); },
-                        IsTrue(), {.clock = &FakeClock()}),
+                        IsTrue(), {.clock = time_controller_.get()}),
               IsRtcOk());
 
   // Call getStats, assert there are no candidates.
   scoped_refptr<const RTCStatsReport> first_report =
-      caller()->NewGetStats(run_loop());
+      caller()->NewGetStats({.clock = time_controller_.get()});
   ASSERT_TRUE(first_report);
   auto first_candidate_stats =
       first_report->GetStatsOfType<RTCRemoteIceCandidateStats>();
@@ -2720,13 +2655,14 @@ TEST_P(PeerConnectionIntegrationTestWithFakeClock,
           "candidate:2214029314 1 udp 2122260223 127.0.0.1 49152 typ host",
           nullptr)),
       [&result](RTCError r) { result = r; });
-  ASSERT_THAT(WaitUntil([&] { return result.has_value(); }, IsTrue()),
+  ASSERT_THAT(WaitUntil([&] { return result.has_value(); }, IsTrue(),
+                        {.clock = time_controller_.get()}),
               IsRtcOk());
   ASSERT_TRUE(result.value().ok());
 
   // Call getStats again, assert there is a remote candidate now.
   scoped_refptr<const RTCStatsReport> second_report =
-      caller()->NewGetStats(run_loop());
+      caller()->NewGetStats({.clock = time_controller_.get()});
   ASSERT_TRUE(second_report);
   auto second_candidate_stats =
       second_report->GetStatsOfType<RTCRemoteIceCandidateStats>();
@@ -3808,6 +3744,8 @@ TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
     caller()->UpdateDelayStats("caller reception", current_size);
     callee()->UpdateDelayStats("callee reception", current_size);
   }
+  EXPECT_TRUE(caller()->AudioDelayStatsPercentageChecked());
+  EXPECT_TRUE(callee()->AudioDelayStatsPercentageChecked());
 }
 
 TEST_F(PeerConnectionIntegrationTestUnifiedPlan,
@@ -4177,11 +4115,11 @@ TEST_P(PeerConnectionIntegrationTest, EndToEndRtpSenderVideoEncoderSelector) {
               IsRtcOk());
   ASSERT_EQ(callee()->pc()->GetReceivers().size(), 1u);
 
-  std::unique_ptr<MockEncoderSelector> encoder_selector =
-      std::make_unique<MockEncoderSelector>();
+  scoped_refptr<MockEncoderSelector> encoder_selector =
+      make_ref_counted<MockEncoderSelector>();
   EXPECT_CALL(*encoder_selector, OnCurrentEncoder);
 
-  sender->SetEncoderSelector(std::move(encoder_selector));
+  sender->SetEncoderSelector(encoder_selector);
 
   // Expect video to be received in one direction.
   MediaExpectations media_expectations;
@@ -4208,8 +4146,8 @@ TEST_P(PeerConnectionIntegrationTest,
               IsRtcOk());
   ASSERT_EQ(callee()->pc()->GetReceivers().size(), 1u);
 
-  std::unique_ptr<MockEncoderSelector> encoder_selector =
-      std::make_unique<MockEncoderSelector>();
+  scoped_refptr<MockEncoderSelector> encoder_selector =
+      make_ref_counted<MockEncoderSelector>();
   std::optional<SdpVideoFormat> next_format;
   EXPECT_CALL(*encoder_selector, OnCurrentEncoder)
       .WillOnce([&](const SdpVideoFormat& format) {
@@ -4221,7 +4159,7 @@ TEST_P(PeerConnectionIntegrationTest,
   EXPECT_CALL(*encoder_selector, OnAvailableBitrate)
       .WillRepeatedly([&](const DataRate& rate) { return next_format; });
 
-  sender->SetEncoderSelector(std::move(encoder_selector));
+  sender->SetEncoderSelector(encoder_selector);
 
   // Expect video to be received in one direction.
   MediaExpectations media_expectations;
@@ -5193,6 +5131,230 @@ TEST_P(PeerConnectionIntegrationTest, PerPeerConnectionHeaderExtensions) {
                 Not(Contains(Field(&RtpExtension::uri, uri))));
   }
 }
+
+#ifdef WEBRTC_HAVE_SCTP
+
+class DowngradeLogSink : public LogSink {
+ public:
+  void OnLogMessage(const std::string& message) override {
+    if (message.find("Received unexpected non-DTLS packet") !=
+        std::string::npos) {
+      found_ = true;
+    }
+  }
+  bool found() const { return found_; }
+
+ private:
+  bool found_ = false;
+};
+
+// This test reproduces the vulnerability where a kPrAnswer with a BUNDLE group
+// but no fingerprint for a media section can cause that media section to use
+// an unencrypted transport.
+TEST_P(PeerConnectionIntegrationTest,
+       DataChannelEncryptionDowngradeViaBundleDesyncInPrAnswer) {
+  RTCConfiguration config;
+  config.bundle_policy = PeerConnectionInterface::kBundlePolicyBalanced;
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
+  ConnectFakeSignaling();
+
+  // 1. Initial negotiation without BUNDLE.
+  // We munge the answer to remove BUNDLE so that separate transports are
+  // created.
+  callee()->SetGeneratedSdpMunger(
+      [](std::unique_ptr<SessionDescriptionInterface>& desc) {
+        desc->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
+      });
+
+  caller()->AddVideoTrack();
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
+  ASSERT_TRUE(WaitUntil([&] { return DtlsConnected(); }));
+
+  // 2. Renegotiation with BUNDLE in offer, and malicious prAnswer.
+  // The malicious prAnswer will have a BUNDLE group containing mid 0 and mid 1,
+  // but mid 1 (Data Channel) will have no fingerprint.
+  callee()->SetGeneratedSdpMunger(nullptr);
+
+  // Create an offer.
+  std::unique_ptr<SessionDescriptionInterface> offer =
+      caller()->CreateOfferAndWait();
+  ASSERT_THAT(offer, NotNull());
+
+  // Set local offer on caller.
+  auto observer = make_ref_counted<FakeSetLocalDescriptionObserver>();
+  caller()->pc()->SetLocalDescription(std::move(offer), observer);
+  ASSERT_TRUE(WaitUntil([&] { return observer->called(); }));
+
+  // Set remote offer on callee.
+  std::unique_ptr<SessionDescriptionInterface> offer_for_callee =
+      caller()->CreateOfferAndWait();
+  ASSERT_THAT(offer_for_callee, NotNull());
+  ASSERT_TRUE(callee()->SetRemoteDescription(std::move(offer_for_callee)));
+
+  // Callee creates a normal answer first.
+  auto answer_observer =
+      make_ref_counted<MockCreateSessionDescriptionObserver>();
+  callee()->pc()->CreateAnswer(
+      answer_observer.get(), PeerConnectionInterface::RTCOfferAnswerOptions());
+  ASSERT_TRUE(WaitUntil([&] { return answer_observer->called(); }));
+  std::unique_ptr<SessionDescriptionInterface> answer =
+      answer_observer->MoveDescription();
+  ASSERT_THAT(answer, NotNull());
+
+  // Convert the answer to a prAnswer by serializing and re-parsing.
+  std::string sdp = answer->ToString();
+  ASSERT_FALSE(sdp.empty());
+  std::unique_ptr<SessionDescriptionInterface> pr_answer =
+      CreateSessionDescription(SdpType::kPrAnswer, sdp);
+  ASSERT_THAT(pr_answer, NotNull());
+
+  // Munge the prAnswer:
+  // - Ensure BUNDLE group is present.
+  // - Remove fingerprint from the second media section (mid 1).
+  SessionDescription* desc = pr_answer->description();
+  const ContentGroup* bundle_group = desc->GetGroupByName(GROUP_TYPE_BUNDLE);
+  ASSERT_THAT(bundle_group, NotNull());
+  ASSERT_THAT(bundle_group->content_names(), SizeIs(2));
+
+  // Remove fingerprint from the second content.
+  const ContentInfos& contents = desc->contents();
+  ASSERT_GE(contents.size(), 2u);
+  TransportInfo* transport_info =
+      desc->GetTransportInfoByName(contents[1].mid());
+  ASSERT_THAT(transport_info, NotNull());
+  transport_info->description.identity_fingerprint.reset();
+
+  // Set the remote prAnswer on the caller.
+  // This succeeds because VerifyCrypto skips the fingerprint check for
+  // bundled sections (except the first).
+  ASSERT_TRUE(caller()->SetRemoteDescription(std::move(pr_answer)));
+
+  // With the fix, the Data Channel's transport will now be BUNDLED into mid 0.
+  // Since mid 0 has DTLS active, mid 1's data will also be DTLS-wrapped.
+  // We can verify this by checking that the SCTP transport's internal DTLS
+  // transport is active.
+  EXPECT_TRUE(network_thread()->BlockingCall([&] {
+    return static_cast<SctpTransport*>(caller()->pc()->GetSctpTransport().get())
+        ->internal()
+        ->dtls_transport()
+        ->IsDtlsActive();
+  }));
+
+  // If the bug were present, it would be sent as raw SCTP and trigger an error
+  // on the peer.
+
+  DowngradeLogSink downgrade_log_sink;
+  LogMessage::AddLogToStream(&downgrade_log_sink, LS_ERROR);
+
+  // Send data from caller.
+  ASSERT_EQ(caller()->data_channels().size(), 1u);
+  ASSERT_TRUE(WaitUntil([&] {
+    return caller()->data_channels()[0]->state() == DataChannelInterface::kOpen;
+  }));
+  caller()->data_channels()[0]->Send(DataBuffer("SECRET-PLAINTEXT"));
+
+  // If the fix is correct, no non-DTLS packets should be received.
+  // We wait a bit to ensure packets have time to arrive.
+  Thread::Current()->ProcessMessages(500);
+
+  bool found = downgrade_log_sink.found();
+  LogMessage::RemoveLogToStream(&downgrade_log_sink);
+
+  EXPECT_FALSE(found) << "Security downgrade detected: raw SCTP packets sent "
+                         "instead of DTLS-wrapped packets.";
+}
+
+// This test verifies that establishing BUNDLE in a prAnswer does not cause
+// the destruction of transports that might be needed if the final answer
+// removes BUNDLE.
+TEST_P(PeerConnectionIntegrationTest,
+       BundleEstablishedInPrAnswerThenRemovedInFinalAnswer) {
+  RTCConfiguration config;
+  config.bundle_policy = PeerConnectionInterface::kBundlePolicyBalanced;
+  ASSERT_TRUE(CreatePeerConnectionWrappersWithConfig(config, config));
+  ConnectFakeSignaling();
+
+  // 1. Initial negotiation without BUNDLE.
+  callee()->SetGeneratedSdpMunger(
+      [](std::unique_ptr<SessionDescriptionInterface>& desc) {
+        desc->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
+      });
+
+  caller()->AddVideoTrack();
+  caller()->CreateDataChannel();
+  caller()->CreateAndSetAndSignalOffer();
+  ASSERT_TRUE(WaitUntil([&] { return SignalingStateStable(); }));
+  ASSERT_TRUE(WaitUntil([&] { return DtlsConnected(); }));
+
+  // 2. Renegotiation with BUNDLE in offer and prAnswer, then NO BUNDLE in
+  // answer.
+  std::unique_ptr<SessionDescriptionInterface> offer =
+      caller()->CreateOfferAndWait();
+  ASSERT_THAT(offer, NotNull());
+
+  // Set local offer on caller.
+  auto observer = make_ref_counted<FakeSetLocalDescriptionObserver>();
+  caller()->pc()->SetLocalDescription(std::move(offer), observer);
+  ASSERT_TRUE(WaitUntil([&] { return observer->called(); }));
+
+  // Set remote offer on callee.
+  std::unique_ptr<SessionDescriptionInterface> offer_for_callee =
+      caller()->CreateOfferAndWait();
+  ASSERT_THAT(offer_for_callee, NotNull());
+  ASSERT_TRUE(callee()->SetRemoteDescription(std::move(offer_for_callee)));
+
+  // Callee creates a prAnswer WITH BUNDLE.
+  auto answer_observer =
+      make_ref_counted<MockCreateSessionDescriptionObserver>();
+  callee()->pc()->CreateAnswer(
+      answer_observer.get(), PeerConnectionInterface::RTCOfferAnswerOptions());
+  ASSERT_TRUE(WaitUntil([&] { return answer_observer->called(); }));
+  std::unique_ptr<SessionDescriptionInterface> answer =
+      answer_observer->MoveDescription();
+  ASSERT_THAT(answer, NotNull());
+
+  std::string sdp = answer->ToString();
+  ASSERT_FALSE(sdp.empty());
+  std::unique_ptr<SessionDescriptionInterface> pr_answer =
+      CreateSessionDescription(SdpType::kPrAnswer, sdp);
+  ASSERT_THAT(pr_answer, NotNull());
+
+  // Set the remote prAnswer on the caller.
+  // This establishes BUNDLE.
+  const ContentGroup* bundle_group =
+      pr_answer->description()->GetGroupByName(GROUP_TYPE_BUNDLE);
+  ASSERT_THAT(bundle_group, NotNull());
+  ASSERT_THAT(bundle_group->content_names(), SizeIs(2));
+
+  ASSERT_TRUE(caller()->SetRemoteDescription(std::move(pr_answer)));
+
+  // 3. Final answer WITHOUT BUNDLE.
+  auto final_answer_observer =
+      make_ref_counted<MockCreateSessionDescriptionObserver>();
+  callee()->pc()->CreateAnswer(
+      final_answer_observer.get(),
+      PeerConnectionInterface::RTCOfferAnswerOptions());
+  ASSERT_TRUE(WaitUntil([&] { return final_answer_observer->called(); }));
+  std::unique_ptr<SessionDescriptionInterface> final_answer =
+      final_answer_observer->MoveDescription();
+  ASSERT_THAT(final_answer, NotNull());
+
+  // Munge it to remove BUNDLE.
+  final_answer->description()->RemoveGroupByName(GROUP_TYPE_BUNDLE);
+
+  // Verify it has no bundle.
+  ASSERT_FALSE(final_answer->description()->GetGroupByName(GROUP_TYPE_BUNDLE));
+
+  // Set the final remote answer on the caller.
+  // This should FAIL because mid 0 was already bundled with mid 1 in the
+  // prAnswer, and RFC 8843 says you can't remove an m= section from a BUNDLE
+  // group once it's been established.
+  ASSERT_FALSE(caller()->SetRemoteDescription(std::move(final_answer)));
+}
+
+#endif  // WEBRTC_HAVE_SCTP
 
 }  // namespace
 

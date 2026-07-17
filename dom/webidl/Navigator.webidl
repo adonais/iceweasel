@@ -355,6 +355,13 @@ partial interface Navigator {
   readonly attribute MediaSession mediaSession;
 };
 
+// https://w3c.github.io/audio-session/
+[Exposed=Window]
+partial interface Navigator {
+  [Pref="dom.audio_session.enabled", SameObject]
+  readonly attribute AudioSession audioSession;
+};
+
 // https://w3c.github.io/web-locks/#navigator-mixins
 [SecureContext]
 interface mixin NavigatorLocks {

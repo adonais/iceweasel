@@ -74,7 +74,7 @@ class CanonicalBrowsingContext final : public BrowsingContext {
   static CanonicalBrowsingContext* Cast(BrowsingContext* aContext);
   static const CanonicalBrowsingContext* Cast(const BrowsingContext* aContext);
   static already_AddRefed<CanonicalBrowsingContext> Cast(
-      already_AddRefed<BrowsingContext>&& aContext);
+      already_AddRefed<BrowsingContext> aContext);
 
   bool IsOwnedByProcess(uint64_t aProcessId) const {
     return mProcessId == aProcessId;

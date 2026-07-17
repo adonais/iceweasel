@@ -14,6 +14,7 @@
 #include "js/Printer.h"
 #include "js/TypeDecls.h"
 #include "js/Utility.h"
+#include "vm/JSScript.h"
 
 namespace js {
 namespace coverage {
@@ -162,7 +163,10 @@ inline bool IsLCovEnabled() {
 bool InitScriptCoverage(JSContext* cx, JSScript* script);
 
 // Collect the code-coverage data from a script into relevant LCovSource.
-bool CollectScriptCoverage(JSScript* script, bool finalizing);
+bool CollectScriptCoverage(JSScript* script);
+
+// Write coverage data for one script.
+bool MaybeWriteScriptCoverage(JSScript* script, const ScriptLCovEntry& entry);
 
 }  // namespace coverage
 }  // namespace js

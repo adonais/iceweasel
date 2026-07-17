@@ -236,6 +236,23 @@ export async function doTask(defaultAgent, force) {
   let defaultPdfHandler = defaultAgent.getDefaultPdfHandler();
   lazy.log.debug(`Default PDF Handler: ${defaultPdfHandler}`);
 
+  let isTaskbarPinned = "Error";
+  try {
+    let shellService = Cc["@mozilla.org/browser/shell-service;1"].getService(
+      Ci.nsIWindowsShellService
+    );
+    let winTaskbar = Cc["@mozilla.org/windows-taskbar;1"].getService(
+      Ci.nsIWinTaskbar
+    );
+    let pinned = await shellService.isCurrentAppPinnedToTaskbarAsync(
+      winTaskbar.defaultGroupId
+    );
+    isTaskbarPinned = pinned ? "IsPinned" : "NotPinned";
+    lazy.log.debug(`Is pinned to taskbar: ${isTaskbarPinned}`);
+  } catch (ex) {
+    lazy.log.error(`Pin detection failed: ${ex}`);
+  }
+
   let notificationTelemetry = {
     shown: kNotificationShown.notShown,
     action: kNotificationAction.noAction,
@@ -267,7 +284,8 @@ export async function doTask(defaultAgent, force) {
     defaultPdfHandler,
     notificationTelemetry.shown,
     notificationTelemetry.action,
-    daysSinceLastAppLaunch
+    daysSinceLastAppLaunch,
+    isTaskbarPinned
   );
 }
 

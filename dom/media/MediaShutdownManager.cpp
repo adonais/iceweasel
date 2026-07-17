@@ -17,7 +17,8 @@ namespace mozilla {
 #undef LOGW
 
 extern LazyLogModule gMediaDecoderLog;
-#define DECODER_LOG(type, msg) MOZ_LOG(gMediaDecoderLog, type, msg)
+#define DECODER_LOG(type, ...) \
+  MOZ_LOG_FMT(gMediaDecoderLog, type, MOZ_LOG_EXPAND_ARGS __VA_ARGS__)
 #define LOGW(...) NS_WARNING(nsPrintfCString(__VA_ARGS__).get())
 
 NS_IMPL_ISUPPORTS(MediaShutdownManager, nsIAsyncShutdownBlocker)

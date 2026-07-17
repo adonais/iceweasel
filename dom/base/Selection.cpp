@@ -93,6 +93,36 @@ static LazyLogModule sSelectionLog("Selection");
 // 5. Verbose: Complete call stacks of APIs.
 LazyLogModule sSelectionAPILog("SelectionAPI");
 
+std::string format_as(SelectionType aType) {
+  constexpr const char* sNames[] = {
+      "eInvalid",
+      "eNone",
+      "eNormal",
+      "eSpellCheck",
+      "eIMERawClause",
+      "eIMESelectedRawClause",
+      "eIMEConvertedClause",
+      "eIMESelectedClause",
+      "eAccessibility",
+      "eFind",
+      "eURLSecondary",
+      "eURLStrikeout",
+      "eTargetText",
+      "eHighlight",
+  };
+  static_assert(static_cast<std::underlying_type_t<SelectionType>>(
+                    SelectionType::eInvalid) == -1);
+  MOZ_ASSERT(static_cast<std::underlying_type_t<SelectionType>>(
+                 SelectionType::eHighlight) == std::size(sNames) - 1);
+  const size_t index =
+      static_cast<std::underlying_type_t<SelectionType>>(aType) + 1;
+  return index >= std::size(sNames) ? "<invalid value>" : sNames[index];
+}
+
+std::ostream& operator<<(std::ostream& aStream, SelectionType aType) {
+  return aStream << format_as(aType);
+}
+
 MOZ_ALWAYS_INLINE bool NeedsToLogSelectionAPI(dom::Selection& aSelection) {
   return aSelection.Type() == SelectionType::eNormal &&
          MOZ_LOG_TEST(sSelectionAPILog, LogLevel::Info);
@@ -114,47 +144,48 @@ void LogStackForSelectionAPI() {
                             logLevel == LogLevel::Verbose
                                 ? 0u /* all */
                                 : 8u /* 8 inclusive ancestors */);
-  MOZ_LOG(sSelectionAPILog, logLevel, ("\n%s", buf.get()));
+  MOZ_LOG_FMT(sSelectionAPILog, logLevel, "\n{}", buf.get());
   sBufPtr = nullptr;
 }
 
 static void LogSelectionAPI(const dom::Selection* aSelection,
                             const char* aFuncName) {
-  MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-          ("%p Selection::%s()", aSelection, aFuncName));
+  MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info, "{} Selection::{}()",
+              static_cast<const void*>(aSelection), aFuncName);
 }
 
 static void LogSelectionAPI(const dom::Selection* aSelection,
                             const char* aFuncName, const char* aArgName,
                             const nsINode* aNode) {
-  MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-          ("%p Selection::%s(%s=%s)", aSelection, aFuncName, aArgName,
-           aNode ? ToString(*aNode).c_str() : "nullptr"));
+  MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info, "{} Selection::{}({}={})",
+              static_cast<const void*>(aSelection), aFuncName, aArgName,
+              RefPtr{aNode});
 }
 
 static void LogSelectionAPI(const dom::Selection* aSelection,
                             const char* aFuncName, const char* aArgName,
                             const dom::AbstractRange& aRange) {
-  MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-          ("%p Selection::%s(%s=%s)", aSelection, aFuncName, aArgName,
-           ToString(aRange).c_str()));
+  MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info, "{} Selection::{}({}={})",
+              static_cast<const void*>(aSelection), aFuncName, aArgName,
+              ToString(aRange));
 }
 
 static void LogSelectionAPI(const dom::Selection* aSelection,
                             const char* aFuncName, const char* aArgName1,
                             const nsINode* aNode, const char* aArgName2,
                             uint32_t aOffset) {
-  MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-          ("%p Selection::%s(%s=%s, %s=%u)", aSelection, aFuncName, aArgName1,
-           aNode ? ToString(*aNode).c_str() : "nullptr", aArgName2, aOffset));
+  MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info,
+              "{} Selection::{}({}={}, {}={})",
+              static_cast<const void*>(aSelection), aFuncName, aArgName1,
+              RefPtr{aNode}, aArgName2, aOffset);
 }
 
 static void LogSelectionAPI(const dom::Selection* aSelection,
                             const char* aFuncName, const char* aArgName,
                             const RawRangeBoundary& aBoundary) {
-  MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-          ("%p Selection::%s(%s=%s)", aSelection, aFuncName, aArgName,
-           ToString(aBoundary).c_str()));
+  MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info, "{} Selection::{}({}={})",
+              static_cast<const void*>(aSelection), aFuncName, aArgName,
+              aBoundary);
 }
 
 static void LogSelectionAPI(const dom::Selection* aSelection,
@@ -162,11 +193,11 @@ static void LogSelectionAPI(const dom::Selection* aSelection,
                             const nsAString& aStr1, const char* aArgName2,
                             const nsAString& aStr2, const char* aArgName3,
                             const nsAString& aStr3) {
-  MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-          ("%p Selection::%s(%s=%s, %s=%s, %s=%s)", aSelection, aFuncName,
-           aArgName1, NS_ConvertUTF16toUTF8(aStr1).get(), aArgName2,
-           NS_ConvertUTF16toUTF8(aStr2).get(), aArgName3,
-           NS_ConvertUTF16toUTF8(aStr3).get()));
+  MOZ_LOG_FMT(
+      sSelectionAPILog, LogLevel::Info, "{} Selection::{}({}={}, {}={}, {}={})",
+      static_cast<const void*>(aSelection), aFuncName, aArgName1,
+      NS_ConvertUTF16toUTF8(aStr1), aArgName2, NS_ConvertUTF16toUTF8(aStr2),
+      aArgName3, NS_ConvertUTF16toUTF8(aStr3));
 }
 
 static void LogSelectionAPI(const dom::Selection* aSelection,
@@ -176,16 +207,17 @@ static void LogSelectionAPI(const dom::Selection* aSelection,
                             const nsINode& aNode2, const char* aOffsetArgName2,
                             uint32_t aOffset2) {
   if (&aNode1 == &aNode2 && aOffset1 == aOffset2) {
-    MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-            ("%p Selection::%s(%s=%s=%s, %s=%s=%u)", aSelection, aFuncName,
-             aNodeArgName1, aNodeArgName2, ToString(aNode1).c_str(),
-             aOffsetArgName1, aOffsetArgName2, aOffset1));
+    MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info,
+                "{} Selection::{}({}={}={}, {}={}={})",
+                static_cast<const void*>(aSelection), aFuncName, aNodeArgName1,
+                aNodeArgName2, aNode1, aOffsetArgName1, aOffsetArgName2,
+                aOffset1);
   } else {
-    MOZ_LOG(
-        sSelectionAPILog, LogLevel::Info,
-        ("%p Selection::%s(%s=%s, %s=%u, %s=%s, %s=%u)", aSelection, aFuncName,
-         aNodeArgName1, ToString(aNode1).c_str(), aOffsetArgName1, aOffset1,
-         aNodeArgName2, ToString(aNode2).c_str(), aOffsetArgName2, aOffset2));
+    MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info,
+                "{} Selection::{}({}={}, {}={}, {}={}, {}={})",
+                static_cast<const void*>(aSelection), aFuncName, aNodeArgName1,
+                aNode1, aOffsetArgName1, aOffset1, aNodeArgName2, aNode2,
+                aOffsetArgName2, aOffset2);
   }
 }
 
@@ -198,18 +230,18 @@ static void LogSelectionAPI(const dom::Selection* aSelection,
                             nsDirection aDirection, const char* aReasonArgName,
                             int16_t aReason) {
   if (&aNode1 == &aNode2 && aOffset1 == aOffset2) {
-    MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-            ("%p Selection::%s(%s=%s=%s, %s=%s=%u, %s=%s, %s=%d)", aSelection,
-             aFuncName, aNodeArgName1, aNodeArgName2, ToString(aNode1).c_str(),
-             aOffsetArgName1, aOffsetArgName2, aOffset1, aDirArgName,
-             ToString(aDirection).c_str(), aReasonArgName, aReason));
+    MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info,
+                "{} Selection::{}({}={}={}, {}={}={}, {}={}, {}={})",
+                static_cast<const void*>(aSelection), aFuncName, aNodeArgName1,
+                aNodeArgName2, aNode1, aOffsetArgName1, aOffsetArgName2,
+                aOffset1, aDirArgName, aDirection, aReasonArgName, aReason);
   } else {
-    MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-            ("%p Selection::%s(%s=%s, %s=%u, %s=%s, %s=%u, %s=%s, %s=%d)",
-             aSelection, aFuncName, aNodeArgName1, ToString(aNode1).c_str(),
-             aOffsetArgName1, aOffset1, aNodeArgName2, ToString(aNode2).c_str(),
-             aOffsetArgName2, aOffset2, aDirArgName,
-             ToString(aDirection).c_str(), aReasonArgName, aReason));
+    MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info,
+                "{} Selection::{}({}={}, {}={}, {}={}, {}={}, {}={}, {}={})",
+                static_cast<const void*>(aSelection), aFuncName, aNodeArgName1,
+                aNode1, aOffsetArgName1, aOffset1, aNodeArgName2, aNode2,
+                aOffsetArgName2, aOffset2, aDirArgName, aDirection,
+                aReasonArgName, aReason);
   }
 }
 
@@ -219,14 +251,14 @@ static void LogSelectionAPI(const dom::Selection* aSelection,
                             const char* aArgName2,
                             const RawRangeBoundary& aBoundary2) {
   if (aBoundary1 == aBoundary2) {
-    MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-            ("%p Selection::%s(%s=%s=%s)", aSelection, aFuncName, aArgName1,
-             aArgName2, ToString(aBoundary1).c_str()));
+    MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info, "{} Selection::{}({}={}={})",
+                static_cast<const void*>(aSelection), aFuncName, aArgName1,
+                aArgName2, aBoundary1);
   } else {
-    MOZ_LOG(sSelectionAPILog, LogLevel::Info,
-            ("%p Selection::%s(%s=%s, %s=%s)", aSelection, aFuncName, aArgName1,
-             ToString(aBoundary1).c_str(), aArgName2,
-             ToString(aBoundary2).c_str()));
+    MOZ_LOG_FMT(sSelectionAPILog, LogLevel::Info,
+                "{} Selection::{}({}={}, {}={})",
+                static_cast<const void*>(aSelection), aFuncName, aArgName1,
+                aBoundary1, aArgName2, aBoundary2);
   }
 }
 }  // namespace mozilla
@@ -242,6 +274,8 @@ static void printRange(nsRange* aDomRange);
 #else
 #  define DEBUG_OUT_RANGE(x)
 #endif  // PRINT_RANGE
+
+uint64_t SelectionChangeGuard::sGeneration = 0;
 
 static constexpr nsLiteralCString kNoDocumentTypeNodeError =
     "DocumentType nodes are not supported"_ns;
@@ -1258,11 +1292,11 @@ nsresult Selection::AddRangesForSelectableNodes(
     return NS_ERROR_UNEXPECTED;
   }
 
-  MOZ_LOG(
+  MOZ_LOG_FMT(
       sSelectionLog, LogLevel::Debug,
-      ("%s: selection=%p, type=%i, range=(%p, StartOffset=%u, EndOffset=%u)",
-       __FUNCTION__, this, static_cast<int>(GetType()), aRange,
-       aRange->StartOffset(), aRange->EndOffset()));
+      "{}: selection={}, type={}, range=({}, StartOffset={}, EndOffset={})",
+      __func__, static_cast<void*>(this), GetType(), static_cast<void*>(aRange),
+      aRange->StartOffset(), aRange->EndOffset());
 
   if (mUserInitiated) {
     return AddRangesForUserSelectableNodes(aRange, aOutIndex,
@@ -1457,7 +1491,7 @@ nsresult Selection::StyledRanges::RemoveRangeAndUnregisterSelection(
 }
 nsresult Selection::RemoveCollapsedRanges() {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__);
+    LogSelectionAPI(this, __func__);
     LogStackForSelectionAPI();
   }
 
@@ -2211,7 +2245,7 @@ Element* Selection::GetAncestorLimiter() const {
 
 void Selection::SetAncestorLimiter(Element* aLimiter) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aLimiter", aLimiter);
+    LogSelectionAPI(this, __func__, "aLimiter", aLimiter);
     LogStackForSelectionAPI();
   }
 
@@ -2354,7 +2388,7 @@ nsresult AutoScroller::DoAutoScroll(nsIFrame* aFrame, nsPoint aPoint) {
 
 void Selection::RemoveAllRanges(ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__);
+    LogSelectionAPI(this, __func__);
     LogStackForSelectionAPI();
   }
 
@@ -2477,7 +2511,7 @@ void Selection::RemoveAllRangesInternal(ErrorResult& aRv,
 
 void Selection::AddRangeJS(nsRange& aRange, ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aRange", aRange);
+    LogSelectionAPI(this, __func__, "aRange", aRange);
     LogStackForSelectionAPI();
   }
 
@@ -2496,7 +2530,7 @@ void Selection::AddRangeJS(nsRange& aRange, ErrorResult& aRv) {
 void Selection::AddRangeAndSelectFramesAndNotifyListeners(nsRange& aRange,
                                                           ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aRange", aRange);
+    LogSelectionAPI(this, __func__, "aRange", aRange);
     LogStackForSelectionAPI();
   }
 
@@ -2620,7 +2654,7 @@ void Selection::AddHighlightRangeAndSelectFramesAndNotifyListeners(
 void Selection::RemoveRangeAndUnselectFramesAndNotifyListeners(
     AbstractRange& aRange, ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aRange", aRange);
+    LogSelectionAPI(this, __func__, "aRange", aRange);
     LogStackForSelectionAPI();
   }
 
@@ -2714,7 +2748,7 @@ bool Selection::IsValidNodeAndOffsetForBoundary(const nsINode& aContainer,
 void Selection::CollapseJS(nsINode* aContainer, uint32_t aOffset,
                            ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aContainer", aContainer, "aOffset",
+    LogSelectionAPI(this, __func__, "aContainer", aContainer, "aOffset",
                     aOffset);
     LogStackForSelectionAPI();
   }
@@ -2735,7 +2769,7 @@ void Selection::CollapseJS(nsINode* aContainer, uint32_t aOffset,
 void Selection::CollapseInLimiter(const RawRangeBoundary& aPoint,
                                   ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aPoint", aPoint);
+    LogSelectionAPI(this, __func__, "aPoint", aPoint);
     LogStackForSelectionAPI();
   }
   if (!aPoint.IsSetAndValid()) {
@@ -2823,7 +2857,7 @@ void Selection::CollapseInternal(InLimiter aInLimiter,
  */
 void Selection::CollapseToStartJS(ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__);
+    LogSelectionAPI(this, __func__);
     LogStackForSelectionAPI();
   }
 
@@ -2834,7 +2868,7 @@ void Selection::CollapseToStartJS(ErrorResult& aRv) {
 
 void Selection::CollapseToStart(ErrorResult& aRv) {
   if (!mCalledByJS && NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__);
+    LogSelectionAPI(this, __func__);
     LogStackForSelectionAPI();
   }
 
@@ -2872,7 +2906,7 @@ void Selection::CollapseToStart(ErrorResult& aRv) {
  */
 void Selection::CollapseToEndJS(ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__);
+    LogSelectionAPI(this, __func__);
     LogStackForSelectionAPI();
   }
 
@@ -2883,7 +2917,7 @@ void Selection::CollapseToEndJS(ErrorResult& aRv) {
 
 void Selection::CollapseToEnd(ErrorResult& aRv) {
   if (!mCalledByJS && NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__);
+    LogSelectionAPI(this, __func__);
     LogStackForSelectionAPI();
   }
 
@@ -3047,7 +3081,7 @@ void Selection::AdjustAnchorFocusForMultiRange(nsDirection aDirection) {
 void Selection::ExtendJS(nsINode& aContainer, uint32_t aOffset,
                          ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aContainer", &aContainer, "aOffset",
+    LogSelectionAPI(this, __func__, "aContainer", &aContainer, "aOffset",
                     aOffset);
     LogStackForSelectionAPI();
   }
@@ -3059,7 +3093,7 @@ void Selection::ExtendJS(nsINode& aContainer, uint32_t aOffset,
 
 nsresult Selection::Extend(nsINode* aContainer, uint32_t aOffset) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aContainer", aContainer, "aOffset",
+    LogSelectionAPI(this, __func__, "aContainer", aContainer, "aOffset",
                     aOffset);
     LogStackForSelectionAPI();
   }
@@ -3121,12 +3155,10 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
   if (aContainer.GetFrameSelection() != mFrameSelection) {
     NS_ASSERTION(
         false,
-        nsFmtCString(
-            "mFrameSelection is {} which is expected as "
-            "aContainer.GetFrameSelection() ({})",
-            mozilla::ToString(mFrameSelection).c_str(),
-            mozilla::ToString(RefPtr{aContainer.GetFrameSelection()}).c_str())
-            .get());
+        fmt::format("mFrameSelection is {} which is expected as "
+                    "aContainer.GetFrameSelection() ({})",
+                    mFrameSelection, RefPtr{aContainer.GetFrameSelection()})
+            .c_str());
     aRv.Throw(NS_ERROR_FAILURE);
     return;
   }
@@ -3413,7 +3445,7 @@ void Selection::ExtendInternal(nsINode& aContainer, uint32_t aOffset,
 
 void Selection::SelectAllChildrenJS(nsINode& aNode, ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aNode", &aNode);
+    LogSelectionAPI(this, __func__, "aNode", &aNode);
     LogStackForSelectionAPI();
   }
 
@@ -3430,7 +3462,7 @@ void Selection::SelectAllChildrenJS(nsINode& aNode, ErrorResult& aRv) {
 
 void Selection::SelectAllChildren(nsINode& aNode, ErrorResult& aRv) {
   if (!mCalledByJS && NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aNode", &aNode);
+    LogSelectionAPI(this, __func__, "aNode", &aNode);
     LogStackForSelectionAPI();
   }
 
@@ -3905,8 +3937,9 @@ void Selection::NotifySelectionListeners() {
     return;  // nothing to do
   }
 
-  MOZ_LOG(sSelectionLog, LogLevel::Debug,
-          ("%s: selection=%p", __FUNCTION__, this));
+  MOZ_LOG_FMT(sSelectionLog, LogLevel::Debug, "{}: selection={}", __func__,
+              static_cast<void*>(this));
+  SelectionChangeGuard::DidChange();
 
   mStyledRanges.mRangesMightHaveChanged = true;
 
@@ -4022,7 +4055,7 @@ bool Selection::IsBlockingSelectionChangeEvents() const {
 
 void Selection::DeleteFromDocument(ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__);
+    LogSelectionAPI(this, __func__);
     LogStackForSelectionAPI();
   }
 
@@ -4063,8 +4096,8 @@ void Selection::DeleteFromDocument(ErrorResult& aRv) {
 void Selection::Modify(const nsAString& aAlter, const nsAString& aDirection,
                        const nsAString& aGranularity) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aAlter", aAlter, "aDirection",
-                    aDirection, "aGranularity", aGranularity);
+    LogSelectionAPI(this, __func__, "aAlter", aAlter, "aDirection", aDirection,
+                    "aGranularity", aGranularity);
     LogStackForSelectionAPI();
   }
 
@@ -4192,9 +4225,9 @@ void Selection::SetBaseAndExtentJS(nsINode& aAnchorNode, uint32_t aAnchorOffset,
                                    nsINode& aFocusNode, uint32_t aFocusOffset,
                                    ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aAnchorNode", aAnchorNode,
-                    "aAnchorOffset", aAnchorOffset, "aFocusNode", aFocusNode,
-                    "aFocusOffset", aFocusOffset);
+    LogSelectionAPI(this, __func__, "aAnchorNode", aAnchorNode, "aAnchorOffset",
+                    aAnchorOffset, "aFocusNode", aFocusNode, "aFocusOffset",
+                    aFocusOffset);
     LogStackForSelectionAPI();
   }
 
@@ -4235,7 +4268,7 @@ void Selection::SetBaseAndExtent(const RawRangeBoundary& aAnchorRef,
                                  const RawRangeBoundary& aFocusRef,
                                  ErrorResult& aRv) {
   if (!mCalledByJS && NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aAnchorRef", aAnchorRef, "aFocusRef",
+    LogSelectionAPI(this, __func__, "aAnchorRef", aAnchorRef, "aFocusRef",
                     aFocusRef);
     LogStackForSelectionAPI();
   }
@@ -4253,7 +4286,7 @@ void Selection::SetBaseAndExtentInLimiter(const RawRangeBoundary& aAnchorRef,
                                           const RawRangeBoundary& aFocusRef,
                                           ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aAnchorRef", aAnchorRef, "aFocusRef",
+    LogSelectionAPI(this, __func__, "aAnchorRef", aAnchorRef, "aFocusRef",
                     aFocusRef);
     LogStackForSelectionAPI();
   }
@@ -4310,8 +4343,7 @@ void Selection::SetStartAndEndInLimiter(const RawRangeBoundary& aStartRef,
                                         const RawRangeBoundary& aEndRef,
                                         ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aStartRef", aStartRef, "aEndRef",
-                    aEndRef);
+    LogSelectionAPI(this, __func__, "aStartRef", aStartRef, "aEndRef", aEndRef);
     LogStackForSelectionAPI();
   }
 
@@ -4329,7 +4361,7 @@ Result<Ok, nsresult> Selection::SetStartAndEndInLimiter(
     uint32_t aEndOffset, nsDirection aDirection, int16_t aReason) {
   MOZ_ASSERT(aDirection == eDirPrevious || aDirection == eDirNext);
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aStartContainer", aStartContainer,
+    LogSelectionAPI(this, __func__, "aStartContainer", aStartContainer,
                     "aStartOffset", aStartOffset, "aEndContainer",
                     aEndContainer, "aEndOffset", aEndOffset, "nsDirection",
                     aDirection, "aReason", aReason);
@@ -4359,8 +4391,7 @@ void Selection::SetStartAndEnd(const RawRangeBoundary& aStartRef,
                                const RawRangeBoundary& aEndRef,
                                ErrorResult& aRv) {
   if (NeedsToLogSelectionAPI(*this)) {
-    LogSelectionAPI(this, __FUNCTION__, "aStartRef", aStartRef, "aEndRef",
-                    aEndRef);
+    LogSelectionAPI(this, __func__, "aStartRef", aStartRef, "aEndRef", aEndRef);
     LogStackForSelectionAPI();
   }
 

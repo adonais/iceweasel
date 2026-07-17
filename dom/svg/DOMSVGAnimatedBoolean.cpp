@@ -4,6 +4,7 @@
 
 #include "DOMSVGAnimatedBoolean.h"
 
+#include "SVGAnimatedBoolean.h"
 #include "mozilla/dom/SVGAnimatedBooleanBinding.h"
 
 namespace mozilla::dom {
@@ -14,6 +15,17 @@ NS_SVG_VAL_IMPL_CYCLE_COLLECTION_WRAPPERCACHED(DOMSVGAnimatedBoolean,
 JSObject* DOMSVGAnimatedBoolean::WrapObject(JSContext* aCx,
                                             JS::Handle<JSObject*> aGivenProto) {
   return SVGAnimatedBoolean_Binding::Wrap(aCx, this, aGivenProto);
+}
+
+bool DOMSVGAnimatedBoolean::BaseVal() const { return mVal->GetBaseValue(); }
+
+void DOMSVGAnimatedBoolean::SetBaseVal(bool aValue) {
+  mVal->SetBaseValue(aValue, mSVGElement);
+}
+
+bool DOMSVGAnimatedBoolean::AnimVal() const {
+  mSVGElement->FlushAnimations();
+  return mVal->GetAnimValue();
 }
 
 }  // namespace mozilla::dom

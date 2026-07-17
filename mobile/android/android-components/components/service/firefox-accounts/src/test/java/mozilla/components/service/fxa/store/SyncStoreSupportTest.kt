@@ -117,7 +117,7 @@ class SyncStoreSupportTest {
             whenever(getProfile(eq(false))).thenReturn(profile)
         }
 
-        assertEquals(AccountState.NotAuthenticated, store.state.accountState)
+        assertEquals(AccountState.Unknown, store.state.accountState)
 
         accountObserver.onAuthenticated(account, AuthType.Existing)
         testDispatcher.scheduler.advanceUntilIdle()
@@ -143,7 +143,7 @@ class SyncStoreSupportTest {
         accountObserver.onAuthenticated(account, AuthType.Existing)
 
         assertNull(store.state.account)
-        assertEquals(AccountState.NotAuthenticated, store.state.accountState)
+        assertEquals(AccountState.Unknown, store.state.accountState)
     }
 
     @Test
@@ -163,7 +163,7 @@ class SyncStoreSupportTest {
 
     @Test
     fun `GIVEN account observer WHEN onAuthenticationProblems observed THEN account state is updated`() {
-        assertEquals(AccountState.NotAuthenticated, store.state.accountState)
+        assertEquals(AccountState.Unknown, store.state.accountState)
 
         accountObserver.onAuthenticationProblems()
 
@@ -173,7 +173,7 @@ class SyncStoreSupportTest {
     @Test
     fun `GIVEN account observer WHEN onFlowError observed THEN account state is updated`() {
         assertNull(store.state.account)
-        assertEquals(AccountState.NotAuthenticated, store.state.accountState)
+        assertEquals(AccountState.Unknown, store.state.accountState)
 
         accountObserver.onFlowError(AuthFlowError.FailedToBeginAuth)
 
@@ -206,7 +206,7 @@ class SyncStoreSupportTest {
         val initialState = store.state.copy()
 
         assertNull(store.state.account)
-        assertEquals(AccountState.NotAuthenticated, store.state.accountState)
+        assertEquals(AccountState.Unknown, store.state.accountState)
 
         `when`(authenticatedAccount.checkAuthorizationStatus(eq(SCOPE_PROFILE))).thenReturn(false)
 
@@ -230,12 +230,12 @@ class SyncStoreSupportTest {
         }
 
         assertNull(store.state.account)
-        assertEquals(AccountState.NotAuthenticated, store.state.accountState)
+        assertEquals(AccountState.Unknown, store.state.accountState)
 
         accountObserver.onReady(account)
 
         assertNull(store.state.account)
-        assertEquals(AccountState.NotAuthenticated, store.state.accountState)
+        assertEquals(AccountState.Unknown, store.state.accountState)
     }
 
     @Test

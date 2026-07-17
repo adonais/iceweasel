@@ -224,7 +224,11 @@ void nsDisplayTextOverflowMarker::PaintTextToContext(gfxContext* aCtx,
     return;
   }
 
-  MOZ_ASSERT(!mStyle.IsEllipsis());
+  if (mStyle.IsEllipsis()) [[unlikely]] {
+    // Text-run allocation might've failed, in which case well...
+    return;
+  }
+
   RefPtr<nsFontMetrics> fm =
       nsLayoutUtils::GetInflatedFontMetricsForFrame(mFrame);
   nsDependentAtomString str16(mStyle.AsString().AsAtom());

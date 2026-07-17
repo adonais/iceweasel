@@ -93,7 +93,7 @@ class HLSDemuxer::HLSDemuxerCallbacksSupport
   }
 
   void OnError(int aErrorCode) {
-    HLS_DEBUG("HLSDemuxerCallbacksSupport", "Got error(%d) from java side",
+    HLS_DEBUG("HLSDemuxerCallbacksSupport", "Got error({}) from java side",
               aErrorCode);
     MutexAutoLock lock(mMutex);
     if (!mDemuxer) {
@@ -355,7 +355,7 @@ void HLSTrackDemuxer::UpdateMediaInfo(int index) {
     }
     auto* audioInfo = mTrackInfo->GetAsAudioInfo();
     MOZ_ASSERT(audioInfo != nullptr);
-    HLS_DEBUG("HLSTrackDemuxer", "Update audio info (%d)", index);
+    HLS_DEBUG("HLSTrackDemuxer", "Update audio info ({})", index);
     java::GeckoAudioInfo::LocalRef audioInfoObj(std::move(infoObj));
     audioInfo->mRate = audioInfoObj->Rate();
     audioInfo->mChannels = audioInfoObj->Channels();
@@ -391,7 +391,7 @@ void HLSTrackDemuxer::UpdateMediaInfo(int index) {
     videoInfo->mMimeType =
         NS_ConvertUTF16toUTF8(videoInfoObj->MimeType()->ToString());
     videoInfo->mDuration = TimeUnit::FromMicroseconds(videoInfoObj->Duration());
-    HLS_DEBUG("HLSTrackDemuxer", "Update video info (%d) / I(%dx%d) / D(%dx%d)",
+    HLS_DEBUG("HLSTrackDemuxer", "Update video info ({}) / I({}x{}) / D({}x{})",
               index, videoInfo->mImage.width, videoInfo->mImage.height,
               videoInfo->mDisplay.width, videoInfo->mDisplay.height);
   }
@@ -471,7 +471,7 @@ CryptoSample HLSTrackDemuxer::ExtractCryptoSample(
     return crypto;
   } while (false);
 
-  HLS_DEBUG("HLSTrackDemuxer", "%s", msg);
+  HLS_DEBUG("HLSTrackDemuxer", "{}", msg);
   return CryptoSample{};
 }
 
@@ -530,7 +530,7 @@ void HLSTrackDemuxer::UpdateNextKeyFrameTime() {
   MOZ_ASSERT(mParent, "Called after BreackCycle()");
   TimeUnit nextKeyFrameTime = mParent->GetNextKeyFrameTime();
   if (nextKeyFrameTime != mNextKeyframeTime.refOr(TimeUnit::FromInfinity())) {
-    HLS_DEBUG("HLSTrackDemuxer", "Update mNextKeyframeTime to %" PRId64,
+    HLS_DEBUG("HLSTrackDemuxer", "Update mNextKeyframeTime to {}",
               nextKeyFrameTime.ToMicroseconds());
     mNextKeyframeTime = Some(nextKeyFrameTime);
   }

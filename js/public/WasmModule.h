@@ -16,7 +16,7 @@ namespace JS {
 
 /**
  * The WasmModule interface allows the embedding to hold a reference to the
- * underying C++ implementation of a JS WebAssembly.Module object for purposes
+ * underlying C++ implementation of a JS WebAssembly.Module object for purposes
  * of efficient postMessage() and (de)serialization from a random thread.
  *
  * In particular, this allows postMessage() of a WebAssembly.Module:

@@ -281,6 +281,7 @@ extern "C" MOZ_EXPORT const char* __tsan_default_suppressions() {
          // parking_lot using incorrect atomic orderings in RwLock, upstream
          // fix already up for review.
          "race:StrongRuleNode::ensure_child\n"
+         "race:StrongRuleNode>::ensure_child\n"
          // No Bug - permanent
          // Upstream Bugs:
          //

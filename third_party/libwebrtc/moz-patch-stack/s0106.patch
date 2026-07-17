@@ -1,23 +1,23 @@
 From: Michael Froman <mfroman@mozilla.com>
-Date: Mon, 13 Jan 2025 08:14:00 -0600
-Subject: Bug 1942428 - (fix-69cc695699) uncomment an arg that upstream thinks
- is unused
+Date: Fri, 7 Mar 2025 17:43:00 -0600
+Subject: Bug 1952339 - (fix-68e7b00928) add default param to emplace() to fix
+ compile issue
 
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/73f9e0e64eb65e9f2579b0f3eb34b88e2b5e5d74
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/26c916591791b13a3d8888066c22c5ba49c86c47
 ---
- modules/rtp_rtcp/source/rtcp_sender.cc | 2 +-
+ call/rtp_config.cc | 2 +-
  1 file changed, 1 insertion(+), 1 deletion(-)
 
-diff --git a/modules/rtp_rtcp/source/rtcp_sender.cc b/modules/rtp_rtcp/source/rtcp_sender.cc
-index b84bc66316..1762623bc1 100644
---- a/modules/rtp_rtcp/source/rtcp_sender.cc
-+++ b/modules/rtp_rtcp/source/rtcp_sender.cc
-@@ -196,7 +196,7 @@ bool RTCPSender::Sending() const {
-   return sending_;
- }
- 
--void RTCPSender::SetSendingStatus(const FeedbackState& /* feedback_state */,
-+void RTCPSender::SetSendingStatus(const FeedbackState& feedback_state,
-                                   bool sending) {
-   bool sendRTCPBye = false;
-   {
+diff --git a/call/rtp_config.cc b/call/rtp_config.cc
+index 560ec099d6..ce31b4e301 100644
+--- a/call/rtp_config.cc
++++ b/call/rtp_config.cc
+@@ -251,7 +251,7 @@ RtpStreamConfig RtpConfig::GetStreamConfig(size_t index) const {
+   stream_config.raw_payload = raw_payload;
+   if (!rtx.ssrcs.empty()) {
+     RTC_DCHECK_EQ(ssrcs.size(), rtx.ssrcs.size());
+-    auto& stream_config_rtx = stream_config.rtx.emplace();
++    auto& stream_config_rtx = stream_config.rtx.emplace(RtpStreamConfig::Rtx());
+     stream_config_rtx.ssrc = rtx.ssrcs[index];
+     stream_config_rtx.payload_type = rtx.payload_type;
+   }

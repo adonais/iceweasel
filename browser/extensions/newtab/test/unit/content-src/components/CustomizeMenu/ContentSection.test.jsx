@@ -232,7 +232,7 @@ describe("ContentSection", () => {
     assert.isFalse(wrapper.find("#timer-widget-section").exists());
   });
 
-  it("should dispatch WIDGETS_ENABLED with widget_size=medium when widgetsMayBeMaximized is false", () => {
+  it("should dispatch WIDGETS_ENABLED with widget_size=large when widgetsMayBeMaximized is false", () => {
     const dispatch = sinon.spy();
     wrapper = mount(
       <ContentSection
@@ -264,12 +264,12 @@ describe("ContentSection", () => {
     assert.ok(widgetsEnabledCall, "Expected WIDGETS_ENABLED to be dispatched");
     assert.equal(
       widgetsEnabledCall.args[0].data.widget_size,
-      "medium",
-      "widget_size should be medium when widgets.system.maximized is false"
+      "large",
+      "widget_size should be large when widgets.system.maximized is false"
     );
   });
 
-  it("should dispatch WIDGETS_ENABLED with widget_size=mini for Weather widget", () => {
+  it("should dispatch WIDGETS_ENABLED with widget_size=small for Weather widget", () => {
     const dispatch = sinon.spy();
     wrapper = mount(
       <ContentSection
@@ -304,8 +304,8 @@ describe("ContentSection", () => {
     );
     assert.equal(
       widgetsEnabledCall.args[0].data.widget_size,
-      "mini",
-      "widget_size should always be mini for Weather widget"
+      "small",
+      "widget_size should be small for Weather widget"
     );
   });
 

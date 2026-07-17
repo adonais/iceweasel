@@ -22,12 +22,15 @@ export function SectionContextMenu({
   following,
   sectionPersonalization,
   sectionPosition,
+  learnMoreUrl,
 }) {
   const SECTIONS_CONTEXT_MENU_OPTIONS = [];
   if (following) {
     SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionUnfollow");
   }
   SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionBlock");
+  SECTIONS_CONTEXT_MENU_OPTIONS.push("Separator");
+  SECTIONS_CONTEXT_MENU_OPTIONS.push("SectionLearnMore");
   const [showContextMenu, setShowContextMenu] = useState(false);
 
   const onClick = e => {
@@ -64,6 +67,7 @@ export function SectionContextMenu({
             sectionKey,
             sectionPosition,
             title,
+            learnMoreUrl,
           }}
         />
       )}

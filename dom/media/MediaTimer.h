@@ -5,7 +5,7 @@
 #if !defined(MediaTimer_h_)
 #  define MediaTimer_h_
 
-#  include <cinttypes>
+#  include <cstdint>
 #  include <queue>
 
 #  include "mozilla/AbstractThread.h"
@@ -21,11 +21,11 @@ namespace mozilla {
 
 extern LazyLogModule gMediaTimerLog;
 
-#  define TIMER_LOG(x, ...)                                    \
-    MOZ_ASSERT(gMediaTimerLog);                                \
-    MOZ_LOG(gMediaTimerLog, LogLevel::Debug,                   \
-            ("[MediaTimer=%p relative_t=%" PRId64 "]" x, this, \
-             RelativeMicroseconds(T::Now()), ##__VA_ARGS__))
+#  define TIMER_LOG(x, ...)                                        \
+    MOZ_ASSERT(gMediaTimerLog);                                    \
+    MOZ_LOG_FMT(gMediaTimerLog, LogLevel::Debug,                   \
+                "[MediaTimer={} relative_t={}]" x, fmt::ptr(this), \
+                RelativeMicroseconds(T::Now()), ##__VA_ARGS__)
 
 // This promise type is only exclusive because so far there isn't a reason for
 // it not to be. Feel free to change that.

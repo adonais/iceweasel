@@ -13,6 +13,10 @@ import io.mockk.just
 import io.mockk.mockk
 import io.mockk.spyk
 import io.mockk.verify
+import mozilla.components.browser.state.state.ActiveOptionsPage
+import mozilla.components.browser.state.state.BrowserState
+import mozilla.components.browser.state.state.WebExtensionState
+import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.support.test.robolectric.testContext
 import mozilla.components.support.utils.toSafeIntent
 import org.junit.Assert.assertEquals
@@ -32,7 +36,6 @@ import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.share.QR_CODE_URI_KEY
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getIntentSource
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.helpers.perf.TestStrictModeManager
 import org.mozilla.fenix.utils.Settings
@@ -55,7 +58,7 @@ class HomeActivityTest {
         settings = mockk(relaxed = true)
         appStore = mockk(relaxed = true)
 
-        every { testContext.settings() } returns settings
+        every { testContext.components.settings } returns settings
         every { testContext.components.appStore } returns appStore
     }
 
@@ -252,5 +255,127 @@ class HomeActivityTest {
         activity.handleNewIntent(intent)
 
         assertNull(NativeShareSheet.qrCodeTapped.testGetValue())
+    }
+
+    @Test
+    fun `GIVEN active options page belongs to an extension WHEN creating open options page directions THEN return directions`() {
+        val activeOptionsPage = ActiveOptionsPage(
+            instanceId = "instanceId",
+            url = "moz-extension://extensionId/options.html",
+            name = "Test extension",
+        )
+        val extension = WebExtensionState(
+            id = "extensionId",
+            activeOptionsPage = activeOptionsPage,
+        )
+        val browserStore = BrowserStore(
+            BrowserState(
+                extensions = mapOf(extension.id to extension),
+            ),
+        )
+        every { activity.applicationContext } returns testContext
+        every { testContext.components.core.store } returns browserStore
+
+        val directions = activity.createOpenOptionsPageDirections(activeOptionsPage)
+
+        assertEquals(R.id.action_global_webExtensionActionOptionsPageFragment, directions?.actionId)
+        assertEquals(activeOptionsPage.url, directions?.arguments?.getString("optionsPageUrl"))
+        assertEquals(activeOptionsPage.name, directions?.arguments?.getString("webExtensionName"))
+        assertEquals(extension.id, directions?.arguments?.getString("webExtensionId"))
+    }
+
+    @Test
+    fun `GIVEN active options page does not belong to an extension WHEN creating open options page directions THEN return null`() {
+        val activeOptionsPage = ActiveOptionsPage(
+            instanceId = "instanceId",
+            url = "moz-extension://extensionId/options.html",
+            name = "Test extension",
+        )
+        val browserStore = BrowserStore(BrowserState())
+        every { activity.applicationContext } returns testContext
+        every { testContext.components.core.store } returns browserStore
+
+        assertNull(activity.createOpenOptionsPageDirections(activeOptionsPage))
+    }
+
+    @Test
+    fun `GIVEN the user is in the extension management UI WHEN opening an options page THEN suppress the request and clear activeOptionsPage`() {
+        val activeOptionsPage = ActiveOptionsPage(
+            instanceId = "instanceId",
+            url = "moz-extension://extensionId/options.html",
+            name = "Test extension",
+        )
+        val extension = WebExtensionState(
+            id = "extensionId",
+            activeOptionsPage = activeOptionsPage,
+        )
+        val browserStore = BrowserStore(
+            BrowserState(extensions = mapOf(extension.id to extension)),
+        )
+        every { activity.applicationContext } returns testContext
+        every { testContext.components.core.store } returns browserStore
+
+        val suppressed = activity.suppressOptionsPageInAddonManagement(
+            currentDestinationId = R.id.installedAddonDetailsFragment,
+            activeOptionsPage = activeOptionsPage,
+        )
+
+        assertTrue(suppressed)
+        assertNull(browserStore.state.extensions[extension.id]?.activeOptionsPage)
+    }
+
+    @Test
+    fun `GIVEN the user is on an addon options page WHEN opening an options page THEN suppress the request and clear activeOptionsPage`() {
+        val activeOptionsPage = ActiveOptionsPage(
+            instanceId = "instanceId",
+            url = "moz-extension://extensionId/options.html",
+            name = "Test extension",
+        )
+        val extension = WebExtensionState(
+            id = "extensionId",
+            activeOptionsPage = activeOptionsPage,
+        )
+        val browserStore = BrowserStore(
+            BrowserState(extensions = mapOf(extension.id to extension)),
+        )
+        every { activity.applicationContext } returns testContext
+        every { testContext.components.core.store } returns browserStore
+
+        val suppressed = activity.suppressOptionsPageInAddonManagement(
+            currentDestinationId = R.id.addonInternalSettingsFragment,
+            activeOptionsPage = activeOptionsPage,
+        )
+
+        assertTrue(suppressed)
+        assertNull(browserStore.state.extensions[extension.id]?.activeOptionsPage)
+    }
+
+    @Test
+    fun `GIVEN the user is not in the extension management UI WHEN opening an options page THEN do not suppress the request`() {
+        val activeOptionsPage = ActiveOptionsPage(
+            instanceId = "instanceId",
+            url = "moz-extension://extensionId/options.html",
+            name = "Test extension",
+        )
+        val extension = WebExtensionState(
+            id = "extensionId",
+            activeOptionsPage = activeOptionsPage,
+        )
+        val browserStore = BrowserStore(
+            BrowserState(extensions = mapOf(extension.id to extension)),
+        )
+        every { activity.applicationContext } returns testContext
+        every { testContext.components.core.store } returns browserStore
+
+        val suppressed = activity.suppressOptionsPageInAddonManagement(
+            currentDestinationId = R.id.browserFragment,
+            activeOptionsPage = activeOptionsPage,
+        )
+
+        assertFalse(suppressed)
+        assertEquals(
+            activeOptionsPage,
+            browserStore.state.extensions[extension.id]?.activeOptionsPage,
+        )
     }
 }

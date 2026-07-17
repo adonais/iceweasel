@@ -15,13 +15,15 @@ const { Chat } = ChromeUtils.importESModule(
 const { MemoryStore } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/services/MemoryStore.sys.mjs"
 );
-const { MODEL_FEATURES } = ChromeUtils.importESModule(
+const { MODEL_FEATURES, SERVICE_TYPES, PURPOSES } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
 const { PlacesTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PlacesTestUtils.sys.mjs"
 );
+
+const TEST_MODEL = "test-model";
 
 function getLastAssistantResponse(conversation) {
   return conversation.messages
@@ -50,7 +52,13 @@ add_task(async function test_chat_streams_end_to_end() {
       conversation.addAssistantMessage("text", "");
 
       // withServer sets up the mock HTTP server, so use the real engine
-      const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+      const engineInstance = await openAIEngine.build({
+        model: TEST_MODEL,
+        serviceType: SERVICE_TYPES.AI,
+        purpose: PURPOSES.CHAT,
+        flowId: null,
+        feature: MODEL_FEATURES.CHAT,
+      });
 
       await Chat.fetchWithHistory({ conversation, engineInstance });
 
@@ -130,7 +138,13 @@ add_task(async function test_chat_tool_call_get_open_tabs() {
         followupChunks: ["Here are your tabs."],
       },
       async () => {
-        const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+        const engineInstance = await openAIEngine.build({
+          model: TEST_MODEL,
+          serviceType: SERVICE_TYPES.AI,
+          purpose: PURPOSES.CHAT,
+          flowId: null,
+          feature: MODEL_FEATURES.CHAT,
+        });
 
         const conversation = new ChatConversation({
           title: "chat title",
@@ -205,7 +219,13 @@ add_task(async function test_chat_tool_call_search_browsing_history() {
         conversation.addUserMessage("Search history", "https://example.com", 0);
         conversation.addAssistantMessage("text", "");
 
-        const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+        const engineInstance = await openAIEngine.build({
+          model: TEST_MODEL,
+          serviceType: SERVICE_TYPES.AI,
+          purpose: PURPOSES.CHAT,
+          flowId: null,
+          feature: MODEL_FEATURES.CHAT,
+        });
 
         await Chat.fetchWithHistory({ conversation, engineInstance });
 
@@ -257,7 +277,13 @@ add_task(async function test_chat_tool_call_get_page_content() {
         conversation.addUserMessage("Read page", "https://example.com", 0);
         conversation.addAssistantMessage("text", "");
 
-        const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+        const engineInstance = await openAIEngine.build({
+          model: TEST_MODEL,
+          serviceType: SERVICE_TYPES.AI,
+          purpose: PURPOSES.CHAT,
+          flowId: null,
+          feature: MODEL_FEATURES.CHAT,
+        });
 
         await Chat.fetchWithHistory({ conversation, engineInstance });
 
@@ -332,7 +358,13 @@ add_task(async function test_chat_tool_call_get_navigation_info() {
         );
         conversation.addAssistantMessage("text", "");
 
-        const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+        const engineInstance = await openAIEngine.build({
+          model: TEST_MODEL,
+          serviceType: SERVICE_TYPES.AI,
+          purpose: PURPOSES.CHAT,
+          flowId: null,
+          feature: MODEL_FEATURES.CHAT,
+        });
 
         await Chat.fetchWithHistory({ conversation, engineInstance });
 
@@ -415,7 +447,13 @@ add_task(async function test_chat_tool_call_get_user_memories() {
         );
         conversation.addAssistantMessage("text", "");
 
-        const engineInstance = await openAIEngine.build(MODEL_FEATURES.CHAT);
+        const engineInstance = await openAIEngine.build({
+          model: TEST_MODEL,
+          serviceType: SERVICE_TYPES.AI,
+          purpose: PURPOSES.CHAT,
+          flowId: null,
+          feature: MODEL_FEATURES.CHAT,
+        });
 
         await Chat.fetchWithHistory({ conversation, engineInstance });
 

@@ -33,6 +33,15 @@ function testBasic() {
   checkObjectFuse(obj, {generation:0,properties:{x:"NotConstant",a:"Constant"}});
   obj.a = undefined;
   checkObjectFuse(obj, {generation:0,properties:{x:"NotConstant",a:"NotConstant"}});
+
+  // Indexed properties aren't tracked.
+  obj[0] = 1;
+  obj[10000000] = 3;
+  checkObjectFuse(obj, {generation:0,properties:{x:"NotConstant",a:"NotConstant"}});
+  var arr = [1, 2, 3];
+  arr[10000000] = 1;
+  addObjectFuse(arr);
+  checkObjectFuse(arr, {generation:0,properties:{}});
 }
 for (var i = 0; i < 20; i++) {
   testBasic();

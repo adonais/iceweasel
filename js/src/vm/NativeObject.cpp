@@ -215,8 +215,8 @@ void ObjectElements::dumpStringContent(js::GenericPrinter& out) const {
       });
   out.put("]");
 
-  out.printf(", init=%u, capacity=%u, length=%u>", initializedLength, capacity,
-             length);
+  out.printf(", init=%u, capacity=%u, length=%u>", initializedLength.get(),
+             capacity, length);
 }
 #endif
 
@@ -2043,6 +2043,7 @@ bool js::AddOrUpdateSparseElementHelper(JSContext* cx,
   // At this point we're updating a property: See SetExistingProperty.
   PropertyInfo prop = map->getPropertyInfo(index);
   if (prop.isDataProperty() && prop.writable()) {
+    Watchtower::watchPropertyValueChange<AllowGC::CanGC>(cx, obj, id, v, prop);
     obj->setSlot(prop.slot(), v);
     return true;
   }

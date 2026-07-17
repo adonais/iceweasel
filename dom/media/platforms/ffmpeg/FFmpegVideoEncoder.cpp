@@ -295,7 +295,7 @@ RefPtr<MediaDataEncoder::InitPromise> FFmpegVideoEncoder<LIBAV_VER>::Init() {
   return InvokeAsync(mTaskQueue, __func__, [self = RefPtr(this)]() {
     MediaResult r = self->InitEncoder();
     if (NS_FAILED(r.Code())) {
-      FFMPEGV_LOG("%s", r.Description().get());
+      FFMPEGV_LOG("{}", r.Description().get());
       return InitPromise::CreateAndReject(r, __func__);
     }
     return InitPromise::CreateAndResolve(true, __func__);
@@ -522,7 +522,7 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
       }
 
       SVCSettings s = settings.extract();
-      FFMPEGV_LOG("SVC options string: %s=%s", s.mSettingKeyValue.first.get(),
+      FFMPEGV_LOG("SVC options string: {}={}", s.mSettingKeyValue.first.get(),
                   s.mSettingKeyValue.second.get());
       mLib->av_opt_set(mCodecContext->priv_data, s.mSettingKeyValue.first.get(),
                        s.mSettingKeyValue.second.get(), 0);
@@ -610,8 +610,8 @@ MediaResult FFmpegVideoEncoder<LIBAV_VER>::InitEncoderInternal(bool aHardware) {
   mLib->av_dict_free(&options);
 
   FFMPEGV_LOG(
-      "%s has been initialized with format: %s, bitrate: %" PRIi64
-      ", width: %d, height: %d, quantizer: [%d, %d], time_base: %d/%d%s",
+      "{} has been initialized with format: {}, bitrate: {}, width: {}, "
+      "height: {}, quantizer: [{}, {}], time_base: {}/{}{}",
       mCodecName.get(), ffmpeg::GetPixelFormatString(mCodecContext->pix_fmt),
       static_cast<int64_t>(mCodecContext->bit_rate), mCodecContext->width,
       mCodecContext->height, mCodecContext->qmin, mCodecContext->qmax,
@@ -749,7 +749,7 @@ FFmpegVideoEncoder<LIBAV_VER>::ToMediaRawData(AVPacket* aPacket) {
         e.Code() != NS_ERROR_NOT_IMPLEMENTED) {
       return Err(e);
     }
-    FFMPEGV_LOG("GetExtraData failed with %s, but we can ignore it for now",
+    FFMPEGV_LOG("GetExtraData failed with {}, but we can ignore it for now",
                 e.Description().get());
   }
 
@@ -916,8 +916,8 @@ FFmpegVideoEncoder<LIBAV_VER>::GetExtraData(AVPacket* aPacket) {
   }
 
   FFMPEGV_LOG(
-      "Generate extra data: profile - %u, constraints: %u, level: %u for pts @ "
-      "%" PRId64,
+      "Generate extra data: profile - {}, constraints: {}, level: {} for pts @ "
+      "{}",
       spsData[1], spsData[2], spsData[3], aPacket->pts);
 
   // Create extra data.
@@ -943,7 +943,7 @@ FFmpegVideoEncoder<LIBAV_VER>::GetSVCSettings() {
   }
 
   if (codecType == CodecType::Unknown) {
-    FFMPEGV_LOG("SVC setting is not implemented for %s codec",
+    FFMPEGV_LOG("SVC setting is not implemented for {} codec",
                 mCodecName.get());
     return Nothing();
   }

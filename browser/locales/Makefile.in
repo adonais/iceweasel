@@ -17,11 +17,7 @@ PWD := $(CURDIR)
 
 ZIP_IN ?= $(ABS_DIST)/$(PACKAGE)
 
-ifdef MOZ_DEV_EDITION
-MOZ_LANGPACK_EID=langpack-$(AB_CD)@devedition.mozilla.org
-else
-MOZ_LANGPACK_EID=langpack-$(AB_CD)@firefox.mozilla.org
-endif
+MOZ_LANGPACK_EID = langpack-$(AB_CD)@$(MOZ_LANGPACK_EID_HOST)
 
 # Required for l10n.mk - defines a list of app sub dirs that should
 # be included in langpack xpis.

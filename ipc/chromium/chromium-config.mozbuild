@@ -5,6 +5,7 @@
 LOCAL_INCLUDES += [
     "!/ipc/ipdl/_ipdlheaders",
     "/ipc/chromium/src",
+    "/third_party/abseil-cpp",
 ]
 
 if CONFIG["OS_TARGET"] == "Linux":

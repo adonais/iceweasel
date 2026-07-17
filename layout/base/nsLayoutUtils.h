@@ -298,6 +298,18 @@ class nsLayoutUtils {
   static nsIFrame* GetBackdropFrame(const nsIContent* aContent);
 
   /**
+   * Returns the ::checkmark pseudo-element for aContent, if any.
+   */
+  static mozilla::dom::Element* GetCheckmarkPseudo(const nsIContent* aContent);
+  static nsIFrame* GetCheckmarkFrame(const nsIContent* aContent);
+
+  /**
+   * Returns the ::picker-icon pseudo-element for aContent, if any.
+   */
+  static mozilla::dom::Element* GetPickerIconPseudo(const nsIContent* aContent);
+  static nsIFrame* GetPickerIconFrame(const nsIContent* aContent);
+
+  /**
    * Stores generated content pseudos such as ::after into aPseudos.
    */
   static void AppendGeneratedContentPseudos(
@@ -2638,7 +2650,7 @@ class nsLayoutUtils {
    */
   static bool InvalidationDebuggingIsEnabled() {
     return mozilla::StaticPrefs::nglayout_debug_invalidation() ||
-           getenv("MOZ_DUMP_INVALIDATION") != 0;
+           getenv("MOZ_DUMP_INVALIDATION") != nullptr;
   }
 
   static void Initialize();

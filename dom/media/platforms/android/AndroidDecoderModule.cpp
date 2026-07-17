@@ -19,13 +19,13 @@
 #include "prlog.h"
 
 #undef LOG
-#define LOG(arg, ...)                                     \
-  MOZ_LOG(                                                \
-      sAndroidDecoderModuleLog, mozilla::LogLevel::Debug, \
-      ("AndroidDecoderModule(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
-#define SLOG(arg, ...)                                        \
-  MOZ_LOG(sAndroidDecoderModuleLog, mozilla::LogLevel::Debug, \
-          ("%s: " arg, __func__, ##__VA_ARGS__))
+#define LOG(arg, ...)                                                         \
+  MOZ_LOG_FMT(sAndroidDecoderModuleLog, mozilla::LogLevel::Debug,             \
+              "AndroidDecoderModule({})::{}: " arg, fmt::ptr(this), __func__, \
+              ##__VA_ARGS__)
+#define SLOG(arg, ...)                                                        \
+  MOZ_LOG_FMT(sAndroidDecoderModuleLog, mozilla::LogLevel::Debug, "{}: " arg, \
+              __func__, ##__VA_ARGS__)
 
 using namespace mozilla;
 using media::DecodeSupport;
@@ -115,7 +115,7 @@ DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
     case MediaCodec::Wave:
       [[fallthrough]];
     case MediaCodec::FLAC:
-      SLOG("Rejecting audio of type %s", PromiseFlatCString(aMimeType).get());
+      SLOG("Rejecting audio of type {}", PromiseFlatCString(aMimeType).get());
       return media::DecodeSupportSet{};
 
     // H264 always reports software decode
@@ -136,7 +136,7 @@ DecodeSupportSet AndroidDecoderModule::SupportsMimeType(
     case MediaCodec::SENTINEL:
       [[fallthrough]];
     default:
-      SLOG("Support check using default logic for %s",
+      SLOG("Support check using default logic for {}",
            PromiseFlatCString(aMimeType).get());
       break;
   }
@@ -233,12 +233,12 @@ void AndroidDecoderModule::SetSupportedMimeTypes(
   for (const auto& s : aSupportedTypes) {
     // Verify MIME type string present
     if (s.Length() < 4) {
-      SLOG("No SW/HW support prefix found in codec string %s", s.get());
+      SLOG("No SW/HW support prefix found in codec string {}", s.get());
       continue;
     }
     const auto mimeType = Substring(s, 3);
     if (mimeType.Length() == 0) {
-      SLOG("No MIME type information found in codec string %s", s.get());
+      SLOG("No MIME type information found in codec string {}", s.get());
       continue;
     }
 
@@ -252,12 +252,12 @@ void AndroidDecoderModule::SetSupportedMimeTypes(
       sSupportedHwMimeTypes->AppendElement(mimeType);
       support = DecodeSupport::HardwareDecode;
     } else {
-      SLOG("Error parsing acceleration info from JNI codec string %s", s.get());
+      SLOG("Error parsing acceleration info from JNI codec string {}", s.get());
       continue;
     }
     const MediaCodec codec = MCSInfo::GetMediaCodecFromMimeType(mimeType);
     if (codec == MediaCodec::SENTINEL) {
-      SLOG("Did not parse string %s to specific codec", s.get());
+      SLOG("Did not parse string {} to specific codec", s.get());
       continue;
     }
     *sSupportedCodecs += MCSInfo::GetMediaCodecsSupportEnum(codec, support);
@@ -354,7 +354,7 @@ bool AndroidDecoderModule::IsJavaDecoderModuleAllowed() {
 already_AddRefed<MediaDataDecoder> AndroidDecoderModule::CreateAudioDecoder(
     const CreateDecoderParams& aParams) {
   const AudioInfo& config = aParams.AudioConfig();
-  LOG("CreateAudioFormat with mimeType=%s, mRate=%d, channels=%d",
+  LOG("CreateAudioFormat with mimeType={}, mRate={}, channels={}",
       config.mMimeType.get(), config.mRate, config.mChannels);
 
   nsString drmStubId;

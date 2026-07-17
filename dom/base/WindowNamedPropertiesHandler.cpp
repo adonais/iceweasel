@@ -14,6 +14,7 @@
 #include "nsGlobalWindowOuter.h"
 #include "nsHTMLDocument.h"
 #include "nsJSUtils.h"
+#include "nsPIDOMWindowInlines.h"
 #include "xpcprivate.h"
 
 namespace mozilla::dom {

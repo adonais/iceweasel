@@ -79,11 +79,6 @@ add_task(async function test_default_telemetry() {
   Assert.equal(events[1].extra.version, sidebarVersion, "Correct version");
 
   Assert.equal(
-    Glean.genaiChatbot.experimentCheckboxClick.testGetValue(),
-    null,
-    "No experiment events"
-  );
-  Assert.equal(
     Glean.genaiChatbot.providerChange.testGetValue(),
     null,
     "No provider change events"

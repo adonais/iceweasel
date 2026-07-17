@@ -252,7 +252,7 @@ RefPtr<WebGLProgram> WebGLContext::CreateProgram() {
   const FuncScope funcScope(*this, "createProgram");
   if (IsContextLost()) return nullptr;
 
-  return new WebGLProgram(this);
+  return MakeRefPtr<WebGLProgram>(this);
 }
 
 RefPtr<WebGLShader> WebGLContext::CreateShader(GLenum type) {
@@ -264,7 +264,7 @@ RefPtr<WebGLShader> WebGLContext::CreateShader(GLenum type) {
     return nullptr;
   }
 
-  return new WebGLShader(this, type);
+  return MakeRefPtr<WebGLShader>(this, type);
 }
 
 void WebGLContext::CullFace(GLenum face) {
@@ -584,7 +584,7 @@ RefPtr<WebGLTexture> WebGLContext::CreateTexture() {
   GLuint tex = 0;
   gl->fGenTextures(1, &tex);
 
-  return new WebGLTexture(this, tex);
+  return MakeRefPtr<WebGLTexture>(this, tex);
 }
 
 GLenum WebGLContext::GetError() {
@@ -655,7 +655,7 @@ webgl::GetUniformData WebGLContext::GetUniform(const WebGLProgram& prog,
       case LOCAL_GL_FLOAT_MAT4x2:
       case LOCAL_GL_FLOAT_MAT4x3:
         gl->fGetUniformfv(prog.mGLName, loc,
-                          reinterpret_cast<float*>(ret.data));
+                          reinterpret_cast<float*>(ret.data.data()));
         break;
 
       case LOCAL_GL_INT:
@@ -682,7 +682,7 @@ webgl::GetUniformData WebGLContext::GetUniform(const WebGLProgram& prog,
       case LOCAL_GL_BOOL_VEC3:
       case LOCAL_GL_BOOL_VEC4:
         gl->fGetUniformiv(prog.mGLName, loc,
-                          reinterpret_cast<int32_t*>(ret.data));
+                          reinterpret_cast<int32_t*>(ret.data.data()));
         break;
 
       case LOCAL_GL_UNSIGNED_INT:
@@ -690,7 +690,7 @@ webgl::GetUniformData WebGLContext::GetUniform(const WebGLProgram& prog,
       case LOCAL_GL_UNSIGNED_INT_VEC3:
       case LOCAL_GL_UNSIGNED_INT_VEC4:
         gl->fGetUniformuiv(prog.mGLName, loc,
-                           reinterpret_cast<uint32_t*>(ret.data));
+                           reinterpret_cast<uint32_t*>(ret.data.data()));
         break;
 
       default:
@@ -857,7 +857,15 @@ bool WebGLContext::DoReadPixelsAndConvert(
   const auto& x = desc.srcOffset.x;
   const auto& y = desc.srcOffset.y;
   const auto size = *ivec2::From(desc.size);
-  const auto& pi = desc.pi;
+  auto pi = desc.pi;
+
+  // Gecko normalizes WebGL 1's GL_HALF_FLOAT_OES to GL_HALF_FLOAT internally,
+  // but GLES 2 glReadPixels() still requires GL_HALF_FLOAT_OES rather than
+  // GL_HALF_FLOAT.
+  if (!IsWebGL2() && gl->IsGLES() && gl->Version() < 300 &&
+      pi.type == LOCAL_GL_HALF_FLOAT) {
+    pi.type = LOCAL_GL_HALF_FLOAT_OES;
+  }
 
   // On at least Win+NV, we'll get PBO errors if we don't have at least
   // `rowStride * height` bytes available to read into.
@@ -1438,7 +1446,7 @@ RefPtr<WebGLFramebuffer> WebGLContext::CreateFramebuffer() {
   GLuint fbo = 0;
   gl->fGenFramebuffers(1, &fbo);
 
-  return new WebGLFramebuffer(this, fbo);
+  return MakeRefPtr<WebGLFramebuffer>(this, fbo);
 }
 
 RefPtr<WebGLFramebuffer> WebGLContext::CreateOpaqueFramebuffer(
@@ -1456,14 +1464,14 @@ RefPtr<WebGLFramebuffer> WebGLContext::CreateOpaqueFramebuffer(
     return nullptr;
   }
 
-  return new WebGLFramebuffer(this, std::move(fbo));
+  return MakeRefPtr<WebGLFramebuffer>(this, std::move(fbo));
 }
 
 RefPtr<WebGLRenderbuffer> WebGLContext::CreateRenderbuffer() {
   const FuncScope funcScope(*this, "createRenderbuffer");
   if (IsContextLost()) return nullptr;
 
-  return new WebGLRenderbuffer(this);
+  return MakeRefPtr<WebGLRenderbuffer>(this);
 }
 
 void WebGLContext::Viewport(GLint x, GLint y, GLsizei width, GLsizei height) {

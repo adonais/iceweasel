@@ -27,7 +27,9 @@
 #endif
 
 mozilla::LazyLogModule gMediaParentLog("MediaParent");
-#define LOG(args) MOZ_LOG(gMediaParentLog, mozilla::LogLevel::Debug, args)
+#define LOG(args)                                        \
+  MOZ_LOG_FMT(gMediaParentLog, mozilla::LogLevel::Debug, \
+              MOZ_LOG_EXPAND_ARGS args)
 
 // A file in the profile dir is used to persist mOriginKeys used to anonymize
 // deviceIds to be unique per origin, to avoid them being supercookies.
@@ -87,10 +89,13 @@ class OriginKeyStore {
       OriginKey since(nsCString(), aSinceWhen / PR_USEC_PER_SEC);
       for (auto iter = mKeys.Iter(); !iter.Done(); iter.Next()) {
         auto originKey = iter.UserData();
-        LOG((((originKey->mSecondsStamp >= since.mSecondsStamp)
-                  ? "%s: REMOVE %" PRId64 " >= %" PRId64
-                  : "%s: KEEP   %" PRId64 " < %" PRId64),
-             __FUNCTION__, originKey->mSecondsStamp, since.mSecondsStamp));
+        if (originKey->mSecondsStamp >= since.mSecondsStamp) {
+          LOG(("{}: REMOVE {} >= {}", __FUNCTION__, originKey->mSecondsStamp,
+               since.mSecondsStamp));
+        } else {
+          LOG(("{}: KEEP   {} < {}", __FUNCTION__, originKey->mSecondsStamp,
+               since.mSecondsStamp));
+        }
 
         if (originKey->mSecondsStamp >= since.mSecondsStamp) {
           if (aRemovedKeys) {
@@ -384,7 +389,7 @@ class OriginKeyStore {
   virtual ~OriginKeyStore() {
     MOZ_ASSERT(NS_IsMainThread());
     sOriginKeyStore = nullptr;
-    LOG(("%s", __FUNCTION__));
+    LOG(("{}", __FUNCTION__));
   }
 
  public:
@@ -529,18 +534,18 @@ template <class Super>
 void Parent<Super>::ActorDestroy(ActorDestroyReason aWhy) {
   // No more IPC from here
   mDestroyed = true;
-  LOG(("%s", __FUNCTION__));
+  LOG(("{}", __FUNCTION__));
 }
 
 template <class Super>
 Parent<Super>::Parent()
     : mOriginKeyStore(OriginKeyStore::Get()), mDestroyed(false) {
-  LOG(("media::Parent: %p", this));
+  LOG(("media::Parent: {}", fmt::ptr(this)));
 }
 
 template <class Super>
 Parent<Super>::~Parent() {
-  LOG(("~media::Parent: %p", this));
+  LOG(("~media::Parent: {}", fmt::ptr(this)));
 }
 
 PMediaParent* AllocPMediaParent() {

@@ -7,8 +7,11 @@ package org.mozilla.fenix.components
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import android.graphics.Matrix
 import android.net.Uri
+import androidx.annotation.VisibleForTesting
 import androidx.core.graphics.scale
+import androidx.exifinterface.media.ExifInterface
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import mozilla.components.concept.fetch.Client
@@ -43,6 +46,8 @@ class LensImageUploader(
 
     /**
      * Fetches the image at [imageUrl], then scales, compresses, and uploads it to Google Lens.
+     * Preferred over [buildUploadByUrl] because the browser's User-Agent and cookies are used to
+     * fetch the image, which succeeds for hosts that block Lens's own server-side fetcher.
      *
      * @return The Lens results URL on success, or null on failure.
      */
@@ -50,6 +55,15 @@ class LensImageUploader(
         val bitmap = fetchBitmap(imageUrl) ?: return@withContext null
         uploadBitmap(bitmap)
     }
+
+    /**
+     * Builds the Google Lens "by URL" search URL for [imageUrl], letting Lens fetch the image
+     * server-side. Loading the returned URL redirects to the Lens results page. Used as a fallback
+     * when [uploadFromUrl] yields no result client-side, whether because the image could not be
+     * downloaded or because the byte upload itself produced no Lens results URL.
+     */
+    fun buildUploadByUrl(imageUrl: String): String =
+        "$UPLOAD_BY_URL_ENDPOINT?url=${Uri.encode(imageUrl)}&ep=$EP_BY_URL&${commonParams()}"
 
     private fun uploadBitmap(bitmap: Bitmap): String? {
         val scaled = scaleBitmap(bitmap)
@@ -61,16 +75,7 @@ class LensImageUploader(
         if (scaled !== bitmap) scaled.recycle()
         bitmap.recycle()
 
-        val metrics = context.resources.displayMetrics
-        val timestamp = System.currentTimeMillis()
-        val locale = Locale.getDefault().language
-
-        val uploadUrl = "https://lens.google.com/v3/upload" +
-            "?hl=$locale" +
-            "&vpw=${metrics.widthPixels}" +
-            "&vph=${metrics.heightPixels}" +
-            "&ep=ccm" +
-            "&st=$timestamp"
+        val uploadUrl = "$UPLOAD_ENDPOINT?${commonParams()}&ep=$EP_BY_BYTES"
 
         val boundary = "----LensBoundary${System.nanoTime()}"
 
@@ -115,13 +120,50 @@ class LensImageUploader(
         }
     }
 
-    private fun decodeBitmap(uri: Uri): Bitmap? {
-        return context.contentResolver.openInputStream(uri)?.use { inputStream ->
-            BitmapFactory.decodeStream(inputStream)
-        }
+    @VisibleForTesting
+    internal fun decodeBitmap(uri: Uri): Bitmap? {
+        val bitmap = context.contentResolver.openInputStream(uri)?.use { input ->
+            BitmapFactory.decodeStream(input)
+        } ?: return null
+
+        // Camera2 writes the capture orientation as an EXIF tag rather than rotating pixels,
+        // and BitmapFactory.decodeStream discards EXIF. Re-read the tag from a fresh stream and
+        // apply it so the upload reaches Lens upright.
+        val orientation = context.contentResolver.openInputStream(uri)?.use { input ->
+            ExifInterface(input).getAttributeInt(
+                ExifInterface.TAG_ORIENTATION,
+                ExifInterface.ORIENTATION_NORMAL,
+            )
+        } ?: ExifInterface.ORIENTATION_NORMAL
+
+        return applyExifOrientation(bitmap, orientation)
     }
 
-    private fun fetchBitmap(imageUrl: String): Bitmap? {
+    private fun applyExifOrientation(bitmap: Bitmap, orientation: Int): Bitmap {
+        val matrix = Matrix()
+        when (orientation) {
+            ExifInterface.ORIENTATION_ROTATE_90 -> matrix.postRotate(ROTATE_90)
+            ExifInterface.ORIENTATION_ROTATE_180 -> matrix.postRotate(ROTATE_180)
+            ExifInterface.ORIENTATION_ROTATE_270 -> matrix.postRotate(ROTATE_270)
+            ExifInterface.ORIENTATION_FLIP_HORIZONTAL -> matrix.preScale(-1f, 1f)
+            ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.preScale(1f, -1f)
+            ExifInterface.ORIENTATION_TRANSPOSE -> {
+                matrix.postRotate(ROTATE_90)
+                matrix.preScale(-1f, 1f)
+            }
+            ExifInterface.ORIENTATION_TRANSVERSE -> {
+                matrix.postRotate(ROTATE_270)
+                matrix.preScale(-1f, 1f)
+            }
+            else -> return bitmap
+        }
+        val rotated = Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+        if (rotated !== bitmap) bitmap.recycle()
+        return rotated
+    }
+
+    @VisibleForTesting
+    internal fun fetchBitmap(imageUrl: String): Bitmap? {
         val request = Request(
             url = imageUrl,
             method = Request.Method.GET,
@@ -137,7 +179,14 @@ class LensImageUploader(
                 if (response.status !in SUCCESS_RANGE) return@use null
                 val bytes = response.body.useStream { readAtMost(it, MAX_DOWNLOAD_BYTES) }
                     ?: return@use null
-                decodeSampledBitmap(bytes)
+                val bitmap = decodeSampledBitmap(bytes) ?: return@use null
+                // BitmapFactory.decodeByteArray discards EXIF the same way decodeStream does;
+                // web JPEGs frequently carry an Orientation tag, so apply it here too.
+                val orientation = ExifInterface(ByteArrayInputStream(bytes)).getAttributeInt(
+                    ExifInterface.TAG_ORIENTATION,
+                    ExifInterface.ORIENTATION_NORMAL,
+                )
+                applyExifOrientation(bitmap, orientation)
             }
         } catch (_: IOException) {
             null
@@ -184,6 +233,18 @@ class LensImageUploader(
         return sampleSize
     }
 
+    /**
+     * Builds the query parameters common to both Lens endpoints: language override and the
+     * viewport dimensions and start time used for server-side rendering and latency tracking.
+     */
+    private fun commonParams(): String {
+        val metrics = context.resources.displayMetrics
+        return "hl=${Locale.getDefault().language}" +
+            "&vpw=${metrics.widthPixels}" +
+            "&vph=${metrics.heightPixels}" +
+            "&st=${System.currentTimeMillis()}"
+    }
+
     private fun scaleBitmap(bitmap: Bitmap): Bitmap {
         val longestDim = max(bitmap.width, bitmap.height)
         if (longestDim <= MAX_IMAGE_DIMENSION) return bitmap
@@ -201,10 +262,26 @@ class LensImageUploader(
     }
 
     companion object {
+        @VisibleForTesting
+        internal const val UPLOAD_ENDPOINT = "https://lens.google.com/upload"
+
+        @VisibleForTesting
+        internal const val UPLOAD_BY_URL_ENDPOINT = "https://lens.google.com/uploadbyurl"
+
+        // Entry-point identifiers assigned to Mozilla by Google for attribution.
+        @VisibleForTesting
+        internal const val EP_BY_BYTES = "fntpubb"
+
+        @VisibleForTesting
+        internal const val EP_BY_URL = "fntpubu"
+
         private const val MAX_IMAGE_DIMENSION = 1000
         private const val JPEG_QUALITY = 85
         private const val CONNECT_TIMEOUT_MS = 15_000
         private const val READ_TIMEOUT_MS = 30_000
+        private const val ROTATE_90 = 90f
+        private const val ROTATE_180 = 180f
+        private const val ROTATE_270 = 270f
 
         /** Hard cap on the bytes read from a remote image. Images above this are discarded. */
         private const val MAX_DOWNLOAD_BYTES = 20 * 1024 * 1024

@@ -26,9 +26,9 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.badge.StatusBadge
 import mozilla.components.compose.base.button.IconButton
 import org.mozilla.fenix.R
-import org.mozilla.fenix.compose.StatusBadge
 import org.mozilla.fenix.home.sports.Group
 import org.mozilla.fenix.home.sports.LiveMatchRefreshSource
 import org.mozilla.fenix.home.sports.Match

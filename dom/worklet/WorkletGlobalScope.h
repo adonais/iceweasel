@@ -57,7 +57,7 @@ class WorkletGlobalScope : public nsIGlobalObject, public nsWrapperCache {
   }
 
   nsISerialEventTarget* SerialEventTarget() const final;
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&&) const final;
+  nsresult Dispatch(already_AddRefed<nsIRunnable>) const final;
 
   already_AddRefed<Console> GetConsole(JSContext* aCx, ErrorResult& aRv);
 

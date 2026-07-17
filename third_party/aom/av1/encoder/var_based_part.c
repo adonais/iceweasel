@@ -1339,16 +1339,21 @@ static void do_int_pro_motion_estimation(AV1_COMP *cpi, MACROBLOCK *x,
   AV1_COMMON *const cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mi = xd->mi[0];
-  const int is_screen = cpi->oxcf.tune_cfg.content == AOM_CONTENT_SCREEN;
+  const int large_search =
+      cpi->oxcf.tune_cfg.content == AOM_CONTENT_SCREEN ||
+      (source_sad_nonrd > kMedSad && cm->width * cm->height > 1280 * 720 &&
+       !cpi->rc.high_motion_content_screen_rtc);
+  const int max_sw =
+      (cpi->oxcf.tune_cfg.content == AOM_CONTENT_SCREEN) ? 512 : 256;
   const int increase_col_sw =
       source_sad_nonrd > kMedSad && !cpi->rc.high_motion_content_screen_rtc;
-  int me_search_size_col = is_screen
-                               ? increase_col_sw ? 512 : 96
+  int me_search_size_col = large_search
+                               ? increase_col_sw ? max_sw : 96
                                : block_size_wide[cm->seq_params->sb_size] >> 1;
-  // For screen use larger search size row motion to capture
+  // Use larger search size row motion to capture
   // vertical scroll, which can be larger motion.
-  int me_search_size_row = is_screen
-                               ? source_sad_nonrd > kMedSad ? 512 : 192
+  int me_search_size_row = large_search
+                               ? source_sad_nonrd > kMedSad ? max_sw : 192
                                : block_size_high[cm->seq_params->sb_size] >> 1;
   if (cm->width * cm->height >= 3840 * 2160) {
     me_search_size_row = me_search_size_row << 1;
@@ -1357,11 +1362,10 @@ static void do_int_pro_motion_estimation(AV1_COMP *cpi, MACROBLOCK *x,
   unsigned int y_sad_zero;
   *y_sad = av1_int_pro_motion_estimation(
       cpi, x, cm->seq_params->sb_size, mi_row, mi_col, &kZeroMv, &y_sad_zero,
-      me_search_size_col, me_search_size_row, 1);
+      me_search_size_col, me_search_size_row, 1, large_search);
   // The logic below selects whether the motion estimated in the
-  // int_pro_motion() will be used in nonrd_pickmode. Only do this
-  // for screen for now.
-  if (is_screen) {
+  // int_pro_motion() will be used in nonrd_pickmode.
+  if (large_search) {
     unsigned int thresh_sad =
         (cm->seq_params->sb_size == BLOCK_128X128) ? 50000 : 20000;
     if (*y_sad < (y_sad_zero >> 1) && *y_sad < thresh_sad) {

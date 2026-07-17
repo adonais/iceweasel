@@ -380,10 +380,9 @@ void MacroAssembler::add64(Imm64 imm, Register64 dest) {
 
 CodeOffset MacroAssembler::sub32FromStackPtrWithPatch(Register dest) {
   ScratchRegisterScope scratch(*this);
-  CodeOffset offs = CodeOffset(currentOffset());
-  ma_movPatchable(Imm32(0), scratch, Always);
+  BufferOffset offset = ma_movPatchable(Imm32(0), scratch, Always);
   ma_sub(getStackPointer(), scratch, dest);
-  return offs;
+  return CodeOffset(offset.getOffset());
 }
 
 void MacroAssembler::patchSub32FromStackPtr(CodeOffset offset, Imm32 imm) {

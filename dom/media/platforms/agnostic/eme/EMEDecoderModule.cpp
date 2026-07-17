@@ -4,7 +4,7 @@
 
 #include "EMEDecoderModule.h"
 
-#include <inttypes.h>
+#include <stdint.h>
 
 #include "Adts.h"
 #include "BlankDecoderModule.h"
@@ -44,9 +44,9 @@ class ADTSSampleConverter {
         ,
         mProfile(aInfo.mProfile < 1 || aInfo.mProfile > 4 ? 2 : aInfo.mProfile),
         mFrequencyIndex(ADTS::GetFrequencyIndex(aInfo.mRate).unwrapOr(255)) {
-    EME_LOG("ADTSSampleConvertor(): aInfo.mProfile=%" PRIi8
-            " aInfo.mExtendedProfile=%" PRIi8,
-            aInfo.mProfile, aInfo.mExtendedProfile);
+    EME_LOG(
+        "ADTSSampleConvertor(): aInfo.mProfile={} aInfo.mExtendedProfile={}",
+        aInfo.mProfile, aInfo.mExtendedProfile);
     if (aInfo.mProfile < 1 || aInfo.mProfile > 4) {
       EME_LOG(
           "ADTSSampleConvertor(): Profile not in [1, 4]! Samples will "
@@ -90,7 +90,7 @@ class EMEDecryptor final : public MediaDataDecoder,
     MOZ_ASSERT(!mIsShutdown);
     mThread = GetCurrentSerialEventTarget();
     uint32_t maxThroughputMs = StaticPrefs::media_eme_max_throughput_ms();
-    EME_LOG("EME max-throughput-ms=%" PRIu32, maxThroughputMs);
+    EME_LOG("EME max-throughput-ms={}", maxThroughputMs);
     mThroughputLimiter.emplace(mThread, maxThroughputMs);
 
     return mDecoder->Init();

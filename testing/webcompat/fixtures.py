@@ -140,6 +140,7 @@ class FirefoxWebDriver(WebDriver):
         prefs[CB_PREF] = cookieBehavior
         prefs[CB_PBM_PREF] = cookieBehavior
 
+        prefs["webgl.allow-in-parent"] = True
         prefs["layout.css.getBoxQuads.enabled"] = True
 
         # prevent "allow notifications for?" popups by setting the

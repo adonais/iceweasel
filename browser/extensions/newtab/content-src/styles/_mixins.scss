@@ -81,6 +81,12 @@ $col-width-px: 75px;
 $col-gap-px: 0.75rem;
 $side-col-width-px: $col-width-px * 2;
 
+// Returns the width of $n grid columns including the (n-1) gaps between them.
+// stylelint-disable-next-line scss/at-function-pattern
+@function --col-span($n) {
+  @return calc(#{$n} * var(--col-width) + #{$n - 1} * var(--space-medium));
+}
+
 // Use this mixin instead of static media query breakpoints. It applies styles
 // when the content grid has room for at least $cols columns, making layouts
 // adapt to the available column count rather than fixed viewport widths.
@@ -125,6 +131,16 @@ $side-col-width-px: $col-width-px * 2;
   }
 }
 
+// Auto-fill centering grid with column tracks sized to $cols-per-track Nova columns.
+// Used for section wrappers and card grids that should center within the content area.
+@mixin nova-centering-grid($cols-per-track: 4) {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, --col-span($cols-per-track));
+  gap: var(--space-medium);
+  justify-content: center;
+  grid-column: 1 / -1;
+}
+
 // Adds transparency and a hover effect to card background.
 @mixin newtab-card-style {
   background: var(--newtab-background-card);
@@ -167,24 +183,36 @@ $side-col-width-px: $col-width-px * 2;
 
 // Baseline styles for all widgets
 @mixin widget-base-style {
-  // Shared size-change transition values. Reference these in widget SCSS
-  // when animating properties that change between small/medium/large sizes
-  // so all widgets stay visually consistent.
   --widget-size-transition-duration: 180ms;
   --widget-size-transition-easing: ease;
 
+  @include newtab-card-style;
+
   padding: var(--space-medium);
-  background-color: var(--newtab-background-card);
   border-radius: var(--border-radius-large);
   box-shadow: var(--box-shadow-level-2);
   color: var(--text-color);
   display: flex;
   flex-direction: column;
   position: relative;
+  transition: height var(--widget-size-transition-duration) var(--widget-size-transition-easing);
+
+  &.small-widget,
+  &.medium-widget {
+    height: var(--newtab-card-height-small);
+  }
+
+  &.large-widget {
+    height: var(--newtab-card-height);
+  }
 
   &:hover,
   &:focus-within {
     outline: 1px solid var(--border-color-deemphasized);
     box-shadow: var(--card-box-shadow-hover);
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    transition: none;
   }
 }

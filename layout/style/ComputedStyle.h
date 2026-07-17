@@ -221,6 +221,10 @@ class ComputedStyle {
 
   bool HasAnchorPosReference() const;
 
+  bool HasAttrReferences() const {
+    return !!mSource.attribute_references.mUsedAttributes;
+  }
+
   bool MaybeAnchorPosReferencesDiffer(const ComputedStyle* aOther) const;
 
   ComputedStyle* GetCachedInheritingAnonBoxStyle(

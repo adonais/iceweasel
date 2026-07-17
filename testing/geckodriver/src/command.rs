@@ -3,7 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 use crate::logging;
-use hyper::Method;
+use http::Method;
 use serde_json::Value;
 use webdriver::command::{WebDriverCommand, WebDriverExtensionCommand};
 use webdriver::error::WebDriverResult;

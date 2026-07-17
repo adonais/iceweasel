@@ -22,7 +22,8 @@
 #include "nsReadableUtils.h"
 
 extern mozilla::LazyLogModule sMediaCapabilitiesLog;
-#define LOG(args) MOZ_LOG(sMediaCapabilitiesLog, LogLevel::Debug, args)
+#define LOG(args) \
+  MOZ_LOG_FMT(sMediaCapabilitiesLog, LogLevel::Debug, MOZ_LOG_EXPAND_ARGS args)
 
 namespace mozilla::mediacaps {
 using dom::AudioConfiguration;
@@ -78,7 +79,7 @@ ValidationResult CheckMIMETypeSupport(
     ValidationResult err = Err(ValidationError::InvalidMIMEType);
     LOG(
         ("[CheckMIMETypeSupport (encodingOrDecodingType is webrtc, "
-         "but MIME type is not one used with RTP, %s) #1] Rejecting '%s'\n",
+         "but MIME type is not one used with RTP, {}) #1] Rejecting '{}'\n",
          EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
     return err;
   }
@@ -96,7 +97,7 @@ ValidationResult CheckMIMETypeSupport(
       ValidationResult err = Err(ValidationError::InapplicableMember);
       LOG(
           ("[CheckMIMETypeSupport (colorGamut/transferFunction are decode "
-           "only, %s), #2, #3] Rejecting '%s'\n",
+           "only, {}), #2, #3] Rejecting '{}'\n",
            EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
       return err;
     }
@@ -108,7 +109,7 @@ ValidationResult CheckMIMETypeSupport(
       ValidationResult err = Err(ValidationError::InapplicableMember);
       LOG(
           ("[CheckMIMETypeSupport #3 (colorGamut/transferFunction only for "
-           "media-source, file; got %s, %s), #2, #3] Rejecting '%s'\n",
+           "media-source, file; got {}, {}), #2, #3] Rejecting '{}'\n",
            GetEnumString(dType).get(), EnumValueToString(err.unwrapErr()),
            aMime.OriginalString().get()));
       return err;
@@ -117,8 +118,8 @@ ValidationResult CheckMIMETypeSupport(
                                          aTransferFunction)) {
       ValidationResult err = Err(ValidationError::InvalidVideoType);
       LOG(
-          ("[CheckMIMETypeSupport #3 (color coding space does not match, %s), "
-           "#2, #3] Rejecting '%s'\n",
+          ("[CheckMIMETypeSupport #3 (color coding space does not match, {}), "
+           "#2, #3] Rejecting '{}'\n",
            EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
       return err;
     }
@@ -145,8 +146,8 @@ static ValidationResult CheckMIMETypeValidity(
         Err(aAVType == AVType::AUDIO ? ValidationError::InvalidAudioType
                                      : ValidationError::InvalidVideoType);
     LOG(
-        ("[Invalid MIME Validity #1, %s] Rejecting - not media, not "
-         "application %s",
+        ("[Invalid MIME Validity #1, {}] Rejecting - not media, not "
+         "application {}",
          EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
     return err;
   }
@@ -160,7 +161,7 @@ static ValidationResult CheckMIMETypeValidity(
   // contentType is of type video
   if (aAVType == AVType::AUDIO && !aMime.Type().HasAudioMajorType()) {
     ValidationResult err = Err(ValidationError::InvalidAudioType);
-    LOG(("[Invalid MIME Validity #1a?, %s] Rejecting '%s'",
+    LOG(("[Invalid MIME Validity #1a?, {}] Rejecting '{}'",
          EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
     return err;
   }
@@ -169,7 +170,7 @@ static ValidationResult CheckMIMETypeValidity(
   // contentType is of type audio
   if (aAVType == AVType::VIDEO && !aMime.Type().HasVideoMajorType()) {
     ValidationResult err = Err(ValidationError::InvalidVideoType);
-    LOG(("[Invalid MIME Validity #1b?, %s] Rejecting '%s'",
+    LOG(("[Invalid MIME Validity #1b?, {}] Rejecting '{}'",
          EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
     return err;
   }
@@ -191,7 +192,7 @@ static ValidationResult CheckMIMETypeValidity(
       !IsMediaTypeWebRTC(aMediaType)) {
     ValidationResult err = Err(ValidationError::SingleCodecHasParams);
     LOG(
-        ("[Invalid MIME Validity #2, %s] Rejecting '%s' (single codec type "
+        ("[Invalid MIME Validity #2, {}] Rejecting '{}' (single codec type "
          "has params)",
          EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
     return err;
@@ -204,7 +205,7 @@ static ValidationResult CheckMIMETypeValidity(
     //            key named "codecs", return false.
     if ((numParams != 1) || !aMime.HaveCodecs()) {
       ValidationResult err = Err(ValidationError::ContainerMissingCodecsParam);
-      LOG(("[Invalid MIME Validity #3.1, %s] Rejecting '%s'",
+      LOG(("[Invalid MIME Validity #3.1, {}] Rejecting '{}'",
            EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
       return err;
     }
@@ -215,7 +216,7 @@ static ValidationResult CheckMIMETypeValidity(
     if (!aMime.HaveCodecs() || codecs.IsEmpty() ||
         codecs.AsString().FindChar(',') != kNotFound) {
       ValidationResult err = Err(ValidationError::ContainerCodecsNotSingle);
-      LOG(("[Invalid MIME #3.2, %s] Rejecting '%s'",
+      LOG(("[Invalid MIME #3.2, {}] Rejecting '{}'",
            EnumValueToString(err.unwrapErr()), aMime.OriginalString().get()));
       return err;
     }
@@ -236,7 +237,7 @@ ValidationResult IsValidAudioConfiguration(const AudioConfiguration& aConfig,
   // Step 2: If mimeType is failure, return false.
   if (!mime) {
     ValidationResult err = Err(ValidationError::InvalidAudioType);
-    LOG(("[Invalid AudioConfiguration #2, %s] Rejecting '%s'\n",
+    LOG(("[Invalid AudioConfiguration #2, {}] Rejecting '{}'\n",
          EnumValueToString(err.unwrapErr()),
          NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
     return err;
@@ -264,7 +265,7 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
   // return false and abort these steps.
   if (!isfinite(aConfig.mFramerate) || !(aConfig.mFramerate > 0)) {
     ValidationResult err = Err(ValidationError::FramerateInvalid);
-    LOG(("[Invalid VideoConfiguration (Framerate, %s) #1] Rejecting '%s'\n",
+    LOG(("[Invalid VideoConfiguration (Framerate, {}) #1] Rejecting '{}'\n",
          EnumValueToString(err.unwrapErr()),
          NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
     return err;
@@ -273,8 +274,8 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
   if (aConfig.mWidth <= 0 || aConfig.mHeight <= 0) {
     ValidationResult err = Err(ValidationError::InvalidVideoConfiguration);
     LOG(
-        ("[Invalid VideoConfiguration (Dimensions, %s) #1] Rejecting '%s' "
-         "(width=%u, height=%u)\n",
+        ("[Invalid VideoConfiguration (Dimensions, {}) #1] Rejecting '{}' "
+         "(width={}, height={})\n",
          EnumValueToString(err.unwrapErr()),
          NS_ConvertUTF16toUTF8(aConfig.mContentType).get(), aConfig.mWidth,
          aConfig.mHeight));
@@ -291,7 +292,7 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
         aType != MediaDecodingType::File &&
         aType != MediaDecodingType::Media_source) {
       ValidationResult err = Err(ValidationError::InapplicableMember);
-      LOG(("[Invalid VideoConfiguration (HDR, %s) #2] Rejecting '%s'\n",
+      LOG(("[Invalid VideoConfiguration (HDR, {}) #2] Rejecting '{}'\n",
            EnumValueToString(err.unwrapErr()),
            NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
       return err;
@@ -301,7 +302,7 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
     if (aConfig.mColorGamut.WasPassed() && aType != MediaDecodingType::File &&
         aType != MediaDecodingType::Media_source) {
       ValidationResult err = Err(ValidationError::InapplicableMember);
-      LOG(("[Invalid VideoConfiguration (Color Gamut, %s) #2] Rejecting '%s'\n",
+      LOG(("[Invalid VideoConfiguration (Color Gamut, {}) #2] Rejecting '{}'\n",
            EnumValueToString(err.unwrapErr()),
            NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
       return err;
@@ -314,8 +315,8 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
         aType != MediaDecodingType::Media_source) {
       ValidationResult err = Err(ValidationError::InapplicableMember);
       LOG(
-          ("[Invalid VideoConfiguration (Transfer Function, %s) #2] Rejecting "
-           "'%s'\n",
+          ("[Invalid VideoConfiguration (Transfer Function, {}) #2] Rejecting "
+           "'{}'\n",
            EnumValueToString(err.unwrapErr()),
            NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
       return err;
@@ -323,14 +324,15 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
   }
 
   if constexpr (std::is_same_v<CodingType, MediaEncodingType>) {
-    // ScalabilityMode is only applicable to MediaEncodingConfiguration
-    // for type webrtc.
+    // ScalabilityMode is only applicable to MediaEncodingConfiguration for
+    // type webrtc, and we reject it for webrtc too until bug 1571470 lands.
+    // Legacy mode still accepts it for non-webrtc.
     if (aConfig.mScalabilityMode.WasPassed() &&
-        aType != MediaEncodingType::Webrtc && !aBehavior.mLegacy) {
+        (aType == MediaEncodingType::Webrtc || !aBehavior.mLegacy)) {
       ValidationResult err = Err(ValidationError::InapplicableMember);
       LOG(
-          ("[Invalid VideoConfiguration (Scalability Mode, %s) #2] Rejecting "
-           "'%s'\n",
+          ("[Invalid VideoConfiguration (Scalability Mode, {}) #2] Rejecting "
+           "'{}'\n",
            EnumValueToString(err.unwrapErr()),
            NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
       return err;
@@ -338,7 +340,7 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
     // colorGamut is only applicable to MediaDecodingConfiguration
     if (aConfig.mColorGamut.WasPassed() && !aBehavior.mLegacy) {
       ValidationResult err = Err(ValidationError::InapplicableMember);
-      LOG(("[Invalid VideoConfiguration (Color Gamut, %s) #2] Rejecting '%s'\n",
+      LOG(("[Invalid VideoConfiguration (Color Gamut, {}) #2] Rejecting '{}'\n",
            EnumValueToString(err.unwrapErr()),
            NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
       return err;
@@ -347,8 +349,8 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
     if (aConfig.mTransferFunction.WasPassed() && !aBehavior.mLegacy) {
       ValidationResult err = Err(ValidationError::InapplicableMember);
       LOG(
-          ("[Invalid VideoConfiguration (Transfer Function, %s) #2] Rejecting "
-           "'%s'\n",
+          ("[Invalid VideoConfiguration (Transfer Function, {}) #2] Rejecting "
+           "'{}'\n",
            EnumValueToString(err.unwrapErr()),
            NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
       return err;
@@ -363,7 +365,7 @@ ValidationResult IsValidVideoConfiguration(const VideoConfiguration& aConfig,
   // Step 4: If mimeType is failure, return false.
   if (!mime) {
     ValidationResult err = Err(ValidationError::InvalidVideoType);
-    LOG(("[Invalid VideoConfiguration (MIME failure, %s) #4] Rejecting '%s'\n",
+    LOG(("[Invalid VideoConfiguration (MIME failure, {}) #4] Rejecting '{}'\n",
          EnumValueToString(err.unwrapErr()),
          NS_ConvertUTF16toUTF8(aConfig.mContentType).get()));
     return err;
@@ -398,7 +400,7 @@ ValidationResult IsValidMediaConfiguration(const MediaConfiguration& aConfig,
   // Step 1: audio and/or video MUST exist.
   if (!aConfig.mVideo.WasPassed() && !aConfig.mAudio.WasPassed()) {
     ValidationResult err = Err(ValidationError::MissingType);
-    LOG(("[Invalid Media Configuration (No A/V, %s) #1] '%s'",
+    LOG(("[Invalid Media Configuration (No A/V, {}) #1] '{}'",
          EnumValueToString(err.unwrapErr()),
          GetMIMEDebugString(aConfig).get()));
     return err;
@@ -408,7 +410,7 @@ ValidationResult IsValidMediaConfiguration(const MediaConfiguration& aConfig,
   if (aConfig.mAudio.WasPassed()) {
     auto rv = IsValidAudioConfiguration(aConfig.mAudio.Value(), aType);
     if (rv.isErr()) {
-      LOG(("[Invalid Media Configuration (Invalid Audio, %s) #2] '%s'",
+      LOG(("[Invalid Media Configuration (Invalid Audio, {}) #2] '{}'",
            EnumValueToString(rv.unwrapErr()),
            GetMIMEDebugString(aConfig).get()));
       return rv;
@@ -420,7 +422,7 @@ ValidationResult IsValidMediaConfiguration(const MediaConfiguration& aConfig,
     auto rv =
         IsValidVideoConfiguration(aConfig.mVideo.Value(), aType, aBehavior);
     if (rv.isErr()) {
-      LOG(("[Invalid Media Configuration (Invalid Video, %s) #3] '%s'",
+      LOG(("[Invalid Media Configuration (Invalid Video, {}) #3] '{}'",
            EnumValueToString(rv.unwrapErr()),
            GetMIMEDebugString(aConfig).get()));
       return rv;
@@ -449,7 +451,7 @@ ValidationResult IsValidMediaDecodingConfiguration(
       IsValidMediaConfiguration(aConfig, AsVariant(aConfig.mType), aBehavior);
   if (base.isErr()) {
     LOG(
-        ("[Invalid MediaDecodingConfiguration (Invalid MediaConfiguration, %s) "
+        ("[Invalid MediaDecodingConfiguration (Invalid MediaConfiguration, {}) "
          "#1]",
          EnumValueToString(base.unwrapErr())));
     return base;
@@ -462,7 +464,7 @@ ValidationResult IsValidMediaDecodingConfiguration(
     if (aConfig.mType != MediaDecodingType::File &&
         aConfig.mType != MediaDecodingType::Media_source) {
       ValidationResult err = Err(ValidationError::KeySystemWrongType);
-      LOG(("[Invalid MediaDecodingConfiguration (keysystem, %s) #2.1]",
+      LOG(("[Invalid MediaDecodingConfiguration (keysystem, {}) #2.1]",
            EnumValueToString(err.unwrapErr())));
       return err;
     }
@@ -470,7 +472,7 @@ ValidationResult IsValidMediaDecodingConfiguration(
     // Step 2.2: If keySystemConfiguration.audio exists, audio MUST also exist.
     if (keySystemConfig.mAudio.WasPassed() && !aConfig.mAudio.WasPassed()) {
       ValidationResult err = Err(ValidationError::KeySystemAudioMissing);
-      LOG(("[Invalid MediaDecodingConfiguration (keysystem, %s) #2.2]",
+      LOG(("[Invalid MediaDecodingConfiguration (keysystem, {}) #2.2]",
            EnumValueToString(err.unwrapErr())));
       return err;
     }
@@ -478,7 +480,7 @@ ValidationResult IsValidMediaDecodingConfiguration(
     // Step 2.3: If keySystemConfiguration.video exists, video MUST also exist.
     if (keySystemConfig.mVideo.WasPassed() && !aConfig.mVideo.WasPassed()) {
       ValidationResult err = Err(ValidationError::KeySystemVideoMissing);
-      LOG(("[Invalid MediaDecodingConfiguration (keysystem, %s) #2.3]",
+      LOG(("[Invalid MediaDecodingConfiguration (keysystem, {}) #2.3]",
            EnumValueToString(err.unwrapErr())));
       return err;
     }

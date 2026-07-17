@@ -1,5 +1,5 @@
 /* import-globals-from common.js */
-/* import-globals-from promisified-events.js */
+/* import-globals-from events.js */
 
 /**
  * Helper method to start a single XUL tree test.

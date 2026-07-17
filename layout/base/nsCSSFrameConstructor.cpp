@@ -1770,10 +1770,13 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
   MOZ_ASSERT(aPseudoElement == PseudoStyleType::Before ||
                  aPseudoElement == PseudoStyleType::After ||
                  aPseudoElement == PseudoStyleType::Marker ||
-                 aPseudoElement == PseudoStyleType::Backdrop,
+                 aPseudoElement == PseudoStyleType::Backdrop ||
+                 aPseudoElement == PseudoStyleType::Checkmark ||
+                 aPseudoElement == PseudoStyleType::PickerIcon,
              "unexpected aPseudoElement");
 
   if (aPseudoElement != PseudoStyleType::Backdrop &&
+      aPseudoElement != PseudoStyleType::PickerIcon &&
       HasUAWidget(aOriginatingElement) &&
       !aOriginatingElement.IsHTMLElement(nsGkAtoms::details)) {
     // ::before / ::after / ::marker shouldn't work on <video> / <input>.
@@ -1811,6 +1814,14 @@ void nsCSSFrameConstructor::CreateGeneratedContentItem(
     case PseudoStyleType::Backdrop:
       elemName = nsGkAtoms::mozgeneratedcontentbackdrop;
       property = nsGkAtoms::backdropPseudoProperty;
+      break;
+    case PseudoStyleType::Checkmark:
+      elemName = nsGkAtoms::mozgeneratedcontentcheckmark;
+      property = nsGkAtoms::checkmarkPseudoProperty;
+      break;
+    case PseudoStyleType::PickerIcon:
+      elemName = nsGkAtoms::mozgeneratedcontentpickericon;
+      property = nsGkAtoms::pickerIconPseudoProperty;
       break;
     default:
       MOZ_ASSERT_UNREACHABLE("unexpected aPseudoElement");
@@ -3225,7 +3236,9 @@ static nsIFrame* FindAncestorWithGeneratedContentPseudo(nsIFrame* aFrame) {
     auto pseudo = f->Style()->GetPseudoType();
     if (pseudo == PseudoStyleType::Before || pseudo == PseudoStyleType::After ||
         pseudo == PseudoStyleType::Marker ||
-        pseudo == PseudoStyleType::Backdrop) {
+        pseudo == PseudoStyleType::Backdrop ||
+        pseudo == PseudoStyleType::Checkmark ||
+        pseudo == PseudoStyleType::PickerIcon) {
       return f;
     }
   }
@@ -5358,11 +5371,9 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
     }
 
     // Look for the ICB.
-    if (aType == FIXED_POS) {
-      LayoutFrameType t = frame->Type();
-      if (t == LayoutFrameType::Viewport || t == LayoutFrameType::PageContent) {
-        return static_cast<nsContainerFrame*>(frame);
-      }
+    if (aType == FIXED_POS &&
+        (frame->IsViewportFrame() || frame->IsPageContentFrame())) {
+      return static_cast<nsContainerFrame*>(frame);
     }
 
     // If the frame is positioned, we will probably return it as the containing
@@ -5380,33 +5391,32 @@ nsContainerFrame* nsCSSFrameConstructor::GetAbsoluteContainingBlock(
       continue;
     }
     nsIFrame* absPosCBCandidate = frame;
-    LayoutFrameType type = absPosCBCandidate->Type();
-    if (type == LayoutFrameType::FieldSet) {
+    if (absPosCBCandidate->IsFieldSetFrame()) {
       absPosCBCandidate =
           static_cast<nsFieldSetFrame*>(absPosCBCandidate)->GetInner();
       if (!absPosCBCandidate) {
         continue;
       }
-      type = absPosCBCandidate->Type();
     }
-    if (type == LayoutFrameType::ScrollContainer) {
+    if (absPosCBCandidate->IsScrollContainerFrame()) {
       ScrollContainerFrame* scrollContainerFrame =
           do_QueryFrame(absPosCBCandidate);
       absPosCBCandidate = scrollContainerFrame->GetScrolledFrame();
       if (!absPosCBCandidate) {
         continue;
       }
-      type = absPosCBCandidate->Type();
     }
-    // Only first continuations can be containing blocks.
-    absPosCBCandidate = absPosCBCandidate->FirstContinuation();
+    // Only first continuations or first IB-split siblings can be containing
+    // blocks.
+    absPosCBCandidate =
+        nsLayoutUtils::FirstContinuationOrIBSplitSibling(absPosCBCandidate);
     // Is the frame really an absolute container?
     if (!absPosCBCandidate->IsAbsoluteContainer()) {
       continue;
     }
 
     // For tables, skip the inner frame and consider the table wrapper frame.
-    if (type == LayoutFrameType::Table) {
+    if (absPosCBCandidate->IsTableFrame()) {
       continue;
     }
     // For table wrapper frames, we can just return absPosCBCandidate.
@@ -5646,6 +5656,9 @@ nsIFrame* nsCSSFrameConstructor::FindSiblingInternal(
 
   auto getFarPseudo = [&](const nsIContent* aContent) -> nsIFrame* {
     if (aDirection == SiblingDirection::Forward) {
+      if (auto* pickerIcon = nsLayoutUtils::GetPickerIconFrame(aContent)) {
+        return pickerIcon;
+      }
       return nsLayoutUtils::GetAfterFrame(aContent);
     }
     if (auto* before = nsLayoutUtils::GetBeforeFrame(aContent)) {
@@ -7657,6 +7670,25 @@ static nsIFrame* FindPreviousNonWhitespaceSibling(nsIFrame* aFrame) {
   return f;
 }
 
+static nsIFrame* CheckRubyContainers(nsIFrame* aFrame, nsIFrame* aParent) {
+  auto* ancestor = aParent;
+  auto* ancestorChild = aFrame;
+  while (ancestor && IsWrapperPseudo(ancestor) &&
+         CanRemoveWrapperPseudoForChildRemoval(ancestorChild, ancestor)) {
+    ancestorChild = ancestor;
+    ancestor = ancestorChild->GetParent();
+  }
+  if (!ancestor) {
+    return nullptr;
+  }
+  const auto ancestorType = ancestor->Type();
+  if (ancestorType != LayoutFrameType::Ruby &&
+      !RubyUtils::IsRubyContainerBox(ancestorType)) {
+    return nullptr;
+  }
+  return ancestor;
+}
+
 bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
     nsIFrame* aFrame) {
 #define TRACE(reason)                                                       \
@@ -7768,9 +7800,7 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
   }
 
   // Check ruby containers
-  LayoutFrameType parentType = parent->Type();
-  if (parentType == LayoutFrameType::Ruby ||
-      RubyUtils::IsRubyContainerBox(parentType)) {
+  if (const auto* ancestor = CheckRubyContainers(inFlowFrame, parent)) {
     // In ruby containers, pseudo frames may be created from
     // whitespaces or even nothing. There are two cases we actually
     // need to handle here, but hard to check exactly:
@@ -7779,7 +7809,7 @@ bool nsCSSFrameConstructor::MaybeRecreateContainerForFrameRemoval(
     // 2. The type of the first child of a ruby frame determines
     //    whether a pseudo ruby base container should exist.
     TRACE("Ruby container");
-    RecreateFramesForContent(parent->GetContent(), InsertionKind::Async);
+    RecreateFramesForContent(ancestor->GetContent(), InsertionKind::Async);
     return true;
   }
 
@@ -9169,6 +9199,11 @@ void nsCSSFrameConstructor::ProcessChildren(
                                    *parentStyle, PseudoStyleType::Marker,
                                    itemsToConstruct, extraFlags);
       }
+      if (aContent->IsHTMLElement(nsGkAtoms::option)) {
+        CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
+                                   *parentStyle, PseudoStyleType::Checkmark,
+                                   itemsToConstruct);
+      }
       // Probe for generated content before
       CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
                                  *parentStyle, PseudoStyleType::Before,
@@ -9200,6 +9235,11 @@ void nsCSSFrameConstructor::ProcessChildren(
       CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
                                  *parentStyle, PseudoStyleType::After,
                                  itemsToConstruct);
+      if (aContent->IsHTMLElement(nsGkAtoms::select)) {
+        CreateGeneratedContentItem(aState, aFrame, *aContent->AsElement(),
+                                   *parentStyle, PseudoStyleType::PickerIcon,
+                                   itemsToConstruct);
+      }
     }
   } else {
     ClearLazyBits(aContent->GetFirstChild(), nullptr);

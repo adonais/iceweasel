@@ -5,6 +5,8 @@
 #ifndef jit_riscv64_Architecture_riscv64_h
 #define jit_riscv64_Architecture_riscv64_h
 
+#include "mozilla/EnumSet.h"
+
 #include <algorithm>
 #include <bit>
 
@@ -514,7 +516,86 @@ static const uint32_t SpillSlotSize =
     std::max(sizeof(Registers::RegisterContent),
              sizeof(FloatRegisters::RegisterContent));
 
-inline uint32_t GetRISCV64Flags() { return 0; }
+enum class RVExtension : uint32_t {
+  // Flag when the extensions are initialized, so they can be atomically set.
+  Initialized,
+
+  // Extension for Address Generation
+  Zba,
+
+  // Extension for Basic Bit Manipulation
+  Zbb,
+
+  // Extension for Single-Bit Manipulation
+  Zbs,
+
+  // Extension for Half-Precision Floating-Point Conversions
+  Zfhmin,
+
+  // Extension for Additional Floating-Point Instructions
+  Zfa,
+
+  // Extension for Integer Conditional Operations
+  Zicond,
+};
+
+using RVExtensions = mozilla::EnumSet<RVExtension>;
+
+class RVFlags final {
+  // The override flags parsed from environment variables or from the
+  // --riscv-ext js shell argument. They are stable after startup: there is no
+  // programmatic way of setting these from JS.
+  static inline RVExtensions extensions{};
+
+ public:
+  RVFlags() = delete;
+
+  // RVFlags::Init is called from the JitContext constructor to read the
+  // hardware flags. This method must only be called once.
+  static void Init();
+
+  static bool IsInitialized() {
+    return extensions.contains(RVExtension::Initialized);
+  }
+
+  static uint32_t GetFlags() {
+    MOZ_ASSERT(IsInitialized());
+    return extensions.serialize();
+  }
+
+  static bool HasZbaExtension() {
+    return extensions.contains(RVExtension::Zba);
+  }
+
+  static bool HasZbbExtension() {
+    return extensions.contains(RVExtension::Zbb);
+  }
+
+  static bool HasZbsExtension() {
+    return extensions.contains(RVExtension::Zbs);
+  }
+
+  static bool HasZfhminExtension() {
+    return extensions.contains(RVExtension::Zfhmin);
+  }
+
+  static bool HasZfaExtension() {
+    return extensions.contains(RVExtension::Zfa);
+  }
+
+  static bool HasZicondExtension() {
+    return extensions.contains(RVExtension::Zicond);
+  }
+};
+
+// Register a string denoting RISCV extensions. During engine initialization,
+// these flags will then be used instead of the actual hardware capabilities.
+// This must be called before JS_Init and the passed string's buffer must
+// outlive the JS_Init call.
+void SetRISCV64ExtensionsString(const char* extensions);
+
+// Retrieve the RISCV extensions as a bitmask. They must have been set.
+inline uint32_t GetRISCV64Flags() { return RVFlags::GetFlags(); }
 
 }  // namespace jit
 }  // namespace js

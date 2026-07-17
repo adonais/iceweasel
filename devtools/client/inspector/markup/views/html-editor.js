@@ -16,7 +16,7 @@ const EventEmitter = require("resource://devtools/shared/event-emitter.js");
  * way is that the editor is loaded in an iframe, and calling appendChild
  * causes it to reload.
  *
- * Meant to be embedded inside of an HTML page, as in markup.xhtml.
+ * Meant to be embedded inside of an HTML page, as in markup.html.
  */
 class HTMLEditor extends EventEmitter {
   /**

@@ -24,7 +24,11 @@ object NavigationRegistry {
     }
 
     fun findPath(from: String, to: String): List<NavigationStep>? {
-        if (from == to) return emptyList()
+        if (from == to) {
+            val selfLoopEdge = graph[from]?.find { it.to == to }
+
+            return selfLoopEdge?.steps ?: emptyList()
+        }
 
         val queue = ArrayDeque<Pair<String, List<NavigationStep>>>()
         val visited = mutableSetOf<String>()

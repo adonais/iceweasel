@@ -195,7 +195,6 @@ FWD_TS_T_ADDREF(GetScriptableSelfAddr, nsINetAddr);
 FWD_TS_T_ADDREF(GetTlsSocketControl, nsITLSSocketControl);
 FWD_TS_T_PTR(GetConnectionFlags, uint32_t);
 FWD_TS_T(SetConnectionFlags, uint32_t);
-FWD_TS_T(SetIsPrivate, bool);
 FWD_TS_T(SetIsTRRConnection, bool);
 FWD_TS_T_PTR(GetIsTRRConnection, bool);
 FWD_TS_T_PTR(GetTlsFlags, uint32_t);

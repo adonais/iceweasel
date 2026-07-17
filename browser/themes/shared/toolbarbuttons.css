@@ -44,10 +44,7 @@
   --smartwindow-ask-btn-bg-opened: transparent;
   --smartwindow-ask-btn-bg-opened-dark: #321342; /* color of the chrome to simulate a transparent background - needed due to gradient borders */
   --smartwindow-ask-btn-bg-opened-hover: var(--color-violet-20);
-  --smartwindow-ask-btn-bg-opened-hover-dark: linear-gradient(
-    color-mix(in srgb, var(--smartwindow-ask-btn-bg-opened-dark) 85%, white),
-    color-mix(in srgb, var(--smartwindow-ask-btn-bg-opened-dark) 85%, white)
-  );
+  --smartwindow-ask-btn-bg-opened-hover-dark: image(color-mix(in srgb, var(--smartwindow-ask-btn-bg-opened-dark) 85%, white));
   --smartwindow-ask-btn-text-color: light-dark(var(--color-violet-80), var(--color-white));
   --smartwindow-ask-btn-text-color-opened: light-dark(var(--color-violet-80), var(--color-violet-10));
   --smartwindow-ask-btn-border-color: light-dark(var(--color-white), transparent);
@@ -61,7 +58,7 @@
   --smartwindow-ask-btn-text-color-hover: var(--smartwindow-ask-btn-text-color);
   --smartwindow-ask-btn-bg-hover: transparent;
   --smartwindow-ask-btn-text-color-opened-hover: var(--smartwindow-ask-btn-text-color-opened);
-  --smartwindow-ask-btn-bg-opened-image: linear-gradient(var(--smartwindow-ask-btn-bg-opened), var(--smartwindow-ask-btn-bg-opened));
+  --smartwindow-ask-btn-bg-opened-image: image(var(--smartwindow-ask-btn-bg-opened));
   --smartwindow-ask-btn-bg-opened-hover-image: none;
   --smartwindow-ask-btn-bg-image-opened-active: var(--smartwindow-ask-btn-gradient);
   --smartwindow-ask-btn-text-color-opened-active: var(--smartwindow-ask-btn-text-color);
@@ -81,8 +78,7 @@
 
   @media (prefers-color-scheme: dark) {
     --smartwindow-ask-btn-gradient: linear-gradient(83deg, #5119dc 0.73%, var(--color-violet-30) 98.05%);
-    --smartwindow-ask-btn-bg-opened-image:
-      linear-gradient(var(--smartwindow-ask-btn-bg-opened-dark), var(--smartwindow-ask-btn-bg-opened-dark)), var(--smartwindow-ask-btn-gradient);
+    --smartwindow-ask-btn-bg-opened-image: image(var(--smartwindow-ask-btn-bg-opened-dark)), var(--smartwindow-ask-btn-gradient);
     --smartwindow-ask-btn-bg-opened-hover-image: var(--smartwindow-ask-btn-bg-opened-hover-dark), var(--smartwindow-ask-btn-gradient);
     --smartwindow-ask-btn-bg-opened-clip: padding-box, border-box;
   }
@@ -735,6 +731,7 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
   &:not(:is([overflowedItem="true"], [cui-areatype="panel"])) {
     > .toolbarbutton-icon {
       width: calc(2 * var(--toolbarbutton-padding-inner) + var(--size-image-small));
+      max-width: var(--size-image-large);
       padding-block: 0;
     }
 
@@ -747,6 +744,7 @@ toolbar[keyNav]:not([collapsed], [customizing]) toolbartabstop,
   toolbarpaletteitem[place="palette"] > & > .toolbarbutton-badge-stack > .toolbarbutton-icon {
     min-height: 16px;
     max-height: 16px;
+    max-width: var(--size-image-small);
   }
 }
 

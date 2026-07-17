@@ -201,6 +201,7 @@ Bugzilla: all of the components whose names begin with "Layout" in the
 "Core" product.
 
 Further documentation:
+
 - Talk: [An Overview of Gecko Layout](https://mozilla.hosted.panopto.com/Panopto/Pages/Viewer.aspx?id=34ff8151-353a-40c4-89e3-ac3201363608) (Cameron McCormack :heycam, 2018-06-13)
 
 ## Frame Construction
@@ -345,17 +346,18 @@ options:
 
 - `None` indicates that no intrinsic inline sizes are dirty
 - `FrameAndAncestors` indicates that intrinsic inline sizes on it and
-   its ancestors are dirty (which happens, for example, if new children
-   are added to it)
+  its ancestors are dirty (which happens, for example, if new children
+  are added to it)
 - `FrameAncestorsAndDescendants` indicates that intrinsic inline sizes
-   on it, its ancestors, and its descendants are dirty (for example, if
-   the font-size changes)
+  on it, its ancestors, and its descendants are dirty (for example, if
+  the font-size changes)
 
 ## Painting
 
 See [](#rendering-overview).
 
 (layout-fragmentation)=
+
 ## Fragmentation
 
 Fragmentation (or pagination) is a concept used in printing,
@@ -370,22 +372,28 @@ described by the CSS specs. Simple elements are often representable with
 exactly one frame, but sometimes an element needs to be represented with
 more than one frame. For example, text breaking across lines:
 
-      xxxxxx AAAA
-      AAA xxxxxxx
+```
+  xxxxxx AAAA
+  AAA xxxxxxx
+```
 
 The A element is a single DOM node but obviously a single rectangular
 frame isn't going to represent its layout precisely.
 
 Similarly, consider text breaking across pages:
 
-      | BBBBBBBBBB |
-      | BBBBBBBBBB |
-      +------------+
+```
+  | BBBBBBBBBB |
+  | BBBBBBBBBB |
+  +------------+
+```
 
-      +------------+
-      | BBBBBBBBBB |
-      | BBBBBBBBBB |
-      |            |
+```
+  +------------+
+  | BBBBBBBBBB |
+  | BBBBBBBBBB |
+  |            |
+```
 
 Again, a single rectangular frame cannot represent the layout of the
 node. A multi-column container with multiple columns is similar.
@@ -420,14 +428,16 @@ The following diagram shows the relationship between the original frame
 tree considering just primary frames, and a possible layout with
 breaking and continuations:
 
-    Original frame tree       Frame tree with A broken into three parts
-        Root                      Root
-         |                      /  |  \
-         A                     A1  A2  A3
-        / \                   / |  |    |
-       B   C                 B  C1 C2   C3
-       |  /|\                |  |  | \   |
-       D E F G               D  E  F G1  G2
+```
+Original frame tree       Frame tree with A broken into three parts
+    Root                      Root
+     |                      /  |  \
+     A                     A1  A2  A3
+    / \                   / |  |    |
+   B   C                 B  C1 C2   C3
+   |  /|\                |  |  | \   |
+   D E F G               D  E  F G1  G2
+```
 
 Certain kinds of frames create multiple child frames for the same
 content element:

@@ -39,24 +39,24 @@
  ******/
 
 #ifndef FRAME_STATE_GROUP_NAME
-#define FRAME_STATE_GROUP_NAME(name_) /* nothing */
-#define DEFINED_FRAME_STATE_GROUP_NAME
+#  define FRAME_STATE_GROUP_NAME(name_) /* nothing */
+#  define DEFINED_FRAME_STATE_GROUP_NAME
 #endif
 
 #ifndef FRAME_STATE_GROUP_CLASS
-#define FRAME_STATE_GROUP_CLASS(name_, class_) /* nothing */
-#define DEFINED_FRAME_STATE_GROUP_CLASS
+#  define FRAME_STATE_GROUP_CLASS(name_, class_) /* nothing */
+#  define DEFINED_FRAME_STATE_GROUP_CLASS
 #endif
 
 #ifndef FRAME_STATE_BIT
-#define FRAME_STATE_BIT(group_, value_, name_) /* nothing */
-#define DEFINED_FRAME_STATE_BIT
+#  define FRAME_STATE_BIT(group_, value_, name_) /* nothing */
+#  define DEFINED_FRAME_STATE_BIT
 #endif
 
 // Helper macro for the common case of a single class
 #define FRAME_STATE_GROUP(name_, class_) \
-FRAME_STATE_GROUP_NAME(name_)            \
-FRAME_STATE_GROUP_CLASS(name_, class_)
+  FRAME_STATE_GROUP_NAME(name_)          \
+  FRAME_STATE_GROUP_CLASS(name_, class_)
 
 // == Frame state bits that apply to all frames ===============================
 
@@ -580,6 +580,18 @@ FRAME_STATE_BIT(Block, 61, NS_BLOCK_INTRINSICS_INFLATED)
 // bit is not set. This bit is set on the first continuation only.
 FRAME_STATE_BIT(Block, 62, NS_BLOCK_HAS_FIRST_LETTER_CHILD)
 
+// NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT is an optimization hint indicating that
+// this block needs to reflow abspos descendants whose containing block is
+// formed by an inline frame.
+//
+// This bit is set in
+// nsInlineFrame::MarkBlockAncestorHavingAbsoluteDescendants() (called from the
+// Reflow() of an inline/ruby descendant that has abspos children), and reset by
+// nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame() after it walks all the
+// block's inline descendants and finds no such abspos descendant, so it may
+// stay set for one extra reflow after the last one is gone.
+FRAME_STATE_BIT(Block, 63, NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT)
+
 // == Frame state bits that apply to image frames =============================
 
 FRAME_STATE_GROUP(Image, nsImageFrame)
@@ -698,16 +710,16 @@ FRAME_STATE_BIT(Page, 20, NS_PAGE_SKIPPED_BY_CUSTOM_RANGE)
 #undef FRAME_STATE_GROUP
 
 #ifdef DEFINED_FRAME_STATE_GROUP_NAME
-#undef DEFINED_FRAME_STATE_GROUP_NAME
-#undef FRAME_STATE_GROUP_NAME
+#  undef DEFINED_FRAME_STATE_GROUP_NAME
+#  undef FRAME_STATE_GROUP_NAME
 #endif
 
 #ifdef DEFINED_FRAME_STATE_GROUP_CLASS
-#undef DEFINED_FRAME_STATE_GROUP_CLASS
-#undef FRAME_STATE_GROUP_CLASS
+#  undef DEFINED_FRAME_STATE_GROUP_CLASS
+#  undef FRAME_STATE_GROUP_CLASS
 #endif
 
 #ifdef DEFINED_FRAME_STATE_BIT
-#undef DEFINED_FRAME_STATE_BIT
-#undef FRAME_STATE_BIT
+#  undef DEFINED_FRAME_STATE_BIT
+#  undef FRAME_STATE_BIT
 #endif

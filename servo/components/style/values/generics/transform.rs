@@ -5,18 +5,25 @@
 //! Generic types for CSS values that are related to transformations.
 
 use crate::derives::*;
+use crate::typed_om::{
+    KeywordValue, MatrixComponent, NumericValue, PerspectiveComponent, PerspectiveValue,
+    RotateComponent, ScaleComponent, SkewComponent, ToTyped, TransformComponent,
+    TranslateComponent, TypedValue,
+};
 use crate::values::computed::length::Length as ComputedLength;
 use crate::values::computed::length::LengthPercentage as ComputedLengthPercentage;
+use crate::values::computed::transform::Matrix3D as ComputedMatrix3D;
 use crate::values::specified::angle::Angle as SpecifiedAngle;
 use crate::values::specified::length::Length as SpecifiedLength;
 use crate::values::specified::length::LengthPercentage as SpecifiedLengthPercentage;
 use crate::values::specified::number::Number as SpecifiedNumber;
 use crate::values::{computed, CSSFloat};
-use crate::{Zero, ZeroNoPercent};
+use crate::{One, Zero, ZeroNoPercent};
 use euclid::default::{Rect, Transform3D};
 use std::fmt::{self, Write};
 use std::ops::Neg;
-use style_traits::{CssWriter, ToCss};
+use style_traits::{CssString, CssWriter, ToCss};
+use thin_vec::ThinVec;
 
 /// A generic 2D transformation matrix.
 #[allow(missing_docs)]
@@ -167,6 +174,7 @@ fn is_same<N: PartialEq>(x: &N, y: &N) -> bool {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 pub enum GenericPerspectiveFunction<L> {
@@ -317,6 +325,170 @@ where
 
 pub use self::GenericTransformOperation as TransformOperation;
 
+/// Converts a transform operation into a transform component.
+pub trait ToTransformComponent {
+    /// Attempt to convert `self` into a transform component.
+    ///
+    /// Implementations append the resulting component to `dest`. Returning
+    /// `Err(())` indicates that the transform operation cannot currently be
+    /// represented as a transform component.
+    fn to_transform_component(&self, _dest: &mut ThinVec<TransformComponent>) -> Result<(), ()>;
+}
+
+impl<Angle, Number, Length, Integer, LengthPercentage> ToTransformComponent
+    for TransformOperation<Angle, Number, Length, Integer, LengthPercentage>
+where
+    Angle: Zero + ToTyped,
+    Number: PartialEq + ToFloat + ToTyped,
+    Length: ToTyped,
+    LengthPercentage: Zero + ToTyped + ZeroNoPercent,
+{
+    fn to_transform_component(&self, dest: &mut ThinVec<TransformComponent>) -> Result<(), ()> {
+        use self::TransformOperation::*;
+
+        // https://drafts.css-houdini.org/css-typed-om-1/#reify-a-transform-function
+        let component = match *self {
+            Matrix(ref m) => TransformComponent::Matrix(MatrixComponent {
+                #[cfg_attr(rustfmt, rustfmt_skip)]
+                matrix: ComputedMatrix3D {
+                    m11: m.a.to_f32()?, m12: m.b.to_f32()?, m13: 0.0, m14: 0.0,
+                    m21: m.c.to_f32()?, m22: m.d.to_f32()?, m23: 0.0, m24: 0.0,
+                    m31: 0.0, m32: 0.0, m33: 1.0, m34: 0.0,
+                    m41: m.e.to_f32()?, m42: m.f.to_f32()?, m43: 0.0, m44: 1.0,
+                },
+                is_2d: true,
+            }),
+            Matrix3D(ref m) => TransformComponent::Matrix(MatrixComponent {
+                #[cfg_attr(rustfmt, rustfmt_skip)]
+                matrix: ComputedMatrix3D {
+                    m11: m.m11.to_f32()?, m12: m.m12.to_f32()?, m13: m.m13.to_f32()?, m14: m.m14.to_f32()?,
+                    m21: m.m21.to_f32()?, m22: m.m22.to_f32()?, m23: m.m23.to_f32()?, m24: m.m24.to_f32()?,
+                    m31: m.m31.to_f32()?, m32: m.m32.to_f32()?, m33: m.m33.to_f32()?, m34: m.m34.to_f32()?,
+                    m41: m.m41.to_f32()?, m42: m.m42.to_f32()?, m43: m.m43.to_f32()?, m44: m.m44.to_f32()?,
+                },
+                is_2d: false,
+            }),
+            Skew(ref theta_x, ref theta_y) => TransformComponent::Skew(SkewComponent {
+                ax: theta_x.to_numeric_value().ok_or(())?,
+                ay: theta_y.to_numeric_value().ok_or(())?,
+            }),
+            SkewX(ref theta) => TransformComponent::SkewX(theta.to_numeric_value().ok_or(())?),
+            SkewY(ref theta) => TransformComponent::SkewY(theta.to_numeric_value().ok_or(())?),
+            Translate(ref tx, ref ty) => TransformComponent::Translate(TranslateComponent {
+                x: tx.to_numeric_value().ok_or(())?,
+                y: ty.to_numeric_value().ok_or(())?,
+                z: NumericValue::zero_px(),
+                is_2d: true,
+            }),
+            TranslateX(ref t) => TransformComponent::Translate(TranslateComponent {
+                x: t.to_numeric_value().ok_or(())?,
+                y: NumericValue::zero_px(),
+                z: NumericValue::zero_px(),
+                is_2d: true,
+            }),
+            TranslateY(ref t) => TransformComponent::Translate(TranslateComponent {
+                x: NumericValue::zero_px(),
+                y: t.to_numeric_value().ok_or(())?,
+                z: NumericValue::zero_px(),
+                is_2d: true,
+            }),
+            TranslateZ(ref t) => TransformComponent::Translate(TranslateComponent {
+                x: NumericValue::zero_px(),
+                y: NumericValue::zero_px(),
+                z: t.to_numeric_value().ok_or(())?,
+                is_2d: false,
+            }),
+            Translate3D(ref tx, ref ty, ref tz) => {
+                TransformComponent::Translate(TranslateComponent {
+                    x: tx.to_numeric_value().ok_or(())?,
+                    y: ty.to_numeric_value().ok_or(())?,
+                    z: tz.to_numeric_value().ok_or(())?,
+                    is_2d: false,
+                })
+            },
+            Scale(ref sx, ref sy) => TransformComponent::Scale(ScaleComponent {
+                x: sx.to_numeric_value().ok_or(())?,
+                y: sy.to_numeric_value().ok_or(())?,
+                z: NumericValue::one(),
+                is_2d: true,
+            }),
+            ScaleX(ref s) => TransformComponent::Scale(ScaleComponent {
+                x: s.to_numeric_value().ok_or(())?,
+                y: NumericValue::one(),
+                z: NumericValue::one(),
+                is_2d: true,
+            }),
+            ScaleY(ref s) => TransformComponent::Scale(ScaleComponent {
+                x: NumericValue::one(),
+                y: s.to_numeric_value().ok_or(())?,
+                z: NumericValue::one(),
+                is_2d: true,
+            }),
+            ScaleZ(ref s) => TransformComponent::Scale(ScaleComponent {
+                x: NumericValue::one(),
+                y: NumericValue::one(),
+                z: s.to_numeric_value().ok_or(())?,
+                is_2d: false,
+            }),
+            Scale3D(ref sx, ref sy, ref sz) => TransformComponent::Scale(ScaleComponent {
+                x: sx.to_numeric_value().ok_or(())?,
+                y: sy.to_numeric_value().ok_or(())?,
+                z: sz.to_numeric_value().ok_or(())?,
+                is_2d: false,
+            }),
+            Rotate(ref theta) => TransformComponent::Rotate(RotateComponent {
+                angle: theta.to_numeric_value().ok_or(())?,
+                x: NumericValue::zero(),
+                y: NumericValue::zero(),
+                z: NumericValue::one(),
+                is_2d: true,
+            }),
+            RotateX(ref theta) => TransformComponent::Rotate(RotateComponent {
+                angle: theta.to_numeric_value().ok_or(())?,
+                x: NumericValue::one(),
+                y: NumericValue::zero(),
+                z: NumericValue::zero(),
+                is_2d: false,
+            }),
+            RotateY(ref theta) => TransformComponent::Rotate(RotateComponent {
+                angle: theta.to_numeric_value().ok_or(())?,
+                x: NumericValue::zero(),
+                y: NumericValue::one(),
+                z: NumericValue::zero(),
+                is_2d: false,
+            }),
+            RotateZ(ref theta) => TransformComponent::Rotate(RotateComponent {
+                angle: theta.to_numeric_value().ok_or(())?,
+                x: NumericValue::zero(),
+                y: NumericValue::zero(),
+                z: NumericValue::one(),
+                is_2d: false,
+            }),
+            Rotate3D(ref ax, ref ay, ref az, ref theta) => {
+                TransformComponent::Rotate(RotateComponent {
+                    angle: theta.to_numeric_value().ok_or(())?,
+                    x: ax.to_numeric_value().ok_or(())?,
+                    y: ay.to_numeric_value().ok_or(())?,
+                    z: az.to_numeric_value().ok_or(())?,
+                    is_2d: false,
+                })
+            },
+            Perspective(ref p) => {
+                let length = match p.to_typed_value().ok_or(())? {
+                    TypedValue::Numeric(value) => PerspectiveValue::Numeric(value),
+                    TypedValue::Keyword(value) => PerspectiveValue::Keyword(value),
+                    _ => return Err(()),
+                };
+                TransformComponent::Perspective(PerspectiveComponent { length })
+            },
+            _ => return Err(()),
+        };
+
+        dest.push(component);
+        Ok(())
+    }
+}
+
 #[derive(
     Clone,
     Debug,
@@ -330,14 +502,32 @@ pub use self::GenericTransformOperation as TransformOperation;
     ToCss,
     ToResolvedValue,
     ToShmem,
-    ToTyped,
 )]
 #[repr(C)]
-#[typed(todo_derive_fields)]
 /// A value of the `transform` property
 pub struct GenericTransform<T>(#[css(if_empty = "none", iterable)] pub crate::OwnedSlice<T>);
 
 pub use self::GenericTransform as Transform;
+
+impl<T: ToTransformComponent> ToTyped for Transform<T> {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        if self.0.is_empty() {
+            dest.push(TypedValue::Keyword(KeywordValue(CssString::from("none"))));
+            return Ok(());
+        }
+
+        // https://drafts.css-houdini.org/css-typed-om-1/#reify-a-transform-list
+        let mut values = ThinVec::new();
+
+        let ops: &[T] = &self.0;
+        for item in ops {
+            item.to_transform_component(&mut values)?;
+        }
+
+        dest.push(TypedValue::Transform(values));
+        Ok(())
+    }
+}
 
 impl<Angle, Number, Length, Integer, LengthPercentage>
     TransformOperation<Angle, Number, Length, Integer, LengthPercentage>
@@ -457,12 +647,12 @@ impl ToRadians for SpecifiedAngle {
     }
 }
 
-// Convert a number type into a float.
-trait ToFloat {
-    // Return the number as an f32, or Err(()) if the conversion is not possible.
+/// Convert a number type into a float.
+pub trait ToFloat {
+    /// Return the number as an f32, or Err(()) if the conversion is not possible.
     fn to_f32(&self) -> Result<f32, ()>;
 
-    // Return the number as an f64, or Err(()) if the conversion is not possible.
+    /// Return the number as an f64, or Err(()) if the conversion is not possible.
     fn to_f64(&self) -> Result<f64, ()>;
 }
 

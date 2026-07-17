@@ -8,7 +8,6 @@ import android.content.Intent
 import android.content.pm.ActivityInfo
 import android.content.pm.ResolveInfo
 import android.speech.RecognizerIntent
-import android.view.LayoutInflater
 import androidx.test.ext.junit.runners.AndroidJUnit4
 import io.mockk.mockk
 import kotlinx.coroutines.CoroutineScope
@@ -29,7 +28,6 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.metrics.MetricsUtils
-import org.mozilla.fenix.databinding.FragmentHomeBinding
 import org.mozilla.fenix.home.toolbar.HomeToolbarComposable.Companion.DirectToSearchConfig
 import org.robolectric.shadows.ShadowPackageManager
 
@@ -53,7 +51,7 @@ class HomeToolbarComposableTest {
         )
         stubSpeechRecognition()
 
-        htc.build(mockk(), false)
+        htc.build(false)
 
         assertTrue(appStore.state.voiceSearchState.isRequestingVoiceInput)
         assertFalse(appStore.state.searchState.isSearchActive)
@@ -74,7 +72,7 @@ class HomeToolbarComposableTest {
             ),
         )
 
-        htc.build(mockk(), false)
+        htc.build(false)
 
         assertFalse(appStore.state.voiceSearchState.isRequestingVoiceInput)
         assertTrue(appStore.state.searchState.isSearchActive)
@@ -98,7 +96,7 @@ class HomeToolbarComposableTest {
             browserStore = browserStore,
         )
 
-        htc.build(mockk(), false)
+        htc.build(false)
 
         assertFalse(appStore.state.voiceSearchState.isRequestingVoiceInput)
         assertTrue(appStore.state.searchState.isSearchActive)
@@ -118,7 +116,7 @@ class HomeToolbarComposableTest {
             ),
         )
 
-        htc.build(mockk(), false)
+        htc.build(false)
 
         assertFalse(appStore.state.voiceSearchState.isRequestingVoiceInput)
         assertTrue(appStore.state.searchState.isSearchActive)
@@ -134,7 +132,6 @@ class HomeToolbarComposableTest {
         coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main),
     ) = HomeToolbarComposable(
         context = testContext,
-        homeBinding = FragmentHomeBinding.inflate(LayoutInflater.from(testContext)),
         navController = mockk(),
         toolbarStore = toolbarStore,
         appStore = appStore,

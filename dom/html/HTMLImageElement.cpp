@@ -70,7 +70,7 @@ static bool IsPreviousSibling(const nsINode* aSubject, const nsINode* aNode) {
 namespace mozilla::dom {
 
 HTMLImageElement::HTMLImageElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {
   // We start out broken
   AddStatesSilently(ElementState::BROKEN);
@@ -606,14 +606,10 @@ JSObject* HTMLImageElement::WrapNode(JSContext* aCx,
   return HTMLImageElement_Binding::Wrap(aCx, this, aGivenProto);
 }
 
-#ifdef DEBUG
-HTMLFormElement* HTMLImageElement::GetFormInternal() const { return mForm; }
-#endif
-
 void HTMLImageElement::SetForm(HTMLFormElement* aForm) {
   MOZ_ASSERT(aForm, "Don't pass null here");
-  NS_ASSERTION(!mForm,
-               "We don't support switching from one non-null form to another.");
+  MOZ_ASSERT(!mForm && !HasFlag(ADDED_TO_FORM),
+             "We don't support switching from one non-null form to another.");
 
   mForm = aForm;
 }

@@ -45,6 +45,9 @@ public class ContentBlockingController {
     /** Fingerprinting content has been loaded. */
     public static final int LOADED_FINGERPRINTING_CONTENT = 0x00000400;
 
+    /** Fingerprinting content which should be blocked from loading was replaced with a shim. */
+    public static final int REPLACED_FINGERPRINTING_CONTENT = 0x08000000;
+
     /** Cryptomining content has been blocked from loading. */
     public static final int BLOCKED_CRYPTOMINING_CONTENT = 0x00000800;
 
@@ -128,7 +131,7 @@ public class ContentBlockingController {
     public static final int ALLOWED_TRACKING_CONTENT = 0x00000020;
 
     /** Indicates that bounce trackers have been purged. */
-    public static final int PURGED_BOUNCETRACKER = 0x00000007;
+    public static final int PURGED_BOUNCETRACKER = 0x00000008;
 
     /** Indicates that suspicious fingerprinting content has been blocked */
     public static final int BLOCKED_SUSPICIOUS_FINGERPRINTING = 0x00000004;
@@ -150,6 +153,7 @@ public class ContentBlockingController {
         Event.LOADED_LEVEL_2_TRACKING_CONTENT,
         Event.BLOCKED_FINGERPRINTING_CONTENT,
         Event.LOADED_FINGERPRINTING_CONTENT,
+        Event.REPLACED_FINGERPRINTING_CONTENT,
         Event.BLOCKED_CRYPTOMINING_CONTENT,
         Event.LOADED_CRYPTOMINING_CONTENT,
         Event.BLOCKED_UNSAFE_CONTENT,
@@ -347,6 +351,18 @@ public class ContentBlockingController {
     return EventDispatcher.getInstance()
         .queryBundle("GeckoView:TrackingDB:GetEarliestRecordedDate")
         .map(bundle -> bundle.getLong("date", 0L));
+  }
+
+  /**
+   * Remove all entries from the content blocking database.
+   *
+   * @return A {@link GeckoResult} that completes when the database has been cleared.
+   */
+  @HandlerThread
+  public @NonNull GeckoResult<Void> clearTrackingDb() {
+    ThreadUtils.assertOnHandlerThread();
+
+    return EventDispatcher.getInstance().queryVoid("GeckoView:TrackingDB:ClearAll");
   }
 
   private List<TrackingDbEvent> eventsFromBundle(final GeckoBundle value) {

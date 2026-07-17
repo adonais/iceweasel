@@ -8,14 +8,14 @@
 
 namespace mozilla::gmp {
 
-#define LOG(msg, ...)                   \
-  MOZ_LOG(GetGMPLog(), LogLevel::Debug, \
-          ("GMPMemoryStorage=%p, " msg, this, ##__VA_ARGS__))
+#define LOG(msg, ...)                                                    \
+  MOZ_LOG_FMT(GetGMPLog(), LogLevel::Debug, "GMPMemoryStorage={}, " msg, \
+              fmt::ptr(this), ##__VA_ARGS__)
 
 class GMPMemoryStorage : public GMPStorage {
  public:
   GMPMemoryStorage(const nsACString& aNodeId, const nsAString& aGMPName) {
-    LOG("Created GMPMemoryStorage, nodeId=%s, gmpName=%s",
+    LOG("Created GMPMemoryStorage, nodeId={}, gmpName={}",
         PromiseFlatCString(aNodeId).get(),
         NS_ConvertUTF16toUTF8(aGMPName).get());
   }

@@ -1131,25 +1131,18 @@ static void screen_content_tools_determination(
     const int allow_intrabc_orig_decision,
     const int use_screen_content_tools_orig_decision,
     const int is_screen_content_type_orig_decision, const int pass,
-    int *projected_size_pass, PSNR_STATS *psnr) {
+    PSNR_STATS *psnr) {
   AV1_COMMON *const cm = &cpi->common;
   FeatureFlags *const features = &cm->features;
 
-#if CONFIG_FPMT_TEST
-  projected_size_pass[pass] =
-      ((cpi->ppi->gf_group.frame_parallel_level[cpi->gf_frame_index] > 0) &&
-       (cpi->ppi->fpmt_unit_test_cfg == PARALLEL_SIMULATION_ENCODE))
-          ? cpi->ppi->p_rc.temp_projected_frame_size
-          : cpi->rc.projected_frame_size;
-#else
-  projected_size_pass[pass] = cpi->rc.projected_frame_size;
-#endif
-
 #if CONFIG_AV1_HIGHBITDEPTH
-  const uint32_t in_bit_depth = cpi->oxcf.input_cfg.input_bit_depth;
   const uint32_t bit_depth = cpi->td.mb.e_mbd.bd;
+  // The decision to enable screen content tools is based on PSNR evaluated only
+  // at the stream bit-depth. Hence, PSNR computation against the actual input
+  // source is skipped by passing the codec bit-depth instead of the source
+  // bit-depth in the final arg.
   aom_calc_highbd_psnr(cpi->source, &cpi->common.cur_frame->buf, &psnr[pass],
-                       bit_depth, in_bit_depth);
+                       bit_depth, bit_depth);
 #else
   aom_calc_psnr(cpi->source, &cpi->common.cur_frame->buf, &psnr[pass]);
 #endif
@@ -1213,8 +1206,7 @@ void av1_determine_sc_tools_with_encoding(AV1_COMP *cpi, const int q_orig) {
   const AV1EncoderConfig *const oxcf = &cpi->oxcf;
   const QuantizationCfg *const q_cfg = &oxcf->q_cfg;
   // Variables to help determine if we should allow screen content tools.
-  int projected_size_pass[3] = { 0 };
-  PSNR_STATS psnr[3];
+  PSNR_STATS psnr[2];
   const int is_key_frame = cm->current_frame.frame_type == KEY_FRAME;
   const int allow_screen_content_tools_orig_decision =
       cm->features.allow_screen_content_tools;
@@ -1287,7 +1279,7 @@ void av1_determine_sc_tools_with_encoding(AV1_COMP *cpi, const int q_orig) {
     screen_content_tools_determination(
         cpi, allow_screen_content_tools_orig_decision,
         allow_intrabc_orig_decision, use_screen_content_tools_orig_decision,
-        is_screen_content_type_orig_decision, pass, projected_size_pass, psnr);
+        is_screen_content_type_orig_decision, pass, psnr);
   }
 
   // Set partition speed feature back.

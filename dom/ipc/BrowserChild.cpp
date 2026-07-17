@@ -435,6 +435,14 @@ void BrowserChild::SetTargetAPZC(
   }
 }
 
+void BrowserChild::NotifyApzAwareListenerAdded(
+    ScrollableLayerGuid::ViewID aScrollId) const {
+  if (mApzcTreeManager) {
+    mApzcTreeManager->NotifyApzAwareListenerAdded(
+        ScrollableLayerGuid(mLayersId, 0, aScrollId));
+  }
+}
+
 bool BrowserChild::DoUpdateZoomConstraints(
     const uint32_t& aPresShellId, const ViewID& aViewId,
     const Maybe<ZoomConstraints>& aConstraints) {
@@ -4247,9 +4255,7 @@ void BrowserChild::OnPointerRawUpdateEventListenerRemoved(
 #if defined(ACCESSIBILITY) && defined(MOZ_ENABLE_SKIA_PDF)
 mozilla::ipc::IPCResult BrowserChild::RecvRequestDocAccessibleForPrint() {
   if (RefPtr<Document> doc = GetTopLevelDocument()) {
-    if (nsAccessibilityService* serv = GetAccService()) {
-      serv->NotifyOfPrintDocument(doc);
-    }
+    a11y::DocManager::NotifyOfPrintDocument(doc);
   }
   return IPC_OK();
 }
@@ -4328,6 +4334,6 @@ BrowserChildMessageManager::GetTabEventTarget() {
 }
 
 nsresult BrowserChildMessageManager::Dispatch(
-    already_AddRefed<nsIRunnable>&& aRunnable) const {
+    already_AddRefed<nsIRunnable> aRunnable) const {
   return SchedulerGroup::Dispatch(std::move(aRunnable));
 }

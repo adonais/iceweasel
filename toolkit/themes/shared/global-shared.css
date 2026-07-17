@@ -74,7 +74,6 @@
   --menuitem-margin: var(--panel-menuitem-margin);
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("widget.macos.native-popovers") and (-moz-platform: macos) {
   panel:not([nonnative]) {
     background-color: transparent;
@@ -146,8 +145,8 @@ html|textarea {
   border: 1px solid var(--input-border-color);
   border-radius: var(--border-radius-medium);
   margin: 0;
-  background-color: var(--input-bgcolor, Field);
-  color: var(--input-color, FieldText);
+  background-color: var(--input-text-background-color);
+  color: var(--input-text-color);
 
   &:where(:user-invalid) {
     border-color: var(--border-color-error);

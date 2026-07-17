@@ -120,8 +120,8 @@ class RemoteSourceStreamInfo;
 class PCUuidGenerator : public JsepUuidGenerator {
  public:
   virtual bool Generate(std::string* idp) override;
-  virtual JsepUuidGenerator* Clone() const override {
-    return new PCUuidGenerator(*this);
+  virtual UniquePtr<JsepUuidGenerator> Clone() const override {
+    return MakeUnique<PCUuidGenerator>(*this);
   }
 
  private:
@@ -169,7 +169,7 @@ class PeerConnectionImpl final
  public:
   explicit PeerConnectionImpl(const dom::GlobalObject* aGlobal = nullptr);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(PeerConnectionImpl)
 
   struct RtpExtensionHeader {
@@ -502,6 +502,9 @@ class PeerConnectionImpl final
   nsresult OnAlpnNegotiated(const std::string& aAlpn, bool aPrivacyRequested);
 
   void OnDtlsStateChange(const std::string& aTransportId,
+                         TransportLayer::State aState,
+                         const nsTArray<nsTArray<uint8_t>>& aRemoteCerts);
+  void OnRtcpStateChange(const std::string& aTransportId,
                          TransportLayer::State aState);
   dom::RTCPeerConnectionState GetNewConnectionState() const;
   // Returns whether we need to fire a state change event

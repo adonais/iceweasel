@@ -1255,7 +1255,7 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
     tmpFlags |= nsISocketTransport::NO_PERMANENT_STORAGE;
   }
 
-  (void)socketTransport->SetIsPrivate(ci->GetPrivate());
+  (void)socketTransport->SetOriginAttributes(ci->GetOriginAttributes());
   (void)socketTransport->SetIsTRRConnection(ci->GetIsTrrServiceChannel());
 
   if (dnsAndSock->mCaps & NS_HTTP_DISALLOW_ECH) {
@@ -1312,12 +1312,6 @@ nsresult DnsAndConnectSocket::TransportSetup::SetupStreams(
 
   socketTransport->SetConnectionFlags(tmpFlags);
   socketTransport->SetTlsFlags(ci->GetTlsFlags());
-
-  const OriginAttributes& originAttributes =
-      dnsAndSock->mConnInfo->GetOriginAttributes();
-  if (originAttributes != OriginAttributes()) {
-    socketTransport->SetOriginAttributes(originAttributes);
-  }
 
   socketTransport->SetQoSBits(gHttpHandler->GetQoSBits());
 

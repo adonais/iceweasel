@@ -332,27 +332,13 @@ void HTMLDialogElement::Show(ErrorResult& aError) {
   // 8. Let document be this's node document.
 
   // 9. Let hideUntil be the result of running topmost popover ancestor given
-  // this, document's showing hint popover list, null, and false.
-  RefPtr<nsINode> hideUntil =
-      GetTopmostPopoverAncestor(PopoverAttributeState::Hint, nullptr, false);
+  // this, null, and false.
+  RefPtr<Element> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
 
-  // 10. If hideUntil is null, then set hideUntil to the result of running
-  // topmost popover ancestor given this, document's showing auto popover list,
-  // null, and false.
-  if (!hideUntil) {
-    hideUntil =
-        GetTopmostPopoverAncestor(PopoverAttributeState::Auto, nullptr, false);
-  }
+  // 10. Run hide popovers until given document, hideUntil, false, and true.
+  OwnerDoc()->HidePopoversUntil(hideUntil, false, true);
 
-  // 11. If hideUntil is null, then set hideUntil to document.
-  if (!hideUntil) {
-    hideUntil = OwnerDoc();
-  }
-
-  // 12. Run hide all popovers until given hideUntil, false, and true.
-  OwnerDoc()->HideAllPopoversUntil(*hideUntil, false, true);
-
-  // 13. Run the dialog focusing steps given this.
+  // 11. Run the dialog focusing steps given this.
   FocusDialog();
 }
 
@@ -514,27 +500,13 @@ void HTMLDialogElement::ShowModal(Element* aSource, ErrorResult& aError) {
   // 17. Let document be subject's node document.
 
   // 18. Let hideUntil be the result of running topmost popover ancestor given
-  // subject, document's showing hint popover list, null, and false.
-  RefPtr<nsINode> hideUntil =
-      GetTopmostPopoverAncestor(PopoverAttributeState::Hint, nullptr, false);
+  // subject, null, and false.
+  RefPtr<Element> hideUntil = GetTopmostPopoverAncestor(nullptr, false);
 
-  // 19. If hideUntil is null, then set hideUntil to the result of running
-  // topmost popover ancestor given subject, document's showing auto popover
-  // list, null, and false.
-  if (!hideUntil) {
-    hideUntil =
-        GetTopmostPopoverAncestor(PopoverAttributeState::Auto, nullptr, false);
-  }
+  // 19. Run hide popovers until given document, hideUntil, false, and true.
+  OwnerDoc()->HidePopoversUntil(hideUntil, false, true);
 
-  // 20. If hideUntil is null, then set hideUntil to document.
-  if (!hideUntil) {
-    hideUntil = OwnerDoc();
-  }
-
-  // 21. Run hide all popovers until given hideUntil, false, and true.
-  OwnerDoc()->HideAllPopoversUntil(*hideUntil, false, true);
-
-  // 22. Run the dialog focusing steps given subject.
+  // 20. Run the dialog focusing steps given subject.
   FocusDialog();
 
   aError.SuppressException();

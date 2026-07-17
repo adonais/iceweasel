@@ -56,11 +56,6 @@
 // pools. E.g. it might be necessary to skip pools when search for, or patching,
 // an instruction sequence.
 //
-// It is often required to keep a reference to a pool entry, to patch it after
-// the buffer is finished. Each pool entry is assigned a unique index, counting
-// up from zero (see the poolEntryCount slot below). These can be mapped back to
-// the offset of the pool entry in the finished buffer, see poolEntryOffset().
-//
 // The code supports no-pool regions, and for these the size of the region, in
 // instructions, must be supplied. This size is used to determine if inserting
 // the instructions would place a pool entry out of range, and if so then a pool
@@ -559,24 +554,6 @@ struct AssemblerBufferSettings {
 template <class Inst, class Asm, AssemblerBufferSettings settings>
 struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
  private:
-  // The PoolEntry index counter. Each PoolEntry is given a unique index,
-  // counting up from zero, and these can be mapped back to the actual pool
-  // entry offset after finishing the buffer, see poolEntryOffset().
-  size_t poolEntryCount;
-
- public:
-  class PoolEntry {
-    size_t index_;
-
-   public:
-    explicit PoolEntry(size_t index) : index_(index) {}
-
-    PoolEntry() : index_(-1) {}
-
-    size_t index() const { return index_; }
-  };
-
- private:
   static constexpr size_t InstSize = settings.instSize;
   static constexpr size_t NumShortBranchRanges = settings.numShortBranchRanges;
   static constexpr size_t ShortRangeBranchHysteresis =
@@ -599,24 +576,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   // The current working pool. Copied out as needed before resetting.
   Pool pool_;
 
-  struct PoolInfo {
-    // The index of the first entry in this pool.
-    // Pool entries are numbered uniquely across all pools, starting from 0.
-    unsigned firstEntryIndex;
-
-    // The location of this pool's first entry in the main assembler buffer.
-    // Note that the pool guard and header come before this offset which
-    // points directly at the data.
-    BufferOffset offset;
-
-    explicit PoolInfo(unsigned index, BufferOffset data)
-        : firstEntryIndex(index), offset(data) {}
-  };
-
-  // Info for each pool that has already been dumped. This does not include
-  // any entries in pool_.
-  Vector<PoolInfo, 8, LifoAllocPolicy<Fallible>> poolInfo_;
-
   // Set of short-range forward branches that have not yet been bound.
   // We may need to insert veneers if the final label turns out to be out of
   // range.
@@ -629,7 +588,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   // inhibition of pool dumping.  These is no significance to different
   // above-zero values; this is a counter and not a boolean only so as to
   // facilitate correctly tracking nested enterNoPools/leaveNoPools calls.
-  unsigned int inhibitPools_;
+  unsigned int inhibitPools_ = 0;
 
 #ifdef DEBUG
   // State for validating the 'maxInst' argument to enterNoPool() in the case
@@ -638,15 +597,15 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   //
   // The buffer offset at the start of the outermost nesting level no-pool
   // region.  Set to all-ones (0xFF..FF) to mean "invalid".
-  size_t inhibitPoolsStartOffset_;
+  size_t inhibitPoolsStartOffset_ = ~size_t(0) /*"invalid"*/;
   // The maximum number of word sized instructions declared for the outermost
   // nesting level no-pool region.  Set to zero when invalid.
-  size_t inhibitPoolsMaxInst_;
+  size_t inhibitPoolsMaxInst_ = 0;
   // The maximum number of new deadlines that are allowed to register in the
   // no-pool region.
-  size_t inhibitPoolsMaxNewDeadlines_;
+  size_t inhibitPoolsMaxNewDeadlines_ = 0;
   // The actual number of new deadlines registered in the no-pool region.
-  size_t inhibitPoolsActualNewDeadlines_;
+  size_t inhibitPoolsActualNewDeadlines_ = 0;
 #endif
 
   // Instruction to use for alignment fill.
@@ -662,24 +621,13 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   // For inhibiting the insertion of fill NOPs in the dynamic context in which
   // they are being inserted.  The zero-vs-nonzero meaning is the same as that
   // documented for `inhibitPools_` above.
-  unsigned int inhibitNops_;
+  unsigned int inhibitNops_ = 0;
 
  public:
   AssemblerBufferWithConstantPools(size_t poolMaxOffset, unsigned nopFill)
-      : poolEntryCount(0),
-        pool_(poolMaxOffset, PcBias, this->lifoAlloc_),
-        poolInfo_(this->lifoAlloc_),
+      : pool_(poolMaxOffset, PcBias, this->lifoAlloc_),
         branchDeadlines_(this->lifoAlloc_),
-        inhibitPools_(0),
-#ifdef DEBUG
-        inhibitPoolsStartOffset_(~size_t(0) /*"invalid"*/),
-        inhibitPoolsMaxInst_(0),
-        inhibitPoolsMaxNewDeadlines_(0),
-        inhibitPoolsActualNewDeadlines_(0),
-#endif
-        nopFill_(nopFill),
-        inhibitNops_(0) {
-  }
+        nopFill_(nopFill) {}
 
  private:
   size_t sizeExcludingCurrentPool() const {
@@ -835,8 +783,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 
   MOZ_NEVER_INLINE
   BufferOffset allocEntry(size_t numInst, unsigned numPoolEntries,
-                          uint8_t* inst, uint8_t* data,
-                          PoolEntry* pe = nullptr) {
+                          uint8_t* inst, uint8_t* data) {
     // The allocation of pool entries is not supported in a no-pool region,
     // check.
     MOZ_ASSERT_IF(numPoolEntries > 0, inhibitPools_ == 0);
@@ -850,15 +797,14 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
 #ifdef JS_JITSPEW
     if (numPoolEntries && JitSpewEnabled(JitSpew_Pools)) {
       JitSpew(JitSpew_Pools, "Inserting %d entries into pool", numPoolEntries);
-      JitSpewStart(JitSpew_Pools, "data is: 0x");
+      AutoJitSpewMessage msg(JitSpew_Pools, "data is: 0x");
       size_t length = numPoolEntries * sizeof(PoolAllocUnit);
       for (unsigned idx = 0; idx < length; idx++) {
-        JitSpewCont(JitSpew_Pools, "%02x", data[length - idx - 1]);
+        msg.append("%02x", data[length - idx - 1]);
         if (((idx & 3) == 3) && (idx + 1 != length)) {
-          JitSpewCont(JitSpew_Pools, "_");
+          msg.append("_");
         }
       }
-      JitSpewFin(JitSpew_Pools);
     }
 #endif
 
@@ -869,19 +815,12 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     }
 
     // Now to get an instruction to write.
-    PoolEntry retPE;
     if (numPoolEntries) {
       JitSpew(JitSpew_Pools, "Entry has index %u, offset %zu", index,
               sizeExcludingCurrentPool());
       Asm::InsertIndexIntoTag(inst, index);
-      // Figure out the offset within the pool entries.
-      retPE = PoolEntry(poolEntryCount);
-      poolEntryCount += numPoolEntries;
     }
     // Now inst is a valid thing to insert into the instruction stream.
-    if (pe != nullptr) {
-      *pe = retPE;
-    }
     return this->putBytes(numInst * InstSize, inst);
   }
 
@@ -905,7 +844,7 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
   BufferOffset putInt(uint32_t value) {
     if (nopFill_ ||
         !hasSpaceForInsts(/* numInsts= */ 1, /* numPoolEntries= */ 0)) {
-      return allocEntry(1, 0, (uint8_t*)&value, nullptr, nullptr);
+      return allocEntry(1, 0, (uint8_t*)&value, nullptr);
     }
 
 #if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_ARM64) ||      \
@@ -986,9 +925,10 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     // of flushPool, we have to check for overflow when comparing the deadline
     // with our expected reserved bytes.
     size_t deadline = branchDeadlines_.earliestDeadline().getOffset();
-    size_t current = this->nextOffset().getOffset();
+    size_t nextOffset = sizeExcludingCurrentPool();
+    size_t poolOffset = nextOffset + (GuardSize + HeaderSize) * InstSize;
     mozilla::CheckedInt<size_t> poolFreeSpace(reservedBytes);
-    auto future = (current + sizeOfSecondaryVeneers()) + poolFreeSpace;
+    auto future = (poolOffset + sizeOfSecondaryVeneers()) + poolFreeSpace;
     return !future.isValid() || deadline < future.value();
   }
 
@@ -996,8 +936,8 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     return pool_.numEntries() == 0 && !hasExpirableShortRangeBranches(bytes);
   }
   void finishPool(size_t reservedBytes) {
-    JitSpew(JitSpew_Pools, "Attempting to finish pool %zu with %u entries.",
-            poolInfo_.length(), pool_.numEntries());
+    JitSpew(JitSpew_Pools, "Attempting to finish pool with %u entries.",
+            pool_.numEntries());
 
     if (reservedBytes < ShortRangeBranchHysteresis) {
       reservedBytes = ShortRangeBranchHysteresis;
@@ -1071,13 +1011,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
       // actually reside there in memory.
       JitSpew(JitSpew_Pools, "Fixing entry %d offset to %zu", idx, codeOffset);
       Asm::PatchConstantPoolLoad(inst, (uint8_t*)inst + codeOffset);
-    }
-
-    // Record the pool info.
-    unsigned firstEntry = poolEntryCount - pool_.numEntries();
-    if (!poolInfo_.append(PoolInfo(firstEntry, data))) {
-      this->fail_oom();
-      return;
     }
 
     // Reset everything to the state that it was in when we started.
@@ -1250,31 +1183,6 @@ struct AssemblerBufferWithConstantPools : public AssemblerBuffer<Inst> {
     MOZ_ASSERT(pool_.numEntries() == 0);
     this->putBytes(numBytes, code);
     return !this->oom();
-  }
-
- public:
-  size_t poolEntryOffset(PoolEntry pe) const {
-    MOZ_ASSERT(pe.index() < poolEntryCount - pool_.numEntries(),
-               "Invalid pool entry, or not flushed yet.");
-    // Find the pool containing pe.index().
-    // The array is sorted, so we can use a binary search.
-    auto b = poolInfo_.begin(), e = poolInfo_.end();
-    // A note on asymmetric types in the upper_bound comparator:
-    // http://permalink.gmane.org/gmane.comp.compilers.clang.devel/10101
-    auto i = std::upper_bound(b, e, pe.index(),
-                              [](size_t value, const PoolInfo& entry) {
-                                return value < entry.firstEntryIndex;
-                              });
-    // Since upper_bound finds the first pool greater than pe,
-    // we want the previous one which is the last one less than or equal.
-    MOZ_ASSERT(i != b, "PoolInfo not sorted or empty?");
-    --i;
-    // The i iterator now points to the pool containing pe.index.
-    MOZ_ASSERT(i->firstEntryIndex <= pe.index() &&
-               (i + 1 == e || (i + 1)->firstEntryIndex > pe.index()));
-    // Compute the byte offset into the pool.
-    unsigned relativeIndex = pe.index() - i->firstEntryIndex;
-    return i->offset.getOffset() + relativeIndex * sizeof(PoolAllocUnit);
   }
 };
 

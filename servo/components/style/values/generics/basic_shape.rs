@@ -160,12 +160,12 @@ pub use self::GenericClipPath as ClipPath;
 )]
 #[animation(no_bound(I))]
 #[repr(u8)]
-#[typed(todo_derive_fields)]
 pub enum GenericShapeOutside<BasicShape, I> {
     #[animation(error)]
     None,
     #[animation(error)]
     Image(I),
+    #[typed(skip)]
     Shape(Box<BasicShape>, #[css(skip_if = "is_default")] ShapeBox),
     #[animation(error)]
     Box(ShapeBox),
@@ -336,6 +336,10 @@ pub enum GenericShapeRadius<LengthPercentage> {
     ClosestSide,
     #[animation(error)]
     FarthestSide,
+    #[animation(error)]
+    FarthestCorner,
+    #[animation(error)]
+    ClosestCorner,
 }
 
 pub use self::GenericShapeRadius as ShapeRadius;

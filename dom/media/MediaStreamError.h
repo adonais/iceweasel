@@ -79,7 +79,7 @@ class MediaStreamError final : public nsISupports,
       : BaseMediaMgrError(aOther.mName, aOther.mMessage, aOther.mConstraint),
         mParent(aParent) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(MediaStreamError)
   NS_INLINE_DECL_STATIC_IID(MOZILLA_DOM_MEDIASTREAMERROR_IMPLEMENTATION_IID)
 

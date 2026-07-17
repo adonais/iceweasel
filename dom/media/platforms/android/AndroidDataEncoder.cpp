@@ -16,12 +16,14 @@
 namespace mozilla {
 
 extern LazyLogModule sPEMLog;
-#define AND_ENC_LOG(arg, ...)                \
-  MOZ_LOG(sPEMLog, mozilla::LogLevel::Debug, \
-          ("AndroidDataEncoder(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
-#define AND_ENC_LOGE(arg, ...)               \
-  MOZ_LOG(sPEMLog, mozilla::LogLevel::Error, \
-          ("AndroidDataEncoder(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
+#define AND_ENC_LOG(arg, ...)                                               \
+  MOZ_LOG_FMT(sPEMLog, mozilla::LogLevel::Debug,                            \
+              "AndroidDataEncoder({})::{}: " arg, fmt::ptr(this), __func__, \
+              ##__VA_ARGS__)
+#define AND_ENC_LOGE(arg, ...)                                              \
+  MOZ_LOG_FMT(sPEMLog, mozilla::LogLevel::Error,                            \
+              "AndroidDataEncoder({})::{}: " arg, fmt::ptr(this), __func__, \
+              ##__VA_ARGS__)
 
 #define REJECT_IF_ERROR()                                                \
   do {                                                                   \
@@ -274,8 +276,8 @@ static RefPtr<MediaByteBuffer> ExtractCodecConfig(
   auto config = MakeRefPtr<MediaByteBuffer>(aSize);
   config->SetLength(aSize);
   NS_ENSURE_SUCCESS(
-      aBuffer->NativeCopy(reinterpret_cast<jlong>(config->Elements()), aOffset,
-                          aSize),
+      aBuffer->NativeCopy(reinterpret_cast<jlong>(config->Elements()),
+                          config->Length(), aOffset, aSize),
       nullptr);
   if (!aAsAVCC) {
     return config;
@@ -378,12 +380,12 @@ RefPtr<MediaRawData> AndroidDataEncoder::GetOutputData(
   auto output = MakeRefPtr<MediaRawData>();
   UniquePtr<MediaRawDataWriter> writer(output->CreateWriter());
   if (!writer->SetSize(aSize)) {
-    AND_ENC_LOGE("fail to allocate output buffer: size=%d", aSize);
+    AND_ENC_LOGE("fail to allocate output buffer: size={}", aSize);
     return nullptr;
   }
 
   NS_ENSURE_SUCCESS(aBuffer->NativeCopy(reinterpret_cast<jlong>(writer->Data()),
-                                        aOffset, aSize),
+                                        writer->Size(), aOffset, aSize),
                     nullptr);
   output->mKeyframe = aIsKeyFrame;
 
@@ -419,7 +421,7 @@ RefPtr<MediaRawData> AndroidDataEncoder::GetOutputDataH264(
 
   NS_ENSURE_SUCCESS(
       aBuffer->NativeCopy(reinterpret_cast<jlong>(writer->Data() + prependSize),
-                          aOffset, aSize),
+                          writer->Size() - prependSize, aOffset, aSize),
       nullptr);
 
   if (asAVCC && !AnnexB::ConvertSampleToAVCC(output, avccHeader)) {

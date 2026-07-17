@@ -21,7 +21,7 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Surface
@@ -32,10 +32,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.testTag
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
@@ -45,43 +47,92 @@ import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import mozilla.components.compose.base.modifier.thenConditional
-import mozilla.components.compose.base.theme.AcornTheme
 import org.mozilla.fenix.R
-import org.mozilla.fenix.home.sessioncontrol.TrackingProtectionInteractor
 import org.mozilla.fenix.theme.FirefoxTheme
 import java.text.BreakIterator
 import java.text.StringCharacterIterator
 import kotlin.math.roundToInt
+import mozilla.components.ui.icons.R as iconsR
 
 private const val FOX_ANIMATION_DURATION = 600
 private const val TYPING_DELAY_MS = 50L
 private const val CURSOR_BLINK_MS = 500L
+private const val DISPLAY_DURATION_MS = 3000L
+private const val TYPEWRITER_REVERSE_DELAY_MS = 1200L
+
+internal const val LONGFOX_FOX_IMAGE_TEST_TAG = "trackersBlockedCard.longfoxFox"
+internal const val PROTECTION_STATUS_PILL_TEST_TAG = "trackersBlockedCard.protectionStatusPill"
 
 /**
  * A card that displays the number of trackers blocked with an animated fox.
  *
+ * When [longfoxEnabled] is true the pill launches the longfox game via [onLongfoxEntryPointClicked];
+ * otherwise it opens the privacy report via [onPrivacyReportTapped]. This routing is independent of
+ * [showLongfoxAnimation], which only controls the occasional fox peek animation.
+ *
  * @param trackersBlockedCount The number of trackers blocked to display.
  * @param modifier Modifier to be applied to the card.
- * @param interactor Optional [TrackingProtectionInteractor] for handling interactions.
- * @param showLongfoxEntryPoint Whether to show the fox animation and typewriter text.
+ * @param onPrivacyReportTapped Invoked when the pill is tapped while longfox is disabled. If null,
+ * the pill is not clickable.
+ * @param onLongfoxEntryPointClicked Invoked when the pill is tapped while longfox is enabled.
+ * @param longfoxEnabled Whether the longfox game is enabled, routing pill taps to
+ * [onLongfoxEntryPointClicked] instead of [onPrivacyReportTapped].
+ * @param showLongfoxAnimation Whether to play the fox peek animation and typewriter text.
  */
 @Composable
 fun TrackersBlockedCard(
     trackersBlockedCount: Int,
     modifier: Modifier = Modifier,
-    interactor: TrackingProtectionInteractor? = null,
-    showLongfoxEntryPoint: Boolean = false,
+    onPrivacyReportTapped: (() -> Unit)? = null,
+    onLongfoxEntryPointClicked: () -> Unit = {},
+    longfoxEnabled: Boolean = false,
+    showLongfoxAnimation: Boolean = false,
 ) {
+    var isPlayingAnimation by remember { mutableStateOf(false) }
     val foxOffsetY = remember { Animatable(1f) }
+    var isReversing by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(showLongfoxEntryPoint) {
-        if (showLongfoxEntryPoint) {
+    // Latch the animation becoming visible into isPlayingAnimation. showLongfoxAnimation is
+    // cleared as soon as the homepage consumes it, so the animation is driven off the latch below
+    // to ensure it runs to completion rather than being cancelled mid-flight.
+    LaunchedEffect(showLongfoxAnimation) {
+        if (showLongfoxAnimation) {
+            isPlayingAnimation = true
+        }
+    }
+
+    // see bug 2050032.
+    // animateTo is frame-driven and freezes while backgrounded, but the delays below keep running,
+    // so a peek interrupted by backgrounding would otherwise play its retract transition on return.
+    // Reset to the hidden state when the card leaves the foreground so it restores cleanly.
+    LifecycleEventEffect(Lifecycle.Event.ON_STOP) {
+        isPlayingAnimation = false
+        coroutineScope.launch { foxOffsetY.snapTo(1f) }
+    }
+
+    LaunchedEffect(isPlayingAnimation) {
+        if (isPlayingAnimation) {
+            isReversing = false
+            // make sure we always start from the beginning position.
+            foxOffsetY.snapTo(1f)
             foxOffsetY.animateTo(
                 targetValue = 0f,
                 animationSpec = tween(durationMillis = FOX_ANIMATION_DURATION, easing = Ease),
             )
+            delay(DISPLAY_DURATION_MS)
+            isReversing = true
+            delay(TYPEWRITER_REVERSE_DELAY_MS)
+            foxOffsetY.animateTo(
+                targetValue = 1f,
+                animationSpec = tween(durationMillis = FOX_ANIMATION_DURATION, easing = Ease),
+            )
+            isPlayingAnimation = false
         }
     }
 
@@ -95,33 +146,32 @@ fun TrackersBlockedCard(
         Box(
             contentAlignment = Alignment.TopStart,
         ) {
-            if (showLongfoxEntryPoint) {
+            if (isPlayingAnimation) {
                 Image(
                     painter = painterResource(R.drawable.expressive_firefox),
                     contentDescription = null,
-                    modifier = Modifier.offset {
-                        IntOffset(
-                            x = foxHorizontalOffset.toPx().roundToInt(),
-                            y = ((-peekHeight.toPx()) + (foxOffsetY.value * peekHeight.toPx())).roundToInt(),
-                        )
-                    },
+                    modifier = Modifier
+                        .testTag(LONGFOX_FOX_IMAGE_TEST_TAG)
+                        .offset {
+                            IntOffset(
+                                x = foxHorizontalOffset.toPx().roundToInt(),
+                                y = ((-peekHeight.toPx()) + (foxOffsetY.value * peekHeight.toPx())).roundToInt(),
+                            )
+                        },
                 )
             }
 
             ProtectionStatusPill(
                 trackersBlockedCount = trackersBlockedCount,
-                interactor = interactor,
+                onClick = if (longfoxEnabled) onLongfoxEntryPointClicked else onPrivacyReportTapped,
+                longfoxEnabled = longfoxEnabled,
             )
         }
 
-        if (showLongfoxEntryPoint) {
-            Spacer(modifier = Modifier.height(6.dp))
-
+        if (isPlayingAnimation && foxOffsetY.value < 1f) {
             TypewriterText(
-                text = stringResource(R.string.help_catch_trackers),
-                modifier = Modifier
-                    .clickable { interactor?.onLongfoxEntryPointClicked() }
-                    .padding(bottom = AcornTheme.layout.space.static300),
+                text = stringResource(org.mozilla.fenix.longfox.R.string.tap_to_play),
+                isReversing = isReversing,
             )
         }
     }
@@ -130,34 +180,40 @@ fun TrackersBlockedCard(
 @Composable
 private fun ProtectionStatusPill(
     trackersBlockedCount: Int,
-    interactor: TrackingProtectionInteractor? = null,
+    onClick: (() -> Unit)? = null,
+    longfoxEnabled: Boolean,
 ) {
-    val shape = RoundedCornerShape(24.dp)
+    val shape = MaterialTheme.shapes.extraLarge
     Row(
         modifier = Modifier
+            .testTag(PROTECTION_STATUS_PILL_TEST_TAG)
             .background(
-                color = MaterialTheme.colorScheme.secondaryContainer,
+                color = MaterialTheme.colorScheme.surfaceBright,
                 shape = shape,
             )
             .clip(shape)
             .thenConditional(
-                Modifier.clickable { interactor?.onPrivacyReportTapped() },
-                { interactor != null },
+                Modifier.clickable { onClick?.invoke() },
+                { onClick != null },
             )
             .padding(horizontal = 16.dp, vertical = 8.dp),
         horizontalArrangement = Arrangement.spacedBy(8.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Image(
-            painter = painterResource(R.drawable.firefox_pictorgram_shield_rgb),
+        Icon(
+            painter = painterResource(iconsR.drawable.mozac_ic_shield_checkmark_20),
             contentDescription = null,
             modifier = Modifier.size(20.dp),
+            tint = MaterialTheme.colorScheme.tertiary,
         )
 
         Text(
-            text = if (trackersBlockedCount > 0) {
+            text =
+            if (longfoxEnabled) {
+                stringResource(R.string.help_catch_trackers)
+            } else if (trackersBlockedCount > 0) {
                 pluralStringResource(
-                    R.plurals.trackers_blocked_count,
+                    R.plurals.trackers_blocked_count_2,
                     trackersBlockedCount,
                     trackersBlockedCount,
                 )
@@ -172,8 +228,9 @@ private fun ProtectionStatusPill(
 
 @Composable
 private fun TypewriterText(
-    text: String,
     modifier: Modifier = Modifier,
+    text: String,
+    isReversing: Boolean = false,
 ) {
     val breakIterator = remember(text) { BreakIterator.getCharacterInstance() }
     var substringText by remember { mutableStateOf("") }
@@ -189,6 +246,20 @@ private fun TypewriterText(
             delay(TYPING_DELAY_MS)
         }
         isTypingComplete = true
+    }
+
+    LaunchedEffect(isReversing) {
+        if (isReversing && isTypingComplete) {
+            breakIterator.text = StringCharacterIterator(text)
+            breakIterator.last()
+            var prevIndex = breakIterator.previous()
+            while (prevIndex != BreakIterator.DONE) {
+                substringText = text.subSequence(0, prevIndex).toString()
+                prevIndex = breakIterator.previous()
+                delay(TYPING_DELAY_MS)
+            }
+            substringText = ""
+        }
     }
 
     LaunchedEffect(Unit) {
@@ -228,10 +299,9 @@ private fun TrackersBlockedCardPreview() {
         Surface {
             TrackersBlockedCard(
                 trackersBlockedCount = 754,
-                interactor = object : TrackingProtectionInteractor {
-                    override fun onPrivacyReportTapped() = Unit
-                override fun onLongfoxEntryPointClicked() = Unit },
-                showLongfoxEntryPoint = true,
+                onPrivacyReportTapped = {},
+                longfoxEnabled = true,
+                showLongfoxAnimation = true,
             )
         }
     }
@@ -244,10 +314,8 @@ private fun TrackersBlockedCardEmptyPreview() {
         Surface {
             TrackersBlockedCard(
                 trackersBlockedCount = 0,
-                interactor = object : TrackingProtectionInteractor {
-                    override fun onPrivacyReportTapped() = Unit
-                override fun onLongfoxEntryPointClicked() = Unit },
-                showLongfoxEntryPoint = false,
+                onPrivacyReportTapped = {},
+                showLongfoxAnimation = false,
             )
         }
     }
@@ -279,11 +347,9 @@ private fun TrackersBlockedCardInteractivePreview() {
 
                     TrackersBlockedCard(
                         trackersBlockedCount = 754,
-                        interactor = object : TrackingProtectionInteractor {
-                            override fun onPrivacyReportTapped() = Unit
-                            override fun onLongfoxEntryPointClicked() = Unit
-                        },
-                        showLongfoxEntryPoint = true,
+                        onPrivacyReportTapped = {},
+                        longfoxEnabled = true,
+                        showLongfoxAnimation = true,
                     )
                 }
 

@@ -9,11 +9,10 @@ standards.
 ## Getting started
 
 In order to get started create a new directory on that you will be uses as your
-local work area, and check out NSS and NSPR. (Note that there's no git mirror of
-NSPR and you require mercurial to get the latest NSPR source.)
+local work area, and check out NSS and NSPR.
 
-    git clone https://github.com/nss-dev/nss.git
-    hg clone https://hg.mozilla.org/projects/nspr
+    git clone https://github.com/mozilla/nss
+    git clone https://github.com/mozilla/nspr
 
 NSS can also be cloned with mercurial
 

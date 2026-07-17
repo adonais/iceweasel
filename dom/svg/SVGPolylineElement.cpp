@@ -23,7 +23,7 @@ JSObject* SVGPolylineElement::WrapNode(JSContext* aCx,
 // Implementation
 
 SVGPolylineElement::SVGPolylineElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGPolylineElementBase(std::move(aNodeInfo)) {}
 
 //----------------------------------------------------------------------

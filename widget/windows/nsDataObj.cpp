@@ -678,8 +678,7 @@ STDMETHODIMP_(ULONG) nsDataObj::Release() {
   // temp file. Addref a timer so it can delay deleting file and destroying
   // this object.
   if (mCachedTempFile) {
-    RefPtr<RemoveTempFileHelper> helper =
-        new RemoveTempFileHelper(mCachedTempFile);
+    auto helper = MakeRefPtr<RemoveTempFileHelper>(mCachedTempFile);
     mCachedTempFile = nullptr;
     helper->Attach();
   }
@@ -1227,8 +1226,13 @@ nsDataObj ::GetFileDescriptorInternetShortcutA(FORMATETC& aFE,
   nsAutoString title;
   if (NS_FAILED(ExtractShortcutTitle(title))) return E_OUTOFMEMORY;
 
+  // Allocate space for two FILEDESCRIPTOR entries: the .url file plus a
+  // ":Zone.Identifier" ADS so the dropped shortcut is marked Internet-zone
+  // (untrusted).
+  size_t const allocSize =
+      sizeof(FILEGROUPDESCRIPTORA) + sizeof(FILEDESCRIPTORA);
   HGLOBAL fileGroupDescHandle =
-      ::GlobalAlloc(GMEM_ZEROINIT | GMEM_SHARE, sizeof(FILEGROUPDESCRIPTORA));
+      ::GlobalAlloc(GMEM_ZEROINIT | GMEM_SHARE, allocSize);
   if (!fileGroupDescHandle) return E_OUTOFMEMORY;
 
   LPFILEGROUPDESCRIPTORA fileGroupDescA =
@@ -1249,10 +1253,23 @@ nsDataObj ::GetFileDescriptorInternetShortcutA(FORMATETC& aFE,
       strcpy(fileGroupDescA->fgd[0].cFileName, "Untitled.url");
     }
   }
-
-  // one file in the file block
-  fileGroupDescA->cItems = 1;
   fileGroupDescA->fgd[0].dwFlags = FD_LINKUI;
+
+  // Build the ":Zone.Identifier" ADS entry.
+  // If appending the suffix would overflow, refuse the entire descriptor.
+  constexpr char kAdsSuffix[] = ":Zone.Identifier";
+  constexpr size_t kAdsSuffixSize = sizeof(kAdsSuffix);  // includes terminator
+  size_t const mainLen = strnlen(fileGroupDescA->fgd[0].cFileName, MAX_PATH);
+  if (mainLen + kAdsSuffixSize > MAX_PATH) {
+    ::GlobalUnlock(fileGroupDescHandle);
+    ::GlobalFree(fileGroupDescHandle);
+    return HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND);
+  }
+  memcpy(fileGroupDescA->fgd[1].cFileName, fileGroupDescA->fgd[0].cFileName,
+         mainLen);
+  memcpy(fileGroupDescA->fgd[1].cFileName + mainLen, kAdsSuffix,
+         kAdsSuffixSize);
+  fileGroupDescA->cItems = 2;
 
   ::GlobalUnlock(fileGroupDescHandle);
   aSTG.hGlobal = fileGroupDescHandle;
@@ -1268,8 +1285,13 @@ nsDataObj ::GetFileDescriptorInternetShortcutW(FORMATETC& aFE,
   nsAutoString title;
   if (NS_FAILED(ExtractShortcutTitle(title))) return E_OUTOFMEMORY;
 
+  // Allocate space for two FILEDESCRIPTOR entries: the .url file plus a
+  // ":Zone.Identifier" ADS so the dropped shortcut is marked Internet-zone
+  // (untrusted).
+  size_t const allocSize =
+      sizeof(FILEGROUPDESCRIPTORW) + sizeof(FILEDESCRIPTORW);
   HGLOBAL fileGroupDescHandle =
-      ::GlobalAlloc(GMEM_ZEROINIT | GMEM_SHARE, sizeof(FILEGROUPDESCRIPTORW));
+      ::GlobalAlloc(GMEM_ZEROINIT | GMEM_SHARE, allocSize);
   if (!fileGroupDescHandle) return E_OUTOFMEMORY;
 
   LPFILEGROUPDESCRIPTORW fileGroupDescW =
@@ -1290,10 +1312,24 @@ nsDataObj ::GetFileDescriptorInternetShortcutW(FORMATETC& aFE,
       wcscpy(fileGroupDescW->fgd[0].cFileName, L"Untitled.url");
     }
   }
-
-  // one file in the file block
-  fileGroupDescW->cItems = 1;
   fileGroupDescW->fgd[0].dwFlags = FD_LINKUI;
+
+  // Build the ":Zone.Identifier" ADS entry.
+  // If appending the suffix would overflow, refuse the entire descriptor.
+  constexpr WCHAR kAdsSuffix[] = L":Zone.Identifier";
+  constexpr size_t kAdsSuffixLen =
+      (sizeof(kAdsSuffix) / sizeof(WCHAR));  // includes terminator
+  size_t const mainLen = wcsnlen(fileGroupDescW->fgd[0].cFileName, MAX_PATH);
+  if (mainLen + kAdsSuffixLen > MAX_PATH) {
+    ::GlobalUnlock(fileGroupDescHandle);
+    ::GlobalFree(fileGroupDescHandle);
+    return HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND);
+  }
+  wmemcpy(fileGroupDescW->fgd[1].cFileName, fileGroupDescW->fgd[0].cFileName,
+          mainLen);
+  wmemcpy(fileGroupDescW->fgd[1].cFileName + mainLen, kAdsSuffix,
+          kAdsSuffixLen);
+  fileGroupDescW->cItems = 2;
 
   ::GlobalUnlock(fileGroupDescHandle);
   aSTG.hGlobal = fileGroupDescHandle;
@@ -1310,6 +1346,41 @@ nsDataObj ::GetFileDescriptorInternetShortcutW(FORMATETC& aFE,
 //
 HRESULT
 nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
+  // The descriptor advertises two entries: the .url content (lindex 0) and
+  // the ":Zone.Identifier" ADS that marks it as Internet-zone (lindex 1).
+  if (aFE.lindex == 1) {
+    constexpr char kZoneIdContent[] = "[ZoneTransfer]\r\nZoneId=3\r\n";
+    constexpr size_t kZoneIdLen = sizeof(kZoneIdContent) - 1;
+
+    nsAutoGlobalMem globalMem(nsHGLOBAL(::GlobalAlloc(GMEM_SHARE, kZoneIdLen)));
+    if (!globalMem) {
+      return E_OUTOFMEMORY;
+    }
+    char* contents = reinterpret_cast<char*>(::GlobalLock(globalMem.get()));
+    if (!contents) {
+      return E_OUTOFMEMORY;
+    }
+    memcpy(contents, kZoneIdContent, kZoneIdLen);
+    ::GlobalUnlock(globalMem.get());
+
+    if (aFE.tymed & TYMED_ISTREAM) {
+      RefPtr<IStream> stream = new CMemStream(
+          globalMem.disown(), kZoneIdLen, already_AddRefed<AutoCloseEvent>());
+      stream.forget(&aSTG.pstm);
+      aSTG.tymed = TYMED_ISTREAM;
+    } else {
+      aSTG.hGlobal = globalMem.disown();
+      aSTG.tymed = TYMED_HGLOBAL;
+    }
+    return S_OK;
+  }
+
+  // Treat aFE.lindex = 0 or -1 as requests for the URL file.  Anything else is
+  // invalid.
+  if (aFE.lindex != 0 && aFE.lindex != -1) {
+    return DV_E_LINDEX;
+  }
+
   static const char* kShellIconPref = "browser.shell.shortcutFavicons";
   nsAutoString url;
   if (NS_FAILED(ExtractShortcutURL(url))) return E_OUTOFMEMORY;
@@ -1345,7 +1416,7 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
       return E_FAIL;
     }
 
-    RefPtr<AutoSetEvent> e = new AutoSetEvent(WrapNotNull(event));
+    auto e = MakeRefPtr<AutoSetEvent>(WrapNotNull(event));
     mozilla::widget::FaviconHelper::ObtainCachedIconFile(
         aUri, aUriHash, mIOThread, true,
         NS_NewRunnableFunction(
@@ -1420,8 +1491,8 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
       // We can't block CMemStream::Read.
       event = nullptr;
     }
-    RefPtr<IStream> stream =
-        new CMemStream(globalMem.disown(), totalLen, event.forget());
+    auto stream =
+        MakeRefPtr<CMemStream>(globalMem.disown(), totalLen, event.forget());
     stream.forget(&aSTG.pstm);
     aSTG.tymed = TYMED_ISTREAM;
   } else {

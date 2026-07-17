@@ -197,8 +197,8 @@ def make_task_description(config, jobs):
         if dep_job.kind in task["dependencies"]:
             task["if-dependencies"] = [dep_job.kind]
 
-        # build-mac-{signing,notarization} uses signingscript instead of iscript
-        if "macosx" in build_platform and config.kind.endswith("-mac-notarization"):
+        # Mac notarization uses signingscript instead of iscript
+        if "macosx" in build_platform and config.kind.endswith("-notarization"):
             task["worker"]["signing-type"] = "release-apple-notarization"
             task["scopes"] = [
                 add_scope_prefix(config, "signing:cert:release-apple-notarization")

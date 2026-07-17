@@ -9,7 +9,7 @@
 #include "StorageAccessAPIHelper.h"
 
 #include "mozilla/net/HttpBaseChannel.h"
-#include "mozilla/net/UrlClassifierCommon.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/glean/AntitrackingMetrics.h"
 #include "nsContentUtils.h"
 #include "nsIChannel.h"
@@ -175,7 +175,7 @@ bool ShouldRedirectHeuristicApplyTrackingResource(nsIChannel* aOldChannel,
   uint32_t oldClassificationFlags =
       classifiedOldChannel->GetFirstPartyClassificationFlags();
 
-  if (net::UrlClassifierCommon::IsTrackingClassificationFlag(
+  if (net::ChannelClassifierUtils::IsTrackingClassificationFlag(
           oldClassificationFlags, NS_UsePrivateBrowsing(aOldChannel))) {
     // This is a redirect from tracking.
     LOG_SPEC2(("Ignoring redirect for %s to %s because it's from tracking ",
@@ -236,8 +236,7 @@ void DynamicFpiRedirectHeuristic(nsIChannel* aOldChannel, nsIURI* aOldURI,
   }
 
   int32_t behavior = cookieJarSettings->GetCookieBehavior();
-  if (behavior !=
-      nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
+  if (behavior != nsICookieService::BEHAVIOR_PARTITION_FOREIGN) {
     LOG(
         ("Disabled by network.cookie.cookieBehavior pref (%d), bailing out "
          "early",

@@ -96,6 +96,10 @@ class TabsTrayTelemetryMiddleware(
                 TabsTray.shareAllTabs.record(NoExtras())
             }
 
+            is TabsTrayAction.SelectAllNormalTabs -> {
+                TabsTray.selectAllNormalTabs.record(NoExtras())
+            }
+
             is TabsTrayAction.CloseAllNormalTabs,
             is TabsTrayAction.CloseAllPrivateTabs,
                 -> {
@@ -193,7 +197,9 @@ class TabsTrayTelemetryMiddleware(
                 }
             }
 
-            is TabGroupAction.DeleteConfirmed -> {
+            is TabGroupAction.DeleteConfirmed,
+            is TabGroupAction.CloseTabAndDeleteGroupConfirmed,
+                -> {
                 TabsTray.tabGroupDeleted.record(NoExtras())
             }
 

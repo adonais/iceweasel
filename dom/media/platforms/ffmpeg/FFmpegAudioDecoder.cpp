@@ -94,7 +94,7 @@ RefPtr<MediaDataDecoder::InitPromise> FFmpegAudioDecoder<LIBAV_VER>::Init() {
   AUTO_PROFILER_LABEL("FFmpegAudioDecoder::Init", MEDIA_PLAYBACK);
 
   if (mAudioInfo.mChannels == 0 || mAudioInfo.mRate == 0) {
-    FFMPEG_LOG("Invalid audio configuration: channels=%u, rate=%u",
+    FFMPEG_LOG("Invalid audio configuration: channels={}, rate={}",
                mAudioInfo.mChannels, mAudioInfo.mRate);
     return InitPromise::CreateAndReject(
         MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
@@ -119,7 +119,7 @@ RefPtr<MediaDataDecoder::InitPromise> FFmpegAudioDecoder<LIBAV_VER>::Init() {
     if (mAudioInfo.mChannels > 2 &&
         (!mExtraData || mExtraData->Length() < 10)) {
       FFMPEG_LOG(
-          "Cannot initialize decoder with %d channels without extradata of at "
+          "Cannot initialize decoder with {} channels without extradata of at "
           "least 10 bytes",
           mAudioInfo.mChannels);
       return InitPromise::CreateAndReject(NS_ERROR_FAILURE, __func__);
@@ -282,10 +282,10 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::PostProcessOutput(
   }
 
   if (aSubmitted < 0) {
-    FFMPEG_LOG("Got %d more frame from packet", mFrame->nb_samples);
+    FFMPEG_LOG("Got {} more frame from packet", mFrame->nb_samples);
   }
 
-  FFMPEG_LOG("FFmpegAudioDecoder decoded: [%s,%s] (Duration: %s) [%s]",
+  FFMPEG_LOG("FFmpegAudioDecoder decoded: [{},{}] (Duration: {}) [{}]",
              aSample->mTime.ToString().get(),
              aSample->GetEndTime().ToString().get(),
              aSample->mDuration.ToString().get(),
@@ -301,7 +301,7 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::PostProcessOutput(
   }
 
   if (!numChannels || !samplingRate) {
-    FFMPEG_LOG("Invalid audio configuration: channels=%u, rate=%u", numChannels,
+    FFMPEG_LOG("Invalid audio configuration: channels={}, rate={}", numChannels,
                samplingRate);
     return MediaResult(NS_ERROR_DOM_MEDIA_DECODE_ERR,
                        RESULT_DETAIL("Invalid audio configuration"));
@@ -316,7 +316,7 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::PostProcessOutput(
 
   media::TimeUnit duration = TimeUnit(mFrame->nb_samples, samplingRate);
   if (!duration.IsValid()) {
-    FFMPEG_LOG("Duration isn't valid (%d + %d)", mFrame->nb_samples,
+    FFMPEG_LOG("Duration isn't valid ({} + {})", mFrame->nb_samples,
                samplingRate);
     return MediaResult(NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
                        RESULT_DETAIL("Invalid sample duration"));
@@ -324,7 +324,7 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::PostProcessOutput(
 
   media::TimeUnit newpts = pts + duration;
   if (!newpts.IsValid()) {
-    FFMPEG_LOG("New pts isn't valid (%lf + %lf)", pts.ToSeconds(),
+    FFMPEG_LOG("New pts isn't valid ({} + {})", pts.ToSeconds(),
                duration.ToSeconds());
     return MediaResult(
         NS_ERROR_DOM_MEDIA_OVERFLOW_ERR,
@@ -413,7 +413,7 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DecodeUsingFFmpeg(
               new AudioData(0, TimeUnit::Zero(), std::move(buf),
                             mAudioInfo.mChannels, mAudioInfo.mRate));
         }
-        FFMPEG_LOG("  EAGAIN (packets submitted: %" PRIu32 ").", submitted);
+        FFMPEG_LOG("  EAGAIN (packets submitted: {}).", submitted);
         rv = NS_OK;
         break;
       }
@@ -461,7 +461,7 @@ MediaResult FFmpegAudioDecoder<LIBAV_VER>::DoDecode(MediaRawData* aSample,
   }
 #endif
 
-  FFMPEG_LOG("FFmpegAudioDecoder::DoDecode: %d bytes, [%s,%s] (Duration: %s)",
+  FFMPEG_LOG("FFmpegAudioDecoder::DoDecode: {} bytes, [{},{}] (Duration: {})",
              aSize, aSample->mTime.ToString().get(),
              aSample->GetEndTime().ToString().get(),
              aSample->mDuration.ToString().get());

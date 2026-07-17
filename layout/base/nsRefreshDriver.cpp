@@ -560,7 +560,7 @@ class VsyncRefreshDriverTimer : public RefreshDriverTimer {
               }),
           useVsyncPriority ? nsIRunnablePriority::PRIORITY_VSYNC
                            : nsIRunnablePriority::PRIORITY_NORMAL);
-      NS_DispatchToMainThread(vsyncEvent);
+      NS_DispatchToMainThread(vsyncEvent, NS_DISPATCH_FALLIBLE);
     }
 
     void NotifyVsyncTimerOnMainThread() {

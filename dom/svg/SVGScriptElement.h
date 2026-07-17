@@ -11,7 +11,7 @@
 #include "mozilla/dom/ScriptElement.h"
 
 nsresult NS_NewSVGScriptElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser);
 
 namespace mozilla::dom {
@@ -22,10 +22,9 @@ class SVGScriptElement final : public SVGScriptElementBase,
                                public ScriptElement {
  protected:
   friend nsresult(::NS_NewSVGScriptElement(
-      nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+      nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
       mozilla::dom::FromParser aFromParser));
-  SVGScriptElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+  SVGScriptElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                    FromParser aFromParser);
 
   JSObject* WrapNode(JSContext* aCx,

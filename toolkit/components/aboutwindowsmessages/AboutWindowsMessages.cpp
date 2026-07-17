@@ -15,6 +15,7 @@
 #include "nsIBaseWindow.h"
 #include "nsIDocShell.h"
 #include "nsDocShellTreeOwner.h"
+#include "nsPIDOMWindowInlines.h"
 #include "mozilla/WidgetUtils.h"
 #include "mozilla/widget/nsWindowLoggedMessages.h"
 

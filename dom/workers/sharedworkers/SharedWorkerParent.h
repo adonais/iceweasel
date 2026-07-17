@@ -49,6 +49,12 @@ class SharedWorkerParent final
 
   mozilla::ipc::IPCResult RecvThaw();
 
+  mozilla::ipc::IPCResult RecvSetLocaleOverride(
+      const nsCString& aLanguageOverride, nsTArray<nsString>&& aLanguages);
+
+  mozilla::ipc::IPCResult RecvUpdateTimezoneOverride(
+      const nsString& aTimezoneOverride);
+
   bool IsSuspended() const { return mSuspended; }
 
   bool IsFrozen() const { return mFrozen; }

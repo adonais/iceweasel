@@ -420,7 +420,7 @@ class nsCocoaUtils {
    * to native modifier flags of macOS.
    */
   static NSEventModifierFlags ConvertWidgetModifiersToMacModifierFlags(
-      nsIWidget::Modifiers aNativeModifiers);
+      nsIWidget::NativeModifiers aNativeModifiers);
 
   /**
    * Get the mouse button, which depends on the event's type and buttonNumber.
@@ -517,6 +517,11 @@ class nsCocoaUtils {
   static void SetTransferDataForTypeFromPasteboardItem(
       nsITransferable* aTransferable, const nsCString& aFlavor,
       NSPasteboardItem* aItem);
+
+  /**
+   * Converts a POPUPPOSITION value to the closest corresponding NSRectEdge.
+   */
+  static NSRectEdge PopupPositionToNSRectEdge(int8_t aPosition);
 
  private:
   /**

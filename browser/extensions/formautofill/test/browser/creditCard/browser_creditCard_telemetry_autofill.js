@@ -5,6 +5,16 @@ Services.scriptloader.loadSubScript(
   this
 );
 
+add_setup(async function () {
+  await SpecialPowers.pushPrefEnv({
+    set: [
+      // Disabled so focusing a filled field reliably re-identifies it instead
+      // of being suppressed during the dynamic-form-change threshold window.
+      ["extensions.formautofill.heuristics.fillOnDynamicFormChanges", false],
+    ],
+  });
+});
+
 add_task(async function test_submit_creditCard_autofill() {
   if (!OSKeyStoreTestUtils.canTestOSKeyStoreLogin()) {
     todo(

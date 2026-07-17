@@ -33,10 +33,10 @@ import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.browser.SwipeGestureListener
 import org.mozilla.fenix.browser.TabPreview
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.getRectWithScreenLocation
 import org.mozilla.fenix.ext.maxActiveTime
 import org.mozilla.fenix.ext.pixelSizeFor
-import org.mozilla.fenix.ext.settings
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -301,7 +301,7 @@ class ToolbarHorizontalGesturesHandler(
         // In Android 10, the system gesture touch area overlaps the bottom of the toolbar, so
         // lets make our swipe area taller by that amount
         activity.window.decorView.getWindowInsets()?.let { insets ->
-            if (activity.settings().shouldUseBottomToolbar) {
+            if (activity.components.settings.shouldUseBottomToolbar) {
                 toolbarLocation.top -= (insets.mandatorySystemGestureInsets().bottom - insets.bottom())
             }
         }

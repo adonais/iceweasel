@@ -9,6 +9,7 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.net.Uri
 import android.service.chooser.ChooserAction
+import com.google.zxing.WriterException
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
@@ -17,6 +18,8 @@ import io.mockk.slot
 import io.mockk.verify
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.test.UnconfinedTestDispatcher
+import mozilla.components.concept.base.crash.Breadcrumb
+import mozilla.components.concept.base.crash.CrashReporting
 import mozilla.components.concept.engine.prompt.ShareData
 import org.junit.Assert.assertEquals
 import org.junit.Test
@@ -43,6 +46,7 @@ class ShareSheetLauncherTest {
     private val mockQRCodeGenerator = mockk<QRCodeGenerator> {
         every { generateQRCodeImage(any(), any(), any(), any()) } returns mockk<Bitmap>()
     }
+    private val mockCrashReporter = mockk<CrashReporting>(relaxed = true)
 
     @OptIn(kotlinx.coroutines.ExperimentalCoroutinesApi::class)
     private val testDispatcher = UnconfinedTestDispatcher()
@@ -55,6 +59,7 @@ class ShareSheetLauncherTest {
         ioDispatcher = testDispatcher,
         homeActivityClass = Activity::class.java,
         shareDelegate = mockShareDelegate,
+        crashReporter = mockCrashReporter,
     )
 
     @Config(sdk = [33])
@@ -136,6 +141,40 @@ class ShareSheetLauncherTest {
         )
 
         assertEquals(4, actionsSlot.captured.size)
+    }
+
+    @Config(sdk = [34])
+    @Test
+    fun `GIVEN QR code generation fails WHEN native share sheet triggered THEN remaining 3 chooser actions are still passed`() {
+        every { mockQRCodeGenerator.generateQRCodeImage(any(), any(), any(), any()) } throws
+            WriterException("Data too big")
+        val actionsSlot = slot<Array<ChooserAction>>()
+        every { mockShareDelegate.shareWithChooserActions(any(), any(), capture(actionsSlot)) } just runs
+
+        launcher.showSystemShareSheet(
+            id = "123",
+            url = "https://www.mozilla.org",
+            title = "Mozilla",
+        )
+
+        verify { mockShareDelegate.shareWithChooserActions(any(), any(), any()) }
+        assertEquals(3, actionsSlot.captured.size)
+    }
+
+    @Config(sdk = [34])
+    @Test
+    fun `GIVEN QR code generation fails WHEN native share sheet triggered THEN the exception is reported`() {
+        val exception = WriterException("Data too big")
+        every { mockQRCodeGenerator.generateQRCodeImage(any(), any(), any(), any()) } throws exception
+
+        launcher.showSystemShareSheet(
+            id = "123",
+            url = "https://www.mozilla.org",
+            title = "Mozilla",
+        )
+
+        verify { mockCrashReporter.recordCrashBreadcrumb(any<Breadcrumb>()) }
+        verify { mockCrashReporter.submitCaughtException(exception) }
     }
 
     @Test

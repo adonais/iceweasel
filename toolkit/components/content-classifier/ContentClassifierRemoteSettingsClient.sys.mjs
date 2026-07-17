@@ -19,8 +19,10 @@ ChromeUtils.defineLazyGetter(lazy, "log", () => {
 const COLLECTION_NAME = "content-classifier-lists";
 
 /**
- * RemoteSettings client that fetches content classifier filter lists
- * and pushes them to the C++ ContentClassifierService.
+ * RemoteSettings client for the content classifier. Owns the filter
+ * list bytes (via the RS attachments cache on disk), notifies the
+ * C++ ContentClassifierService of list updates and removals, and
+ * serves bytes back on demand via getListBytes().
  */
 export class ContentClassifierRemoteSettingsClient {
   classID = Components.ID("{C7DDDBF2-8BC4-41A1-AC90-5144BEC5ABDF}");
@@ -38,17 +40,15 @@ export class ContentClassifierRemoteSettingsClient {
   }
 
   /**
-   * Initialize the client, import all existing lists, and register a
-   * sync listener for future updates. Resolves once the initial import
-   * has finished (or failed). Safe to call more than once; subsequent
-   * calls resolve immediately without re-importing.
+   * Initialize the client and register a sync
+   * listener for future updates. Resolves once the initial import has
+   * finished (or failed).
    *
    * The service keeps a strong reference to this client via mRSClient
    * and we keep a strong reference back via #service. The resulting
    * cycle is broken explicitly when the service calls shutdown().
    *
    * @param {nsIContentClassifierService} service
-   *   The C++ service to push filter list data to.
    */
   async init(service) {
     if (!service) {
@@ -84,8 +84,9 @@ export class ContentClassifierRemoteSettingsClient {
   }
 
   /**
-   * Handle a RemoteSettings sync event by applying record changes
-   * to the content classifier service.
+   * Handle a RemoteSettings sync event. Notifies the service,
+   * which then pulls list bytes lazily via
+   * getListBytes when it actually rebuilds an engine.
    *
    * @param {object} event
    * @param {object} event.data
@@ -109,49 +110,18 @@ export class ContentClassifierRemoteSettingsClient {
       } catch (e) {
         lazy.log.error(`Failed to delete attachment for "${record.Name}":`, e);
       }
-      service.removeFilterList(record.Name);
-      lazy.log.info(`Removed list "${record.Name}"`);
     }
 
-    let updateResults = await Promise.all(
-      updated.map(async ({ new: newRecord }) => {
-        // The attachment cache is keyed by record id, and old/new have
-        // the same id for updated records, so download() overwrites the
-        // stale cached attachment. No explicit deleteDownloaded needed.
-        let ok = await this.#downloadAndStore(service, newRecord);
-        if (ok) {
-          lazy.log.info(`Updated list "${newRecord.Name}"`);
-        }
-        return ok;
-      })
-    );
-
-    let createResults = await Promise.all(
-      created.map(async record => {
-        let ok = await this.#downloadAndStore(service, record);
-        if (ok) {
-          lazy.log.info(`Added list "${record.Name}"`);
-        }
-        return ok;
-      })
-    );
-
-    // Always apply so that `deleted` takes effect even if all
-    // downloads failed. For updates/creates, applyFilterLists will
-    // simply rebuild from whatever stored data survived.
-    service.applyFilterLists();
-
-    let failureCount =
-      updateResults.filter(ok => !ok).length +
-      createResults.filter(ok => !ok).length;
-    if (failureCount) {
-      lazy.log.warn(`onSync: ${failureCount} record(s) failed to download`);
-    }
+    let updatedNames = [
+      ...updated.map(({ new: r }) => r.Name),
+      ...created.map(r => r.Name),
+    ];
+    let removedNames = deleted.map(r => r.Name);
+    service.onListsChanged(updatedNames, removedNames);
   }
 
   /**
-   * Fetch all records from the collection, download their attachments,
-   * and push the data to the C++ service.
+   * Fetch all records from the collection and notify the service.
    */
   async importAllLists() {
     let service = this.#service;
@@ -159,58 +129,47 @@ export class ContentClassifierRemoteSettingsClient {
       return;
     }
 
+    let records = [];
     try {
-      let records = await this.#rs.get();
+      records = await this.#rs.get();
       lazy.log.debug(`importAllLists: got ${records.length} records`);
-
-      if (records.length) {
-        let results = await Promise.all(
-          records.map(record => this.#downloadAndStore(service, record))
-        );
-        let failureCount = results.filter(ok => !ok).length;
-        if (failureCount) {
-          lazy.log.warn(
-            `importAllLists: ${failureCount} record(s) failed to download`
-          );
-        }
-      }
     } catch (error) {
       lazy.log.error(`Error importing lists:`, error);
-    } finally {
-      // Always apply, even on total failure, so callers waiting on the
-      // "lists loaded" notification don't hang.
-      service.applyFilterLists();
     }
+
+    service.onListsChanged(
+      records.map(r => r.Name),
+      []
+    );
   }
 
   /**
-   * Download a record's attachment and push it to the service.
+   * Return a Uint8Array containing the bytes of the named list's
+   * attachment. Throws if no record with that name exists or the
+   * attachment cannot be obtained.
    *
-   * @param {nsIContentClassifierService} service
-   * @param {object} record  A RemoteSettings record with an attachment.
-   * @returns {Promise<boolean>}
-   *   true if the data was successfully stored, false otherwise.
+   * @param {string} name  The Name field of the RemoteSettings record.
+   * @returns {Promise<Uint8Array>}
    */
-  async #downloadAndStore(service, record) {
-    if (!record.attachment) {
-      lazy.log.warn(`Record "${record.Name}" has no attachment`);
-      return false;
+  async getListBytes(name) {
+    let records = await this.#rs.get();
+    let record = records.find(r => r.Name === name);
+    if (!record) {
+      throw new Error(`No record with name "${name}"`);
     }
-
+    if (!record.attachment) {
+      throw new Error(`Record "${name}" has no attachment`);
+    }
+    let result;
     try {
-      let result = await this.#rs.attachments.download(record, {
+      result = await this.#rs.attachments.download(record, {
         fallbackToCache: true,
         fallbackToDump: true,
       });
-      let bytes = new Uint8Array(result.buffer);
-      service.setFilterListData(record.Name, bytes);
-      lazy.log.debug(
-        `Downloaded and stored "${record.Name}" (${bytes.length} bytes)`
-      );
-      return true;
     } catch (e) {
-      lazy.log.error(`Failed to download attachment for "${record.Name}":`, e);
-      return false;
+      lazy.log.error(`Failed to download attachment for "${name}":`, e);
+      throw new Error(`Failed to download attachment for "${name}"`);
     }
+    return new Uint8Array(result.buffer);
   }
 }

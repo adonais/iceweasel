@@ -271,7 +271,7 @@ nsresult XULContentSinkImpl::FlushText(bool aCreateTextNode) {
     if (NS_FAILED(rv)) return rv;
 
     children->AppendElement(text.forget());
-  } while (0);
+  } while (false);
 
   // Reset our text buffer
   mText.ClearAndRetainStorage();

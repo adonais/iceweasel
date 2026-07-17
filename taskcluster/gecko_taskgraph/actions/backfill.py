@@ -281,6 +281,10 @@ def new_label(label, tasks):
             return begining_label + "-1"
         raise Exception(f"New label ({label}) was not found in the task-graph")
     else:
+        # Handle the case where an unnumbered task was previously chunked (e.g.,
+        # "task-swr" maps to "task-swr-1" in an older revision).
+        if label + "-1" in tasks:
+            return label + "-1"
         raise Exception(f"{label} was not found in the task-graph")
 
 

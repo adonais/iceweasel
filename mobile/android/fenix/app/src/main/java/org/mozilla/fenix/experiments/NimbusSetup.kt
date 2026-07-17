@@ -19,7 +19,6 @@ import org.mozilla.experiments.nimbus.internal.NimbusServerSettings
 import org.mozilla.fenix.BuildConfig
 import org.mozilla.fenix.R
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.messaging.CustomAttributeProvider
 import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.utils.Settings
@@ -39,6 +38,7 @@ private val logger = Logger("service/Nimbus")
  */
 fun createNimbus(
     context: Context,
+    settings: Settings,
     urlString: String?,
     remoteSettingsService: RemoteSettingsService?,
     geckoPrefHandler: GeckoPrefHandler,
@@ -46,9 +46,9 @@ fun createNimbus(
     // These values can be used in the JEXL expressions when targeting experiments.
     val customTargetingAttributes = CustomAttributeProvider.getCustomTargetingAttributes(context)
 
-    val isAppFirstRun = context.settings().isFirstNimbusRun
+    val isAppFirstRun = settings.isFirstNimbusRun
     if (isAppFirstRun) {
-        context.settings().isFirstNimbusRun = false
+        settings.isFirstNimbusRun = false
     }
 
     val recordedNimbusContext = RecordedNimbusContext.create(
@@ -59,7 +59,7 @@ fun createNimbus(
     val serverSettings: NimbusServerSettings? = remoteSettingsService?.let { service ->
         NimbusServerSettings(
             rsService = service,
-            collectionName = if (context.settings().nimbusUsePreview) {
+            collectionName = if (settings.nimbusUsePreview) {
                 "nimbus-preview"
             } else {
                 "nimbus-mobile-experiments"
@@ -87,11 +87,11 @@ fun createNimbus(
         errorReporter = context::reportError
         initialExperiments = R.raw.initial_experiments
         timeoutLoadingExperiment = TIME_OUT_LOADING_EXPERIMENT_FROM_DISK_MS
-        sharedPreferences = context.settings().preferences
+        sharedPreferences = settings.preferences
         isFirstRun = isAppFirstRun
         featureManifest = FxNimbus
         onFetchCallback = {
-            context.settings().nimbusExperimentsFetched = true
+            settings.nimbusExperimentsFetched = true
         }
         recordedContext = recordedNimbusContext
         this.geckoPrefHandler = geckoPrefHandler
@@ -134,20 +134,20 @@ fun NimbusException.isReportableError(): Boolean {
  * `nimbus.fml.yaml` file.
  */
 fun NimbusInterface.maybeFetchExperiments(
-    context: Context,
+    settings: Settings,
     feature: NimbusSystem = FxNimbusMessaging.features.nimbusSystem.value(),
     currentTimeMillis: Long = System.currentTimeMillis(),
 ) {
-    if (context.settings().nimbusUsePreview) {
-        context.settings().nimbusLastFetchTime = 0L
+    if (settings.nimbusUsePreview) {
+        settings.nimbusLastFetchTime = 0L
         fetchExperiments()
     } else {
         val minimumPeriodMinutes = feature.refreshIntervalForeground
-        val lastFetchTimeMillis = context.settings().nimbusLastFetchTime
+        val lastFetchTimeMillis = settings.nimbusLastFetchTime
         val minimumPeriodMillis = minimumPeriodMinutes * Settings.ONE_MINUTE_MS
 
         if (currentTimeMillis - lastFetchTimeMillis >= minimumPeriodMillis) {
-            context.settings().nimbusLastFetchTime = currentTimeMillis
+            settings.nimbusLastFetchTime = currentTimeMillis
             fetchExperiments()
         }
     }

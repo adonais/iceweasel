@@ -94,6 +94,7 @@
 #include "nsIWindowWatcher.h"
 #include "nsMimeTypes.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsQueryObject.h"
 #include "nsReadableUtils.h"
 #include "nsSandboxFlags.h"
@@ -382,6 +383,10 @@ void XMLHttpRequestMainThread::SetClientInfoAndController(
     const Maybe<ServiceWorkerDescriptor>& aController) {
   mClientInfo.emplace(aClientInfo);
   mController = aController;
+}
+
+void XMLHttpRequestMainThread::SetAssociatedBrowsingContextID(uint64_t aId) {
+  mAssociatedBrowsingContextID = aId;
 }
 
 void XMLHttpRequestMainThread::ResetResponse() {
@@ -2498,18 +2503,17 @@ void XMLHttpRequestMainThread::ChangeStateToDone(bool aWasSync) {
     // final events.
     nsLoadFlags loadFlags = 0;
     mChannel->GetLoadFlags(&loadFlags);
-    if (loadFlags & nsIRequest::LOAD_BACKGROUND) {
-      nsPIDOMWindowInner* owner = GetOwnerWindow();
-      BrowsingContext* bc = owner ? owner->GetBrowsingContext() : nullptr;
-      bc = bc ? bc->Top() : nullptr;
-      if (bc && bc->IsLoading()) {
-        MOZ_ASSERT(!mDelayedDoneNotifier);
-        RefPtr<XMLHttpRequestDoneNotifier> notifier =
-            new XMLHttpRequestDoneNotifier(this);
-        mDelayedDoneNotifier = notifier;
-        bc->AddDeprioritizedLoadRunner(notifier);
-        return;
-      }
+    MOZ_DIAGNOSTIC_ASSERT(loadFlags & nsIRequest::LOAD_BACKGROUND);
+    nsPIDOMWindowInner* owner = GetOwnerWindow();
+    BrowsingContext* bc = owner ? owner->GetBrowsingContext() : nullptr;
+    bc = bc ? bc->Top() : nullptr;
+    if (bc && bc->IsLoading()) {
+      MOZ_ASSERT(!mDelayedDoneNotifier);
+      RefPtr<XMLHttpRequestDoneNotifier> notifier =
+          new XMLHttpRequestDoneNotifier(this);
+      mDelayedDoneNotifier = notifier;
+      bc->AddDeprioritizedLoadRunner(notifier);
+      return;
     }
   }
 
@@ -2642,6 +2646,12 @@ nsresult XMLHttpRequestMainThread::CreateChannel() {
   }
   NS_ENSURE_SUCCESS(rv, rv);
 
+  if (mAssociatedBrowsingContextID) {
+    nsCOMPtr<nsILoadInfo> loadInfo = mChannel->LoadInfo();
+    rv = loadInfo->SetAssociatedBrowsingContextID(mAssociatedBrowsingContextID);
+    NS_ENSURE_SUCCESS(rv, rv);
+  }
+
   mAlreadyGotStopRequest = false;
 
   if (mCSPEventListener) {
@@ -2745,19 +2755,6 @@ nsresult XMLHttpRequestMainThread::InitiateFetch(
 
       preload = nullptr;
     }
-  }
-
-  // nsIRequest::LOAD_BACKGROUND prevents throbber from becoming active, which
-  // in turn keeps STOP button from becoming active.  If the consumer passed in
-  // a progress event handler we must load with nsIRequest::LOAD_NORMAL or
-  // necko won't generate any progress notifications.
-  if (HasListenersFor(nsGkAtoms::onprogress) ||
-      (mUpload && mUpload->HasListenersFor(nsGkAtoms::onprogress))) {
-    nsLoadFlags loadFlags;
-    mChannel->GetLoadFlags(&loadFlags);
-    loadFlags &= ~nsIRequest::LOAD_BACKGROUND;
-    loadFlags |= nsIRequest::LOAD_NORMAL;
-    mChannel->SetLoadFlags(loadFlags);
   }
 
   nsCOMPtr<nsIHttpChannel> httpChannel(do_QueryInterface(mChannel));

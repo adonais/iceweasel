@@ -145,5 +145,5 @@ bool PlatformThread::CreateNonJoinable(size_t stack_size, Delegate* delegate) {
 
 // static
 void PlatformThread::Join(PlatformThreadHandle thread_handle) {
-  pthread_join(thread_handle, NULL);
+  pthread_join(thread_handle, nullptr);
 }

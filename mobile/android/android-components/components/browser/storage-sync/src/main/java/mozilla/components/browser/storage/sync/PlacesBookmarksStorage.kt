@@ -9,7 +9,6 @@ import androidx.annotation.VisibleForTesting
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.coroutines.withContext
 import mozilla.appservices.places.PlacesApi
-import mozilla.appservices.places.uniffi.PlacesApiException
 import mozilla.components.concept.storage.BookmarkInfo
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.storage.BookmarksStorage
@@ -215,13 +214,9 @@ open class PlacesBookmarksStorage(
      */
     override suspend fun countBookmarksInTrees(guids: List<String>): UInt {
         return withContext(readScope.coroutineContext) {
-            try {
+            handlePlacesExceptions("countBookmarksInTrees", 0U, {
                 reader.countBookmarksInTrees(guids)
-            } catch (e: PlacesApiException) {
-                crashReporter?.submitCaughtException(e)
-                logger.warn("Ignoring PlacesApiException while running countBookmarksInTrees", e)
-                0U
-            }
+            })
         }
     }
 

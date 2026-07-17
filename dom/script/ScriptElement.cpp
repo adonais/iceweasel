@@ -129,6 +129,10 @@ void ScriptElement::ContentAppended(nsIContent* aFirstNewContent,
     return;
   }
   UpdateTrustWorthiness(aInfo.mMutationEffectOnScript);
+  // moveBefore() must not run the script.
+  if (aInfo.mOldParent) {
+    return;
+  }
   MaybeProcessScript(nullptr /* aParser */);
 }
 
@@ -138,6 +142,10 @@ void ScriptElement::ContentInserted(nsIContent* aChild,
     return;
   }
   UpdateTrustWorthiness(aInfo.mMutationEffectOnScript);
+  // moveBefore() must not run the script.
+  if (aInfo.mOldParent) {
+    return;
+  }
   MaybeProcessScript(nullptr /* aParser */);
 }
 

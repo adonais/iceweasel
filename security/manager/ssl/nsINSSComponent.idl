@@ -21,13 +21,12 @@ interface nsINSSComponent : nsISupports {
    * When we log out of a PKCS#11 token, any TLS connections that may have
    * involved a client certificate stored on that token must be closed. Since we
    * don't have a fine-grained way to do this, we basically cancel everything.
-   * More speficially, this clears all temporary certificate exception overrides
-   * and any remembered client authentication certificate decisions, and then
+   * More speficially, this clears the TLS session cache and then
    * cancels all network connections (strictly speaking, this last part is
    * overzealous - we only need to cancel all https connections (see bug
    * 1446645)).
    */
-  [noscript] void logoutAuthenticatedPK11();
+  void clearTLSCacheAndCancelAllConnections();
 
   /**
    * Used to determine if the given certificate (represented as an array of

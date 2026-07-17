@@ -11,6 +11,7 @@
 #endif
 #include <cmath>
 #include <cstring>
+#include <cstdint>
 #include "mozilla/Assertions.h"
 #include "FdPrintf.h"
 

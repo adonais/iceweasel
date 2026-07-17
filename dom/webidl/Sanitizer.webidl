@@ -30,19 +30,29 @@ dictionary SanitizerElementNamespaceWithAttributes : SanitizerElementNamespace {
   sequence<SanitizerAttribute> removeAttributes;
 };
 
-typedef (DOMString or SanitizerElementNamespace) SanitizerElement;
-typedef (DOMString or SanitizerElementNamespaceWithAttributes) SanitizerElementWithAttributes;
-
 dictionary SanitizerAttributeNamespace {
   required DOMString name;
   DOMString? _namespace = null;
 };
+
+dictionary SanitizerProcessingInstruction {
+  required DOMString target;
+};
+
+typedef (DOMString or SanitizerElementNamespace) SanitizerElement;
+typedef (DOMString or SanitizerElementNamespaceWithAttributes) SanitizerElementWithAttributes;
+typedef (DOMString or SanitizerProcessingInstruction) SanitizerPI;
 typedef (DOMString or SanitizerAttributeNamespace) SanitizerAttribute;
 
 dictionary SanitizerConfig {
   sequence<SanitizerElementWithAttributes> elements;
   sequence<SanitizerElement> removeElements;
   sequence<SanitizerElement> replaceWithChildrenElements;
+
+  [Pref="dom.security.sanitizer.processing-instructions"]
+  sequence<SanitizerPI> processingInstructions;
+  [Pref="dom.security.sanitizer.processing-instructions"]
+  sequence<SanitizerPI> removeProcessingInstructions;
 
   sequence<SanitizerAttribute> attributes;
   sequence<SanitizerAttribute> removeAttributes;
@@ -63,6 +73,10 @@ interface Sanitizer {
   boolean allowElement(SanitizerElementWithAttributes element);
   boolean removeElement(SanitizerElement element);
   boolean replaceElementWithChildren(SanitizerElement element);
+  [Pref="dom.security.sanitizer.processing-instructions"]
+  boolean allowProcessingInstruction(SanitizerPI pi);
+  [Pref="dom.security.sanitizer.processing-instructions"]
+  boolean removeProcessingInstruction(SanitizerPI pi);
   boolean allowAttribute(SanitizerAttribute attribute);
   boolean removeAttribute(SanitizerAttribute attribute);
   boolean setComments(boolean allow);

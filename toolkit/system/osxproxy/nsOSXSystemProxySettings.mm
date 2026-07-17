@@ -11,9 +11,31 @@
 #include "nsNetCID.h"
 #include "nsObjCExceptions.h"
 #include "mozilla/Attributes.h"
+#include "mozilla/Services.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "nsINetworkLinkService.h"
+#include "nsIObserver.h"
+#include "nsIObserverService.h"
+#include "nsXPCOM.h"
 #include "ProxyUtils.h"
 #include "ProxyConfig.h"
+
+class nsOSXSystemProxySettings;
+
+class NetworkLinkObserver final : public nsIObserver {
+ public:
+  NS_DECL_THREADSAFE_ISUPPORTS
+  NS_DECL_NSIOBSERVER
+
+  explicit NetworkLinkObserver(nsOSXSystemProxySettings* aSettings)
+      : mSettings(aSettings) {}
+
+  void ClearSettings() { mSettings = nullptr; }
+
+ private:
+  ~NetworkLinkObserver() = default;
+  nsOSXSystemProxySettings* mSettings;
+};
 
 class nsOSXSystemProxySettings : public nsISystemProxySettings {
  public:
@@ -46,6 +68,7 @@ class nsOSXSystemProxySettings : public nsISystemProxySettings {
   SCDynamicStoreContext mContext;
   SCDynamicStoreRef mSystemDynamicStore;
   NSDictionary* mProxyDict;
+  RefPtr<NetworkLinkObserver> mNetworkLinkObserver;
 
   // Mapping of URI schemes to SystemConfiguration keys
   struct SchemeMapping {
@@ -57,6 +80,26 @@ class nsOSXSystemProxySettings : public nsISystemProxySettings {
   };
   static const SchemeMapping gSchemeMappingList[];
 };
+
+NS_IMPL_ISUPPORTS(NetworkLinkObserver, nsIObserver)
+
+NS_IMETHODIMP NetworkLinkObserver::Observe(nsISupports*, const char* aTopic,
+                                           const char16_t*) {
+  if (!strcmp(aTopic, NS_XPCOM_SHUTDOWN_OBSERVER_ID)) {
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->RemoveObserver(this, NS_NETWORK_LINK_TOPIC);
+      obs->RemoveObserver(this, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
+    }
+    mSettings = nullptr;
+    return NS_OK;
+  }
+
+  if (!strcmp(aTopic, NS_NETWORK_LINK_TOPIC) && mSettings) {
+    mSettings->ProxyHasChanged();
+  }
+  return NS_OK;
+}
 
 NS_IMPL_ISUPPORTS(nsOSXSystemProxySettings, nsISystemProxySettings)
 
@@ -132,6 +175,14 @@ nsresult nsOSXSystemProxySettings::Init() {
 
   InitDone();
 
+  nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+  if (obs) {
+    mNetworkLinkObserver = new NetworkLinkObserver(this);
+    obs->AddObserver(mNetworkLinkObserver, NS_NETWORK_LINK_TOPIC, false);
+    obs->AddObserver(mNetworkLinkObserver, NS_XPCOM_SHUTDOWN_OBSERVER_ID,
+                     false);
+  }
+
   return NS_OK;
 
   NS_OBJC_END_TRY_BLOCK_RETURN(NS_ERROR_FAILURE);
@@ -141,6 +192,15 @@ nsOSXSystemProxySettings::~nsOSXSystemProxySettings() {
   NS_OBJC_BEGIN_TRY_IGNORE_BLOCK;
 
   [mProxyDict release];
+
+  if (mNetworkLinkObserver) {
+    mNetworkLinkObserver->ClearSettings();
+    nsCOMPtr<nsIObserverService> obs = mozilla::services::GetObserverService();
+    if (obs) {
+      obs->RemoveObserver(mNetworkLinkObserver, NS_NETWORK_LINK_TOPIC);
+      obs->RemoveObserver(mNetworkLinkObserver, NS_XPCOM_SHUTDOWN_OBSERVER_ID);
+    }
+  }
 
   if (mSystemDynamicStore) {
     // Invalidate the dynamic store's run loop source

@@ -217,7 +217,7 @@ html {
 
 .onboardingContainer {
   --grey-subtitle-1: light-dark(var(--color-gray-70), white);
-  --mr-welcome-background-color: light-dark(var(--color-gray-05), var(--color-gray-80));
+  --mr-welcome-background-color: light-dark(var(--color-gray-0), var(--color-gray-80));
   --mr-screen-heading-color: var(--text-color);
   --mr-welcome-background-gradient: linear-gradient(
     0deg,
@@ -225,7 +225,7 @@ html {
     light-dark(rgba(2, 144, 238, 20%), rgba(2, 144, 238, 30%)) 100%
   );
   --mr-smart-window-background-gradient: radial-gradient(190% 105% at 50% 90%, light-dark(#FDF3F2, #4E243F) 0%, light-dark(#ECE4FB, #311764) 100%);
-  --mr-screen-background-color: light-dark(var(--color-gray-05), var(--color-gray-70));
+  --mr-screen-background-color: light-dark(var(--color-gray-0), var(--color-gray-70));
   --single-select-border-color: var(--color-gray-60);
   --single-select-hover-color: light-dark(var(--color-gray-20), var(--color-gray-70));
   --picker-background-color: color-mix(in srgb, transparent 98%, light-dark(black, white) 2%);

@@ -22,7 +22,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/AIWindow.sys.mjs",
   IntentClassifier:
     "moz-src:///browser/components/aiwindow/models/IntentClassifier.sys.mjs",
-  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderHeuristicFallback:
     "moz-src:///browser/components/urlbar/UrlbarProviderHeuristicFallback.sys.mjs",
@@ -163,6 +163,8 @@ export class UrlbarProviderAiChat extends UrlbarProvider {
       let searchResult = new lazy.UrlbarResult({
         type: UrlbarUtils.RESULT_TYPE.SEARCH,
         source: UrlbarUtils.RESULT_SOURCE.SEARCH,
+        // Pin below the heuristic result.
+        suggestedIndex: 1,
         payload: {
           engine: engine.name,
           query: queryContext.searchString,

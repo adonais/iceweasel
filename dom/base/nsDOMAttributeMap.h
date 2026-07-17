@@ -95,7 +95,7 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
 
   explicit nsDOMAttributeMap(Element* aContent);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_WRAPPERCACHE_CLASS(nsDOMAttributeMap)
 
   void DropReference();
@@ -128,8 +128,8 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
   static void BlastSubtreeToPieces(nsINode* aNode);
 
   Element* GetParentObject() const { return mContent; }
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
   DocGroup* GetDocGroup() const;
 
   // WebIDL
@@ -157,7 +157,7 @@ class nsDOMAttributeMap final : public nsISupports, public nsWrapperCache {
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf aMallocSizeOf) const;
 
  protected:
-  virtual ~nsDOMAttributeMap();
+  ~nsDOMAttributeMap();
 
  private:
   nsCOMPtr<Element> mContent;

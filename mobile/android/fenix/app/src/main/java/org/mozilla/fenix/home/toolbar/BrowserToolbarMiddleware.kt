@@ -5,10 +5,13 @@
 package org.mozilla.fenix.home.toolbar
 
 import android.content.Context
+import android.content.Intent
+import android.speech.RecognizerIntent
 import androidx.annotation.VisibleForTesting
 import androidx.navigation.NavController
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.launch
@@ -27,6 +30,7 @@ import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.P
 import mozilla.components.compose.browser.toolbar.concept.PageOrigin.Companion.PageOriginContextualMenuInteractions.PasteFromClipboardClicked
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.BrowserActionsEndUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.NavigationActionsUpdated
+import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageActionsEndUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageActionsStartUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserDisplayToolbarAction.PageOriginUpdated
 import mozilla.components.compose.browser.toolbar.store.BrowserEditToolbarAction.SearchQueryUpdated
@@ -62,11 +66,13 @@ import org.mozilla.fenix.components.UseCases
 import org.mozilla.fenix.components.appstate.AppAction
 import org.mozilla.fenix.components.appstate.AppAction.SearchAction.SearchStarted
 import org.mozilla.fenix.components.appstate.SupportedMenuNotifications
+import org.mozilla.fenix.components.appstate.VoiceSearchAction.VoiceInputRequested
 import org.mozilla.fenix.components.menu.MenuAccessPoint
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.home.HomeFragmentDirections
 import org.mozilla.fenix.home.toolbar.DisplayActions.FakeClicked
 import org.mozilla.fenix.home.toolbar.DisplayActions.MenuClicked
+import org.mozilla.fenix.home.toolbar.DisplayActions.VoiceSearchClicked
 import org.mozilla.fenix.home.toolbar.PageOriginInteractions.OriginClicked
 import org.mozilla.fenix.home.toolbar.TabCounterInteractions.AddNewPrivateTab
 import org.mozilla.fenix.home.toolbar.TabCounterInteractions.AddNewTab
@@ -81,10 +87,14 @@ import mozilla.components.lib.state.Action as MVIAction
 import mozilla.components.ui.icons.R as iconsR
 import mozilla.components.ui.tabcounter.R as tabcounterR
 
+// Speculative delay for putting the toolbar in edit mode after an initial voice search request.
+private const val DISPLAY_TOOLBAR_DELAY_AFTER_VOICE_REQUEST = 1_000L
+
 @VisibleForTesting
 internal sealed class DisplayActions : BrowserToolbarEvent {
     data class MenuClicked(override val source: Source) : DisplayActions()
     data object FakeClicked : DisplayActions()
+    data object VoiceSearchClicked : DisplayActions()
 }
 
 internal sealed class TabCounterInteractions : BrowserToolbarEvent {
@@ -145,6 +155,7 @@ class BrowserToolbarMiddleware(
                 }
 
                 updatePageOrigin(store)
+                updateEndPageActions(store)
                 updateEndBrowserActions(store)
                 updateNavigationActions(store)
                 updateToolbarActionsBasedOnOrientation(store)
@@ -199,6 +210,14 @@ class BrowserToolbarMiddleware(
             is OriginClicked -> {
                 Events.searchBarTapped.record(Events.SearchBarTappedExtra("HOME"))
                 appStore.dispatch(SearchStarted())
+            }
+            is VoiceSearchClicked -> {
+                scope.launch {
+                    appStore.dispatch(VoiceInputRequested)
+                    delay(DISPLAY_TOOLBAR_DELAY_AFTER_VOICE_REQUEST)
+                    appStore.dispatch(SearchStarted())
+                }
+                next(action)
             }
             is PasteFromClipboardClicked -> {
                 openNewTab(store, searchTerms = clipboard.text)
@@ -272,7 +291,11 @@ class BrowserToolbarMiddleware(
         store.dispatch(
             PageOriginUpdated(
                 PageOrigin(
-                    hint = R.string.search_hint,
+                    hint = if (isVoiceSearchEnabledForDisplayToolbar()) {
+                        R.string.search_hint_short
+                    } else {
+                        R.string.search_hint
+                    },
                     title = null,
                     url = null,
                     contextualMenuOptions = listOf(PasteFromClipboard, LoadFromClipboard),
@@ -288,6 +311,32 @@ class BrowserToolbarMiddleware(
             ),
         )
     }
+
+    private fun updateEndPageActions(store: Store<BrowserToolbarState, BrowserToolbarAction>) =
+        store.dispatch(
+            PageActionsEndUpdated(
+                buildEndPageActions(),
+            ),
+        )
+
+    private fun buildEndPageActions(): List<Action> = buildList {
+        if (isVoiceSearchEnabledForDisplayToolbar() && isSpeechRecognitionAvailable()) {
+            add(
+                ActionButtonRes(
+                    drawableResId = iconsR.drawable.mozac_ic_microphone_24,
+                    contentDescription = R.string.voice_search_content_description,
+                    onClick = VoiceSearchClicked,
+                ),
+            )
+        }
+    }
+
+    private fun isVoiceSearchEnabledForDisplayToolbar() =
+        settings.shouldShowVoiceSearch && settings.showVoiceSearchInDisplayToolbar
+
+    private fun isSpeechRecognitionAvailable() =
+        Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH)
+            .resolveActivity(uiContext.packageManager) != null
 
     private fun buildStartPageActions(selectedSearchEngine: SearchEngine?): List<Action> {
         return listOfNotNull(

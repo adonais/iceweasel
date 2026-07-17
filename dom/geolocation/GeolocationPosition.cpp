@@ -48,8 +48,6 @@ nsGeoPositionCoords::nsGeoPositionCoords(double aLat, double aLong, double aAlt,
   MOZ_ASSERT(EqualOrBothNaN(mSpeed, aSpeed));
 }
 
-nsGeoPositionCoords::~nsGeoPositionCoords() = default;
-
 NS_INTERFACE_MAP_BEGIN(nsGeoPositionCoords)
   NS_INTERFACE_MAP_ENTRY_AMBIGUOUS(nsISupports, nsIDOMGeoPositionCoords)
   NS_INTERFACE_MAP_ENTRY(nsIDOMGeoPositionCoords)

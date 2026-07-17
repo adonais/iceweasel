@@ -254,13 +254,15 @@ static bool ToRefType(JSContext* cx, const JSLinearString* typeLinearStr,
   }
 
 #ifdef ENABLE_WASM_JSPI
-  if (StringEqualsLiteral(typeLinearStr, "contref")) {
-    *out = RefType::cont();
-    return true;
-  }
-  if (StringEqualsLiteral(typeLinearStr, "nullcontref")) {
-    *out = RefType::nocont();
-    return true;
+  if (StackSwitchingAvailable(cx)) {
+    if (StringEqualsLiteral(typeLinearStr, "contref")) {
+      *out = RefType::cont();
+      return true;
+    }
+    if (StringEqualsLiteral(typeLinearStr, "nullcontref")) {
+      *out = RefType::nocont();
+      return true;
+    }
   }
 #endif
 

@@ -23,7 +23,7 @@ endif()
 
 # VERSION is the release version of the library. It should be updated at the
 # same time as the LT_* variables.
-project(AOM LANGUAGES C CXX VERSION 3.13.3)
+project(AOM LANGUAGES C CXX VERSION 3.14.0)
 
 # GENERATED source property global visibility.
 if(POLICY CMP0118)
@@ -58,9 +58,9 @@ endif()
 # We set SO_FILE_VERSION = [c-a].a.r
 #
 # The VERSION number in project() should be updated when these variables are.
-set(LT_CURRENT 16)
-set(LT_REVISION 3)
-set(LT_AGE 13)
+set(LT_CURRENT 17)
+set(LT_REVISION 0)
+set(LT_AGE 14)
 math(EXPR SO_VERSION "${LT_CURRENT} - ${LT_AGE}")
 set(SO_FILE_VERSION "${SO_VERSION}.${LT_AGE}.${LT_REVISION}")
 unset(LT_CURRENT)

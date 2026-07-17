@@ -7,7 +7,6 @@ package mozilla.components.compose.base
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -35,8 +34,6 @@ import androidx.compose.ui.window.Dialog
 import mozilla.components.compose.base.button.TextButton
 import mozilla.components.compose.base.theme.AcornTheme
 import mozilla.components.support.base.log.logger.Logger
-
-private val ROUNDED_CORNER_SHAPE = RoundedCornerShape(28.dp)
 
 /**
  * The tag used for links in the text for annotated strings.
@@ -141,7 +138,7 @@ private fun LinksDialog(
             modifier = Modifier
                 .background(
                     color = MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = ROUNDED_CORNER_SHAPE,
+                    shape = MaterialTheme.shapes.extraLarge,
                 )
                 .padding(16.dp),
             horizontalAlignment = Alignment.CenterHorizontally,

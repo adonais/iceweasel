@@ -1054,7 +1054,6 @@ export class UserCharacteristicsPageService {
         "mathml8",
         "mathml9",
         "mathml10",
-        "mathmlDiagFontFamily",
         "monochrome",
         "cssSystemColors",
         "cssSystemFonts",
@@ -1138,7 +1137,15 @@ export class UserCharacteristicsPageService {
 
     for (const type in metrics) {
       for (const metric of metrics[type]) {
-        Glean.characteristics[metric][type](data.get(metric));
+        const value = data.get(metric);
+        // Populators may omit a field when no valid value is available
+        // (e.g. populateVoiceList omits all voices_* fields when the 5s
+        // populate timeout wins, so timed-out runs are absent rather than
+        // collapsed to sha1("") / count=0).
+        if (value === undefined) {
+          continue;
+        }
+        Glean.characteristics[metric][type](value);
       }
     }
   }

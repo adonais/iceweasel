@@ -21,6 +21,7 @@
 #include "jsapi.h"
 #include "jstypes.h"
 
+#include "builtin/ModuleObject.h"
 #include "gc/PublicIterators.h"
 #include "jit/IonScript.h"  // IonBlockCounts
 #include "js/CharacterEncoding.h"
@@ -1892,12 +1893,9 @@ bool ExpressionDecompiler::decompilePC(jsbytecode* pc, uint8_t defIndex) {
              write("(...))");
 
     case JSOp::DynamicImport:
-      return write("import(...)");
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-    case JSOp::DynamicImportSource:
-      return write("import.source(...)");
-#endif
+      return write(GET_UINT8(pc) == uint8_t(ImportPhase::Source)
+                       ? "import.source(...)"
+                       : "import(...)");
 
     case JSOp::Typeof:
     case JSOp::TypeofExpr:
@@ -2977,7 +2975,7 @@ static bool GenerateLcovInfo(JSContext* cx, JS::Realm* realm,
       continue;
     }
 
-    if (!coverage::CollectScriptCoverage(script, false)) {
+    if (!coverage::CollectScriptCoverage(script)) {
       ReportOutOfMemory(cx);
       return false;
     }

@@ -194,6 +194,12 @@ export class PlacesQuery {
       case SORT_BY.SITE:
         orderBy = "url";
         break;
+      case SORT_BY.DATESITE:
+        orderBy = "visit_date DESC, url";
+        break;
+      case SORT_BY.LAST_VISITED:
+        orderBy = "visit_date DESC";
+        break;
     }
     const sql = `SELECT MAX(visit_date) as visit_date, title, url, guid
       FROM moz_historyvisits v

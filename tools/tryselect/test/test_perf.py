@@ -1160,7 +1160,7 @@ def test_full_run(options, call_counts, log_ind, expected_log_message):
                 "here once the tests are complete (the autodetected framework "
                 "selection may not show all of your tests):\n"
                 " https://perf.compare/compare-lando-results?"
-                "baseLando=42&newLando=43&"
+                "landoInstance=lando-test&baseLando=42&newLando=43&"
                 "baseRepo=try&newRepo=try&framework=1\n"
             ),
         ),
@@ -1523,6 +1523,49 @@ def test_check_cached_revision(
 
 
 @pytest.mark.parametrize(
+    "cached_lando_instance, current_lando_instance, expected_return",
+    [
+        # Cache from old lando, current push on new lando -> miss
+        ("lando-prod", "lando-prod-2025", None),
+        # Cache from new lando, current push on old lando -> miss
+        ("lando-prod-2025", "lando-prod", None),
+        # Both on the same (new) lando -> hit
+        ("lando-prod-2025", "lando-prod-2025", "2b04563b5"),
+    ],
+)
+def test_check_cached_revision_lando_instance_change(
+    cached_lando_instance, current_lando_instance, expected_return
+):
+    load_data = {
+        "lando_base_commit": [
+            {
+                "base_revision_treeherder": "2b04563b5",
+                "date": "2023-03-31",
+                "tasks": [],
+                "lando": True,
+                "lando_instance": cached_lando_instance,
+            },
+        ],
+    }
+    with mock.patch("tryselect.selectors.perf.json.load") as load, mock.patch(
+        "tryselect.selectors.perf.json.dump"
+    ), mock.patch(
+        "tryselect.selectors.perf.pathlib.Path.is_file"
+    ) as is_file, mock.patch("tryselect.selectors.perf.pathlib.Path.open"), mock.patch(
+        "tryselect.selectors.perf.PerfParser.determine_lando_instance",
+        return_value=current_lando_instance,
+    ):
+        load.return_value = load_data
+        is_file.return_value = True
+
+        result = PerfParser.check_cached_revision(
+            [], "lando_base_commit", push_to_vcs=False
+        )
+
+        assert result == expected_return
+
+
+@pytest.mark.parametrize(
     "args, call_counts, exists_cache_file",
     [
         (
@@ -1815,7 +1858,7 @@ def test_unknown_framework():
 
 EXPANDED_CATEGORIES = {
     "Critical Desktop Performance desktop firefox": {
-        "try-config-defaults": {"rebuild": 20},
+        "try-config-defaults": {"per-task-rebuild": {"speedometer3": 20}},
     },
     "Benchmarks desktop firefox": {
         "try-config-defaults": {},
@@ -1823,12 +1866,21 @@ EXPANDED_CATEGORIES = {
 }
 
 
+SP3_TASK = "browsertime-benchmark-firefox-speedometer3"
+
+
 @pytest.mark.parametrize(
-    "selected_categories, try_config_params, expected_rebuild",
+    "selected_categories, tasks, try_config_params, expected_rebuild",
     [
-        (["Critical Desktop Performance desktop firefox"], {}, 20),
         (
             ["Critical Desktop Performance desktop firefox"],
+            [SP3_TASK],
+            {},
+            {SP3_TASK: 20},
+        ),
+        (
+            ["Critical Desktop Performance desktop firefox"],
+            [SP3_TASK],
             {"try_task_config": {"rebuild": 5}},
             5,
         ),
@@ -1837,13 +1889,14 @@ EXPANDED_CATEGORIES = {
                 "Critical Desktop Performance desktop firefox",
                 "Benchmarks desktop firefox",
             ],
+            [SP3_TASK, "browsertime-benchmark-firefox-motionmark"],
             {},
-            1,
+            {SP3_TASK: 20},
         ),
     ],
 )
 def test_category_default_rebuild(
-    selected_categories, try_config_params, expected_rebuild
+    selected_categories, tasks, try_config_params, expected_rebuild
 ):
     with category_reset():
         from tryselect.selectors.perfselector.classification import (
@@ -1868,15 +1921,14 @@ def test_category_default_rebuild(
             "tryselect.selectors.perf.PerfParser.get_categories",
             return_value=EXPANDED_CATEGORIES,
         ):
-            get_perf_tasks_mock.return_value = ["a-task"], selected_categories, []
+            get_perf_tasks_mock.return_value = tasks, selected_categories, []
 
             run(try_config_params=try_config_params, push_to_vcs=True)
 
             assert perf_push_to_try_mock.call_count == 1
             actual_try_config = perf_push_to_try_mock.call_args[0][3]
-            actual_rebuild = (
-                (actual_try_config or {}).get("try_task_config", {}).get("rebuild", 1)
-            )
+            task_config = (actual_try_config or {}).get("try_task_config", {})
+            actual_rebuild = task_config.get("rebuild", 1)
             assert actual_rebuild == expected_rebuild
 
 

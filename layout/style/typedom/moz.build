@@ -84,6 +84,7 @@ UNIFIED_SOURCES += [
     "CSSVariableReferenceValue.cpp",
     "StylePropertyMap.cpp",
     "StylePropertyMapReadOnly.cpp",
+    "TypedOMUtils.cpp",
 ]
 
 FINAL_LIBRARY = "xul"

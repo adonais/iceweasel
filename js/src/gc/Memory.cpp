@@ -1142,6 +1142,7 @@ void* AllocateMappedContent(int fd, size_t offset, size_t length,
                                  MAP_PRIVATE | MAP_FIXED, fd, alignedOffset));
   if (map == MAP_FAILED) {
     UnmapInternal(region, mappedLength);
+    RecordMemoryFree(mappedLength);
     return nullptr;
   }
 #  endif

@@ -301,7 +301,11 @@ def perfdocs(
             vcs = get_repository_object(str(topsrcdir))
             changed = set(vcs.get_changed_files("AM", mode="all"))
             changed.update(vcs.get_outgoing_files("AM"))
-            paths = [str(topsrcdir / p) for p in changed]
+            # The "AM" filter is applied per commit, so a file modified in
+            # one commit and deleted in a later one is still captured. Keep
+            # only the paths that still exist, otherwise run_perfdocs errors
+            # trying to lint a deleted file.
+            paths = [str(topsrcdir / p) for p in changed if (topsrcdir / p).exists()]
         except Exception as e:
             logger.info(f"Failed to get modified files: {e}")
 

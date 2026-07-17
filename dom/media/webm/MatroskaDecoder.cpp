@@ -6,7 +6,7 @@
 
 #include "AOMDecoder.h"
 #include "MediaContainerType.h"
-#include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 #include "PlatformDecoderModule.h"
 #include "VideoUtils.h"
 #include "mozilla/StaticPrefs_media.h"
@@ -124,11 +124,10 @@ bool MatroskaDecoder::IsSupportedType(const MediaContainerType& aContainerType,
 
   if (!tracks.IsEmpty()) {
     // Look for exact match as we know the codecs used.
-    RefPtr<PDMFactory> platform = new PDMFactory();
     for (const auto& track : tracks) {
-      if (!track ||
-          platform->Supports(SupportDecoderParams(*track), aDiagnostics)
-              .isEmpty()) {
+      if (!track || PDMFactorySupport::IsSupported(SupportDecoderParams(*track),
+                                                   aDiagnostics)
+                        .isEmpty()) {
         return false;
       }
     }
@@ -170,9 +169,9 @@ bool MatroskaDecoder::IsSupportedType(const MediaContainerType& aContainerType,
   }
 
   // Check that something is supported at least.
-  RefPtr<PDMFactory> platform = new PDMFactory();
   for (const auto& track : tracks) {
-    if (track && !platform->Supports(SupportDecoderParams(*track), aDiagnostics)
+    if (track && !PDMFactorySupport::IsSupported(SupportDecoderParams(*track),
+                                                 aDiagnostics)
                       .isEmpty()) {
       return true;
     }

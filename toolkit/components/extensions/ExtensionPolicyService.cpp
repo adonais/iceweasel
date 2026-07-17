@@ -34,6 +34,7 @@
 #include "nsNetUtil.h"
 #include "nsPrintfCString.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsXULAppAPI.h"
 #include "nsQueryObject.h"
 

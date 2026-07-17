@@ -17,6 +17,7 @@
 #include "nsIPermission.h"
 #include "nsIPermissionMonitor.h"
 #include "nsISupportsPrimitives.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsXULAppAPI.h"
 
 namespace mozilla::dom {
@@ -136,7 +137,7 @@ void EnsureOSMonitoring(PermissionName aName) {
     if (NS_WARN_IF(!observerService)) {
       return;
     }
-    RefPtr<SystemPermissionObserver> observer = new SystemPermissionObserver();
+    RefPtr observer = MakeRefPtr<SystemPermissionObserver>();
     if (NS_WARN_IF(NS_FAILED(observerService->AddObserver(
             observer, "system-permission-changed", /*ownsWeak=*/false)))) {
       return;

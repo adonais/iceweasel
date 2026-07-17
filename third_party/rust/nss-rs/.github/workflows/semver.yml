@@ -38,11 +38,11 @@ jobs:
           fi
           echo "ref=$TAG" >> "$GITHUB_OUTPUT"
 
-      - uses: mozilla/actions/nss@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+      - uses: mozilla/actions/nss@2e46408d5c495e59a21e5e125e82008fad0d9408 # v1.1.7
         with:
           version-file: min_version.txt
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: mozilla/actions/semver@a832d8ca9b69e2c0f166d430a40d8d2affceb075 # v1.1.2
+      - uses: mozilla/actions/semver@2e46408d5c495e59a21e5e125e82008fad0d9408 # v1.1.7
         with:
           base-ref: ${{ steps.tag.outputs.ref }}

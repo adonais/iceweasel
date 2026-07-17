@@ -18,7 +18,6 @@ internal object EditAddressTestTag {
     const val EMAIL_FIELD = "address.edit.field.email"
     const val SAVE_BUTTON = "address.edit.button.save"
     const val CANCEL_BUTTON = "address.edit.button.cancel"
-    const val DELETE_BUTTON = "address.edit.button.delete"
     const val TOPBAR_DELETE_BUTTON = "address.edit.topbar.button.delete"
     const val DIALOG_CANCEL_BUTTON = "address.edit.dialog.button.cancel"
     const val DIALOG_DELETE_BUTTON = "address.edit.dialog.button.delete"

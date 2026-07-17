@@ -223,7 +223,7 @@ static bool ToNicerStunStruct(const char* aAddrForFqdn,
   }
 
   if (isTls) {
-    aResult->addr.tls = 1;
+    aResult->addr.tls = true;
   }
 
   nr_transport_addr_fmt_addr_string(&(aResult->addr));
@@ -349,8 +349,7 @@ RefPtr<NrIceMediaStream> NrIceCtx::CreateStream(const std::string& id,
     return nullptr;
   }
 
-  RefPtr<NrIceMediaStream> stream =
-      new NrIceMediaStream(this, id, name, components);
+  RefPtr stream = MakeRefPtr<NrIceMediaStream>(this, id, name, components);
   streams_[id] = stream;
   return stream;
 }

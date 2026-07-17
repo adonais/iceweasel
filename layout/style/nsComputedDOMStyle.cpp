@@ -1477,9 +1477,9 @@ void nsComputedDOMStyle::SetValueToTrackBreadth(
       return aValue->SetString("auto");
     case Tag::Breadth:
       return SetValueToLengthPercentage(aValue, aBreadth.AsBreadth(), true);
-    case Tag::Fr: {
+    case Tag::Flex: {
       nsAutoString tmpStr;
-      nsStyleUtil::AppendCSSNumber(aBreadth.AsFr(), tmpStr);
+      nsStyleUtil::AppendCSSNumber(aBreadth.AsFlex()._0, tmpStr);
       tmpStr.AppendLiteral("fr");
       return aValue->SetString(tmpStr);
     }
@@ -1520,7 +1520,7 @@ already_AddRefed<nsROCSSPrimitiveValue> nsComputedDOMStyle::GetGridTrackSize(
 
   // minmax(auto, <flex>) is equivalent to (and is our internal representation
   // of) <flex>, and both compute to <flex>
-  if (min.IsAuto() && max.IsFr()) {
+  if (min.IsAuto() && max.IsFlex()) {
     return GetGridTrackBreadth(max);
   }
 
@@ -2359,7 +2359,12 @@ already_AddRefed<CSSValue> nsComputedDOMStyle::GetTransformValue(
    */
   nsStyleTransformMatrix::TransformReferenceBox refBox(mInnerFrame, nsRect());
   gfx::Matrix4x4 matrix = nsStyleTransformMatrix::ReadTransforms(
-      aTransform, refBox, float(mozilla::AppUnitsPerCSSPixel()));
+      aTransform, refBox, float(mozilla::AppUnitsPerCSSPixel()),
+      mozilla::StyleZoom::ONE);  // One is passed in, as computed value does not
+                                 // need zooming
+  // TODO(salipov, bug 2045846): Fix zooming for transforms other than matrix.
+  // Note that unzooming may be neded here for transforms using lengths as
+  // opposed to numbers.
 
   return MatrixToCSSValue(matrix);
 }

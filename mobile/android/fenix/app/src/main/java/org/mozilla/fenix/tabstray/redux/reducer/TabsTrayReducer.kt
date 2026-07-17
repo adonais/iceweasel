@@ -28,6 +28,7 @@ internal object TabsTrayReducer {
 
             // Selection Mode Actions
             is TabsTrayAction.EnterSelectMode,
+            is TabsTrayAction.SelectAllNormalTabs,
             is TabsTrayAction.ExitSelectMode,
             is TabsTrayAction.AddSelectTab,
             is TabsTrayAction.TabItemLongClicked,
@@ -124,6 +125,28 @@ internal object TabsTrayReducer {
                         selectedTabGroups = emptySet(),
                     ),
                 )
+
+            is TabsTrayAction.SelectAllNormalTabs -> {
+                val selectedTabGroups = HashSet<TabsTrayItem.TabGroup>()
+                val selectedTabs = HashSet<TabsTrayItem.Tab>()
+
+                state.normalTabsState.items.forEach { item ->
+                    when (item) {
+                        is TabsTrayItem.Tab -> selectedTabs.add(item)
+                        is TabsTrayItem.TabGroup -> {
+                            selectedTabGroups.add(item)
+                            selectedTabs.addAll(item.tabs)
+                        }
+                    }
+                }
+
+                state.copy(
+                    mode = TabsTrayState.Mode.Select(
+                        selectedTabs = selectedTabs,
+                        selectedTabGroups = selectedTabGroups,
+                    ),
+                )
+            }
 
             is TabsTrayAction.ExitSelectMode ->
                 state.copy(mode = TabsTrayState.Mode.Normal)

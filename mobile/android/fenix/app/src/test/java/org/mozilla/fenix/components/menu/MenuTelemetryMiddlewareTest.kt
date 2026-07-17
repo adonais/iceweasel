@@ -302,6 +302,16 @@ class MenuTelemetryMiddlewareTest {
     }
 
     @Test
+    fun `WHEN navigating to the wallpaper settings THEN record the change wallpaper browser menu telemetry`() {
+        val store = createStore()
+        assertNull(Events.browserMenuAction.testGetValue())
+
+        store.dispatch(MenuAction.Navigate.Wallpaper)
+
+        assertTelemetryRecorded(Events.browserMenuAction, item = "change_wallpaper")
+    }
+
+    @Test
     fun `GIVEN the menu accesspoint is from the home screen WHEN navigating to the settings THEN record the home menu interaction telemetry`() {
         val store = createStore(accessPoint = MenuAccessPoint.Home)
         assertNull(Events.browserMenuAction.testGetValue())

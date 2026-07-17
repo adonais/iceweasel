@@ -4,7 +4,7 @@
 
 #include "sdp/SipccSdp.h"
 
-#include <cstdlib>
+#include <charconv>
 
 #include "mozilla/Assertions.h"
 #include "mozilla/UniquePtr.h"
@@ -27,7 +27,7 @@ SipccSdp::SipccSdp(const SipccSdp& aOrig)
   }
 }
 
-Sdp* SipccSdp::Clone() const { return new SipccSdp(*this); }
+UniquePtr<Sdp> SipccSdp::Clone() const { return MakeUnique<SipccSdp>(*this); }
 
 const SdpOrigin& SipccSdp::GetOrigin() const { return mOrigin; }
 
@@ -66,15 +66,25 @@ SdpMediaSection& SipccSdp::AddMediaSection(
   media->mPortCount = 0;
   media->mProtocol = protocol;
   media->mConnection = MakeUnique<SdpConnection>(addrType, addr);
-  media->GetAttributeList().SetAttribute(new SdpDirectionAttribute(dir));
+  media->GetAttributeList().SetAttribute(
+      MakeUnique<SdpDirectionAttribute>(dir));
   mMediaSections.emplace_back(media);
   return *media;
 }
 
 bool SipccSdp::LoadOrigin(sdp_t* sdp, InternalResults& results) {
   std::string username = sdp_get_owner_username(sdp);
-  uint64_t sessId = strtoull(sdp_get_owner_sessionid(sdp), nullptr, 10);
-  uint64_t sessVer = strtoull(sdp_get_owner_version(sdp), nullptr, 10);
+
+  // Parse session fields using std::from_chars and strlen
+  uint64_t sessId = 0;
+  const char* sessionIdStr = sdp_get_owner_sessionid(sdp);
+  std::from_chars(sessionIdStr, sessionIdStr + strlen(sessionIdStr), sessId,
+                  10);
+
+  uint64_t sessVer = 0;
+  const char* sessionVersionStr = sdp_get_owner_version(sdp);
+  std::from_chars(sessionVersionStr,
+                  sessionVersionStr + strlen(sessionVersionStr), sessVer, 10);
 
   sdp_nettype_e type = sdp_get_owner_network_type(sdp);
   if (type != SDP_NT_INTERNET) {

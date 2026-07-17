@@ -10,7 +10,7 @@
 #include "mozilla/dom/SVGFilters.h"
 
 nsresult NS_NewSVGFECompositeElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -19,11 +19,11 @@ using SVGFECompositeElementBase = SVGFilterPrimitiveElement;
 class SVGFECompositeElement final : public SVGFECompositeElementBase {
   friend nsresult(::NS_NewSVGFECompositeElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
  protected:
   explicit SVGFECompositeElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : SVGFECompositeElementBase(std::move(aNodeInfo)) {}
   JSObject* WrapNode(JSContext* aCx,
                      JS::Handle<JSObject*> aGivenProto) override;

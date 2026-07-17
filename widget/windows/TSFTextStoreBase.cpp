@@ -1103,7 +1103,7 @@ HRESULT TSFTextStoreBase::RetrieveRequestedAttrsInternal(
       switch (i) {
         case TSFUtils::AttrIndex::InputScope: {
           paAttrVals[count].varValue.vt = VT_UNKNOWN;
-          RefPtr<IUnknown> inputScope = new TSFInputScope(mInputScopes);
+          auto inputScope = MakeRefPtr<TSFInputScope>(mInputScopes);
           paAttrVals[count].varValue.punkVal = inputScope.forget().take();
           break;
         }

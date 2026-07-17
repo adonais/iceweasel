@@ -43,6 +43,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   sample.map(function() {});
 
   assert.sameValue(calls, 1);
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

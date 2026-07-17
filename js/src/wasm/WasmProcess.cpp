@@ -23,6 +23,7 @@
 #include "wasm/WasmBuiltinModule.h"
 #include "wasm/WasmBuiltins.h"
 #include "wasm/WasmCode.h"
+#include "wasm/WasmComponent.h"
 #include "wasm/WasmInstance.h"
 #include "wasm/WasmModuleTypes.h"
 #include "wasm/WasmStaticTypeDefs.h"
@@ -231,6 +232,9 @@ void wasm::ShutDown() {
   BuiltinModuleFuncs::destroy();
   StaticTypeDefs::destroy();
   PurgeCanonicalTypes();
+#ifdef ENABLE_WASM_COMPONENTS
+  PurgeComponentCanonicalTypes();
+#endif
 
 #ifdef ENABLE_WASM_JSPI
   if (sJSPromiseTagType) {

@@ -29,7 +29,7 @@ class ClipboardItem final : public nsWrapperCache {
     using GetDataPromise =
         MozPromise<OwningStringOrBlob, nsresult, /* IsExclusive = */ true>;
 
-    NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+    NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
     NS_DECL_NSIASYNCCLIPBOARDREQUESTCALLBACK
     NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(ItemEntry, PromiseNativeHandler)
 

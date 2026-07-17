@@ -641,6 +641,40 @@ describe("<Weather> (Widgets/Weather)", () => {
       });
     });
 
+    it("attaches size submenu listener after Weather initializes", () => {
+      // Regression: useEffect deps must include weatherData.initialized.
+      const dispatch = jest.fn();
+      const store = createStore(combineReducers(reducers), {
+        ...mockState,
+        Weather: { ...mockState.Weather, initialized: false },
+      });
+      const { container } = render(
+        <Provider store={store}>
+          <Weather dispatch={dispatch} size="small" />
+        </Provider>
+      );
+      act(() => {
+        store.dispatch({
+          type: at.WEATHER_UPDATE,
+          data: { ...mockState.Weather, lastUpdated: Date.now() },
+        });
+      });
+      const mockItem = document.createElement("div");
+      mockItem.dataset.size = "medium";
+      const event = new MouseEvent("click", { bubbles: true });
+      Object.defineProperty(event, "composedPath", { value: () => [mockItem] });
+      container
+        .querySelector("panel-list[id='weather-size-submenu']")
+        .dispatchEvent(event);
+
+      expect(dispatch).toHaveBeenCalledWith(
+        expect.objectContaining({
+          type: at.SET_PREF,
+          data: { name: "widgets.weather.size", value: "medium" },
+        })
+      );
+    });
+
     it("dispatches SET_PREF(widgets.weather.enabled, false) and WIDGETS_ENABLED on hide click", () => {
       const { container, dispatch } = renderWeather();
       const item = container.querySelector(
@@ -796,6 +830,21 @@ describe("<Weather> (Widgets/Weather)", () => {
       expect(
         container.querySelector(".weather-anchor")
       ).not.toBeInTheDocument();
+    });
+
+    it("suppresses weather-error when opt-in is showing", () => {
+      const state = {
+        ...optInMockState,
+        Weather: { ...optInMockState.Weather, suggestions: [{}] },
+      };
+      const { container } = renderWeather("small", state);
+      expect(container.querySelector(".weather-error")).not.toBeInTheDocument();
+      expect(
+        container.querySelector(".weather-widget.weather-error-state")
+      ).not.toBeInTheDocument();
+      expect(
+        container.querySelector(".weather-opt-in-container")
+      ).toBeInTheDocument();
     });
   });
 

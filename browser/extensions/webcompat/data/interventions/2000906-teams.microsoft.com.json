@@ -3,7 +3,11 @@
   "bugs": {
     "2000906": {
       "issue": "broken-meetings",
-      "matches": ["*://teams.microsoft.com/*", "*://teams.live.com/*"]
+      "matches": [
+        "*://teams.cloud.microsoft/*",
+        "*://teams.microsoft.com/*",
+        "*://teams.live.com/*"
+      ]
     }
   },
   "interventions": [

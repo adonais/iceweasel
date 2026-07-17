@@ -32,3 +32,4 @@ STYLE_SHEET(XUL, "chrome://global/content/xul.css", UAUnshared)
 STYLE_SHEET(AccessibleCaret, "resource://gre-resources/accessiblecaret.css",
             Author)
 STYLE_SHEET(Details, "resource://gre-resources/details.css", Author)
+STYLE_SHEET(Select, "resource://gre-resources/select.css", Author)

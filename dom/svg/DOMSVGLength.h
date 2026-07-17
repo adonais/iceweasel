@@ -98,9 +98,9 @@ class DOMSVGLength final : public nsWrapperCache {
 
   /**
    * Create an unowned copy of a length that is owned or is reflecting a single
-   * attribute. The caller is responsible for the first AddRef().
+   * attribute.
    */
-  DOMSVGLength* Copy();
+  already_AddRefed<DOMSVGLength> Copy();
 
   /**
    * Returns true if our attribute is animating.

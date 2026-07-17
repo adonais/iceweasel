@@ -17,9 +17,9 @@ includes: [detachArrayBuffer.js, testTypedArray.js]
 features: [BigInt, TypedArray]
 ---*/
 
-testWithBigIntTypedArrayConstructors(function(TA) {
+testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   var loops = 0;
-  var sample = new TA(2);
+  var sample = new TA(makeCtorArg(2));
 
   sample.map(function() {
     if (loops === 0) {
@@ -30,6 +30,6 @@ testWithBigIntTypedArrayConstructors(function(TA) {
   });
 
   assert.sameValue(loops, 2);
-}, null, ["passthrough"]);
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

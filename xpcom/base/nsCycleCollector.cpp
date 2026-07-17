@@ -1734,7 +1734,7 @@ class nsCycleCollectorLogSinkToFile final : public nsICycleCollectorLogSink {
     // We don't want any JS to run between ScanRoots and CollectWhite calls,
     // and since ScanRoots calls this method, better to log the message
     // asynchronously.
-    RefPtr<LogStringMessageAsync> log = new LogStringMessageAsync(msg);
+    RefPtr log = MakeRefPtr<LogStringMessageAsync>(msg);
     NS_DispatchToCurrentThread(log);
     return NS_OK;
   }

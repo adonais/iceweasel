@@ -34,6 +34,8 @@ https_first_disabled = true
 
 ["browser_caching_domnodeid.js"]
 
+["browser_caching_headinglevel.js"]
+
 ["browser_caching_hyperlink.js"]
 
 ["browser_caching_innerHTML.js"]

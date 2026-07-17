@@ -8,6 +8,14 @@
 #include <windows.h>
 #include <winspool.h>
 
+// winspool.h pollutes the global namespace, failing unified builds in e.g.
+// nsIFormControl::SetForm. Undo the damage.
+#undef AddForm
+#undef DeleteForm
+#undef EnumForms
+#undef GetForm
+#undef SetForm
+
 #include "mozilla/Array.h"
 #include "mozilla/dom/Promise.h"
 #include "nsPaper.h"
@@ -27,15 +35,16 @@ static const double kPointsPerTenthMM = 72.0 / 254.0;
 static const double kPointsPerInch = 72.0;
 
 nsPrinterWin::nsPrinterWin(const CommonPaperInfoArray* aArray,
-                           const nsAString& aName)
-    : nsPrinterBase(aArray),
+                           const nsAString& aName, bool aSortAfterLocal)
+    : nsPrinterBase(aArray, aSortAfterLocal),
       mName(aName),
       mDefaultDevmodeWStorage("nsPrinterWin::mDefaultDevmodeWStorage") {}
 
 // static
 already_AddRefed<nsPrinterWin> nsPrinterWin::Create(
-    const CommonPaperInfoArray* aArray, const nsAString& aName) {
-  return do_AddRef(new nsPrinterWin(aArray, aName));
+    const CommonPaperInfoArray* aArray, const nsAString& aName,
+    bool aSortAfterLocal) {
+  return do_AddRef(new nsPrinterWin(aArray, aName, aSortAfterLocal));
 }
 
 template <class T>

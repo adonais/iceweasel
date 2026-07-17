@@ -105,10 +105,6 @@ tasks:
             by-test-platform:
                 .*windows.*: win11-64-25h2
                 default: default
-        test-manifest-loader:
-            by-test-platform:
-                linux.*64-tsan(-qr)?/opt: default
-                default: null  # don't load tests in the taskgraph
         chunks:
             by-test-platform:
                 linux.*64-tsan(-qr)?/opt: dynamic
@@ -153,6 +149,11 @@ tasks:
                     by-test-platform:
                         android.*: []
                         .*-wayland/debug.*: []
+                        # Compositor shutdown assertion in DisconnectApzcTreeManager
+                        # on headless macOS aarch64 VM workers (Bug 2039987 family);
+                        # same pattern excludes jsreftest, marionette-unittest, and
+                        # mochitest-remote on this platform.
+                        macosx1500-aarch64-vms/debug: []
                         default: built-projects
         max-run-time: 3600
         mozharness:

@@ -61,6 +61,7 @@ static void UpdateSystemCaretFor(Accessible* aAccessible) {
 }
 
 void a11y::PlatformInit() {
+  Compatibility::Init();
   nsWinUtils::MaybeStartWindowEmulation();
   ia2AccessibleText::InitTextChangeData();
 }

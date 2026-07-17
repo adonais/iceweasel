@@ -223,6 +223,18 @@ TEST_F(DERPrivateKeyImportTest, ImportPrivateRSAKey) {
   EXPECT_FALSE(PORT_GetError()) << PORT_GetError();
 }
 
+TEST_F(DERPrivateKeyImportTest, ImportRSAPSSKey) {
+  // An id-RSASSA-PSS (1.2.840.113549.1.1.10) PrivateKeyInfo wraps an ordinary
+  // RSAPrivateKey, byte-identical to rsaEncryption; only the algorithm OID
+  // differs (and NSS represents both as CKK_RSA). Reuse the valid RSA key and
+  // swap only the OID's terminal arc (1 -> 10) to exercise the PSS path.
+  std::vector<uint8_t> pss_key = kValidRSAKey;
+  ASSERT_EQ(pss_key[19], 0x01);  // rsaEncryption OID terminal arc
+  pss_key[19] = 0x0a;            // id-RSASSA-PSS
+  EXPECT_TRUE(ParsePrivateKey(pss_key, true));
+  EXPECT_FALSE(PORT_GetError()) << PORT_GetError();
+}
+
 TEST_F(DERPrivateKeyImportTest, ImportEcdsaKey) {
   EXPECT_TRUE(ParsePrivateKey(kValidP256Key, true));
   EXPECT_FALSE(PORT_GetError()) << PORT_GetError();

@@ -39,7 +39,7 @@ JSObject* DocumentType::WrapNode(JSContext* cx,
   return DocumentType_Binding::Wrap(cx, this, aGivenProto);
 }
 
-DocumentType::DocumentType(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+DocumentType::DocumentType(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                            const nsAString& aPublicId,
                            const nsAString& aSystemId,
                            const nsAString& aInternalSubset)

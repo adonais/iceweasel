@@ -456,10 +456,13 @@ nsresult ElementInternals::SetAttr(nsAtom* aName, const nsAString& aValue) {
   Document* document = mTarget->GetComposedDoc();
   mozAutoDocUpdate updateBatch(document, true);
 
+#ifdef ACCESSIBILITY
   const AttrModType modType =
       mAttrs.HasAttr(aName) ? AttrModType::Modification : AttrModType::Addition;
-  MutationObservers::NotifyARIAAttributeDefaultWillChange(mTarget, aName,
-                                                          modType);
+  if (auto* accService = GetAccService()) {
+    accService->NotifyARIAAttributeDefaultWillChange(mTarget, aName, modType);
+  }
+#endif
 
   nsAttrValue attrValue(aValue);
   nsresult rs = NS_OK;
@@ -474,8 +477,11 @@ nsresult ElementInternals::SetAttr(nsAtom* aName, const nsAString& aValue) {
   }
   nsMutationGuard::DidMutate();
 
-  MutationObservers::NotifyARIAAttributeDefaultChanged(mTarget, aName, modType);
-
+#ifdef ACCESSIBILITY
+  if (auto* accService = GetAccService()) {
+    accService->NotifyARIAAttributeDefaultChanged(mTarget, aName, modType);
+  }
+#endif
   return rs;
 }
 
@@ -636,7 +642,11 @@ void ElementInternals::GetAttrElements(
   // elements.
   auto elements = getAttrAssociatedElements();
 
-  if (elements == cachedAttrElements) {
+  // aUseCachedValue is null when the binding has no cached attr-associated
+  // elements object to reuse yet (e.g. the first getter call). In that case we
+  // must return the freshly computed elements below rather than signalling a
+  // cache hit, otherwise we would dereference a null pointer.
+  if (aUseCachedValue && elements == cachedAttrElements) {
     // 2. If the contents of elements is equal to the contents of this's cached
     // attr-associated elements, then return this's cached attr-associated
     // elements object.

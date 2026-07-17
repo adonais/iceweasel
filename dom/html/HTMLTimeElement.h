@@ -12,8 +12,7 @@ namespace mozilla::dom {
 
 class HTMLTimeElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLTimeElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLTimeElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   virtual ~HTMLTimeElement();
 
   // HTMLTimeElement WebIDL

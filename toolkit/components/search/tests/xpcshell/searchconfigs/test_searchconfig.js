@@ -646,6 +646,25 @@ const test = new SearchConfigTest([
     ],
   },
   {
+    identifier: "perplexity",
+    aliases: ["@perplexity"],
+    default: {
+      // Not default anywhere.
+    },
+    available: {
+      excluded: [
+        // Should be available everywhere.
+      ],
+    },
+    details: [
+      {
+        included: [{}],
+        domain: "www.perplexity.ai",
+        searchUrlCode: "pc=firefox",
+      },
+    ],
+  },
+  {
     identifier: "qwant",
     aliases: ["@qwant"],
     default: {

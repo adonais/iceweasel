@@ -33,12 +33,12 @@ class ReadableStreamGenericReader : public nsISupports {
   virtual ReadableStreamBYOBReader* AsBYOB() = 0;
 
   Promise* ClosedPromise() { return mClosedPromise; }
-  void SetClosedPromise(already_AddRefed<Promise>&& aClosedPromise) {
+  void SetClosedPromise(already_AddRefed<Promise> aClosedPromise) {
     mClosedPromise = aClosedPromise;
   }
 
   ReadableStream* GetStream() { return mStream; }
-  void SetStream(already_AddRefed<ReadableStream>&& aStream) {
+  void SetStream(already_AddRefed<ReadableStream> aStream) {
     mStream = aStream;
   }
   void SetStream(ReadableStream* aStream) {

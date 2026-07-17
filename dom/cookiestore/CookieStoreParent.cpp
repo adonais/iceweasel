@@ -10,7 +10,9 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/ipc/BackgroundParent.h"
+#include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/URIUtils.h"  // for ParamTraits<nsIURI*>
 #include "mozilla/net/Cookie.h"
 #include "mozilla/net/CookieCommons.h"
@@ -203,6 +205,19 @@ mozilla::ipc::IPCResult CookieStoreParent::RecvGetSubscriptionsRequest(
     GetSubscriptionsRequestResolver&& aResolver) {
   AssertIsOnBackgroundThread();
 
+  auto principalOrErr = PrincipalInfoToPrincipal(aPrincipalInfo);
+  if (principalOrErr.isErr()) {
+    return IPC_FAIL(this, "invalid PrincipalInfo");
+  }
+  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+
+  RefPtr<ThreadsafeContentParentHandle> parent =
+      BackgroundParent::GetContentParentHandle(Manager());
+  if (parent && !ValidatePrincipalCouldPotentiallyBeLoadedBy(
+                    principal, parent->GetRemoteType(), {})) {
+    return IPC_FAIL(this, "principal not allowed for remote type");
+  }
+
   InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
               [self = RefPtr(this), aPrincipalInfo, aScopeURL]() {
                 CookieStoreSubscriptionService* service =
@@ -239,6 +254,19 @@ mozilla::ipc::IPCResult CookieStoreParent::RecvSubscribeOrUnsubscribeRequest(
     const CopyableTArray<CookieSubscription>& aSubscriptions,
     bool aSubscription, SubscribeOrUnsubscribeRequestResolver&& aResolver) {
   AssertIsOnBackgroundThread();
+
+  auto principalOrErr = PrincipalInfoToPrincipal(aPrincipalInfo);
+  if (principalOrErr.isErr()) {
+    return IPC_FAIL(this, "invalid PrincipalInfo");
+  }
+  nsCOMPtr<nsIPrincipal> principal = principalOrErr.unwrap();
+
+  RefPtr<ThreadsafeContentParentHandle> parent =
+      BackgroundParent::GetContentParentHandle(Manager());
+  if (parent && !ValidatePrincipalCouldPotentiallyBeLoadedBy(
+                    principal, parent->GetRemoteType(), {})) {
+    return IPC_FAIL(this, "principal not allowed for remote type");
+  }
 
   InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
               [self = RefPtr(this), aPrincipalInfo, aScopeURL, aSubscriptions,

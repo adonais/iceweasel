@@ -2,56 +2,27 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-#include "jit/InterpreterEntryTrampoline.h"
+#include "gc/PublicIterators.h"
+#include "gc/Zone.h"
 #include "jit/JitRuntime.h"
+#include "jit/JitZone.h"
 #include "jit/Linker.h"
 #include "vm/Interpreter.h"
 
 #include "gc/Marking-inl.h"
+#include "gc/WeakMap-inl.h"
 #include "jit/MacroAssembler-inl.h"
 
 using namespace js;
 using namespace js::jit;
 
-void js::ClearInterpreterEntryMap(JSRuntime* runtime) {
-  if (runtime->hasJitRuntime() &&
-      runtime->jitRuntime()->hasInterpreterEntryMap()) {
-    runtime->jitRuntime()->getInterpreterEntryMap()->clear();
+EntryTrampolineMap* JitZone::getOrCreateInterpreterEntryMap(JS::Zone* zone) {
+  if (!interpreterEntryMap) {
+    interpreterEntryMap = js::MakeUnique<EntryTrampolineMap>(zone);
   }
-}
 
-void EntryTrampolineMap::traceTrampolineCode(JSTracer* trc) {
-  for (auto iter = modIter(); !iter.done(); iter.next()) {
-    EntryTrampoline& trampoline = iter.get().value();
-    trampoline.trace(trc);
-  }
+  return interpreterEntryMap.get();
 }
-
-void EntryTrampolineMap::updateScriptsAfterMovingGC(void) {
-  for (auto iter = modIter(); !iter.done(); iter.next()) {
-    BaseScript* script = iter.get().key();
-    if (IsForwarded(script)) {
-      script = Forwarded(script);
-      iter.rekey(script);
-    }
-  }
-}
-
-#ifdef JSGC_HASH_TABLE_CHECKS
-void EntryTrampoline::checkTrampolineAfterMovingGC() const {
-  JitCode* trampoline = entryTrampoline_;
-  CheckGCThingAfterMovingGC(trampoline);
-}
-
-void EntryTrampolineMap::checkScriptsAfterMovingGC() {
-  gc::CheckTableAfterMovingGC(*this, [](const auto& entry) {
-    BaseScript* script = entry.key();
-    CheckGCThingAfterMovingGC(script);
-    entry.value().checkTrampolineAfterMovingGC();
-    return script;
-  });
-}
-#endif
 
 void JitRuntime::generateBaselineInterpreterEntryTrampoline(
     MacroAssembler& masm) {

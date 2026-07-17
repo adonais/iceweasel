@@ -198,7 +198,9 @@ enum aome_enc_control_id {
   AOME_SET_SCALEMODE = 11,
 
   /*!\brief Codec control function to set encoder spatial layer id, int
-   * parameter.
+   * parameter. Spatial layer id must be within valid range of 0 to the
+   * allowed number of spatial layers, set via the control
+   * AV1E_SET_SVC_PARAMS, or via AOME_SET_NUMBER_SPATIAL_LAYERS.
    */
   AOME_SET_SPATIAL_LAYER_ID = 12,
 
@@ -1289,7 +1291,9 @@ enum aome_enc_control_id {
   /* NOTE: enums 145-149 unused */
 
   /*!\brief Codec control function to set the layer id, aom_svc_layer_id_t*
-   * parameter
+   * parameter. Layer id for spatial or temporal layer must be within valid
+   * range of 0 to the allowed number of spatial or temporal layers, set via
+   * the control AV1E_SET_SVC_PARAMS, or via AOME_SET_NUMBER_SPATIAL_LAYERS.
    */
   AV1E_SET_SVC_LAYER_ID = 131,
 
@@ -1622,14 +1626,18 @@ enum aome_enc_control_id {
   /*!\brief Codec control function to enable external rate control library.
    *
    * args: a pointer to aom_rc_funcs_t that contains implementation of callbacks
+   *
+   * \attention Experimental. Not part of the stable API.
    */
   AV1E_SET_EXTERNAL_RATE_CONTROL = 173,
 
   /*!\brief Codec control function to get GOP structure from the encoder.
    *
    * args: a pointer to aom_gop_info_t
+   *
+   * \attention Experimental. Not part of the stable API.
    */
-  AV1E_GET_GOP_INFO,
+  AV1E_GET_GOP_INFO = 174,
 
   /*!\brief Codec control function to validate HBD input.
    *
@@ -1637,7 +1645,7 @@ enum aome_enc_control_id {
    * ensure that every pixel is within the valid range. To disable/enable,
    * set this parameter to 0/1. The default value is set to be 1.
    */
-  AOME_SET_VALIDATE_INPUT_HBD,
+  AOME_SET_VALIDATE_HBD_INPUT = 175,
 
   // Any new encoder control IDs should be added above.
   // Maximum allowed encoder control ID is 229.
@@ -1843,10 +1851,14 @@ typedef struct aom_svc_params {
    *   \li When \em not using #AV1E_SET_SVC_REF_FRAME_CONFIG: [1, 3]
    */
   int number_temporal_layers;
-  int max_quantizers[AOM_MAX_LAYERS];        /**< Max Q for each layer */
-  int min_quantizers[AOM_MAX_LAYERS];        /**< Min Q for each layer */
-  int scaling_factor_num[AOM_MAX_SS_LAYERS]; /**< Scaling factor-numerator */
-  int scaling_factor_den[AOM_MAX_SS_LAYERS]; /**< Scaling factor-denominator */
+  int max_quantizers[AOM_MAX_LAYERS]; /**< Max Q for each layer */
+  int min_quantizers[AOM_MAX_LAYERS]; /**< Min Q for each layer */
+  /*! Scaling factor-numerator */
+  int scaling_factor_num[AOM_MAX_SS_LAYERS];
+  /*! Scaling factor-denominator: must be greater than or equal to the
+   *  scaling_factor_num[].
+   */
+  int scaling_factor_den[AOM_MAX_SS_LAYERS];
   /*! Target bitrate for each layer, in kilobits per second */
   int layer_target_bitrate[AOM_MAX_LAYERS];
   /*! Frame rate factor for each temporal layer */
@@ -1892,6 +1904,8 @@ typedef enum {
 /*!\brief The GOP structure information determined by the encoder.
  * 250 is MAX_STATIC_GF_GROUP_LENGTH defined in av1/firstpass.h.
  * This is a subset of GF_GROUP. More fields can be added if needed.
+ *
+ * \attention Experimental. Not part of the stable API.
  */
 typedef struct aom_gop_info {
   int gop_size; /**< The number of frames of this GOP */
@@ -2343,8 +2357,8 @@ AOM_CTRL_USE_TYPE(AV1E_SET_LOOPFILTER_CONTROL, int)
 AOM_CTRL_USE_TYPE(AOME_GET_LOOPFILTER_LEVEL, int *)
 #define AOM_CTRL_AOME_GET_LOOPFILTER_LEVEL
 
-AOM_CTRL_USE_TYPE(AOME_SET_VALIDATE_INPUT_HBD, int)
-#define AOM_CTRL_AOME_SET_VALIDATE_INPUT_HBD
+AOM_CTRL_USE_TYPE(AOME_SET_VALIDATE_HBD_INPUT, int)
+#define AOM_CTRL_AOME_SET_VALIDATE_HBD_INPUT
 
 AOM_CTRL_USE_TYPE(AV1E_SET_AUTO_INTRA_TOOLS_OFF, unsigned int)
 #define AOM_CTRL_AV1E_SET_AUTO_INTRA_TOOLS_OFF

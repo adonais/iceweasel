@@ -37,6 +37,7 @@ ChromeUtils.defineESModuleGetters(this, {
     "moz-src:///browser/components/customizableui/PanelMultiView.sys.mjs",
   RecentlyClosedTabsAndWindowsMenuUtils:
     "resource:///modules/sessionstore/RecentlyClosedTabsAndWindowsMenuUtils.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 var StarUI = {
@@ -576,7 +577,7 @@ var PlacesCommandHook = {
     let win =
       BrowserWindowTracker.getTopWindow() ??
       (await BrowserWindowTracker.promiseOpenWindow());
-    win.gURLBar.search(UrlbarTokenizer.RESTRICT.BOOKMARK, {
+    win.gURLBar.search(UrlbarShared.RESTRICT_TOKENS.BOOKMARK, {
       searchModeEntry: "bookmarkmenu",
     });
   },
@@ -585,7 +586,7 @@ var PlacesCommandHook = {
     let win =
       BrowserWindowTracker.getTopWindow() ??
       (await BrowserWindowTracker.promiseOpenWindow());
-    win.gURLBar.search(UrlbarTokenizer.RESTRICT.HISTORY, {
+    win.gURLBar.search(UrlbarShared.RESTRICT_TOKENS.HISTORY, {
       searchModeEntry: "historymenu",
     });
   },
@@ -1275,10 +1276,22 @@ var PlacesToolbarHelper = {
         menu.appendChild(submenu);
         this.addManagedBookmarks(submenupopup, entry.children);
       } else if (entry.name && entry.url) {
-        // It's bookmark.
-        let { preferredURI } = Services.uriFixup.getFixupURIInfo(entry.url);
-        let menuitem = document.createXULElement("menuitem");
-        menuitem.setAttribute("label", entry.name);
+        // It's a bookmark.
+        // Match Chrome: accept scheme-less hostnames like "google.com" by
+        // prefixing https:// when the raw value isn't a valid URL.
+        let parsed = URL.parse(entry.url);
+        let url = entry.url;
+        if (!parsed) {
+          parsed = URL.parse(`https://${entry.url}`);
+          url = parsed?.href;
+        }
+        if (!parsed) {
+          console.error(
+            `ManagedBookmarks: ignoring invalid url "${entry.url}"`
+          );
+          continue;
+        }
+
         let imageURL;
         if (entry.favicon) {
           let iconURL = URL.parse(entry.favicon);
@@ -1295,27 +1308,39 @@ var PlacesToolbarHelper = {
                 `expected one of: ${this.MANAGED_BOOKMARK_FAVICON_SCHEMES.join(", ")}`
             );
           }
+        } else if (parsed.protocol != "javascript:") {
+          imageURL = "page-icon:" + ChromeUtils.encodeURIForSrcset(url);
         }
-        menuitem.setAttribute(
-          "image",
-          imageURL ||
-            "page-icon:" + ChromeUtils.encodeURIForSrcset(preferredURI.spec)
-        );
+
+        let menuitem = document.createXULElement("menuitem");
+        menuitem.setAttribute("label", entry.name);
+        if (imageURL) {
+          menuitem.setAttribute("image", imageURL);
+        }
         menuitem.classList.add(
           "menuitem-iconic",
           "menuitem-with-favicon",
           "bookmark-item"
         );
-        menuitem.link = preferredURI.spec;
+        menuitem.link = url;
         menu.appendChild(menuitem);
       }
     }
   },
 
   openManagedBookmark(event) {
-    openUILink(event.target.link, event, {
-      triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
-    });
+    let link = event.target.link;
+    let triggeringPrincipal =
+      Services.scriptSecurityManager.getSystemPrincipal();
+    if (/^javascript:/i.test(link)) {
+      openTrustedLinkIn(link, "current", {
+        allowPopups: true,
+        allowInheritPrincipal: true,
+        triggeringPrincipal,
+      });
+      return;
+    }
+    openUILink(link, event, { triggeringPrincipal });
   },
 
   onDragStartManaged(event) {

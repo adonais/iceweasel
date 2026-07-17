@@ -616,7 +616,8 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
   }
 
   // Even if we're display: contents or optgroups, we might not be able to
-  // create an accessible if we're in a content-visibility: hidden subtree.
+  // create an accessible if we're in a content-visibility: hidden, visibility:
+  // hidden or inert subtree.
   //
   // To check that, find the closest ancestor element with a frame.
   for (nsIContent* c :
@@ -624,7 +625,8 @@ bool nsCoreUtils::CanCreateAccessibleWithoutFrame(nsIContent* aContent) {
     if (nsIFrame* f = c->GetPrimaryFrame()) {
       if (f->HidesContent(nsIFrame::IncludeContentVisibility::Hidden) ||
           f->IsHiddenByContentVisibilityOnAnyAncestor(
-              nsIFrame::IncludeContentVisibility::Hidden)) {
+              nsIFrame::IncludeContentVisibility::Hidden) ||
+          !f->StyleVisibility()->IsVisible() || f->StyleUI()->IsInert()) {
         return false;
       }
       break;

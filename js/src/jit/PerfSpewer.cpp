@@ -803,7 +803,7 @@ void PerfSpewer::CollectJitCodeInfo(UniqueChars& function_name, void* code_addr,
 #endif
 #ifdef XP_WIN
   if (etwCollection) {
-    void* scriptContextId = NULL;
+    void* scriptContextId = nullptr;
     uint32_t flags = 0;
     uint64_t map = 0;
     uint64_t assembly = 0;

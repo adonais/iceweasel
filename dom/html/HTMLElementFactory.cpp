@@ -18,7 +18,7 @@ using namespace mozilla::dom;
 //----------------------------------------------------------------------
 
 nsGenericHTMLElement* NS_NewHTMLNOTUSEDElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     FromParser aFromParser) {
   MOZ_ASSERT_UNREACHABLE("The element ctor should never be called");
   return nullptr;
@@ -35,7 +35,7 @@ static const HTMLContentCreatorFunction sHTMLContentCreatorFunctions[] = {
     NS_NewHTMLUnknownElement};
 
 nsresult NS_NewHTMLElement(Element** aResult,
-                           already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+                           already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                            FromParser aFromParser, nsAtom* aIsAtom,
                            mozilla::dom::CustomElementDefinition* aDefinition) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo = aNodeInfo;
@@ -49,7 +49,7 @@ nsresult NS_NewHTMLElement(Element** aResult,
 }
 
 already_AddRefed<nsGenericHTMLElement> CreateHTMLElement(
-    uint32_t aNodeType, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    uint32_t aNodeType, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     FromParser aFromParser) {
   MOZ_ASSERT(aNodeType <= NS_HTML_TAG_MAX || aNodeType == eHTMLTag_userdefined,
              "aNodeType is out of bounds");

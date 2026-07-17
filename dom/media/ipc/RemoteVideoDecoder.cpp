@@ -108,8 +108,7 @@ MediaResult RemoteVideoDecoderChild::InitIPDL(
   if (!manager->CanSend()) {
     if (mLocation == RemoteMediaIn::GpuProcess) {
       // The manager doesn't support sending messages because we've just crashed
-      // and are working on reinitialization. Don't initialize mIPDLSelfRef and
-      // leave us in an error state. We'll then immediately reject the promise
+      // and are working on reinitialization. We immediately reject the promise
       // when Init() is called and the caller can try again. Hopefully by then
       // the new manager is ready, or we've notified the caller of it being no
       // longer available. If not, then the cycle repeats until we're ready.
@@ -138,11 +137,14 @@ MediaResult RemoteVideoDecoderChild::InitIPDL(
     }
   }
 
-  mIPDLSelfRef = this;
   VideoDecoderInfoIPDL decoderInfo(aVideoInfo, aFramerate);
-  MOZ_ALWAYS_TRUE(manager->SendPRemoteDecoderConstructor(
-      this, decoderInfo, aOptions, aIdentifier, aMediaEngineId, aTrackingId,
-      cdm));
+  if (!manager->SendPRemoteDecoderConstructor(this, decoderInfo, aOptions,
+                                              aIdentifier, aMediaEngineId,
+                                              aTrackingId, cdm)) {
+    return MediaResult(
+        NS_ERROR_DOM_MEDIA_FATAL_ERR,
+        RESULT_DETAIL("RemoteMediaManager unable to construct."));
+  }
 
   return NS_OK;
 }

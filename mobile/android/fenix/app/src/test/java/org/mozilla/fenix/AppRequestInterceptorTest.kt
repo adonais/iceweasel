@@ -26,7 +26,7 @@ import org.junit.runner.RunWith
 import org.mozilla.fenix.AppRequestInterceptor.Companion.HIGH_RISK_ERROR_PAGES
 import org.mozilla.fenix.AppRequestInterceptor.Companion.LOW_AND_MEDIUM_RISK_ERROR_PAGES
 import org.mozilla.fenix.GleanMetrics.ErrorPage
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.robolectric.RobolectricTestRunner
 
@@ -41,7 +41,7 @@ class AppRequestInterceptorTest {
 
     @Before
     fun setUp() {
-        every { testContext.settings() } returns mockk(relaxed = true)
+        every { testContext.components.settings } returns mockk(relaxed = true)
 
         navigationController = mockk(relaxed = true)
         interceptor = spyk(

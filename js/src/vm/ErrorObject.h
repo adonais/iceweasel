@@ -178,7 +178,9 @@ UniquePtr<JSErrorReport> CopyErrorReport(JSContext* cx, JSErrorReport* report);
 // errors).
 static const size_t MAX_REPORTED_STACK_DEPTH = 1u << 7;
 
-bool CaptureStack(JSContext* cx, MutableHandleObject stack);
+mozilla::Maybe<uint32_t> GetStackTraceLimit(JSContext* cx);
+
+bool CaptureStack(JSContext* cx, MutableHandleObject stack, uint32_t limit);
 
 JSString* ComputeStackString(JSContext* cx);
 

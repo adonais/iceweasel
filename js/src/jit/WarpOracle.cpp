@@ -189,8 +189,8 @@ AbortReasonOr<WarpSnapshot*> WarpOracle::createSnapshot() {
 
 #ifdef JS_JITSPEW
   if (JitSpewEnabled(JitSpew_WarpSnapshots)) {
-    Fprinter& out = JitSpewPrinter();
-    snapshot->dump(out);
+    AutoJitSpewMessage msg(JitSpew_WarpSnapshots);
+    snapshot->dump(msg.printer());
   }
 #endif
 
@@ -655,12 +655,8 @@ AbortReasonOr<WarpScriptSnapshot*> WarpScriptOracle::createScriptSnapshot() {
       case JSOp::Goto:
       case JSOp::DebugCheckSelfHosted:
       case JSOp::DynamicImport:
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-      case JSOp::DynamicImportSource:
-#endif
       case JSOp::ToString:
       case JSOp::GlobalOrEvalDeclInstantiation:
-      case JSOp::BindVar:
       case JSOp::MutateProto:
       case JSOp::Callee:
       case JSOp::ToAsyncIter:

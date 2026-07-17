@@ -7,6 +7,7 @@
 
 use crate::derives::*;
 use crate::parser::{Parse, ParserContext};
+use crate::typed_om::{NumericValue, ToTyped, TypedValue, UnitValue};
 use crate::values::specified;
 use crate::values::{CSSFloat, CustomIdent};
 use crate::{One, Zero};
@@ -14,7 +15,8 @@ use cssparser::Parser;
 use std::fmt::{self, Write};
 use std::usize;
 use style_traits::values::specified::AllowedNumericType;
-use style_traits::{CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use style_traits::{CssString, CssWriter, ParseError, StyleParseErrorKind, ToCss};
+use thin_vec::ThinVec;
 
 /// A `<grid-line>` type.
 ///
@@ -210,6 +212,64 @@ impl Parse for GridLine<specified::Integer> {
     }
 }
 
+/// The unit of a `<frequency>` value.
+pub struct FlexUnit;
+
+impl FlexUnit {
+    /// Returns whether the given string is the flex unit.
+    #[inline]
+    pub fn matches(unit: &str) -> bool {
+        unit.eq_ignore_ascii_case("fr")
+    }
+
+    /// Returns the flex unit name as a string.
+    #[inline]
+    pub fn name() -> &'static str {
+        "fr"
+    }
+}
+
+/// A CSS `<flex>` value.
+///
+/// https://drafts.csswg.org/css-grid-2/#typedef-flex
+#[derive(
+    Animate,
+    Clone,
+    Copy,
+    Debug,
+    MallocSizeOf,
+    PartialEq,
+    SpecifiedValueInfo,
+    ToAnimatedValue,
+    ToComputedValue,
+    ToResolvedValue,
+    ToShmem,
+)]
+#[repr(C)]
+pub struct Flex(pub CSSFloat);
+
+impl ToCss for Flex {
+    fn to_css<W>(&self, dest: &mut CssWriter<W>) -> fmt::Result
+    where
+        W: Write,
+    {
+        self.0.to_css(dest)?;
+        dest.write_str(FlexUnit::name())
+    }
+}
+
+impl ToTyped for Flex {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        let value = self.0;
+        let unit = CssString::from("fr");
+        dest.push(TypedValue::Numeric(NumericValue::Unit(UnitValue {
+            value,
+            unit,
+        })));
+        Ok(())
+    }
+}
+
 /// A track breadth for explicit grid track sizing. It's generic solely to
 /// avoid re-implementing it for the computed type.
 ///
@@ -226,14 +286,14 @@ impl Parse for GridLine<specified::Integer> {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 pub enum GenericTrackBreadth<L> {
     /// The generic type is almost always a non-negative `<length-percentage>`
     Breadth(L),
     /// A flex fraction specified in `fr` units.
-    #[css(dimension)]
-    Fr(CSSFloat),
+    Flex(Flex),
     /// `auto`
     Auto,
     /// `min-content`
@@ -321,7 +381,7 @@ impl<L> TrackSize<L> {
                 }
 
                 match *breadth_1 {
-                    TrackBreadth::Fr(_) => false, // should be <inflexible-breadth> at this point
+                    TrackBreadth::Flex(_) => false, // should be <inflexible-breadth> at this point
                     _ => breadth_2.is_fixed(),
                 }
             },
@@ -347,7 +407,7 @@ impl<L: ToCss> ToCss for TrackSize<L> {
                 // According to gecko minmax(auto, <flex>) is equivalent to <flex>,
                 // and both are serialized as <flex>.
                 if let TrackBreadth::Auto = *min {
-                    if let TrackBreadth::Fr(_) = *max {
+                    if let TrackBreadth::Flex(_) = *max {
                         return max.to_css(dest);
                     }
                 }
@@ -363,6 +423,15 @@ impl<L: ToCss> ToCss for TrackSize<L> {
                 lp.to_css(dest)?;
                 dest.write_char(')')
             },
+        }
+    }
+}
+
+impl<L: ToTyped> ToTyped for TrackSize<L> {
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        match *self {
+            TrackSize::Breadth(ref breadth) => breadth.to_typed(dest),
+            _ => Err(()),
         }
     }
 }
@@ -384,7 +453,6 @@ impl<L: ToCss> ToCss for TrackSize<L> {
     ToTyped,
 )]
 #[repr(transparent)]
-#[typed(todo_derive_fields)]
 pub struct GenericImplicitGridTracks<T>(
     #[css(if_empty = "auto", iterable)] pub crate::OwnedSlice<T>,
 );
@@ -545,12 +613,14 @@ impl<L: ToCss, I: ToCss> ToCss for TrackRepeat<L, I> {
     ToCss,
     ToResolvedValue,
     ToShmem,
+    ToTyped,
 )]
 #[repr(C, u8)]
 pub enum GenericTrackListValue<LengthPercentage, Integer> {
     /// A <track-size> value.
     TrackSize(#[animation(field_bound)] GenericTrackSize<LengthPercentage>),
     /// A <track-repeat> value.
+    #[typed(skip)]
     TrackRepeat(#[animation(field_bound)] GenericTrackRepeat<LengthPercentage, Integer>),
 }
 
@@ -656,6 +726,24 @@ impl<L: ToCss, I: ToCss> ToCss for TrackList<L, I> {
         }
 
         Ok(())
+    }
+}
+
+impl<L: ToTyped, I: ToTyped> ToTyped for TrackList<L, I> {
+    // Note: The specification does not currently define how grid track lists
+    // should be reified into Typed OM. The current behavior follows existing
+    // WPT coverage (grid-template-columns-rows.html). Syncing spec with UA/WPT
+    // behavior tracked in https://github.com/w3c/csswg-drafts/issues/13907
+    fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
+        if self.values.len() != 1 {
+            return Err(());
+        }
+
+        if self.line_names.iter().any(|names| !names.is_empty()) {
+            return Err(());
+        }
+
+        self.values[0].to_typed(dest)
     }
 }
 
@@ -826,7 +914,6 @@ impl<I: ToCss> ToCss for LineNameList<I> {
 )]
 #[value_info(other_values = "subgrid")]
 #[repr(C, u8)]
-#[typed(todo_derive_fields)]
 pub enum GenericGridTemplateComponent<L, I> {
     /// `none` value.
     None,
@@ -841,9 +928,11 @@ pub enum GenericGridTemplateComponent<L, I> {
     /// A `subgrid <line-name-list>?`
     /// TODO: Support animations for this after subgrid is addressed in [grid-2] spec.
     #[animation(error)]
+    #[typed(skip)]
     Subgrid(Box<GenericLineNameList<I>>),
     /// `masonry` value.
     /// https://github.com/w3c/csswg-drafts/issues/4650
+    #[typed(skip)]
     Masonry,
 }
 

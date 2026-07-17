@@ -19,6 +19,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <tuple>
 #include <type_traits>
 #include <utility>
 #include <vector>
@@ -97,6 +98,7 @@
 #include "pc/rtp_transceiver.h"
 #include "pc/rtp_transmission_manager.h"
 #include "pc/rtp_transport_internal.h"
+#include "pc/scoped_operations_batcher.h"
 #include "pc/sctp_data_channel.h"
 #include "pc/sctp_transport.h"
 #include "pc/sdp_offer_answer.h"
@@ -623,7 +625,8 @@ PeerConnection::PeerConnection(
   // Field trials specific to the peerconnection should be owned by the `env`,
   RTC_DCHECK(dependencies.trials == nullptr);
 
-  transport_controller_copy_ =
+  std::vector<IceParameters> pooled_credentials;
+  std::tie(transport_controller_copy_, pooled_credentials) =
       InitializeNetworkThread(stun_servers, turn_servers);
 
   if (call_ptr_) {
@@ -640,6 +643,7 @@ PeerConnection::PeerConnection(
       env_, this, configuration_, std::move(dependencies.cert_generator),
       std::move(dependencies.video_bitrate_allocator_factory), context_.get(),
       codec_lookup_helper_.get());
+  sdp_handler_->UpdateCachedIceCredentials(std::move(pooled_credentials));
   rtp_manager_ = std::make_unique<RtpTransmissionManager>(
       env_, call_ptr_, IsUnifiedPlan(), context_.get(),
       codec_lookup_helper_.get(), &usage_pattern_, observer_,
@@ -677,7 +681,6 @@ PeerConnection::PeerConnection(
 PeerConnection::~PeerConnection() {
   TRACE_EVENT0("webrtc", "PeerConnection::~PeerConnection");
   RTC_DCHECK_RUN_ON(signaling_thread());
-  RTC_LOG_THREAD_BLOCK_COUNT();
 
   sdp_handler_->PrepareForShutdown();
 
@@ -685,8 +688,8 @@ PeerConnection::~PeerConnection() {
   // potentially pending operations.
   data_channel_controller_.PrepareForShutdown();
 
-  std::vector<absl::AnyInvocable<void() &&>> network_tasks;
-  std::vector<absl::AnyInvocable<void() &&>> worker_tasks;
+  ScopedOperationsBatcher network_tasks(network_thread());
+  ScopedOperationsBatcher worker_tasks(worker_thread());
 
   // Stop transceivers before destroying the stats collector because
   // AudioRtpSender has a reference to the LegacyStatsCollector that it will
@@ -697,33 +700,28 @@ PeerConnection::~PeerConnection() {
   legacy_stats_.reset(nullptr);
   stats_collector_.CancelPendingRequestAndGetShutdownTasks(network_tasks,
                                                            worker_tasks);
-
-  CloseOnNetworkThread(network_tasks);
+  network_tasks.AddWithFinalizer(MakeCloseOnNetworkThreadTask());
 
   // call_ must be destroyed on the worker thread.
-  worker_thread()->BlockingCall([&] {
+  worker_tasks.Add([this]() {
     RTC_DCHECK_RUN_ON(worker_thread());
-    for (auto& task : worker_tasks) {
-      std::move(task)();
-      task = nullptr;
-    }
     worker_thread_safety_->SetNotAlive();
     call_.reset();
     media_engine_ref_.reset();
   });
+
+  network_tasks.Run();
+  worker_tasks.Run();
 
   if (sdp_handler_) {
     sdp_handler_->ResetSessionDescFactory();
   }
 
   data_channel_controller_.PrepareForShutdown();
-
-  // The expectation is that there will have been 1 blocking call for the worker
-  // thread and optionally 1 task for the network thread.
-  RTC_DCHECK_BLOCK_COUNT_NO_MORE_THAN(2);
 }
 
-JsepTransportController* PeerConnection::InitializeNetworkThread(
+std::pair<JsepTransportController*, std::vector<IceParameters>>
+PeerConnection::InitializeNetworkThread(
     const ServerAddresses& stun_servers,
     const std::vector<RelayServerConfig>& turn_servers) {
   RTC_DCHECK_RUN_ON(signaling_thread());
@@ -850,40 +848,52 @@ JsepTransportController* PeerConnection::InitializeNetworkThread(
         pa_result.enable_ipv6 ? kPeerConnection_IPv6 : kPeerConnection_IPv4;
     RTC_HISTOGRAM_ENUMERATION("WebRTC.PeerConnection.IPMetrics", address_family,
                               kPeerConnectionAddressFamilyCounter_Max);
-    return InitializeTransportController_n(std::move(controller), *config);
+    JsepTransportController* controller_ptr =
+        InitializeTransportController_n(std::move(controller), *config);
+    std::vector<IceParameters> credentials =
+        port_allocator_->GetPooledIceCredentials();
+    return std::make_pair(controller_ptr, credentials);
   });
 }
 
-void PeerConnection::CloseOnNetworkThread(
-    std::vector<absl::AnyInvocable<void() &&>>& network_tasks) {
+ScopedOperationsBatcher::BatchTaskWithFinalizer
+PeerConnection::MakeCloseOnNetworkThreadTask() {
   RTC_DCHECK_RUN_ON(signaling_thread());
-  if (transport_controller_copy_ || !network_tasks.empty()) {
-    network_thread()->BlockingCall([&] {
-      RTC_DCHECK_RUN_ON(network_thread());
-      for (auto& task : network_tasks) {
-        std::move(task)();
-        task = nullptr;
-      }
-      if (network_thread_safety_->alive()) {
-        // port_allocator_ and transport_controller_ live on the network thread
-        // and must be destroyed there.
-        TeardownDataChannelTransport_n(RTCError::OK());
-        port_allocator_->DiscardCandidatePool();
-        transport_controller_.reset();
-        port_allocator_.reset();
-        network_thread_safety_->SetNotAlive();
-      }
-    });
+
+  if (!transport_controller_copy_) {
+    return nullptr;
   }
 
-  if (transport_controller_copy_) {
-    transport_controller_copy_ = nullptr;
-    sctp_mid_s_.reset();
-    SetSctpTransportName("");
-  } else {
-    RTC_DCHECK(!sctp_mid_s_);
-    RTC_DCHECK(sctp_transport_name_s_.empty());
-  }
+  auto jsep_close_task = transport_controller_copy_->MakeCloseTask();
+
+  return [this, jsep_close_task = std::move(jsep_close_task)]() mutable
+             -> RTCErrorOr<ScopedOperationsBatcher::FinalizerTask> {
+    RTC_DCHECK_RUN_ON(network_thread());
+    if (network_thread_safety_->alive()) {
+      // port_allocator_ and transport_controller_ live on the network thread
+      // and must be destroyed there.
+      TeardownDataChannelTransport_n(RTCError::OK());
+      port_allocator_->DiscardCandidatePool();
+
+      std::move(jsep_close_task)();
+
+      transport_controller_.reset();
+      port_allocator_.reset();
+      network_thread_safety_->SetNotAlive();
+    }
+
+    return ScopedOperationsBatcher::FinalizerTask([this]() {
+      RTC_DCHECK_RUN_ON(signaling_thread());
+      if (transport_controller_copy_) {
+        transport_controller_copy_ = nullptr;
+        sctp_mid_s_.reset();
+        SetSctpTransportName("");
+      } else {
+        RTC_DCHECK(!sctp_mid_s_);
+        RTC_DCHECK(sctp_transport_name_s_.empty());
+      }
+    });
+  };
 }
 
 JsepTransportController* PeerConnection::InitializeTransportController_n(
@@ -1223,12 +1233,17 @@ PeerConnection::AddTransceiver(MediaType media_type,
   std::string sender_id = (track && !rtp_manager()->FindSenderById(track->id())
                                ? track->id()
                                : CreateRandomUuid());
+  ScopedOperationsBatcher worker_tasks(context_->worker_thread());
   auto transceiver = rtp_manager()->CreateAndAddTransceiver(
       configuration_.media_config, sdp_handler_->audio_options(),
       sdp_handler_->video_options(), configuration_.crypto_options,
       sdp_handler_->video_bitrate_allocator_factory(), media_type, track,
       init.stream_ids, parameters.encodings,
-      /*header_extensions_to_negotiate=*/{}, sender_id);
+      /*header_extensions_to_negotiate=*/{},
+      /*simulcast_rejected=*/false, /*initial_simulcast_layers=*/{},
+      worker_tasks, sender_id);
+  RTCError error = worker_tasks.Run();
+  RTC_DCHECK(error.ok());
   transceiver->internal()->set_direction(init.direction);
 
   if (update_negotiation_needed) {
@@ -1272,6 +1287,7 @@ scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
     auto audio_sender =
         AudioRtpSender::Create(env_, signaling_thread(), worker_thread(),
                                CreateRandomUuid(), legacy_stats_.get(), nullptr,
+                               /*enable_sframe_at_owner=*/nullptr,
                                rtp_manager()->voice_media_send_channel());
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), audio_sender);
@@ -1280,7 +1296,10 @@ scoped_refptr<RtpSenderInterface> PeerConnection::CreateSender(
   } else if (kind == MediaStreamTrackInterface::kVideoKind) {
     auto video_sender = VideoRtpSender::Create(
         env_, signaling_thread(), worker_thread(), CreateRandomUuid(), nullptr,
-        rtp_manager()->video_media_send_channel());
+        /*enable_sframe_at_owner=*/nullptr,
+        rtp_manager()->video_media_send_channel(),
+        /*init_send_encodings=*/{}, /*simulcast_rejected=*/false,
+        /*initial_simulcast_layers=*/{});
     new_sender = RtpSenderProxyWithInternal<RtpSenderInternal>::Create(
         signaling_thread(), video_sender);
     rtp_manager()->GetVideoTransceiver()->internal()->AddSenderPlanB(
@@ -1671,30 +1690,39 @@ RTCError PeerConnection::SetConfiguration(
 
   // Apply part of the configuration on the network thread.  In theory this
   // shouldn't fail.
-  if (!network_thread()->BlockingCall(
-          [this, needs_ice_restart, &ice_config, &stun_servers, &turn_servers,
-           &modified_config, has_local_description] {
-            RTC_DCHECK_RUN_ON(network_thread());
-            // As described in JSEP, calling setConfiguration with new ICE
-            // servers or candidate policy must set a "needs-ice-restart" bit so
-            // that the next offer triggers an ICE restart which will pick up
-            // the changes.
-            if (needs_ice_restart)
-              transport_controller_->SetNeedsIceRestartFlag();
+  std::vector<IceParameters> pooled_credentials;
+  // TODO: webrtc:42222117 - For carrying `new_states` from the transport
+  // controller on the network thread to the transport controller on the
+  // signaling thread, we should instead use a
+  // ScopedOperationsBatcher::BatchTaskWithFinalizer.
+  flat_map<std::string, JsepTransportController::TransportState> new_states;
+  if (!network_thread()->BlockingCall([&] {
+        RTC_DCHECK_RUN_ON(network_thread());
+        // As described in JSEP, calling setConfiguration with new ICE
+        // servers or candidate policy must set a "needs-ice-restart" bit so
+        // that the next offer triggers an ICE restart which will pick up
+        // the changes.
+        if (needs_ice_restart)
+          transport_controller_->SetNeedsIceRestartFlag();
 
-            transport_controller_->SetIceConfig(ice_config);
-            return ReconfigurePortAllocator_n(
-                stun_servers, turn_servers, modified_config.type,
-                modified_config.ice_candidate_pool_size,
-                modified_config.GetTurnPortPrunePolicy(),
-                modified_config.turn_customizer,
-                modified_config.stun_candidate_keepalive_interval,
-                has_local_description);
-          })) {
+        transport_controller_->SetIceConfig(ice_config);
+        bool result = ReconfigurePortAllocator_n(
+            stun_servers, turn_servers, modified_config.type,
+            modified_config.ice_candidate_pool_size,
+            modified_config.GetTurnPortPrunePolicy(),
+            modified_config.turn_customizer,
+            modified_config.stun_candidate_keepalive_interval,
+            has_local_description);
+        pooled_credentials = port_allocator_->GetPooledIceCredentials();
+        new_states = transport_controller_n()->GetTransportStates_n();
+        return result;
+      })) {
     return LOG_ERROR(RTCError(RTCErrorType::INTERNAL_ERROR)
                      << "Failed to apply configuration to PortAllocator.");
   }
 
+  transport_controller_s()->SetTransportStates(std::move(new_states));
+  sdp_handler_->UpdateCachedIceCredentials(std::move(pooled_credentials));
   configuration_ = modified_config;
   return RTCError::OK();
 }
@@ -1928,10 +1956,14 @@ void PeerConnection::Close() {
 
   NoteUsageEvent(UsageEvent::CLOSE_CALLED);
 
+  ScopedOperationsBatcher worker_tasks(worker_thread());
+
   if (ConfiguredForMedia()) {
-    for (const auto& transceiver : rtp_manager()->transceivers()->List()) {
-      if (!transceiver->stopped())
-        transceiver->StopInternal();
+    for (RtpTransceiver* transceiver :
+         rtp_manager()->transceivers()->ListInternal()) {
+      if (!transceiver->stopped()) {
+        worker_tasks.Add(transceiver->GetStopTransceiverProcedure());
+      }
     }
   }
 
@@ -1942,10 +1974,11 @@ void PeerConnection::Close() {
   // worker thread (see `PushNewMediaChannelAndDeleteChannel`) and then
   // eventually freed on the signaling thread.
   // It would be good to combine those steps with the teardown steps here.
-  std::vector<absl::AnyInvocable<void() &&>> network_tasks;
-  std::vector<absl::AnyInvocable<void() &&>> worker_tasks;
-  sdp_handler_->GetMediaChannelTeardownTasks(network_tasks, worker_tasks);
-  CloseOnNetworkThread(network_tasks);
+  {
+    ScopedOperationsBatcher network_tasks(network_thread());
+    sdp_handler_->GetMediaChannelTeardownTasks(network_tasks, worker_tasks);
+    network_tasks.AddWithFinalizer(MakeCloseOnNetworkThreadTask());
+  }
 
   // The event log is used in the transport controller, which must be outlived
   // by the former. CreateOffer by the peer connection is implemented
@@ -1957,16 +1990,14 @@ void PeerConnection::Close() {
     rtp_manager_->Close();
   }
 
-  worker_thread()->BlockingCall([&] {
+  worker_tasks.Add([this]() {
     RTC_DCHECK_RUN_ON(worker_thread());
-    for (auto& task : worker_tasks) {
-      std::move(task)();
-      task = nullptr;
-    }
     worker_thread_safety_->SetNotAlive();
     call_.reset();
     StopRtcEventLog_w();
   });
+
+  worker_tasks.Run();
   ReportUsagePattern();
   ReportCloseUsageMetrics();
 
@@ -2415,12 +2446,6 @@ void PeerConnection::StopRtcEventLog_w() {
   env_.event_log().StopLogging();
 }
 
-std::optional<SSLRole> PeerConnection::GetSctpSslRole_n() {
-  RTC_DCHECK_RUN_ON(network_thread());
-  return sctp_mid_n_ ? transport_controller_->GetDtlsRole(*sctp_mid_n_)
-                     : std::nullopt;
-}
-
 bool PeerConnection::GetSslRole(const std::string& content_name,
                                 SSLRole* role) {
   RTC_DCHECK_RUN_ON(signaling_thread());
@@ -2833,6 +2858,7 @@ void PeerConnection::AddRemoteCandidate(absl::string_view mid,
   new_candidate.set_network_type(ADAPTER_TYPE_UNKNOWN);
   new_candidate.set_relay_protocol("");
   new_candidate.set_underlying_type_for_vpn(ADAPTER_TYPE_UNKNOWN);
+  new_candidate.set_network_slice(NetworkSlice::NO_SLICE);
 
   network_thread()->PostTask(SafeTask(
       network_thread_safety_,
@@ -3081,7 +3107,7 @@ bool PeerConnection::OnTransportChanged(
          rtp_manager()->transceivers()->UnsafeList()) {
       auto internal = transceiver->internal();
       if (internal->HasChannel() && internal->mid() == mid) {
-        ret = internal->SetChannelRtpTransport(rtp_transport);
+        ret = internal->SetRtpTransport(rtp_transport);
       }
     }
   }

@@ -40,7 +40,7 @@ bool InlineTranslator::TranslateRecording(char* aData, size_t aLen) {
     return false;
   }
 
-  uint8_t eventType = RecordedEvent::EventType::INVALID;
+  uint8_t eventType;
   ReadElement(reader, eventType);
   while (reader.good()) {
     bool success = RecordedEvent::DoWithEvent(

@@ -818,7 +818,7 @@ export class _TopSiteList extends React.PureComponent {
     // Make a copy of the sites to truncate or extend to desired length
     let topSites = this.props.TopSites.rows.slice();
     topSites.length =
-      this.props.TopSitesRows *
+      (this.props.TopSitesRows ?? 0) *
       (this.props.topSitesMaxSitesPerRow ?? TOP_SITES_MAX_SITES_PER_ROW);
     // if topSites do not fill an entire row add 'Add shortcut' button to array of topSites
     // (there should only be one of these)

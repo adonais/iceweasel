@@ -19,6 +19,7 @@ import io.mockk.spyk
 import io.mockk.verify
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
+import mozilla.components.feature.qr.QrScanActivity
 import mozilla.components.support.test.robolectric.testContext
 import org.junit.Before
 import org.junit.Test
@@ -130,30 +131,76 @@ class LensFeatureTest {
         testDispatcher.scheduler.advanceUntilIdle()
 
         coVerify { uploader.uploadFromUrl("https://example.com/image.jpg") }
+        verify(exactly = 0) { uploader.buildUploadByUrl(any()) }
         verify(exactly = 0) { lensLauncher.launch(any()) }
         verify { appStore.dispatch(LensAction.LensDismissed) }
     }
 
     @Test
-    fun `GIVEN uploadFromImageUrl WHEN upload returns null THEN LensDismissed is dispatched`() = runTest(testDispatcher) {
+    fun `GIVEN uploadFromImageUrl WHEN download returns null THEN it falls back to the uploadbyurl tab`() = runTest(testDispatcher) {
+        val fallbackUrl = "https://lens.google.com/uploadbyurl?url=fallback"
         coEvery { uploader.uploadFromUrl(any()) } returns null
+        every { uploader.buildUploadByUrl(any()) } returns fallbackUrl
         testDispatcher.scheduler.advanceUntilIdle()
 
         feature.uploadFromImageUrl("https://example.com/image.jpg")
         testDispatcher.scheduler.advanceUntilIdle()
 
-        coVerify { uploader.uploadFromUrl("https://example.com/image.jpg") }
+        verify { uploader.buildUploadByUrl("https://example.com/image.jpg") }
+        verify {
+            testContext.components.useCases.tabsUseCases.addTab(
+                url = fallbackUrl,
+                selectTab = true,
+                startLoading = true,
+                private = false,
+            )
+        }
+        verify { appStore.dispatch(LensAction.LensResultAvailable(fallbackUrl)) }
         verify { appStore.dispatch(LensAction.LensDismissed) }
     }
 
     @Test
-    fun `GIVEN uploadFromImageUrl WHEN upload throws IOException THEN LensDismissed is dispatched`() = runTest(testDispatcher) {
+    fun `GIVEN uploadFromImageUrl WHEN download throws IOException THEN it falls back to the uploadbyurl tab`() = runTest(testDispatcher) {
+        val fallbackUrl = "https://lens.google.com/uploadbyurl?url=fallback"
         coEvery { uploader.uploadFromUrl(any()) } throws java.io.IOException("boom")
+        every { uploader.buildUploadByUrl(any()) } returns fallbackUrl
         testDispatcher.scheduler.advanceUntilIdle()
 
         feature.uploadFromImageUrl("https://example.com/image.jpg")
         testDispatcher.scheduler.advanceUntilIdle()
 
+        verify { uploader.buildUploadByUrl("https://example.com/image.jpg") }
+        verify {
+            testContext.components.useCases.tabsUseCases.addTab(
+                url = fallbackUrl,
+                selectTab = true,
+                startLoading = true,
+                private = false,
+            )
+        }
+        verify { appStore.dispatch(LensAction.LensResultAvailable(fallbackUrl)) }
+        verify { appStore.dispatch(LensAction.LensDismissed) }
+    }
+
+    @Test
+    fun `GIVEN private browsing mode WHEN download returns null THEN it does not fall back to uploadbyurl and dispatches LensDismissed`() = runTest(testDispatcher) {
+        appStore.dispatch(AppAction.BrowsingModeManagerModeChanged(BrowsingMode.Private))
+        testDispatcher.scheduler.advanceUntilIdle()
+        coEvery { uploader.uploadFromUrl(any()) } returns null
+
+        feature.uploadFromImageUrl("https://example.com/image.jpg")
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        verify(exactly = 0) { uploader.buildUploadByUrl(any()) }
+        verify(exactly = 0) {
+            testContext.components.useCases.tabsUseCases.addTab(
+                url = any(),
+                selectTab = any(),
+                startLoading = any(),
+                private = any(),
+            )
+        }
+        verify(exactly = 0) { appStore.dispatch(any<LensAction.LensResultAvailable>()) }
         verify { appStore.dispatch(LensAction.LensDismissed) }
     }
 
@@ -233,6 +280,61 @@ class LensFeatureTest {
 
         verify { appStore.dispatch(LensAction.LensDismissed) }
         verify(exactly = 0) { lensLauncher.launch(any()) }
+    }
+
+    @Test
+    fun `GIVEN a QR-bearing intent WHEN handleCameraActivityResult is called THEN LensDismissed dispatches and the QR feature handles it`() = runTest(testDispatcher) {
+        val qrFeature: QrScanFenixFeature = mockk(relaxed = true)
+        val qrIntent = mockk<Intent> {
+            every { hasExtra(QrScanActivity.EXTRA_SCAN_RESULT_DATA) } returns true
+        }
+
+        feature.handleCameraActivityResult(Activity.RESULT_OK, qrIntent, qrFeature)
+
+        verify { appStore.dispatch(LensAction.LensDismissed) }
+        verify { qrFeature.handleToolbarQrScanResults(Activity.RESULT_OK, qrIntent) }
+        coVerify(exactly = 0) { uploader.upload(any()) }
+    }
+
+    @Test
+    fun `GIVEN an image intent WHEN handleCameraActivityResult is called THEN it delegates to handleImageResult`() = runTest(testDispatcher) {
+        val qrFeature: QrScanFenixFeature = mockk(relaxed = true)
+        coEvery { uploader.upload(any()) } returns "https://lens.google.com/results"
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        val imageIntent = mockk<Intent> {
+            every { hasExtra(QrScanActivity.EXTRA_SCAN_RESULT_DATA) } returns false
+            every { data } returns Uri.parse("content://test/image.jpg")
+        }
+
+        feature.handleCameraActivityResult(Activity.RESULT_OK, imageIntent, qrFeature)
+        testDispatcher.scheduler.advanceUntilIdle()
+
+        coVerify { uploader.upload(Uri.parse("content://test/image.jpg")) }
+        verify { appStore.dispatch(LensAction.LensResultAvailable("https://lens.google.com/results")) }
+        verify(exactly = 0) { qrFeature.handleToolbarQrScanResults(any(), any()) }
+    }
+
+    @Test
+    fun `GIVEN a QR-bearing intent and a null QR feature WHEN handleCameraActivityResult is called THEN LensDismissed still dispatches`() = runTest(testDispatcher) {
+        val qrIntent = mockk<Intent> {
+            every { hasExtra(QrScanActivity.EXTRA_SCAN_RESULT_DATA) } returns true
+        }
+
+        feature.handleCameraActivityResult(Activity.RESULT_OK, qrIntent, qrScanFeature = null)
+
+        verify { appStore.dispatch(LensAction.LensDismissed) }
+        coVerify(exactly = 0) { uploader.upload(any()) }
+    }
+
+    @Test
+    fun `GIVEN null intent data WHEN handleCameraActivityResult is called THEN it delegates to handleImageResult and dispatches LensDismissed`() = runTest(testDispatcher) {
+        val qrFeature: QrScanFenixFeature = mockk(relaxed = true)
+
+        feature.handleCameraActivityResult(Activity.RESULT_CANCELED, null, qrFeature)
+
+        verify { appStore.dispatch(LensAction.LensDismissed) }
+        verify(exactly = 0) { qrFeature.handleToolbarQrScanResults(any(), any()) }
     }
 
     @Test

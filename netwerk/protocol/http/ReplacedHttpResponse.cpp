@@ -60,9 +60,9 @@ ReplacedHttpResponse::SetResponseHeader(const nsACString& header,
 
 NS_IMETHODIMP
 ReplacedHttpResponse::VisitResponseHeaders(nsIHttpHeaderVisitor* visitor) {
-  mInVisitHeaders = true;
+  ++mInVisitHeaders;
   nsresult rv = mResponseHeaders.VisitHeaders(visitor);
-  mInVisitHeaders = false;
+  --mInVisitHeaders;
   return rv;
 }
 }  // namespace mozilla::net

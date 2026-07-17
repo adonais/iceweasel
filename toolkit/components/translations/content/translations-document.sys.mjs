@@ -5238,6 +5238,10 @@ class TranslationScheduler {
     translationId,
     priority
   ) {
+    if (this.#engineStatus === "error") {
+      return Promise.resolve(null);
+    }
+
     const { promise, resolve, reject } = Promise.withResolvers();
     this.#unscheduledRequestPriorities.set(translationId, priority);
 
@@ -5432,6 +5436,10 @@ class TranslationScheduler {
   #shouldScheduleMoreTranslationRequests() {
     if (!this.#isPageShown) {
       // We should not spend CPU time if the page is hidden.
+      return false;
+    }
+
+    if (this.#engineStatus === "error") {
       return false;
     }
 

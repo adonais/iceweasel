@@ -43,7 +43,7 @@ class SpeechTrackListener;
 
 LogModule* GetSpeechRecognitionLog();
 #define SR_LOG(...) \
-  MOZ_LOG(GetSpeechRecognitionLog(), mozilla::LogLevel::Debug, (__VA_ARGS__))
+  MOZ_LOG_FMT(GetSpeechRecognitionLog(), mozilla::LogLevel::Debug, __VA_ARGS__)
 
 class SpeechRecognition final : public DOMEventTargetHelper,
                                 public nsIObserver,

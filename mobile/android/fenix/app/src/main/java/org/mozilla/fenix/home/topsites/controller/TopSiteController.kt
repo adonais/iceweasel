@@ -106,6 +106,11 @@ interface TopSiteController {
      * @see [TopSiteInteractor.onShortcutsLibraryViewed]
      */
     fun handleShortcutsLibraryViewed()
+
+    /**
+     * @see [TopSiteInteractor.onSaveShortcut]
+     */
+    fun handleSaveShortcut(title: String, url: String)
 }
 
 /**
@@ -403,6 +408,15 @@ class DefaultTopSiteController(
 
     override fun handleShortcutsLibraryViewed() {
         ShortcutsLibrary.viewed.record(NoExtras())
+    }
+
+    override fun handleSaveShortcut(title: String, url: String) {
+        viewLifecycleScope.launch {
+            topSitesUseCases.addPinnedSites(
+                title = title,
+                url = url,
+            )
+        }
     }
 
     /**

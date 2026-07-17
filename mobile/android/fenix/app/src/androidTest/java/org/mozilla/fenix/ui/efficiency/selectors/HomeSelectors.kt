@@ -88,6 +88,13 @@ object HomeSelectors {
         groups = listOf("jumpBackIn"),
     )
 
+    val RECENT_BOOKMARKS_SECTION = Selector(
+        strategy = SelectorStrategy.UIAUTOMATOR_WITH_TEXT,
+        value = getStringResource(R.string.home_bookmarks_title),
+        description = "Bookmarks section header",
+        groups = listOf("recentBookmarksSection"),
+    )
+
     val all = listOf(
         HOMEPAGE_VIEW,
         MAIN_MENU_BUTTON,
@@ -98,5 +105,6 @@ object HomeSelectors {
         TAB_COUNTER_ZERO,
         JUMP_BACK_IN_SECTION,
         JUMP_BACK_IN_SHOW_ALL,
+        RECENT_BOOKMARKS_SECTION,
     )
 }

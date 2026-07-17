@@ -13,7 +13,7 @@ import androidx.navigation.fragment.navArgs
 import org.mozilla.fenix.R
 import org.mozilla.fenix.databinding.FragmentTrackingProtectionBlockingBinding
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.utils.Settings
 
@@ -32,7 +32,7 @@ class TrackingProtectionBlockingFragment :
 
     private val args: TrackingProtectionBlockingFragmentArgs by navArgs()
 
-    internal var settingsProvider: () -> Settings = { requireContext().settings() }
+    internal var settingsProvider: () -> Settings = { requireComponents.settings }
     private val settings: Settings by lazy { settingsProvider() }
 
     @VisibleForTesting

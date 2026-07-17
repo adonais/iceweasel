@@ -17,6 +17,8 @@ class ErrorResult;
 
 namespace dom {
 
+class CrossShadowBoundaryRange;
+
 class StaticRange : public AbstractRange {
  public:
   enum class MutationObserved : bool { No, Yes };
@@ -69,6 +71,13 @@ class StaticRange : public AbstractRange {
    * @see https://dom.spec.whatwg.org/#staticrange-valid
    */
   bool IsValid() const;
+
+  // CrossShadowBoundaryRange is the only StaticRange constructed with
+  // MutationObserved::Yes, so this distinguishes it without a dedicated tag.
+  bool IsCrossShadowBoundaryRange() const {
+    return mIsMutationObserved == MutationObserved::Yes;
+  }
+  inline CrossShadowBoundaryRange* AsCrossShadowBoundaryRange();
 
  private:
   // Whether the start and end points are in the same tree.

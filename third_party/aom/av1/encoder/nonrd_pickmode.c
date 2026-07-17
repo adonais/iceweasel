@@ -331,7 +331,7 @@ static int search_new_mv(AV1_COMP *cpi, MACROBLOCK *x,
     MV ref_mv = av1_get_ref_mv(x, 0).as_mv;
     tmp_sad = av1_int_pro_motion_estimation(
         cpi, x, bsize, mi_row, mi_col, &ref_mv, &y_sad_zero, me_search_size_col,
-        me_search_size_row, 0);
+        me_search_size_row, 0, 0);
 
     if (tmp_sad > x->pred_mv_sad[LAST_FRAME]) return -1;
 

@@ -72,7 +72,6 @@ class nsUDPSocket final : public nsASocketHandler, public nsIUDPSocket {
   Mutex mLock{"nsUDPSocket.mLock"};
   PRFileDesc* mFD{nullptr};
   NetAddr mAddr;
-  OriginAttributes mOriginAttributes;
   nsCOMPtr<nsIUDPSocketListener> mListener MOZ_GUARDED_BY(mLock);
   nsCOMPtr<nsIUDPSocketSyncListener> mSyncListener;
   nsCOMPtr<nsIEventTarget> mListenerTarget MOZ_GUARDED_BY(mLock);

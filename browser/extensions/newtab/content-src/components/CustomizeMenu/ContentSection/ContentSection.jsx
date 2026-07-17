@@ -61,13 +61,13 @@ export class ContentSection extends React.PureComponent {
             this.props.weatherDisplay === "detailed"
           ) {
             widgetSize =
-              widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
+              widgetsMayBeMaximized && !widgetsMaximized ? "medium" : "large";
           } else {
-            widgetSize = "mini";
+            widgetSize = "small";
           }
         } else {
           widgetSize =
-            widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
+            widgetsMayBeMaximized && !widgetsMaximized ? "medium" : "large";
         }
 
         const data = {
@@ -222,7 +222,7 @@ export class ContentSection extends React.PureComponent {
                     pressed={
                       (wallpapersUserEnabled && !!activeWallpaper) || null
                     }
-                    onToggle={this.onPreferenceSelect}
+                    ontoggle={this.onPreferenceSelect}
                     data-preference="newtabWallpapers.user.enabled"
                     data-event-source="WALLPAPERS"
                     data-l10n-id="newtab-wallpaper-toggle-title"
@@ -249,7 +249,7 @@ export class ContentSection extends React.PureComponent {
                     <moz-toggle
                       id="weather-toggle"
                       pressed={weatherEnabled || null}
-                      onToggle={this.onPreferenceSelect}
+                      ontoggle={this.onPreferenceSelect}
                       data-preference="showWeather"
                       data-event-source="WEATHER"
                       data-l10n-id="newtab-custom-widget-weather-toggle"
@@ -263,7 +263,7 @@ export class ContentSection extends React.PureComponent {
                     <moz-toggle
                       id="lists-toggle"
                       pressed={listsEnabled || null}
-                      onToggle={this.onPreferenceSelect}
+                      ontoggle={this.onPreferenceSelect}
                       data-preference="widgets.lists.enabled"
                       data-event-source="WIDGET_LISTS"
                       data-l10n-id="newtab-custom-widget-lists-toggle"
@@ -277,7 +277,7 @@ export class ContentSection extends React.PureComponent {
                     <moz-toggle
                       id="timer-toggle"
                       pressed={timerEnabled || null}
-                      onToggle={this.onPreferenceSelect}
+                      ontoggle={this.onPreferenceSelect}
                       data-preference="widgets.focusTimer.enabled"
                       data-event-source="WIDGET_TIMER"
                       data-l10n-id="newtab-custom-widget-timer-toggle"
@@ -288,12 +288,10 @@ export class ContentSection extends React.PureComponent {
                 {/* Clocks */}
                 {mayHaveClocksWidget && (
                   <div id="clocks-widget-section" className="section">
-                    {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
                     <moz-toggle
                       id="clocks-toggle"
                       pressed={!!clocksEnabled}
                       ontoggle={this.onPreferenceSelect}
-                      onToggle={this.onPreferenceSelect}
                       data-preference="widgets.clocks.enabled"
                       data-event-source="WIDGET_CLOCKS"
                       data-l10n-id="newtab-custom-widget-clock-toggle"
@@ -312,7 +310,7 @@ export class ContentSection extends React.PureComponent {
                   <moz-toggle
                     id="weather-toggle"
                     pressed={weatherEnabled || null}
-                    onToggle={this.onPreferenceSelect}
+                    ontoggle={this.onPreferenceSelect}
                     data-preference={
                       novaEnabled ? "widgets.weather.enabled" : "showWeather"
                     }
@@ -329,7 +327,7 @@ export class ContentSection extends React.PureComponent {
               <moz-toggle
                 id="shortcuts-toggle"
                 pressed={topSitesEnabled || null}
-                onToggle={this.onPreferenceSelect}
+                ontoggle={this.onPreferenceSelect}
                 data-preference="feeds.topsites"
                 data-event-source="TOP_SITES"
                 data-l10n-id={
@@ -395,7 +393,7 @@ export class ContentSection extends React.PureComponent {
                   <moz-toggle
                     id="widgets-system-toggle"
                     pressed={widgetsEnabled || null}
-                    onToggle={this.onPreferenceSelect}
+                    ontoggle={this.onPreferenceSelect}
                     data-preference="widgets.enabled"
                     data-event-source="WIDGETS_SYSTEM"
                     data-l10n-id="newtab-custom-widget-section-toggle"
@@ -442,7 +440,7 @@ export class ContentSection extends React.PureComponent {
                 <moz-toggle
                   id="pocket-toggle"
                   pressed={pocketEnabled || null}
-                  onToggle={this.onPreferenceSelect}
+                  ontoggle={this.onPreferenceSelect}
                   data-preference="feeds.section.topstories"
                   data-event-source="TOP_STORIES"
                   data-l10n-id={pocketToggleL10nId}

@@ -18,7 +18,7 @@ class Module final : public nsIXPCScriptable {
   Module();
 
  private:
-  ~Module();
+  ~Module() = default;
 };
 
 }  // namespace ctypes

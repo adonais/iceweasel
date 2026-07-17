@@ -217,6 +217,10 @@ DrawTargetWebgl::~DrawTargetWebgl() {
 SharedContextWebgl::SharedContextWebgl() = default;
 
 SharedContextWebgl::~SharedContextWebgl() {
+  // Detach weak references first so that no cleanup below can promote a
+  // WeakPtr to this object while it is being destroyed, which would AddRef
+  // an object with a zero refcount and recursively delete it on Release.
+  DetachWeakPtr();
   // Detect context loss before deletion.
   if (mWebgl) {
     ExitTlsScope();
@@ -460,17 +464,22 @@ bool DrawTargetWebgl::Init(const IntSize& size, const SurfaceFormat format,
     return false;
   }
 
-  auto handle = mozilla::ipc::shared_memory::Create(shmemSize);
+  // The handle must be frozen to prevent resizing or writing to the buffer
+  // backing our local Skia DrawTarget.
+  auto handle = mozilla::ipc::shared_memory::CreateFreezable(shmemSize);
   if (NS_WARN_IF(!handle)) {
     return false;
   }
-  auto mapping = handle.Map();
+  auto mapping = std::move(handle).Map();
   if (NS_WARN_IF(!mapping)) {
     return false;
   }
 
-  mShmemHandle = std::move(handle).ToReadOnly();
-  mShmem = std::move(mapping);
+  std::tie(mShmemHandle, mShmem) =
+      std::move(mapping).FreezeWithMutableMapping();
+  if (NS_WARN_IF(!mShmemHandle) || NS_WARN_IF(!mShmem)) {
+    return false;
+  }
 
   mSkia = new DrawTargetSkia;
   auto stride = layers::ImageDataSerializer::ComputeRGBStride(
@@ -1586,7 +1595,12 @@ void SharedContextWebgl::ResetPathVertexBuffer() {
   mPathVertexOffset = sizeof(kRectVertexData);
 
   size_t newCapacity = mPathVertexBuffer->ByteLength();
-  AddUntrackedTextureMemory(newCapacity);
+  if (newCapacity > 0) {
+    AddUntrackedTextureMemory(newCapacity);
+  } else {
+    mPathVertexCapacity = 0;
+    mPathVertexOffset = 0;
+  }
 
   if (mWGROutputBuffer &&
       (!mPathVertexCapacity || newCapacity != oldCapacity)) {
@@ -4384,8 +4398,7 @@ void DrawTargetWebgl::FillRect(const Rect& aRect, const Pattern& aPattern,
   } else {
     // If the pattern is unsupported, then transform the rect to a path so it
     // can be cached.
-    SkPath skiaPath;
-    skiaPath.addRect(RectToSkRect(aRect));
+    SkPath skiaPath = SkPath::Rect(RectToSkRect(aRect));
     RefPtr<PathSkia> path = new PathSkia(skiaPath, FillRule::FILL_WINDING);
     DrawPath(path, aPattern, aOptions);
   }
@@ -5605,8 +5618,8 @@ void DrawTargetWebgl::DrawSurfaceWithShadow(SourceSurface* aSurface,
   if (ShouldAccelPath(options, nullptr)) {
     SurfacePattern pattern(aSurface, ExtendMode::CLAMP,
                            Matrix::Translation(aDest));
-    SkPath skiaPath;
-    skiaPath.addRect(RectToSkRect(Rect(aSurface->GetRect()) + aDest));
+    SkPath skiaPath =
+        SkPath::Rect(RectToSkRect(Rect(aSurface->GetRect()) + aDest));
     RefPtr<PathSkia> path = new PathSkia(skiaPath, FillRule::FILL_WINDING);
     AutoRestoreTransform restore(this);
     SetTransform(Matrix());
@@ -5640,8 +5653,7 @@ void DrawTargetWebgl::StrokeRect(const Rect& aRect, const Pattern& aPattern,
   } else {
     // If the stroke options are unsupported, then transform the rect to a path
     // so it can be cached.
-    SkPath skiaPath;
-    skiaPath.addRect(RectToSkRect(aRect));
+    SkPath skiaPath = SkPath::Rect(RectToSkRect(aRect));
     RefPtr<PathSkia> path = new PathSkia(skiaPath, FillRule::FILL_WINDING);
     DrawPath(path, aPattern, aOptions, &aStrokeOptions, true);
   }
@@ -5732,9 +5744,8 @@ void DrawTargetWebgl::StrokeLine(const Point& aStart, const Point& aEnd,
                               aOptions)) {
     // If the stroke options are unsupported, then transform the line to a path
     // so it can be cached.
-    SkPath skiaPath;
-    skiaPath.moveTo(PointToSkPoint(aStart));
-    skiaPath.lineTo(PointToSkPoint(aEnd));
+    SkPath skiaPath =
+        SkPath::Line(PointToSkPoint(aStart), PointToSkPoint(aEnd));
     RefPtr<PathSkia> path = new PathSkia(skiaPath, FillRule::FILL_WINDING);
     DrawPath(path, aPattern, aOptions, &aStrokeOptions, true);
   }
@@ -6360,13 +6371,19 @@ bool DrawTargetWebgl::ReadIntoSkia() {
     } else {
       // If there's no existing snapshot and we can successfully map the Skia
       // target for reading, then try to read into that.
+      bool readInto = false;
       if (!mSnapshot && mSkia->LockBits(&data, &size, &stride, &format)) {
-        (void)ReadInto(data, stride);
+        if (size == GetSize()) {
+          readInto = ReadInto(data, stride);
+        }
         mSkia->ReleaseBits(data);
-      } else if (RefPtr<SourceSurface> snapshot = Snapshot()) {
-        // Otherwise, fall back to getting a snapshot from WebGL if available
-        // and then copying that to Skia.
-        mSkia->CopySurface(snapshot, GetRect(), IntPoint(0, 0));
+      }
+      if (!readInto) {
+        if (RefPtr<SourceSurface> snapshot = Snapshot()) {
+          // Otherwise, fall back to getting a snapshot from WebGL if available
+          // and then copying that to Skia.
+          mSkia->CopySurface(snapshot, GetRect(), IntPoint(0, 0));
+        }
       }
       didReadback = true;
     }
@@ -6504,7 +6521,10 @@ bool DrawTargetWebgl::UsageProfile::RequiresRefresh() const {
 }
 
 void SharedContextWebgl::CachePrefs() {
-  uint32_t capacity = StaticPrefs::gfx_canvas_accelerated_gpu_path_size() << 20;
+  uint32_t capacity =
+      std::min(StaticPrefs::gfx_canvas_accelerated_gpu_path_size(),
+               uint32_t(INT32_MAX) >> 20)
+      << 20;
   if (capacity != mPathVertexCapacity) {
     mPathVertexCapacity = capacity;
     if (mPathCache) {

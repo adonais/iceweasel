@@ -25,7 +25,6 @@ panel-list {
   max-width: var(--panel-max-width);
   white-space: normal;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media (not (prefers-contrast)) and (not -moz-pref("browser.nova.enabled")) {
     --panel-list-background-color: light-dark(color-mix(in srgb, var(--color-violet-30) 5%, white), var(--color-violet-110));
     --panel-list-border-color: light-dark(var(--color-purple-20), var(--color-gray-70));
@@ -34,7 +33,6 @@ panel-list {
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
   panel-list {

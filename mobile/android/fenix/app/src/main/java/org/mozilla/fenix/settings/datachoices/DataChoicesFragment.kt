@@ -14,7 +14,6 @@ import androidx.navigation.findNavController
 import androidx.navigation.fragment.navArgs
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.theme.FirefoxTheme
 
@@ -37,7 +36,7 @@ class DataChoicesFragment : Fragment(), SystemInsetsPaddedFragment {
                         initialState = DataChoicesState(itemToScrollTo = args.preferenceToScrollTo),
                         middleware = listOf(
                             DataChoicesMiddleware(
-                                settings = context.settings(),
+                                settings = context.components.settings,
                                 learnMoreClicked = ::learnMoreClicked,
                                 nimbusSdk = context.components.nimbus.sdk,
                                 engine = context.components.core.engine,

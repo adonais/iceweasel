@@ -60,6 +60,9 @@ run-if = [
   "os == 'android'", # FIXME: enable on more desktop platforms (see bug 1608506 comment 4)
   "os == 'mac'",
 ]
+skip-if = [
+  "macos_vm", # Bug 2037084: APZ touch-zoom needs a real display
+]
 
 ["test_group_double_tap_zoom.html"]
 run-if = [
@@ -225,6 +228,8 @@ skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && debug", # Bug 1915078
 ]
 
+["test_group_touchevents-7.html"]
+
 ["test_group_touchevents.html"]
 
 ["test_group_wheelevents.html"]
@@ -238,6 +243,7 @@ skip-if = [
 ["test_group_zoom-2.html"]
 skip-if = [
   "os == 'win'", # see bug 1495580 for Windows
+  "macos_vm", # Bug 2037084: APZ zoom needs a real display
 ]
 
 ["test_group_zoom.html"]

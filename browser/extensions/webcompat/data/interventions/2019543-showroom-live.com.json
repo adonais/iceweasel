@@ -1,7 +1,7 @@
 {
   "label": "showroom-live.com",
   "bugs": {
-    "2019231": {
+    "2019543": {
       "issue": "page-fails-to-load",
       "matches": ["*://www.showroom-live.com/*"]
     }

@@ -17,7 +17,6 @@
 #include "mozilla/PendingStyles.h"       // for PendingStyle, PendingStyleCache
 #include "mozilla/RangeBoundary.h"       // for RawRangeBoundary, RangeBoundary
 #include "mozilla/SelectionState.h"      // for RangeUpdater, etc.
-#include "mozilla/StyleSheet.h"          // for StyleSheet
 #include "mozilla/TransactionManager.h"  // for TransactionManager
 #include "mozilla/WeakPtr.h"             // for WeakPtr
 #include "mozilla/dom/DataTransfer.h"    // for dom::DataTransfer
@@ -72,6 +71,7 @@ class PresShell;
 class TextComposition;
 class TextInputListener;
 class TextServicesDocument;
+struct LimitersAndCaretData;
 namespace dom {
 class AbstractRange;
 class DataTransfer;
@@ -241,6 +241,9 @@ class EditorBase : public nsIEditor,
    * plaintext editors.
    */
   Element* GetExposedRoot() const;
+
+  /** Get EditContext used for this editor. */
+  virtual dom::EditContext* GetEditContext() const { return nullptr; }
 
   /**
    * Set or unset TextInputListener.  If setting non-nullptr when the editor
@@ -593,7 +596,10 @@ class EditorBase : public nsIEditor,
   [[nodiscard]] virtual Element* FindSelectionRoot(const nsINode& aNode) const;
 
   /**
-   * OnFocus() is called when we get a focus event.
+   * Called before `eFocus` event is dispatched into the DOM. Any state of the
+   * DOM which can be referred by web content's script should be initialized
+   * during this call because `focus` event should be fired after the focus move
+   * finished.
    *
    * @param aOriginalEventTargetNode    The original event target node of the
    *                                    focus event.
@@ -602,7 +608,18 @@ class EditorBase : public nsIEditor,
       const nsINode& aOriginalEventTargetNode);
 
   /**
-   * OnBlur() is called when we're blurred.
+   * Called when `eFocus` event propagation ends in the web content. The focused
+   * element may be redirected by a `focus` event listener so this editor may
+   * not have focus anymore when this is called.
+   */
+  MOZ_CAN_RUN_SCRIPT virtual void PostHandleFocusEvent(
+      const nsINode& aFocusEventTargetNode);
+
+  /**
+   * Called before `eBlur` event is dispatched into the DOM. Any state of the
+   * DOM which can be referred by web content's script should be finalized
+   * during this call because `blur` event should be fired after the blur
+   * finished.
    *
    * @param aEventTarget        The event target of the blur event.
    */
@@ -1128,6 +1145,8 @@ class EditorBase : public nsIEditor,
       return *mSelection;
     }
 
+    LimitersAndCaretData SelectionLimitersAndCaretData() const;
+
     Text* GetCachedTextNode() const {
       MOZ_ASSERT(mEditorBase.IsTextEditor());
       return mTextNode;
@@ -1597,6 +1616,7 @@ class EditorBase : public nsIEditor,
                SelectionType::eNormal);
     return mEditActionData->SelectionRef();
   }
+  LimitersAndCaretData SelectionLimitersAndCaretData() const;
 
   // Return the Text if and only if we're a TextEditor instance.  It's cached
   // while we're handling an edit action, so, this stores the latest value even

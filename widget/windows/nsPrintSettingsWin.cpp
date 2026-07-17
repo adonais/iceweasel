@@ -436,7 +436,7 @@ void nsPrintSettingsWin::CopyToNative(DEVMODEW* aDevMode) {
 
 //-------------------------------------------
 nsresult nsPrintSettingsWin::_Clone(nsIPrintSettings** _retval) {
-  RefPtr<nsPrintSettingsWin> printSettings = new nsPrintSettingsWin(*this);
+  auto printSettings = MakeRefPtr<nsPrintSettingsWin>(*this);
   printSettings.forget(_retval);
   return NS_OK;
 }

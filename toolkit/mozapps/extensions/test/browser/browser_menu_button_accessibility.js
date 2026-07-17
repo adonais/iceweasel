@@ -7,7 +7,10 @@ async function testOpenMenu(btn, method) {
   let shown = BrowserTestUtils.waitForEvent(btn.documentGlobal, "shown", true);
   await method();
   await shown;
-  is(btn.getAttribute("aria-expanded"), "true", "expanded when open");
+  // moz-button is expected to have the aria properties set on the
+  // button it is wrapping and managing internally.
+  let ariaBtn = btn.localName === "moz-button" ? btn.buttonEl : btn;
+  is(ariaBtn.getAttribute("aria-expanded"), "true", "expanded when open");
 }
 
 async function testCloseMenu(btn, method) {
@@ -18,14 +21,25 @@ async function testCloseMenu(btn, method) {
   );
   await method();
   await hidden;
-  is(btn.getAttribute("aria-expanded"), "false", "not expanded when closed");
+  // moz-button is expected to have the aria properties set on the
+  // button it is wrapping and managing internally.
+  let ariaBtn = btn.localName === "moz-button" ? btn.buttonEl : btn;
+  is(
+    ariaBtn.getAttribute("aria-expanded"),
+    "false",
+    "not expanded when closed"
+  );
 }
 
 async function testButton(btn) {
   let win = btn.documentGlobal;
 
-  is(btn.getAttribute("aria-haspopup"), "menu", "it has a menu");
-  is(btn.getAttribute("aria-expanded"), "false", "not expanded");
+  // moz-button is expected to have the aria properties set on the
+  // button it is wrapping and managing internally.
+  let ariaBtn = btn.localName === "moz-button" ? btn.buttonEl : btn;
+
+  is(ariaBtn.getAttribute("aria-haspopup"), "menu", "it has a menu");
+  is(ariaBtn.getAttribute("aria-expanded"), "false", "not expanded");
 
   info("Test open/close with mouse");
   await testOpenMenu(btn, () => {

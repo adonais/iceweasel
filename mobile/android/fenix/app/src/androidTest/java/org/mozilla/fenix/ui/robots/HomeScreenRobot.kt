@@ -14,7 +14,6 @@ import androidx.compose.ui.test.assertIsNotDisplayed
 import androidx.compose.ui.test.filter
 import androidx.compose.ui.test.hasAnyChild
 import androidx.compose.ui.test.hasAnySibling
-import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasTestTag
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.ComposeTestRule
@@ -29,11 +28,9 @@ import androidx.compose.ui.test.performClick
 import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performScrollToNode
 import androidx.compose.ui.test.performTouchInput
-import androidx.compose.ui.test.waitUntilAtLeastOneExists
 import androidx.test.espresso.Espresso.onView
 import androidx.test.espresso.action.ViewActions
 import androidx.test.espresso.assertion.PositionAssertions.isPartiallyBelow
-import androidx.test.espresso.assertion.ViewAssertions.matches
 import androidx.test.espresso.matcher.RootMatchers
 import androidx.test.espresso.matcher.ViewMatchers
 import androidx.test.espresso.matcher.ViewMatchers.withId
@@ -42,7 +39,6 @@ import androidx.test.uiautomator.By
 import androidx.test.uiautomator.UiObjectNotFoundException
 import androidx.test.uiautomator.UiScrollable
 import androidx.test.uiautomator.UiSelector
-import androidx.test.uiautomator.Until
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL_BOX
 import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.TABS_COUNTER
 import org.hamcrest.CoreMatchers.allOf
@@ -78,9 +74,6 @@ import org.mozilla.fenix.home.ui.HomepageTestTag.HOMEPAGE_WORDMARK_TEXT
 import org.mozilla.fenix.home.ui.HomepageTestTag.POCKET_STORIES
 import org.mozilla.fenix.home.ui.HomepageTestTag.PRIVATE_BROWSING_HOMEPAGE_BUTTON
 import org.mozilla.fenix.tabstray.TabsTrayTestTag
-import org.mozilla.fenix.ui.util.PositionOnScreenMatcher.Position.BOTTOM
-import org.mozilla.fenix.ui.util.PositionOnScreenMatcher.Position.TOP
-import org.mozilla.fenix.ui.util.isAtPosition
 import mozilla.components.browser.menu.R as menuR
 import mozilla.components.compose.base.R as composeBaseR
 
@@ -329,32 +322,27 @@ class HomeScreenRobot(private val composeTestRule: ComposeTestRule) {
         }
     }
 
-    // Temporarily not in use because Sponsored Pocket stories are only advertised for a limited time.
-    // See also known issue https://bugzilla.mozilla.org/show_bug.cgi?id=1828629
-//    fun verifyPocketSponsoredStoriesItems(vararg positions: Int) {
-//        positions.forEach {
-//            pocketStoriesList
-//                .scrollIntoView(UiSelector().resourceId(HOMEPAGE_SPONSORED_STORY).index(it - 1))
-//
-//            assertTrue(
-//                "Pocket story item at position $it not found.",
-//                mDevice.findObject(UiSelector().index(it - 1).resourceId(HOMEPAGE_SPONSORED_STORY))
-//                    .waitForExists(waitingTimeShort),
-//            )
-//        }
-//    }
-
     fun verifyToolbarPosition(bottomPosition: Boolean) {
-        Log.i(TAG, "verifyToolbarPosition: Trying to verify toolbar is set to top: $bottomPosition")
-        onView(withId(R.id.composable_toolbar))
-            .check(
-                if (bottomPosition) {
-                    matches(isAtPosition(BOTTOM))
-                } else {
-                    matches(isAtPosition(TOP))
-                },
+        Log.i(TAG, "verifyToolbarPosition: Trying to verify toolbar is set to bottom: $bottomPosition")
+        val toolbar = mDevice.findObject(UiSelector().resourceId("$packageName:id/composable_toolbar"))
+        assertTrue(
+            "Toolbar must be present in the view hierarchy",
+            toolbar.waitForExists(waitingTime),
+        )
+        val toolbarCenterY = toolbar.visibleBounds.centerY()
+        val screenCenter = mDevice.displayHeight / 2
+        if (bottomPosition) {
+            assertTrue(
+                "Toolbar should be positioned at the bottom of the screen",
+                toolbarCenterY > screenCenter,
             )
-        Log.i(TAG, "verifyToolbarPosition: Verified toolbar position is set to top: $bottomPosition")
+        } else {
+            assertTrue(
+                "Toolbar should be positioned at the top of the screen",
+                toolbarCenterY < screenCenter,
+            )
+        }
+        Log.i(TAG, "verifyToolbarPosition: Verified toolbar position is set to bottom: $bottomPosition")
     }
 
     fun verifyNavigationToolbarIsSetToTheBottomOfTheHomeScreen() {

@@ -752,10 +752,8 @@ class ModuleEnvironmentObject : public EnvironmentObject {
                                          Handle<ModuleObject*> module);
   static ModuleEnvironmentObject* createSynthetic(JSContext* cx,
                                                   Handle<ModuleObject*> module);
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   static ModuleEnvironmentObject* createForWasmModule(
       JSContext* cx, Handle<ModuleObject*> module);
-#endif
 
   ModuleObject& module() const;
   IndirectBindingMap& importBindings() const;

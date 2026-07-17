@@ -11,6 +11,7 @@
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/ServoStyleConsts.h"
+#include "mozilla/dom/CSSImageValue.h"
 #include "mozilla/dom/CSSKeywordValue.h"
 #include "mozilla/dom/CSSNumericValue.h"
 #include "mozilla/dom/CSSStyleValueBinding.h"
@@ -70,6 +71,22 @@ void CSSStyleValue::Create(nsCOMPtr<nsISupports> aParent,
             const auto& numericValue = typedValue.AsNumeric();
 
             styleValue = CSSNumericValue::Create(aParent, numericValue);
+
+            break;
+          }
+
+          case StyleTypedValue::Tag::Transform: {
+            const auto& transformValue = typedValue.AsTransform();
+
+            styleValue = CSSTransformValue::Create(aParent, transformValue);
+
+            break;
+          }
+
+          case StyleTypedValue::Tag::Image: {
+            const auto& imageValue = typedValue.AsImage();
+
+            styleValue = CSSImageValue::Create(aParent, imageValue);
 
             break;
           }
@@ -233,9 +250,20 @@ bool CSSStyleValue::IsCSSTransformValue() const {
   return mStyleValueType == StyleValueType::TransformValue;
 }
 
+bool CSSStyleValue::IsCSSImageValue() const {
+  return mStyleValueType == StyleValueType::ImageValue;
+}
+
 void CSSStyleValue::ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                                           nsACString& aDest) const {
   switch (GetStyleValueType()) {
+    case StyleValueType::ImageValue: {
+      const CSSImageValue& imageValue = GetAsCSSImageValue();
+
+      imageValue.ToCssTextWithProperty(aPropertyId, aDest);
+      break;
+    }
+
     case StyleValueType::TransformValue: {
       const CSSTransformValue& transformValue = GetAsCSSTransformValue();
 

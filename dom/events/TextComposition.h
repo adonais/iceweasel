@@ -154,28 +154,68 @@ class TextComposition final {
   RawRangeBoundary LastIMESelectionEndRef() const;
 
   /**
-   * The offset of composition string in the text node.  If composition string
-   * hasn't been inserted in any text node yet, this returns UINT32_MAX.
+   * The offset of composition string in the `Text` node.  If composition string
+   * hasn't been inserted in any `Text` yet, this returns UINT32_MAX. If the
+   * `Text` is split by the app and the offset is larger than the node, this
+   * clamps the offset into the data length.
    */
-  uint32_t XPOffsetInTextNode() const {
+  [[nodiscard]] uint32_t ClampedStartOffsetInTextNode() const {
+    return std::min(mCompositionStartOffsetInTextNode,
+                    mContainerTextNode->TextDataLength());
+  }
+
+  /**
+   * The length of composition string in the `Text` node.  If composition string
+   * hasn't been inserted in any `Text` yet, this returns 0. If the `Text` is
+   * split by the app and the end offset is greater than the end offset of
+   * the data, this clamps the length into the data length.
+   */
+  [[nodiscard]] uint32_t ClampedLengthInTextNode() const {
+    return mCompositionLengthInTextNode == UINT32_MAX
+               ? 0
+               : ClampedEndOffsetInTextNode() - ClampedStartOffsetInTextNode();
+  }
+
+  /**
+   * The end offset of composition string in the `Text` node.  If composition
+   * string hasn't been inserted in any `Text` yet, this returns UINT32_MAX. If
+   * the `Text` is split by the app and the end offset is greater than the
+   * end offset of the data, this clamps the end offset into the data length.
+   */
+  [[nodiscard]] uint32_t ClampedEndOffsetInTextNode() const {
+    if (mCompositionStartOffsetInTextNode == UINT32_MAX ||
+        mCompositionLengthInTextNode == UINT32_MAX) {
+      return UINT32_MAX;
+    }
+    return static_cast<uint32_t>(
+        std::min<uint64_t>(static_cast<uint64_t>(mCompositionLengthInTextNode) +
+                               ClampedStartOffsetInTextNode(),
+                           mContainerTextNode->TextDataLength()));
+  }
+
+  /**
+   * The original start offset of the composition in the `Text` even if `Text`
+   * is split by the app.
+   */
+  [[nodiscard]] uint32_t StartOffsetMaybeInFollowingTextNode() const {
     return mCompositionStartOffsetInTextNode;
   }
 
   /**
-   * The length of composition string in the text node.  If composition string
-   * hasn't been inserted in any text node yet, this returns 0.
+   * The original length of the composition in the `Text` even if `Text` is
+   * split by the app.
    */
-  uint32_t XPLengthInTextNode() const {
+  [[nodiscard]] uint32_t LengthMaybeInFollowingTextNode() const {
     return mCompositionLengthInTextNode == UINT32_MAX
                ? 0
                : mCompositionLengthInTextNode;
   }
 
   /**
-   * The end offset of composition string in the text node.  If composition
-   * string hasn't been inserted in any text node yet, this returns UINT32_MAX.
+   * The original end offset of the composition in the `Text` even if `Text` is
+   * split by the app.
    */
-  uint32_t XPEndOffsetInTextNode() const {
+  [[nodiscard]] uint32_t EndOffsetMaybeInFollowingTextNode() const {
     if (mCompositionStartOffsetInTextNode == UINT32_MAX ||
         mCompositionLengthInTextNode == UINT32_MAX) {
       return UINT32_MAX;

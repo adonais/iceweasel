@@ -11,6 +11,7 @@ dictionary SocketElement {
   DOMString type = "";
   double sent = 0;
   double received = 0;
+  DOMString originAttributesSuffix = "";
 };
 
 [GenerateConversionToJS]
@@ -38,6 +39,7 @@ dictionary HttpConnectionElement {
   sequence<HttpConnInfo> active;
   sequence<HttpConnInfo> idle;
   sequence<DnsAndSockInfoDict> dnsAndSocks;
+  DOMString originAttributesSuffix = "";
 };
 
 [GenerateConversionToJS]

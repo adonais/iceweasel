@@ -113,7 +113,8 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitSWDecoder(
 
   AVCodec* codec = FindSoftwareAVCodec(mLib, mCodecID);
   if (!codec) {
-    FFMPEG_LOG("  couldn't find ffmpeg decoder for codec id %d", mCodecID);
+    FFMPEG_LOG("  couldn't find ffmpeg decoder for codec id {}",
+               static_cast<int>(mCodecID));
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("unable to find codec"));
   }
@@ -161,8 +162,8 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::MaybeAttachCryptoInfo(
   aPacket->moz_crypto_info_addref = CryptoInfoAddRef;
   aPacket->moz_crypto_info_release = CryptoInfoRelease;
 
-  FFMPEG_LOG("  encrypted packet, ndk_crypto_info=%p",
-             aPacket->moz_ndk_crypto_info);
+  FFMPEG_LOG("  encrypted packet, ndk_crypto_info={}",
+             fmt::ptr(aPacket->moz_ndk_crypto_info));
   return NS_OK;
 }
 
@@ -190,7 +191,8 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::MaybeAttachCDM() {
                        RESULT_DETAIL("missing AMediaCrypto from CDM"));
   }
 
-  FFMPEG_LOG("  attached CDM, ndk_crypto=%p", mCodecContext->moz_ndk_crypto);
+  FFMPEG_LOG("  attached CDM, ndk_crypto={}",
+             fmt::ptr(mCodecContext->moz_ndk_crypto));
   return NS_OK;
 }
 
@@ -207,12 +209,12 @@ void FFmpegDataDecoder<LIBAV_VER>::MaybeDetachCDM() {
 
 MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVCodec* aCodec,
                                                       AVDictionary** aOptions) {
-  FFMPEG_LOG("  codec %s : %s", aCodec->name, aCodec->long_name);
+  FFMPEG_LOG("  codec {} : {}", aCodec->name, aCodec->long_name);
 
   StaticMutexAutoLock mon(sMutex);
 
   if (!(mCodecContext = mLib->avcodec_alloc_context3(aCodec))) {
-    FFMPEG_LOG("  couldn't allocate ffmpeg context for codec %s", aCodec->name);
+    FFMPEG_LOG("  couldn't allocate ffmpeg context for codec {}", aCodec->name);
     return MediaResult(NS_ERROR_OUT_OF_MEMORY,
                        RESULT_DETAIL("Couldn't init ffmpeg context"));
   }
@@ -239,7 +241,7 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVCodec* aCodec,
 #endif
   MediaResult ret = AllocateExtraData();
   if (NS_FAILED(ret)) {
-    FFMPEG_LOG("  couldn't allocate ffmpeg extra data for codec %s",
+    FFMPEG_LOG("  couldn't allocate ffmpeg extra data for codec {}",
                aCodec->name);
     ReleaseCodecContext();
     return ret;
@@ -261,7 +263,7 @@ MediaResult FFmpegDataDecoder<LIBAV_VER>::InitDecoder(AVCodec* aCodec,
 
   if (mLib->avcodec_open2(mCodecContext, aCodec, aOptions) < 0) {
     ReleaseCodecContext();
-    FFMPEG_LOG("  Couldn't open avcodec for %s", aCodec->name);
+    FFMPEG_LOG("  Couldn't open avcodec for {}", aCodec->name);
     return MediaResult(NS_ERROR_DOM_MEDIA_FATAL_ERR,
                        RESULT_DETAIL("Couldn't open avcodec"));
   }
@@ -502,12 +504,12 @@ void FFmpegDataDecoder<LIBAV_VER>::ReleaseFrame() {
       continue;
     }
 
-    FFMPEGV_LOG("Using preferred software codec %s", codec->name);
+    FFMPEGV_LOG("Using preferred software codec {}", codec->name);
     return codec;
   }
 
   if (fallbackCodec) {
-    FFMPEGV_LOG("Using fallback software codec %s", fallbackCodec->name);
+    FFMPEGV_LOG("Using fallback software codec {}", fallbackCodec->name);
   }
   return fallbackCodec;
 #else
@@ -523,7 +525,7 @@ void FFmpegDataDecoder<LIBAV_VER>::ReleaseFrame() {
       return nullptr;
     }
 
-    FFMPEGV_LOG("Using preferred software codec %s", codec->name);
+    FFMPEGV_LOG("Using preferred software codec {}", codec->name);
   }
   return codec;
 #endif
@@ -566,12 +568,12 @@ void FFmpegDataDecoder<LIBAV_VER>::ReleaseFrame() {
       continue;
     }
 
-    FFMPEGV_LOG("Using preferred hardware codec %s", codec->name);
+    FFMPEGV_LOG("Using preferred hardware codec {}", codec->name);
     return codec;
   }
 
   if (fallbackCodec) {
-    FFMPEGV_LOG("Using fallback hardware codec %s", fallbackCodec->name);
+    FFMPEGV_LOG("Using fallback hardware codec {}", fallbackCodec->name);
   }
   return nullptr;
 }

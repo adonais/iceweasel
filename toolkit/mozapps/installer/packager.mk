@@ -35,7 +35,7 @@ stage-package: multilocale.txt locale-manifest.in $(MOZ_PKG_MANIFEST) $(MOZ_PKG_
 		$(if $(MOZ_PACKAGER_MINIFY_PDFJS),--minify-pdfjs) \
 		$(addprefix --jarlog ,$(wildcard $(JARLOG_FILE_AB_CD))) \
 		$(addprefix --compress ,$(JAR_COMPRESSION)) \
-		$(MOZ_PKG_MANIFEST) '$(DIST)' '$(DIST)'/$(MOZ_PKG_DIR)$(if $(MOZ_PKG_MANIFEST),,$(_BINPATH:%=/%)) \
+		$(MOZ_PKG_MANIFEST) '$(DIST)' '$(DIST)'/$(MOZ_PKG_DIR)$(if $(MOZ_PKG_MANIFEST),,$(if $(MOZ_MACBUNDLE_NAME),$(MOZ_PKG_BINPATH:%=/%))) \
 		$(if $(filter omni,$(MOZ_PACKAGER_FORMAT)),$(if $(NON_OMNIJAR_FILES),--non-resource $(NON_OMNIJAR_FILES)))
 
 prepare-package: stage-package
@@ -54,7 +54,7 @@ ifdef MOZ_PACKAGE_JSSHELL
 	# Package JavaScript Shell
 	@echo 'Packaging JavaScript Shell...'
 	$(RM) $(PKG_JSSHELL)
-	$(MAKE_JSSHELL)
+	$(call py_action,zip $(JSSHELL_NAME),-C $(DIST)/bin --strip $(abspath $(PKG_JSSHELL)) --files-from $(DEPTH)/jsshell-archive.list)
 endif # MOZ_PACKAGE_JSSHELL
 ifdef MOZ_AUTOMATION
 ifdef MOZ_ARTIFACT_BUILD_SYMBOLS
@@ -107,8 +107,8 @@ endif # MOZ_BUILD_APP == mobile/android
 endif
 ifeq (Darwin_cocoa, $(OS_ARCH)_$(MOZ_WIDGET_TOOLKIT))
 ifneq (,$(MOZ_ASAN)$(LIBFUZZER)$(MOZ_UBSAN))
-	@echo "Rewriting sanitizer runtime dylib paths for all binaries in $(DIST)/$(MOZ_PKG_DIR)/$(_BINPATH) ..."
-	$(PYTHON3) $(MOZILLA_DIR)/build/unix/rewrite_sanitizer_dylib.py '$(DIST)/$(MOZ_PKG_DIR)/$(_BINPATH)'
+	@echo "Rewriting sanitizer runtime dylib paths for all binaries in $(DIST)/$(MOZ_PKG_DIR)/$(MOZ_PKG_BINPATH) ..."
+	$(PYTHON3) $(MOZILLA_DIR)/build/unix/rewrite_sanitizer_dylib.py '$(DIST)/$(MOZ_PKG_DIR)/$(MOZ_PKG_BINPATH)'
 endif # MOZ_ASAN || LIBFUZZER || MOZ_UBSAN
 endif # Darwin_cocoa
 ifndef MOZ_ARTIFACT_BUILDS
@@ -158,11 +158,7 @@ endif
 GARBAGE += make-package
 
 make-sourcestamp-file::
-	$(NSINSTALL) -D $(DIST)/$(PKG_PATH)
-	@awk '$$2 == "MOZ_BUILDID" {print $$3}' $(DEPTH)/buildid.h > $(MOZ_SOURCESTAMP_FILE)
-ifdef MOZ_INCLUDE_SOURCE_INFO
-	@awk '$$2 == "MOZ_SOURCE_URL" {print $$3}' $(DEPTH)/source-repo.h >> $(MOZ_SOURCESTAMP_FILE)
-endif
+	$(call py_action,make_sourcestamp_file,--output $(MOZ_SOURCESTAMP_FILE) --buildid-header $(DEPTH)/buildid.h $(if $(MOZ_INCLUDE_SOURCE_INFO),--source-repo-header $(DEPTH)/source-repo.h))
 
 # The install target will install the application to prefix/lib/appname-version
 install:: prepare-package
@@ -216,13 +212,4 @@ multilocale.txt-%:
 
 locale-manifest.in: LOCALES?=$(MOZ_CHROME_MULTILOCALE)
 locale-manifest.in: $(GLOBAL_DEPS) FORCE
-	printf '\n[multilocale]\n' > $@
-	printf '$(BASE_PATH)/res/multilocale.txt\n' >> $@
-	for LOCALE in $(ALL_LOCALES) ;\
-	do \
-	  for ENTRY in $(MOZ_CHROME_LOCALE_ENTRIES) ;\
-		do \
-		  printf "$$ENTRY""$$LOCALE"'@JAREXT@\n' >> $@; \
-		  printf "$$ENTRY""$$LOCALE"'.manifest\n' >> $@; \
-	  done \
-	done
+	$(call py_action,locale_manifest,--output $@ --base-path $(BASE_PATH) --locales $(ALL_LOCALES) --locale-entries $(MOZ_CHROME_LOCALE_ENTRIES))

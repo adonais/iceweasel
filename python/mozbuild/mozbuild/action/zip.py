@@ -36,7 +36,13 @@ def main(args):
         help="Exclude files that match the pattern",
     )
     parser.add_argument("zip", help="Path to zip file to write")
-    parser.add_argument("input", nargs="+", help="Path to files to add to zip")
+    parser.add_argument("input", nargs="*", help="Path to files to add to zip")
+    parser.add_argument(
+        "--files-from",
+        metavar="PATH",
+        help="Read additional input paths from the given file, one per line. "
+        "Blank lines and lines starting with '#' are ignored.",
+    )
     parser.add_argument(
         "--dep-file",
         help="File to write any additional make dependencies to",
@@ -51,6 +57,19 @@ def main(args):
         help="Exit with an error if no files are added",
     )
     args = parser.parse_args(args)
+
+    if args.files_from:
+        with open(args.files_from, encoding="utf-8") as fh:
+            for line in fh:
+                stripped = line.strip()
+                if not stripped or stripped.startswith("#"):
+                    continue
+                args.input.append(stripped)
+
+    if not args.input:
+        parser.error(
+            "at least one input path is required (via positional args or --files-from)"
+        )
 
     jarrer = Jarrer()
 

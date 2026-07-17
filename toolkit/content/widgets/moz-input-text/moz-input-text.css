@@ -2,19 +2,6 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-:host {
-  --input-text-min-height: var(--button-min-height);
-  --input-text-border-color: var(--border-color);
-  --input-text-border-color-disabled: var(--border-color-interactive-disabled);
-  --input-text-border: var(--border-width) solid var(--input-text-border-color);
-  --input-text-border-radius: var(--border-radius-medium);
-  --input-text-background-color: Field;
-  --input-text-color: FieldText;
-  --input-text-background-color-disabled: var(--button-background-color-disabled);
-  --input-text-opacity-disabled: var(--button-opacity-disabled);
-  --input-text-icon-size: var(--icon-size-xsmall);
-}
-
 #input {
   width: 100%;
   max-width: var(--input-text-max-width, none);
@@ -36,6 +23,7 @@
   &:disabled {
     border-color: var(--input-text-border-color-disabled);
     background-color: var(--input-text-background-color-disabled);
+    color: var(--input-text-color-disabled);
     opacity: var(--input-text-opacity-disabled);
   }
 

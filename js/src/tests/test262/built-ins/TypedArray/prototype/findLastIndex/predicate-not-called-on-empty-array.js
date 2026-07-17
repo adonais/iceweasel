@@ -17,8 +17,8 @@ includes: [testTypedArray.js]
 features: [TypedArray, array-find-from-last]
 ---*/
 
-testWithTypedArrayConstructors(function(TA) {
-  var sample = new TA();
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
+  var sample = new TA(makeCtorArg(0));
   var called = false;
 
   var predicate = function() {
@@ -36,6 +36,6 @@ testWithTypedArrayConstructors(function(TA) {
     result, -1,
     "returns -1 on an empty instance"
   );
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

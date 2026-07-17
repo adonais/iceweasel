@@ -530,6 +530,11 @@ export var TelemetryEnvironmentTesting = {
   },
 
   checkPartnerSection(data, isInitial) {
+    if (AppConstants.MOZ_APP_NAME == "thunderbird") {
+      // Thunderbird doesn't have distribution data and this section fails.
+      return;
+    }
+
     const EXPECTED_FIELDS = {
       distributionId: DISTRIBUTION_ID,
       distributionVersion: DISTRIBUTION_VERSION,

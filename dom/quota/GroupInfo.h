@@ -37,6 +37,8 @@ class GroupInfo final {
 
   PersistenceType GetPersistenceType() const { return mPersistenceType; }
 
+  const nsCString& GetGroup() const;
+
  private:
   // Private destructor, to discourage deletion outside of Release():
   MOZ_COUNTED_DTOR(GroupInfo)

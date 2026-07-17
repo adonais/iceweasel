@@ -34,7 +34,7 @@ class SessionHistoryInfo;
 
 // https://html.spec.whatwg.org/#navigation-api-method-tracker
 struct NavigationAPIMethodTracker final : public nsISupports {
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(NavigationAPIMethodTracker)
 
   NavigationAPIMethodTracker(Navigation* aNavigationObject,
@@ -145,6 +145,8 @@ class Navigation final : public DOMEventTargetHelper {
       SessionHistoryInfo* aDestinationSHE, NavigationType aNavigationType,
       bool aFiredNavigateEvent = true);
 
+  MOZ_CAN_RUN_SCRIPT void TruncateForwardEntries(uint32_t aNewLength);
+
   MOZ_CAN_RUN_SCRIPT
   void RunNavigateEventHandlerSteps(
       NavigateEvent* aNavigateEvent,
@@ -158,11 +160,12 @@ class Navigation final : public DOMEventTargetHelper {
   static bool IsAPIEnabled(JSContext* /* unused */ = nullptr,
                            JSObject* /* unused */ = nullptr);
 
+  enum class FinalStatus : uint8_t { Continue, Intercept, Prevent };
+
   // Wrapper algorithms for firing the navigate event.
   // https://html.spec.whatwg.org/#navigate-event-firing
-
   MOZ_CAN_RUN_SCRIPT bool FireTraverseNavigateEvent(
-      JSContext* aCx, const SessionHistoryInfo& aDestinationSessionHistoryInfo,
+      JSContext* aCx, nsDocShellLoadState* aLoadState,
       Maybe<UserNavigationInvolvement> aUserInvolvement);
 
   MOZ_CAN_RUN_SCRIPT bool FirePushReplaceReloadNavigateEvent(
@@ -232,7 +235,8 @@ class Navigation final : public DOMEventTargetHelper {
       FormData* aFormDataEntryList,
       nsIStructuredCloneContainer* aClassicHistoryAPIState,
       const nsAString& aDownloadRequestFilename,
-      NavigationAPIMethodTracker* aNavigationAPIMethodTracker = nullptr);
+      NavigationAPIMethodTracker* aNavigationAPIMethodTracker = nullptr,
+      nsDocShellLoadState* aLoadState = nullptr);
 
   NavigationHistoryEntry* FindNavigationHistoryEntry(
       const SessionHistoryInfo& aSessionHistoryInfo) const;

@@ -15,7 +15,7 @@ class KeyboardEvent;
 
 class XULMenuElement final : public XULButtonElement {
  public:
-  explicit XULMenuElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit XULMenuElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : XULButtonElement(std::move(aNodeInfo)) {}
 
   MOZ_CAN_RUN_SCRIPT void SetActiveMenuChild(Element*);

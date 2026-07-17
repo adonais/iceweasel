@@ -24,7 +24,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -43,6 +43,7 @@ import androidx.core.graphics.drawable.toDrawable
 import androidx.fragment.compose.content
 import androidx.navigation.fragment.navArgs
 import mozilla.components.compose.base.button.TextButton
+import mozilla.components.support.base.android.NoObscuredTouchesDialogFragment
 import org.mozilla.fenix.compose.Favicon
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
@@ -60,7 +61,7 @@ import mozilla.components.ui.icons.R as iconsR
  *
  * @see [DownloadAddonDialogFragmentArgs].
  */
-class DownloadAddonDialogFragment : AppCompatDialogFragment() {
+class DownloadAddonDialogFragment : NoObscuredTouchesDialogFragment() {
     private val args by navArgs<DownloadAddonDialogFragmentArgs>()
 
     /**
@@ -194,7 +195,7 @@ private fun AddonDetails(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .clip(RoundedCornerShape(FirefoxTheme.layout.corner.xLarge))
+            .clip(CircleShape)
             .background(MaterialTheme.colorScheme.surfaceContainerHighest)
             .padding(
                 horizontal = FirefoxTheme.layout.space.static150,

@@ -50,7 +50,11 @@ ipprotection-feature-introduction-link-text-captive-portal-1 = Get <a data-l10n-
 
 ipprotection-feature-introduction-button-primary = Next
 ipprotection-feature-introduction-button-secondary-not-now = Not now
+ipprotection-feature-introduction-button-secondary-not-now-menuitem =
+    .label = Not now
 ipprotection-feature-introduction-button-secondary-no-thanks = No thanks
+ipprotection-feature-introduction-button-secondary-no-thanks-menuitem =
+    .label = No thanks
 ipprotection-feature-introduction-button-secondary-remove = Remove VPN from toolbar
 ipprotection-feature-introduction-button-secondary-remove-1 =
     .label = Remove VPN from toolbar

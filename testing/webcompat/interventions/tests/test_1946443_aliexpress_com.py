@@ -7,6 +7,7 @@ FIRST_ITEM_IMAGE_CSS = ".swiper .swiper-slide-active .AUC-MI-image"
 
 async def are_any_product_images_too_big(client):
     await client.navigate(URL, wait="none")
+    client.hide_elements("#batman-dialog-overlay-wrap")
     item = client.await_css(FIRST_ITEM_IMAGE_CSS, is_displayed=True)
     return client.execute_script(
         """

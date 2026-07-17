@@ -49,7 +49,7 @@ bool GMPVideoEncoderParent::MgrIsOnOwningThread() const {
 
 // Note: may be called via Terminated()
 void GMPVideoEncoderParent::Close() {
-  GMP_LOG_DEBUG("%s::%s: %p", __CLASS__, __FUNCTION__, this);
+  GMP_LOG_DEBUG("{}::{}: {}", __CLASS__, __FUNCTION__, fmt::ptr(this));
   MOZ_ASSERT(mPlugin->GMPEventTarget()->IsOnCurrentThread());
   // Consumer is done with us; we can shut down.  No more callbacks should
   // be made to mCallback.  Note: do this before Shutdown()!
@@ -68,7 +68,7 @@ GMPErr GMPVideoEncoderParent::InitEncode(
     const nsTArray<uint8_t>& aCodecSpecific,
     GMPVideoEncoderCallbackProxy* aCallback, int32_t aNumberOfCores,
     uint32_t aMaxPayloadSize) {
-  GMP_LOG_DEBUG("%s::%s: %p", __CLASS__, __FUNCTION__, this);
+  GMP_LOG_DEBUG("{}::{}: {}", __CLASS__, __FUNCTION__, fmt::ptr(this));
   if (mIsOpen) {
     NS_WARNING("Trying to re-init an in-use GMP video encoder!");
     return GMPGenericErr;
@@ -109,7 +109,7 @@ GMPErr GMPVideoEncoderParent::Encode(
   GMPVideoi420FrameData frameData;
   ipc::Shmem frameShmem;
   if (!inputFrameImpl->InitFrameData(frameData, frameShmem)) {
-    GMP_LOG_ERROR("%s::%s: failed to init frame data", __CLASS__, __FUNCTION__);
+    GMP_LOG_ERROR("{}::{}: failed to init frame data", __CLASS__, __FUNCTION__);
     return GMPGenericErr;
   }
 
@@ -123,7 +123,7 @@ GMPErr GMPVideoEncoderParent::Encode(
 
   if (!SendEncode(frameData, std::move(frameShmem), aCodecSpecificInfo,
                   aFrameTypes)) {
-    GMP_LOG_ERROR("%s::%s: failed to send encode", __CLASS__, __FUNCTION__);
+    GMP_LOG_ERROR("{}::{}: failed to send encode", __CLASS__, __FUNCTION__);
     return GMPGenericErr;
   }
 
@@ -183,7 +183,7 @@ GMPErr GMPVideoEncoderParent::SetPeriodicKeyFrames(bool aEnable) {
 
 // Note: Consider keeping ActorDestroy sync'd up when making changes here.
 void GMPVideoEncoderParent::Shutdown() {
-  GMP_LOG_DEBUG("%s::%s: %p", __CLASS__, __FUNCTION__, this);
+  GMP_LOG_DEBUG("{}::{}: {}", __CLASS__, __FUNCTION__, fmt::ptr(this));
   MOZ_ASSERT(mPlugin->GMPEventTarget()->IsOnCurrentThread());
 
   if (mShuttingDown) {
@@ -205,7 +205,8 @@ void GMPVideoEncoderParent::Shutdown() {
 
 // Note: Keep this sync'd up with Shutdown
 void GMPVideoEncoderParent::ActorDestroy(ActorDestroyReason aWhy) {
-  GMP_LOG_DEBUG("%s::%s: %p (%d)", __CLASS__, __FUNCTION__, this, (int)aWhy);
+  GMP_LOG_DEBUG("{}::{}: {} ({})", __CLASS__, __FUNCTION__, fmt::ptr(this),
+                (int)aWhy);
   mIsOpen = false;
   mActorDestroyed = true;
   if (mCallback) {

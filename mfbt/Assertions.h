@@ -113,7 +113,7 @@ MOZ_BEGIN_EXTERN_C
  * dist/include/mozilla/Assertions.h or so) to the srcdir, if possible.
  */
 static inline const char* MOZ_StripRelativeComponents(const char* aPath) {
-  if (*aPath == '/' || *aPath == '\\') {
+  if (!aPath || *aPath == '/' || *aPath == '\\') {
     // Keep absolute paths as they are.
     return aPath;
   }

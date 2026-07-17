@@ -19,6 +19,7 @@
 #include "nsISupports.h"
 #include "nsIDocShell.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"  // FIXME: Stop including inline definitions!
 #include "nsWrapperCache.h"
 
 class nsILoadInfo;

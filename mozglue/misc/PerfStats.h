@@ -83,7 +83,8 @@ extern "C" bool NS_IsMainThread();
   MACRO(A11Y_SendCache)                           \
   MACRO(A11Y_WillRefresh)                         \
   MACRO(A11Y_AccessibilityServiceInit)            \
-  MACRO(A11Y_PlatformShowHideEvent)
+  MACRO(A11Y_PlatformShowHideEvent)               \
+  MACRO(UrlClassifierCheckChannel)
 
 namespace mozilla {
 

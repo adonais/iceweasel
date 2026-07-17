@@ -89,6 +89,7 @@
     <string name="pref_key_custom_review_prompt_enabled" translatable="false">pref_key_custom_review_prompt_enabled</string>
     <string name="pref_key_custom_review_prompt_ui_enabled" translatable="false">pref_key_custom_review_prompt_ui_enabled</string>
     <string name="pref_key_last_browse_activity_time" translatable="false">pref_key_last_browse_activity_time</string>
+    <string name="pref_key_last_home_activity_time" translatable="false">pref_key_last_home_activity_time</string>
     <string name="pref_key_last_cfr_shown_time" translatable="false">pref_key_last_cfr_shown_time</string>
     <string name="pref_key_is_first_run" translatable="false">pref_key_is_first_run</string>
     <string name="pref_key_is_first_splash_screen_shown" translatable="false">pref_key_is_first_splash_screen_shown</string>
@@ -171,7 +172,6 @@
     <string name="pref_key_show_nonsponsored_suggestions" translatable="false">pref_key_show_nonsponsored_suggestions</string>
     <string name="pref_key_learn_about_fx_suggest" translatable="false">pref_key_learn_about_fx_suggest</string>
     <string name="pref_key_use_remote_search_configuration" translatable="false">pref_key_use_remote_search_configuration</string>
-    <string name="pref_key_allow_settings_search" translatable="false">pref_key_allow_settings_search</string>
 
     <!-- Site Permissions Settings -->
     <string name="pref_key_show_site_exceptions" translatable="false">pref_key_show_site_exceptions</string>
@@ -198,7 +198,6 @@
 
     <!-- App icon settings-->
     <string name="pref_key_app_icon">pref_key_app_icon</string>
-    <string name="pref_key_app_icon_selection_enabled" translatable="false">pref_key_app_icon_selection_enabled</string>
 
     <!-- Cfr -->
     <string name="pref_key_menu_cfr" translatable="false">pref_key_menu_cfr</string>
@@ -229,6 +228,8 @@
     <string name="pref_key_swipe_toolbar_show_tabs" translatable="false">pref_key_swipe_toolbar_show_tabs</string>
     <string name="pref_key_recent_tabs" translatable="false">pref_key_recent_tabs</string>
     <string name="pref_key_privacy_report" translatable="false">pref_key_privacy_report</string>
+    <string name="pref_key_privacy_report_metric" translatable="false">privacy_report</string>
+    <string name="pref_key_privacy_report_tab_manager" translatable="false">pref_key_privacy_report_tab_manager</string>
     <string name="pref_key_customization_bookmarks" translatable="false">pref_key_recent_bookmarks</string>
     <string name="pref_key_customization_category_toolbar" translatable="false">pref_key_customization_category_toolbar</string>
     <string name="pref_key_customization_category_toolbar_layout" translatable="false">pref_key_customization_category_toolbar_layout</string>
@@ -277,7 +278,6 @@
     <string name="pref_key_tracking_protection_redirect_trackers" translatable="false">pref_key_tracking_protection_redirect_trackers</string>
     <string name="pref_key_tracking_protection_suspected_fingerprinters" translatable="false">pref_key_tracking_protection_suspected_fingerprinters</string>
     <string name="pref_key_tracking_protection_suspected_fingerprinters_select" translatable="false">pref_key_tracking_protection_suspected_fingerprinters_select</string>
-    <string name="pref_key_tracking_protection_dashboard_status" translatable="false">pref_key_tracking_protection_dashboard_status</string>
 
     <!-- Logins Settings -->
     <string name="pref_key_save_logins_settings" translatable="false">pref_key_save_logins_settings</string>
@@ -460,7 +460,6 @@
     <string name="pref_key_pocket_sponsored_stories" translatable="false">pref_key_pocket_sponsored_stories</string>
 
     <!-- Secret Info Setting Keys -->
-    <string name="pref_key_secret_debug_info" translatable="false">pref_key_secret_debug_info</string>
     <string name="pref_key_start_profiler" translatable="false">pref_key_start_profiler</string>
 
     <!-- Secret Settings -->
@@ -602,12 +601,15 @@
     <!-- Tab Groups -->
     <string name="pref_key_tab_groups" translatable="false">pref_key_tab_groups_feature</string>
     <string name="pref_key_tab_groups_drag_and_drop" translatable="false">pref_key_tab_groups_drag_and_drop</string>
+    <string name="pref_key_tab_groups_onboarding" translatable="false">pref_key_tab_groups_onboarding</string>
 
     <!-- Native Share Sheet -->
     <string name="pref_key_native_share_sheet" translatable="false">pref_key_native_share_sheet</string>
 
     <!-- Longfox -->
     <string name="pref_key_enable_longfox" translatable="false">pref_key_enable_longfox</string>
+    <string name="pref_key_app_launch_count" translatable="false">pref_key_app_launch_count</string>
+    <string name="pref_key_longfox_peek_animation_shown_count" translatable="false">pref_key_longfox_peek_animation_shown_count</string>
 
     <!-- Sports Widget -->
     <string name="pref_key_sports_selected_countries" translatable="false">pref_key_sports_selected_countries</string>
@@ -617,6 +619,10 @@
 
     <!-- Google Lens Integration -->
     <string name="pref_key_google_lens_integration" translatable="false">pref_key_google_lens_integration</string>
+    <string name="pref_key_google_lens_integration_user_enabled" translatable="false">pref_key_google_lens_integration_user_enabled</string>
+
+    <!-- Voice Search in Display Toolbar -->
+    <string name="pref_key_show_voice_search_in_display_toolbar" translatable="false">pref_key_show_voice_search_in_display_toolbar</string>
     <!--  Search Optimization Cards  -->
     <string name="pref_key_search_optimization" translatable="false">pref_key_search_optimization</string>
     <string name="pref_key_search_optimization_feature" translatable="false">pref_key_search_optimization_feature</string>
@@ -624,4 +630,8 @@
     <string name="pref_key_search_optimization_stocks" translatable="false">pref_key_search_optimization_stocks</string>
     <string name="pref_key_search_optimization_flights" translatable="false">pref_key_search_optimization_flights</string>
     <string name="pref_key_search_optimization_sports" translatable="false">pref_key_search_optimization_sports</string>
+
+    <!--  WebCompat Reporter Enhancements  -->
+    <string name="pref_key_webcompat_reporter_enhancements" translatable="false">pref_key_webcompat_reporter_enhancements</string>
+
 </resources>

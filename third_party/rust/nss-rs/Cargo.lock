@@ -160,7 +160,7 @@ dependencies = [
 
 [[package]]
 name = "nss-rs"
-version = "0.9.0"
+version = "0.13.2"
 dependencies = [
  "bindgen",
  "enum-map",
@@ -176,6 +176,7 @@ dependencies = [
  "thiserror",
  "toml",
  "windows",
+ "zeroize",
 ]
 
 [[package]]
@@ -579,3 +580,23 @@ name = "winnow"
 version = "0.7.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a5364e9d77fcdeeaa6062ced926ee3381faa2ee02d3eb83a5c27a8825540829"
+
+[[package]]
+name = "zeroize"
+version = "1.8.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ced3678a2879b30306d323f4542626697a464a97c0a07c9aebf7ebca65cd4dde"
+dependencies = [
+ "zeroize_derive",
+]
+
+[[package]]
+name = "zeroize_derive"
+version = "1.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ce36e65b0d2999d2aafac989fb249189a141aee1f53c612c1f37d72631959f69"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]

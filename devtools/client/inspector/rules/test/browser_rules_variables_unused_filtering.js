@@ -171,10 +171,10 @@ add_task(async function testUnusedVariablesAndFiltering() {
   info("hit tab");
   const ruleEditor = getRuleViewRuleEditorAt(view, 1);
   let onFocus = once(ruleEditor.element, "focus", true);
-  let onRuleViewChanged = view.once("ruleview-changed");
+  let onModifications = view.once("property-value-updated");
   EventUtils.synthesizeKey("VK_TAB", {}, view.styleWindow);
   await onFocus;
-  await onRuleViewChanged;
+  await onModifications;
 
   is(
     inplaceEditor(view.styleDocument.activeElement),
@@ -195,10 +195,10 @@ add_task(async function testUnusedVariablesAndFiltering() {
 
   // Blur the field to put back the UI in its initial state (and avoid pending
   // requests when the test ends).
-  onRuleViewChanged = view.once("ruleview-changed");
+  onModifications = view.once("property-value-updated");
   EventUtils.synthesizeKey("VK_ESCAPE", {}, view.styleWindow);
   view.debounce.flush();
-  await onRuleViewChanged;
+  await onModifications;
 
   info(
     "Check that clicking on the Show unused button does show all the variables at the expected positions"

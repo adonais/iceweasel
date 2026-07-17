@@ -391,6 +391,18 @@ void FragmentDirective::HighlightTextDirectives(
     targetTextSelection->AddRangeAndSelectFramesAndNotifyListeners(
         MOZ_KnownLive(*range), IgnoreErrors());
   }
+  // AddRangeAndSelectFramesAndNotifyListeners sets the selection's anchor to
+  // each newly added range, so after the loop the anchor points to the last
+  // range. The selection stores ranges in document order, which may differ
+  // from directive (URL) order. Find the first directive's range and set the
+  // anchor to it so that ScrollSelectionIntoView scrolls to the correct one.
+  const nsRange* firstDirectiveRange = aTextDirectiveRanges[0];
+  for (uint32_t rangeIndex : IntegerRange(targetTextSelection->RangeCount())) {
+    if (targetTextSelection->GetRangeAt(rangeIndex) == firstDirectiveRange) {
+      targetTextSelection->SetAnchorFocusRange(rangeIndex);
+      break;
+    }
+  }
 }
 
 void FragmentDirective::GetTextDirectiveRanges(

@@ -19,7 +19,7 @@ JSObject* SVGMetadataElement::WrapNode(JSContext* aCx,
 // Implementation
 
 SVGMetadataElement::SVGMetadataElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGMetadataElementBase(std::move(aNodeInfo)) {}
 
 nsresult SVGMetadataElement::Init() { return NS_OK; }

@@ -34,7 +34,7 @@ class NimbusMessagingTriggerTest {
     val fenixTestRule: FenixTestRule = FenixTestRule()
 
     @get:Rule
-    val activityTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides(skipOnboarding = true)
+    val activityTestRule = HomeActivityIntentTestRule.withDefaultSettingsOverrides()
 
     @Before
     fun setUp() {

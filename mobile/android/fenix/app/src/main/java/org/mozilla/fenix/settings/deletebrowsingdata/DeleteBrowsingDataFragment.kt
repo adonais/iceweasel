@@ -28,7 +28,6 @@ import org.mozilla.fenix.databinding.FragmentDeleteBrowsingDataBinding
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.utils.Settings
 
@@ -68,7 +67,7 @@ class DeleteBrowsingDataFragment : Fragment(R.layout.fragment_delete_browsing_da
             settings = requireComponents.settings,
             coroutineContext = requireActivity().lifecycleScope.coroutineContext,
         )
-        settings = requireContext().settings()
+        settings = requireComponents.settings
 
         getCheckboxes().iterator().forEach {
             it.onCheckListener = { _ ->

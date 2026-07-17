@@ -175,4 +175,3 @@ a11y:
     notification_emails:
       - asurkov@mozilla.com
     expires: never
-    telemetry_mirror: A11Y_TREE_UPDATE_TIMING_MS

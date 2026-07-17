@@ -368,12 +368,14 @@ class GitRepository(Repository):
         (cmd, _, env) = self._process_run_args(*args)
         subprocess.check_call(cmd, cwd=self.path, env=env)
 
-    def push_to_try(
-        self,
-        message: str,
-        changed_files: dict[str, str] = {},
-        allow_log_capture: bool = False,
-    ):
+    def _resolve_try_branch(self):
+        if not self.branch:
+            raise ValueError(
+                "Cannot push to try from a detached HEAD; checkout a branch first."
+            )
+        return self.branch
+
+    def _push_to_hg_try(self, message, changed_files, allow_log_capture):
         if not self.has_git_cinnabar:
             raise MissingVCSExtension("cinnabar")
 

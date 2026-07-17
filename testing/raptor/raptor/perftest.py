@@ -33,7 +33,6 @@ for path in paths:
 from chrome_trace import ChromeTrace
 from cmdline import (
     CHROME_ANDROID_APPS,
-    DESKTOP_APPS,
     FIREFOX_ANDROID_APPS,
     FIREFOX_APPS,
     GECKO_PROFILER_APPS,
@@ -610,14 +609,7 @@ class Perftest(metaclass=ABCMeta):
         # creating the playback tool
         playback_dir = os.path.join(here, "tooltool-manifests", "playback")
 
-        # Bug 1926419 avoid using mitm11 manifest on linux desktop tests.
-        if "linux" in self.config["platform"] and self.config["app"] in DESKTOP_APPS:
-            playback_manifest = test.get(
-                "playback_pageset_manifest_backup",
-                test.get("playback_pageset_manifest"),
-            )
-        else:
-            playback_manifest = test.get("playback_pageset_manifest")
+        playback_manifest = test.get("playback_pageset_manifest")
         playback_manifests = playback_manifest.split(",")
 
         self.config.update({

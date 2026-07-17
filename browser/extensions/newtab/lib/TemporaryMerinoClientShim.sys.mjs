@@ -174,6 +174,10 @@ export class TemporaryMerinoClientShim {
    *   used for accuweather's location autocomplete endpoint
    * @param {string} [options.endpointUrl]
    *   If specified, overrides the default `merinoEndpointURL` pref value.
+   * @param {string} [options.acceptLanguage]
+   *   If specified, sent as the `Accept-Language` request header so Merino
+   *   (and any upstream provider it delegates to) can return localized
+   *   results.
    * @returns {Promise<MerinoClientSuggestion[]>}
    *   The Merino suggestions or null if there's an error or unexpected
    *   response.
@@ -184,6 +188,7 @@ export class TemporaryMerinoClientShim {
     timeoutMs = lazy.UrlbarPrefs.get("merinoTimeoutMs"),
     otherParams = {},
     endpointUrl = null,
+    acceptLanguage = null,
   }) {
     this.#lazy.logger.debug("Fetch start", { query });
 
@@ -332,7 +337,10 @@ export class TemporaryMerinoClientShim {
           // `response` in the outer scope and set it here instead of returning
           // the response from this inner function and assuming it will also be
           // returned by `Promise.race`.
-          let result = await this.#fetch(url, { signal: controller.signal });
+          let result = await this.#fetch(url, {
+            signal: controller.signal,
+            acceptLanguage,
+          });
           response = result?.response;
           this.#lazy.logger.debug("Got response", {
             status: response?.status,
@@ -529,6 +537,7 @@ export class TemporaryMerinoClientShim {
       otherParams,
       timeoutMs,
       endpointUrl,
+      acceptLanguage: Services.locale.appLocaleAsBCP47,
     });
     return response?.[0] ?? null;
   }
@@ -622,7 +631,9 @@ export class TemporaryMerinoClientShim {
     }
 
     try {
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        headers: { "Accept-Language": Services.locale.appLocaleAsBCP47 },
+      });
       /**
        * @type {Array<{
        *   date_time: string,
@@ -651,32 +662,36 @@ export class TemporaryMerinoClientShim {
    *   The source that is requesting this fetch.
    * @param {string} options.endpointUrl
    *   The teams endpoint URL.
-   * @returns {Promise<Array|null>}
-   *   Array of team objects, or null if the endpoint is not configured or an
-   *   error occurs.
+   * @returns {Promise<{data: object|null, error: null | "invalid_url" | "load_error"}>}
+   *   `error: null` with `data: null` means the endpoint is not configured
+   *   (deliberate skip).
    */
   async fetchSportsTeams({ source, endpointUrl }) {
     if (!endpointUrl) {
-      return null;
+      return { data: null, error: null };
     }
     let url = URL.parse(endpointUrl);
     if (!url) {
       this.#lazy.logger.error("Invalid sports teams endpoint URL", endpointUrl);
-      return null;
+      return { data: null, error: "invalid_url" };
     }
     if (source) {
       url.searchParams.set("source", source);
     }
     try {
       const response = await fetch(url);
-
-      // The `data` variable has the teams response we'll be reading
+      if (!response.ok) {
+        this.#lazy.logger.error(
+          `Sports teams fetch failed with status ${response.status}`
+        );
+        return { data: null, error: "load_error" };
+      }
       const data = /** @type {any} */ (await response.json());
       this.#lazy.logger.debug("fetchSportsTeams response", data);
-      return data;
+      return { data, error: null };
     } catch (e) {
       this.#lazy.logger.error("Sports teams fetch error", e);
-      return null;
+      return { data: null, error: "load_error" };
     }
   }
 
@@ -689,13 +704,13 @@ export class TemporaryMerinoClientShim {
    *   The source that is requesting this fetch.
    * @param {string} options.endpointUrl
    *   The matches endpoint URL.
-   * @returns {Promise<Array|null>}
-   *   Array of match objects, or null if the endpoint is not configured or an
-   *   error occurs.
+   * @returns {Promise<{data: object|null, error: null | "invalid_url" | "load_error"}>}
+   *   `error: null` with `data: null` means the endpoint is not configured
+   *   (deliberate skip).
    */
   async fetchSportsMatches({ source, endpointUrl }) {
     if (!endpointUrl) {
-      return null;
+      return { data: null, error: null };
     }
     let url = URL.parse(endpointUrl);
     if (!url) {
@@ -703,19 +718,119 @@ export class TemporaryMerinoClientShim {
         "Invalid sports matches endpoint URL",
         endpointUrl
       );
-      return null;
+      return { data: null, error: "invalid_url" };
     }
     if (source) {
       url.searchParams.set("source", source);
     }
     try {
       const response = await fetch(url);
-      // The `data` variable has the matches response we'll be reading
+      if (!response.ok) {
+        this.#lazy.logger.error(
+          `Sports matches fetch failed with status ${response.status}`
+        );
+        return { data: null, error: "load_error" };
+      }
       const data = /** @type {any} */ (await response.json());
       this.#lazy.logger.debug("fetchSportsMatches response", data);
-      return data;
+      return { data, error: null };
     } catch (e) {
       this.#lazy.logger.error("Sports matches fetch error", e);
+      return { data: null, error: "load_error" };
+    }
+  }
+
+  /**
+   * Fetch currently-live matches from the Merino WCS endpoint.
+   *
+   * @param {object} options
+   *   Options object
+   * @param {string} options.source
+   *   The source that is requesting this fetch.
+   * @param {string} options.endpointUrl
+   *   The live matches endpoint URL.
+   * @returns {Promise<{data: object|null, error: null | "invalid_url" | "load_error"}>}
+   *   On success, `data` is `{ matches: [...] }`. `error: null` with
+   *   `data: null` means the endpoint is not configured (deliberate skip).
+   */
+  async fetchSportsLive({ source, endpointUrl }) {
+    if (!endpointUrl) {
+      return { data: null, error: null };
+    }
+    let url = URL.parse(endpointUrl);
+    if (!url) {
+      this.#lazy.logger.error("Invalid sports live endpoint URL", endpointUrl);
+      return { data: null, error: "invalid_url" };
+    }
+    if (source) {
+      url.searchParams.set("source", source);
+    }
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        this.#lazy.logger.error(
+          `Sports live fetch failed with status ${response.status}`
+        );
+        return { data: null, error: "load_error" };
+      }
+      const data = /** @type {any} */ (await response.json());
+      this.#lazy.logger.debug("fetchSportsLive response", data);
+      return { data, error: null };
+    } catch (e) {
+      this.#lazy.logger.error("Sports live fetch error", e);
+      return { data: null, error: "load_error" };
+    }
+  }
+
+  /**
+   * Fetch watch-live broadcaster listings for the active sports event from
+   * the Merino WCS endpoint.
+   *
+   * @param {object} options
+   *   Options object
+   * @param {string} options.source
+   *   The source that is requesting this fetch.
+   * @param {string} options.endpointUrl
+   *   The watch-live endpoint URL.
+   * @param {string} [options.acceptLanguage]
+   *   Optional BCP-47 locale string sent as the Accept-Language header so
+   *   the backend can localize broadcaster/region copy.
+   * @returns {Promise<object|null>}
+   *   The watch-live payload, or null if the endpoint is not configured or
+   *   an error occurs. The caller is responsible for shape-validating the
+   *   payload before consuming it.
+   */
+  async fetchWatchLive({ source, endpointUrl, acceptLanguage }) {
+    if (!endpointUrl) {
+      return null;
+    }
+    let url = URL.parse(endpointUrl);
+    if (!url) {
+      this.#lazy.logger.error(
+        "Invalid sports watch-live endpoint URL",
+        endpointUrl
+      );
+      return null;
+    }
+    if (source) {
+      url.searchParams.set("source", source);
+    }
+    const fetchOptions = acceptLanguage
+      ? { headers: { "Accept-Language": acceptLanguage } }
+      : undefined;
+    try {
+      const response = await fetch(url, fetchOptions);
+      if (!response.ok) {
+        this.#lazy.logger.error(
+          `Sports watch-live fetch failed with status ${response.status}`
+        );
+        return null;
+      }
+      const data = /** @type {any} */ (await response.json());
+      this.#lazy.logger.debug("fetchWatchLive response", data);
+      return data;
+    } catch (e) {
+      this.#lazy.logger.error("Sports watch-live fetch error", e);
       return null;
     }
   }
@@ -777,6 +892,8 @@ export class TemporaryMerinoClientShim {
    *   Options object.
    * @param {AbortSignal} options.signal
    *   An `AbortController.signal` for the fetch.
+   * @param {string} [options.acceptLanguage]
+   *   If set, sent as the `Accept-Language` request header.
    * @returns {Promise<?FetchResult>}
    *   The fetch result, or null if the fetch couldn't be started.
    *
@@ -786,7 +903,7 @@ export class TemporaryMerinoClientShim {
    * @property {number} elapsedMs
    *   The duration of the fetch in ms.
    */
-  async #fetch(url, { signal }) {
+  async #fetch(url, { signal, acceptLanguage }) {
     let configUrl;
     let relayUrl;
     if (this.#allowOhttp) {
@@ -796,10 +913,12 @@ export class TemporaryMerinoClientShim {
 
     let useOhttp = configUrl && relayUrl;
 
+    let headers = acceptLanguage ? { "Accept-Language": acceptLanguage } : {};
+
     let response;
     let startMs = ChromeUtils.now();
     if (!useOhttp) {
-      response = await fetch(url, { signal });
+      response = await fetch(url, { signal, headers });
     } else {
       let config = await lazy.ObliviousHTTP.getOHTTPConfig(configUrl);
       if (!config) {
@@ -810,7 +929,7 @@ export class TemporaryMerinoClientShim {
       this.#lazy.logger.debug("Sending request using OHTTP", { url });
       response = await lazy.ObliviousHTTP.ohttpRequest(relayUrl, config, url, {
         signal,
-        headers: {},
+        headers,
       });
     }
 

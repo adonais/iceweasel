@@ -284,7 +284,12 @@ class BrowserToolbarSearchMiddleware(
         }
         is SearchSelectorItemClicked -> {
             appStore.dispatch(SearchEngineSelected(action.searchEngine, true))
-            appStore.dispatch(SearchStarted())
+            appStore.dispatch(
+                SearchStarted(
+                    tabId = appStore.state.searchState.sourceTabId,
+                    source = appStore.state.searchState.searchAccessPoint,
+                ),
+            )
             refreshConfigurationAfterSearchEngineChange(store, action.searchEngine)
             updateSearchEndPageActions(store) // to update the visibility of the qr scanner button
         }
@@ -314,6 +319,10 @@ class BrowserToolbarSearchMiddleware(
                 Toolbar.ButtonTappedExtra(source = SOURCE_ADDRESS_BAR, item = ACTION_LENS_CLICKED),
             )
             observeLensInput()
+            // The Lens camera screen lets the user toggle to QR scanning; observe both
+            // result streams so a QR string returned from the Lens flow still lands in
+            // the URL bar.
+            observeQrScannerInput(store)
             appStore.dispatch(LensRequested)
         }
 
@@ -563,10 +572,13 @@ class BrowserToolbarSearchMiddleware(
                 ),
             )
         } else if (isValidSearchEngine) {
-            if (settings.googleLensIntegrationEnabled && selectedSearchEngine.isGoogleSearchEngine()) {
+            if (settings.googleLensIntegrationEnabled &&
+                settings.googleLensIntegrationUserEnabled &&
+                selectedSearchEngine.isGoogleSearchEngine()
+            ) {
                 add(
                     ActionButtonRes(
-                        drawableResId = iconsR.drawable.mozac_ic_image_24,
+                        drawableResId = R.drawable.ic_logo_google_lens_24,
                         contentDescription = R.string.lens_search_content_description,
                         state = ActionButton.State.DEFAULT,
                         onClick = LensButtonClicked,
@@ -586,7 +598,7 @@ class BrowserToolbarSearchMiddleware(
     }
 
     private fun observeQrScannerInput(store: Store<BrowserToolbarState, BrowserToolbarAction>) {
-        observeQRScannerInputJob = null
+        observeQRScannerInputJob?.cancel()
         observeQRScannerInputJob = appStore.observeWhileActive {
             distinctUntilChangedBy { it.qrScannerState.lastScanData }
                 .collect {
@@ -613,7 +625,7 @@ class BrowserToolbarSearchMiddleware(
     }
 
     private fun observeLensInput() {
-        observeLensInputJob = null
+        observeLensInputJob?.cancel()
         observeLensInputJob = appStore.observeWhileActive {
             distinctUntilChangedBy { it.lensState.resultUrl }
                 .collect {

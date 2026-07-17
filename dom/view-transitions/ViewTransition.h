@@ -99,7 +99,7 @@ class ViewTransition final : public nsISupports, public nsWrapperCache {
   using Phase = ViewTransitionPhase;
   using TypeList = nsTArray<RefPtr<nsAtom>>;
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(ViewTransition)
 
   ViewTransition(Document&, ViewTransitionUpdateCallback*, TypeList&&);

@@ -12,10 +12,10 @@
 #ifndef XSIMD_SSE4_1_HPP
 #define XSIMD_SSE4_1_HPP
 
-#include <type_traits>
-
 #include "../types/xsimd_sse4_1_register.hpp"
 #include "./common/xsimd_common_cast.hpp"
+
+#include <type_traits>
 
 namespace xsimd
 {
@@ -103,6 +103,41 @@ namespace xsimd
         XSIMD_INLINE batch<double, A> floor(batch<double, A> const& self, requires_arch<sse4_1>) noexcept
         {
             return _mm_floor_pd(self);
+        }
+
+        // get
+        template <class A, size_t I, class T, class = std::enable_if_t<std::is_integral<T>::value>>
+        XSIMD_INLINE T get(batch<T, A> const& self, ::xsimd::index<I>, requires_arch<sse4_1>) noexcept
+        {
+            XSIMD_IF_CONSTEXPR(I == 0)
+            {
+                return first(self, sse2 {});
+            }
+            else XSIMD_IF_CONSTEXPR(sizeof(T) == 1)
+            {
+                return static_cast<T>(_mm_extract_epi8(self, I));
+            }
+            else XSIMD_IF_CONSTEXPR(sizeof(T) == 2)
+            {
+                return static_cast<T>(_mm_extract_epi16(self, I));
+            }
+            else XSIMD_IF_CONSTEXPR(sizeof(T) == 4)
+            {
+                return static_cast<T>(_mm_extract_epi32(self, I));
+            }
+            else XSIMD_IF_CONSTEXPR(sizeof(T) == 8)
+            {
+#if defined(__x86_64__)
+                return static_cast<T>(_mm_extract_epi64(self, I));
+#else
+                return get(self, ::xsimd::index<I> {}, sse2 {});
+#endif
+            }
+            else
+            {
+                assert(false && "unsupported arch/op combination");
+                return {};
+            }
         }
 
         // insert
@@ -229,7 +264,7 @@ namespace xsimd
         }
 
         // load_stream
-        template <class A, class T, class = typename std::enable_if<std::is_integral<T>::value, void>::type>
+        template <class A, class T, class = std::enable_if_t<std::is_integral<T>::value, void>>
         XSIMD_INLINE batch<T, A> load_stream(T const* mem, convert<T>, requires_arch<sse4_1>) noexcept
         {
             return _mm_stream_load_si128((__m128i*)mem);
@@ -322,6 +357,41 @@ namespace xsimd
                 assert(false && "unsupported arch/op combination");
                 return {};
             }
+        }
+
+        // mul_hi
+        template <class A>
+        XSIMD_INLINE batch<int32_t, A> mul_hi(batch<int32_t, A> const& self, batch<int32_t, A> const& other, requires_arch<sse4_1>) noexcept
+        {
+            __m128i even = _mm_mul_epi32(self, other); // 64-bit products in lanes 0,2
+            __m128i odd = _mm_mul_epi32(_mm_srli_epi64(self, 32), _mm_srli_epi64(other, 32));
+            // hi halves in the low 32 of each 64 lane of (even>>32), and in the high 32 of odd
+            __m128i even_hi = _mm_srli_epi64(even, 32);
+            // blend: 32-bit lanes {even_hi[0], odd_hi[1], even_hi[2], odd_hi[3]}
+            return _mm_blend_epi16(even_hi, odd, 0xCC);
+        }
+        template <class A>
+        XSIMD_INLINE batch<uint32_t, A> mul_hi(batch<uint32_t, A> const& self, batch<uint32_t, A> const& other, requires_arch<sse4_1>) noexcept
+        {
+            __m128i even = _mm_mul_epu32(self, other);
+            __m128i odd = _mm_mul_epu32(_mm_srli_epi64(self, 32), _mm_srli_epi64(other, 32));
+            __m128i even_hi = _mm_srli_epi64(even, 32);
+            return _mm_blend_epi16(even_hi, odd, 0xCC);
+        }
+
+        template <class A>
+        XSIMD_INLINE batch<uint64_t, A> mul_hi(batch<uint64_t, A> const& self, batch<uint64_t, A> const& other, requires_arch<sse4_1>) noexcept
+        {
+            return detail::mulhi_u64_core<A>(self, other,
+                                             [](batch<uint64_t, A> a, batch<uint64_t, A> b)
+                                             { return batch<uint64_t, A>(_mm_mul_epu32(a, b)); });
+        }
+        template <class A>
+        XSIMD_INLINE batch<int64_t, A> mul_hi(batch<int64_t, A> const& self, batch<int64_t, A> const& other, requires_arch<sse4_1>) noexcept
+        {
+            return detail::mulhi_i64_core<A>(self, other,
+                                             [](batch<uint64_t, A> a, batch<uint64_t, A> b)
+                                             { return batch<uint64_t, A>(_mm_mul_epu32(a, b)); });
         }
 
         // nearbyint

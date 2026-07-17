@@ -5,6 +5,7 @@
 #ifndef DOM_MEDIA_WEBRTC_SDP_SDPATTRIBUTELIST_H_
 #define DOM_MEDIA_WEBRTC_SDP_SDPATTRIBUTELIST_H_
 
+#include "mozilla/UniquePtr.h"
 #include "sdp/SdpAttribute.h"
 
 namespace mozilla {
@@ -28,7 +29,7 @@ class SdpAttributeList {
   virtual const SdpAttribute* GetAttribute(
       const AttributeType type, const bool sessionFallback) const = 0;
   // The setter takes an attribute of any type, and takes ownership
-  virtual void SetAttribute(SdpAttribute* attr) = 0;
+  virtual void SetAttribute(UniquePtr<SdpAttribute>&& attr) = 0;
   virtual void RemoveAttribute(const AttributeType type) = 0;
   virtual void Clear() = 0;
   virtual uint32_t Count() const = 0;

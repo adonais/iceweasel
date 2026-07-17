@@ -56,10 +56,10 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
             is FolderLongClicked,
             is RecursiveSelectionCountLoaded,
             is OpenTabsConfirmationDialogAction.Present,
-            is InitEdit,
-            is InitEditLoaded,
+            is ViewAppeared,
+            is BookmarkToEditLoaded,
             is ReceivedSyncSignInUpdate,
-            CloseClicked, AddFolderClicked, Init, SignIntoSyncClicked,
+            CloseClicked, AddFolderClicked, SignIntoSyncClicked,
             OpenTabsConfirmationDialogAction.CancelTapped, OpenTabsConfirmationDialogAction.ConfirmTapped,
             FirstSyncCompleted, PrivateBrowsingAuthorized,
                 -> Unit
@@ -279,8 +279,6 @@ internal class BookmarksTelemetryMiddleware : Middleware<BookmarksState, Bookmar
         is ImportAction.ImportFailed -> BookmarksManagement.importFailed.record(NoExtras())
         is ImportAction.ImportFileClicked.FromMenu ->
             BookmarksManagement.importFromFileMenuClick.record(NoExtras())
-        is ImportAction.ImportFileClicked.FromButton ->
-            BookmarksManagement.importFromFileButtonClick.record(NoExtras())
         is ImportAction.ImportSucceeded -> {
             BookmarksManagement.importSuccessful.record(
                 extra = BookmarksManagement.ImportSuccessfulExtra(bookmarksCount = action.count),

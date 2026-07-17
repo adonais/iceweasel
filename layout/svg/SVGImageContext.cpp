@@ -43,6 +43,13 @@ void SVGImageContext::MaybeStoreContextPaint(SVGImageContext& aContext,
     aContext.SetColorScheme(Some(scheme));
   }
 
+  {
+    const auto& linkParameters = aStyle.StyleUIReset()->mLinkParameters;
+    if (!linkParameters._0.IsEmpty()) {
+      aContext.SetLinkParameters(linkParameters);
+    }
+  }
+
   const nsStyleSVG* style = aStyle.StyleSVG();
   if (!style->ExposesContextProperties()) {
     // Content must have '-moz-context-properties' set to the names of the

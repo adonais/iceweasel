@@ -18,12 +18,15 @@ class AddonPageHeader extends AboutAddonsHTMLElement {
             <search-addons></search-addons>
           </div>
           <div class="main-heading">
-            <button
+            <moz-button
+              type="ghost"
+              iconsrc="chrome://global/skin/icons/arrow-left.svg"
+              size="default"
               class="back-button"
               action="go-back"
               data-l10n-id="header-back-button"
               hidden
-            ></button>
+            ></moz-button>
             <h1 class="header-name"></h1>
             <div class="spacer"></div>
             <addon-updates-message
@@ -31,13 +34,12 @@ class AddonPageHeader extends AboutAddonsHTMLElement {
               hidden
             ></addon-updates-message>
             <div class="page-options-menu">
-              <button
+              <moz-button
+                size="default"
                 class="more-options-button"
-                action="page-options"
-                aria-haspopup="menu"
-                aria-expanded="false"
+                iconsrc="chrome://global/skin/icons/settings.svg"
                 data-l10n-id="addon-page-options-button"
-              ></button>
+              ></moz-button>
             </div>
           </div>
         </div>
@@ -51,30 +53,31 @@ class AddonPageHeader extends AboutAddonsHTMLElement {
       this.appendChild(AddonPageHeader.fragment);
       this.heading = this.querySelector(".header-name");
       this.backButton = this.querySelector(".back-button");
-      this.pageOptionsMenuButton = this.querySelector(
-        '[action="page-options"]'
-      );
+      this.pageOptionsMenuButton = this.querySelector(".more-options-button");
+
       // The addon-page-options element is outside of this element since this is
       // position: sticky and that would break the positioning of the menu.
       this.pageOptionsMenu = document.getElementById(
         this.getAttribute("page-options-id")
       );
+
+      // Wiring up the addon-page-options panel-list with the page options
+      // moz-button.
+      customElements
+        .whenDefined("addon-page-options")
+        .then(
+          () =>
+            (this.pageOptionsMenuButton.menuId =
+              this.pageOptionsMenu.panelListId)
+        );
     }
     document.addEventListener("view-selected", this);
     this.addEventListener("click", this);
-    this.addEventListener("mousedown", this);
-    // Use capture since the event is actually triggered on the internal
-    // panel-list and it doesn't bubble.
-    this.pageOptionsMenu.addEventListener("shown", this, true);
-    this.pageOptionsMenu.addEventListener("hidden", this, true);
   }
 
   disconnectedCallback() {
     document.removeEventListener("view-selected", this);
     this.removeEventListener("click", this);
-    this.removeEventListener("mousedown", this);
-    this.pageOptionsMenu.removeEventListener("shown", this, true);
-    this.pageOptionsMenu.removeEventListener("hidden", this, true);
   }
 
   setViewInfo({ type, param }) {
@@ -94,32 +97,12 @@ class AddonPageHeader extends AboutAddonsHTMLElement {
   }
 
   handleEvent(e) {
-    let { backButton, pageOptionsMenu, pageOptionsMenuButton } = this;
     if (e.type === "click") {
       switch (e.target) {
-        case backButton:
+        case this.backButton:
           window.history.back();
           break;
-        case pageOptionsMenuButton:
-          if (e.inputSource == MouseEvent.MOZ_SOURCE_KEYBOARD) {
-            this.pageOptionsMenu.toggle(e);
-          }
-          break;
       }
-    } else if (
-      e.type == "mousedown" &&
-      e.target == pageOptionsMenuButton &&
-      e.button == 0
-    ) {
-      this.pageOptionsMenu.toggle(e);
-    } else if (
-      e.target == pageOptionsMenu.panel &&
-      (e.type == "shown" || e.type == "hidden")
-    ) {
-      this.pageOptionsMenuButton.setAttribute(
-        "aria-expanded",
-        this.pageOptionsMenu.open
-      );
     } else if (e.target == document && e.type == "view-selected") {
       const { type, param } = e.detail;
       this.setViewInfo({ type, param });

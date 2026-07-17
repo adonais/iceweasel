@@ -3352,7 +3352,8 @@ static int cdef_filter_block_worker_hook(void *arg1, void *arg2) {
   while (cdef_get_next_job(cdef_sync, cdef_search_ctx, &cur_fbr, &cur_fbc,
                            &sb_count)) {
     av1_cdef_mse_calc_block(cdef_search_ctx, error_info, cur_fbr, cur_fbc,
-                            sb_count);
+                            sb_count,
+                            thread_data->cpi->sf.lpf_sf.adaptive_cdef_mode);
   }
   error_info->setjmp = 0;
   return 1;

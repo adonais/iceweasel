@@ -16,7 +16,7 @@ add_task(async function () {
 
   Services.prefs.setIntPref(
     "network.cookie.cookieBehavior",
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN
   );
 
   const server = CookieXPCShellUtils.createServer({

@@ -81,6 +81,7 @@ enum class GLFeature {
   clear_buffers,
   copy_buffer,
   copy_image,
+  debug,
   depth_clamp,
   depth_texture,
   draw_buffers,
@@ -524,11 +525,11 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
 
  protected:
   void MarkExtensionUnsupported(GLExtensions aKnownExtension) {
-    mAvailableExtensions[aKnownExtension] = 0;
+    mAvailableExtensions[aKnownExtension] = false;
   }
 
   void MarkExtensionSupported(GLExtensions aKnownExtension) {
-    mAvailableExtensions[aKnownExtension] = 1;
+    mAvailableExtensions[aKnownExtension] = true;
   }
 
   std::bitset<Extensions_Max> mAvailableExtensions;
@@ -2447,7 +2448,7 @@ class GLContext : public GenericAtomicRefCounted, public SupportsWeakPtr {
   // Extension ARB_sync (GL)
  public:
   GLsync fFenceSync(GLenum condition, GLbitfield flags) {
-    GLsync ret = 0;
+    GLsync ret = nullptr;
     BEFORE_GL_CALL;
     ASSERT_SYMBOL_PRESENT(fFenceSync);
     ret = mSymbols.fFenceSync(condition, flags);

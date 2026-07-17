@@ -553,6 +553,76 @@ class TabsTrayStoreReducerTest {
     }
 
     @Test
+    fun `WHEN SelectAllTabs THEN all tabs and tab groups (including tabs within groups) are selected`() {
+        val tab1 = createTab(url = "https://mozilla.org/1", id = "tab-1")
+        val tab2 = createTab(url = "https://mozilla.org/2", id = "tab-2")
+        val tabInGroup1 = createTab(url = "https://mozilla.org/group1-1", id = "tab-g1-1")
+        val tabInGroup2 = createTab(url = "https://mozilla.org/group1-2", id = "tab-g1-2")
+        val group = createTabGroup(id = "group-1", tabs = mutableListOf(tabInGroup1, tabInGroup2))
+
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(
+                items = listOf(tab1, group, tab2),
+            ),
+        )
+
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.SelectAllNormalTabs,
+        )
+
+        val expectedMode = Mode.Select(
+            selectedTabs = setOf(tab1, tab2, tabInGroup1, tabInGroup2),
+            selectedTabGroups = setOf(group),
+        )
+
+        assertEquals(expectedMode, resultState.mode)
+    }
+
+    @Test
+    fun `WHEN SelectAllTabs with no groups THEN all individual tabs are selected`() {
+        val tab1 = createTab(url = "https://mozilla.org/1", id = "tab-1")
+        val tab2 = createTab(url = "https://mozilla.org/2", id = "tab-2")
+
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(
+                items = listOf(tab1, tab2),
+            ),
+        )
+
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.SelectAllNormalTabs,
+        )
+
+        val expectedMode = Mode.Select(
+            selectedTabs = setOf(tab1, tab2),
+            selectedTabGroups = emptySet(),
+        )
+
+        assertEquals(expectedMode, resultState.mode)
+    }
+
+    @Test
+    fun `WHEN SelectAllTabs with empty tray THEN selection is empty`() {
+        val initialState = TabsTrayState(
+            normalTabsState = TabsTrayState.NormalTabsState(items = emptyList()),
+        )
+
+        val resultState = TabsTrayReducer.reduce(
+            state = initialState,
+            action = TabsTrayAction.SelectAllNormalTabs,
+        )
+
+        val expectedMode = Mode.Select(
+            selectedTabs = emptySet(),
+            selectedTabGroups = emptySet(),
+        )
+
+        assertEquals(expectedMode, resultState.mode)
+    }
+
+    @Test
     fun `WHEN ReorderTabsTrayItem is invoked THEN the state is not updated`() {
         val initialState = TabsTrayState()
         val resultState = TabsTrayReducer.reduce(

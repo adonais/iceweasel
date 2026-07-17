@@ -12,6 +12,7 @@
 #include "mozilla/dom/Document.h"
 #include "nsContentUtils.h"
 #include "nsIObserverService.h"
+#include "nsPIDOMWindowInlines.h"
 
 namespace mozilla {
 

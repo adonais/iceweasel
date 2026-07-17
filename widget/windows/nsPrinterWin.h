@@ -25,11 +25,11 @@ class nsPrinterWin final : public nsPrinterBase {
   nsPrinterWin() = delete;
   static already_AddRefed<nsPrinterWin> Create(
       const mozilla::CommonPaperInfoArray* aPaperInfoArray,
-      const nsAString& aName);
+      const nsAString& aName, bool aSortAfterLocal);
 
  private:
   nsPrinterWin(const mozilla::CommonPaperInfoArray* aPaperInfoArray,
-               const nsAString& aName);
+               const nsAString& aName, bool aSortAfterLocal);
   ~nsPrinterWin() = default;
 
   PrintSettingsInitializer GetValidatedSettings(

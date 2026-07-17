@@ -190,8 +190,7 @@ void SharedSurfacesParent::AddSameProcess(const wr::ExternalImageId& aId,
   // This is good because we avoid mapping the same shared memory twice, but
   // still allow the original surface to be freed and remove the wrapper from
   // the table when it is no longer needed.
-  RefPtr<SourceSurfaceSharedDataWrapper> surface =
-      new SourceSurfaceSharedDataWrapper();
+  RefPtr surface = MakeRefPtr<SourceSurfaceSharedDataWrapper>();
   surface->Init(aSurface);
 
   uint64_t id = wr::AsUint64(aId);
@@ -248,8 +247,7 @@ void SharedSurfacesParent::Add(const wr::ExternalImageId& aId,
     return;
   }
 
-  RefPtr<SourceSurfaceSharedDataWrapper> surface =
-      new SourceSurfaceSharedDataWrapper();
+  RefPtr surface = MakeRefPtr<SourceSurfaceSharedDataWrapper>();
 
   // We preferentially map in new surfaces when they are initially received
   // because we are likely to reference them in a display list soon. The unmap

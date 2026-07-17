@@ -118,7 +118,7 @@ define_lock_ranks! {
     }
     rank DEVICE_SNATCHABLE_LOCK "Device::snatchable_lock" followed by {
         BUFFER_MAP_STATE,
-        DEVICE_FENCE,
+        DEVICE_COMMAND_INDICES,
         QUEUE_PENDING_WRITES,
         TEXTURE_INITIALIZATION_STATUS,
         QUEUE_LIFE_TRACKER,
@@ -133,12 +133,9 @@ define_lock_ranks! {
         TEXTURE_BIND_GROUPS,
         TEXTURE_CLEAR_MODE,
         TEXTURE_VIEWS,
+        QUERY_SET_INITIALIZED_SLOTS,
         // Uncomment this to see an interesting cycle.
         // COMMAND_BUFFER_DATA,
-    }
-    rank DEVICE_FENCE "Device::fence" followed by {
-        DEVICE_COMMAND_INDICES,
-        QUEUE_LIFE_TRACKER,
     }
     rank DEVICE_COMMAND_INDICES "Device::command_indices" followed by {
         BUFFER_POOL,
@@ -189,6 +186,7 @@ define_lock_ranks! {
     rank DEVICE_USAGE_SCOPES "Device::usage_scopes" followed by { }
     rank REGISTRY_STORAGE "Registry::storage" followed by { }
     rank SHARED_TRACKER_INDEX_ALLOCATOR_INNER "SharedTrackerIndexAllocator::inner" followed by { }
+    rank QUERY_SET_INITIALIZED_SLOTS "QuerySet::initialized_slots" followed by { }
     rank TEXTURE_BIND_GROUPS "Texture::bind_groups" followed by { }
     rank TEXTURE_CLEAR_MODE "Texture::clear_mode" followed by { }
     rank TEXTURE_VIEWS "Texture::views" followed by { }

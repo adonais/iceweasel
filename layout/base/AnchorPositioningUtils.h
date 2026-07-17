@@ -321,11 +321,11 @@ struct AnchorPositioningUtils {
 
   static Maybe<nsRect> GetAnchorPosRect(
       const nsIFrame* aAbsoluteContainingBlock, const nsIFrame* aAnchor,
-      bool aCBRectIsvalid);
+      bool aCBRectIsValid);
 
   static Maybe<AnchorPosInfo> ResolveAnchorPosRect(
       const nsIFrame* aPositioned, const nsIFrame* aAbsoluteContainingBlock,
-      const ScopedNameRef& aAnchorName, bool aCBRectIsvalid,
+      const ScopedNameRef& aAnchorName, bool aCBRectIsValid,
       AnchorPosResolutionCache* aResolutionCache);
 
   static Maybe<nsSize> ResolveAnchorPosSize(

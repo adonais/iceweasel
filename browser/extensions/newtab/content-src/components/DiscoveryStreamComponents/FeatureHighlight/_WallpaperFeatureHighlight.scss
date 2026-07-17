@@ -91,7 +91,6 @@
   .feature-highlight .wallpaper-feature-highlight-modal {
     @include nova-feature-highlight-border;
     --wallpaper-highlight-image-background: #FCF5F0;
-    --wallpaper-highlight-tail-image: url('chrome://newtab/content/data/content/assets/highlights/feature-callout-tail.svg');
 
     width: 352px;
     min-height: 382px;
@@ -150,15 +149,13 @@
     }
 
     &.inset-block-start::after {
-      width: 20px;
-      height: 56px;
-      /* stylelint-disable-next-line declaration-property-value-disallowed-list */
-      inset-block-end: 7px;
-      /* stylelint-disable-next-line declaration-property-value-disallowed-list */
-      inset-inline-end: -17.5px;
-      transform: none;
-      background: var(--wallpaper-highlight-tail-image) no-repeat center / contain;
+      inset-inline-end: calc(var(--space-xlarge) / -2 + var(--border-width));
+      background: var(--background-color-box);
+      /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
+      border: var(--border-width) solid var(--nova-highlight-border-gradient-end);
+      border-start-end-radius: var(--border-radius-small);
       box-shadow: none;
+      clip-path: polygon(0% 0%, 100% 0%, 100% 100%);
     }
 
     > moz-button {
@@ -167,15 +164,42 @@
     }
   }
 
-  @media (prefers-color-scheme: dark) {
-    .feature-highlight .wallpaper-feature-highlight-modal {
-      --wallpaper-highlight-tail-image: url('chrome://newtab/content/data/content/assets/highlights/feature-callout-tail-dark.svg');
+  &.world-cup-variant .feature-highlight .wallpaper-feature-highlight-modal {
+    min-height: 355px;
+
+    .wallpaper-feature-highlight-content {
+      gap: var(--space-small);
+    }
+
+    .wallpaper-feature-highlight-image {
+      --wallpaper-highlight-image-background: transparent;
+
+      background-image: none;
+      height: auto;
+      padding-block: 0;
+    }
+
+    .wallpaper-feature-highlight-image img {
+      width: 100%;
+      height: auto;
+      max-width: 304px;
+      object-fit: contain;
+    }
+
+    .title {
+      color: var(--text-color);
+      font-size: var(--font-size-small);
+    }
+
+    .subtitle {
+      color: var(--text-color);
+      font-size: var(--font-size-small);
+      font-weight: var(--font-weight);
+    }
+
+    .button-wrapper {
+      margin-block-start: var(--space-medium);
     }
   }
 
-  @media (forced-colors: active) {
-    .feature-highlight .wallpaper-feature-highlight-modal {
-      --wallpaper-highlight-tail-image: url('chrome://newtab/content/data/content/assets/highlights/feature-callout-tail-hcm.svg');
-    }
-  }
 }

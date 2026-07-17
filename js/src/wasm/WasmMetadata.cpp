@@ -298,8 +298,14 @@ bool ModuleMetadata::addDefinedFunc(
   if (!codeMeta->types->addType(std::move(funcType))) {
     return false;
   }
+  return addDefinedFuncWithType(typeIndex, declareForRef,
+                                std::move(optionalExportedName));
+}
 
-  FuncDesc funcDesc = FuncDesc(typeIndex);
+bool ModuleMetadata::addDefinedFuncWithType(
+    uint32_t funcTypeIndex, bool declareForRef,
+    mozilla::Maybe<CacheableName>&& optionalExportedName) {
+  FuncDesc funcDesc = FuncDesc(funcTypeIndex);
   uint32_t funcIndex = codeMeta->funcs.length();
   if (!codeMeta->funcs.append(funcDesc)) {
     return false;

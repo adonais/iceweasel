@@ -18,6 +18,7 @@ Ensure that {doc}`viaduct` is initialized during application startup, as it is u
 The `SuggestClient` additionally requires the OHTTP channel to be configured before making requests:
 
 :::{tab-set-code}
+
 ```kotlin
 import mozilla.appservices.viaduct.OhttpConfig
 import mozilla.appservices.viaduct.configureOhttpChannel
@@ -39,6 +40,7 @@ let config = OhttpConfig(
 )
 try configureOhttpChannel(channelId: "merino", config: config)
 ```
+
 :::
 
 ## Async
@@ -64,10 +66,10 @@ import mozilla.appservices.merino.CuratedRecommendationsResponse
 import mozilla.appservices.merino.CuratedRecommendationsApiException
 ```
 
-
 ```swift
 import MozillaAppServices
 ```
+
 :::
 
 ## Initializing the Curated Recommendations Client
@@ -75,6 +77,7 @@ import MozillaAppServices
 The `CuratedRecommendationsClient` is initialized using a `CuratedRecommendationsConfig` object. This includes a required `userAgentHeader` and an optional `baseHost`. If `baseHost` is not provided, the client will default to the production host.
 
 :::{tab-set-code}
+
 ```kotlin
 
 val config = CuratedRecommendationsConfig(
@@ -96,14 +99,15 @@ let config = CuratedRecommendationsConfig(
 let client = try CuratedRecommendationsClient(config: config)
 
 ```
-:::
 
+:::
 
 ## Fetching Curated Recommendations
 
 The `getCuratedRecommendations()` method fetches recommendations based on the provided request parameters.
 
 :::{tab-set-code}
+
 ```kotlin
 
 val request = CuratedRecommendationsRequest(
@@ -141,6 +145,7 @@ do {
 }
 
 ```
+
 :::
 
 ## Data Models
@@ -150,6 +155,7 @@ do {
 The `CuratedRecommendationsRequest` model defines the parameters required to request curated recommendations.
 
 ### Request Fields
+
 | **Field** | **Type** | **Description** |
 |-----------|---------|----------------|
 | `locale` | `string` | The Firefox installed locale, e.g., `en`, `en-US`, `de-DE`. Determines the language of recommendations. |
@@ -162,13 +168,12 @@ The `CuratedRecommendationsRequest` model defines the parameters required to req
 | `experimentBranch` | `string (optional)` | _(Optional)_ The branch name of the Nimbus experiment that the user is in. |
 | `enableInterestPicker` | `boolean (optional, default: false)` | _(Optional, defaults to `false`)_ If `true`, the API response will include an `interestPicker` object with sections for interest bubbles. |
 
-
-
 ### Curated Recommendations Response Model
 
 The `CuratedRecommendationsResponse` model defines the response format containing recommendations.
 
 ### Response Fields
+
 | **Field** | **Type** | **Description** |
 |-----------|---------|----------------|
 | `recommendedAt` | `integer` | The timestamp (in milliseconds) indicating when the recommendations were generated. |
@@ -176,14 +181,13 @@ The `CuratedRecommendationsResponse` model defines the response format containin
 | `feeds` | `object (optional)` | _(Optional)_ A structured set of multiple curated recommendation lists. |
 | `interestPicker` | `object (optional)` | _(Optional)_ Returned if `enableInterestPicker` is `true` in the request. Specifies the display order (`receivedFeedRank`) and a list of sections (referenced by `sectionId`) for interest bubbles. The text in these bubbles should match the corresponding section title. |
 
-
 ## Error Handling
 
 The Curated Recommendations component defines the following error hierarchy:
-- **`CuratedRecommendationsApiError`**: Base error
-    - **`Network(reason: string)`**: Network error while making a request.
-    - **`Other(code: integer (optional), reason: string)`**: Generic error containing an HTTP status code and message.
 
+- **`CuratedRecommendationsApiError`**: Base error
+  - **`Network(reason: string)`**: Network error while making a request.
+  - **`Other(code: integer (optional), reason: string)`**: Generic error containing an HTTP status code and message.
 
 ### Handling Errors in Kotlin and Swift
 
@@ -232,6 +236,7 @@ func fetchCuratedRecommendations() {
 }
 
 ```
+
 :::
 
 ---
@@ -256,6 +261,7 @@ import mozilla.appservices.merino.MerinoSuggestApiException
 ```swift
 import MozillaAppServices
 ```
+
 :::
 
 ## Initializing the Suggest Client
@@ -263,6 +269,7 @@ import MozillaAppServices
 The `SuggestClient` is initialized using a `SuggestConfig` object with an optional `baseHost`. If not provided, it defaults to the production host.
 
 :::{tab-set-code}
+
 ```kotlin
 
 val config = SuggestConfig(
@@ -280,6 +287,7 @@ let config = SuggestConfig(baseHost: nil) // defaults to https://merino.services
 let client = try SuggestClient(config: config)
 
 ```
+
 :::
 
 ## Fetching Suggestions
@@ -287,6 +295,7 @@ let client = try SuggestClient(config: config)
 The `getSuggestions()` method returns a raw JSON string containing the Merino suggest response. Callers are responsible for deserializing the response.
 
 :::{tab-set-code}
+
 ```kotlin
 
 val options = SuggestOptions(
@@ -330,6 +339,7 @@ do {
 }
 
 ```
+
 :::
 
 ## Data Models
@@ -362,9 +372,10 @@ All fields are optional — omitted fields are not sent to Merino.
 ## Error Handling
 
 The Suggest component defines the following error hierarchy:
+
 - **`MerinoSuggestApiError`**: Base error
-    - **`Network(reason: string)`**: A network-level failure (e.g. no connectivity, OHTTP not configured).
-    - **`Other(code: integer (optional), reason: string)`**: An HTTP error or unexpected failure, with an optional status code.
+  - **`Network(reason: string)`**: A network-level failure (e.g. no connectivity, OHTTP not configured).
+  - **`Other(code: integer (optional), reason: string)`**: An HTTP error or unexpected failure, with an optional status code.
 
 ### Handling Errors in Kotlin and Swift
 
@@ -411,6 +422,7 @@ func fetchSuggestions() {
 }
 
 ```
+
 :::
 
 ---
@@ -437,6 +449,7 @@ import mozilla.appservices.merino.MerinoWorldCupApiException
 ```swift
 import MozillaAppServices
 ```
+
 :::
 
 ## Initializing the World Cup Client
@@ -444,6 +457,7 @@ import MozillaAppServices
 The `WorldCupClient` is initialized using a `WorldCupConfig` object with an optional `baseHost`. If not provided, it defaults to the production host.
 
 :::{tab-set-code}
+
 ```kotlin
 
 val config = WorldCupConfig(
@@ -461,6 +475,7 @@ let config = WorldCupConfig(baseHost: nil) // defaults to https://merino.service
 let client = try WorldCupClient(config: config)
 
 ```
+
 :::
 
 ## Fetching World Cup Data
@@ -474,6 +489,7 @@ The client exposes three methods, each returning the raw JSON response body as a
 Callers are responsible for deserializing the response.
 
 :::{tab-set-code}
+
 ```kotlin
 
 val options = WorldCupOptions(
@@ -507,6 +523,7 @@ do {
 }
 
 ```
+
 :::
 
 ## Data Models
@@ -534,9 +551,10 @@ Each `get*()` method returns the raw JSON response body as a string, or `null`/`
 ## Error Handling
 
 The World Cup component defines the following error hierarchy:
+
 - **`MerinoWorldCupApiError`**: Base error
-    - **`Network(reason: string)`**: A network-level failure (e.g. no connectivity).
-    - **`Other(code: integer (optional), reason: string)`**: An HTTP error or unexpected failure, with an optional status code.
+  - **`Network(reason: string)`**: A network-level failure (e.g. no connectivity).
+  - **`Other(code: integer (optional), reason: string)`**: An HTTP error or unexpected failure, with an optional status code.
 
 ### Handling Errors in Kotlin and Swift
 
@@ -583,4 +601,5 @@ func fetchMatches() {
 }
 
 ```
+
 :::

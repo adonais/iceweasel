@@ -656,7 +656,7 @@ nsresult nsMathMLContainerFrame::ReLayoutChildren(nsIFrame* aParentFrame) {
 
   // walk-up to the first frame that is a MathML frame, stop if we reach <math>
   nsIFrame* frame = aParentFrame;
-  while (1) {
+  while (true) {
     nsIFrame* parent = frame->GetParent();
     if (!parent || !parent->GetContent()) {
       break;

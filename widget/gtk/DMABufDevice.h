@@ -178,7 +178,7 @@ class GbmLib {
                                            uint32_t width, uint32_t height,
                                            uint32_t format, uint32_t flags) {
     if (!gbm) {
-      return 0;
+      return nullptr;
     }
     return sCreateSurface(gbm, width, height, format, flags);
   }

@@ -13,7 +13,6 @@ import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.MatcherHelper.itemContainingText
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithDescription
 import org.mozilla.fenix.helpers.MatcherHelper.itemWithResId
-import org.mozilla.fenix.helpers.MatcherHelper.itemWithText
 import org.mozilla.fenix.helpers.TestAssetHelper.externalLinksAsset
 import org.mozilla.fenix.helpers.TestAssetHelper.htmlControlsFormAsset
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
@@ -136,7 +135,7 @@ class WebControlsTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, itemContainingText("Email link"))
             waitForAppWindowToBeUpdated()
-            clickPageObject(composeTestRule, itemWithText("Open"))
+            clickPageObject(composeTestRule, itemContainingText("Open in App"))
             assertNativeAppOpens(composeTestRule, Constants.PackageName.GMAIL_APP, emailLink)
         }
     }
@@ -150,7 +149,7 @@ class WebControlsTest {
         }.enterURLAndEnterToBrowser(externalLinksPage.url) {
             clickPageObject(composeTestRule, itemContainingText("Telephone link"))
             waitForAppWindowToBeUpdated()
-            clickPageObject(composeTestRule, itemWithText("Open"))
+            clickPageObject(composeTestRule, itemContainingText("Open in App"))
             assertNativeAppOpens(composeTestRule, Constants.PackageName.PHONE_APP, phoneLink)
         }
     }

@@ -353,26 +353,38 @@ bool CORSCacheEntry::CheckDNSCache() {
     return false;
   }
 
-  nsCOMPtr<nsIDNSRecord> record;
-  nsresult rv = dns->ResolveNative(host, nsIDNSService::RESOLVE_OFFLINE, mOA,
-                                   getter_AddRefs(record));
-  if (NS_FAILED(rv) || !record) {
-    return false;
+  // Happy Eyeballs resolves each address family separately, so the host may be
+  // cached only as per-family (AF_INET/AF_INET6) records with no AF_UNSPEC
+  // entry. Check each family: the cached preflight is still valid as long as a
+  // matching DNS entry exists and none was updated after the preflight was
+  // created.
+  const nsIDNSService::DNSFlags familyFlags[] = {
+      nsIDNSService::RESOLVE_DEFAULT_FLAGS,  // AF_UNSPEC
+      nsIDNSService::RESOLVE_DISABLE_IPV6,   // AF_INET
+      nsIDNSService::RESOLVE_DISABLE_IPV4,   // AF_INET6
+  };
+
+  bool foundRecord = false;
+  for (const auto& flags : familyFlags) {
+    nsCOMPtr<nsIDNSRecord> record;
+    nsresult rv =
+        dns->ResolveNative(host, nsIDNSService::RESOLVE_OFFLINE | flags, mOA,
+                           getter_AddRefs(record));
+    nsCOMPtr<nsIDNSAddrRecord> addrRec = do_QueryInterface(record);
+    if (NS_FAILED(rv) || !addrRec) {
+      continue;
+    }
+
+    foundRecord = true;
+    TimeStamp lastUpdate;
+    (void)addrRec->GetLastUpdate(&lastUpdate);
+    if (lastUpdate > mCreationTime) {
+      // The DNS result was re-resolved after the preflight was cached.
+      return false;
+    }
   }
 
-  nsCOMPtr<nsIDNSAddrRecord> addrRec = do_QueryInterface(record);
-  if (!addrRec) {
-    return false;
-  }
-
-  TimeStamp lastUpdate;
-  (void)addrRec->GetLastUpdate(&lastUpdate);
-
-  if (lastUpdate > mCreationTime) {
-    return false;
-  }
-
-  return true;
+  return foundRecord;
 }
 
 bool CORSCacheEntry::CheckRequest(const nsCString& aMethod,

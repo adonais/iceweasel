@@ -18,6 +18,7 @@
 #include "mozilla/PodOperations.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/Result.h"
+#include "mozilla/ResultVariant.h"
 #include "mozilla/Span.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/UniquePtrExtensions.h"
@@ -36,6 +37,45 @@ class KnowsCompositor;
 
 class MediaByteBuffer;
 class TrackInfoSharedPtr;
+
+// Backing storage for AlignedBuffer which allows both malloc'd and js_malloc'd
+// data to be used.
+class BufferStorage {
+ public:
+  explicit BufferStorage(void* aBuffer, bool aUseJsFree = false)
+      : mBuffer(aBuffer), mUseJsFree(aUseJsFree) {}
+  BufferStorage(const BufferStorage&) = delete;
+  BufferStorage& operator=(const BufferStorage&) = delete;
+  BufferStorage(BufferStorage&& aOther)
+      : mBuffer(aOther.mBuffer), mUseJsFree(aOther.mUseJsFree) {
+    aOther.mBuffer = nullptr;
+  }
+  BufferStorage& operator=(BufferStorage&& aOther) {
+    if (&aOther == this) {
+      return *this;
+    }
+    Deallocate();
+    mBuffer = aOther.mBuffer;
+    mUseJsFree = aOther.mUseJsFree;
+    aOther.mBuffer = nullptr;
+    return *this;
+  }
+  ~BufferStorage() { Deallocate(); }
+  size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
+    return aMallocSizeOf(mBuffer);
+  }
+
+ private:
+  void Deallocate() {
+    if (mUseJsFree) {
+      js_free(mBuffer);
+    } else {
+      free(mBuffer);
+    }
+  }
+  void* mBuffer;
+  bool mUseJsFree;
+};
 
 // AlignedBuffer:
 // Memory allocations are fallibles. Methods return a boolean indicating if
@@ -83,6 +123,19 @@ class AlignedBuffer {
       return;
     }
     PodCopy(mData, aData, aLength);
+  }
+
+  // Construct AlignedBuffer, taking ownership of data
+  AlignedBuffer(Type* aBuffer, size_t aOffset, size_t aLength, bool aUseJsFree)
+      : mData(aBuffer + aOffset),
+        mLength(aLength),
+        mBuffer(aBuffer, aUseJsFree),
+        mCapacity(aLength) {
+    const uintptr_t alignmask = AlignmentOffset();
+    if ((reinterpret_cast<uintptr_t>(mData) & alignmask) != 0) {
+      // Create copy of data to ensure correct alignment
+      *this = AlignedBuffer(mData, mLength);
+    }
   }
 
   AlignedBuffer(const AlignedBuffer& aOther)
@@ -176,14 +229,12 @@ class AlignedBuffer {
 
   // Methods for reporting memory.
   size_t SizeOfIncludingThis(MallocSizeOf aMallocSizeOf) const {
-    size_t size = aMallocSizeOf(this);
-    size += aMallocSizeOf(mBuffer.get());
-    return size;
+    return aMallocSizeOf(this) + SizeOfExcludingThis(aMallocSizeOf);
   }
   // AlignedBuffer is typically allocated on the stack. As such, you likely
   // want to use SizeOfExcludingThis
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) const {
-    return aMallocSizeOf(mBuffer.get());
+    return mBuffer.SizeOfExcludingThis(aMallocSizeOf);
   }
   size_t ComputedSizeOfExcludingThis() const { return mCapacity; }
 
@@ -247,7 +298,7 @@ class AlignedBuffer {
       PodCopy(newData, mData, mLength);
     }
 
-    mBuffer = std::move(newBuffer);
+    mBuffer = BufferStorage(newBuffer.release());
     mCapacity = sizeNeeded.value();
     mData = newData;
 
@@ -255,7 +306,7 @@ class AlignedBuffer {
   }
   Type* mData;
   size_t mLength{};  // number of elements
-  UniquePtr<uint8_t[]> mBuffer;
+  BufferStorage mBuffer;
   size_t mCapacity{};  // in bytes
 };
 
@@ -770,6 +821,9 @@ class MediaAlignedByteBuffer final : public AlignedByteBuffer {
   MediaAlignedByteBuffer() = default;
   MediaAlignedByteBuffer(const uint8_t* aData, size_t aLength)
       : AlignedByteBuffer(aData, aLength) {}
+  MediaAlignedByteBuffer(uint8_t* aData, size_t aOffset, size_t aLength,
+                         bool aUseJsFree)
+      : AlignedByteBuffer(aData, aOffset, aLength, aUseJsFree) {}
 
  private:
   ~MediaAlignedByteBuffer() = default;

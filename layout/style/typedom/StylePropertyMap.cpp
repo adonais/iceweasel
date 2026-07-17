@@ -7,6 +7,7 @@
 #include "mozilla/CSSPropertyId.h"
 #include "mozilla/ErrorResult.h"
 #include "mozilla/RefPtr.h"
+#include "mozilla/URLExtraData.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/CSSStyleRule.h"
 #include "mozilla/dom/CSSStyleValue.h"
@@ -100,9 +101,14 @@ void StylePropertyMap::Set(
   if (styleValueOrString.IsCSSStyleValue()) {
     styleValue = styleValueOrString.GetAsCSSStyleValue();
   } else {
+    RefPtr<URLExtraData> urlExtraData = mDeclarations.GetURLExtraData();
+    if (!urlExtraData) {
+      aRv.Throw(NS_ERROR_NOT_AVAILABLE);
+      return;
+    }
+
     styleValue = CSSStyleValue::ParseStyleValue(
-        mParent, aProperty, styleValueOrString.GetAsUTF8String(),
-        mDeclarations.GetURLExtraData(),
+        mParent, aProperty, styleValueOrString.GetAsUTF8String(), urlExtraData,
         /* aStyleValues */ nullptr, aRv);
     if (aRv.Failed()) {
       return;

@@ -334,7 +334,7 @@ NSString* GetPathForApp(NSDictionary* aPersistantApp) {
     return nil;
   }
   NSURL* url = CFBridgingRelease(
-      _CFURLCreateFromPropertyListRepresentation(NULL, fileData));
+      _CFURLCreateFromPropertyListRepresentation(nullptr, fileData));
   if (!url) {
     return nil;
   }

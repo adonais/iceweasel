@@ -27,7 +27,7 @@ class WebTransportBidirectionalStream final : public nsISupports,
                                            WebTransportSendStream* aWritable)
       : mGlobal(aGlobal), mReadable(aReadable), mWritable(aWritable) {}
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(WebTransportBidirectionalStream)
 
   static already_AddRefed<WebTransportBidirectionalStream> Create(

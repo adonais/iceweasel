@@ -109,21 +109,19 @@ bool DateTimeInputTypeBase::HasBadInput() const {
   return !allEmpty && IsValueEmpty();
 }
 
-// Format PRExplodedTime according to current locale
-static bool FormatDateTime(
+bool DateTimeInputTypeBase::FormatDateTime(
     const PRExplodedTime& aTime,
     const intl::DateTimeFormat::ComponentsBag& aComponents,
-    nsAString& aFormatted) {
+    nsAString& aFormatted) const {
   // AppDateTimeFormat is not thread-safe.
   MOZ_ASSERT(NS_IsMainThread(), "Should only be called from main thread");
-  return NS_SUCCEEDED(
-      intl::AppDateTimeFormat::Format(aComponents, &aTime, aFormatted));
+  return NS_SUCCEEDED(intl::AppDateTimeFormat::FormatForDocument(
+      aComponents, &aTime, mInputElement->OwnerDoc(), aFormatted));
 }
 
-// Format timestamp according to current locale
-static bool FormatDateTime(
+bool DateTimeInputTypeBase::FormatDateTime(
     double aValue, const intl::DateTimeFormat::ComponentsBag& aComponents,
-    nsAString& aFormatted) {
+    nsAString& aFormatted) const {
   PRExplodedTime exploded;
   PRTime time = static_cast<PRTime>(aValue * PR_USEC_PER_MSEC);
   PR_ExplodeTime(

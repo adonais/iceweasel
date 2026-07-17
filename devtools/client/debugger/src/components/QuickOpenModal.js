@@ -33,8 +33,10 @@ import {
   formatSourceForList,
 } from "../utils/quick-open";
 import Modal from "./shared/Modal";
-import SearchInput from "./shared/SearchInput";
 import ResultList from "./shared/ResultList";
+
+import SearchInput from "devtools/client/shared/components/SearchInput";
+import DebuggerImage from "devtools/client/shared/components/DebuggerImage";
 
 const maxResults = 100;
 
@@ -476,6 +478,9 @@ export class QuickOpenModal extends Component {
         showSearchModifiers: false,
         selectedItemId:
           expanded && items[selectedIndex] ? items[selectedIndex].id : "",
+        searchOptions: {},
+        setSearchOptions: () => {},
+        DebuggerImage,
         ...(this.isSourceSearch() ? SIZE_BIG : SIZE_DEFAULT),
       }),
       results &&

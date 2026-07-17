@@ -122,7 +122,7 @@ Result<Ok, LaunchError> LaunchApp(const std::vector<std::string>& argv,
 
     for (size_t i = 0; i < argv.size(); i++)
       argv_cstr[i] = const_cast<char*>(argv[i].c_str());
-    argv_cstr[argv.size()] = NULL;
+    argv_cstr[argv.size()] = nullptr;
 
 #ifdef MOZ_CODE_COVERAGE
     if (gcov_child_prefix && !options.full_env) {
@@ -156,7 +156,7 @@ Result<Ok, LaunchError> LaunchApp(const std::vector<std::string>& argv,
 
   gProcessLog.print("==> process %d launched child process %d\n",
                     GetCurrentProcId(), pid);
-  if (options.wait) HANDLE_EINTR(waitpid(pid, 0, 0));
+  if (options.wait) HANDLE_EINTR(waitpid(pid, nullptr, 0));
 
   if (process_handle) *process_handle = pid;
 

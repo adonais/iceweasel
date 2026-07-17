@@ -232,13 +232,6 @@ class nsSocketTransport final : public nsASocketHandler,
   uint32_t mTlsFlags{0};
   bool mReuseAddrPort{false};
 
-  // The origin attributes are used to create sockets.  The first party domain
-  // will eventually be used to isolate OCSP cache and is only non-empty when
-  // "privacy.firstparty.isolate" is enabled.  Setting this is the only way to
-  // carry origin attributes down to NSPR layers which are final consumers.
-  // It must be set before the socket transport is built.
-  OriginAttributes mOriginAttributes;
-
   uint16_t SocketPort() {
     return (!mProxyHost.IsEmpty() && !mProxyTransparent) ? mProxyPort : mPort;
   }

@@ -1402,7 +1402,7 @@
       // calculations.
       let rect =
         window.windowUtils.getBoundsWithoutFlushing(tabStripItemElement);
-      // Vertical tabs live under the #sidebar-main element which gets animated and has a
+      // Vertical tabs live under the #sidebar-container element which gets animated and has a
       // transform style property, making it the containing block for all its descendants.
       // Position:absolute elements need to account for this when updating position using
       // other measurements whose origin is the viewport or documentElement's 0,0

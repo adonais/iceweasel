@@ -33,6 +33,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   parseURLPattern:
     "chrome://remote/content/shared/webdriver/URLPattern.sys.mjs",
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
+  SessionDataCategory:
+    "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   SessionDataMethod:
     "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   truncate: "chrome://remote/content/shared/Format.sys.mjs",
@@ -3063,7 +3065,7 @@ class NetworkModule extends RootBiDiModule {
     }
 
     const sessionDataItem = {
-      category: "response-collector",
+      category: lazy.SessionDataCategory.ResponseCollector,
       method,
       moduleName: "network",
       values: [collectorId],

@@ -218,12 +218,12 @@ nsis-3.07-win:
         add-prefix: nsis/
 
 upx:
-    description: upx 5.1.1 source
+    description: upx 5.2.0 source
     fetch:
         type: static-url
-        url: https://github.com/upx/upx/releases/download/v5.1.1/upx-5.1.1-src.tar.xz
-        sha256: 8eb914115b306fd9fd2110bd3d27ddb8ae7c5a03bb965f7d10f046a3a4ff9dfe
-        size: 1435728
+        url: https://github.com/upx/upx/releases/download/v5.2.0/upx-5.2.0-src.tar.xz
+        sha256: af99e526d5759de94412aea1104d5e4ca406cb725295f8633ecc9e843dc1ce1c
+        size: 1764768
         artifact-name: upx-src.tar.zst
         strip-components: 1
         add-prefix: upx/
@@ -232,9 +232,9 @@ wine:
     description: wine source code
     fetch:
         type: static-url
-        url: https://dl.winehq.org/wine/source/11.x/wine-11.6.tar.xz
-        sha256: d49d166975478f609e6a9cdbda0a07c65a3b795e061fc454d3f1034c828d19e0
-        size: 43700900
+        url: https://dl.winehq.org/wine/source/11.x/wine-11.10.tar.xz
+        sha256: e4c35ebe26f4f8eef5f2143e24a1fb9fd103f1d46132ad4755479227d086b8e7
+        size: 45603064
         gpg-signature:
             sig-url: "{url}.sign"
             key-path: build/unix/build-gcc/DA23579A74D4AD9AF9D3F945CEFAC8EAAF17519D.key
@@ -242,12 +242,12 @@ wine:
         strip-components: 1
         add-prefix: wine-source/
 
-cbindgen-0.29.1:
-    description: cbindgen 0.29.1 source code
+cbindgen-0.29.4:
+    description: cbindgen 0.29.4 source code
     fetch:
         type: git
         repo: https://github.com/mozilla/cbindgen
-        revision: eef17769e2739ebb425fee0bbd88e6a52ac2a4e1
+        revision: b826cb8911488fe8a209d2b693492c0c673e8cca
     fetch-alias: cbindgen
 
 cctools-port:
@@ -322,7 +322,7 @@ gn:
     fetch:
         type: git
         repo: https://gn.googlesource.com/gn
-        revision: f98b6d7275c2e823e0983fa7f874facfe6980778
+        revision: 6f8c0328ee29c76e3566a216f2f0cf2992daa6ed
 
 grcov:
     description: grcov source code
@@ -337,8 +337,8 @@ sccache:
     fetch:
         type: git
         repo: https://github.com/mozilla/sccache
-        # 0.11.0 release
-        revision: 5709f069514a775ddb6604a6e9f5f5c91c0e9821
+        # 0.15.0 release
+        revision: c2e4b4ca035f91f8b63978afc8e2c71f174fe306
 
 fxc2:
     description: fxc2 source code
@@ -352,7 +352,7 @@ mingw-w64:
     fetch:
         type: git
         repo: https://git.code.sf.net/p/mingw-w64/mingw-w64
-        revision: cd1afb6649aafbd5b36e0cf71815d533ada461f8
+        revision: 00349888007fef589c2604bf60d0ea14c0e2d606
 
 mingw-w64-trunk:
     description: mingw-w64 master branch source code
@@ -390,19 +390,12 @@ clang-14:
         repo: https://github.com/llvm/llvm-project
         revision: 4bc1d0b51c8e488d78ab69c8b19cfbcd1f7db6a4
 
-clang-17:
-    description: clang 17.0.6 source code
+clang-19:
+    description: clang 19.1.7 source code
     fetch:
         type: git
         repo: https://github.com/llvm/llvm-project
-        revision: 6009708b4367171ccdbf4b5905cb6a803753fe18
-
-clang-20:
-    description: clang 20.1.8 source code
-    fetch:
-        type: git
-        repo: https://github.com/llvm/llvm-project
-        revision: 87f0227cb60147a26a1eeb4fb06e3b505e9c7261
+        revision: cd708029e0b2869e80abe31ddb175f7c35361f90
 
 clang-21:
     description: clang 21.1.8 source code
@@ -410,6 +403,13 @@ clang-21:
         type: git
         repo: https://github.com/llvm/llvm-project
         revision: 2078da43e25a4623cab2d0d60decddf709aaea28
+
+clang-22:
+    description: clang 22.1.6 source code
+    fetch:
+        type: git
+        repo: https://github.com/llvm/llvm-project
+        revision: fc4aad7b5db3fff421df9a9637605b9ca5667881
 
 clang-trunk:
     description: clang main branch source code
@@ -423,13 +423,13 @@ clang-trunk:
 # We build stable rust from source so the resulting compiler acts as a nightly
 # rust compiler, allowing to use unstable features like -Zbuild-std and
 # sanitizers.
-rust-1.90.0:
-    description: Rust 1.90.0 source code
+rust-1.94.1:
+    description: Rust 1.94.1 source code
     fetch:
         type: git
         include-dot-git: true
         repo: https://github.com/rust-lang/rust/
-        revision: 1159e78c4747b02ef996e55082b704c09b970588
+        revision: e408947bfd200af42db322daf0fadfe7e26d3bd1
 
 rust-nightly:
     description: Rust nightly source code
@@ -469,23 +469,23 @@ win64-ninja:
         add-prefix: ninja/bin/
 
 macosx64-cmake:
-    description: cmake 4.2.3
+    description: cmake 4.3.3
     fetch:
         type: static-url
-        url: https://github.com/Kitware/CMake/releases/download/v4.3.1/cmake-4.3.1-macos-universal.tar.gz
-        sha256: c21fe4ade82a6a236aae0b9fbd8263c7ac6824a3fb32d03594456e30b06f3b7f
-        size: 87032455
+        url: https://github.com/Kitware/CMake/releases/download/v4.3.3/cmake-4.3.3-macos-universal.tar.gz
+        sha256: 5221a13450c7a0219a2a0d1b6c9085eb06489721fafd8488ccebc1584175d2fb
+        size: 87452640
         artifact-name: cmake.tar.zst
         strip-components: 3
         add-prefix: cmake/
 
 cmake:
-    description: cmake 4.3.1 source code
+    description: cmake 4.3.3 source code
     fetch:
         type: static-url
-        url: https://github.com/Kitware/CMake/releases/download/v4.3.1/cmake-4.3.1.tar.gz
-        sha256: 0798f4be7a1a406a419ac32db90c2956936fecbf50db3057d7af47d69a2d7edb
-        size: 12966559
+        url: https://github.com/Kitware/CMake/releases/download/v4.3.3/cmake-4.3.3.tar.gz
+        sha256: cba4bb7a44edf2877bb6f059932896383babe435b3a8c3b5df48b4aa41c9bb85
+        size: 12971567
         artifact-name: cmake.tar.zst
         strip-components: 1
         add-prefix: cmake/
@@ -512,12 +512,12 @@ fix-stacks:
         revision: 1fb1bcc8cb4dd65fbe342853954651563a0a88e7
 
 7zz:
-    description: 7-zip 26.00 source code
+    description: 7-zip 26.01 source code
     fetch:
         type: static-url
-        url: https://www.7-zip.org/a/7z2600-src.tar.xz
-        sha256: 3e596155744af055a77fc433c703d54e3ea9212246287b5b1436a6beac060f16
-        size: 1538112
+        url: https://github.com/ip7z/7zip/releases/download/26.01/7z2601-src.tar.xz
+        sha256: b2389e0e930b2f9a348cf0fe7d9870a46482a8ec044ee0bdf42e2136db31c3d6
+        size: 1543032
         artifact-name: 7z-src.tar.zst
         add-prefix: 7zz/
 
@@ -693,12 +693,12 @@ pkgconf:
         strip-components: 1
         add-prefix: pkgconf/
 
-afl-plus-plus-4.0:
-    description: AFL++ 4.x source
+afl-plus-plus:
+    description: AFL++ 5.x source
     fetch:
         type: git
         repo: https://github.com/AFLplusplus/AFLplusplus
-        revision: e5a8ba39ecf97d05e286fdd4e01da96554dbf64f
+        revision: 4d0ec73b3eaad851402f18d63ea8344e9890d458
 
 cargo-vet:
     description: cargo-vet source
@@ -712,7 +712,7 @@ symbol-scrapers:
     fetch:
         type: git
         repo: https://github.com/mozilla/symbol-scrapers
-        revision: 1f59a3cca3ef7cff850915e5071559858ae32571
+        revision: 54402d045d400f79f10de9163c0071d64c449f3e
 
 xz:
     description: xz 5.8.3 source code
@@ -813,7 +813,7 @@ dxc-src:
     fetch:
         type: git
         repo: https://github.com/FirefoxGraphics/DirectXShaderCompiler
-        revision: dc9cb8960f8d4fbb5f904eac1e3bf7f1821e4be1
+        revision: 9c26d96149925760ca86cd43610d9d32b6ec70c2
 
 jj:
     description: jj 0.38.0 source code
@@ -830,11 +830,14 @@ firefox-profiler:
         revision: 8c0afb1f47190487b08ea2561ae3cc0f7a5d31e9
 
 # See https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
+# We can't catch regressions from these updates in CI. Testing should focus on
+# "no tabs in toolbar" functionality, making sure tabs are selectable at the
+# very top of the screen when maximized, and fullscreen transitions (F11).
 windowsappsdk-redist:
     description: Windows App SDK Redistributable
     fetch:
         type: static-url
-        url: https://aka.ms/windowsappsdk/1.8/1.8.251106002/Microsoft.WindowsAppRuntime.Redist.1.8.zip
-        sha256: 57748c37e2b0ce381518bbe7ac72e015c150771a343af89f9f0bd95aa5e9bbc0
-        size: 465986932
+        url: https://aka.ms/windowsappsdk/2.2/2.2.0/Microsoft.WindowsAppRuntime.Redist.2.2.zip
+        sha256: ab078d5b1d730f093ed4e1a33d0e709d1dbca85fa4a10f546cc6824e3b48057f
+        size: 478796379
         artifact-name: Microsoft.WindowsAppRuntime.Redist.tar.zst

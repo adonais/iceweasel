@@ -59,7 +59,7 @@ bool VALibWrapper::LinkVAAPILibs() {
   lspec.value.pathname = libDrm;
   mVALibDrm = PR_LoadLibraryWithFlags(lspec, PR_LD_NOW | PR_LD_LOCAL);
   if (!mVALibDrm) {
-    FFMPEGP_LOG("VA-API support: Missing or old %s library.\n", libDrm);
+    FFMPEGP_LOG("VA-API support: Missing or old {} library.\n", libDrm);
     return false;
   }
 
@@ -72,7 +72,7 @@ bool VALibWrapper::LinkVAAPILibs() {
     mVALib = nullptr;
   }
   if (!mVALib) {
-    FFMPEGP_LOG("VA-API support: Missing or old %s library.\n", lib);
+    FFMPEGP_LOG("VA-API support: Missing or old {} library.\n", lib);
     return false;
   }
 

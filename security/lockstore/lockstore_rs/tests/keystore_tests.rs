@@ -2,11 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use lockstore_rs::{CipherSuite, Keystore, LockstoreError};
+use lockstore_rs::{CipherSuite, KekType, Keystore, LockstoreError};
+use std::time::Duration;
 use tempfile::tempdir;
 
-const LOCAL: &str = "lockstore::kek::local";
-const TEST_LEVEL: &str = "lockstore::kek::test";
+fn mint_local(ks: &Keystore) -> String {
+    ks.create_kek(KekType::LocalKey, "", b"", Duration::ZERO)
+        .expect("create local kek")
+}
+
+/// Well-formed LocalKey-typed kek_ref with no backing DB record.
+/// Used in tests that exercise the "kek_ref not found" code paths.
+const BOGUS_LOCAL: &str = "lockstore::kek::local:nonexistent-id";
 
 #[test]
 fn test_new_in_memory() {
@@ -17,12 +24,13 @@ fn test_new_in_memory() {
 #[test]
 fn test_create_dek() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("col1", LOCAL, true)
+        .create_dek("col1", &local, true)
         .expect("Failed to create DEK");
 
-    let collections = keystore.list_collections().expect("Failed to list");
+    let collections = keystore.list_deks().expect("Failed to list");
     assert_eq!(collections, vec!["col1"]);
 
     keystore.close();
@@ -31,12 +39,13 @@ fn test_create_dek() {
 #[test]
 fn test_create_dek_duplicate_fails() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("dup", LOCAL, true)
+        .create_dek("dup", &local, true)
         .expect("Failed to create DEK");
 
-    let result = keystore.create_dek("dup", LOCAL, true);
+    let result = keystore.create_dek("dup", &local, true);
     assert!(matches!(
         result,
         Err(LockstoreError::InvalidConfiguration(_))
@@ -48,14 +57,15 @@ fn test_create_dek_duplicate_fails() {
 #[test]
 fn test_delete_dek() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("to_delete", LOCAL, true)
+        .create_dek("to_delete", &local, true)
         .expect("Failed to create DEK");
 
     keystore.delete_dek("to_delete").expect("Failed to delete");
 
-    let collections = keystore.list_collections().expect("Failed to list");
+    let collections = keystore.list_deks().expect("Failed to list");
     assert!(collections.is_empty());
 
     keystore.close();
@@ -74,9 +84,10 @@ fn test_delete_dek_nonexistent() {
 #[test]
 fn test_extractable_dek() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("extractable", LOCAL, true)
+        .create_dek("extractable", &local, true)
         .expect("Failed to create DEK");
 
     assert!(keystore
@@ -84,7 +95,7 @@ fn test_extractable_dek() {
         .expect("Failed to check"));
 
     let (key, cipher_suite) = keystore
-        .get_dek("extractable", LOCAL)
+        .get_dek("extractable", &local)
         .expect("Failed to get DEK");
     assert!(!key.is_empty());
     assert_eq!(cipher_suite, CipherSuite::Aes256Gcm);
@@ -95,16 +106,17 @@ fn test_extractable_dek() {
 #[test]
 fn test_non_extractable_dek() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("non_extractable", LOCAL, false)
+        .create_dek("non_extractable", &local, false)
         .expect("Failed to create DEK");
 
     assert!(!keystore
         .is_dek_extractable("non_extractable")
         .expect("Failed to check"));
 
-    let result = keystore.get_dek("non_extractable", LOCAL);
+    let result = keystore.get_dek("non_extractable", &local);
     assert!(matches!(result, Err(LockstoreError::NotExtractable(_))));
 
     keystore.close();
@@ -113,13 +125,14 @@ fn test_non_extractable_dek() {
 #[test]
 fn test_create_dek_with_aes256gcm() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek_with_cipher("aes_col", LOCAL, true, CipherSuite::Aes256Gcm)
+        .create_dek_with_cipher("aes_col", &local, true, CipherSuite::Aes256Gcm)
         .expect("Failed to create DEK");
 
     let (_key, cipher_suite) = keystore
-        .get_dek("aes_col", LOCAL)
+        .get_dek("aes_col", &local)
         .expect("Failed to get DEK");
     assert_eq!(cipher_suite, CipherSuite::Aes256Gcm);
 
@@ -129,13 +142,14 @@ fn test_create_dek_with_aes256gcm() {
 #[test]
 fn test_create_dek_with_chacha20() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek_with_cipher("chacha_col", LOCAL, true, CipherSuite::ChaCha20Poly1305)
+        .create_dek_with_cipher("chacha_col", &local, true, CipherSuite::ChaCha20Poly1305)
         .expect("Failed to create DEK");
 
     let (_key, cipher_suite) = keystore
-        .get_dek("chacha_col", LOCAL)
+        .get_dek("chacha_col", &local)
         .expect("Failed to get DEK");
     assert_eq!(cipher_suite, CipherSuite::ChaCha20Poly1305);
 
@@ -145,13 +159,14 @@ fn test_create_dek_with_chacha20() {
 #[test]
 fn test_get_dek_returns_correct_data() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("get_test", LOCAL, true)
+        .create_dek("get_test", &local, true)
         .expect("Failed to create DEK");
 
     let (key, cipher_suite) = keystore
-        .get_dek("get_test", LOCAL)
+        .get_dek("get_test", &local)
         .expect("Failed to get DEK");
 
     assert_eq!(key.len(), cipher_suite.key_size());
@@ -161,44 +176,46 @@ fn test_get_dek_returns_correct_data() {
 }
 
 #[test]
-fn test_list_collections_empty() {
+fn test_list_deks_empty() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
 
-    let collections = keystore.list_collections().expect("Failed to list");
+    let collections = keystore.list_deks().expect("Failed to list");
     assert!(collections.is_empty());
 
     keystore.close();
 }
 
 #[test]
-fn test_list_collections_single() {
+fn test_list_deks_single() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("only", LOCAL, true)
+        .create_dek("only", &local, true)
         .expect("Failed to create DEK");
 
-    let collections = keystore.list_collections().expect("Failed to list");
+    let collections = keystore.list_deks().expect("Failed to list");
     assert_eq!(collections, vec!["only"]);
 
     keystore.close();
 }
 
 #[test]
-fn test_list_collections_multiple() {
+fn test_list_deks_multiple() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("alpha", LOCAL, true)
+        .create_dek("alpha", &local, true)
         .expect("Failed to create DEK");
     keystore
-        .create_dek("beta", LOCAL, false)
+        .create_dek("beta", &local, false)
         .expect("Failed to create DEK");
     keystore
-        .create_dek("gamma", LOCAL, true)
+        .create_dek("gamma", &local, true)
         .expect("Failed to create DEK");
 
-    let collections = keystore.list_collections().expect("Failed to list");
+    let collections = keystore.list_deks().expect("Failed to list");
     assert_eq!(collections.len(), 3);
     assert!(collections.contains(&"alpha".to_string()));
     assert!(collections.contains(&"beta".to_string()));
@@ -208,66 +225,72 @@ fn test_list_collections_multiple() {
 }
 
 #[test]
-fn test_list_collections_after_delete() {
+fn test_list_deks_after_delete() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("a", LOCAL, true)
+        .create_dek("a", &local, true)
         .expect("Failed to create DEK");
     keystore
-        .create_dek("b", LOCAL, true)
+        .create_dek("b", &local, true)
         .expect("Failed to create DEK");
 
     keystore.delete_dek("a").expect("Failed to delete");
 
-    let collections = keystore.list_collections().expect("Failed to list");
+    let collections = keystore.list_deks().expect("Failed to list");
     assert_eq!(collections, vec!["b"]);
 
     keystore.close();
 }
 
 #[test]
-fn test_list_collection_keks_after_create_dek() {
+fn test_list_keks_after_create_dek() {
     let keystore = Keystore::new_in_memory().unwrap();
-    keystore.create_dek("col", LOCAL, true).unwrap();
+    let local = mint_local(&keystore);
+    keystore.create_dek("col", &local, true).unwrap();
 
-    let refs = keystore.list_collection_keks("col").unwrap();
-    assert_eq!(refs, vec![LOCAL.to_string()]);
+    let refs = keystore.list_keks("col").unwrap();
+    assert_eq!(refs, vec![local.clone()]);
 
     keystore.close();
 }
 
 #[test]
-fn test_list_collection_keks_after_add_kek() {
+fn test_list_keks_after_add_kek() {
     let keystore = Keystore::new_in_memory().unwrap();
-    keystore.create_dek("col", LOCAL, true).unwrap();
-    keystore.add_kek("col", LOCAL, TEST_LEVEL).unwrap();
+    let local = mint_local(&keystore);
+    let test = mint_local(&keystore);
+    keystore.create_dek("col", &local, true).unwrap();
+    keystore.add_kek("col", &local, &test).unwrap();
 
-    let refs = keystore.list_collection_keks("col").unwrap();
+    let refs = keystore.list_keks("col").unwrap();
     assert_eq!(refs.len(), 2);
-    assert!(refs.contains(&LOCAL.to_string()));
-    assert!(refs.contains(&TEST_LEVEL.to_string()));
+    assert!(refs.contains(&local));
+    assert!(refs.contains(&test.clone()));
 
     keystore.close();
 }
 
 #[test]
-fn test_list_collection_keks_after_remove_kek() {
+fn test_list_keks_after_remove_kek() {
     let keystore = Keystore::new_in_memory().unwrap();
-    keystore.create_dek("col", LOCAL, true).unwrap();
-    keystore.add_kek("col", LOCAL, TEST_LEVEL).unwrap();
-    keystore.remove_kek("col", LOCAL).unwrap();
+    let local = mint_local(&keystore);
+    let test = mint_local(&keystore);
+    keystore.create_dek("col", &local, true).unwrap();
+    keystore.add_kek("col", &local, &test).unwrap();
+    keystore.remove_kek("col", &local).unwrap();
 
-    let refs = keystore.list_collection_keks("col").unwrap();
-    assert_eq!(refs, vec![TEST_LEVEL.to_string()]);
+    let refs = keystore.list_keks("col").unwrap();
+    assert_eq!(refs, vec![test.clone()]);
 
     keystore.close();
 }
 
 #[test]
-fn test_list_collection_keks_unknown_collection() {
+fn test_list_keks_unknown_dek() {
     let keystore = Keystore::new_in_memory().unwrap();
-    let result = keystore.list_collection_keks("nonexistent");
+    let result = keystore.list_keks("nonexistent");
     assert!(matches!(result, Err(LockstoreError::NotFound(_))));
 
     keystore.close();
@@ -276,8 +299,9 @@ fn test_list_collection_keks_unknown_collection() {
 #[test]
 fn test_get_dek_missing_collection() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
-    let result = keystore.get_dek("nonexistent", LOCAL);
+    let result = keystore.get_dek("nonexistent", &local);
     assert!(matches!(result, Err(LockstoreError::NotFound(_))));
 
     keystore.close();
@@ -305,11 +329,12 @@ fn test_new_on_disk() {
     let path = dir.path().join("keystore.sqlite");
 
     let keystore = Keystore::get(path).expect("Failed to create on-disk keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col1", LOCAL, true)
+        .create_dek("col1", &local, true)
         .expect("Failed to create DEK");
 
-    let collections = keystore.list_collections().expect("Failed to list");
+    let collections = keystore.list_deks().expect("Failed to list");
     assert_eq!(collections, vec!["col1"]);
 
     keystore.close();
@@ -321,13 +346,15 @@ fn test_on_disk_persistence() {
     let path = dir.path().join("keystore.sqlite");
 
     let key_material;
+    let local;
     {
         let keystore = Keystore::get(path.clone()).expect("Failed to create on-disk keystore");
+        local = mint_local(&keystore);
         keystore
-            .create_dek("persist", LOCAL, true)
+            .create_dek("persist", &local, true)
             .expect("Failed to create DEK");
         let (key, _cs) = keystore
-            .get_dek("persist", LOCAL)
+            .get_dek("persist", &local)
             .expect("Failed to get DEK");
         key_material = key;
         keystore.close();
@@ -335,7 +362,7 @@ fn test_on_disk_persistence() {
 
     let keystore = Keystore::get(path).expect("Failed to reopen keystore");
     let (key, cipher_suite) = keystore
-        .get_dek("persist", LOCAL)
+        .get_dek("persist", &local)
         .expect("DEK should persist");
     assert_eq!(key, key_material);
     assert_eq!(cipher_suite, CipherSuite::Aes256Gcm);
@@ -344,26 +371,27 @@ fn test_on_disk_persistence() {
 }
 
 #[test]
-fn test_on_disk_list_collections_persists() {
+fn test_on_disk_list_deks_persists() {
     let dir = tempdir().expect("Failed to create temp dir");
     let path = dir.path().join("keystore.sqlite");
 
     {
         let keystore = Keystore::get(path.clone()).expect("Failed to create on-disk keystore");
+        let local = mint_local(&keystore);
         keystore
-            .create_dek("alpha", LOCAL, true)
+            .create_dek("alpha", &local, true)
             .expect("Failed to create DEK");
         keystore
-            .create_dek("beta", LOCAL, false)
+            .create_dek("beta", &local, false)
             .expect("Failed to create DEK");
         keystore
-            .create_dek("gamma", LOCAL, true)
+            .create_dek("gamma", &local, true)
             .expect("Failed to create DEK");
         keystore.close();
     }
 
     let keystore = Keystore::get(path).expect("Failed to reopen keystore");
-    let collections = keystore.list_collections().expect("Failed to list");
+    let collections = keystore.list_deks().expect("Failed to list");
     assert_eq!(collections.len(), 3);
     assert!(collections.contains(&"alpha".to_string()));
     assert!(collections.contains(&"beta".to_string()));
@@ -377,10 +405,12 @@ fn test_on_disk_delete_dek_persists() {
     let dir = tempdir().expect("Failed to create temp dir");
     let path = dir.path().join("keystore.sqlite");
 
+    let local;
     {
         let keystore = Keystore::get(path.clone()).expect("Failed to create on-disk keystore");
+        local = mint_local(&keystore);
         keystore
-            .create_dek("to_delete", LOCAL, true)
+            .create_dek("to_delete", &local, true)
             .expect("Failed to create DEK");
         keystore
             .delete_dek("to_delete")
@@ -389,10 +419,10 @@ fn test_on_disk_delete_dek_persists() {
     }
 
     let keystore = Keystore::get(path).expect("Failed to reopen keystore");
-    let result = keystore.get_dek("to_delete", LOCAL);
+    let result = keystore.get_dek("to_delete", &local);
     assert!(matches!(result, Err(LockstoreError::NotFound(_))));
 
-    let collections = keystore.list_collections().expect("Failed to list");
+    let collections = keystore.list_deks().expect("Failed to list");
     assert!(collections.is_empty());
 
     keystore.close();
@@ -401,20 +431,22 @@ fn test_on_disk_delete_dek_persists() {
 #[test]
 fn test_add_kek() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
+    let test = mint_local(&keystore);
 
     keystore
-        .create_dek("col", LOCAL, true)
+        .create_dek("col", &local, true)
         .expect("Failed to create DEK");
 
     keystore
-        .add_kek("col", LOCAL, TEST_LEVEL)
+        .add_kek("col", &local, &test)
         .expect("Failed to add security level");
 
     let (key_local, _) = keystore
-        .get_dek("col", LOCAL)
+        .get_dek("col", &local)
         .expect("Failed to get via LocalKey");
     let (key_test, _) = keystore
-        .get_dek("col", TEST_LEVEL)
+        .get_dek("col", &test)
         .expect("Failed to get via Test");
 
     assert_eq!(
@@ -428,12 +460,13 @@ fn test_add_kek() {
 #[test]
 fn test_add_duplicate_kek_fails() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("col", LOCAL, true)
+        .create_dek("col", &local, true)
         .expect("Failed to create DEK");
 
-    let result = keystore.add_kek("col", LOCAL, LOCAL);
+    let result = keystore.add_kek("col", &local, &local);
     assert!(matches!(
         result,
         Err(LockstoreError::InvalidConfiguration(_))
@@ -445,12 +478,14 @@ fn test_add_duplicate_kek_fails() {
 #[test]
 fn test_add_kek_missing_source_fails() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
+    let target = mint_local(&keystore);
 
     keystore
-        .create_dek("col", LOCAL, true)
+        .create_dek("col", &local, true)
         .expect("Failed to create DEK");
 
-    let result = keystore.add_kek("col", TEST_LEVEL, LOCAL);
+    let result = keystore.add_kek("col", BOGUS_LOCAL, &target);
     assert!(matches!(result, Err(LockstoreError::NotFound(_))));
 
     keystore.close();
@@ -459,23 +494,25 @@ fn test_add_kek_missing_source_fails() {
 #[test]
 fn test_remove_kek() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
+    let test = mint_local(&keystore);
 
     keystore
-        .create_dek("col", LOCAL, true)
+        .create_dek("col", &local, true)
         .expect("Failed to create DEK");
     keystore
-        .add_kek("col", LOCAL, TEST_LEVEL)
+        .add_kek("col", &local, &test)
         .expect("Failed to add security level");
 
     keystore
-        .remove_kek("col", TEST_LEVEL)
+        .remove_kek("col", &test)
         .expect("Failed to remove security level");
 
-    let result = keystore.get_dek("col", TEST_LEVEL);
+    let result = keystore.get_dek("col", &test);
     assert!(matches!(result, Err(LockstoreError::NotFound(_))));
 
     let (key, _) = keystore
-        .get_dek("col", LOCAL)
+        .get_dek("col", &local)
         .expect("LocalKey should still work");
     assert!(!key.is_empty());
 
@@ -485,12 +522,13 @@ fn test_remove_kek() {
 #[test]
 fn test_remove_last_kek_fails() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     keystore
-        .create_dek("col", LOCAL, true)
+        .create_dek("col", &local, true)
         .expect("Failed to create DEK");
 
-    let result = keystore.remove_kek("col", LOCAL);
+    let result = keystore.remove_kek("col", &local);
     assert!(matches!(
         result,
         Err(LockstoreError::InvalidConfiguration(_))
@@ -502,16 +540,18 @@ fn test_remove_last_kek_fails() {
 #[test]
 fn test_remove_kek_authenticates() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
+    let test = mint_local(&keystore);
 
     keystore
-        .create_dek("col", LOCAL, true)
+        .create_dek("col", &local, true)
         .expect("Failed to create DEK");
     keystore
-        .add_kek("col", LOCAL, TEST_LEVEL)
+        .add_kek("col", &local, &test)
         .expect("Failed to add security level");
 
     keystore
-        .remove_kek("col", TEST_LEVEL)
+        .remove_kek("col", &test)
         .expect("Should authenticate and remove successfully");
 
     keystore.close();
@@ -520,15 +560,17 @@ fn test_remove_kek_authenticates() {
 #[test]
 fn test_remove_nonexistent_kek_fails() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
+    let test = mint_local(&keystore);
 
     keystore
-        .create_dek("col", LOCAL, true)
+        .create_dek("col", &local, true)
         .expect("Failed to create DEK");
     keystore
-        .add_kek("col", LOCAL, TEST_LEVEL)
+        .add_kek("col", &local, &test)
         .expect("Failed to add security level");
 
-    let result = keystore.remove_kek("missing_col", LOCAL);
+    let result = keystore.remove_kek("missing_col", &local);
     assert!(matches!(result, Err(LockstoreError::NotFound(_))));
 
     keystore.close();
@@ -547,17 +589,18 @@ fn test_invalid_kek_ref() {
 #[test]
 fn test_encrypt_decrypt_roundtrip() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, false)
+        .create_dek("col", &local, false)
         .expect("Failed to create DEK");
 
     let plaintext = b"hello, lockstore";
     let blob = keystore
-        .encrypt("col", LOCAL, plaintext)
+        .encrypt("col", &local, plaintext)
         .expect("Failed to encrypt");
     assert_ne!(blob.as_slice(), &plaintext[..]);
     let round = keystore
-        .decrypt("col", LOCAL, &blob)
+        .decrypt("col", &local, &blob)
         .expect("Failed to decrypt");
     assert_eq!(round, plaintext);
 
@@ -567,13 +610,14 @@ fn test_encrypt_decrypt_roundtrip() {
 #[test]
 fn test_encrypt_empty_plaintext() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, false)
+        .create_dek("col", &local, false)
         .expect("Failed to create DEK");
 
-    let blob = keystore.encrypt("col", LOCAL, b"").expect("encrypt empty");
+    let blob = keystore.encrypt("col", &local, b"").expect("encrypt empty");
     let round = keystore
-        .decrypt("col", LOCAL, &blob)
+        .decrypt("col", &local, &blob)
         .expect("decrypt empty");
     assert!(round.is_empty());
 
@@ -583,12 +627,13 @@ fn test_encrypt_empty_plaintext() {
 #[test]
 fn test_encrypt_produces_unique_ciphertexts() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, false)
+        .create_dek("col", &local, false)
         .expect("Failed to create DEK");
 
-    let a = keystore.encrypt("col", LOCAL, b"same").expect("encrypt a");
-    let b = keystore.encrypt("col", LOCAL, b"same").expect("encrypt b");
+    let a = keystore.encrypt("col", &local, b"same").expect("encrypt a");
+    let b = keystore.encrypt("col", &local, b"same").expect("encrypt b");
     assert_ne!(
         a, b,
         "two encryptions of the same plaintext must differ (nonce randomness)"
@@ -601,17 +646,18 @@ fn test_encrypt_produces_unique_ciphertexts() {
 fn test_encrypt_bypasses_extractability() {
     // encrypt/decrypt must work on a non-extractable DEK even though get_dek refuses.
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, false)
+        .create_dek("col", &local, false)
         .expect("Failed to create DEK");
 
     assert!(matches!(
-        keystore.get_dek("col", LOCAL),
+        keystore.get_dek("col", &local),
         Err(LockstoreError::NotExtractable(_))
     ));
 
-    let blob = keystore.encrypt("col", LOCAL, b"abc").expect("encrypt");
-    let round = keystore.decrypt("col", LOCAL, &blob).expect("decrypt");
+    let blob = keystore.encrypt("col", &local, b"abc").expect("encrypt");
+    let round = keystore.decrypt("col", &local, &blob).expect("decrypt");
     assert_eq!(round, b"abc");
 
     keystore.close();
@@ -620,7 +666,8 @@ fn test_encrypt_bypasses_extractability() {
 #[test]
 fn test_encrypt_missing_collection() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
-    let err = keystore.encrypt("nosuch", LOCAL, b"x").unwrap_err();
+    let local = mint_local(&keystore);
+    let err = keystore.encrypt("nosuch", &local, b"x").unwrap_err();
     assert!(matches!(err, LockstoreError::NotFound(_)));
     keystore.close();
 }
@@ -628,11 +675,12 @@ fn test_encrypt_missing_collection() {
 #[test]
 fn test_encrypt_unknown_kek_ref_on_existing_collection() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, false)
+        .create_dek("col", &local, false)
         .expect("Failed to create DEK");
 
-    let err = keystore.encrypt("col", TEST_LEVEL, b"x").unwrap_err();
+    let err = keystore.encrypt("col", BOGUS_LOCAL, b"x").unwrap_err();
     assert!(matches!(err, LockstoreError::NotFound(_)));
     keystore.close();
 }
@@ -640,8 +688,9 @@ fn test_encrypt_unknown_kek_ref_on_existing_collection() {
 #[test]
 fn test_encrypt_invalid_kek_ref() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, false)
+        .create_dek("col", &local, false)
         .expect("Failed to create DEK");
 
     let err = keystore.encrypt("col", "bogus::ref", b"x").unwrap_err();
@@ -652,15 +701,16 @@ fn test_encrypt_invalid_kek_ref() {
 #[test]
 fn test_decrypt_tampered_ciphertext_fails() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, false)
+        .create_dek("col", &local, false)
         .expect("Failed to create DEK");
 
-    let mut blob = keystore.encrypt("col", LOCAL, b"hello").expect("encrypt");
+    let mut blob = keystore.encrypt("col", &local, b"hello").expect("encrypt");
     // Flip a byte past the cipher-suite prefix and nonce so the AEAD tag rejects.
     let last = blob.len() - 1;
     blob[last] ^= 0x01;
-    let err = keystore.decrypt("col", LOCAL, &blob).unwrap_err();
+    let err = keystore.decrypt("col", &local, &blob).unwrap_err();
     assert!(matches!(err, LockstoreError::Decryption(_)));
 
     keystore.close();
@@ -669,29 +719,27 @@ fn test_decrypt_tampered_ciphertext_fails() {
 #[test]
 fn test_decrypt_empty_ciphertext_fails() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, false)
+        .create_dek("col", &local, false)
         .expect("Failed to create DEK");
 
-    let err = keystore.decrypt("col", LOCAL, &[]).unwrap_err();
+    let err = keystore.decrypt("col", &local, &[]).unwrap_err();
     assert!(matches!(err, LockstoreError::Decryption(_)));
     keystore.close();
 }
 
 #[test]
 fn test_decrypt_tampered_cipher_suite_prefix_fails() {
-    // The cipher-suite id is the blob's leading byte. Flipping it to
-    // point at a different (still-valid) suite must be rejected before
-    // AEAD even runs, because the DEK was created under a known suite.
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek_with_cipher("col", LOCAL, false, CipherSuite::Aes256Gcm)
+        .create_dek_with_cipher("col", &local, false, CipherSuite::Aes256Gcm)
         .expect("create DEK");
-    let mut blob = keystore.encrypt("col", LOCAL, b"hello").expect("encrypt");
-    // Aes256Gcm = 0, ChaCha20Poly1305 = 1. Flip to the other one.
+    let mut blob = keystore.encrypt("col", &local, b"hello").expect("encrypt");
     assert_eq!(blob[0], 0, "fresh blob carries the Aes256Gcm id");
     blob[0] = 1;
-    let err = keystore.decrypt("col", LOCAL, &blob).unwrap_err();
+    let err = keystore.decrypt("col", &local, &blob).unwrap_err();
     match err {
         LockstoreError::Decryption(msg) => {
             assert!(
@@ -710,16 +758,14 @@ fn test_decrypt_tampered_cipher_suite_prefix_fails() {
 
 #[test]
 fn test_decrypt_unknown_cipher_suite_prefix_fails() {
-    // An unknown cipher-suite id (any byte not in the supported set)
-    // must be rejected at parse time with `Decryption("Unknown cipher
-    // suite id: …")`.
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, false)
+        .create_dek("col", &local, false)
         .expect("create DEK");
-    let mut blob = keystore.encrypt("col", LOCAL, b"hello").expect("encrypt");
+    let mut blob = keystore.encrypt("col", &local, b"hello").expect("encrypt");
     blob[0] = 0xff;
-    let err = keystore.decrypt("col", LOCAL, &blob).unwrap_err();
+    let err = keystore.decrypt("col", &local, &blob).unwrap_err();
     match err {
         LockstoreError::Decryption(msg) => {
             assert!(
@@ -738,56 +784,78 @@ fn test_decrypt_unknown_cipher_suite_prefix_fails() {
 
 #[test]
 fn test_decrypt_truncated_ciphertext_fails() {
-    // Drop the trailing AEAD tag → the AEAD layer must reject. Distinct
-    // from byte-flipping in the middle: this exercises the
-    // length-too-short or tag-missing path inside NSS's AEAD.
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, false)
+        .create_dek("col", &local, false)
         .expect("create DEK");
-    let blob = keystore.encrypt("col", LOCAL, b"hello").expect("encrypt");
-    // AES-GCM and ChaCha20-Poly1305 both use a 16-byte tag.
+    let blob = keystore.encrypt("col", &local, b"hello").expect("encrypt");
     assert!(blob.len() > 16, "blob should be > tag size");
     let truncated = &blob[..blob.len() - 16];
-    let err = keystore.decrypt("col", LOCAL, truncated).unwrap_err();
+    let err = keystore.decrypt("col", &local, truncated).unwrap_err();
     assert!(matches!(err, LockstoreError::Decryption(_)));
     keystore.close();
 }
 
 #[test]
 fn test_decrypt_with_wrong_dek_fails() {
-    // Two distinct DEKs encrypt-decrypt independently. A ciphertext
-    // produced under DEK A must not decrypt under DEK B (different
-    // collection ⇒ different random DEK).
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
-    keystore.create_dek("a", LOCAL, false).expect("create A");
-    keystore.create_dek("b", LOCAL, false).expect("create B");
-    let blob = keystore.encrypt("a", LOCAL, b"hello").expect("encrypt A");
-    // Decrypt under collection "b" — DEK mismatch, AEAD tag fails.
-    let err = keystore.decrypt("b", LOCAL, &blob).unwrap_err();
+    let local = mint_local(&keystore);
+    keystore.create_dek("a", &local, false).expect("create A");
+    keystore.create_dek("b", &local, false).expect("create B");
+    let blob = keystore.encrypt("a", &local, b"hello").expect("encrypt A");
+    let err = keystore.decrypt("b", &local, &blob).unwrap_err();
     assert!(matches!(err, LockstoreError::Decryption(_)));
     keystore.close();
 }
 
 #[test]
 fn test_encrypt_decrypt_across_keks_share_dek() {
-    // After add_kek, a ciphertext produced at one level must decrypt
-    // at another — they wrap the same underlying DEK.
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
+    let test = mint_local(&keystore);
     keystore
-        .create_dek("col", LOCAL, true)
+        .create_dek("col", &local, true)
         .expect("Failed to create DEK");
     keystore
-        .add_kek("col", LOCAL, TEST_LEVEL)
+        .add_kek("col", &local, &test)
         .expect("Failed to add level");
 
     let blob = keystore
-        .encrypt("col", LOCAL, b"cross-level")
+        .encrypt("col", &local, b"cross-level")
         .expect("encrypt at local");
     let round = keystore
-        .decrypt("col", TEST_LEVEL, &blob)
+        .decrypt("col", &test, &blob)
         .expect("decrypt at test");
     assert_eq!(round, b"cross-level");
+
+    keystore.close();
+}
+
+#[test]
+fn test_two_independent_local_keks() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let a = mint_local(&keystore);
+    let b = mint_local(&keystore);
+    assert_ne!(a, b, "createKek must mint a distinct kek_ref each call");
+
+    keystore.close();
+}
+
+#[test]
+fn test_two_deks_under_same_kek_differ() {
+    let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let kek = mint_local(&keystore);
+
+    keystore.create_dek("col-a", &kek, true).expect("create A");
+    keystore.create_dek("col-b", &kek, true).expect("create B");
+
+    let (dek_a, _) = keystore.get_dek("col-a", &kek).expect("get A");
+    let (dek_b, _) = keystore.get_dek("col-b", &kek).expect("get B");
+    assert_ne!(
+        dek_a, dek_b,
+        "two createDek calls under the same KEK must produce independent random DEKs"
+    );
 
     keystore.close();
 }
@@ -797,7 +865,7 @@ fn test_encrypt_decrypt_across_keks_share_dek() {
 // ---------------------------------------------------------------------------
 
 #[test]
-fn test_lockstore_keystore_get_returns_same_arc() {
+fn test_keystore_get_returns_same_arc() {
     use std::sync::Arc;
 
     let dir = tempdir().expect("Failed to create temp dir");
@@ -812,7 +880,7 @@ fn test_lockstore_keystore_get_returns_same_arc() {
 }
 
 #[test]
-fn test_lockstore_keystore_get_distinct_paths() {
+fn test_keystore_get_distinct_paths() {
     use std::sync::Arc;
 
     let dir_a = tempdir().expect("Failed to create temp dir A");
@@ -829,20 +897,17 @@ fn test_lockstore_keystore_get_distinct_paths() {
 }
 
 #[test]
-fn test_lockstore_keystore_get_state_visible_across_handles() {
-    // Behavioural invariant: writes through one Arc are visible through
-    // any other Arc returned by `Keystore::get` for the same
-    // path, because there's only one underlying handle.
-
+fn test_keystore_get_state_visible_across_handles() {
     let dir = tempdir().expect("Failed to create temp dir");
     let path = dir.path().join("lockstore.keys.sqlite");
 
     let a = Keystore::get(path.clone()).expect("first open");
-    a.create_dek("shared-state", LOCAL, true)
+    let local = mint_local(&a);
+    a.create_dek("shared-state", &local, true)
         .expect("create DEK via first handle");
 
     let b = Keystore::get(path).expect("second open");
-    let collections = b.list_collections().expect("list via second handle");
+    let collections = b.list_deks().expect("list via second handle");
     assert!(
         collections.contains(&"shared-state".to_string()),
         "DEK created via the first handle must be visible via the second"
@@ -852,23 +917,23 @@ fn test_lockstore_keystore_get_state_visible_across_handles() {
 #[test]
 fn test_import_dek_local_key() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     let dek = [7u8; 32];
     keystore
-        .import_dek("imported", LOCAL, &dek, true)
+        .import_dek("imported", &local, &dek, true)
         .expect("Failed to import DEK");
 
     let (round, suite) = keystore
-        .get_dek("imported", LOCAL)
+        .get_dek("imported", &local)
         .expect("Failed to get imported DEK");
     assert_eq!(round, dek, "round-tripped DEK matches imported bytes");
     assert_eq!(suite, CipherSuite::Aes256Gcm);
 
-    // Sanity: encrypt/decrypt under the imported DEK.
     let ct = keystore
-        .encrypt("imported", LOCAL, b"payload")
+        .encrypt("imported", &local, b"payload")
         .expect("encrypt");
-    let pt = keystore.decrypt("imported", LOCAL, &ct).expect("decrypt");
+    let pt = keystore.decrypt("imported", &local, &ct).expect("decrypt");
     assert_eq!(pt, b"payload");
 
     keystore.close();
@@ -877,9 +942,10 @@ fn test_import_dek_local_key() {
 #[test]
 fn test_import_dek_rejects_wrong_length() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     let short = [9u8; 16];
-    let result = keystore.import_dek("short", LOCAL, &short, true);
+    let result = keystore.import_dek("short", &local, &short, true);
     assert!(matches!(
         result,
         Err(LockstoreError::InvalidConfiguration(_))
@@ -891,13 +957,14 @@ fn test_import_dek_rejects_wrong_length() {
 #[test]
 fn test_import_dek_rejects_existing_collection() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     let dek = [3u8; 32];
     keystore
-        .import_dek("dup", LOCAL, &dek, true)
+        .import_dek("dup", &local, &dek, true)
         .expect("first import");
 
-    let result = keystore.import_dek("dup", LOCAL, &dek, true);
+    let result = keystore.import_dek("dup", &local, &dek, true);
     assert!(matches!(
         result,
         Err(LockstoreError::InvalidConfiguration(_))
@@ -909,24 +976,24 @@ fn test_import_dek_rejects_existing_collection() {
 #[test]
 fn test_import_dek_non_extractable() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
     let dek = [11u8; 32];
     keystore
-        .import_dek("hidden", LOCAL, &dek, false)
+        .import_dek("hidden", &local, &dek, false)
         .expect("import");
 
     assert!(!keystore
         .is_dek_extractable("hidden")
         .expect("query extractability"));
 
-    let result = keystore.get_dek("hidden", LOCAL);
+    let result = keystore.get_dek("hidden", &local);
     assert!(matches!(result, Err(LockstoreError::NotExtractable(_))));
 
-    // encrypt/decrypt still works — the bytes never need to leave the keystore.
     let ct = keystore
-        .encrypt("hidden", LOCAL, b"opaque")
+        .encrypt("hidden", &local, b"opaque")
         .expect("encrypt");
-    let pt = keystore.decrypt("hidden", LOCAL, &ct).expect("decrypt");
+    let pt = keystore.decrypt("hidden", &local, &ct).expect("decrypt");
     assert_eq!(pt, b"opaque");
 
     keystore.close();
@@ -935,29 +1002,31 @@ fn test_import_dek_non_extractable() {
 #[test]
 fn test_switch_kek_local_to_test() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
+    let test = mint_local(&keystore);
 
     keystore
-        .create_dek("col", LOCAL, true)
+        .create_dek("col", &local, true)
         .expect("Failed to create DEK");
-    let (before, _) = keystore.get_dek("col", LOCAL).expect("get DEK before");
+    let (before, _) = keystore.get_dek("col", &local).expect("get DEK before");
 
     keystore
-        .switch_kek("col", LOCAL, TEST_LEVEL)
+        .switch_kek("col", &local, &test)
         .expect("Failed to switch KEK");
 
-    let keks = keystore.list_collection_keks("col").expect("list keks");
+    let keks = keystore.list_keks("col").expect("list keks");
     assert_eq!(
         keks,
-        vec![TEST_LEVEL.to_string()],
+        vec![test.clone()],
         "only the new kek_ref should wrap the collection after switch"
     );
 
     let (after, _) = keystore
-        .get_dek("col", TEST_LEVEL)
+        .get_dek("col", &test)
         .expect("get DEK via new kek_ref");
     assert_eq!(before, after, "DEK bytes are unchanged across switch");
 
-    let missing = keystore.get_dek("col", LOCAL);
+    let missing = keystore.get_dek("col", &local);
     assert!(
         matches!(missing, Err(LockstoreError::NotFound(_))),
         "old kek_ref no longer wraps the collection"
@@ -969,9 +1038,10 @@ fn test_switch_kek_local_to_test() {
 #[test]
 fn test_switch_kek_rejects_same_ref() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
-    keystore.create_dek("col", LOCAL, true).expect("create");
-    let result = keystore.switch_kek("col", LOCAL, LOCAL);
+    keystore.create_dek("col", &local, true).expect("create");
+    let result = keystore.switch_kek("col", &local, &local);
     assert!(matches!(
         result,
         Err(LockstoreError::InvalidConfiguration(_))
@@ -983,15 +1053,15 @@ fn test_switch_kek_rejects_same_ref() {
 #[test]
 fn test_switch_kek_rejects_new_already_wraps() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
+    let test = mint_local(&keystore);
 
-    keystore.create_dek("col", LOCAL, true).expect("create");
+    keystore.create_dek("col", &local, true).expect("create");
     keystore
-        .add_kek("col", LOCAL, TEST_LEVEL)
+        .add_kek("col", &local, &test)
         .expect("add second KEK");
 
-    // Both LOCAL and TEST_LEVEL wrap "col"; switching LOCAL → TEST_LEVEL
-    // would duplicate the new wrapping.
-    let result = keystore.switch_kek("col", LOCAL, TEST_LEVEL);
+    let result = keystore.switch_kek("col", &local, &test);
     assert!(matches!(
         result,
         Err(LockstoreError::InvalidConfiguration(_))
@@ -1003,9 +1073,10 @@ fn test_switch_kek_rejects_new_already_wraps() {
 #[test]
 fn test_switch_kek_rejects_missing_old() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
 
-    keystore.create_dek("col", LOCAL, true).expect("create");
-    let result = keystore.switch_kek("col", TEST_LEVEL, LOCAL);
+    keystore.create_dek("col", &local, true).expect("create");
+    let result = keystore.switch_kek("col", BOGUS_LOCAL, &local);
     assert!(matches!(result, Err(LockstoreError::NotFound(_))));
 
     keystore.close();
@@ -1014,22 +1085,57 @@ fn test_switch_kek_rejects_missing_old() {
 #[test]
 fn test_switch_kek_preserves_ciphertext() {
     let keystore = Keystore::new_in_memory().expect("Failed to create keystore");
+    let local = mint_local(&keystore);
+    let test = mint_local(&keystore);
 
-    keystore.create_dek("col", LOCAL, false).expect("create");
+    keystore.create_dek("col", &local, false).expect("create");
     let ct = keystore
-        .encrypt("col", LOCAL, b"pre-switch")
+        .encrypt("col", &local, b"pre-switch")
         .expect("encrypt before switch");
 
-    keystore
-        .switch_kek("col", LOCAL, TEST_LEVEL)
-        .expect("switch");
+    keystore.switch_kek("col", &local, &test).expect("switch");
 
-    // The same ciphertext must still decrypt under the new kek_ref:
-    // switch_kek changes only the wrapping, not the DEK itself.
     let pt = keystore
-        .decrypt("col", TEST_LEVEL, &ct)
+        .decrypt("col", &test, &ct)
         .expect("decrypt after switch");
     assert_eq!(pt, b"pre-switch");
 
+    keystore.close();
+}
+
+#[test]
+fn test_create_kek_identifier_deterministic_and_idempotent() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    // A non-empty identifier yields a deterministic, well-known kek_ref.
+    let kek = keystore
+        .create_kek(KekType::LocalKey, "sqlite", b"", Duration::ZERO)
+        .expect("create with identifier");
+    assert_eq!(kek, "lockstore::kek::local:sqlite");
+
+    // Wrap a DEK and produce a ciphertext under it.
+    keystore.create_dek("c", &kek, false).expect("create dek");
+    let ct = keystore.encrypt("c", &kek, b"hello").expect("encrypt");
+
+    // A second create with the same identifier is get-or-create: same ref,
+    // and it must NOT regenerate the KEK bytes, so the earlier ciphertext
+    // still decrypts.
+    let kek2 = keystore
+        .create_kek(KekType::LocalKey, "sqlite", b"", Duration::ZERO)
+        .expect("idempotent create");
+    assert_eq!(kek, kek2);
+    let pt = keystore.decrypt("c", &kek, &ct).expect("decrypt");
+    assert_eq!(pt, b"hello".to_vec());
+
+    keystore.close();
+}
+
+#[test]
+fn test_create_kek_rejects_non_base64url_identifier() {
+    let keystore = Keystore::new_in_memory().expect("keystore");
+    let result = keystore.create_kek(KekType::LocalKey, "bad:id", b"", Duration::ZERO);
+    assert!(matches!(
+        result,
+        Err(LockstoreError::InvalidConfiguration(_))
+    ));
     keystore.close();
 }

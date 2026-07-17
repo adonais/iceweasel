@@ -10,6 +10,11 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  PlacesTestUtils: "resource://testing-common/PlacesTestUtils.sys.mjs",
+  PlacesUtils: "resource://gre/modules/PlacesUtils.sys.mjs",
+});
+
 add_setup(async function () {
   // Prevent network requests for remote search suggestions during testing.
   await SpecialPowers.pushPrefEnv({
@@ -217,14 +222,144 @@ add_task(async function test_smartbar_click_on_suggestion_navigates() {
 });
 
 add_task(
+  async function test_smartbar_navigation_suggestion_does_not_submit_to_chat() {
+    const testUrl = "https://example.com/aiwindow-nav-suggestion/";
+    await PlacesTestUtils.addVisits([
+      { uri: testUrl, title: "AI Window Nav Suggestion" },
+    ]);
+    registerCleanupFunction(() => PlacesUtils.history.clear());
+
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    // Typing a plain question makes the smartbar default to "chat" mode, with an
+    // "Ask" suggestion on top. The history visit added above puts a clickable URL
+    // suggestion below it, which is the one we click.
+    await promiseSmartbarSuggestionsOpen(browser, () =>
+      typeInSmartbar(browser, "aiwindow-nav-suggestion")
+    );
+    await waitForSmartbarAction(browser, "chat");
+    await stubLoadURL(browser, { captureURL: true });
+
+    const committedAction = await SpecialPowers.spawn(
+      browser,
+      [testUrl],
+      async url => {
+        const { UrlbarUtils } = ChromeUtils.importESModule(
+          "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs"
+        );
+        const aiWindowElement = content.document.querySelector("ai-window");
+        const smartbar = aiWindowElement.shadowRoot.querySelector(
+          "#ai-window-smartbar"
+        );
+
+        const urlRow = await ContentTaskUtils.waitForCondition(() => {
+          for (const row of smartbar.querySelectorAll(".urlbarView-row")) {
+            const res = smartbar.view.getResultFromElement(row);
+            if (
+              res?.type === UrlbarUtils.RESULT_TYPE.URL &&
+              res.payload.url === url
+            ) {
+              return row;
+            }
+          }
+          return null;
+        }, "Wait for the navigation URL suggestion row");
+
+        let action = null;
+        smartbar.addEventListener(
+          "smartbar-commit",
+          e => {
+            action = e.detail.action;
+          },
+          { once: true }
+        );
+
+        EventUtils.synthesizeMouseAtCenter(urlRow, {}, content);
+
+        await ContentTaskUtils.waitForCondition(
+          () => action !== null,
+          "Wait for the smartbar-commit event"
+        );
+
+        return action;
+      }
+    );
+
+    Assert.equal(
+      committedAction,
+      "navigate",
+      "Picking a URL suggestion should commit as a navigation, not chat"
+    );
+
+    const { called, url: loadedUrl } = await getStubLoadURLResult(browser);
+    Assert.ok(called, "Clicking the URL suggestion should navigate");
+    Assert.equal(loadedUrl, testUrl, "Should navigate to the suggestion URL");
+
+    await BrowserTestUtils.closeWindow(win);
+  }
+);
+
+add_task(async function test_smartbar_enter_in_chat_mode_commits_chat() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  // Typing a plain question puts the smartbar in "chat" mode. Pressing Enter
+  // should commit as chat, not navigate.
+  await promiseSmartbarSuggestionsOpen(browser, () =>
+    typeInSmartbar(browser, "what is the capital of france")
+  );
+  await waitForSmartbarAction(browser, "chat");
+  await stubLoadURL(browser);
+
+  const committedAction = await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+
+    let action = null;
+    content.document.addEventListener(
+      "smartbar-commit",
+      e => {
+        action = e.detail.action;
+      },
+      { once: true }
+    );
+
+    const inputCta = smartbar.querySelector("input-cta");
+    await ContentTaskUtils.waitForCondition(
+      () => inputCta.getAttribute("action") !== "stop",
+      "Wait for generation to complete before submitting via Enter"
+    );
+
+    smartbar.inputField.focus();
+    EventUtils.synthesizeKey("KEY_Enter", {}, content);
+
+    await ContentTaskUtils.waitForCondition(
+      () => action !== null,
+      "Wait for the smartbar-commit event"
+    );
+
+    return action;
+  });
+
+  Assert.equal(
+    committedAction,
+    "chat",
+    "Pressing Enter with the CTA in chat mode should commit as chat"
+  );
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
+add_task(
   async function test_smartbar_suggestions_suppressed_on_typing_when_chat_active() {
     const sb = this.sinon.createSandbox();
 
     try {
       sb.stub(this.Chat, "fetchWithHistory");
-      sb.stub(this.openAIEngine, "build").resolves({
-        loadPrompt: () => Promise.resolve("Mock system prompt"),
-      });
+      sb.stub(this.openAIEngine, "build").resolves({});
 
       const win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;
@@ -260,9 +395,7 @@ add_task(
 
     try {
       sb.stub(this.Chat, "fetchWithHistory");
-      sb.stub(this.openAIEngine, "build").resolves({
-        loadPrompt: () => Promise.resolve("Mock system prompt"),
-      });
+      sb.stub(this.openAIEngine, "build").resolves({});
 
       const win = await openAIWindow();
       const browser = win.gBrowser.selectedBrowser;
@@ -292,5 +425,59 @@ add_task(
     } finally {
       sb.restore();
     }
+  }
+);
+
+add_task(
+  async function test_smartbar_no_duplicate_firefox_suggest_group_labels() {
+    const FIREFOX_SUGGEST_LABEL = "Firefox Suggest";
+    const searchQuery = "test";
+
+    // Add two Places visits. The first stays in the GENERAL result group and
+    // the second is promoted to an INPUT_HISTORY result. Both render with a
+    // “Firefox Suggest” label and a duplicate label was created when the AiChat
+    // search fallback result lands between the groups.
+    await PlacesTestUtils.addVisits([
+      { uri: "https://example.com/one", title: "Test Page One" },
+      { uri: "https://example.com/two", title: "Test Page Two" },
+    ]);
+    await UrlbarUtils.addToInputHistory("https://example.com/two", searchQuery);
+
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+
+    await promiseSmartbarSuggestionsOpen(browser, () =>
+      typeInSmartbar(browser, searchQuery)
+    );
+
+    const labelCount = await SpecialPowers.spawn(
+      browser,
+      [FIREFOX_SUGGEST_LABEL],
+      async groupLabel => {
+        const smartbar = content.document
+          .querySelector("ai-window")
+          .shadowRoot.querySelector("#ai-window-smartbar");
+        // Wait for the history results
+        await ContentTaskUtils.waitForCondition(
+          () =>
+            smartbar.querySelector(
+              '.urlbarView-row[type="history"], .urlbarView-row[type="adaptive-history"]'
+            ),
+          "Wait for rows to render"
+        );
+        return [...smartbar.querySelectorAll(".urlbarView-row")].filter(
+          row => row.getAttribute("label") === groupLabel
+        ).length;
+      }
+    );
+
+    Assert.equal(
+      labelCount,
+      1,
+      `"${FIREFOX_SUGGEST_LABEL}" should appear exactly once`
+    );
+
+    await PlacesUtils.history.clear();
+    await BrowserTestUtils.closeWindow(win);
   }
 );

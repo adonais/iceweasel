@@ -231,9 +231,7 @@ FormAutofillUtils = {
 
   get useMLInference() {
     return (
-      AppConstants.NIGHTLY_BUILD &&
-      AppConstants.platform !== "android" &&
-      FormAutofillUtils.useMLTelemetry
+      AppConstants.platform !== "android" && FormAutofillUtils.enableMLAutofill
     );
   },
 
@@ -697,16 +695,17 @@ FormAutofillUtils = {
       names = subNames || subLnames;
     }
 
-    // Overwrite subKeys with subIsoids, when available
+    // Build the keys array using a copy to avoid mutating the cached sub_keys data
+    const keys = [...subKeys];
     if (subIsoids && subIsoids.length && subIsoids.length == subKeys.length) {
       for (let i = 0; i < subIsoids.length; i++) {
         if (subIsoids[i]) {
-          subKeys[i] = subIsoids[i];
+          keys[i] = subIsoids[i];
         }
       }
     }
 
-    return new Map(subKeys.map((key, index) => [key, names[index]]));
+    return new Map(keys.map((key, index) => [key, names[index]]));
   },
 
   /**
@@ -1562,14 +1561,7 @@ XPCOMUtils.defineLazyPreferenceGetter(
 
 XPCOMUtils.defineLazyPreferenceGetter(
   FormAutofillUtils,
-  "useMLTelemetry",
-  "extensions.formautofill.addresses.telemetry.mlenabled",
-  true
-);
-
-XPCOMUtils.defineLazyPreferenceGetter(
-  FormAutofillUtils,
   "enableMLAutofill",
-  "extensions.formautofill.addresses.useml",
+  "extensions.formautofill.useml",
   false
 );

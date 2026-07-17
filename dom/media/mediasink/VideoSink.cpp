@@ -27,11 +27,11 @@ extern LazyLogModule gMediaDecoderLog;
 
 #undef FMT
 
-#define FMT(x, ...) "VideoSink=%p " x, this, ##__VA_ARGS__
+#define FMT(x, ...) "VideoSink={} " x, fmt::ptr(this), ##__VA_ARGS__
 #define VSINK_LOG(x, ...) \
-  MOZ_LOG(gMediaDecoderLog, LogLevel::Debug, (FMT(x, ##__VA_ARGS__)))
+  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Debug, FMT(x, ##__VA_ARGS__))
 #define VSINK_LOG_V(x, ...) \
-  MOZ_LOG(gMediaDecoderLog, LogLevel::Verbose, (FMT(x, ##__VA_ARGS__)))
+  MOZ_LOG_FMT(gMediaDecoderLog, LogLevel::Verbose, FMT(x, ##__VA_ARGS__))
 
 namespace mozilla {
 
@@ -194,7 +194,7 @@ void VideoSink::EnsureHighResTimersOnOnlyIfPlaying() {
 
 void VideoSink::SetPlaying(bool aPlaying) {
   AssertOwnerThread();
-  VSINK_LOG_V(" playing (%d) -> (%d)", mAudioSink->IsPlaying(), aPlaying);
+  VSINK_LOG_V(" playing ({}) -> ({})", mAudioSink->IsPlaying(), aPlaying);
 
   if (!aPlaying) {
     // Reset any update timer if paused.
@@ -230,7 +230,7 @@ void VideoSink::SetPlaying(bool aPlaying) {
 nsresult VideoSink::Start(const media::TimeUnit& aStartTime,
                           const MediaInfo& aInfo) {
   AssertOwnerThread();
-  VSINK_LOG("[%s]", __func__);
+  VSINK_LOG("[{}]", __func__);
 
   nsresult rv = mAudioSink->Start(aStartTime, aInfo);
 
@@ -277,7 +277,7 @@ nsresult VideoSink::Start(const media::TimeUnit& aStartTime,
 void VideoSink::Stop() {
   AssertOwnerThread();
   MOZ_ASSERT(mAudioSink->IsStarted(), "playback not started.");
-  VSINK_LOG("[%s]", __func__);
+  VSINK_LOG("[{}]", __func__);
 
   mAudioSink->Stop();
 
@@ -308,7 +308,7 @@ bool VideoSink::IsPlaying() const {
 void VideoSink::Shutdown() {
   AssertOwnerThread();
   MOZ_ASSERT(!mAudioSink->IsStarted(), "must be called after playback stops.");
-  VSINK_LOG("[%s]", __func__);
+  VSINK_LOG("[{}]", __func__);
 
   mAudioSink->Shutdown();
 }
@@ -486,8 +486,7 @@ void VideoSink::RenderVideoFrames(Span<const RefPtr<VideoData>> aFrames,
     img->mProducerID = mProducerID;
     img->mMediaTime = frame->mTime;
 
-    VSINK_LOG_V("playing video frame %" PRId64
-                " (id=%x, vq-queued=%zu, clock=%" PRId64 ")",
+    VSINK_LOG_V("playing video frame {} (id={:x}, vq-queued={}, clock={})",
                 frame->mTime.ToMicroseconds(), frame->mFrameID,
                 VideoQueue().GetSize(), aClockTime);
     if (!wasSent) {
@@ -534,8 +533,7 @@ void VideoSink::UpdateRenderedVideoFrames() {
     } else {
       droppedInSink++;
       mDroppedInSinkSequenceDuration += frame->mDuration;
-      VSINK_LOG_V("discarding video frame mTime=%" PRId64
-                  " clock_time=%" PRId64,
+      VSINK_LOG_V("discarding video frame mTime={} clock_time={}",
                   frame->mTime.ToMicroseconds(), clockTime.ToMicroseconds());
 
       struct VideoSinkDroppedFrameMarker {
@@ -575,7 +573,7 @@ void VideoSink::UpdateRenderedVideoFrames() {
         totalCompositorDroppedCount - mOldCompositorDroppedCount;
     if (droppedInCompositor > 0) {
       mOldCompositorDroppedCount = totalCompositorDroppedCount;
-      VSINK_LOG_V("%u video frame previously discarded by compositor",
+      VSINK_LOG_V("{} video frame previously discarded by compositor",
                   droppedInCompositor);
     }
     mPendingDroppedCount += droppedInCompositor;
@@ -684,7 +682,7 @@ void VideoSink::MaybeResolveEndPromise() {
     if (clockTime < mVideoFrameEndTime) {
       VSINK_LOG_V(
           "Not reach video end time yet, reschedule timer to resolve "
-          "end promise. clockTime=%" PRId64 ", endTime=%" PRId64,
+          "end promise. clockTime={}, endTime={}",
           clockTime.ToMicroseconds(), mVideoFrameEndTime.ToMicroseconds());
       int64_t delta = (mVideoFrameEndTime - clockTime).ToMicroseconds() /
                       mAudioSink->PlaybackRate();

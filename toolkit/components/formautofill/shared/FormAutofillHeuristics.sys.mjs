@@ -967,10 +967,10 @@ export const FormAutofillHeuristics = {
       lazy.FormAutofillUtils.isCreditCardOrAddressFieldType(element)
     );
 
-    // All of the tokenization is done into a map first and then
-    // retrieved later within inferFieldInfo. This is used because
-    // we may wish to ask the ML inference to be performed all in one
-    // step, if possible.
+    // Because we include information about the adjacent fields, it is
+    // easier to  perform all of the tokenization at once and insert the
+    // results into a map first, keyed by element. The tokens can then be
+    // retrieved later within inferFieldInfo.
     let mlTokensMap = this.tokenizeElements(elements);
 
     const fieldDetails = [];
@@ -991,11 +991,12 @@ export const FormAutofillHeuristics = {
         continue;
       }
 
-      const [fieldName, inferInfo, extraInfo] = this.inferFieldInfo(
+      const [fieldName, inferInfo, mlData] = this.inferFieldInfo(
         element,
         elements,
         mlTokensMap
       );
+
       const attributes = this.parseAdditionalAttributes(element, fieldName);
 
       fieldDetails.push(
@@ -1004,7 +1005,7 @@ export const FormAutofillHeuristics = {
           fathomConfidence: inferInfo.fathomConfidence,
           isVisible,
           isLookup: attributes.isLookup,
-          extraInfo,
+          mlData,
         })
       );
     }
@@ -1094,6 +1095,7 @@ export const FormAutofillHeuristics = {
     if (!isAutoCompleteOff || FormAutofill.creditCardsAutocompleteOff) {
       fieldNames.push(...this.CREDIT_CARD_FIELDNAMES);
     }
+
     if (!isAutoCompleteOff || FormAutofill.addressesAutocompleteOff) {
       fieldNames.push(...this.ADDRESS_FIELDNAMES);
     }
@@ -1145,55 +1147,29 @@ export const FormAutofillHeuristics = {
    *                    [0]the inferred field name
    *                    [1]information collected during the inference process. The possible values includes:
    *                       'autocompleteInfo' and 'fathomConfidence'.
-   *                    [2] extra information used for ML model measurement.
+   *                    [2] tokens used for ML inference.
    */
-  inferFieldInfo(element, elements, mlTokens) {
+  inferFieldInfo(element, elements = [], mlTokens) {
+    const inferredInfo = {};
     const autocompleteInfo = element.getAutocompleteInfo();
-    // An input[autocomplete="on"] will should just use hueristics to guess
-    // the field name.
-    const useAutocomplete =
+
+    // An input[autocomplete="on"] will not be early return here since it stll
+    // needs to find the field name.
+    if (
       autocompleteInfo?.fieldName &&
       !["on", "off"].includes(autocompleteInfo.fieldName) &&
-      !lazy.FormAutofillUtils.isUnsupportedField(autocompleteInfo.fieldName);
-
-    let extraInfo = {};
-    if (!useAutocomplete || lazy.FormAutofillUtils.useMLInference) {
-      // element.documentGlobal can be null in xpcshell tests.
-      let beforeTime = element.documentGlobal?.performance?.now();
-
-      let [fieldName, inferredInfo] = this.inferFieldInfoHeuristics(
-        element,
-        elements
-      );
-
-      // Extra information used for ML inference and measurement.
-      // For now, we will always guess the ML field type, but this would later
-      // be moved to just before the fathom check below. Note that we only save
-      // the tokens to be used for ML inference, since inference must happen in
-      // the parent process.
-      extraInfo = {
-        reFieldName: fieldName,
-        reTime: element.documentGlobal?.performance?.now() - beforeTime,
-        mlData: mlTokens?.get(element),
-      };
-
-      if (!useAutocomplete) {
-        return [fieldName, inferredInfo, extraInfo];
-      }
+      !lazy.FormAutofillUtils.isUnsupportedField(autocompleteInfo.fieldName)
+    ) {
+      inferredInfo.autocompleteInfo = autocompleteInfo;
+      return [autocompleteInfo.fieldName, inferredInfo];
     }
-
-    return [autocompleteInfo.fieldName, { autocompleteInfo }, extraInfo];
-  },
-
-  inferFieldInfoHeuristics(element, elements = []) {
-    const inferredInfo = {};
 
     const fields = this._getPossibleFieldNames(element);
 
     // "email" type of input is accurate for heuristics to determine its Email
     // field or not. However, "tel" type is used for ZIP code for some web site
     // (e.g. HomeDepot, BestBuy), so "tel" type should be not used for "tel"
-    // prediction.
+    // prediction. We also allow this in ML mode since email is likely correct.
     if (element.type == "email" && fields.includes("email")) {
       return ["email", inferredInfo];
     }
@@ -1233,6 +1209,11 @@ export const FormAutofillHeuristics = {
       // by fathom but is considered cc-name by regex-based heuristic, if the form
       // also contains a cc-number identified by fathom, we will treat the form as a
       // valid cc form; hence both cc-number & cc-name are identified.
+    }
+
+    if (mlTokens) {
+      // If ML is desired, skip heuristics and use the ML data instead.
+      return [matchedFieldNames, inferredInfo, mlTokens?.get(element)];
     }
 
     // Check every select for options that
@@ -1292,7 +1273,7 @@ export const FormAutofillHeuristics = {
       return ["tel", inferredInfo];
     }
 
-    return [matchedFieldNames, inferredInfo];
+    return [matchedFieldNames, inferredInfo, mlTokens?.get(element)];
   },
 
   /**

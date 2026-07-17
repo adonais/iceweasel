@@ -33,6 +33,8 @@ run-if = [
   "!headless",
 ]
 
+["browser_pdfjs_csp.js"]
+
 ["browser_pdfjs_download_button.js"]
 
 ["browser_pdfjs_editing_contextmenu.js"]
@@ -117,6 +119,13 @@ support-files = [
 support-files = ["pdf_response_link.sjs"]
 
 ["browser_pdfjs_rfp_exemption.js"]
+
+["browser_pdfjs_sandboxed_iframe.js"]
+support-files = [
+  "file_pdfjs_csp_sandbox_opener.html",
+  "file_pdfjs_csp_sandbox_opener.html^headers^",
+  "file_pdfjs_csp.sjs",
+]
 
 ["browser_pdfjs_saveas.js"]
 support-files = [

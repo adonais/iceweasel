@@ -520,7 +520,7 @@ TEST(NsDeque, RefPtrDeque)
 {
   sFreeCount = 0;
   nsRefPtrDeque<RefCountedClass> deque;
-  RefPtr<RefCountedClass> ptr1 = new RefCountedClass();
+  RefPtr ptr1 = mozilla::MakeRefPtr<RefCountedClass>();
   EXPECT_EQ(1u, ptr1->GetRefCount());
 
   deque.Push(ptr1);
@@ -534,7 +534,7 @@ TEST(NsDeque, RefPtrDeque)
   }
 
   {
-    RefPtr<RefCountedClass> ptr2 = new RefCountedClass();
+    RefPtr ptr2 = mozilla::MakeRefPtr<RefCountedClass>();
     deque.PushFront(ptr2.forget());
     EXPECT_TRUE(deque.PeekFront());
     ptr2 = deque.PopFront();
@@ -562,7 +562,7 @@ TEST(NsDeque, RefPtrDequeTestIterator)
   nsRefPtrDeque<RefCountedClass> deque;
   const uint32_t cnt = 10;
   for (uint32_t i = 0; i < cnt; ++i) {
-    RefPtr<RefCountedClass> ptr = new RefCountedClass();
+    RefPtr ptr = mozilla::MakeRefPtr<RefCountedClass>();
     deque.Push(ptr.forget());
     EXPECT_TRUE(deque.Peek());
   }

@@ -167,7 +167,11 @@ describe("<Weather>", () => {
       );
 
       const weatherInstance = wrapper.find("_Weather").instance();
-      weatherInstance.panelElement = { hide: sinon.spy() };
+      weatherInstance.panelElement = {
+        hide: sinon.spy(),
+        addEventListener: sinon.spy(),
+        removeEventListener: sinon.spy(),
+      };
 
       const submenuNode = wrapper
         .find("panel-list[id='weather-size-submenu']")
@@ -438,7 +442,11 @@ describe("<Weather>", () => {
 
       // Mock the panel element's hide method
       const weatherInstance = wrapper.find("_Weather").instance();
-      weatherInstance.panelElement = { hide: sinon.spy() };
+      weatherInstance.panelElement = {
+        hide: sinon.spy(),
+        addEventListener: sinon.spy(),
+        removeEventListener: sinon.spy(),
+      };
 
       // Find the detect location panel-item
       const detectLocationBtn = wrapper.find("#weather-menu-detect-location");
@@ -494,7 +502,11 @@ describe("<Weather>", () => {
       );
 
       const weatherInstance = wrapper.find("_Weather").instance();
-      weatherInstance.panelElement = { hide: sinon.spy() };
+      weatherInstance.panelElement = {
+        hide: sinon.spy(),
+        addEventListener: sinon.spy(),
+        removeEventListener: sinon.spy(),
+      };
 
       const displayMenuItem = wrapper.find("#weather-menu-display-detailed");
       assert.ok(displayMenuItem.exists(), "Display menu item should exist");
@@ -537,7 +549,11 @@ describe("<Weather>", () => {
       );
 
       const weatherInstance = wrapper.find("_Weather").instance();
-      weatherInstance.panelElement = { hide: sinon.spy() };
+      weatherInstance.panelElement = {
+        hide: sinon.spy(),
+        addEventListener: sinon.spy(),
+        removeEventListener: sinon.spy(),
+      };
 
       const tempMenuItem = wrapper.find("#weather-menu-temp-fahrenheit");
       assert.ok(tempMenuItem.exists(), "Temperature menu item should exist");

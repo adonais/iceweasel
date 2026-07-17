@@ -116,3 +116,9 @@ browser/chrome/browser/builtin-addons/newtab/data/data/content/assets/shaft-arro
 chrome/toolkit/skin/classic/global/icons/shaft-arrow-left.svg
 browser/chrome/browser/builtin-addons/newtab/data/data/content/assets/shaft-arrow-right.svg
 chrome/toolkit/skin/classic/global/icons/shaft-arrow-right.svg
+
+# Bug 2034982 - kit-in-circle.svg is shared between the about:pdf landing page
+# (toolkit global skin, used by the promo) and browser/extensions/newtab, which
+# ship in separate packaging domains.
+browser/chrome/browser/builtin-addons/newtab/data/data/content/assets/kit-in-circle.svg
+chrome/toolkit/skin/classic/global/illustrations/kit-in-circle.svg

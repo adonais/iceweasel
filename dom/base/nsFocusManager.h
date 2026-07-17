@@ -13,6 +13,7 @@
 #include "nsIContent.h"
 #include "nsIFocusManager.h"
 #include "nsIObserver.h"
+#include "nsPIDOMWindowInlines.h"  // FIXME: Stop including inline definitions!
 #include "nsWeakReference.h"
 
 #define FOCUSMANAGER_CONTRACTID "@mozilla.org/focus-manager;1"
@@ -49,7 +50,7 @@ class nsFocusManager final : public nsIFocusManager,
 
  public:
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(nsFocusManager, nsIFocusManager)
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSIOBSERVER
   NS_DECL_NSIFOCUSMANAGER
 

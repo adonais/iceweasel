@@ -15,6 +15,7 @@
 #include "js/experimental/JitInfo.h"  // JSJitGetterOp, JSJitInfo
 #include "js/ForOfIterator.h"         // JS::ForOfIterator
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
+#include "js/Prefs.h"                 // JS::Prefs
 #include "js/PropertySpec.h"
 #include "js/Stack.h"
 #include "vm/ArrayObject.h"
@@ -1065,6 +1066,17 @@ class PromiseReactionRecord : public MicroTaskEntry {
     MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
     return getFixedSlot(handlerSlot());
   }
+
+  // Get the handler for a target state, before the state
+  // transition has happened in setTargetStateAndHandlerArg
+  Value targetStateHandler(JS::PromiseState targetState) {
+    MOZ_ASSERT(this->targetState() == JS::PromiseState::Pending);
+    MOZ_ASSERT(targetState != JS::PromiseState::Pending);
+
+    return getFixedSlot(targetState == JS::PromiseState::Fulfilled
+                            ? Slots::OnFulfilled
+                            : Slots::OnRejected);
+  }
   Value handlerArg() {
     MOZ_ASSERT(targetState() != JS::PromiseState::Pending);
     return getFixedSlot(handlerArgSlot());
@@ -1102,7 +1114,13 @@ class ThenableJob : public MicroTaskEntry {
 
   enum TargetFunction : int32_t {
     PromiseResolveThenableJob,
-    PromiseResolveBuiltinThenableJob
+    PromiseResolveBuiltinThenableJob,
+#ifdef NIGHTLY_BUILD
+    // Job used by SafePromiseResolve (JS::SafeResolve): runs
+    // PerformPromiseResolution on `promise` with the resolution value stored
+    // in the Thenable slot. The Then slot is unused for this target.
+    DeferredResolveJob,
+#endif  // NIGHTLY_BUILD
   };
 
   Value thenable() const { return getFixedSlot(Slots::Thenable); }
@@ -1180,6 +1198,7 @@ static bool RejectPromiseFunction(JSContext* cx, unsigned argc, Value* vp);
 
 static JSFunction* GetResolveFunctionFromReject(JSFunction* reject);
 static JSFunction* GetRejectFunctionFromResolve(JSFunction* resolve);
+static JSFunction* GetResolveFunctionFromPromise(PromiseObject* promise);
 
 #ifdef DEBUG
 
@@ -1629,7 +1648,7 @@ static bool ResolvePromiseFunction(JSContext* cx, unsigned argc, Value* vp) {
 static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
   MOZ_ASSERT(cx->realm());
   GeckoProfilerRuntime& profiler = cx->runtime()->geckoProfiler();
-  if (profiler.enabled()) {
+  if (MOZ_UNLIKELY(profiler.enabled())) {
     // Emit a flow start marker here.
     uint64_t uid = 0;
     if (JS::GetFlowIdFromJSMicroTask(job, &uid)) {
@@ -1638,18 +1657,68 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
     }
   }
 
+  // Only check if we need to use the debug queue when we're not on main thread.
+  if (MOZ_LIKELY(cx->runtime()->isMainRuntime())) {
+    return cx->microTaskQueues->enqueueRegularMicroTask(cx, ObjectValue(*job));
+  }
+
   // We need to root this job because useDebugQueue can GC.
   Rooted<JS::JSMicroTask*> rootedJob(cx, job);
-
-  // Only check if we need to use the debug queue when we're not on main thread.
-  if (MOZ_UNLIKELY(!cx->runtime()->isMainRuntime() &&
-                   cx->jobQueue->useDebugQueue(cx->global()))) {
+  if (MOZ_UNLIKELY(cx->jobQueue->useDebugQueue(cx->global()))) {
     return cx->microTaskQueues->enqueueDebugMicroTask(cx,
                                                       ObjectValue(*rootedJob));
   }
+
   return cx->microTaskQueues->enqueueRegularMicroTask(cx,
                                                       ObjectValue(*rootedJob));
 }
+
+// This traces the paths in EnqueuePromiseReactionJobCrossRealm where you'd
+// actually change realms.
+static bool CanUseSameRealmEnqueue(JSContext* cx, HandleObject reactionObj,
+                                   JS::PromiseState targetState) {
+  if (IsProxy(reactionObj)) {
+    return false;
+  }
+
+  MOZ_RELEASE_ASSERT(reactionObj->is<PromiseReactionRecord>());
+  PromiseReactionRecord* reaction = &reactionObj->as<PromiseReactionRecord>();
+  if (cx->realm() != reaction->realm()) {
+    return false;
+  }
+
+  // Handle only real promise objects
+  JSObject* reactionPromise = reaction->promise();
+  if (reactionPromise && !reactionPromise->is<PromiseObject>()) {
+    return false;
+  }
+
+  Value targetHandler = reaction->targetStateHandler(targetState);
+
+  // This mimics AutoFunctionOrCurrentRealm on handler, however we
+  // don't handle anything but the simplest cases, returning false
+  // at any point of complexity.
+  if (targetHandler.isObject()) {
+    RootedObject handlerObj(cx, &targetHandler.toObject());
+    JS::Realm* handlerRealm = JS::GetFunctionRealm(cx, handlerObj);
+    if (!handlerRealm) {
+      cx->clearPendingException();
+      return false;
+    }
+
+    if (cx->realm() != handlerRealm) {
+      return false;
+    }
+  }
+  return true;
+}
+
+[[nodiscard]] static bool EnqueuePromiseReactionJobCrossRealm(
+    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg,
+    JS::PromiseState targetState);
+[[nodiscard]] static bool EnqueuePromiseReactionJobSameRealm(
+    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg,
+    JS::PromiseState targetState);
 
 /**
  * ES2022 draft rev d03c1ec6e235a5180fa772b6178727c17974cb14
@@ -1668,11 +1737,25 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
  *               whether the onFulfilled or onRejected handler is called.
  */
 [[nodiscard]] static bool EnqueuePromiseReactionJob(
-    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg_,
+    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg,
     JS::PromiseState targetState) {
   MOZ_ASSERT(targetState == JS::PromiseState::Fulfilled ||
              targetState == JS::PromiseState::Rejected);
+  if (CanUseSameRealmEnqueue(cx, reactionObj, targetState)) {
+    return EnqueuePromiseReactionJobSameRealm(cx, reactionObj, handlerArg,
+                                              targetState);
+  }
+  return EnqueuePromiseReactionJobCrossRealm(cx, reactionObj, handlerArg,
+                                             targetState);
+}
 
+// The most general handling of promise enqueue cross realm.
+//
+// Note: Changes to this will almost certainly require changes to
+//       CanUseSameRealmEnqueue and EnqueuePromiseReactionJobSameRealm
+[[nodiscard]] static bool EnqueuePromiseReactionJobCrossRealm(
+    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg_,
+    JS::PromiseState targetState) {
   // The reaction might have been stored on a Promise from another
   // compartment, which means it would've been wrapped in a CCW.
   // To properly handle that case here, unwrap it and enter its
@@ -1854,6 +1937,69 @@ static bool EnqueueJob(JSContext* cx, JS::JSMicroTask* job) {
 
   // HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
   return EnqueueJob(cx, &reactionVal.toObject());
+}
+
+// A specialization of EnqueuePromiseReactionJobCrossRealm for very common
+// same realm case. Should not be called directly, rather
+// EnqueuePromiseReactionJob will dispatch here if it's safe.
+[[nodiscard]] static bool EnqueuePromiseReactionJobSameRealm(
+    JSContext* cx, HandleObject reactionObj, HandleValue handlerArg_,
+    JS::PromiseState targetState) {
+  RootedTuple<PromiseReactionRecord*, Value, JSObject*, JSObject*, JSObject*>
+      roots(cx);
+  RootedField<PromiseReactionRecord*, 0> reaction(roots);
+  RootedField<Value, 1> handlerArg(roots, handlerArg_);
+
+  // Checked in CanUseSameRealmEnqueue
+  MOZ_ASSERT(!IsProxy(reactionObj));
+  MOZ_ASSERT(reactionObj->is<PromiseReactionRecord>());
+
+  reaction = &reactionObj->as<PromiseReactionRecord>();
+
+  // Checked in CanUseSameRealmEnqueue
+  MOZ_ASSERT(cx->realm() == reaction->realm());
+
+  // Must not enqueue a reaction job more than once.
+  MOZ_ASSERT(reaction->targetState() == JS::PromiseState::Pending);
+
+  // NOTE: Instead of capturing reaction and arguments separately in the
+  //       Job Abstract Closure below, store arguments (= handlerArg) in
+  //       reaction object and capture it.
+  //       Also, set reaction.[[Type]] is represented by targetState here.
+  cx->check(handlerArg);
+  reaction->setTargetStateAndHandlerArg(targetState, handlerArg);
+
+  // NewPromiseReactionJob
+  // Checked in CanUseSameRealmEnqueue: the reaction's promise is either null
+  // or a PromiseObject.
+  RootedField<JSObject*, 2> promise(roots, reaction->promise());
+
+  // NewPromiseReactionJob
+  // Step 1 (reordered). Let job be a new Job Abstract Closure with no
+  //                     parameters that captures reaction and argument
+  //                     and performs the following steps when called:
+
+  // Get a representative object for this global: We will use this later
+  // to extract the target global for execution. We don't store the global
+  // directly because CCWs to globals can change identity.
+  //
+  // So instead we simply store Object.prototype from the target global,
+  // an object which always exists.
+  RootedField<JSObject*, 3> globalRepresentative(
+      roots, &cx->global()->getObjectPrototype());
+
+  cx->check(reaction);
+
+  RootedField<JSObject*, 4> stack(
+      roots,
+      JS::MaybeGetPromiseAllocationSiteFromPossiblyWrappedPromise(promise));
+  cx->check(stack, globalRepresentative);
+
+  reaction->setAllocationStack(stack);
+  reaction->setEnqueueGlobalRepresentative(globalRepresentative);
+
+  // HostEnqueuePromiseJob(job.[[Job]], job.[[Realm]]).
+  return EnqueueJob(cx, reaction);
 }
 
 [[nodiscard]] static bool TriggerPromiseReactions(JSContext* cx,
@@ -2609,12 +2755,15 @@ static bool PromiseReactionJob(JSContext* cx, HandleObject reactionObjIn) {
  *
  * Steps 1.a-d.
  *
- * A PromiseResolveThenableJob is set as the native function of an extended
- * JSFunction object, with all information required for the job's
- * execution stored in the function's extended slots.
+ * With the thenable-curtailment proposal
+ * (https://tc39.es/proposal-thenable-curtailment/) these steps are the
+ * PerformPromiseResolveThenable abstract operation: the body shared between
+ * the enqueued thenable job (the ~sync~ resolution path) and the synchronous
+ * thenable invocation done by PerformPromiseResolution in ~deferred~ mode.
  */
-static bool PromiseResolveThenableJob(JSContext* cx, HandleObject promise,
-                                      HandleValue thenable, HandleObject then) {
+static bool PerformPromiseResolveThenable(JSContext* cx, HandleObject promise,
+                                          HandleValue thenable,
+                                          HandleObject then) {
   // Step 1.a. Let resolvingFunctions be
   //           CreateResolvingFunctions(promiseToResolve).
   RootedTuple<JSObject*, JSObject*, Value, SavedFrame*, Value> roots(cx);
@@ -2847,6 +2996,186 @@ static bool PromiseResolveBuiltinThenableJob(JSContext* cx,
 
   return EnqueueJob(cx, thenableJob);
 }
+
+#ifdef NIGHTLY_BUILD
+/**
+ * Thenable-curtailment: https://tc39.es/proposal-thenable-curtailment/
+ *
+ * RequiresDeferredPromiseResolution (value)
+ *
+ * Returns true in *needsDeferral if the synchronous steps of resolving a
+ * promise with `value` _might_ execute user code: e.g.
+ * - a Proxy or other exotic object on the prototype chain, an accessor
+ *   for `"then"`, or a callable data-property `"then"`.
+ *
+ */
+[[nodiscard]] static bool RequiresDeferredPromiseResolution(
+    JSContext* cx, HandleValue value, bool* needsDeferral) {
+  *needsDeferral = false;
+  if (!value.isObject()) {
+    return true;
+  }
+
+  RootedValue thenVal(cx);
+  if (!GetPropertyPure(cx, &value.toObject(), NameToId(cx->names().then),
+                       thenVal.address())) {
+    *needsDeferral = true;
+    return true;
+  }
+
+  *needsDeferral = IsCallable(thenVal);
+  return true;
+}
+
+/**
+ * Thenable-curtailment: https://tc39.es/proposal-thenable-curtailment/
+ *
+ * PerformPromiseResolution (promise, resolution, called)
+ *
+ * This realizes PerformPromiseResolution with `called` fixed to ~deferred~:
+ * it is only ever reached from the deferred-resolve job enqueued by
+ * SafePromiseResolve. (The ~sync~ resolution path is the ordinary
+ * ResolvePromiseInternal used by the resolve function.) Because we are in
+ * ~deferred~ mode, a callable `then` is invoked synchronously via
+ * PerformPromiseResolveThenable rather than by enqueuing a further job, so
+ * the deferred resolution takes the same number of microtask ticks as an
+ * ordinary thenable resolution.
+ */
+[[nodiscard]] static bool PerformPromiseResolution(
+    JSContext* cx, Handle<PromiseObject*> promise, HandleValue resolution) {
+  MOZ_ASSERT(promise->state() == JS::PromiseState::Pending);
+
+  // Step 1.
+  if (!resolution.isObject()) {
+    return FulfillMaybeWrappedPromise(cx, promise, resolution);
+  }
+
+  // Step 2.
+  if (resolution.isObject() && &resolution.toObject() == promise) {
+    JS_ReportErrorNumberASCII(cx, GetErrorMessage, nullptr,
+                              JSMSG_CANNOT_RESOLVE_PROMISE_WITH_ITSELF);
+    RootedValue selfResolutionError(cx);
+    Rooted<SavedFrame*> stack(cx);
+    if (!MaybeGetAndClearExceptionAndStack(cx, &selfResolutionError, &stack)) {
+      return false;
+    }
+    return RejectPromiseInternal(cx, promise, selfResolutionError, stack);
+  }
+
+  // Step 3.
+  RootedObject resolutionObj(cx, &resolution.toObject());
+  RootedValue thenVal(cx);
+  if (!GetProperty(cx, resolutionObj, resolution, cx->names().then, &thenVal)) {
+    // Step 4.
+    RootedValue exn(cx);
+    Rooted<SavedFrame*> stack(cx);
+    if (!MaybeGetAndClearExceptionAndStack(cx, &exn, &stack)) {
+      return false;
+    }
+    if (IsSettledMaybeWrappedPromise(promise)) {
+      return true;
+    }
+    return RejectPromiseInternal(cx, promise, exn, stack);
+  }
+
+  if (IsSettledMaybeWrappedPromise(promise)) {
+    return true;
+  }
+
+  // Step 6
+  if (!IsCallable(thenVal)) {
+    return FulfillMaybeWrappedPromise(cx, promise, resolution);
+  }
+
+  // Step 7. (called is ~deferred~.) Run the thenable now instead of enqueuing
+  // another job: PerformPromiseResolveThenable(promise, resolution, then).
+  RootedObject promiseObj(cx, promise);
+  RootedObject thenObj(cx, &thenVal.toObject());
+  return PerformPromiseResolveThenable(cx, promiseObj, resolution, thenObj);
+}
+
+/**
+ * Thenable-curtailment: https://tc39.es/proposal-thenable-curtailment/
+ *
+ * Enqueues a deferred-resolve microtask job that will invoke
+ * PerformPromiseResolution on `promise` with `resolution` when run.
+ *
+ * The job's realm is the caller's current realm, matching
+ * HostEnqueuePromiseJob's contract.
+ */
+[[nodiscard]] static bool EnqueueDeferredResolveJob(
+    JSContext* cx, Handle<PromiseObject*> promise, HandleValue resolution) {
+  RootedObject incumbentGlobalRepresentative(cx);
+  RootedObject optionalHostDefinedData(cx);
+  if (!GetObjectFromHostDefinedData(cx, &incumbentGlobalRepresentative,
+                                    &optionalHostDefinedData)) {
+    return false;
+  }
+
+  RootedObject promiseObj(cx, promise);
+  ThenableJob* job = NewThenableJob(
+      cx, ThenableJob::DeferredResolveJob, promiseObj, resolution, nullptr,
+      incumbentGlobalRepresentative, optionalHostDefinedData);
+  if (!job) {
+    return false;
+  }
+
+  return EnqueueJob(cx, job);
+}
+
+/**
+ * Thenable-curtailment: https://tc39.es/proposal-thenable-curtailment/
+ *
+ * SafePromiseResolve (promiseCapability, resolution)
+ *
+ * Resolves `promise` with `resolution`. If the synchronous resolution steps
+ * might run user code (Proxy, accessor, or callable "then" data property),
+ * mark the promise's resolving functions as no-ops and defer the actual
+ * PerformPromiseResolution steps to a freshly-enqueued microtask.
+ *
+ * The spec routes the deferral through a null-prototype wrapper thenable
+ * resolved via the promise's [[Resolve]] function; that wrapper is never
+ * exposed to user code, so we skip allocating it and instead latch the
+ * resolving functions directly and enqueue the deferred-resolve job here.
+ */
+bool js::SafeResolvePromise(JSContext* cx, Handle<PromiseObject*> promise,
+                            HandleValue resolution) {
+  cx->check(promise, resolution);
+  MOZ_ASSERT(!PromiseHasAnyFlag(*promise, PROMISE_FLAG_ASYNC));
+
+  if (promise->state() != JS::PromiseState::Pending) {
+    return true;
+  }
+
+  bool needsDeferral = false;
+  if (!RequiresDeferredPromiseResolution(cx, resolution, &needsDeferral)) {
+    return false;
+  }
+
+  if (!needsDeferral) {
+    return PromiseObject::resolve(cx, promise, resolution);
+  }
+
+  // Mark resolving functions as no-ops.
+  if (IsPromiseWithDefaultResolvingFunction(promise)) {
+    if (PromiseHasAnyFlag(
+            *promise,
+            PROMISE_FLAG_DEFAULT_RESOLVING_FUNCTIONS_ALREADY_RESOLVED)) {
+      return true;
+    }
+    SetAlreadyResolvedPromiseWithDefaultResolvingFunction(promise);
+  } else {
+    JSFunction* resolveFun = GetResolveFunctionFromPromise(promise);
+    if (!resolveFun) {
+      // Already latched.
+      return true;
+    }
+    SetAlreadyResolvedResolutionFunction(resolveFun);
+  }
+
+  return EnqueueDeferredResolveJob(cx, promise, resolution);
+}
+#endif  // NIGHTLY_BUILD
 
 [[nodiscard]] static bool AddDummyPromiseReactionForDebugger(
     JSContext* cx, Handle<PromiseObject*> promise,
@@ -8187,13 +8516,23 @@ JS_PUBLIC_API bool JS::RunJSMicroTask(JSContext* cx,
       case ThenableJob::PromiseResolveThenableJob: {
         // MG:XXX: Unify naming: is it `then` or `handler` make up your mind.
         RootedField<JSObject*, 3> then(roots, job->then());
-        return PromiseResolveThenableJob(cx, promise, thenable, then);
+        return PerformPromiseResolveThenable(cx, promise, thenable, then);
       }
       case ThenableJob::PromiseResolveBuiltinThenableJob: {
         RootedField<JSObject*, 2> thenableObj(roots,
                                               &job->thenable().toObject());
         return PromiseResolveBuiltinThenableJob(cx, promise, thenableObj);
       }
+#ifdef NIGHTLY_BUILD
+      case ThenableJob::DeferredResolveJob: {
+        MOZ_ASSERT(promise->is<PromiseObject>());
+        Rooted<PromiseObject*> promiseRooted(cx, &promise->as<PromiseObject>());
+        if (promiseRooted->state() != JS::PromiseState::Pending) {
+          return true;
+        }
+        return PerformPromiseResolution(cx, promiseRooted, thenable);
+      }
+#endif  // NIGHTLY_BUILD
     }
     MOZ_CRASH("Corrupted Target Function");
     return false;

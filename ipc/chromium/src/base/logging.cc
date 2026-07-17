@@ -45,7 +45,7 @@ Logger::~Logger() {
   MOZ_LOG(gChromiumPRLog, prlevel,
           ("%s:%i: %s", mFile, mLine, mMsg ? mMsg.get() : "<no message>"));
   if (xpcomlevel != -1)
-    NS_DebugBreak(xpcomlevel, mMsg.get(), NULL, mFile, mLine);
+    NS_DebugBreak(xpcomlevel, mMsg.get(), nullptr, mFile, mLine);
 }
 
 void Logger::printf(const char* fmt, ...) {

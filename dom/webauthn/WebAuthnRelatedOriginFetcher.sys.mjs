@@ -219,7 +219,7 @@ export class WebAuthnRelatedOriginFetcher {
   _showDesktopPrompt(aManager, aRpId, aIsCreate) {
     if (!l10n) {
       l10n = new Localization(
-        ["branding/brand.ftl", "browser/webauthnDialog.ftl"],
+        ["branding/brand.ftl", "toolkit/webauthnDialog.ftl"],
         true
       );
     }

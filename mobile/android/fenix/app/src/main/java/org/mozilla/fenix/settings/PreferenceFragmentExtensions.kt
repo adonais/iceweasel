@@ -13,6 +13,7 @@ import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.android.material.textfield.TextInputEditText
 import com.google.android.material.textfield.TextInputLayout
 import org.mozilla.fenix.R
+import org.mozilla.fenix.ext.pixelSizeFor
 
 /**
  * Displays a custom [MaterialAlertDialogBuilder] for an [EditTextPreference].
@@ -54,7 +55,7 @@ fun PreferenceFragmentCompat.showCustomEditTextPreferenceDialog(
     textInputLayout.addView(editText)
 
     val container = FrameLayout(context).apply {
-        val horizontalPadding = context.resources.getDimensionPixelSize(R.dimen.dialog_edit_text_horizontal_padding)
+        val horizontalPadding = context.pixelSizeFor(R.dimen.dialog_edit_text_horizontal_padding)
         setPadding(horizontalPadding, 0, horizontalPadding, 0)
         addView(textInputLayout)
     }

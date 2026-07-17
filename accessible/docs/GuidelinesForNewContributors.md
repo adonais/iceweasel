@@ -4,6 +4,7 @@ Thank you for your interest in contributing to the Gecko accessibility module.
 This document provides some brief, high level guidelines to get you started.
 
 ## Local and Remote Accessibility Trees
+
 Accessibility clients communicate with Gecko's parent process, but web content is isolated in its own content processes.
 Therefore, in order for accessibility clients to access web content, the accessibility tree from each content process is cached in the parent process.
 See the [Architecture](Architecture.md) page for more details.
@@ -11,17 +12,18 @@ See the [Architecture](Architecture.md) page for more details.
 This means that when writing patches to change what is exposed to accessibility clients, you need to ensure that:
 
 1. The data is included in the cache sent to the parent process.
-    This might already be the case if you are modifying an existing property, but it most likely won't be if you are adding something new.
-    The cache is built in [`LocalAccessible::BundleFieldsForCache`](https://searchfox.org/firefox-main/rev/dab03896ede1413be148884e054b311767bcf1a0/accessible/generic/LocalAccessible.cpp#3538).
+   This might already be the case if you are modifying an existing property, but it most likely won't be if you are adding something new.
+   The cache is built in [`LocalAccessible::BundleFieldsForCache`](https://searchfox.org/firefox-main/rev/dab03896ede1413be148884e054b311767bcf1a0/accessible/generic/LocalAccessible.cpp#3538).
 2. An event is fired when the data is changed, if appropriate.
-    This is necessary both to update the parent process cache and to notify clients of the change.
-    However, not all properties have associated events.
-    See [the `EVENT_*` constants in nsIAccessibleEvent](https://searchfox.org/firefox-main/rev/dab03896ede1413be148884e054b311767bcf1a0/accessible/interfaces/nsIAccessibleEvent.idl#31) for the supported events.
+   This is necessary both to update the parent process cache and to notify clients of the change.
+   However, not all properties have associated events.
+   See [the `EVENT_*` constants in nsIAccessibleEvent](https://searchfox.org/firefox-main/rev/dab03896ede1413be148884e054b311767bcf1a0/accessible/interfaces/nsIAccessibleEvent.idl#31) for the supported events.
 3. A cache update is queued when the data is changed, if there is no associated event.
-    See [`DocAccessible::QueueCacheUpdate`](https://searchfox.org/firefox-main/rev/dab03896ede1413be148884e054b311767bcf1a0/accessible/generic/DocAccessible.h#114).
+   See [`DocAccessible::QueueCacheUpdate`](https://searchfox.org/firefox-main/rev/dab03896ede1413be148884e054b311767bcf1a0/accessible/generic/DocAccessible.h#114).
 4. The data can be queried via both `LocalAccessible` and `RemoteAccessible` methods.
 
 ## Tests
+
 Ideally, any change to code in this module should be covered by automated tests.
 
 To run a test directory or file, use the command:
@@ -29,6 +31,7 @@ To run a test directory or file, use the command:
 `./mach test accessible/tests/path`
 
 ### Browser Tests
+
 Browser tests are located in `accessible/tests/browser`.
 This is our preferred test suite, as it supports testing across multiple processes, is supported by our linters, allows for OS specific testing, etc.
 Any new tests should be added to this test suite, in the folder which best approximates their behavior.
@@ -50,6 +53,7 @@ Please do not use them as examples for general test writing.
 If you believe your work requires a telemetry or performance test, please reach out to :morgan on matrix or bugzilla.
 
 ### Mochitests
+
 Mochitests are located in `accessible/tests/mochitest`.
 This is an older, legacy test suite which only supports testing `LocalAccessible` in a single process.
 However, because of the massive number of tests here, many have not yet been ported to browser tests.
@@ -58,6 +62,7 @@ New tests should not be added in this directory except for those related to XUL.
 However, any failures introduced in these tests must still be fixed.
 
 ### Crash Tests
+
 There is another suite of tests located in `accessible/tests/crashtests`.
 However, this test suite is unreliable and thus legacy.
 Because the accessibility module runs asynchronously from DOM, it is difficult to guarantee that any potential crash is hit before the test exits.

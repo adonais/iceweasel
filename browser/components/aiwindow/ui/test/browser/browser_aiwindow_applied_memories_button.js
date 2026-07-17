@@ -15,7 +15,10 @@ add_task(async function test_applied_memories_button_basic() {
       const button = doc.getElementById("test-button");
 
       button.messageId = "msg-1";
-      button.appliedMemories = ["User is vegan", "User has a cat"];
+      button.appliedMemories = [
+        { memory_summary: "User is vegan" },
+        { memory_summary: "User has a cat" },
+      ];
 
       await content.customElements.whenDefined("applied-memories-button");
 
@@ -51,7 +54,7 @@ add_task(async function test_applied_memories_button_basic() {
       button.addEventListener("remove-applied-memory", onRemove);
 
       removeButton.click();
-      button.appliedMemories = ["User has a cat"];
+      button.appliedMemories = [{ memory_summary: "User has a cat" }];
       await content.Promise.resolve();
 
       const itemsAfter = button.shadowRoot.querySelectorAll(
@@ -61,7 +64,11 @@ add_task(async function test_applied_memories_button_basic() {
 
       ok(removeEventDetail, "remove-applied-memory event fired");
       is(removeEventDetail.messageId, "msg-1", "Event includes messageId");
-      is(removeEventDetail.memory, "User is vegan", "Event includes memory");
+      is(
+        removeEventDetail.memory.memory_summary,
+        "User is vegan",
+        "Event includes memory"
+      );
 
       doc.body.click();
 
@@ -83,7 +90,10 @@ add_task(async function test_applied_memories_button_retry_without_memories() {
       const button = content.document.getElementById("test-button");
 
       button.messageId = "msg-1";
-      button.appliedMemories = ["User is vegan", "User has a cat"];
+      button.appliedMemories = [
+        { memory_summary: "User is vegan" },
+        { memory_summary: "User has a cat" },
+      ];
 
       await content.customElements.whenDefined("applied-memories-button");
 
@@ -119,7 +129,7 @@ add_task(async function test_applied_memories_button_showCallout_auto_opens() {
     await SpecialPowers.spawn(browser, [], async () => {
       const button = content.document.getElementById("test-button");
       button.messageId = "msg-1";
-      button.appliedMemories = ["User is vegan"];
+      button.appliedMemories = [{ memory_summary: "User is vegan" }];
 
       await content.customElements.whenDefined("applied-memories-button");
 
@@ -261,7 +271,7 @@ add_task(async function test_applied_memories_button_manage_memories() {
     await SpecialPowers.spawn(browser, [], async () => {
       const button = content.document.getElementById("test-button");
       button.messageId = "msg-1";
-      button.appliedMemories = ["User is vegan"];
+      button.appliedMemories = [{ memory_summary: "User is vegan" }];
       button.showCallout = true;
 
       await content.customElements.whenDefined("applied-memories-button");

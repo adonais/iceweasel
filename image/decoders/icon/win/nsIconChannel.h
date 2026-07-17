@@ -53,6 +53,7 @@ class nsIconChannel final : public nsIChannel, public nsIStreamListener {
   nsCOMPtr<nsIInterfaceRequestor> mCallbacks;
   nsCOMPtr<nsISupports> mOwner;
   nsCOMPtr<nsILoadInfo> mLoadInfo;
+  RefPtr<mozilla::dom::ParentProcessChannelHandle> mParentProcessChannelHandle;
 
   nsCOMPtr<nsIInputStreamPump> mPump;
   nsCOMPtr<nsIStreamListener> mListener;

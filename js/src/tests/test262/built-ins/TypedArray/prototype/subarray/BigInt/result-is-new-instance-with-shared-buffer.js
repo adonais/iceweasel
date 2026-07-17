@@ -32,6 +32,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     compareArray(sample, [40n, 100n, 111n, 43n]),
     "changes on the new instance values affect the original sample"
   );
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

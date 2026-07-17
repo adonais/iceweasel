@@ -27,7 +27,7 @@ class SipccSdp final : public Sdp {
       : mOrigin(origin), mAttributeList(nullptr) {}
   SipccSdp(const SipccSdp& aOrig);
 
-  virtual Sdp* Clone() const override;
+  virtual UniquePtr<Sdp> Clone() const override;
 
   virtual const SdpOrigin& GetOrigin() const override;
 

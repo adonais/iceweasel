@@ -9,10 +9,13 @@
 
 #include <type_traits>
 
+#include "gc/Cell.h"
+#include "gc/Nursery.h"
 #include "gc/RelocationOverlay.h"
 #include "gc/Zone.h"
 #include "js/Id.h"
 #include "js/Value.h"
+#include "vm/Runtime.h"
 #include "vm/StringType.h"
 #include "vm/TaggedProto.h"
 #include "wasm/WasmAnyRef.h"
@@ -212,12 +215,19 @@ void CheckTableAfterMovingGC(const Table& table, F&& checkEntryAndGetLookup) {
 
 template <typename T>
 inline bool IsGCThingValidAfterMovingGC(T* t) {
-  if (!t->isTenured()) {
+  if (!IsCellPointerValid(t)) {
     return false;
   }
 
-  TenuredCell* cell = &t->asTenured();
-  return cell->arena()->allocated() && !cell->isForwarded();
+  if (t->isForwarded()) {
+    return false;
+  }
+
+  if (t->isTenured()) {
+    return t->asTenured().arena()->allocated();
+  }
+
+  return t->runtimeFromMainThread()->gc.nursery().semispaceEnabled();
 }
 
 template <typename T>

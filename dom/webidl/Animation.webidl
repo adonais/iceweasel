@@ -3,7 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/.
  *
  * The origin of this IDL file is
- * https://drafts.csswg.org/web-animations/#animation
+ * https://drafts.csswg.org/web-animations-2/#the-animation-interface
  *
  * Copyright © 2015 W3C® (MIT, ERCIM, Keio), All Rights Reserved. W3C
  * liability, trademark and document use rules apply.
@@ -22,12 +22,13 @@ interface Animation : EventTarget {
   attribute DOMString id;
   [Pure]
   attribute AnimationEffect? effect;
+  [BinaryName="timelineFromJS"]
   attribute AnimationTimeline? timeline;
 
-  [BinaryName="startTimeAsDouble"]
-  attribute double? startTime;
-  [SetterThrows, BinaryName="currentTimeAsDouble"]
-  attribute double? currentTime;
+  [SetterThrows]
+  attribute CSSNumberish? startTime;
+  [SetterThrows]
+  attribute CSSNumberish? currentTime;
 
   readonly attribute double?            overallProgress;
            attribute double             playbackRate;

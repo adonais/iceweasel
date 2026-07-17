@@ -19,6 +19,8 @@ skip-if = [
 
 ["test_browserGlue_migration_places_xulstore.js"]
 
+["test_browserGlue_migration_removeABAPerms.js"]
+
 ["test_browserGlue_migration_removeContentBlockerPerms.js"]
 
 ["test_browserGlue_migration_remove_pref.js"]

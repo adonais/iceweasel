@@ -8,6 +8,7 @@
 #include "mozilla/dom/MimeTypeArrayBinding.h"
 #include "mozilla/dom/MimeTypeBinding.h"
 #include "nsContentUtils.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPluginArray.h"
 
 using namespace mozilla;

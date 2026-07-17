@@ -703,7 +703,7 @@ class ModuleScript final : public nsISupports {
   ~ModuleScript();
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(ModuleScript)
 
   explicit ModuleScript(ScriptFetchInfo* aFetchInfo);

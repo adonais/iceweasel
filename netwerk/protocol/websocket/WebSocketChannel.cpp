@@ -121,8 +121,12 @@ const uint32_t kWSReconnectMaxDelay = 60 * 1000;
 // to same host/path/port.
 class FailDelay {
  public:
-  FailDelay(nsCString address, nsCString path, int32_t port)
-      : mAddress(std::move(address)), mPath(std::move(path)), mPort(port) {
+  FailDelay(nsCString address, nsCString path, int32_t port,
+            nsCString originSuffix)
+      : mAddress(std::move(address)),
+        mPath(std::move(path)),
+        mPort(port),
+        mOriginSuffix(std::move(originSuffix)) {
     mLastFailure = TimeStamp::Now();
     mNextDelay = kWSReconnectInitialBaseDelay +
                  (rand() % kWSReconnectInitialRandomDelay);
@@ -160,6 +164,7 @@ class FailDelay {
   nsCString mAddress;  // IP address (or hostname if using proxy)
   nsCString mPath;
   int32_t mPort;
+  nsCString mOriginSuffix;
 
  private:
   TimeStamp mLastFailure;  // Time of last failed attempt
@@ -190,18 +195,23 @@ class FailDelayManager {
 
   ~FailDelayManager() { MOZ_COUNT_DTOR(FailDelayManager); }
 
-  void Add(nsCString& address, nsCString& path, int32_t port) {
-    if (mDelaysDisabled) return;
+  void Add(nsCString& address, nsCString& path, int32_t port,
+           nsCString& originSuffix) {
+    if (mDelaysDisabled) {
+      return;
+    }
 
-    UniquePtr<FailDelay> record(new FailDelay(address, path, port));
-    mEntries.AppendElement(std::move(record));
+    mEntries.AppendElement(
+        MakeUnique<FailDelay>(address, path, port, originSuffix));
   }
 
   // Element returned may not be valid after next main thread event: don't keep
   // pointer to it around
   FailDelay* Lookup(nsCString& address, nsCString& path, int32_t port,
-                    uint32_t* outIndex = nullptr) {
-    if (mDelaysDisabled) return nullptr;
+                    nsCString& originSuffix, uint32_t* outIndex = nullptr) {
+    if (mDelaysDisabled) {
+      return nullptr;
+    }
 
     FailDelay* result = nullptr;
     TimeStamp rightNow = TimeStamp::Now();
@@ -211,7 +221,7 @@ class FailDelayManager {
     for (int32_t i = mEntries.Length() - 1; i >= 0; --i) {
       FailDelay* fail = mEntries[i].get();
       if (fail->mAddress.Equals(address) && fail->mPath.Equals(path) &&
-          fail->mPort == port) {
+          fail->mPort == port && fail->mOriginSuffix.Equals(originSuffix)) {
         if (outIndex) *outIndex = i;
         result = fail;
         // break here: removing more entries would mess up *outIndex.
@@ -230,7 +240,8 @@ class FailDelayManager {
   void DelayOrBegin(WebSocketChannel* ws) {
     if (!mDelaysDisabled) {
       uint32_t failIndex = 0;
-      FailDelay* fail = Lookup(ws->mAddress, ws->mPath, ws->mPort, &failIndex);
+      FailDelay* fail = Lookup(ws->mAddress, ws->mPath, ws->mPort,
+                               ws->mOriginSuffix, &failIndex);
 
       if (fail) {
         TimeStamp rightNow = TimeStamp::Now();
@@ -266,14 +277,15 @@ class FailDelayManager {
 
   // Remove() also deletes all expired entries as it iterates: better for
   // battery life than using a periodic timer.
-  void Remove(nsCString& address, nsCString& path, int32_t port) {
+  void Remove(nsCString& address, nsCString& path, int32_t port,
+              nsCString& originSuffix) {
     TimeStamp rightNow = TimeStamp::Now();
 
     // iterate from end, to make deletion indexing easier
     for (int32_t i = mEntries.Length() - 1; i >= 0; --i) {
       FailDelay* entry = mEntries[i].get();
       if ((entry->mAddress.Equals(address) && entry->mPath.Equals(path) &&
-           entry->mPort == port) ||
+           entry->mPort == port && entry->mOriginSuffix.Equals(originSuffix)) ||
           entry->IsExpired(rightNow)) {
         mEntries.RemoveElementAt(i);
       }
@@ -325,13 +337,13 @@ class nsWSAdmissionManager {
     bool hostFound = (sManager->IndexOf(ws->mAddress, ws->mOriginSuffix) >= 0);
 
     uint32_t failIndex = 0;
-    FailDelay* fail = sManager->mFailures.Lookup(ws->mAddress, ws->mPath,
-                                                 ws->mPort, &failIndex);
+    FailDelay* fail = sManager->mFailures.Lookup(
+        ws->mAddress, ws->mPath, ws->mPort, ws->mOriginSuffix, &failIndex);
     bool existingFail = fail != nullptr;
 
     // Always add ourselves to queue, even if we'll connect immediately
-    UniquePtr<nsOpenConn> newdata(
-        new nsOpenConn(ws->mAddress, ws->mOriginSuffix, existingFail, ws));
+    auto newdata = MakeUnique<nsOpenConn>(ws->mAddress, ws->mOriginSuffix,
+                                          existingFail, ws);
 
     // If a connection has not previously failed then prioritize it over
     // connections that have
@@ -374,7 +386,7 @@ class nsWSAdmissionManager {
 
     // Connection succeeded, so stop keeping track of any previous failures
     sManager->mFailures.Remove(aChannel->mAddress, aChannel->mPath,
-                               aChannel->mPort);
+                               aChannel->mPort, aChannel->mOriginSuffix);
 
     // Check for queued connections to same host.
     // Note: still need to check for failures, since next websocket with same
@@ -395,8 +407,9 @@ class nsWSAdmissionManager {
 
     if (NS_FAILED(aReason)) {
       // Have we seen this failure before?
-      FailDelay* knownFailure = sManager->mFailures.Lookup(
-          aChannel->mAddress, aChannel->mPath, aChannel->mPort);
+      FailDelay* knownFailure =
+          sManager->mFailures.Lookup(aChannel->mAddress, aChannel->mPath,
+                                     aChannel->mPort, aChannel->mOriginSuffix);
       if (knownFailure) {
         if (aReason == NS_ERROR_NOT_CONNECTED) {
           // Don't count close() before connection as a network error
@@ -415,7 +428,7 @@ class nsWSAdmissionManager {
              aChannel->mAddress.get(), aChannel->mPath.get(),
              (int)aChannel->mPort, aChannel));
         sManager->mFailures.Add(aChannel->mAddress, aChannel->mPath,
-                                aChannel->mPort);
+                                aChannel->mPort, aChannel->mOriginSuffix);
       }
     }
 
@@ -2997,6 +3010,13 @@ nsresult WebSocketChannel::StartWebsocketData() {
   mIOThread->Dispatch(NS_NewRunnableFunction(
       "WebSocketChannel::StartWebsocketData", [self{std::move(self)}] {
         LOG(("WebSocketChannel::DoStartWebsocketData() %p", self.get()));
+        {
+          MutexAutoLock lock(self->mMutex);
+          if (self->mStopped) {
+            return;
+          }
+          self->mDataStarted = true;
+        }
 
         NS_DispatchToMainThread(
             NewRunnableMethod("net::WebSocketChannel::NotifyOnStart", self,
@@ -3030,7 +3050,6 @@ void WebSocketChannel::NotifyOnStart() {
       GetListenerMT();
   LOG(("WebSocketChannel::NotifyOnStart Notifying Listener %p",
        listener ? listener->mListener.get() : nullptr));
-  mDataStarted = true;
   if (listener) {
     nsresult rv = listener->mListener->OnStart(listener->mContext);
     if (NS_FAILED(rv)) {
@@ -3536,7 +3555,8 @@ WebSocketChannel::AsyncOpenNative(nsIURI* aURI, const nsACString& aOrigin,
     mWasOpened = 1;
     {
       MutexAutoLock lock(mMutex);
-      mListenerMT = new ListenerAndContextContainer(aListener, aContext);
+      mListenerMT =
+          MakeRefPtr<ListenerAndContextContainer>(aListener, aContext);
     }
     rv = mServerTransportProvider->SetListener(this);
     MOZ_ASSERT(NS_SUCCEEDED(rv));
@@ -3645,7 +3665,7 @@ WebSocketChannel::AsyncOpenNative(nsIURI* aURI, const nsACString& aOrigin,
   mWasOpened = 1;
   {
     MutexAutoLock lock(mMutex);
-    mListenerMT = new ListenerAndContextContainer(aListener, aContext);
+    mListenerMT = MakeRefPtr<ListenerAndContextContainer>(aListener, aContext);
   }
   IncrementSessionCount();
 

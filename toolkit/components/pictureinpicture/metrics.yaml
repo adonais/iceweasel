@@ -252,6 +252,16 @@ pictureinpicture:
     expires: never
     extra_keys: *pictureinpicture_opened_method_extra
 
+  opened_method_api:
+    type: event
+    description: >
+      Records the method for opening the Picture-in-Picture window.
+    bugs: *pictureinpicture_opened_method_bugs
+    data_reviews: *pictureinpicture_opened_method_data_reviews
+    notification_emails: *pictureinpicture_opened_method_emails
+    expires: never
+    extra_keys: *pictureinpicture_opened_method_extra
+
   closed_method_close_button:
     type: event
     description: >
@@ -397,6 +407,17 @@ pictureinpicture:
       Records the method for closing the Picture-in-Picture window.
       This event was generated to correspond to the Legacy Telemetry event
       pictureinpicture.closed_method#browserCrash.
+    bugs: *pictureinpicture_closed_method_bugs
+    data_reviews: *pictureinpicture_closed_method_data_reviews
+    notification_emails: *pictureinpicture_closed_method_emails
+    expires: never
+
+  closed_method_api:
+    type: event
+    description: >
+      Records the method for closing the Picture-in-Picture window.
+      This event was generated to correspond to the Legacy Telemetry event
+      pictureinpicture.closed_method#programmatic.
     bugs: *pictureinpicture_closed_method_bugs
     data_reviews: *pictureinpicture_closed_method_data_reviews
     notification_emails: *pictureinpicture_closed_method_emails

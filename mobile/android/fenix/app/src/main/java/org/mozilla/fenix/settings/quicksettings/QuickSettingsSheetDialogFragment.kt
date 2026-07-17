@@ -33,7 +33,6 @@ import org.mozilla.fenix.android.FenixDialogFragment
 import org.mozilla.fenix.databinding.FragmentQuickSettingsDialogSheetBinding
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.quicksettings.protections.ProtectionsView
 
@@ -123,7 +122,7 @@ class QuickSettingsSheetDialogFragment : FenixDialogFragment() {
                 binding.trackingProtectionLayout,
                 binding.trackingProtectionDivider,
                 interactor,
-                context.settings(),
+                context.components.settings,
             )
         clearSiteDataView = ClearSiteDataView(
             context = context,

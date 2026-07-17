@@ -2,13 +2,13 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use flate2::{read::ZlibDecoder, write::ZlibEncoder, Compression};
+use adler2::adler32_slice;
 use log::warn;
 use nsstring::nsCString;
 use serde::{Deserialize, Serialize};
 use static_assertions::const_assert;
 use std::ffi::c_void;
-use std::io::{Read as _, Write as _};
+use std::io::Write as _;
 use std::path::Path;
 use thin_vec::ThinVec;
 
@@ -17,24 +17,15 @@ pub type SslTokensReadCallback =
     unsafe extern "C" fn(ctx: *mut c_void, record: *const SslTokensPersistedRecord);
 
 /// FFI-safe representation of one persisted token record.
-/// All cert chain fields are included so that PSK-resumed TLS 1.3
-/// connections (which receive no Certificate message from the server)
-/// can reconstruct full security info after a browser restart.
 #[repr(C)]
 pub struct SslTokensPersistedRecord {
     pub id: u64,
     pub key: nsCString,
     pub expiration_time: PrTime,
-    pub token: *const u8,
-    pub token_len: usize,
-    pub ev_status: u8,
-    pub ct_status: u16,
+    /// Cached for `ShouldPersistKey` filtering without decompressing the payload.
     pub overridable_error: u8,
-    pub server_cert: ThinVec<u8>,
-    pub succeeded_cert_chain: ThinVec<ThinVec<u8>>,
-    pub handshake_certs: ThinVec<ThinVec<u8>>,
-    /// Empty = absent (`None`); one element = present (`Some(value)`).
-    pub is_built_cert_chain_root_built_in_root: ThinVec<bool>,
+    pub compressed_payload: *const u8,
+    pub compressed_payload_len: usize,
 }
 
 #[derive(Clone, Serialize, Deserialize)]
@@ -46,74 +37,38 @@ struct PersistedRecord {
     id: u64,
     key: Vec<u8>,
     expiration_time: PrTime,
-    token: Vec<u8>,
-    ev_status: u8,
-    ct_status: u16,
     overridable_error: u8,
-    server_cert: Vec<u8>,
-    succeeded_cert_chain: Option<Vec<Vec<u8>>>,
-    handshake_certs: Option<Vec<Vec<u8>>>,
-    is_built_cert_chain_root_built_in_root: Option<bool>,
+    compressed_payload: Vec<u8>,
 }
 
 impl PersistedRecord {
-    fn thin_chain_to_opt(chain: &ThinVec<ThinVec<u8>>) -> Option<Vec<Vec<u8>>> {
-        (!chain.is_empty()).then(|| chain.iter().map(|c| c.to_vec()).collect())
-    }
-
-    fn opt_chain_to_thin(chain: Option<&[Vec<u8>]>) -> ThinVec<ThinVec<u8>> {
-        chain.map_or_else(ThinVec::new, |c| {
-            c.iter().map(|b| ThinVec::from(b.as_slice())).collect()
-        })
-    }
-
-    /// Constructs a `PersistedRecord` from a C-compatible record.
-    ///
     /// # Safety
     ///
-    /// `token` must be valid for `token_len` bytes.
+    /// `compressed_payload` must be valid for `compressed_payload_len` bytes.
     unsafe fn from_record(rec: &SslTokensPersistedRecord) -> Self {
         let key = rec.key.as_ref().to_vec();
-        // SAFETY: token is valid for token_len bytes.
-        let token = unsafe { std::slice::from_raw_parts(rec.token, rec.token_len) }.to_vec();
+        // SAFETY: compressed_payload is valid for compressed_payload_len bytes.
+        let compressed_payload = unsafe {
+            std::slice::from_raw_parts(rec.compressed_payload, rec.compressed_payload_len)
+        }
+        .to_vec();
         Self {
             id: rec.id,
             key,
             expiration_time: rec.expiration_time,
-            token,
-            ev_status: rec.ev_status,
-            ct_status: rec.ct_status,
             overridable_error: rec.overridable_error,
-            server_cert: rec.server_cert.to_vec(),
-            succeeded_cert_chain: Self::thin_chain_to_opt(&rec.succeeded_cert_chain),
-            handshake_certs: Self::thin_chain_to_opt(&rec.handshake_certs),
-            is_built_cert_chain_root_built_in_root: rec
-                .is_built_cert_chain_root_built_in_root
-                .first()
-                .copied(),
+            compressed_payload,
         }
     }
 
-    /// Constructs a stack-allocated `SslTokensPersistedRecord` that partially
-    /// borrows from `self` (the `token` raw pointer) and partially copies (cert
-    /// chain fields) and passes it to `f`. The record must not escape `f`.
     fn with_record<F: FnOnce(&SslTokensPersistedRecord)>(&self, f: F) {
         let rec = SslTokensPersistedRecord {
             id: self.id,
             key: nsCString::from(self.key.as_slice()),
             expiration_time: self.expiration_time,
-            token: self.token.as_ptr(),
-            token_len: self.token.len(),
-            ev_status: self.ev_status,
-            ct_status: self.ct_status,
             overridable_error: self.overridable_error,
-            server_cert: ThinVec::from(self.server_cert.as_slice()),
-            succeeded_cert_chain: Self::opt_chain_to_thin(self.succeeded_cert_chain.as_deref()),
-            handshake_certs: Self::opt_chain_to_thin(self.handshake_certs.as_deref()),
-            is_built_cert_chain_root_built_in_root: self
-                .is_built_cert_chain_root_built_in_root
-                .into_iter()
-                .collect(),
+            compressed_payload: self.compressed_payload.as_ptr(),
+            compressed_payload_len: self.compressed_payload.len(),
         };
         f(&rec);
     }
@@ -123,12 +78,13 @@ impl PersistedRecord {
 type PrTime = i64;
 
 const MAGIC: [u8; 4] = *b"STCF";
-const VERSION: u8 = 2;
-/// Derived from the header layout: magic(4) + version(1).
-/// Integrity is provided by the Adler-32 embedded in the zlib stream.
+const VERSION: u8 = 3;
+/// File layout: magic(4) + version(1) + `bincode_body(N)` + `adler32_le(4)`.
+/// VERSION 3: each record stores a single compressed payload (token + cert
+/// info together) instead of separate fields.
 const HEADER_SIZE: usize = MAGIC.len() + size_of::<u8>();
 const_assert!(HEADER_SIZE == 5);
-/// Maximum allowed size for the compressed body and decompressed payload.
+/// Sanity cap on the bincode body to guard against corrupt size fields.
 const MAX_PAYLOAD_SIZE: usize = 16 * 1024 * 1024;
 
 #[derive(Debug)]
@@ -138,39 +94,14 @@ enum ParseError {
     Truncated,
 }
 
-/// Zlib-compresses `data` using default compression. The embedded Adler-32
-/// checksum allows `zlib_decompress` to detect corruption or tampering.
-fn zlib_compress(data: &[u8]) -> Option<Vec<u8>> {
-    let mut enc = ZlibEncoder::new(Vec::new(), Compression::default());
-    enc.write_all(data).ok()?;
-    enc.finish().ok()
-}
-
-/// Zlib-decompresses `data`, verifying the embedded Adler-32 checksum.
-/// Returns `None` on corruption, tampering, or if the output exceeds
-/// `MAX_PAYLOAD_SIZE`.
-fn zlib_decompress(data: &[u8]) -> Option<Vec<u8>> {
-    if data.len() > MAX_PAYLOAD_SIZE {
-        return None;
-    }
-    let mut out = Vec::new();
-    ZlibDecoder::new(data)
-        .take(MAX_PAYLOAD_SIZE as u64 + 1)
-        .read_to_end(&mut out)
-        .ok()?;
-    if out.len() > MAX_PAYLOAD_SIZE {
-        return None;
-    }
-    Some(out)
-}
-
 fn to_file_bytes(records: &[PersistedRecord], magic: [u8; 4]) -> Vec<u8> {
-    let record_bytes = bincode::serialize(records).unwrap_or_default();
-    let body = zlib_compress(&record_bytes).unwrap_or_default();
-    let mut out = Vec::with_capacity(HEADER_SIZE + body.len());
+    let body = bincode::serialize(records).unwrap_or_default();
+    let checksum = adler32_slice(&body).to_le_bytes();
+    let mut out = Vec::with_capacity(HEADER_SIZE + body.len() + 4);
     out.extend_from_slice(&magic);
     out.push(VERSION);
     out.extend_from_slice(&body);
+    out.extend_from_slice(&checksum);
     out
 }
 
@@ -178,8 +109,7 @@ fn from_file_bytes(
     data: &[u8],
     expected_magic: [u8; 4],
 ) -> Result<Vec<PersistedRecord>, ParseError> {
-    // Destructure the fixed header in one slice pattern — avoids repeated indexing.
-    let Some(([magic @ .., version], body)) = data.split_first_chunk::<HEADER_SIZE>() else {
+    let Some(([magic @ .., version], rest)) = data.split_first_chunk::<HEADER_SIZE>() else {
         return Err(ParseError::Truncated);
     };
     if magic != &expected_magic {
@@ -188,8 +118,16 @@ fn from_file_bytes(
     if *version != VERSION {
         return Err(ParseError::BadVersion);
     }
-    let record_bytes = zlib_decompress(body).ok_or(ParseError::Truncated)?;
-    bincode::deserialize::<Vec<PersistedRecord>>(&record_bytes).map_err(|_| ParseError::Truncated)
+    let Some((body, stored)) = rest.split_last_chunk::<4>() else {
+        return Err(ParseError::Truncated);
+    };
+    if body.len() > MAX_PAYLOAD_SIZE {
+        return Err(ParseError::Truncated);
+    }
+    if adler32_slice(body).to_le_bytes() != *stored {
+        return Err(ParseError::Truncated);
+    }
+    bincode::deserialize::<Vec<PersistedRecord>>(body).map_err(|_| ParseError::Truncated)
 }
 
 /// Reads `bin_path`, falling back to `bin_path.with_extension("tmp")` if the
@@ -361,19 +299,13 @@ mod tests {
 
     type TestResult = Result<(), Box<dyn std::error::Error>>;
 
-    fn make_record(id: u64, key: &str, token: &[u8], expiration_time: i64) -> PersistedRecord {
+    fn make_record(id: u64, key: &str, payload: &[u8], expiration_time: i64) -> PersistedRecord {
         PersistedRecord {
             id,
             key: key.as_bytes().to_vec(),
             expiration_time,
-            token: token.to_vec(),
-            ev_status: 0,
-            ct_status: 0,
             overridable_error: 0,
-            server_cert: vec![1, 2, 3],
-            succeeded_cert_chain: Some(vec![vec![4, 5], vec![6, 7, 8]]),
-            handshake_certs: None,
-            is_built_cert_chain_root_built_in_root: Some(true),
+            compressed_payload: payload.to_vec(),
         }
     }
 
@@ -388,20 +320,14 @@ mod tests {
     #[test]
     fn round_trip_records() {
         let input = vec![
-            make_record(1, "example.com:443", b"token1", i64::MAX),
-            make_record(2, "other.net:443", b"tok2", 9999),
+            make_record(1, "example.com:443", b"payload1", i64::MAX),
+            make_record(2, "other.net:443", b"payload2", 9999),
         ];
         let output =
             from_file_bytes(&to_file_bytes(&input, MAGIC), MAGIC).expect("valid file bytes");
         assert_eq!(output.len(), 2);
         assert_eq!(output[0].key, b"example.com:443");
-        assert_eq!(output[0].token, b"token1");
-        assert_eq!(output[0].server_cert, [1, 2, 3]);
-        assert_eq!(
-            output[0].succeeded_cert_chain,
-            Some(vec![vec![4, 5], vec![6, 7, 8]])
-        );
-        assert_eq!(output[0].is_built_cert_chain_root_built_in_root, Some(true));
+        assert_eq!(output[0].compressed_payload, b"payload1");
         assert_eq!(output[1].id, 2);
     }
 
@@ -426,9 +352,10 @@ mod tests {
 
     #[test]
     fn corrupt_body() {
-        // Corrupt the last byte of the zlib body — zlib's Adler-32 detects it.
+        // Corrupt a byte in the body — the Adler-32 checksum detects it.
         let mut bytes = to_file_bytes(&[], MAGIC);
-        *bytes.last_mut().expect("non-empty") ^= 0xFF;
+        let body_start = HEADER_SIZE;
+        bytes[body_start] ^= 0xFF;
         assert!(matches!(
             from_file_bytes(&bytes, MAGIC),
             Err(ParseError::Truncated)

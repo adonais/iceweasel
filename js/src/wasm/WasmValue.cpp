@@ -977,7 +977,11 @@ Value wasm::UnboxFuncRef(FuncRef val) {
 
 #ifdef DEBUG
 void wasm::AssertEdgeSourceNotInsideNursery(void* vp) {
-  Nursery& nursery = TlsContext.get()->runtime()->gc.nursery();
-  MOZ_ASSERT(!nursery.isInside(vp));
+  JSContext* cx = TlsContext.get();
+  if (cx) {
+    // We can't check this when called off thread.
+    Nursery& nursery = cx->runtime()->gc.nursery();
+    MOZ_ASSERT(!nursery.isInside(vp));
+  }
 }
 #endif

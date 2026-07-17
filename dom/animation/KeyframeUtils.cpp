@@ -273,7 +273,8 @@ nsTArray<Keyframe> KeyframeUtils::GetKeyframesFromObject(
 
 /* static */
 KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
-    nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline) {
+    nsTArray<Keyframe>& aKeyframes, const dom::AnimationTimeline* aTimeline,
+    const dom::AnimationRange* aRange) {
   if (aKeyframes.IsEmpty()) {
     return {false, false};
   }
@@ -309,7 +310,8 @@ KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
     }
 
     hasTimelineRangeOffset = true;
-    keyframe.mComputedOffset = GetComputedOffset(offset.ref(), aTimeline);
+    keyframe.mComputedOffset =
+        GetComputedOffset(offset.ref(), aTimeline, aRange);
   }
 
   // 2. The 2nd pass. Follow the spec to compute the missing offsets.
@@ -319,9 +321,9 @@ KeyframesOffsetHasAny KeyframeUtils::ComputeMissingKeyframeOffsets(
 }
 
 /* static */
-double KeyframeUtils::GetComputedOffset(
-    const Keyframe::OffsetType& aOffset,
-    const dom::AnimationTimeline* aTimeline) {
+double KeyframeUtils::GetComputedOffset(const Keyframe::OffsetType& aOffset,
+                                        const dom::AnimationTimeline* aTimeline,
+                                        const dom::AnimationRange* aRange) {
   MOZ_ASSERT(aOffset.mRangeName != StyleTimelineRangeName::None &&
                  aOffset.mRangeName != StyleTimelineRangeName::Normal,
              "This is only for keyframe selector with timeline range name");
@@ -331,13 +333,24 @@ double KeyframeUtils::GetComputedOffset(
   }
 
   const dom::ViewTimeline* vt = aTimeline->AsViewTimeline();
-  const auto result =
+  const auto offset =
       vt->MapKeyframeOffsetToOffset(aOffset.mRangeName, aOffset.mPercentage);
+  if (!offset) {
+    return std::numeric_limits<double>::quiet_NaN();
+  }
 
-  // FIXME: Bug 2039090. We should apply animation-range to get the correct
-  // computed offset.
+  if (!aRange) {
+    return *offset;
+  }
 
-  return result ? result.value() : std::numeric_limits<double>::quiet_NaN();
+  // Attach this keyframe offset, |*offset|, which is calculated based on the
+  // whole timeline range, i.e. [0.0, 1.0], to the animation attachment range,
+  // i.e. [range.first, range.second], to get the final computed offset.
+  //
+  // Note: [range.first, range.second] is calculated based on the whole timeline
+  // range as well.
+  const auto& range = vt->IntervalForAttachmentRange(*aRange);
+  return (*offset - range.first) / (range.second - range.first);
 }
 
 /* static */
@@ -1040,17 +1053,16 @@ static void BuildSegmentsFromValueEntries(
              aEntries[j + 1].mProperty == aEntries[j].mProperty) {
         ++j;
       }
-    } else if (aEntries[i].mOffset == 1.0f) {
-      if (aEntries[i + 1].mOffset == 1.0f &&
+    } else if (aEntries[i].mOffset >= 1.0f) {
+      if (aEntries[i].mOffset == 1.0f && aEntries[i + 1].mOffset == 1.0f &&
           aEntries[i + 1].mProperty == aEntries[i].mProperty) {
         // We need to generate a final zero-length segment.
         while (j + 1 < n && aEntries[j + 1].mOffset == 1.0f &&
                aEntries[j + 1].mProperty == aEntries[j].mProperty) {
           ++j;
         }
-      } else {
+      } else if (aEntries[i].mProperty != aEntries[i + 1].mProperty) {
         // New property.
-        MOZ_ASSERT(aEntries[i].mProperty != aEntries[i + 1].mProperty);
         animationProperty = nullptr;
         ++i;
         continue;

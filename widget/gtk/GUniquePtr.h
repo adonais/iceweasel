@@ -24,6 +24,16 @@ struct GFreeDeleter {
   void operator()(void* aPtr) const { g_free(aPtr); }
   void operator()(GtkPaperSize* aPtr) const { gtk_paper_size_free(aPtr); }
   void operator()(gchar** aPtr) const { g_strfreev(aPtr); }
+  void operator()(GInputStream* aPtr) const {
+    g_input_stream_close(aPtr, nullptr, nullptr);
+    g_object_unref(aPtr);
+  }
+  void operator()(GBytes* aPtr) const { g_bytes_unref(aPtr); }
+  void operator()(GByteArray* aPtr) const { g_byte_array_unref(aPtr); }
+  void operator()(GCancellable* aPtr) const {
+    g_cancellable_cancel(aPtr);
+    g_object_unref(aPtr);
+  }
 };
 
 template <typename T>

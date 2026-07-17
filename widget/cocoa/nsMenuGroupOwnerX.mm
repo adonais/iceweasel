@@ -145,12 +145,6 @@ void nsMenuGroupOwnerX::ContentInserted(nsIContent* aChild,
 
 void nsMenuGroupOwnerX::ParentChainChanged(nsIContent* aContent) {}
 
-void nsMenuGroupOwnerX::ARIAAttributeDefaultWillChange(mozilla::dom::Element*,
-                                                       nsAtom*, AttrModType) {}
-
-void nsMenuGroupOwnerX::ARIAAttributeDefaultChanged(mozilla::dom::Element*,
-                                                    nsAtom*, AttrModType) {}
-
 // For change management, we don't use a |nsSupportsHashtable| because
 // we know that the lifetime of all these items is bounded by the
 // lifetime of the menubar. No need to add any more strong refs to the

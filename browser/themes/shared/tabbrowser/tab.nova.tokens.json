@@ -6,7 +6,10 @@
           "value": "{color.violet.30}"
         },
         "trailing": {
-          "value": "{color.orange.30}"
+          "value": {
+            "light": "{color.orange.30}",
+            "dark": "{color.violet.50}"
+          }
         }
       },
       "accent": {
@@ -24,12 +27,6 @@
           "light": "color-mix(in lch, var(--color-violet-desaturated-50) 25%, transparent)",
           "dark": "color-mix(in lch, var(--color-violet-desaturated-30) 40%, transparent)",
           "nativeTheme": "color-mix(in srgb, currentColor 11%, transparent);"
-        }
-      },
-      "selected": {
-        "value": {
-          "default": "var(--background-color-box)",
-          "nativeTheme": "var(--toolbar-background-color)"
         }
       }
     }

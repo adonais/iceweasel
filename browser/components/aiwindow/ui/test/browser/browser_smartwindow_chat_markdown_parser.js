@@ -3,7 +3,7 @@
 
 "use strict";
 
-const { parseMarkdown, CHAT_WRAPPER_ELEMENTS } = ChromeUtils.importESModule(
+const { parseMarkdown } = ChromeUtils.importESModule(
   "chrome://browser/content/aiwindow/modules/ChatMarkdownParser.mjs"
 );
 
@@ -34,8 +34,22 @@ function getAnchorText(html) {
   return html.match(/<a [^>]*>([^<]*)<\/a>/)?.[1] ?? null;
 }
 
+function getOpenTagIndex(result, tag) {
+  let index = result.indexOf(`<${tag}>`);
+  // The tag can have attributes, fallback to checking the start of the
+  // opening tag only.
+  if (index === -1) {
+    index = result.indexOf(`<${tag} `);
+  }
+  return index;
+}
+
 function assertHasTag(result, tag) {
-  Assert.ok(result.includes(`<${tag}>`), `Should contain opening <${tag}>`);
+  Assert.notStrictEqual(
+    getOpenTagIndex(result, tag),
+    -1,
+    `Should contain opening <${tag}>`
+  );
   Assert.ok(result.includes(`</${tag}>`), `Should contain closing </${tag}>`);
 }
 
@@ -45,7 +59,7 @@ function assertTagsNestedOrder(result, tags) {
   for (const tag of tags) {
     assertHasTag(result, tag);
 
-    const openIndex = result.indexOf(`<${tag}>`);
+    const openIndex = getOpenTagIndex(result, tag);
     const closeIndex = result.indexOf(`</${tag}>`);
     Assert.greater(
       openIndex,
@@ -155,7 +169,7 @@ Second table:
 | 3  | 4  |`;
 
   const result = parseMarkdown(markdown);
-  const wrapperCount = result.split("<ai-chat-table>").length - 1;
+  const wrapperCount = result.split("<ai-chat-table").length - 1;
   Assert.equal(wrapperCount, 2, "Should have two table wrappers");
 });
 

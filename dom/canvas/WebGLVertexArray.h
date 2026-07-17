@@ -62,7 +62,7 @@ class WebGLVertexArray : public WebGLContextBoundObject {
   bool mHasBeenBound = false;
 
  public:
-  static WebGLVertexArray* Create(WebGLContext* webgl);
+  static RefPtr<WebGLVertexArray> Create(WebGLContext* webgl);
 
  protected:
   explicit WebGLVertexArray(WebGLContext* webgl);

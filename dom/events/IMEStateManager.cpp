@@ -142,11 +142,12 @@ void IMEStateManager::Shutdown() {
 // static
 void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
                                                   BrowserParent* aFocus) {
-  MOZ_ASSERT(aBlur != aFocus);
+  RefPtr<BrowserParent> blur(aBlur);
+  MOZ_ASSERT(blur != aFocus);
   MOZ_ASSERT(XRE_IsParentProcess());
 
   if (sPendingFocusedBrowserSwitchingData.isSome()) {
-    MOZ_ASSERT(aBlur ==
+    MOZ_ASSERT(blur ==
                sPendingFocusedBrowserSwitchingData.ref().mBrowserParentFocused);
     // If focus is not changed between browsers actually, we need to do
     // nothing here.  Let's cancel handling what this method does.
@@ -158,9 +159,9 @@ void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
                "moves between browsers"));
       return;
     }
-    aBlur = sPendingFocusedBrowserSwitchingData.ref().mBrowserParentBlurred;
+    blur = sPendingFocusedBrowserSwitchingData.ref().mBrowserParentBlurred;
     sPendingFocusedBrowserSwitchingData.ref().mBrowserParentFocused = aFocus;
-    MOZ_ASSERT(aBlur != aFocus);
+    MOZ_ASSERT(blur != aFocus);
   }
 
   // If application was inactive, but is now activated, and the last focused
@@ -170,11 +171,11 @@ void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
   // composition shouldn't be commited now.  Therefore, we should put off to
   // handle this until getting another call of this method or a call of
   //`OnFocusChangeInternal()`.
-  if (aBlur && !aFocus && !sIsActive && sTextInputHandlingWidget &&
+  if (blur && !aFocus && !sIsActive && sTextInputHandlingWidget &&
       sTextCompositions &&
       sTextCompositions->GetCompositionFor(sTextInputHandlingWidget)) {
     if (sPendingFocusedBrowserSwitchingData.isNothing()) {
-      sPendingFocusedBrowserSwitchingData.emplace(aBlur, aFocus);
+      sPendingFocusedBrowserSwitchingData.emplace(blur, aFocus);
     }
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  OnFocusMovedBetweenBrowsers(), put off to handle it until "
@@ -207,12 +208,12 @@ void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
   // The manager check is to avoid telling the content process to stop
   // IME state management after focus has already moved there between
   // two same-process-hosted out-of-process iframes.
-  if (aBlur && (!aFocus || (aBlur->Manager() != aFocus->Manager()))) {
+  if (blur && (!aFocus || (blur->Manager() != aFocus->Manager()))) {
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  OnFocusMovedBetweenBrowsers(), notifying previous "
              "focused child process of parent process or another child process "
              "getting focus"));
-    aBlur->StopIMEStateManagement();
+    blur->StopIMEStateManagement();
   }
 
   if (sActiveIMEContentObserver) {
@@ -222,10 +223,10 @@ void IMEStateManager::OnFocusMovedBetweenBrowsers(BrowserParent* aBlur,
   if (sFocusedIMEWidget) {
     // sFocusedIMEBrowserParent can be null, if IME focus hasn't been
     // taken before BrowserParent blur.
-    // aBlur can be null when keyboard focus moves not actually
+    // `blur` can be null when keyboard focus moves not actually
     // between tabs but an open menu is involved.
-    MOZ_ASSERT(!sFocusedIMEBrowserParent || !aBlur ||
-               (sFocusedIMEBrowserParent == aBlur));
+    MOZ_ASSERT(!sFocusedIMEBrowserParent || !blur ||
+               (sFocusedIMEBrowserParent == blur));
     MOZ_LOG(sISMLog, LogLevel::Debug,
             ("  OnFocusMovedBetweenBrowsers(), notifying IME of blur"));
     NotifyIME(NOTIFY_IME_OF_BLUR, sFocusedIMEWidget, sFocusedIMEBrowserParent);
@@ -660,33 +661,29 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
       sFocusedElement.get() == aElement &&
       aAction.mFocusChange != InputContextAction::MENU_GOT_PSEUDO_FOCUS;
 
-  MOZ_LOG(
+  MOZ_LOG_FMT(
       sISMLog, LogLevel::Info,
-      ("OnChangeFocusInternal(aPresContext=0x%p (available: %s), "
-       "aElement=0x%p (remote: %s), aAction={ mCause=%s, "
-       "mFocusChange=%s }), sFocusedPresContext=0x%p (available: %s), "
-       "sFocusedElement=0x%p, sTextInputHandlingWidget=0x%p (available: %s), "
-       "BrowserParent::GetFocused()=0x%p, sActiveIMEContentObserver=0x%p, "
-       "sInstalledMenuKeyboardListener=%s, sIsActive=%s, "
-       "restoringContextForRemoteContent=%s",
-       aPresContext, TrueOrFalse(CanHandleWith(aPresContext)), aElement,
-       TrueOrFalse(remoteHasFocus), ToString(aAction.mCause).c_str(),
-       ToString(aAction.mFocusChange).c_str(), sFocusedPresContext.get(),
-       TrueOrFalse(CanHandleWith(sFocusedPresContext)), sFocusedElement.get(),
-       sTextInputHandlingWidget,
-       TrueOrFalse(sTextInputHandlingWidget &&
-                   !sTextInputHandlingWidget->Destroyed()),
-       BrowserParent::GetFocused(), sActiveIMEContentObserver.get(),
-       TrueOrFalse(sInstalledMenuKeyboardListener), TrueOrFalse(sIsActive),
-       TrueOrFalse(restoringContextForRemoteContent)));
-  if (aElement) {
-    MOZ_LOG(sISMLog, LogLevel::Debug,
-            ("  aElement:        %s", ToString(*aElement).c_str()));
-  }
-  if (sFocusedElement) {
-    MOZ_LOG(sISMLog, LogLevel::Debug,
-            ("  sFocusedElement: %s", ToString(*sFocusedElement).c_str()));
-  }
+      "OnChangeFocusInternal(\naPresContext={} (available: {}),\n"
+      "aElement={} (remote: {}),\n"
+      "aAction={{ mCause={}, mFocusChange={} }}),\n"
+      "sFocusedPresContext={} (available: {}),\n"
+      "sFocusedElement={},\n"
+      "sTextInputHandlingWidget={} (available: {}), "
+      "BrowserParent::GetFocused()={}, sActiveIMEContentObserver={}, "
+      "sInstalledMenuKeyboardListener={}, sIsActive={}, "
+      "restoringContextForRemoteContent={}",
+      static_cast<void*>(aPresContext),
+      TrueOrFalse(CanHandleWith(aPresContext)), RefPtr{aElement},
+      TrueOrFalse(remoteHasFocus), ToString(aAction.mCause),
+      ToString(aAction.mFocusChange), static_cast<void*>(sFocusedPresContext),
+      TrueOrFalse(CanHandleWith(sFocusedPresContext)), sFocusedElement,
+      static_cast<void*>(sTextInputHandlingWidget),
+      TrueOrFalse(sTextInputHandlingWidget &&
+                  !sTextInputHandlingWidget->Destroyed()),
+      static_cast<void*>(BrowserParent::GetFocused()),
+      static_cast<void*>(sActiveIMEContentObserver),
+      TrueOrFalse(sInstalledMenuKeyboardListener), TrueOrFalse(sIsActive),
+      TrueOrFalse(restoringContextForRemoteContent));
 
   sIsActive = !!aPresContext;
   if (sPendingFocusedBrowserSwitchingData.isSome()) {
@@ -945,18 +942,22 @@ nsresult IMEStateManager::OnChangeFocusInternal(nsPresContext* aPresContext,
 
 // static
 void IMEStateManager::OnInstalledMenuKeyboardListener(bool aInstalling) {
-  MOZ_LOG(
+  MOZ_LOG_FMT(
       sISMLog, LogLevel::Info,
-      ("OnInstalledMenuKeyboardListener(aInstalling=%s), "
-       "nsContentUtils::IsSafeToRunScript()=%s, "
-       "sInstalledMenuKeyboardListener=%s, BrowserParent::GetFocused()=0x%p, "
-       "sActiveChildInputContext=%s, sFocusedPresContext=0x%p, "
-       "sFocusedElement=0x%p, sPseudoFocusChangeRunnable=0x%p",
-       TrueOrFalse(aInstalling),
-       TrueOrFalse(nsContentUtils::IsSafeToRunScript()),
-       TrueOrFalse(sInstalledMenuKeyboardListener), BrowserParent::GetFocused(),
-       ToString(sActiveChildInputContext).c_str(), sFocusedPresContext.get(),
-       sFocusedElement.get(), sPseudoFocusChangeRunnable.get()));
+      "OnInstalledMenuKeyboardListener(aInstalling={}), "
+      "nsContentUtils::IsSafeToRunScript()={}, "
+      "sInstalledMenuKeyboardListener={}, BrowserParent::GetFocused()={}, "
+      "sActiveChildInputContext={},\n"
+      "sFocusedPresContext={},\n"
+      "sFocusedElement={},\n"
+      "sPseudoFocusChangeRunnable={}",
+      TrueOrFalse(aInstalling),
+      TrueOrFalse(nsContentUtils::IsSafeToRunScript()),
+      TrueOrFalse(sInstalledMenuKeyboardListener),
+      static_cast<void*>(BrowserParent::GetFocused()),
+      ToString(sActiveChildInputContext).c_str(),
+      static_cast<void*>(sFocusedPresContext), sFocusedElement,
+      static_cast<void*>(sPseudoFocusChangeRunnable));
 
   // Update the state whether the menubar has pseudo focus or not immediately.
   // This will be referred by the runner which is created below.

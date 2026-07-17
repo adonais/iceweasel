@@ -37,7 +37,7 @@ class SandboxTestingChild : public PSandboxTestingChild {
   NS_INLINE_DECL_THREADSAFE_REFCOUNTING(SandboxTestingChild, override)
 
   bool IsTestThread();
-  void PostToTestThread(already_AddRefed<nsIRunnable>&& runnable);
+  void PostToTestThread(already_AddRefed<nsIRunnable> runnable);
 
   void ActorDestroy(ActorDestroyReason aWhy) override;
 

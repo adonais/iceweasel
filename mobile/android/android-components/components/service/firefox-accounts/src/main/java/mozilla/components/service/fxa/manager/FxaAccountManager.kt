@@ -118,6 +118,7 @@ open class FxaAccountManager(
     private val accountOnDisk by lazy { getStorageWrapper().account() }
     private val account by lazy { accountOnDisk.account() }
     private val accountStateEventsObserver = AccountStateEventsObserver(this::queueEvent)
+    private val accountScopeAccessor by lazy { AccountScopeAccessor(getAccountStorage()) }
 
     // Note on threading: we use a single-threaded executor, so there's no concurrent access possible.
     // However, that executor doesn't guarantee that it'll always use the same thread, and so vars
@@ -248,6 +249,38 @@ open class FxaAccountManager(
      * Indicates if sync is currently running.
      */
     fun isSyncActive() = syncManager?.isSyncActive() ?: false
+
+    /**
+     * Sets the enabled state of a sync engine and triggers a sync with [SyncReason.EngineChange].
+     *
+     * @param engine The [SyncEngine] to enable or disable.
+     * @param enabled Whether the engine should be enabled or disabled.
+     */
+    suspend fun setEngineEnabled(engine: SyncEngine, enabled: Boolean) = withContext(coroutineContext) {
+        syncManager?.setEngineEnabled(engine, enabled)
+    }
+
+    /**
+     * Checks whether the given OAuth [scope] is granted to the persisted account. Only consults the
+     * stored account when it is in an accessible state; otherwise `false` is returned.
+     *
+     * @param scope The OAuth scope to look for.
+     * @return `true` if the scope is granted, `false` otherwise.
+     */
+    suspend fun containsScope(scope: String): Boolean {
+        if (authenticatedAccount() == null) {
+            return false
+        }
+        return when (val status = accountScopeAccessor.containsScope(scope)) {
+            ScopeStatus.Granted -> true
+            ScopeStatus.NotGranted -> false
+            is ScopeStatus.Unavailable -> {
+                logger.warn("Unable to determine scope status for account.", status.cause)
+                crashReporter?.submitCaughtException(status.cause ?: ScopeUnavailableException(status.reason))
+                false
+            }
+        }
+    }
 
     /**
      * Call this after registering your observers, and before interacting with this class.

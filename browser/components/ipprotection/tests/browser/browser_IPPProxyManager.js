@@ -136,7 +136,7 @@ add_task(async function test_IPPProxyManager_bug_1999946() {
     return channelFilterRef;
   });
 
-  STUBS.fetchProxyPass.rejects(new Error("Simulate a Fail"));
+  IPPDummyAuthProvider.setProxyPassError(new Error("Simulate a Fail"));
 
   setupService({
     isReady: true,
@@ -166,7 +166,6 @@ add_task(async function test_IPPProxyManager_bug_1999946() {
  * Tests that opening the panel when the IPPProxyManager state is PAUSED shows the paused view.
  */
 add_task(async function test_IPPProxyManager_paused_shown() {
-  const sandbox = sinon.createSandbox();
   IPPProxyManager.reset();
 
   const usage = makeUsage("5368709120", "0", "2027-01-01T00:00:00.000Z");
@@ -199,7 +198,6 @@ add_task(async function test_IPPProxyManager_paused_shown() {
   );
 
   await closePanel();
-  sandbox.restore();
   cleanupService();
 });
 
@@ -207,7 +205,6 @@ add_task(async function test_IPPProxyManager_paused_shown() {
  * Tests that setting usage with remaining > 0 unpauses the IPPProxyManager and shows the main view.
  */
 add_task(async function test_IPPProxyManager_unpause_on_available() {
-  const sandbox = sinon.createSandbox();
   IPPProxyManager.reset();
   setupService({
     isReady: true,
@@ -269,7 +266,6 @@ add_task(async function test_IPPProxyManager_unpause_on_available() {
   Assert.ok(turnOnButton, "Turn on button should be shown when un-paused");
 
   await closePanel();
-  sandbox.restore();
   cleanupService();
 });
 
@@ -278,7 +274,6 @@ add_task(async function test_IPPProxyManager_unpause_on_available() {
  * when bandwidth quota is exceeded.
  */
 add_task(async function test_IPPProxyManager_update_usage_on_stop() {
-  const sandbox = sinon.createSandbox();
   IPPProxyManager.reset();
   setupService({
     isReady: true,
@@ -356,7 +351,6 @@ add_task(async function test_IPPProxyManager_update_usage_on_stop() {
   );
 
   await closePanel();
-  sandbox.restore();
   cleanupService();
 });
 
@@ -364,7 +358,6 @@ add_task(async function test_IPPProxyManager_update_usage_on_stop() {
  * Tests that re-opening the panel when the IPPProxyManager state is ACTIVE does not reset the state (Bug 2021236).
  */
 add_task(async function test_IPPProxyManager_active_shown() {
-  const sandbox = sinon.createSandbox();
   IPPProxyManager.reset();
 
   const usage = makeUsage();
@@ -408,7 +401,6 @@ add_task(async function test_IPPProxyManager_active_shown() {
   );
 
   await closePanel();
-  sandbox.restore();
   cleanupService();
 });
 

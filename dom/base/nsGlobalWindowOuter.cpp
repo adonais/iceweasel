@@ -2251,14 +2251,10 @@ nsresult nsGlobalWindowOuter::SetNewDocument(Document* aDocument,
       newInnerGlobal = newInnerWindow->GetWrapper();
     } else {
       newInnerWindow = nsGlobalWindowInner::Create(this, thisChrome, aActor);
-      if (StaticPrefs::dom_timeout_defer_during_load() &&
-          !aDocument->NodePrincipal()->IsURIInPrefList(
-              "dom.timeout.defer_during_load.force-disable")) {
-        // ensure the initial loading state is known
-        newInnerWindow->SetActiveLoadingState(
-            aDocument->GetReadyStateEnum() ==
-            Document::ReadyState::READYSTATE_LOADING);
-      }
+      // ensure the initial loading state is known
+      newInnerWindow->SetActiveLoadingState(
+          aDocument->GetReadyStateEnum() ==
+          Document::ReadyState::READYSTATE_LOADING);
 
       // The outer window is automatically treated as frozen when we
       // null out the inner window. As a result, initializing classes
@@ -7267,7 +7263,7 @@ void nsGlobalWindowOuter::CheckForDPIChange() {
 }
 
 nsresult nsGlobalWindowOuter::Dispatch(
-    already_AddRefed<nsIRunnable>&& aRunnable) const {
+    already_AddRefed<nsIRunnable> aRunnable) const {
   MOZ_RELEASE_ASSERT(NS_IsMainThread());
   return NS_DispatchToCurrentThread(std::move(aRunnable));
 }

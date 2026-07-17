@@ -15,6 +15,7 @@
 #include "mozilla/Components.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsIStringBundle.h"
+#include "nsPIDOMWindowInlines.h"
 
 using namespace mozilla::a11y;
 
@@ -110,7 +111,7 @@ uint64_t ApplicationAccessible::NativeState() const { return 0; }
 
 KeyBinding ApplicationAccessible::AccessKey() const { return KeyBinding(); }
 
-void ApplicationAccessible::Init() {
+void ApplicationAccessible::CreateInitialDocs() {
   // Basically children are kept updated by Append/RemoveChild method calls.
   // However if there are open windows before accessibility was started
   // then we need to make sure root accessibles for open windows are created so

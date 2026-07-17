@@ -93,7 +93,7 @@ export const SingleSelect = ({
     <div className={`tiles-single-select-container`}>
       <div>
         <fieldset className={`tiles-single-select-section ${category}`}>
-          <Localized text={content.subtitle}>
+          <Localized text={content.tiles?.subtitle || content.subtitle}>
             <legend className="sr-only" />
           </Localized>
           {content.tiles.data.map(

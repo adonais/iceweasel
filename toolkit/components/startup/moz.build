@@ -18,5 +18,7 @@ UNIFIED_SOURCES += [
 
 FINAL_LIBRARY = "xul"
 
+include("/ipc/chromium/chromium-config.mozbuild")
+
 with Files("**"):
     BUG_COMPONENT = ("Toolkit", "Startup and Profile System")

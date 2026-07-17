@@ -143,10 +143,7 @@ nsIFrame* TouchManager::SetupTarget(WidgetTouchEvent* aEvent,
           aEvent, touch->mRefPoint, relativeTo);
       target = FindFrameTargetedByInputEvent(aEvent, relativeTo, eventPoint);
       if (target) {
-        nsIContent* targetContent = target->GetContentForEvent(aEvent);
-        touch->SetTouchTarget(targetContent
-                                  ? targetContent->GetAsElementOrParentElement()
-                                  : nullptr);
+        touch->SetTouchTarget(target->GetEventTargetContent(aEvent));
       } else {
         aEvent->mTouches.RemoveElementAt(i);
       }
@@ -234,10 +231,7 @@ nsIFrame* TouchManager::SuppressInvalidPointsAndGetTargetedFrame(
         touch->mIsTouchEventSuppressed = true;
       } else {
         targetFrame = newTargetFrame;
-        nsIContent* newTargetContent = targetFrame->GetContentForEvent(aEvent);
-        touch->SetTouchTarget(
-            newTargetContent ? newTargetContent->GetAsElementOrParentElement()
-                             : nullptr);
+        touch->SetTouchTarget(targetFrame->GetEventTargetContent(aEvent));
       }
     }
     if (targetFrame) {

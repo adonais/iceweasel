@@ -49,19 +49,13 @@ void MessagePumpDefault::Run(Delegate* delegate) {
     if (delayed_work_time_.is_null()) {
       hangMonitor.NotifyWait();
       AUTO_PROFILER_LABEL("MessagePumpDefault::Run:Wait", IDLE);
-      {
-        AUTO_PROFILER_THREAD_SLEEP;
-        event_.Wait();
-      }
+      event_.Wait();
     } else {
       TimeDelta delay = delayed_work_time_ - TimeTicks::Now();
       if (delay > TimeDelta()) {
         hangMonitor.NotifyWait();
         AUTO_PROFILER_LABEL("MessagePumpDefault::Run:Wait", IDLE);
-        {
-          AUTO_PROFILER_THREAD_SLEEP;
-          event_.TimedWait(delay);
-        }
+        event_.TimedWait(delay);
       } else {
         // It looks like delayed_work_time_ indicates a time in the past, so we
         // need to call DoDelayedWork now.

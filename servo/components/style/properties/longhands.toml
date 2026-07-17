@@ -863,7 +863,6 @@ affects = "layout"
 type = "FontFeatureSettings"
 initial = "computed::FontFeatureSettings::normal()"
 struct = "font"
-engine = "gecko"
 extra_prefixes = ["moz:layout.css.prefixes.font-features", "webkit"]
 animation_type = "discrete"
 spec = "https://drafts.csswg.org/css-fonts/#propdef-font-feature-settings"
@@ -981,7 +980,6 @@ affects = "layout"
 type = "FontVariantEastAsian"
 initial = "computed::FontVariantEastAsian::empty()"
 struct = "font"
-engine = "gecko"
 animation_type = "discrete"
 gecko_ffi_name = "mFont.variantEastAsian"
 spec = "https://drafts.csswg.org/css-fonts/#propdef-font-variant-east-asian"
@@ -991,7 +989,6 @@ affects = "layout"
 type = "FontVariantLigatures"
 initial = "computed::FontVariantLigatures::empty()"
 struct = "font"
-engine = "gecko"
 animation_type = "discrete"
 gecko_ffi_name = "mFont.variantLigatures"
 spec = "https://drafts.csswg.org/css-fonts/#propdef-font-variant-ligatures"
@@ -1001,7 +998,6 @@ affects = "layout"
 type = "FontVariantNumeric"
 initial = "computed::FontVariantNumeric::empty()"
 struct = "font"
-engine = "gecko"
 animation_type = "discrete"
 gecko_ffi_name = "mFont.variantNumeric"
 spec = "https://drafts.csswg.org/css-fonts/#propdef-font-variant-numeric"
@@ -1251,6 +1247,15 @@ struct = "font"
 spec = "https://drafts.csswg.org/css2/visudet.html#propdef-line-height"
 servo_restyle_damage = "rebuild_box"
 affects = "layout"
+
+[link-parameters]
+type = "LinkParameters"
+initial = "computed::LinkParameters::none()"
+struct = "ui"
+animation_type = "discrete"
+spec = "https://drafts.csswg.org/css-link-params-1/#propdef-link-parameters"
+affects = "paint"
+gecko_pref = "layout.css.link-parameters.enabled"
 
 [list-style-image]
 type = "Image"
@@ -2367,7 +2372,7 @@ affects = "paint"
 type = "position::HorizontalPosition"
 initial = "computed::LengthPercentage::zero_percent()"
 struct = "svg"
-engine = "gecko"
+servo_pref = "layout.unimplemented"
 extra_prefixes = ["webkit"]
 spec = "https://drafts.fxtf.org/css-masking-1/#propdef-mask-position"
 vector = { animation_type = "repeatable_list" }
@@ -2377,7 +2382,7 @@ affects = "paint"
 type = "position::VerticalPosition"
 initial = "computed::LengthPercentage::zero_percent()"
 struct = "svg"
-engine = "gecko"
+servo_pref = "layout.unimplemented"
 extra_prefixes = ["webkit"]
 spec = "https://drafts.fxtf.org/css-masking-1/#propdef-mask-position"
 vector = { animation_type = "repeatable_list" }
@@ -2387,7 +2392,7 @@ affects = "paint"
 type = "BackgroundRepeat"
 initial = "computed::BackgroundRepeat::repeat()"
 struct = "svg"
-engine = "gecko"
+servo_pref = "layout.unimplemented"
 extra_prefixes = ["webkit"]
 animation_type = "discrete"
 spec = "https://drafts.fxtf.org/css-masking-1/#propdef-mask-repeat"
@@ -2398,7 +2403,7 @@ affects = "paint"
 type = "background::BackgroundSize"
 initial = "computed::BackgroundSize::auto()"
 struct = "svg"
-engine = "gecko"
+servo_pref = "layout.unimplemented"
 extra_prefixes = ["webkit"]
 spec = "https://drafts.fxtf.org/css-masking-1/#propdef-mask-size"
 vector = { animation_type = "repeatable_list" }
@@ -3145,6 +3150,106 @@ logical_group = "border-radius"
 logical = true
 affects = "paint"
 
+[corner-top-left-shape]
+type = "CornerShape"
+initial = "computed::CornerShape::round()"
+initial_specified_value = "specified::CornerShape::round()"
+struct = "border"
+gecko_pref = "layout.css.corner-shape.enabled"
+servo_pref = "layout.unimplemented"
+spec = "https://drafts.csswg.org/css-borders-4/#propdef-corner-top-left-shape"
+gecko_ffi_name = "mCornerShape.top_left"
+logical_group = "corner-shape"
+affects = "paint"
+
+[corner-top-right-shape]
+type = "CornerShape"
+initial = "computed::CornerShape::round()"
+initial_specified_value = "specified::CornerShape::round()"
+struct = "border"
+gecko_pref = "layout.css.corner-shape.enabled"
+servo_pref = "layout.unimplemented"
+spec = "https://drafts.csswg.org/css-borders-4/#propdef-corner-top-right-shape"
+gecko_ffi_name = "mCornerShape.top_right"
+logical_group = "corner-shape"
+affects = "paint"
+
+[corner-bottom-right-shape]
+type = "CornerShape"
+initial = "computed::CornerShape::round()"
+initial_specified_value = "specified::CornerShape::round()"
+struct = "border"
+gecko_pref = "layout.css.corner-shape.enabled"
+servo_pref = "layout.unimplemented"
+spec = "https://drafts.csswg.org/css-borders-4/#propdef-corner-bottom-right-shape"
+gecko_ffi_name = "mCornerShape.bottom_right"
+logical_group = "corner-shape"
+affects = "paint"
+
+[corner-bottom-left-shape]
+type = "CornerShape"
+initial = "computed::CornerShape::round()"
+initial_specified_value = "specified::CornerShape::round()"
+struct = "border"
+gecko_pref = "layout.css.corner-shape.enabled"
+servo_pref = "layout.unimplemented"
+spec = "https://drafts.csswg.org/css-borders-4/#propdef-corner-bottom-left-shape"
+gecko_ffi_name = "mCornerShape.bottom_left"
+logical_group = "corner-shape"
+affects = "paint"
+
+[corner-start-start-shape]
+type = "CornerShape"
+initial = "computed::CornerShape::round()"
+initial_specified_value = "specified::CornerShape::round()"
+struct = "border"
+gecko_pref = "layout.css.corner-shape.enabled"
+servo_pref = "layout.unimplemented"
+spec = "https://drafts.csswg.org/css-borders-4/#propdef-corner-start-start-shape"
+gecko_ffi_name = "mCornerShape.start_start"
+logical_group = "corner-shape"
+logical = true
+affects = "paint"
+
+[corner-start-end-shape]
+type = "CornerShape"
+initial = "computed::CornerShape::round()"
+initial_specified_value = "specified::CornerShape::round()"
+struct = "border"
+gecko_pref = "layout.css.corner-shape.enabled"
+servo_pref = "layout.unimplemented"
+spec = "https://drafts.csswg.org/css-borders-4/#propdef-corner-start-end-shape"
+gecko_ffi_name = "mCornerShape.start_end"
+logical_group = "corner-shape"
+logical = true
+affects = "paint"
+
+[corner-end-start-shape]
+type = "CornerShape"
+initial = "computed::CornerShape::round()"
+initial_specified_value = "specified::CornerShape::round()"
+struct = "border"
+gecko_pref = "layout.css.corner-shape.enabled"
+servo_pref = "layout.unimplemented"
+spec = "https://drafts.csswg.org/css-borders-4/#propdef-corner-end-start-shape"
+gecko_ffi_name = "mCornerShape.end_start"
+logical_group = "corner-shape"
+logical = true
+affects = "paint"
+
+[corner-end-end-shape]
+type = "CornerShape"
+initial = "computed::CornerShape::round()"
+initial_specified_value = "specified::CornerShape::round()"
+struct = "border"
+gecko_pref = "layout.css.corner-shape.enabled"
+servo_pref = "layout.unimplemented"
+spec = "https://drafts.csswg.org/css-borders-4/#propdef-corner-end-end-shape"
+gecko_ffi_name = "mCornerShape.end_end"
+logical_group = "corner-shape"
+logical = true
+affects = "paint"
+
 [margin-top]
 type = "Margin"
 initial = "computed::Margin::zero()"
@@ -3511,6 +3616,9 @@ vector = {}
 keyword = { values = ["scroll", "fixed"], extra_gecko_values = ["local"], gecko_enum_prefix = "StyleImageLayerAttachment" }
 
 [background-clip]
+type = "BackgroundClip"
+initial = "computed::BackgroundClip::BorderBox"
+parse_method = "parse_for_background"
 struct = "background"
 spec = "https://drafts.csswg.org/css-backgrounds/#the-background-clip"
 animation_type = "discrete"
@@ -3518,7 +3626,6 @@ affects = "paint"
 extra_prefixes = ["webkit"]
 servo_restyle_damage = "repaint"
 vector = {}
-keyword = { values = ["border-box", "padding-box", "content-box"], extra_gecko_values = ["text"], gecko_enum_prefix = "StyleGeometryBox", gecko_inexhaustive = true }
 
 [background-origin]
 struct = "background"
@@ -3667,7 +3774,6 @@ keyword = { values = ["normal", "text", "emoji", "unicode"] }
 
 [font-variant-position]
 struct = "font"
-engine = "gecko"
 spec = "https://drafts.csswg.org/css-fonts/#propdef-font-variant-position"
 animation_type = "discrete"
 affects = "layout"
@@ -3928,7 +4034,7 @@ keyword = { values = ["fill", "contain", "cover", "none", "scale-down"] }
 
 [mask-type]
 struct = "svg"
-engine = "gecko"
+servo_pref = "layout.unimplemented"
 spec = "https://drafts.fxtf.org/css-masking-1/#propdef-mask-type"
 animation_type = "discrete"
 affects = "paint"
@@ -3936,7 +4042,7 @@ keyword = { values = ["luminance", "alpha"] }
 
 [mask-mode]
 struct = "svg"
-engine = "gecko"
+servo_pref = "layout.unimplemented"
 spec = "https://drafts.fxtf.org/css-masking-1/#propdef-mask-mode"
 animation_type = "discrete"
 affects = "paint"
@@ -3944,18 +4050,20 @@ vector = {}
 keyword = { values = ["match-source", "alpha", "luminance"] }
 
 [mask-clip]
+type = "BackgroundClip"
+initial = "computed::BackgroundClip::BorderBox"
+parse_method = "parse_for_mask"
 struct = "svg"
-engine = "gecko"
+servo_pref = "layout.unimplemented"
 spec = "https://drafts.fxtf.org/css-masking-1/#propdef-mask-clip"
 animation_type = "discrete"
 affects = "paint"
 vector = {}
 extra_prefixes = ["webkit"]
-keyword = { values = ["border-box", "content-box", "padding-box"], extra_gecko_values = ["fill-box", "stroke-box", "view-box", "no-clip"], gecko_enum_prefix = "StyleGeometryBox", gecko_inexhaustive = true }
 
 [mask-origin]
 struct = "svg"
-engine = "gecko"
+servo_pref = "layout.unimplemented"
 spec = "https://drafts.fxtf.org/css-masking-1/#propdef-mask-origin"
 animation_type = "discrete"
 affects = "paint"
@@ -3965,7 +4073,7 @@ keyword = { values = ["border-box", "content-box", "padding-box"], extra_gecko_v
 
 [mask-composite]
 struct = "svg"
-engine = "gecko"
+servo_pref = "layout.unimplemented"
 spec = "https://drafts.fxtf.org/css-masking-1/#propdef-mask-composite"
 animation_type = "discrete"
 affects = "paint"

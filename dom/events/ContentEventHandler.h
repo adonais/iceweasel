@@ -187,13 +187,15 @@ class MOZ_STACK_CLASS ContentEventHandler {
              SelectionType aSelectionType = SelectionType::eNormal,
              bool aRequireFlush = true);
   /**
-   * InitRootContent() computes the root content of current focused editor.
+   * InitRootContent() initializes mRootElement and return the first selection
+   * range in it.
    *
    * @param aNormalSelection    This must be a Selection instance whose type is
    *                            SelectionType::eNormal.
+   * @return The first valid range of aNormalSelection.
    */
-  MOZ_CAN_RUN_SCRIPT nsresult
-  InitRootContent(const Selection& aNormalSelection);
+  MOZ_CAN_RUN_SCRIPT Result<nsRange*, nsresult> InitRootContent(
+      const Selection& aNormalSelection);
 
  public:
   // FlatText means the text that is generated from DOM tree. The BR elements
@@ -314,6 +316,7 @@ class MOZ_STACK_CLASS ContentEventHandler {
 
   /**
    * Get the flatten text length in the range.
+   *
    * @param aStartPosition      Start node and offset in the node of the range.
    *                            If the container is an element node, it's
    *                            important to start from before or after its open
@@ -329,20 +332,10 @@ class MOZ_STACK_CLASS ContentEventHandler {
    * @param aRootElement        The root element of the editor or document.
    *                            aRootElement won't cause any text including
    *                            line breaks.
-   * @param aLength             The result of the flatten text length of the
-   *                            range.
-   * @param aIsRemovingNode     Should be true only when this is called from
-   *                            nsIMutationObserver::ContentRemoved().
-   *                            When this is true, the container of
-   *                            aStartPosition should be the removing node and
-   *                            points start of it and the container of
-   *                            aEndPosition must be same as the container of
-   *                            aStartPosition and points end of the container.
    */
-  static nsresult GetFlatTextLengthInRange(
+  static Result<uint32_t, nsresult> GetFlatTextLengthInRange(
       const RawNodePosition& aStartPosition,
-      const RawNodePosition& aEndPosition, const Element* aRootElement,
-      uint32_t* aLength, bool aIsRemovingNode = false);
+      const RawNodePosition& aEndPosition, const Element* aRootElement);
 
   // Computes the native text length between aStartOffset and aEndOffset of
   // aTextNode.
@@ -387,8 +380,8 @@ class MOZ_STACK_CLASS ContentEventHandler {
   // of line breaker caused by the start of aContent because aRange never
   // includes the line breaker caused by its start node.
   template <typename SimpleRangeType>
-  nsresult GetStartOffset(const SimpleRangeType& aSimpleRange,
-                          uint32_t* aOffset);
+  Result<uint32_t, nsresult> GetStartOffset(
+      const SimpleRangeType& aSimpleRange) const;
   // Check if we should insert a line break before aContent.
   // This should return false only when aContent is an html element which
   // is typically used in a paragraph like <em>.

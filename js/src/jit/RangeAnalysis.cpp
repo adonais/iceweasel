@@ -117,13 +117,10 @@ static inline void SpewRange(const MDefinition* def) {
 #ifdef JS_JITSPEW
   if (JitSpewEnabled(JitSpew_Range) && def->type() != MIRType::None &&
       def->range()) {
-    JitSpewHeader(JitSpew_Range);
-    Fprinter& out = JitSpewPrinter();
-    out.printf("  ");
-    def->printName(out);
-    out.printf(" has range ");
-    def->range()->dump(out);
-    out.printf("\n");
+    AutoJitSpewMessage msg(JitSpew_Range, "  ");
+    def->printName(msg.printer());
+    msg.append(" has range ");
+    def->range()->dump(msg.printer());
   }
 #endif
 }
@@ -147,13 +144,9 @@ static const char* TruncateKindString(TruncateKind kind) {
 static inline void SpewTruncate(const MDefinition* def, TruncateKind kind,
                                 bool shouldClone) {
   if (JitSpewEnabled(JitSpew_Range)) {
-    JitSpewHeader(JitSpew_Range);
-    Fprinter& out = JitSpewPrinter();
-    out.printf("  ");
-    out.printf("truncating ");
-    def->printName(out);
-    out.printf(" (kind: %s, clone: %d)\n", TruncateKindString(kind),
-               shouldClone);
+    AutoJitSpewMessage msg(JitSpew_Range, "  truncating ");
+    def->printName(msg.printer());
+    msg.append(" (kind: %s, clone: %d)", TruncateKindString(kind), shouldClone);
   }
 }
 #else
@@ -330,11 +323,9 @@ bool RangeAnalysis::addBetaNodes() {
     }
 
     if (JitSpewEnabled(JitSpew_Range)) {
-      JitSpewHeader(JitSpew_Range);
-      Fprinter& out = JitSpewPrinter();
-      out.printf("  Adding beta node for %u with range ", val->id());
-      comp.dump(out);
-      out.printf("\n");
+      AutoJitSpewMessage msg(
+          JitSpew_Range, "  Adding beta node for %u with range ", val->id());
+      comp.dump(msg.printer());
     }
 
     if (!alloc().ensureBallast()) {
@@ -727,14 +718,19 @@ void Range::setDouble(double l, double h) {
   canHaveFractionalPart_ = ExcludesFractionalParts;
   canBeNegativeZero_ = ExcludesNegativeZero;
 
-  // If denormals are disabled, any value with exponent 0 will be immediately
-  // flushed to 0. This gives 2**53 bit patterns that compare equal to zero.
+  // If denormals are disabled, any denormal value will be immediately flushed
+  // to 0, so any bit pattern in the denormal range compares equal to zero.
   //
-  // Check whether the range [l .. h] can cross any of the 2^53 zeros. We have
-  // to be conservative as the main thread might not interpret doubles the same
-  // way as the compiler thread.
-  const double doubleMin = mozilla::BitwiseCast<double>(
-      mozilla::SpecificFloatingPointBits<double, 0, 1, 0>::value);
+  // Check whether the range [l .. h] can cross any of these zeros. We have to
+  // be conservative as the main thread might not interpret floating point
+  // values the same way as the compiler thread.
+  //
+  // This Range may describe a Float32 value, whose denormal range begins at
+  // the smallest normal binary32 (2**-126) rather than the smallest normal
+  // binary64 (2**-1022). Use the (wider) binary32 threshold so we stay
+  // conservative for both float32 and double values.
+  const double doubleMin = double(mozilla::BitwiseCast<float>(
+      mozilla::SpecificFloatingPointBits<float, 0, 1, 0>::value));
   bool includesNegative = std::isnan(l) || l < doubleMin;
   bool includesPositive = std::isnan(h) || h > -doubleMin;
   bool crossesZero = includesNegative && includesPositive;

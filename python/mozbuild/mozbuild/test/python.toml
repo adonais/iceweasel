@@ -11,6 +11,8 @@ subsuite = "mozbuild"
 
 ["action/test_process_install_manifest.py"]
 
+["action/test_zip.py"]
+
 ["backend/test_build.py"]
 
 ["backend/test_configenvironment.py"]
@@ -88,6 +90,8 @@ subsuite = "mozbuild"
 ["test_confvars.py"]
 
 ["test_containers.py"]
+
+["test_devtools_mcp.py"]
 
 ["test_dotproperties.py"]
 

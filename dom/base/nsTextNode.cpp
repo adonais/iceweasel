@@ -29,7 +29,7 @@ class nsAttributeTextNode final : public nsTextNode,
  public:
   NS_DECL_ISUPPORTS_INHERITED
 
-  nsAttributeTextNode(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+  nsAttributeTextNode(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                       int32_t aNameSpaceID, nsAtom* aAttrName,
                       nsAtom* aFallback)
       : nsTextNode(std::move(aNodeInfo)),

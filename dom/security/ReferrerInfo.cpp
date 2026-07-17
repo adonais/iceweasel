@@ -646,7 +646,8 @@ nsresult ReferrerInfo::LimitReferrerLength(
   // 'ePolicySchemeHostPort' or the 'origin' of any other policy is still over
   // the length limit. If so, truncate the referrer entirely.
   AutoTArray<nsString, 2> params = {
-      referrerLengthLimit, NS_ConvertUTF8toUTF16(aInAndOutTrimmedReferrer)};
+      std::move(referrerLengthLimit),
+      NS_ConvertUTF8toUTF16(aInAndOutTrimmedReferrer)};
   LogMessageToConsole(aChannel, "ReferrerOriginLengthOverLimitation", params);
   aInAndOutTrimmedReferrer.Truncate();
 
@@ -666,7 +667,7 @@ nsresult ReferrerInfo::GetOriginFromReferrerURI(nsIURI* aReferrer,
     return rv;
   }
 
-  aResult = scheme;
+  aResult = std::move(scheme);
   aResult.AppendLiteral("://");
   // Note we explicitly cleared UserPass above, so do not need to build it.
   rv = aReferrer->GetAsciiHostPort(asciiHostPort);

@@ -2,9 +2,9 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-use api::units::*;
+use api::{ImageBufferKind, ColorF, units::*};
 
-use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState};
+use crate::pattern::{Pattern, PatternBuilder, PatternBuilderContext, PatternBuilderState, PatternKind};
 use crate::render_task_graph::RenderTaskId;
 use crate::renderer::BlendMode;
 
@@ -12,7 +12,8 @@ pub struct ImagePattern {
     pub src_task_id: RenderTaskId,
     pub src_is_opaque: bool,
     pub premultiplied: bool,
-    // pub color: ColorF, // TODO
+    pub sampler_kind: ImageBufferKind,
+    pub color: ColorF,
 }
 
 impl PatternBuilder for ImagePattern {
@@ -29,7 +30,17 @@ impl PatternBuilder for ImagePattern {
             BlendMode::Alpha
         };
 
-        Pattern::texture(self.src_task_id, self.src_is_opaque)
-            .with_blend_mode(blend_mode)
+        let mut pattern = Pattern::texture(self.src_task_id, self.src_is_opaque)
+            .with_base_color(self.color)
+            .with_blend_mode(blend_mode);
+
+        pattern.kind = match self.sampler_kind {
+            ImageBufferKind::Texture2D => PatternKind::ColorOrTexture,
+            ImageBufferKind::TextureExternal => PatternKind::TextureExternal,
+            ImageBufferKind::TextureExternalBT709 => PatternKind::TextureExternalBT709,
+            ImageBufferKind::TextureRect => PatternKind::TextureRect,
+        };
+
+        pattern
     }
 }

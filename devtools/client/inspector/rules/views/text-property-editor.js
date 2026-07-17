@@ -132,6 +132,7 @@ class TextPropertyEditor {
   #colorSwatchSpans;
   #bezierSwatchSpans;
   #linearEasingSwatchSpans;
+  #filterSwatchSpan;
 
   #onValidate;
   #isDragging = false;
@@ -139,6 +140,10 @@ class TextPropertyEditor {
   #hasDragged = false;
   #draggingController = null;
   #draggingValueCache = null;
+
+  // Property value when we start editing or opening a swatch
+  // (used to revert back to the value before edition)
+  #initialValue = null;
 
   /**
    * Boolean indicating if the name or value is being currently edited.
@@ -148,7 +153,7 @@ class TextPropertyEditor {
   }
 
   /**
-   * Get the rule to the current text property
+   * Get the Rule model to the current text property
    */
   get rule() {
     return this.prop.rule;
@@ -176,8 +181,7 @@ class TextPropertyEditor {
       class: "ruleview-propertycontainer",
     });
 
-    const indent =
-      ((this.ruleEditor.rule.domRule.ancestorData.length || 0) + 1) * 2;
+    const indent = ((this.rule.domRule.ancestorData.length || 0) + 1) * 2;
     createChild(this.container, "span", {
       class: "ruleview-rule-indent clipboard-only",
       textContent: " ".repeat(indent),
@@ -316,9 +320,8 @@ class TextPropertyEditor {
           }
 
           if (event.target.classList.contains("ruleview-variable-link")) {
-            const isRuleInStartingStyle =
-              this.ruleEditor.rule.isInStartingStyle();
-            const rulePseudoElement = this.ruleEditor.rule.pseudoElement;
+            const isRuleInStartingStyle = this.rule.isInStartingStyle();
+            const rulePseudoElement = this.rule.pseudoElement;
             await this.ruleView.highlightProperty(
               event.target.dataset.variableName,
               {
@@ -639,7 +642,11 @@ class TextPropertyEditor {
       },
       inStartingStyleRule: this.rule.isInStartingStyle(),
       isValid: this.isValid(),
-      cssExplainersEnabled: this.ruleView.cssExplainersEnabled,
+      cssExplainersEnabled:
+        this.ruleView.cssExplainersEnabled &&
+        // @backward-compat { version 153 } Server support for CSS explainers was added
+        // in 153, so the line below can be removed once it hits release.
+        this.rule.domRule.supportsCssExplainers,
     };
 
     if (this.rule.darkColorScheme !== undefined) {
@@ -678,7 +685,7 @@ class TextPropertyEditor {
     }
 
     this.ruleView.emit("property-value-updated", {
-      rule: this.prop.rule,
+      rule: this.rule,
       property: name,
       value: val,
     });
@@ -711,96 +718,8 @@ class TextPropertyEditor {
       })();
     }
 
-    // Attach the color picker tooltip to the color swatches
-    this.#colorSwatchSpans = this.valueSpan.querySelectorAll(
-      "." + COLOR_SWATCH_CLASS
-    );
     if (this.ruleEditor.isEditable) {
-      for (const span of this.#colorSwatchSpans) {
-        // Adding this swatch to the list of swatches our colorpicker
-        // knows about
-        this.ruleView.tooltips.getTooltip("colorPicker").addSwatch(span, {
-          onShow: this.#onStartEditing,
-          onPreview: this.#onSwatchPreview,
-          onCommit: this.#onSwatchCommit,
-          onRevert: this.#onSwatchRevert,
-        });
-        const title = l10n("rule.colorSwatch.tooltip");
-        span.setAttribute("title", title);
-        span.dataset.propertyName = this.nameSpan.textContent;
-      }
-    }
-
-    // Attach the cubic-bezier tooltip to the bezier swatches
-    this.#bezierSwatchSpans = this.valueSpan.querySelectorAll(
-      "." + BEZIER_SWATCH_CLASS
-    );
-    if (this.ruleEditor.isEditable) {
-      for (const span of this.#bezierSwatchSpans) {
-        // Adding this swatch to the list of swatches our colorpicker
-        // knows about
-        this.ruleView.tooltips.getTooltip("cubicBezier").addSwatch(span, {
-          onShow: this.#onStartEditing,
-          onPreview: this.#onSwatchPreview,
-          onCommit: this.#onSwatchCommit,
-          onRevert: this.#onSwatchRevert,
-        });
-        const title = l10n("rule.bezierSwatch.tooltip");
-        span.setAttribute("title", title);
-      }
-    }
-
-    // Attach the linear easing tooltip to the linear easing swatches
-    this.#linearEasingSwatchSpans = this.valueSpan.querySelectorAll(
-      "." + LINEAR_EASING_SWATCH_CLASS
-    );
-    if (this.ruleEditor.isEditable) {
-      for (const span of this.#linearEasingSwatchSpans) {
-        // Adding this swatch to the list of swatches our colorpicker
-        // knows about
-        this.ruleView.tooltips
-          .getTooltip("linearEaseFunction")
-          .addSwatch(span, {
-            onShow: this.#onStartEditing,
-            onPreview: this.#onSwatchPreview,
-            onCommit: this.#onSwatchCommit,
-            onRevert: this.#onSwatchRevert,
-          });
-        span.setAttribute("title", l10n("rule.bezierSwatch.tooltip"));
-      }
-    }
-
-    // Attach the filter editor tooltip to the filter swatch
-    const span = this.valueSpan.querySelector("." + FILTER_SWATCH_CLASS);
-    if (this.ruleEditor.isEditable) {
-      if (span) {
-        this.outputParserOptions.filterSwatch = true;
-
-        this.ruleView.tooltips.getTooltip("filterEditor").addSwatch(
-          span,
-          {
-            onShow: this.#onStartEditing,
-            onPreview: this.#onSwatchPreview,
-            onCommit: this.#onSwatchCommit,
-            onRevert: this.#onSwatchRevert,
-          },
-          outputParser,
-          this.outputParserOptions
-        );
-        const title = l10n("rule.filterSwatch.tooltip");
-        span.setAttribute("title", title);
-      }
-    }
-
-    this.angleSwatchSpans = this.valueSpan.querySelectorAll(
-      "." + ANGLE_SWATCH_CLASS
-    );
-    if (this.ruleEditor.isEditable) {
-      for (const angleSpan of this.angleSwatchSpans) {
-        angleSpan.addEventListener("unit-change", this.#onSwatchCommit);
-        const title = l10n("rule.angleSwatch.tooltip");
-        angleSpan.setAttribute("title", title);
-      }
+      this.#addSwatches();
     }
 
     const nodeFront = this.ruleView.inspector.selection.nodeFront;
@@ -884,6 +803,154 @@ class TextPropertyEditor {
     }
   };
 
+  /**
+   * Register all "swatches". i.e. all rounded icons in declaration values
+   * from which you can open tooltips to configure complex values easily.
+   * Like: colors, filters,...
+   *
+   * Note that the DOM Elements for the rounded icons are generated by
+   * the OutputParser. This code only register event listeners on them
+   * to show/hide the tooltip and connect it with the rule view.
+   */
+  #addSwatches() {
+    const { tooltips } = this.ruleView;
+    // Attach the color picker tooltip to the color swatches
+    const previousColorSwatchSpans = this.#colorSwatchSpans;
+    this.#colorSwatchSpans = this.valueSpan.querySelectorAll(
+      "." + COLOR_SWATCH_CLASS
+    );
+    const colorSwatchTitle = l10n("rule.colorSwatch.tooltip");
+    const colorTooltip = tooltips.getTooltip("colorPicker");
+    for (let i = 0; i < this.#colorSwatchSpans.length; i++) {
+      const span = this.#colorSwatchSpans[i];
+      colorTooltip.addSwatch(
+        span,
+        {
+          onShow: this.#onStartEditing,
+          onPreview: this.#onSwatchPreview,
+          onCommit: this.#onSwatchCommit,
+          onRevert: this.#onSwatchRevert,
+        },
+        previousColorSwatchSpans ? previousColorSwatchSpans[i] : null
+      );
+      span.setAttribute("title", colorSwatchTitle);
+      span.dataset.propertyName = this.nameSpan.textContent;
+    }
+
+    // Attach the cubic-bezier tooltip to the bezier swatches
+    const previousBezierSwatchSpans = this.#bezierSwatchSpans;
+    this.#bezierSwatchSpans = this.valueSpan.querySelectorAll(
+      "." + BEZIER_SWATCH_CLASS
+    );
+    const bezierSwatchTitle = l10n("rule.bezierSwatch.tooltip");
+    const cubicTooltip = tooltips.getTooltip("cubicBezier");
+    for (let i = 0; i < this.#bezierSwatchSpans.length; i++) {
+      const span = this.#bezierSwatchSpans[i];
+      cubicTooltip.addSwatch(
+        span,
+        {
+          onShow: this.#onStartEditing,
+          onPreview: this.#onSwatchPreview,
+          onCommit: this.#onSwatchCommit,
+          onRevert: this.#onSwatchRevert,
+        },
+        previousBezierSwatchSpans ? previousBezierSwatchSpans[i] : null
+      );
+      span.setAttribute("title", bezierSwatchTitle);
+    }
+
+    // Attach the linear easing tooltip to the linear easing swatches
+    const previousLinearEasingSwatchSpans = this.#linearEasingSwatchSpans;
+    this.#linearEasingSwatchSpans = this.valueSpan.querySelectorAll(
+      "." + LINEAR_EASING_SWATCH_CLASS
+    );
+    const linearTooltip = tooltips.getTooltip("linearEaseFunction");
+    for (let i = 0; i < this.#linearEasingSwatchSpans.length; i++) {
+      const span = this.#linearEasingSwatchSpans[i];
+      linearTooltip.addSwatch(
+        span,
+        {
+          onShow: this.#onStartEditing,
+          onPreview: this.#onSwatchPreview,
+          onCommit: this.#onSwatchCommit,
+          onRevert: this.#onSwatchRevert,
+        },
+        previousLinearEasingSwatchSpans
+          ? previousLinearEasingSwatchSpans[i]
+          : null
+      );
+      span.setAttribute("title", bezierSwatchTitle);
+    }
+
+    // Attach the filter editor tooltip to the filter swatch
+    const previousFilterSwatchSpan = this.#filterSwatchSpan;
+    this.#filterSwatchSpan = this.valueSpan.querySelector(
+      "." + FILTER_SWATCH_CLASS
+    );
+    if (this.#filterSwatchSpan) {
+      tooltips.getTooltip("filterEditor").addSwatch(
+        this.#filterSwatchSpan,
+        {
+          onShow: this.#onStartEditing,
+          onPreview: this.#onSwatchPreview,
+          onCommit: this.#onSwatchCommit,
+          onRevert: this.#onSwatchRevert,
+        },
+        this.ruleView.outputParser,
+        { ...this.outputParserOptions, filterSwatch: true },
+        previousFilterSwatchSpan
+      );
+      const title = l10n("rule.filterSwatch.tooltip");
+      this.#filterSwatchSpan.setAttribute("title", title);
+    }
+
+    this.angleSwatchSpans = this.valueSpan.querySelectorAll(
+      "." + ANGLE_SWATCH_CLASS
+    );
+    const angleSwatchTitle = l10n("rule.angleSwatch.tooltip");
+    for (const angleSpan of this.angleSwatchSpans) {
+      angleSpan.addEventListener("unit-change", this.#onSwatchCommit);
+      angleSpan.setAttribute("title", angleSwatchTitle);
+    }
+  }
+
+  /**
+   * Unregister swatches registered via #addSwatches
+   */
+  #removeSwatches() {
+    const { tooltips } = this.ruleView;
+    if (this.#colorSwatchSpans?.length) {
+      const tooltip = tooltips.getTooltip("colorPicker");
+      for (const span of this.#colorSwatchSpans) {
+        tooltip.removeSwatch(span);
+      }
+    }
+
+    if (this.angleSwatchSpans?.length) {
+      for (const span of this.angleSwatchSpans) {
+        span.removeEventListener("unit-change", this.#onSwatchCommit);
+      }
+    }
+
+    if (this.#bezierSwatchSpans?.length) {
+      const tooltip = tooltips.getTooltip("cubicBezier");
+      for (const span of this.#bezierSwatchSpans) {
+        tooltip.removeSwatch(span);
+      }
+    }
+
+    if (this.#linearEasingSwatchSpans?.length) {
+      const tooltip = tooltips.getTooltip("linearEaseFunction");
+      for (const span of this.#linearEasingSwatchSpans) {
+        tooltip.removeSwatch(span);
+      }
+    }
+
+    if (this.#filterSwatchSpan) {
+      tooltips.getTooltip("filterEditor").removeSwatch(this.#filterSwatchSpan);
+    }
+  }
+
   #onStartEditing = () => {
     this.element.classList.remove("ruleview-overridden", "ruleview-invalid");
     this.enable.style.visibility = "hidden";
@@ -893,6 +960,7 @@ class TextPropertyEditor {
     if (this.expander) {
       this.expander.hidden = true;
     }
+    this.#initialValue = this.prop.value;
   };
 
   get #shouldShowComputedExpander() {
@@ -934,7 +1002,7 @@ class TextPropertyEditor {
       !this.editing &&
       this.isValid() &&
       this.prop.overridden &&
-      !this.ruleEditor.rule.isUnmatched
+      !this.rule.isUnmatched
     );
   }
 
@@ -1039,7 +1107,7 @@ class TextPropertyEditor {
     this.filterProperty.addEventListener(
       "click",
       event => {
-        this.ruleEditor.ruleView.setFilterStyles("`" + this.prop.name + "`");
+        this.ruleView.setFilterStyles("`" + this.prop.name + "`");
         event.stopPropagation();
       },
       { signal: this.abortController.signal }
@@ -1476,7 +1544,7 @@ class TextPropertyEditor {
    *        The move focus direction number.
    */
   remove(direction) {
-    this.ruleEditor.rule.editClosestTextProperty(this.prop, direction);
+    this.rule.editClosestTextProperty(this.prop, direction);
 
     this.prop.remove();
     this.nameSpan.textProperty = null;
@@ -1514,11 +1582,9 @@ class TextPropertyEditor {
     // If the value is not empty (or is an empty variable) and unchanged,
     // revert the property back to its original value and enabled or disabled state
     if ((value.trim() || isVariable) && isValueUnchanged) {
-      const onPropertySet = this.ruleEditor.rule.previewPropertyValue(
-        this.prop,
-        val.value,
-        val.priority
-      );
+      const onPropertySet = this.prop.setValue(val.value, val.priority, {
+        reverting: !commit,
+      });
       this.rule.setPropertyEnabled(this.prop, this.prop.enabled);
       return onPropertySet;
     }
@@ -1533,7 +1599,9 @@ class TextPropertyEditor {
     this.telemetry.recordEvent("edit_rule", "ruleview");
 
     // First, set this property value (common case, only modified a property)
-    const onPropertySet = this.prop.setValue(val.value, val.priority);
+    const onPropertySet = this.prop.setValue(val.value, val.priority, {
+      reverting: !commit,
+    });
 
     if (!this.prop.enabled) {
       this.prop.setEnabled(true);
@@ -1586,7 +1654,7 @@ class TextPropertyEditor {
    * value of this property before editing.
    */
   #onSwatchRevert = () => {
-    this.#previewValue(this.prop.value, true);
+    this.#previewValue(this.#initialValue, true);
     this.update();
   };
 
@@ -1661,11 +1729,8 @@ class TextPropertyEditor {
     }
 
     const val = parseSingleValue(this.cssProperties.isKnown, value);
-    this.ruleEditor.rule.previewPropertyValue(
-      this.prop,
-      val.value,
-      val.priority
-    );
+    // Note that the following instruction is async
+    this.prop.setValue(val.value, val.priority, { reverting });
   };
 
   /**
@@ -1833,7 +1898,9 @@ class TextPropertyEditor {
 
   #draggingOnKeydown = event => {
     if (event.key == "Escape") {
-      this.prop.setValue(this.committed.value, this.committed.priority);
+      this.prop.setValue(this.committed.value, this.committed.priority, {
+        reverting: true,
+      });
       this.#onStopDragging();
       event.preventDefault();
     }
@@ -1952,32 +2019,7 @@ class TextPropertyEditor {
   }
 
   destroy() {
-    if (this.#colorSwatchSpans && this.#colorSwatchSpans.length) {
-      for (const span of this.#colorSwatchSpans) {
-        this.ruleView.tooltips.getTooltip("colorPicker").removeSwatch(span);
-      }
-    }
-
-    if (this.angleSwatchSpans && this.angleSwatchSpans.length) {
-      for (const span of this.angleSwatchSpans) {
-        span.removeEventListener("unit-change", this.#onSwatchCommit);
-        this.ruleView.tooltips.getTooltip("filterEditor").removeSwatch(span);
-      }
-    }
-
-    if (this.#bezierSwatchSpans && this.#bezierSwatchSpans.length) {
-      for (const span of this.#bezierSwatchSpans) {
-        this.ruleView.tooltips.getTooltip("cubicBezier").removeSwatch(span);
-      }
-    }
-
-    if (this.#linearEasingSwatchSpans && this.#linearEasingSwatchSpans.length) {
-      for (const span of this.#linearEasingSwatchSpans) {
-        this.ruleView.tooltips
-          .getTooltip("linearEaseFunction")
-          .removeSwatch(span);
-      }
-    }
+    this.#removeSwatches();
 
     if (this.abortController) {
       this.abortController.abort();

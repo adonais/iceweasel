@@ -43,7 +43,7 @@ extern bool gUserCancelledDrag;
 mozilla::StaticRefPtr<nsIArray> gDraggedTransferables;
 
 already_AddRefed<nsIDragSession> nsDragService::CreateDragSession() {
-  RefPtr<nsIDragSession> sess = new nsDragSession();
+  auto sess = MakeRefPtr<nsDragSession>();
   return sess.forget();
 }
 
@@ -134,7 +134,7 @@ NSImage* nsDragSession::ConstructDragImage(nsINode* aDOMNode,
                DrawOptions(1.0f, CompositionOp::OP_SOURCE));
 
   NSBitmapImageRep* imageRep =
-      [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
+      [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:nullptr
                                               pixelsWide:width
                                               pixelsHigh:height
                                            bitsPerSample:8

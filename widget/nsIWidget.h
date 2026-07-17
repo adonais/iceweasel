@@ -17,6 +17,7 @@
 #include "mozilla/Maybe.h"
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/TypedEnumBits.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/gfx/Matrix.h"
 #include "mozilla/gfx/Rect.h"
@@ -450,7 +451,6 @@ class nsIWidget : public nsSupportsWeakReference {
   using PopupLevel = mozilla::widget::PopupLevel;
   using BorderStyle = mozilla::widget::BorderStyle;
   using TransparencyMode = mozilla::widget::TransparencyMode;
-  using Screen = mozilla::widget::Screen;
 
   // Used in UpdateThemeGeometries.
   struct ThemeGeometry {
@@ -1172,7 +1172,7 @@ class nsIWidget : public nsSupportsWeakReference {
   /**
    * Return the screen the widget is in, or null if we don't know.
    */
-  virtual already_AddRefed<Screen> GetWidgetScreen();
+  virtual already_AddRefed<mozilla::widget::Screen> GetWidgetScreen();
 
   /**
    * Put the toplevel window into or out of fullscreen mode.
@@ -1590,9 +1590,7 @@ class nsIWidget : public nsSupportsWeakReference {
       mozilla::WidgetInputEvent* aEvent,
       const mozilla::layers::APZEventResult& aApzResult);
 
-  // TODO: Make this an enum class with MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS or
-  //       EnumSet class.
-  enum Modifiers : uint32_t {
+  enum class NativeModifiers : uint32_t {
     NO_MODIFIERS = 0x00000000,
     CAPS_LOCK = 0x00000001,  // when CapsLock is active
     NUM_LOCK = 0x00000002,   // when NumLock is active
@@ -1610,8 +1608,13 @@ class nsIWidget : public nsSupportsWeakReference {
                             // layouts which maps AltGr to AltRight
                             // key.
     FUNCTION = 0x00100000,
-    NUMERIC_KEY_PAD = 0x01000000  // when the key is coming from the keypad
+    NUMERIC_KEY_PAD = 0x01000000,  // when the key is coming from the keypad
+
+    ALL_BITS = CAPS_LOCK | NUM_LOCK | SHIFT_L | SHIFT_R | CTRL_L | CTRL_R |
+               ALT_L | ALT_R | COMMAND_L | COMMAND_R | HELP | ALTGRAPH |
+               FUNCTION | NUMERIC_KEY_PAD
   };
+
   /**
    * Utility method intended for testing. Dispatches native key events
    * to this widget to simulate the press and release of a key.
@@ -1622,7 +1625,7 @@ class nsIWidget : public nsSupportsWeakReference {
    * http://msdn.microsoft.com/en-us/library/ms646305(VS.85).aspx
    * @param aNativeKeyCode a *platform-specific* keycode.
    * On Windows, this is the virtual key code.
-   * @param aModifiers some combination of the above 'Modifiers' flags;
+   * @param aModifiers some combination of the above 'NativeModifiers' flags;
    * not all flags will apply to all platforms. Mac ignores the _R
    * modifiers. Windows ignores COMMAND, NUMERIC_KEY_PAD, HELP and
    * FUNCTION.
@@ -1639,7 +1642,7 @@ class nsIWidget : public nsSupportsWeakReference {
    */
   virtual nsresult SynthesizeNativeKeyEvent(
       int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
-      uint32_t aModifierFlags, const nsAString& aCharacters,
+      nsIWidget::NativeModifiers aModifierFlags, const nsAString& aCharacters,
       const nsAString& aUnmodifiedCharacters,
       nsISynthesizedEventCallback* aCallback) {
     mozilla::widget::AutoSynthesizedEventCallbackNotifier notifier(aCallback);
@@ -1657,7 +1660,7 @@ class nsIWidget : public nsSupportsWeakReference {
    * pixels, with origin at the top left
    * @param aNativeMessage abstract native message.
    * @param aButton Mouse button defined by DOM UI Events.
-   * @param aModifierFlags Some values of nsIWidget::Modifiers.
+   * @param aModifierFlags Some values of nsIWidget::NativeModifiers.
    *                       FYI: On Windows, Android and Headless widget on all
    *                       platroms, this hasn't been handled yet.
    * @param aCallback the callback that will get notified once the events
@@ -1672,7 +1675,7 @@ class nsIWidget : public nsSupportsWeakReference {
   };
   virtual nsresult SynthesizeNativeMouseEvent(
       LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-      mozilla::MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
+      mozilla::MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
       nsISynthesizedEventCallback* aCallback) {
     mozilla::widget::AutoSynthesizedEventCallbackNotifier notifier(aCallback);
     return NS_ERROR_UNEXPECTED;
@@ -1708,7 +1711,7 @@ class nsIWidget : public nsSupportsWeakReference {
    * @param aDeltaZ           The delta value for Z direction.  If the native
    *                          message doesn't indicate Z direction scrolling,
    *                          this may be ignored.
-   * @param aModifierFlags    Must be values of Modifiers, or zero.
+   * @param aModifierFlags    Must be values of NativeModifiers, or zero.
    * @param aAdditionalFlags  See nsIDOMWidnowUtils' consts and their
    *                          document.
    * @param aCallback         The callback that will get notified once the
@@ -1716,7 +1719,7 @@ class nsIWidget : public nsSupportsWeakReference {
    */
   virtual nsresult SynthesizeNativeMouseScrollEvent(
       LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
-      double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
+      double aDeltaY, double aDeltaZ, nsIWidget::NativeModifiers aModifierFlags,
       uint32_t aAdditionalFlags, nsISynthesizedEventCallback* aCallback) {
     mozilla::widget::AutoSynthesizedEventCallbackNotifier notifier(aCallback);
     return NS_ERROR_UNEXPECTED;
@@ -2483,5 +2486,7 @@ class nsIWidget : public nsSupportsWeakReference {
   CreateCompositorSession(int aWidth, int aHeight,
                           mozilla::layers::CompositorOptions* aOptionsOut);
 };
+
+MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(nsIWidget::NativeModifiers)
 
 #endif  // nsIWidget_h_

@@ -47,8 +47,7 @@ uint32_t MakeCookieBehavior(uint32_t aCookieBehavior) {
   bool isFirstPartyIsolated = OriginAttributes::IsFirstPartyEnabled();
 
   if (isFirstPartyIsolated &&
-      aCookieBehavior ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN) {
+      aCookieBehavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN) {
     return nsICookieService::BEHAVIOR_REJECT_TRACKER;
   }
   return aCookieBehavior;
@@ -570,7 +569,7 @@ CookieService::SetCookieStringFromHttp(nsIURI* aHostURI,
   bool mustBePartitioned =
       isForeignAndNotAddon &&
       cookieJarSettings->GetCookieBehavior() ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN &&
+          nsICookieService::BEHAVIOR_PARTITION_FOREIGN &&
       !result.contains(ThirdPartyAnalysis::IsStorageAccessPermissionGranted);
 
   nsCString cookieHeader(aCookieHeader);
@@ -1212,19 +1211,9 @@ CookieStatus CookieService::CheckPrefs(
   if (aIsForeign && aIsThirdPartyTrackingResource &&
       !aStorageAccessPermissionGranted &&
       aCookieJarSettings->GetRejectThirdPartyContexts()) {
-    // Set the reject reason to partitioned tracker if we are not blocking
-    // tracker cookie.
-    uint32_t rejectReason =
-        aCookieJarSettings->GetPartitionForeign() &&
-                !StaticPrefs::
-                    network_cookie_cookieBehavior_trackerCookieBlocking()
-            ? nsIWebProgressListener::STATE_COOKIES_PARTITIONED_FOREIGN
-            : nsIWebProgressListener::STATE_COOKIES_BLOCKED_TRACKER;
-    if (StoragePartitioningEnabled(rejectReason, aCookieJarSettings)) {
+    if (aCookieJarSettings->GetPartitionForeign()) {
       MOZ_ASSERT(!aOriginAttrs.mPartitionKey.IsEmpty(),
                  "We must have a StoragePrincipal here!");
-      // Set the reject reason to partitioned tracker if the resource to reflect
-      // that we are partitioning tracker cookies.
       *aRejectedReason =
           nsIWebProgressListener::STATE_COOKIES_PARTITIONED_TRACKER;
       return STATUS_ACCEPTED;
@@ -1376,6 +1365,36 @@ CookieService::CountCookiesFromHost(const nsACString& aHost,
 
   *aCountFromHost = mPersistentStorage->CountCookiesFromHost(baseDomain, 0);
 
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+CookieService::HasCookiesForSite(const nsACString& aHost,
+                                 const nsAString& aPattern, bool* aResult) {
+  NS_ENSURE_ARG_POINTER(aResult);
+  *aResult = false;
+
+  OriginAttributesPattern pattern;
+  if (!pattern.Init(aPattern)) {
+    return NS_ERROR_INVALID_ARG;
+  }
+
+  nsAutoCString host(aHost);
+  nsresult rv = NormalizeHost(host);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  nsAutoCString baseDomain;
+  rv = CookieCommons::GetBaseDomainFromHost(mTLDService, host, baseDomain);
+  NS_ENSURE_SUCCESS(rv, rv);
+
+  if (!IsInitialized()) {
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  CookieStorage* storage = PickStorage(pattern);
+  storage->EnsureInitialized();
+
+  *aResult = storage->HasCookiesForSite(baseDomain, pattern);
   return NS_OK;
 }
 

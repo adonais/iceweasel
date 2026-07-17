@@ -194,7 +194,8 @@ bool nsMacUtilsImpl::IsTCSMAvailable() {
   if (sTCSMStatus == TCSM_Unknown) {
     uint32_t oldVal = 0;
     size_t oldValSize = sizeof(oldVal);
-    int rv = sysctlbyname("kern.tcsm_available", &oldVal, &oldValSize, NULL, 0);
+    int rv =
+        sysctlbyname("kern.tcsm_available", &oldVal, &oldValSize, nullptr, 0);
     TCSMStatus newStatus;
     if (rv < 0 || oldVal == 0) {
       newStatus = TCSM_Unavailable;
@@ -213,7 +214,8 @@ bool nsMacUtilsImpl::IsTCSMAvailable() {
 
 static nsresult EnableTCSM() {
   uint32_t newVal = 1;
-  int rv = sysctlbyname("kern.tcsm_enable", NULL, 0, &newVal, sizeof(newVal));
+  int rv = sysctlbyname("kern.tcsm_enable", nullptr, nullptr, &newVal,
+                        sizeof(newVal));
   if (rv < 0) {
     return NS_ERROR_UNEXPECTED;
   }
@@ -224,7 +226,7 @@ static nsresult EnableTCSM() {
 static bool IsTCSMEnabled() {
   uint32_t oldVal = 0;
   size_t oldValSize = sizeof(oldVal);
-  int rv = sysctlbyname("kern.tcsm_enable", &oldVal, &oldValSize, NULL, 0);
+  int rv = sysctlbyname("kern.tcsm_enable", &oldVal, &oldValSize, nullptr, 0);
   return (rv == 0) && (oldVal != 0);
 }
 #endif
@@ -249,7 +251,7 @@ void nsMacUtilsImpl::EnableTCSMIfAvailable() {
 uint32_t nsMacUtilsImpl::GetPhysicalCPUCount() {
   uint32_t oldVal = 0;
   size_t oldValSize = sizeof(oldVal);
-  int rv = sysctlbyname("hw.physicalcpu_max", &oldVal, &oldValSize, NULL, 0);
+  int rv = sysctlbyname("hw.physicalcpu_max", &oldVal, &oldValSize, nullptr, 0);
   if (rv == -1) {
     return 0;
   }

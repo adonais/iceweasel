@@ -1737,10 +1737,11 @@ var Links = {
     }
 
     let links = this._providers.get(aProvider);
-    if (!links) {
+    if (!links || !links.linkMap) {
       // This is not an error, it just means that between the time the provider
       // was added and the future time we call getLinks on it, it notified us of
-      // a change.
+      // a change. The cache may also exist but not yet be populated while
+      // _populateProviderCache is awaiting getLinks.
       return;
     }
 

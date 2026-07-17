@@ -187,6 +187,10 @@ bool TSFStaticSink::IsSogouActive() {
   return IsSimplifiedChinese() && ActiveTIP() == TextInputProcessorID::Sogou;
 }
 
+bool TSFStaticSink::IsWeChatIMEActive() {
+  return IsSimplifiedChinese() && ActiveTIP() == TextInputProcessorID::WeChat;
+}
+
 void TSFStaticSink::ComputeActiveTextInputProcessor() {
   if (mActiveTIP != TextInputProcessorID::NotComputed) {
     return;
@@ -466,6 +470,15 @@ TextInputProcessorID TSFStaticSink::ComputeActiveTIPAsSimplifiedChinese() {
       {0xa6, 0xea, 0x00, 0x06, 0x5b, 0x84, 0x43, 0x11}};
   if (mActiveTIPGUID == kSogouGUID) {
     return TextInputProcessorID::Sogou;
+  }
+  // {607FDF85-FCC8-4DBD-A365-41296F980C9C}
+  static constexpr GUID kWeChatGUID = {
+      0x607fdf85,
+      0xfcc8,
+      0x4dbd,
+      {0xa3, 0x65, 0x41, 0x29, 0x6f, 0x98, 0x0c, 0x9c}};
+  if (mActiveTIPGUID == kWeChatGUID) {
+    return TextInputProcessorID::WeChat;
   }
   // NOTE: There are some other Simplified Chinese TIPs installed in Windows:
   // * Chinese Simplified QuanPin (version 6.0)

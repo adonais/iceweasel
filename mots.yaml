@@ -8,7 +8,7 @@
 # documentation and how to modify this file.
 repo: mozilla-central
 created_at: '2021-10-14T12:50:40.073465'
-updated_at: '2026-05-04T15:54:11.381350+00:00'
+updated_at: '2026-06-09T08:28:44.783016+00:00'
 export:
   path: ./docs/mots/index.rst
   format: rst
@@ -46,6 +46,10 @@ people:
     bmo_id: 382067
     name: Andrew Halberstadt
     nick: ahal
+  - &ahale
+    bmo_id: 706885
+    name: Ashley Hale
+    nick: ahale
   - &ahochheiden
     bmo_id: 693303
     name: Alex Hochheiden
@@ -73,6 +77,10 @@ people:
     bmo_id: 339940
     name: André Bargull
     nick: anba
+  - &andhuang
+    bmo_id: 789204
+    name: Andy Huang
+    nick: andhuang
   - &andi
     bmo_id: 555858
     name: Andi
@@ -458,6 +466,10 @@ people:
     bmo_id: 506442
     name: David Parks
     nick: handyman
+  - &hannaa
+    bmo_id: 708282
+    name: Hanna Alemu
+    nick: hanna_a
   - &hiro
     bmo_id: 131213
     name: Hiroyuki Ikezoe
@@ -598,6 +610,10 @@ people:
     bmo_id: 621062
     name: Josh Groves
     nick: josh
+  - &jprickett
+    bmo_id: 708280
+    name: Jason Prickett
+    nick: jprickett
   - &jrmuizel
     bmo_id: 309398
     name: Jeff Muizelaar
@@ -933,6 +949,10 @@ people:
     bmo_id: 697076
     name: Perry McManis
     nick: perry.mcmanis
+  - &polly
+    bmo_id: 750904
+    name: Polly McEldowney
+    nick: polly
   - &prathiksha
     bmo_id: 580428
     name: ''
@@ -973,8 +993,7 @@ people:
     bmo_id: 11099
     name: Robert Relyea
     nick: rrelyea
-  - &rsainani
-    bmo_id: 718207
+  - bmo_id: 718207
     name: Rahul Sainani
     nick: rsainani
   - &ryansleevi
@@ -985,6 +1004,10 @@ people:
     bmo_id: 75935
     name: Ryan VanderMeulen
     nick: RyanVM
+  - &sachung
+    bmo_id: 753877
+    name: Sarah Chung
+    nick: sachung
   - &saschanaz
     bmo_id: 473060
     name: Kagami Rosylight
@@ -1888,7 +1911,7 @@ modules:
         - Aaron Klotz
         - Jim Chen
         - Randall E. Barker
-        - Jon Almeida
+        - Jonathan Almeida
       url: https://wiki.mozilla.org/Mobile/GeckoView
       components:
         - GeckoView::General
@@ -1956,9 +1979,8 @@ modules:
       review_group: gfx-reviewers
     owners:
       - *jrmuizel
-    peers:
       - *nical
-      - *jgilbert
+    peers:
       - *mstange
       - *basschouten
       - *jfkthame
@@ -1967,6 +1989,7 @@ modules:
       - *gw
       - *lsalzman
       - *aosmond
+      - *ahale
     machine_name: core_graphics
 
   - name: 'Core: HAL'
@@ -3706,6 +3729,7 @@ modules:
           - *Gijs
           - *emcminn
           - *charlie
+          - *aminomancer
         machine_name: normandy
 
       - machine_name: firefox_view
@@ -3772,6 +3796,10 @@ modules:
           - browser/components/aboutwelcome/**/*
           - browser/components/uitour/**/*
           - toolkit/components/messaging-system/**/*
+          - browser/components/asrouter/docs/**/*
+          - browser/components/aboutwelcome/docs/**/*
+          - toolkit/components/messaging-system/schemas/**/*
+          - browser/components/uitour/docs/**/*
         meta:
           components:
             - Firefox::Messaging System
@@ -3788,6 +3816,10 @@ modules:
           - *dmosedale
           - *emcminn
           - *mimi
+          - *hannaa
+          - *jprickett
+          - *sachung
+          - *andhuang
         machine_name: inproduct_messaging
 
       - name: Launcher Process
@@ -4138,8 +4170,10 @@ modules:
       - *gl
     peers:
       - *royang
-      - *rsainani
+      - *polly
     meta:
+      peers_emeritus:
+        - Rahul Sainani
     submodules:
 
       - machine_name: fenix_addons
@@ -4756,5 +4790,5 @@ modules:
         - Ryan Tilder
       group: dev-platform
 hashes:
-  config: 597912a134f7fcd57622c0ce222d3c1afcef67d7
-  export: 4c64c0ea58f5856d29834def047e139a60bf5a3e
+  config: 69d925ebf8f8be63bc3e43a14bf9c7e8c4f6c49c
+  export: 776a9abcd4f21f0524f9436b80892ca4f7783868

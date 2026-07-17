@@ -2075,7 +2075,7 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
     printf("  [frame]");
     frame->ListTag(stdout);
     printf(": alignmentBaseline=%d baselineShiftIsKw=%d (enum == %d)\n",
-           static_cast<int>(alignmentBaseline), baselineShiftEnum,
+           static_cast<int>(alignmentBaseline), baselineShiftEnum ? 1 : 0,
            baselineShiftEnum ? static_cast<int>(*baselineShiftEnum) : -1);
 #endif
 
@@ -2119,17 +2119,66 @@ void nsLineLayout::VerticalAlignFrames(PerSpanData* psd) {
       }
     }
 
-    // Adjust the bounds according to the given baseline
+    const auto GetFontBaseline = [](nsFontMetrics* aFM,
+                                    StyleAlignmentBaseline aAlignmentBaseline) {
+      switch (aAlignmentBaseline) {
+        case StyleAlignmentBaseline::Alphabetic:
+          return aFM->AlphabeticBaseline();
+        case StyleAlignmentBaseline::Central:
+          return aFM->CentralBaseline();
+        case StyleAlignmentBaseline::Ideographic:
+          return aFM->IdeographicUnderBaseline();
+        case StyleAlignmentBaseline::Mathematical:
+          return aFM->MathBaseline();
+        case StyleAlignmentBaseline::Hanging:
+          return aFM->HangingBaseline();
+        default:
+          MOZ_ASSERT_UNREACHABLE("Unexpected alignment baseline");
+          return 0;
+      }
+    };
+
+    // Adjust the bounds according to the given baseline.
     switch (alignmentBaseline) {
-      default:
       case StyleAlignmentBaseline::Baseline:
         pfd->mBounds.BStart(lineWM) = baselineBCoord - pfd->mAscent;
         pfd->mBlockDirAlign = VALIGN_OTHER;
         break;
 
+      default:
+      case StyleAlignmentBaseline::Alphabetic:
+      case StyleAlignmentBaseline::Central:
+      case StyleAlignmentBaseline::Ideographic:
+      case StyleAlignmentBaseline::Mathematical:
+      case StyleAlignmentBaseline::Hanging: {
+        nscoord parentBaseline = GetFontBaseline(fm, alignmentBaseline) *
+                                 lineWM.FlowRelativeToLineRelativeFactor();
+        pfd->mBounds.BStart(lineWM) =
+            baselineBCoord - parentBaseline - pfd->mAscent;
+        // For child span frames, additional adjustment is required to align
+        // child's requested font baseline to the parent's font baseline.
+        // Non-span child frames already have the requested baseline's offset
+        // baked into their ascents, so no additional adjustment is required.
+        // See Baseline::SynthesizeBOffsetFromInnerBox.
+        if (frameSpan) {
+          RefPtr spanFm = nsLayoutUtils::GetInflatedFontMetricsForFrame(frame);
+          nscoord selfBaseline = GetFontBaseline(spanFm, alignmentBaseline) *
+                                 lineWM.FlowRelativeToLineRelativeFactor();
+          pfd->mBounds.BStart(lineWM) += selfBaseline;
+        }
+        pfd->mBlockDirAlign = VALIGN_OTHER;
+        break;
+      }
+
       case StyleAlignmentBaseline::Middle: {
         // Align the midpoint of the frame with 1/2 the parents
         // x-height above the baseline.
+        //
+        // TODO(bug 2030203): The css-inline-3 definition of `middle` doesn't
+        // match this existing CSS2 implementation. Per css-inline-3, this
+        // should align the x-middle baselines of the child and parent (like
+        // `alphabetic`/etc. above). But CSS2 aligned the midpoint of the child
+        // with the x-middle baseline of the parent, which can differ.
         nscoord parentXHeight =
             lineWM.FlowRelativeToLineRelativeFactor() * fm->XHeight();
         if (frameSpan) {

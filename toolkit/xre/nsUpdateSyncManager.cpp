@@ -88,6 +88,11 @@ nsresult nsUpdateSyncManager::OpenLock(nsIFile* anAppFile) {
   rv = appDirFile->GetPath(appDirPath);
   NS_ENSURE_SUCCESS(rv, rv);
 
+  if (!mozilla::GetMultiInstanceLockFileName(UPDATE_LOCK_NAME_TOKEN,
+                                             appDirPath.get(), mLockFilePath)) {
+    return NS_ERROR_FAILURE;
+  }
+
   mLock =
       mozilla::OpenMultiInstanceLock(UPDATE_LOCK_NAME_TOKEN, appDirPath.get());
   NS_ENSURE_TRUE(mLock, NS_ERROR_FAILURE);
@@ -123,4 +128,9 @@ NS_IMETHODIMP nsUpdateSyncManager::IsOtherInstanceRunning(bool* aResult) {
 NS_IMETHODIMP nsUpdateSyncManager::ResetLock(nsIFile* anAppFile = nullptr) {
   ReleaseLock();
   return OpenLock(anAppFile);
+}
+
+NS_IMETHODIMP nsUpdateSyncManager::GetUpdateLockFilePath(nsAString& aPath) {
+  aPath = NS_ConvertUTF8toUTF16(mLockFilePath);
+  return NS_OK;
 }

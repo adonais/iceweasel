@@ -277,7 +277,7 @@ nsresult SystemStatusBar::Init() {
 
 NS_IMETHODIMP
 SystemStatusBar::AddItem(Element* aElement) {
-  RefPtr<StatusBarEntry> entry = new StatusBarEntry(aElement);
+  auto entry = MakeRefPtr<StatusBarEntry>(aElement);
   nsresult rv = entry->Init();
   NS_ENSURE_SUCCESS(rv, rv);
 

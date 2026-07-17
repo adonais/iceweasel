@@ -64,7 +64,7 @@ class AssertIsDetectorTest : LintDetectorTest() {
                 Fix for src/com/example/test/MyTest.kt line 7: Replace with assertIs<ArrayList>(result):
                 @@ -7 +7 @@
                 -        assertTrue(result is ArrayList)
-                +        assertIs<ArrayList>(result)
+                +        kotlin.test.assertIs<ArrayList>(result)
                 """.trimIndent(),
             )
     }
@@ -97,7 +97,7 @@ class AssertIsDetectorTest : LintDetectorTest() {
                 Fix for src/com/example/test/MyTest.kt line 7: Replace with assertIs<ArrayList>(result, "should be array list"):
                 @@ -7 +7 @@
                 -        Assert.assertTrue("should be array list", result is ArrayList)
-                +        assertIs<ArrayList>(result, "should be array list")
+                +        kotlin.test.assertIs<ArrayList>(result, "should be array list")
                 """.trimIndent(),
             )
     }
@@ -130,7 +130,7 @@ class AssertIsDetectorTest : LintDetectorTest() {
                 Fix for src/com/example/test/MyTest.kt line 7: Replace with assertIs<ArrayList>(result, "should be array list"):
                 @@ -7 +7 @@
                 -        assertTrue(result is ArrayList, "should be array list")
-                +        assertIs<ArrayList>(result, "should be array list")
+                +        kotlin.test.assertIs<ArrayList>(result, "should be array list")
                 """.trimIndent(),
             )
     }
@@ -162,7 +162,7 @@ class AssertIsDetectorTest : LintDetectorTest() {
                 Fix for src/com/example/test/MyTest.kt line 6: Replace with assertIs<ArrayList>(listOf("1")):
                 @@ -6 +6 @@
                 -        assertTrue(listOf("1") is ArrayList)
-                +        assertIs<ArrayList>(listOf("1"))
+                +        kotlin.test.assertIs<ArrayList>(listOf("1"))
                 """.trimIndent(),
             )
     }

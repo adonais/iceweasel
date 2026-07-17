@@ -38,7 +38,7 @@ class Touch final : public nsISupports,
         int32_t aTiltX, int32_t aTiltY, int32_t aTwist);
   Touch(const Touch& aOther);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Touch)
 
   void InitializePoints(nsPresContext* aPresContext, WidgetEvent* aEvent);

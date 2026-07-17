@@ -358,9 +358,6 @@ async function test_submit_telemetry(tc) {
             if (doorhangerChange.selectUsername) {
               await selectDoorhangerUsername(doorhangerChange.selectUsername);
             }
-            if (doorhangerChange.selectPassword) {
-              await selectDoorhangerPassword(doorhangerChange.selectPassword);
-            }
           }
         }
 

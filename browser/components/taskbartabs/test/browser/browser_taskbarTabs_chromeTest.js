@@ -58,7 +58,7 @@ function checkWindowChrome(win, userContextId) {
     "Container indicator is shown if applicable"
   );
 
-  let sideBarElement = win.document.getElementById("sidebar-main");
+  let sideBarElement = win.document.getElementById("sidebar-container");
   ok(BrowserTestUtils.isHidden(sideBarElement), "The sidebar should be hidden");
 }
 

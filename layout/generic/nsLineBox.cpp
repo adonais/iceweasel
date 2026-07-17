@@ -96,8 +96,8 @@ void nsLineBox::StealHashTableFrom(nsLineBox* aFromLine,
   MOZ_ASSERT(!mFlags.mHasHashedFrames);
   MOZ_ASSERT(GetChildCount() >= int32_t(aFromLineNewCount));
   mFrames = aFromLine->mFrames;
-  mFlags.mHasHashedFrames = 1;
-  aFromLine->mFlags.mHasHashedFrames = 0;
+  mFlags.mHasHashedFrames = true;
+  aFromLine->mFlags.mHasHashedFrames = false;
   aFromLine->mChildCount = aFromLineNewCount;
   // remove aFromLine's frames that aren't on this line
   nsIFrame* f = aFromLine->mFirstChild;
@@ -121,7 +121,7 @@ void nsLineBox::NoteFramesMovedFrom(nsLineBox* aFromLine) {
       StealHashTableFrom(aFromLine, fromNewCount);
     } else {
       delete aFromLine->mFrames;
-      aFromLine->mFlags.mHasHashedFrames = 0;
+      aFromLine->mFlags.mHasHashedFrames = false;
       aFromLine->mChildCount = fromNewCount;
     }
   } else {

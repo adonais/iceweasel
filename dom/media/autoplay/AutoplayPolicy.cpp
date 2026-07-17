@@ -24,11 +24,12 @@
 #include "nsIPermissionManager.h"
 #include "nsIPrincipal.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 
 mozilla::LazyLogModule gAutoplayPermissionLog("Autoplay");
 
 #define AUTOPLAY_LOG(msg, ...) \
-  MOZ_LOG(gAutoplayPermissionLog, LogLevel::Debug, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(gAutoplayPermissionLog, LogLevel::Debug, msg, ##__VA_ARGS__)
 
 using namespace mozilla::dom;
 
@@ -142,13 +143,13 @@ static uint32_t DefaultAutoplayBehaviour() {
 
 static bool IsMediaElementInaudible(const HTMLMediaElement& aElement) {
   if (aElement.Volume() == 0.0 || aElement.Muted()) {
-    AUTOPLAY_LOG("Media %p is muted.", &aElement);
+    AUTOPLAY_LOG("Media {} is muted.", fmt::ptr(&aElement));
     return true;
   }
 
   if (!aElement.HasAudio() &&
       aElement.ReadyState() >= HTMLMediaElement_Binding::HAVE_METADATA) {
-    AUTOPLAY_LOG("Media %p has no audio track", &aElement);
+    AUTOPLAY_LOG("Media {} has no audio track", fmt::ptr(&aElement));
     return true;
   }
 
@@ -165,22 +166,22 @@ static bool IsAllowedToPlayByBlockingModel(const HTMLMediaElement& aElement) {
   if (policy == sPOLICY_STICKY_ACTIVATION) {
     const bool isAllowed =
         IsWindowAllowedToPlayOverall(aElement.OwnerDoc()->GetInnerWindow());
-    AUTOPLAY_LOG("Use 'sticky-activation', isAllowed=%d", isAllowed);
+    AUTOPLAY_LOG("Use 'sticky-activation', isAllowed={}", isAllowed);
     return isAllowed;
   }
   // If element is blessed, it would always be allowed to play().
   const bool isElementBlessed = aElement.IsBlessed();
   if (policy == sPOLICY_USER_INPUT_DEPTH) {
     const bool isUserInput = UserActivation::IsHandlingUserInput();
-    AUTOPLAY_LOG("Use 'User-Input-Depth', isBlessed=%d, isUserInput=%d",
+    AUTOPLAY_LOG("Use 'User-Input-Depth', isBlessed={}, isUserInput={}",
                  isElementBlessed, isUserInput);
     return isElementBlessed || isUserInput;
   }
   const bool hasTransientActivation =
       aElement.OwnerDoc()->HasValidTransientUserGestureActivation();
   AUTOPLAY_LOG(
-      "Use 'transient-activation', isBlessed=%d, "
-      "hasValidTransientActivation=%d",
+      "Use 'transient-activation', isBlessed={}, "
+      "hasValidTransientActivation={}",
       isElementBlessed, hasTransientActivation);
   return isElementBlessed || hasTransientActivation;
 }
@@ -238,8 +239,8 @@ static bool IsAllowedToPlayInternal(const HTMLMediaElement& aElement) {
       SiteAutoplayPerm(aElement.OwnerDoc()->GetInnerWindow());
 
   AUTOPLAY_LOG(
-      "IsAllowedToPlayInternal, isInaudible=%d,"
-      "isUsingAutoplayModel=%d, sitePermission=%d, defaultBehaviour=%d",
+      "IsAllowedToPlayInternal, isInaudible={},"
+      "isUsingAutoplayModel={}, sitePermission={}, defaultBehaviour={}",
       isInaudible, isUsingAutoplayModel, sitePermission, defaultBehaviour);
 
   // For site permissions we store permissionManager values except
@@ -272,8 +273,8 @@ static bool IsAllowedToPlayInternal(const HTMLMediaElement& aElement) {
 /* static */
 bool AutoplayPolicy::IsAllowedToPlay(const HTMLMediaElement& aElement) {
   const bool result = IsAllowedToPlayInternal(aElement);
-  AUTOPLAY_LOG("IsAllowedToPlay, mediaElement=%p, isAllowToPlay=%s", &aElement,
-               result ? "allowed" : "blocked");
+  AUTOPLAY_LOG("IsAllowedToPlay, mediaElement={}, isAllowToPlay={}",
+               fmt::ptr(&aElement), result ? "allowed" : "blocked");
   return result;
 }
 
@@ -355,9 +356,9 @@ DocumentAutoplayPolicy IsDocAllowedToPlay(const Document& aDocument) {
       IsWindowAllowedToPlayByTraits(window);
 
   AUTOPLAY_LOG(
-      "IsDocAllowedToPlay(), policy=%d, sitePermission=%d, "
-      "globalPermission=%d, isWindowAllowedToPlayByGesture=%d, "
-      "isWindowAllowedToPlayByTraits=%d",
+      "IsDocAllowedToPlay(), policy={}, sitePermission={}, "
+      "globalPermission={}, isWindowAllowedToPlayByGesture={}, "
+      "isWindowAllowedToPlayByTraits={}",
       policy, sitePermission, globalPermission, isWindowAllowedToPlayByGesture,
       isWindowAllowedToPlayByTraits);
 
@@ -413,8 +414,8 @@ dom::AutoplayPolicy AutoplayPolicy::GetAutoplayPolicy(
       IsAllowedToPlayByBlockingModel(aElement);
 
   AUTOPLAY_LOG(
-      "IsAllowedToPlay(element), sitePermission=%d, globalPermission=%d, "
-      "isAllowedToPlayByBlockingModel=%d",
+      "IsAllowedToPlay(element), sitePermission={}, globalPermission={}, "
+      "isAllowedToPlayByBlockingModel={}",
       sitePermission, globalPermission, isAllowedToPlayByBlockingModel);
 
 #if defined(MOZ_WIDGET_ANDROID)

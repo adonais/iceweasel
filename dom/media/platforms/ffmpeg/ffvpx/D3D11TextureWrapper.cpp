@@ -16,7 +16,7 @@ struct ID3D11Texture2D;
 extern mozilla::LazyLogModule sFFmpegVideoLog;
 
 #define LOG(...) \
-  MOZ_LOG(sFFmpegVideoLog, mozilla::LogLevel::Verbose, (__VA_ARGS__))
+  MOZ_LOG_FMT(sFFmpegVideoLog, mozilla::LogLevel::Verbose, __VA_ARGS__)
 
 namespace mozilla {
 
@@ -38,7 +38,7 @@ D3D11TextureWrapper::D3D11TextureWrapper(AVFrame* aAVFrame,
   MOZ_ASSERT(aTexture);
   mHWAVBuffer = aLib->av_buffer_ref(aAVFrame->buf[0]);
   MOZ_ASSERT(mHWAVBuffer);
-  LOG("Locked D3D11 texture %p on index %u", mTexture, mArrayIdx);
+  LOG("Locked D3D11 texture {} on index {}", fmt::ptr(mTexture), mArrayIdx);
 }
 
 D3D11TextureWrapper::~D3D11TextureWrapper() {
@@ -48,7 +48,7 @@ D3D11TextureWrapper::~D3D11TextureWrapper() {
   mLib->av_buffer_unref(&mHWAVBuffer);
   mLib = nullptr;
   mReleaseMethod();
-  LOG("Unlocked D3D11 texture %p on index %u", mTexture, mArrayIdx);
+  LOG("Unlocked D3D11 texture {} on index {}", fmt::ptr(mTexture), mArrayIdx);
 }
 
 }  // namespace mozilla

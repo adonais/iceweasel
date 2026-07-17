@@ -7,6 +7,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/AlreadyAddRefed.h"
+#include "mozilla/gfx/Point.h"
 #include "nsCOMPtr.h"
 #include "nsCycleCollectionParticipant.h"
 #include "nsISupports.h"
@@ -60,6 +61,8 @@ class DOMPointReadOnly : public nsWrapperCache {
   static already_AddRefed<DOMPointReadOnly> ReadStructuredClone(
       JSContext* aCx, nsIGlobalObject* aGlobal,
       JSStructuredCloneReader* aReader);
+
+  static gfx::Point ToPoint(const DOMPointInit& aPointInit);
 
  protected:
   virtual ~DOMPointReadOnly() = default;

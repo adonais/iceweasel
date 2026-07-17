@@ -28,15 +28,22 @@ export const TaskbarTabsPin = {
    * @param {TaskbarTab} aTaskbarTab - A Taskbar Tab to pin to the taskbar.
    * @param {TaskbarTabsRegistry} aRegistry - The registry to track pin resources with.
    * @param {imgIContainer} aIcon - The icon to show with this Taskbar Tab.
+   * @param {object} [aDetails] - Additional options for this pin.
+   * @param {DOMWindow} [aDetails.window] - The window to associate any UI with.
    * @returns {Promise} Resolves once finished.
    */
-  async pinTaskbarTab(aTaskbarTab, aRegistry, aIcon) {
+  async pinTaskbarTab(aTaskbarTab, aRegistry, aIcon, { window = null } = {}) {
     lazy.logConsole.info("Pinning Taskbar Tab to the taskbar.");
 
     try {
       let iconPath = await createTaskbarIcon(aTaskbarTab, aIcon);
 
-      let shortcut = await createShortcut(aTaskbarTab, iconPath, aRegistry);
+      let shortcut = await createShortcut(
+        aTaskbarTab,
+        iconPath,
+        aRegistry,
+        window
+      );
 
       if (AppConstants.platform === "win" && !lazy.TaskbarTabsUtils.isMSIX()) {
         await lazy.ShellService.pinShortcutToTaskbar(
@@ -159,9 +166,11 @@ async function createTaskbarIcon(aTaskbarTab, aIcon) {
  * @param {TaskbarTab} aTaskbarTab - The Taskbar Tab to generate a shortcut for.
  * @param {nsIFile} aFileIcon - The icon file to use for the shortcut.
  * @param {TaskbarTabsRegistry} aRegistry - The registry used to save the shortcut path.
+ * @param {DOMWindow?} aWindow - The window to associate any UI with, or null
+ * if no window is available.
  * @returns {Promise<string>} The path to the created shortcut.
  */
-async function createShortcut(aTaskbarTab, aFileIcon, aRegistry) {
+async function createShortcut(aTaskbarTab, aFileIcon, aRegistry, aWindow) {
   lazy.logConsole.info("Creating Taskbar Tabs shortcut.");
 
   let targetfile = Services.dirsvc.get("XREExeF", Ci.nsIFile);
@@ -221,12 +230,15 @@ async function createShortcut(aTaskbarTab, aFileIcon, aRegistry) {
   }
 
   if (AppConstants.platform === "linux") {
-    let appId = "org.mozilla.firefox.webapp-" + aTaskbarTab.id;
+    let appId = lazy.TaskbarTabsUtils._determineNewDesktopEntryName(
+      aTaskbarTab.id
+    );
     await lazy.ShellService.createLinuxDesktopEntry(
       appId,
       aTaskbarTab.name,
       args,
-      aFileIcon.path
+      aFileIcon.path,
+      { window: aWindow }
     );
 
     let relativePath = appId + ".desktop";

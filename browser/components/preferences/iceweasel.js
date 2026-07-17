@@ -48,6 +48,18 @@ const gIceweaselPane = {
 
   // called when the document is first parsed
   async init() {
+    let categoryButton = (
+      document.querySelector(
+        `#categories moz-page-nav-button[view="paneIceweasel"]`
+      )
+    );
+    if (categoryButton) {
+      if (Services.prefs.getBoolPref("browser.settings-redesign.enabled", false)) {
+        categoryButton.remove();
+        return;
+      }
+      categoryButton.hidden = false;
+    }
     if (this.inited) {
       return;
     }

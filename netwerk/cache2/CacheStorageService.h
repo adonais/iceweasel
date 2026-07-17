@@ -25,6 +25,7 @@
 #include "mozilla/TimeStamp.h"
 #include "nsTArray.h"
 
+class nsICacheEntry;
 class nsIURI;
 class nsICacheEntryDoomCallback;
 class nsICacheStorageVisitor;
@@ -153,6 +154,11 @@ class CacheStorageService final : public nsICacheStorageService,
   size_t SizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   size_t SizeOfIncludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   MOZ_DEFINE_MALLOC_SIZE_OF(MallocSizeOf)
+
+  void NoteNoVarySearchEntry(const nsACString& aContextKey,
+                             const nsACString& aBasePath,
+                             const nsACString& aFullKey);
+  void NoteNoVarySearchEntry(nsICacheEntry* aEntry, nsIURI* aURI);
 
  private:
   virtual ~CacheStorageService();

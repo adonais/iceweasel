@@ -186,7 +186,7 @@ class CookieJarSettings final : public nsICookieJarSettings {
   }
 
   // Utility function to test if the passed cookiebahvior is
-  // BEHAVIOR_REJECT_TRACKER, BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN or
+  // BEHAVIOR_REJECT_TRACKER, BEHAVIOR_PARTITION_FOREIGN or
   // BEHAVIOR_REJECT_FOREIGN when
   // network.cookie.rejectForeignWithExceptions.enabled pref is set to true.
   static bool IsRejectThirdPartyContexts(uint32_t aCookieBehavior);

@@ -123,7 +123,7 @@ void Disassemble(uint8_t* code, size_t length, InstrCallback callback) {
   uint8_t* end = code + length;
 
   while (instr < end) {
-    EmbeddedVector<char, ReasonableBufferSize> buffer;
+    EmbeddedVector<char, disasm::ReasonableBufferSize> buffer;
     buffer[0] = '\0';
     uint8_t* next_instr = instr + d.InstructionDecode(buffer, instr);
 

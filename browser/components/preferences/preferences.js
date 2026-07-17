@@ -6,7 +6,6 @@
 /* import-globals-from main.js */
 /* import-globals-from home.js */
 /* import-globals-from search.js */
-/* import-globals-from containers.js */
 /* import-globals-from privacy.js */
 /* import-globals-from sync.js */
 /* import-globals-from moreFromMozilla.js */
@@ -418,6 +417,7 @@ const CONFIG_PANES = Object.freeze({
     iconSrc: "chrome://browser/skin/fxa/avatar-empty.svg",
     groupIds: [
       "defaultBrowserSync",
+      "accountDisabled",
       "account",
       "sync",
       "importBrowserData",
@@ -459,6 +459,12 @@ const CONFIG_PANES = Object.freeze({
     iconSrc: "chrome://browser/skin/translations.svg",
     module: "chrome://browser/content/preferences/config/translations.mjs",
     visible: () => srdSectionEnabled("translations"),
+  },
+  containers: {
+    parent: srdSectionEnabled("tabsBrowsing") ? "tabsBrowsing" : "general",
+    l10nId: "containers-section-header2",
+    groupIds: ["containers"],
+    module: "chrome://browser/content/preferences/config/containers.mjs",
   },
 });
 
@@ -523,7 +529,6 @@ function init_all() {
   register_module("paneSearch", gSearchPane);
   register_module("panePrivacy", gPrivacyPane);
   register_module("paneIceweasel", gIceweaselPane);
-  register_module("paneContainers", gContainersPane);
 
   // Restore the cached Firefox Labs nav button visibility so it shows
   // immediately when recipes are expected to be available, before

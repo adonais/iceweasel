@@ -13,13 +13,13 @@ namespace mozilla {
 
 using Microsoft::WRL::ComPtr;
 
-#define LOG(msg, ...)                         \
-  MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug, \
-          ("MFCDMProxy=%p, " msg, this, ##__VA_ARGS__))
+#define LOG(msg, ...)                                                    \
+  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Debug, "MFCDMProxy={}, " msg, \
+              fmt::ptr(this), ##__VA_ARGS__)
 
 MFCDMProxy::MFCDMProxy(IMFContentDecryptionModule* aCDM, uint64_t aCDMParentId)
     : mCDM(aCDM), mCDMParentId(aCDMParentId) {
-  LOG("MFCDMProxy created, created by %" PRId64 " MFCDMParent", mCDMParentId);
+  LOG("MFCDMProxy created, created by {} MFCDMParent", mCDMParentId);
 }
 
 MFCDMProxy::~MFCDMProxy() { LOG("MFCDMProxy destroyed"); }
@@ -54,11 +54,11 @@ HRESULT MFCDMProxy::GetInputTrustAuthority(uint32_t aStreamId,
     }
     RETURN_IF_FAILED(mCDM->CreateTrustedInput(
         aContentInitData, aContentInitDataSize, &mTrustedInput));
-    LOG("Created a trust input for stream %u", aStreamId);
+    LOG("Created a trust input for stream {}", aStreamId);
   }
 
-  // GetInputTrustAuthority takes IUnknown* as the output. Using other COM
-  // interface will have a v-table mismatch issue.
+  // GetInputTrustAuthority takes IUnknown* as the output. Using
+  // other COM interface will have a v-table mismatch issue.
   ComPtr<IUnknown> unknown;
   RETURN_IF_FAILED(
       mTrustedInput->GetInputTrustAuthority(aStreamId, aRiid, &unknown));
@@ -90,9 +90,10 @@ void MFCDMProxy::ResetTrustedInput() {
 
 void MFCDMProxy::OnHardwareContextReset() {
   LOG("OnHardwareContextReset");
-  // Hardware context reset invalidates all crypto sessions and the CDM's
-  // hardware DRM context. Shut down ITAs and release the CDM reference so the
-  // stale COM object does not block a new CDM from acquiring TEE resources.
+  // Hardware context reset invalidates all crypto sessions and
+  // the CDM's hardware DRM context. Shut down ITAs and release
+  // the CDM reference so the stale COM object does not block a
+  // new CDM from acquiring TEE resources.
   for (auto& inputAuthorities : mInputTrustAuthorities) {
     SHUTDOWN_IF_POSSIBLE(inputAuthorities.second);
   }

@@ -6,29 +6,29 @@ package mozilla.components.lib.llm.mlpa
 
 import kotlinx.coroutines.flow.Flow
 import mozilla.components.concept.llm.Llm
+import mozilla.components.concept.llm.LlmProvider.ModelID
 import mozilla.components.concept.llm.Prompt
 import mozilla.components.lib.llm.mlpa.service.AuthorizationToken
 import mozilla.components.lib.llm.mlpa.service.ChatService
 import mozilla.components.lib.llm.mlpa.service.ChatService.Request
 import mozilla.components.lib.llm.mlpa.service.ChatService.Request.Message
-import mozilla.components.lib.llm.mlpa.service.ChatService.Request.ModelID
 
 internal class MlpaLlm(
     val chatService: ChatService,
     val authorizationToken: AuthorizationToken,
+    val modelID: ModelID,
 ) : Llm {
     override suspend fun prompt(prompt: Prompt): Flow<String> = chatService.completion(
         authorizationToken,
-        request = prompt.asRequest,
+        request = prompt.toRequest(modelID),
     )
 }
 
-internal val Prompt.asRequest
-    get() = Request(
-        model = ModelID.mozSummarization,
-        messages = buildList {
-            systemPrompt?.let { add(Message.system(it)) }
-            add(Message.user(userPrompt))
-        },
-        stream = true,
-    )
+internal fun Prompt.toRequest(model: ModelID) = Request(
+    model = model,
+    messages = buildList {
+        systemPrompt?.let { add(Message.system(it)) }
+        add(Message.user(userPrompt))
+    },
+    stream = true,
+)

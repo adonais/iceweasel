@@ -949,16 +949,6 @@ bool WarpCacheIRTranspiler::emitGuardIsNotArrayBufferMaybeShared(
   return true;
 }
 
-bool WarpCacheIRTranspiler::emitGuardIsTypedArray(ObjOperandId objId) {
-  MDefinition* obj = getOperand(objId);
-
-  auto* ins = MGuardIsTypedArray::New(alloc(), obj);
-  add(ins);
-
-  setOperand(objId, ins);
-  return true;
-}
-
 bool WarpCacheIRTranspiler::emitGuardIsNonResizableTypedArray(
     ObjOperandId objId) {
   MDefinition* obj = getOperand(objId);
@@ -1377,6 +1367,15 @@ bool WarpCacheIRTranspiler::emitGuardNonDoubleType(ValOperandId inputId,
   }
 
   MOZ_CRASH("unexpected type");
+}
+
+bool WarpCacheIRTranspiler::emitGuardIsNotObject(ValOperandId inputId) {
+  MDefinition* input = getOperand(inputId);
+
+  auto* ins = MGuardIsNotObject::New(alloc(), input);
+  add(ins);
+  setOperand(inputId, ins);
+  return true;
 }
 
 bool WarpCacheIRTranspiler::emitGuardTo(ValOperandId inputId, MIRType type) {
@@ -7114,8 +7113,6 @@ bool WarpCacheIRTranspiler::emitMetaCreateThis(uint32_t numFixedSlots,
   callInfo_->setThis(createThis);
   return true;
 }
-
-bool WarpCacheIRTranspiler::emitReturnFromIC() { return true; }
 
 bool WarpCacheIRTranspiler::emitBailout() {
   auto* bail = MBail::New(alloc());

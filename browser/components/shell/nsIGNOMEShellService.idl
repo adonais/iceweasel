@@ -4,6 +4,9 @@
 
 #include "nsIShellService.idl"
 
+interface nsIINIParserWriter;
+interface mozIDOMWindowProxy;
+
 [scriptable, uuid(2ce5c803-edcd-443d-98eb-ceba86d02d13)]
 interface nsIGNOMEShellService : nsIShellService
 {
@@ -64,4 +67,26 @@ interface nsIGNOMEShellService : nsIShellService
    * @returns The current status of the desktop entry.
    */
   nsIGNOMEShellService_DesktopEntryStatus getDesktopEntryStatus(in AUTF8String aEntryId);
+
+  /**
+   * Uses the Dynamic Launcher portal to install a desktop entry for this user.
+   *
+   * @param aEntryId The ID of the desktop entry; if this were being installed
+   *        manually, this would be the filename before ".desktop".
+   * @param aDesktopEntry The content of the desktop entry. Note that the
+   *        'Name' and 'Icon' fields may be overridden by the user.
+   * @param aWindow The window to use as the owner of the dialog (if any).
+   * @returns A promise resolved when the user has completed the installation.
+   */
+  [implicit_jscontext]
+  Promise requestInstallDynamicLauncher(in AUTF8String aEntryId, in nsIINIParserWriter aDesktopEntry, in mozIDOMWindowProxy aWindow);
+
+  /**
+   * Uses the Dynamic Launcher portal to remove a desktop entry for this user.
+   *
+   * @param aEntryId The ID that the desktop entry was installed with.
+   * @returns A promise that resolves when uninstallation is complete.
+   */
+  [implicit_jscontext]
+  Promise requestUninstallDynamicLauncher(in AUTF8String aEntryId);
 };

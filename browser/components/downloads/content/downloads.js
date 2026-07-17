@@ -1745,8 +1745,9 @@ var DownloadsBlockedSubview = {
       download.error?.reputationCheckVerdict === "Malware";
 
     e.unblockButton.hidden =
-      download.error?.becauseBlockedByContentAnalysis &&
-      download.error?.reputationCheckVerdict === "Malware";
+      (download.error?.becauseBlockedByContentAnalysis &&
+        download.error?.reputationCheckVerdict === "Malware") ||
+      !Services.prefs.getBoolPref("browser.safebrowsing.allowOverride", true);
 
     title.l10n
       ? document.l10n.setAttributes(e.title, title.l10n.id, title.l10n.args)

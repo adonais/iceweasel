@@ -26,13 +26,13 @@ static void testDetails() {
   using mozilla::detail::Nth;
 
   // Test Nth with a list of 1 item.
-  static_assert(std::is_same_v<typename Nth<0, int>::Type, int>,
+  static_assert(std::is_same_v<Nth<0, int>, int>,
                 "Nth<0, int>::Type should be int");
 
   // Test Nth with a list of more than 1 item.
-  static_assert(std::is_same_v<typename Nth<0, int, char>::Type, int>,
+  static_assert(std::is_same_v<Nth<0, int, char>, int>,
                 "Nth<0, int, char>::Type should be int");
-  static_assert(std::is_same_v<typename Nth<1, int, char>::Type, char>,
+  static_assert(std::is_same_v<Nth<1, int, char>, char>,
                 "Nth<1, int, char>::Type should be char");
 
   using mozilla::detail::SelectVariantType;

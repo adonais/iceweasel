@@ -21,13 +21,16 @@ const { IPProtectionAlertManager } = ChromeUtils.importESModule(
   "moz-src:///browser/components/ipprotection/IPProtectionAlertManager.sys.mjs"
 );
 
-const { IPPSignInWatcher } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/fxa/IPPSignInWatcher.sys.mjs"
+const { IPProtectionActivator } = ChromeUtils.importESModule(
+  "moz-src:///toolkit/components/ipprotection/IPProtectionActivator.sys.mjs"
 );
 
-const { IPPFxaAuthProvider } = ChromeUtils.importESModule(
-  "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs"
+const { IPPDummyAuthProvider } = ChromeUtils.importESModule(
+  "resource://testing-common/ipprotection/IPPDummyAuthProvider.sys.mjs"
 );
+IPProtectionActivator.addHelpers(IPPDummyAuthProvider.helpers);
+IPProtectionActivator.setupHelpers();
+IPProtectionActivator.setAuthProvider(IPPDummyAuthProvider);
 
 const { HttpServer, HTTP_403 } = ChromeUtils.importESModule(
   "resource://testing-common/httpd.sys.mjs"
@@ -262,16 +265,12 @@ let DEFAULT_EXPERIMENT = {
   variant: "alpha",
   isRollout: false,
 };
-/* exported SETUP_EXPERIMENT */
+/* exported DEFAULT_EXPERIMENT */
 
 let DEFAULT_SERVICE_STATUS = {
   isReady: false,
   canEnroll: true,
-  entitlement: {
-    status: 200,
-    error: undefined,
-    entitlement: createTestEntitlement(),
-  },
+  entitlement: createTestEntitlement(),
   proxyPass: {
     status: 200,
     error: undefined,
@@ -279,22 +278,10 @@ let DEFAULT_SERVICE_STATUS = {
     usage: makeUsage(),
   },
   usageInfo: makeUsage(),
-  signInFlow: true,
 };
 /* exported DEFAULT_SERVICE_STATUS */
 
-let STUBS = {
-  isReady: undefined,
-  hasUpgraded: undefined,
-  isEnrolling: undefined,
-  updateEntitlement: undefined,
-  checkForUpgrade: undefined,
-  enrollAndEntitle: undefined,
-  fetchProxyPass: undefined,
-  fetchProxyUsage: undefined,
-  getEntitlement: undefined,
-  fxaSignInFlow: undefined,
-};
+let STUBS = {};
 /* exported STUBS */
 
 async function waitForServiceInitialized() {
@@ -344,7 +331,7 @@ add_setup(async function setupVPN() {
 
   setupService();
 
-  await putServerInRemoteSettings(DEFAULT_SERVICE_STATUS.serverList);
+  await putServerInRemoteSettings();
 
   await SpecialPowers.pushPrefEnv({
     set: [["browser.ipProtection.enabled", true]],
@@ -383,93 +370,79 @@ add_setup(async function setupVPN() {
   });
 });
 
-function setupStubs(stubs = STUBS) {
-  setupSandbox.stub(IPPFxaAuthProvider, "aboutToStart").resolves(null);
-  stubs.isReady = setupSandbox.stub(IPPFxaAuthProvider, "isReady");
-  stubs.hasUpgraded = setupSandbox.stub(IPPFxaAuthProvider, "hasUpgraded");
-  // Stub isEnrolling, updateEntitlement, and checkForUpgrade
-  // to prevent loading skeleton from rendering unexpectedly during tests.
-  stubs.isEnrolling = setupSandbox
-    .stub(IPPFxaAuthProvider, "isEnrolling")
-    .get(() => false);
-  stubs.updateEntitlement = setupSandbox
-    .stub(IPPFxaAuthProvider, "updateEntitlement")
-    .resolves();
-  stubs.checkForUpgrade = setupSandbox
-    .stub(IPPFxaAuthProvider, "checkForUpgrade")
-    .resolves();
+// Default fxaSignInFlow behavior + default getEntitlement response. Used
+// by setupStubs at suite startup and re-applied by cleanupService between
+// tasks.
+function resetDummyDefaults() {
+  IPPDummyAuthProvider.setGetEntitlementResponse({
+    entitlement: DEFAULT_SERVICE_STATUS.entitlement,
+  });
+  // In production, a successful FxA flow signs the user in and the auth
+  // provider's sign-in watcher picks it up. The dummy has no watcher, so
+  // reflect the outcome here.
+  STUBS.fxaSignInFlow.callsFake(async () => {
+    IPPDummyAuthProvider.simulateSignIn(true);
+    return true;
+  });
+}
 
-  stubs.enrollAndEntitle = setupSandbox.stub(
-    IPPFxaAuthProvider,
-    "enrollAndEntitle"
-  );
-  stubs.fetchProxyPass = setupSandbox.stub(
-    IPPFxaAuthProvider,
-    "fetchProxyPass"
-  );
-  stubs.fetchProxyUsage = setupSandbox.stub(
-    IPPFxaAuthProvider,
-    "fetchProxyUsage"
-  );
-  stubs.getEntitlement = setupSandbox
-    .stub(IPPFxaAuthProvider, "getEntitlement")
-    .resolves({ entitlement: DEFAULT_SERVICE_STATUS.entitlement?.entitlement });
-  stubs.fxaSignInFlow = setupSandbox.stub(
+function setupStubs() {
+  STUBS.fxaSignInFlow = setupSandbox.stub(
     SpecialMessageActions,
     "fxaSignInFlow"
   );
+  resetDummyDefaults();
+
+  // Start signed-out so initOnStartupCompleted() is a no-op until a test
+  // opts in via setupService({ isReady: true }) (or simulateSignIn directly).
+  IPPDummyAuthProvider.simulateSignIn(false);
 }
 /* exported setupStubs */
 
-function setupService(
-  {
-    isReady,
-    hasUpgraded,
-    canEnroll,
-    entitlement,
-    proxyPass,
-    usageInfo,
-    signInFlow,
-  } = DEFAULT_SERVICE_STATUS,
-  stubs = STUBS
-) {
-  if (typeof isReady != "undefined") {
-    stubs.isReady.get(() => isReady);
-  }
-
-  if (typeof hasUpgraded != "undefined") {
-    stubs.hasUpgraded.get(() => hasUpgraded);
-  }
-
+function setupService({
+  isReady,
+  hasUpgraded,
+  canEnroll,
+  proxyPass,
+  usageInfo,
+} = DEFAULT_SERVICE_STATUS) {
+  // Seed the provider's responses before triggering sign-in, so that the
+  // transition into READY (which schedules a usage refresh) reads the seeded
+  // usage instead of a stale default.
   if (typeof canEnroll != "undefined") {
-    stubs.enrollAndEntitle.resolves({
+    IPPDummyAuthProvider.setEnrollResponse({
       isEnrolledAndEntitled: canEnroll,
-      entitlement: canEnroll
-        ? DEFAULT_SERVICE_STATUS.entitlement?.entitlement
-        : undefined,
+      entitlement: canEnroll ? DEFAULT_SERVICE_STATUS.entitlement : undefined,
     });
   }
 
-  if (typeof entitlement != "undefined") {
-    stubs.getEntitlement.resolves({ entitlement: entitlement?.entitlement });
-  }
-
   if (typeof proxyPass != "undefined") {
-    stubs.fetchProxyPass.resolves(proxyPass);
+    IPPDummyAuthProvider.setProxyPass(proxyPass);
   }
 
   if (typeof usageInfo != "undefined") {
-    stubs.fetchProxyUsage.resolves(usageInfo);
+    IPPDummyAuthProvider.setProxyUsage(usageInfo);
   }
 
-  if (typeof signInFlow != "undefined") {
-    stubs.fxaSignInFlow.resolves(signInFlow);
+  if (typeof isReady != "undefined") {
+    if (isReady) {
+      IPPDummyAuthProvider.simulateSignIn(true);
+      IPPDummyAuthProvider.setEntitlement(
+        createTestEntitlement({ subscribed: !!hasUpgraded })
+      );
+    } else {
+      IPPDummyAuthProvider.simulateSignIn(false);
+    }
   }
 }
 /* exported setupService */
 
 async function cleanupService() {
-  setupService(DEFAULT_SERVICE_STATUS);
+  setupService();
+  // Reset the dummy's response overrides that aren't part of the params
+  // accepted by setupService, so they don't leak into the next task.
+  IPPDummyAuthProvider.setProxyPassError(null);
+  resetDummyDefaults();
 }
 /* exported cleanupService */
 

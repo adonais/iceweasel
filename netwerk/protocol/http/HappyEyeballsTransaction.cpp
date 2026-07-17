@@ -27,15 +27,34 @@ namespace mozilla::net {
 
 HappyEyeballsTransaction::HappyEyeballsTransaction(
     nsHttpConnectionInfo* aConnInfo, nsIInterfaceRequestor* aCallbacks,
-    uint32_t aCaps, StatusForwarder&& aStatusForwarder,
+    uint32_t aCaps, uint64_t aBrowserId, StatusForwarder&& aStatusForwarder,
+    ClientAuthForwarder&& aClientAuthRequestedForwarder,
+    ClientAuthForwarder&& aClientAuthSelectedForwarder,
     ZeroRttHandle* aZeroRttHandle)
     : SpeculativeTransaction(aConnInfo, aCallbacks, aCaps,
                              /* aCallback */ nullptr,
                              /* reportActivity */ false),
       mStatusForwarder(std::move(aStatusForwarder)),
-      mZeroRttHandle(aZeroRttHandle) {
+      mClientAuthRequestedForwarder(std::move(aClientAuthRequestedForwarder)),
+      mClientAuthSelectedForwarder(std::move(aClientAuthSelectedForwarder)),
+      mZeroRttHandle(aZeroRttHandle),
+      mBrowserId(aBrowserId) {
   LOG1(("HappyEyeballsTransaction ctor %p handle=%p", this,
         mZeroRttHandle.get()));
+}
+
+void HappyEyeballsTransaction::OnClientAuthCertificateRequested() {
+  LOG(("HappyEyeballsTransaction::OnClientAuthCertificateRequested %p", this));
+  if (mClientAuthRequestedForwarder) {
+    mClientAuthRequestedForwarder();
+  }
+}
+
+void HappyEyeballsTransaction::OnClientAuthCertificateSelected() {
+  LOG(("HappyEyeballsTransaction::OnClientAuthCertificateSelected %p", this));
+  if (mClientAuthSelectedForwarder) {
+    mClientAuthSelectedForwarder();
+  }
 }
 
 HappyEyeballsTransaction::~HappyEyeballsTransaction() {
@@ -106,7 +125,13 @@ nsresult HappyEyeballsTransaction::ReadSegments(nsAHttpSegmentReader* aReader,
 nsresult HappyEyeballsTransaction::WriteSegments(nsAHttpSegmentWriter* aWriter,
                                                  uint32_t aCount,
                                                  uint32_t* aCountWritten) {
-  MOZ_ASSERT_UNREACHABLE("Shoud not be called");
+  // OnSocketReadable calls WriteSegments after EnsureNPNComplete returns true,
+  // which can happen after our Finish0RTT already closed the HET (e.g. the
+  // PostProcessNPNSetup path has no early return on Finish0RTT failure).
+  if (mState == State::Closed) {
+    return NS_BASE_STREAM_CLOSED;
+  }
+  MOZ_ASSERT_UNREACHABLE("Should not be called");
   return NullHttpTransaction::WriteSegments(aWriter, aCount, aCountWritten);
 }
 
@@ -188,6 +213,12 @@ void HappyEyeballsTransaction::Transition(State aNext,
       }
 
       SetConnection(nullptr);
+      // The HET no longer participates in 0-RTT coordination after adoption.
+      // Break the RefPtr cycle between ZeroRttHandle::mWinner (RefPtr<HET>)
+      // and HET::mZeroRttHandle (RefPtr<ZeroRttHandle>): Cleanup() drops
+      // mWinner; clearing mZeroRttHandle here drops the HET's ref back to the
+      // handle.
+      mZeroRttHandle = nullptr;
       break;
     }
 
@@ -230,6 +261,29 @@ nsHttpRequestHead* HappyEyeballsTransaction::RequestHead() {
     }
   }
   return SpeculativeTransaction::RequestHead();
+}
+
+void HappyEyeballsTransaction::MaybeRemoveSSLTokens() {
+  nsAHttpConnection* handle = Connection();
+  if (!handle) {
+    return;
+  }
+  RefPtr<HttpConnectionBase> base = handle->HttpConnection();
+  RefPtr<nsHttpConnection> conn = do_QueryObject(base);
+  if (!conn) {
+    return;
+  }
+  nsCOMPtr<nsITLSSocketControl> tlsCtrl;
+  conn->GetTLSSocketControl(getter_AddRefs(tlsCtrl));
+  nsCOMPtr<nsITransportSecurityInfo> secInfo;
+  if (tlsCtrl) {
+    tlsCtrl->GetSecurityInfo(getter_AddRefs(secInfo));
+  }
+  if (mZeroRttHandle) {
+    if (nsHttpTransaction* realTxn = mZeroRttHandle->RealTxn()) {
+      realTxn->RemoveSSLTokens(secInfo);
+    }
+  }
 }
 
 nsresult HappyEyeballsTransaction::FetchHTTPSRR() {

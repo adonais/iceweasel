@@ -184,7 +184,6 @@ EXPORTS.mozilla.css += [
     "Loader.h",
     "Rule.h",
     "SheetLoadData.h",
-    "SheetParsingMode.h",
     "StreamLoader.h",
     "StylePreloadKind.h",
 ]

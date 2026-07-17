@@ -153,7 +153,7 @@
 
 // @nova-cleanup(remove-conditional): Remove .nova-enabled selector, make default behavior for .ad-banner-inner.billboard
 .nova-enabled .ad-banner-wrapper .ad-banner-inner.billboard {
-  --billboard-container-width: calc(12 * var(--col-width) + 11 * var(--space-medium));
+  --billboard-container-width: var(--col-span-12);
 
   .ad-banner-link {
     display: flex;

@@ -13,10 +13,7 @@
 [Exposed=(Window, Worker), Pref="layout.css.typed-om.enabled"]
 interface CSSTranslate : CSSTransformComponent {
   [Throws] constructor(CSSNumericValue x, CSSNumericValue y, optional CSSNumericValue z);
-  // TODO: Change to [SetterThrows] once the x attribute is fully implemented
-  [Throws] attribute CSSNumericValue x;
-  // TODO: Change to [SetterThrows] once the y attribute is fully implemented
-  [Throws] attribute CSSNumericValue y;
-  // TODO: Change to [SetterThrows] once the z attribute is fully implemented
-  [Throws] attribute CSSNumericValue z;
+  [SetterThrows] attribute CSSNumericValue x;
+  [SetterThrows] attribute CSSNumericValue y;
+  [SetterThrows] attribute CSSNumericValue z;
 };

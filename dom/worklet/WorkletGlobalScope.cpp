@@ -61,7 +61,7 @@ nsISerialEventTarget* WorkletGlobalScope::SerialEventTarget() const {
 }
 
 nsresult WorkletGlobalScope::Dispatch(
-    already_AddRefed<nsIRunnable>&& aRunnable) const {
+    already_AddRefed<nsIRunnable> aRunnable) const {
   WorkletThread::AssertIsOnWorkletThread();
   return SerialEventTarget()->Dispatch(std::move(aRunnable));
 }

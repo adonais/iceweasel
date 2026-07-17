@@ -25,7 +25,8 @@
   --fc-primary-button-background-active: var(--fc-primary-button-background-active-light, #053E94);
   --fc-primary-button-color-active: var(--fc-primary-button-color-active-light, rgb(251,251,254));
   --fc-primary-button-border-active: var(--fc-primary-button-border-active-light, transparent);
-  --fc-step-color: color-mix(in srgb, currentColor 50%, transparent);
+  --fc-step-color: var(--fc-step-color-light, color-mix(in srgb, currentColor 50%, transparent));
+  --fc-current-step-color: var(--fc-current-step-color-light, #0061E0);
   --fc-link-color: var(--fc-link-color-light, #0061E0);
   --fc-link-color-hover: var(--fc-link-color-hover-light, #0250BB);
   --fc-link-color-active: var(--fc-link-color-active-light, #053E94);
@@ -78,6 +79,8 @@
     --fc-primary-button-background-active: var(--fc-primary-button-background-active-dark, rgb(170,242,255));
     --fc-primary-button-color-active: var(--fc-primary-button-color-active-dark, rgb(43,42,51));
     --fc-primary-button-border-active: var(--fc-primary-button-border-active-dark, transparent);
+    --fc-step-color: var(--fc-step-color-dark, color-mix(in srgb, currentColor 50%, transparent));
+    --fc-current-step-color: var(--fc-current-step-color-dark, rgb(0,221,255));
     --fc-link-color: var(--fc-link-color-dark, #00DDFF);
     --fc-link-color-hover: var(--fc-link-color-hover-dark, #80EBFF);
     --fc-link-color-active: var(--fc-link-color-hover-active, #AAF2FF);
@@ -111,7 +114,8 @@
   --fc-primary-button-background-active: var(--fc-primary-button-background-active-light, #053E94);
   --fc-primary-button-color-active: var(--fc-primary-button-color-active-light, rgb(251,251,254));
   --fc-primary-button-border-active: var(--fc-primary-button-border-active-light, transparent);
-  --fc-step-color: color-mix(in srgb, currentColor 50%, transparent);
+  --fc-step-color: var(--fc-step-color-light, color-mix(in srgb, currentColor 50%, transparent));
+  --fc-current-step-color: var(--fc-current-step-color-light, #0061E0);
   --fc-link-color: var(--fc-link-color-light, #0061E0);
   --fc-link-color-hover: var(--fc-link-color-hover-light, #0250BB);
   --fc-link-color-active: var(--fc-link-color-active-light, #053E94);
@@ -145,6 +149,8 @@
   --fc-primary-button-background-active: var(--fc-primary-button-background-active-dark, rgb(170,242,255));
   --fc-primary-button-color-active: var(--fc-primary-button-color-active-dark, rgb(43,42,51));
   --fc-primary-button-border-active: var(--fc-primary-button-border-active-dark, transparent);
+  --fc-step-color: var(--fc-step-color-dark, color-mix(in srgb, currentColor 50%, transparent));
+  --fc-current-step-color: var(--fc-current-step-color-dark, rgb(0,221,255));
   --fc-link-color: var(--fc-link-color-dark, #00DDFF);
   --fc-link-color-hover: var(--fc-link-color-hover-dark, #80EBFF);
   --fc-link-color-active: var(--fc-link-color-hover-active, #AAF2FF);
@@ -178,7 +184,8 @@
     --fc-primary-button-background-active: var(--fc-primary-button-background-active-hcm, SelectedItemText);
     --fc-primary-button-color-active: var(--fc-primary-button-color-active-hcm, SelectedItem);
     --fc-primary-button-border-active: var(--fc-primary-button-border-active-hcm, SelectedItem);
-    --fc-step-color: var(--fc-accent-color-hcm, LinkText);
+    --fc-step-color: var(--fc-step-color-hcm, CanvasText);
+    --fc-current-step-color: var(--fc-current-step-color-light, CanvasText);
     --fc-link-color: var(--fc-link-color-hcm, LinkText);
     --fc-link-color-hover: var(--fc-link-color-hover-hcm, LinkText);
     --fc-link-color-active: var(--fc-link-color-active-hcm, ActiveText);
@@ -215,7 +222,8 @@
     --fc-primary-button-background-active: var(--fc-primary-button-background-active-light, #053E94);
     --fc-primary-button-color-active: var(--fc-primary-button-color-active-light, rgb(251,251,254));
     --fc-primary-button-border-active: var(--fc-primary-button-border-active-light, transparent);
-    --fc-step-color: color-mix(in srgb, currentColor 50%, transparent);
+    --fc-step-color: var(--fc-step-color-light, color-mix(in srgb, currentColor 50%, transparent));
+    --fc-current-step-color: var(--fc-current-step-color-light, #0061E0);
     --fc-link-color: var(--fc-link-color-light, #0061E0);
     --fc-link-color-hover: var(--fc-link-color-hover-light, #0250BB);
     --fc-link-color-active: var(--fc-link-color-active-light, #053E94);
@@ -249,6 +257,8 @@
     --fc-primary-button-background-active: var(--fc-primary-button-background-active-dark, rgb(170,242,255));
     --fc-primary-button-color-active: var(--fc-primary-button-color-active-dark, rgb(43,42,51));
     --fc-primary-button-border-active: var(--fc-primary-button-border-active-dark, transparent);
+    --fc-step-color: var(--fc-step-color-dark, color-mix(in srgb, currentColor 50%, transparent));
+    --fc-current-step-color: var(--fc-current-step-color-dark, rgb(0,221,255));
     --fc-link-color: var(--fc-link-color-dark, #00DDFF);
     --fc-link-color-hover: var(--fc-link-color-hover-dark, #80EBFF);
     --fc-link-color-active: var(--fc-link-color-hover-active, #AAF2FF);
@@ -282,6 +292,8 @@
   --fc-primary-button-background-active: var(--fc-primary-button-background-active-dark, rgb(170,242,255));
   --fc-primary-button-color-active: var(--fc-primary-button-color-active-dark, rgb(43,42,51));
   --fc-primary-button-border-active: var(--fc-primary-button-border-active-dark, transparent);
+  --fc-step-color: var(--fc-step-color-dark, color-mix(in srgb, currentColor 50%, transparent));
+  --fc-current-step-color: var(--fc-current-step-color-dark, rgb(0,221,255));
   --fc-link-color: var(--fc-link-color-dark, #00DDFF);
   --fc-link-color-hover: var(--fc-link-color-hover-dark, #80EBFF);
   --fc-link-color-active: var(--fc-link-color-hover-active, #AAF2FF);
@@ -315,7 +327,8 @@
     --fc-primary-button-background-active: var(--fc-primary-button-background-active-hcm, SelectedItemText);
     --fc-primary-button-color-active: var(--fc-primary-button-color-active-hcm, SelectedItem);
     --fc-primary-button-border-active: var(--fc-primary-button-border-active-hcm, SelectedItem);
-    --fc-step-color: var(--fc-accent-color-hcm, LinkText);
+    --fc-step-color: var(--fc-step-color-hcm, CanvasText);
+    --fc-current-step-color: var(--fc-current-step-color-light, CanvasText);
     --fc-link-color: var(--fc-link-color-hcm, LinkText);
     --fc-link-color-hover: var(--fc-link-color-hover-hcm, LinkText);
     --fc-link-color-active: var(--fc-link-color-active-hcm, ActiveText);
@@ -619,7 +632,7 @@ div#feature-callout.hidden {
   border: 4px solid var(--fc-step-color);
 }
 #feature-callout .screen[pos=callout] .section-main .main-content .steps .indicator.current {
-  border-color: var(--fc-accent-color);
+  border-color: var(--fc-current-step-color);
 }
 #feature-callout .screen[pos=callout] .section-main .main-content .steps:not(.progress-bar) {
   flex-flow: row nowrap;
@@ -986,28 +999,28 @@ panel#feature-callout[arrow-position=bottom] {
 
 #feature-callout[arrow-position=inline-end] .arrow-box {
   top: var(--arrow-center-inset);
-  inset-inline-end: var(--arrow-offset);
+  right: var(--arrow-offset);
   --fc-arrow-clip-path: polygon(100% 0, 100% 100%, 98% 100%, 0 2%, 0 0);
 }
 panel#feature-callout[arrow-position=inline-end]::part(content) {
-  margin-inline-end: var(--panel-arrow-space);
+  margin-right: var(--panel-arrow-space);
 }
 
 panel#feature-callout[arrow-position=inline-end] {
-  margin-inline-end: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+  margin-right: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
 }
 
 #feature-callout[arrow-position=inline-start] .arrow-box {
   top: var(--arrow-center-inset);
-  inset-inline-start: var(--arrow-offset);
+  left: var(--arrow-offset);
   --fc-arrow-clip-path: polygon(0 100%, 100% 100%, 100% 98%, 2% 0, 0 0);
 }
 panel#feature-callout[arrow-position=inline-start]::part(content) {
-  margin-inline-start: var(--panel-arrow-space);
+  margin-left: var(--panel-arrow-space);
 }
 
 panel#feature-callout[arrow-position=inline-start] {
-  margin-inline-start: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+  margin-left: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
 }
 
 #feature-callout[arrow-position=top-end] .arrow-box {
@@ -1064,54 +1077,54 @@ panel#feature-callout[arrow-position=bottom-start] {
 
 #feature-callout[arrow-position=inline-end-top] .arrow-box {
   top: var(--arrow-corner-inset);
-  inset-inline-end: var(--arrow-offset);
+  right: var(--arrow-offset);
   --fc-arrow-clip-path: polygon(100% 0, 100% 100%, 98% 100%, 0 2%, 0 0);
 }
 panel#feature-callout[arrow-position=inline-end-top]::part(content) {
-  margin-inline-end: var(--panel-arrow-space);
+  margin-right: var(--panel-arrow-space);
 }
 
 panel#feature-callout[arrow-position=inline-end-top] {
-  margin-inline-end: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+  margin-right: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
 }
 
 #feature-callout[arrow-position=inline-end-bottom] .arrow-box {
   bottom: var(--arrow-corner-inset);
-  inset-inline-end: var(--arrow-offset);
+  right: var(--arrow-offset);
   --fc-arrow-clip-path: polygon(100% 0, 100% 100%, 98% 100%, 0 2%, 0 0);
 }
 panel#feature-callout[arrow-position=inline-end-bottom]::part(content) {
-  margin-inline-end: var(--panel-arrow-space);
+  margin-right: var(--panel-arrow-space);
 }
 
 panel#feature-callout[arrow-position=inline-end-bottom] {
-  margin-inline-end: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+  margin-right: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
 }
 
 #feature-callout[arrow-position=inline-start-top] .arrow-box {
   top: var(--arrow-corner-inset);
-  inset-inline-start: var(--arrow-offset);
+  left: var(--arrow-offset);
   --fc-arrow-clip-path: polygon(0 100%, 100% 100%, 100% 98%, 2% 0, 0 0);
 }
 panel#feature-callout[arrow-position=inline-start-top]::part(content) {
-  margin-inline-start: var(--panel-arrow-space);
+  margin-left: var(--panel-arrow-space);
 }
 
 panel#feature-callout[arrow-position=inline-start-top] {
-  margin-inline-start: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+  margin-left: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
 }
 
 #feature-callout[arrow-position=inline-start-bottom] .arrow-box {
   bottom: var(--arrow-corner-inset);
-  inset-inline-start: var(--arrow-offset);
+  left: var(--arrow-offset);
   --fc-arrow-clip-path: polygon(0 100%, 100% 100%, 100% 98%, 2% 0, 0 0);
 }
 panel#feature-callout[arrow-position=inline-start-bottom]::part(content) {
-  margin-inline-start: var(--panel-arrow-space);
+  margin-left: var(--panel-arrow-space);
 }
 
 panel#feature-callout[arrow-position=inline-start-bottom] {
-  margin-inline-start: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
+  margin-left: calc(-1 * (var(--panel-box-shadow-margin) + var(--arrow-overlap-magnitude)));
 }
 
 :root[ai-window] #feature-callout {
@@ -1294,7 +1307,7 @@ html {
 
 .onboardingContainer {
   --grey-subtitle-1: light-dark(var(--color-gray-70), white);
-  --mr-welcome-background-color: light-dark(var(--color-gray-05), var(--color-gray-80));
+  --mr-welcome-background-color: light-dark(var(--color-gray-0), var(--color-gray-80));
   --mr-screen-heading-color: var(--text-color);
   --mr-welcome-background-gradient: linear-gradient(
     0deg,
@@ -1302,7 +1315,7 @@ html {
     light-dark(rgba(2, 144, 238, 20%), rgba(2, 144, 238, 30%)) 100%
   );
   --mr-smart-window-background-gradient: radial-gradient(190% 105% at 50% 90%, light-dark(#FDF3F2, #4E243F) 0%, light-dark(#ECE4FB, #311764) 100%);
-  --mr-screen-background-color: light-dark(var(--color-gray-05), var(--color-gray-70));
+  --mr-screen-background-color: light-dark(var(--color-gray-0), var(--color-gray-70));
   --single-select-border-color: var(--color-gray-60);
   --single-select-hover-color: light-dark(var(--color-gray-20), var(--color-gray-70));
   --picker-background-color: color-mix(in srgb, transparent 98%, light-dark(black, white) 2%);

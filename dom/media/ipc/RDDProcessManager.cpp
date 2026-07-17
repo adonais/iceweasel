@@ -291,8 +291,8 @@ bool RDDProcessManager::CreateContentBridge(
   MOZ_ASSERT(NS_IsMainThread());
 
   if (NS_WARN_IF(!IsRDDProcessAlive())) {
-    MOZ_LOG(sPDMLog, LogLevel::Debug,
-            ("RDD shutdown before creating content bridge"));
+    MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
+                "RDD shutdown before creating content bridge");
     return false;
   }
 
@@ -303,8 +303,8 @@ bool RDDProcessManager::CreateContentBridge(
       mRDDChild->OtherEndpointProcInfo(), aOtherProcess, &parentPipe,
       &childPipe);
   if (NS_FAILED(rv)) {
-    MOZ_LOG(sPDMLog, LogLevel::Debug,
-            ("Could not create content remote decoder: %d", int(rv)));
+    MOZ_LOG_FMT(sPDMLog, LogLevel::Debug,
+                "Could not create content remote decoder: {}", int(rv));
     return false;
   }
 

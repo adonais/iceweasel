@@ -192,6 +192,10 @@ class ChannelWrapper final : public DOMEventTargetHelper,
 
   int64_t ParentFrameId() const;
 
+  uint64_t DocumentInnerWindowId() const;
+
+  uint64_t ParentDocumentInnerWindowId() const;
+
   void GetFrameAncestors(
       dom::Nullable<nsTArray<dom::MozFrameAncestorInfo>>& aFrameAncestors,
       ErrorResult& aRv) const;

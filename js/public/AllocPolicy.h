@@ -53,8 +53,7 @@ class AllocPolicyBase {
   // For allocation policies that support allocating GCed memory, trace an
   // allocation. For policies that use malloc, this is a no-op.
   template <typename T>
-  void traceOwnedAlloc(JSTracer* trc, gc::Cell* maybeOwner, T** ptrp,
-                       const char* name) {}
+  void traceOwnedAlloc(JSTracer* trc, T** ptrp, const char* name) {}
 
   // For memory reporting, get the size of an allocation made with this policy.
   // The parameter |mallocSizeOf| is only used for policies that use malloc.
@@ -75,9 +74,8 @@ void TraceOwnedAllocs(JSTracer* trc, gc::Cell* maybeOwner, Container& container,
                       const char* name) {
   auto& allocPolicy = container.allocPolicy();
   allocPolicy.updateOwningGCThing(maybeOwner);
-  container.traceOwnedAllocs([&](auto** ptrp) {
-    allocPolicy.traceOwnedAlloc(trc, maybeOwner, ptrp, name);
-  });
+  container.traceOwnedAllocs(
+      [&](auto** ptrp) { allocPolicy.traceOwnedAlloc(trc, ptrp, name); });
 }
 
 // For containers implementing |traceOwnedAllocs| get the total size of owned

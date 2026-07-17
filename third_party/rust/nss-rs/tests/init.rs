@@ -42,7 +42,7 @@ fn init_nodb() {
 #[cfg(not(nss_nodb))]
 #[test]
 fn init_withdb() {
-    init_db(::test_fixture::NSS_DB_PATH).unwrap();
+    init_db(::test_fixture::db_path()).unwrap();
     assert_initialized();
     unsafe {
         assert_ne!(nss_init::NSS_IsInitialized(), 0);

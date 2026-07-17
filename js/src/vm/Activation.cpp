@@ -6,6 +6,7 @@
 
 #include "mozilla/Assertions.h"  // MOZ_ASSERT
 
+#include "vm/JitActivation.h"
 #include "vm/JSContext.h"  // JSContext, js::TlsContext
 
 using namespace js;
@@ -30,4 +31,18 @@ ActivationIterator& ActivationIterator::operator++() {
   MOZ_ASSERT(activation_);
   activation_ = activation_->prev();
   return *this;
+}
+
+void Activation::trace(JSTracer* trc) {
+  if (isInterpreter()) {
+    asInterpreter()->trace(trc);
+    return;
+  }
+
+  asJit()->trace(trc);
+}
+
+void Activation::traceCommon(JSTracer* trc) {
+  frameCache_.trace(trc);
+  TraceRoot(trc, &asyncStack_, "Activation::asyncStack_");
 }

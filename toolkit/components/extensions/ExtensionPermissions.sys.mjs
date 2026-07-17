@@ -669,6 +669,13 @@ export var OriginControls = {
       return { noAccess: true };
     }
 
+    // Suppress whenClicked for URIs covered by required manifest origins on
+    // policy-managed extensions, since switching modes would revoke the
+    // policy grant.
+    let isPolicyRequiredOrigin =
+      Services.policies?.isAddonRequiredByPolicy(policy.extension?.id) &&
+      policy.extension?.getManifestOriginsMatchPatternSet()?.matches(uri);
+
     // activeTab and the resulting whenClicked state is only applicable for MV2
     // extensions with a browser action and MV3 extensions (with or without).
     let activeTab =
@@ -716,7 +723,7 @@ export var OriginControls = {
     }
 
     return {
-      whenClicked: true,
+      whenClicked: !isPolicyRequiredOrigin,
       alwaysOn: true,
       temporaryAccess,
       hasAccess,
@@ -824,6 +831,15 @@ export var OriginControls = {
     // Return earlier if the extension doesn't really have access to the
     // given url.
     if (!policy.allowedOrigins.matches(uri)) {
+      return;
+    }
+
+    // Return earlier if the url matches host_permissions locked through the
+    // enterprise policies.
+    if (
+      Services.policies?.isAddonRequiredByPolicy(policy.extension?.id) &&
+      policy.extension.getManifestOriginsMatchPatternSet()?.matches(uri)
+    ) {
       return;
     }
 

@@ -32,9 +32,7 @@ class SettingsPrivateBrowsingTest {
     @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides(
-                skipOnboarding = true,
-            ),
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
     @get:Rule(order = 2)

@@ -306,6 +306,28 @@ class DocAccessibleParent : public RemoteAccessible,
 
   size_t SizeOfExcludingThis(MallocSizeOf aMallocSizeOf) override;
 
+  /**
+   * Return the cache domain set that should be used for accessibles in this
+   * document.
+   */
+  uint64_t EffectiveCacheDomains() const;
+
+  /**
+   * Return true if every domain in aRequiredCacheDomains is active for
+   * accessibles in this document.
+   */
+  bool DomainsAreActive(uint64_t aRequiredCacheDomains) const {
+    return (aRequiredCacheDomains & ~EffectiveCacheDomains()) == 0;
+  }
+
+  /**
+   * If any domain in aRequiredCacheDomains is not currently active for this
+   * document, request that it become active and return true. If all required
+   * domains are already active, return false. The caller should treat true as
+   * "can't proceed right now": the fields aren't in the cache yet.
+   */
+  bool RequestDomainsIfInactive(uint64_t aRequiredCacheDomains);
+
 #ifdef MOZ_ENABLE_SKIA_PDF
   mozilla::ipc::IPCResult RecvPrinting();
 #endif

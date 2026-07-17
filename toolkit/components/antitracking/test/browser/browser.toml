@@ -118,8 +118,6 @@ support-files= [
 
 ["browser_nimbus_etp_features.js"]
 
-["browser_nimbus_thirdPartyTrackerCookieBlocking.js"]
-
 ["browser_noStorageAccessAutoGrant_thirdPartyTracker.js"]
 
 ["browser_onBeforeRequestNotificationForTrackingResources.js"]

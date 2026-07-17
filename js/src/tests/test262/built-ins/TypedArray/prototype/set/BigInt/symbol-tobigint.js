@@ -47,6 +47,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     typedArray.set([s]);
   }, "abrupt completion from Symbol");
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

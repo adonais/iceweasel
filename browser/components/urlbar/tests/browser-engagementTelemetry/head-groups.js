@@ -347,7 +347,7 @@ async function doRestrictKeywordsTest({ trigger, assert }) {
     await openPopup("@");
 
     let totalResults = await UrlbarTestUtils.getResultCount(window);
-    let restrictSymbols = Object.values(UrlbarTokenizer.RESTRICT);
+    let restrictSymbols = Object.values(UrlbarShared.RESTRICT_TOKENS);
 
     for (let i = 0; i < totalResults; i++) {
       let details = await UrlbarTestUtils.getDetailsOfResultAt(window, i);

@@ -74,7 +74,7 @@ add_task(async function test_events_prevented() {
 
       let wheelEventPromise = helper.waitForContentEventOnce("wheel");
       await SpecialPowers.spawn(browser, [], () => {
-        content.dispatchEvent(new content.WheelEvent("wheel"));
+        content.dispatchEvent(new content.WheelEvent("wheel", { deltaY: 1 }));
       });
       await wheelEventPromise;
 

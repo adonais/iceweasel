@@ -198,20 +198,7 @@ bool SVGMotionSMILType::IsEqual(const SMILValue& aLeft,
   const MotionSegmentArray& leftArr = ExtractMotionSegmentArray(aLeft);
   const MotionSegmentArray& rightArr = ExtractMotionSegmentArray(aRight);
 
-  // If array-lengths don't match, we're trivially non-equal.
-  if (leftArr.Length() != rightArr.Length()) {
-    return false;
-  }
-
-  // Array-lengths match -- check each array-entry for equality.
-  uint32_t length = leftArr.Length();  // == rightArr->Length(), if we get here
-  for (uint32_t i = 0; i < length; ++i) {
-    if (leftArr[i] != rightArr[i]) {
-      return false;
-    }
-  }
-
-  return true;  // If we get here, we found no differences.
+  return leftArr == rightArr;
 }
 
 // Helper method for Add & CreateMatrix
@@ -328,23 +315,15 @@ nsresult SVGMotionSMILType::ComputeDistance(const SMILValue& aFrom,
     const PathPointParams& toParams = to.mU.mPathPointParams;
     MOZ_ASSERT(fromParams.mPath == toParams.mPath,
                "Interpolation endpoints should be from same path");
-    aDistance = std::fabs(toParams.mDistToPoint - fromParams.mDistToPoint);
+    aDistance = std::abs(toParams.mDistToPoint - fromParams.mDistToPoint);
   } else {
     const TranslationParams& fromParams = from.mU.mTranslationParams;
     const TranslationParams& toParams = to.mU.mTranslationParams;
-    float dX = toParams.mX - fromParams.mX;
-    float dY = toParams.mY - fromParams.mY;
-    aDistance = NS_hypot(dX, dY);
+    aDistance =
+        NS_hypot(toParams.mX - fromParams.mX, toParams.mY - fromParams.mY);
   }
 
   return NS_OK;
-}
-
-// Helper method for Interpolate()
-static inline float InterpolateFloat(const float& aStartFlt,
-                                     const float& aEndFlt,
-                                     const double& aUnitDistance) {
-  return aStartFlt + aUnitDistance * (aEndFlt - aStartFlt);
 }
 
 nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
@@ -407,7 +386,7 @@ nsresult SVGMotionSMILType::Interpolate(const SMILValue& aStartVal,
 
   // Get the interpolated distance along our path.
   float resultDist =
-      InterpolateFloat(startDist, endParams.mDistToPoint, aUnitDistance);
+      std::lerp(startDist, endParams.mDistToPoint, aUnitDistance);
 
   // Construct the intermediate result segment, and put it in our outparam.
   // AppendElement has guaranteed success here, since InitValue() allocates

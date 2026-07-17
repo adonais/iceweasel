@@ -38,8 +38,8 @@ class SearchBarComponent(composeRule: AndroidComposeTestRule<HomeActivityIntentT
         return SearchBarSelectors.all.filter { it.groups.contains(group) }
     }
 
-    override fun navigateToPage(url: String): SearchBarComponent {
-        super.navigateToPage(url)
+    override fun navigateToPage(url: String, forceNavigation: Boolean): SearchBarComponent {
+        super.navigateToPage(url, forceNavigation = forceNavigation)
         return this
     }
 

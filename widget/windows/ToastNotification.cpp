@@ -5,6 +5,7 @@
 #include "ToastNotification.h"
 
 #include <windows.h>
+#include <shellapi.h>
 #include <appmodel.h>
 #include <ktmw32.h>
 #include <windows.foundation.h>
@@ -456,7 +457,7 @@ ToastNotification::ShowAlert(nsIAlertNotification* aAlert,
   }
 
   NS_ENSURE_TRUE(mAumid.isSome(), NS_ERROR_UNEXPECTED);
-  RefPtr<ToastNotificationHandler> handler = new ToastNotificationHandler(
+  auto handler = MakeRefPtr<ToastNotificationHandler>(
       this, mAumid.ref(), aAlert, aAlertListener, name, cookie, title, text,
       hostPort, textClickable, requireInteraction, actions, isSystemPrincipal,
       opaqueRelaunchData, inPrivateBrowsing, isSilent, imagePlacement,
@@ -525,7 +526,7 @@ ToastNotification::GetXmlStringForWindowsAlert(nsIAlertNotification* aAlert,
   bool isSystemPrincipal = principal && principal->IsSystemPrincipal();
 
   NS_ENSURE_TRUE(mAumid.isSome(), NS_ERROR_UNEXPECTED);
-  RefPtr<ToastNotificationHandler> handler = new ToastNotificationHandler(
+  auto handler = MakeRefPtr<ToastNotificationHandler>(
       this, mAumid.ref(), aAlert, nullptr /* aAlertListener */, name, cookie,
       title, text, hostPort, textClickable, requireInteraction, actions,
       isSystemPrincipal, opaqueRelaunchData, inPrivateBrowsing, isSilent);
@@ -575,8 +576,7 @@ RefPtr<ToastHandledPromise> ToastNotification::VerifyTagPresentOrFallback(
           ("External windowsTag '%s' is not handled",
            NS_ConvertUTF16toUTF8(aWindowsTag).get()));
 
-  RefPtr<ToastHandledPromise::Private> fallbackPromise =
-      new ToastHandledPromise::Private(__func__);
+  auto fallbackPromise = MakeRefPtr<ToastHandledPromise::Private>(__func__);
 
   // TODO: Bug 1806005 - At time of writing this function is called in a call
   // stack containing `WndProc` callback on an STA thread. As a result attempts
@@ -839,6 +839,31 @@ ToastNotification::RemoveAllNotificationsForInstall() {
       (void)NS_WARN_IF(FAILED(hr));
     }
   }();
+
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+ToastNotification::IsFullscreen(bool* aRetVal) {
+  *aRetVal = false;
+
+  QUERY_USER_NOTIFICATION_STATE state{QUNS_ACCEPTS_NOTIFICATIONS};
+  if (FAILED(SHQueryUserNotificationState(&state))) {
+    // If the user notification state cannot be queried, fall back to reporting
+    // non-fullscreen so notifications aren't suppressed
+    return NS_OK;
+  }
+
+  switch (state) {
+    case QUNS_BUSY:
+    case QUNS_RUNNING_D3D_FULL_SCREEN:
+    case QUNS_PRESENTATION_MODE:
+      *aRetVal = true;
+      break;
+    default:
+      // Treat any state not listed above as non-fullscreen
+      break;
+  }
 
   return NS_OK;
 }

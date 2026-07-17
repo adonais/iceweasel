@@ -24,7 +24,7 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.sameValue(n, 2n, "additional unexpected ToBigInt() calls");
   assert.sameValue(sample[0], 1n, "incorrect ToNumber result in index 0");
   assert.sameValue(sample[1], 1n, "incorrect ToNumber result in index 1");
-});
+}, null, null, ["immutable"]);
 
 
 reportCompare(0, 0);

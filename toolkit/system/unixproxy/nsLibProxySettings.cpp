@@ -111,6 +111,13 @@ nsUnixSystemProxySettings::GetSystemWPADSetting(bool* aSystemWPADSetting) {
   return NS_OK;
 }
 
+// we do not know if libproxy would return DIRECT or PROXY
+NS_IMETHODIMP
+nsUnixSystemProxySettings::GetSystemProxyDirect(bool* aResult) {
+  *aResult = false;
+  return NS_OK;
+}
+
 NS_IMPL_COMPONENT_FACTORY(nsUnixSystemProxySettings) {
   return do_AddRef(new nsUnixSystemProxySettings()).downcast<nsISupports>();
 }

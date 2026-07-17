@@ -3,11 +3,7 @@ from urllib.parse import urlunsplit
 import pytest
 from tests.support.classic.asserts import assert_error
 
-
-def navigate_to(session, url):
-    return session.transport.send(
-        "POST", "session/{session_id}/url".format(**vars(session)), {"url": url}
-    )
+from . import navigate_to
 
 
 @pytest.fixture

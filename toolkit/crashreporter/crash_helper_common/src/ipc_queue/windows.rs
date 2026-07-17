@@ -50,7 +50,7 @@ impl IPCQueue {
         let port = unsafe {
             CreateIoCompletionPort(
                 /* FileHandle */ INVALID_HANDLE_VALUE,
-                /* ExistingCompletionPort */ 0,
+                /* ExistingCompletionPort */ std::ptr::null_mut(),
                 /* CompletionKey */ 0,
                 CONCURRENT_THREADS,
             ) as RawHandle

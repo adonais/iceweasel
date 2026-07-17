@@ -11,8 +11,7 @@ NS_IMPL_NS_NEW_HTML_ELEMENT_CHECK_PARSER(Frame)
 namespace mozilla::dom {
 
 HTMLFrameElement::HTMLFrameElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
-    FromParser aFromParser)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo, FromParser aFromParser)
     : nsGenericHTMLFrameElement(std::move(aNodeInfo), aFromParser) {}
 
 HTMLFrameElement::~HTMLFrameElement() = default;

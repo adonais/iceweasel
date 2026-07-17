@@ -3,18 +3,19 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "CmdLineAndEnvUtils.h"
-#include "nsWinRemoteServer.h"
-#include "RemoteUtils.h"
+#include "nsCommandLine.h"
 #include "nsCOMPtr.h"
-#include "nsXPCOM.h"
-#include "nsPIDOMWindow.h"
-#include "nsIWindowMediator.h"
 #include "nsIBaseWindow.h"
-#include "nsIWidget.h"
 #include "nsICommandLineRunner.h"
 #include "nsICommandLine.h"
-#include "nsCommandLine.h"
 #include "nsIDocShell.h"
+#include "nsIWidget.h"
+#include "nsIWindowMediator.h"
+#include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
+#include "nsWinRemoteServer.h"
+#include "nsXPCOM.h"
+#include "RemoteUtils.h"
 #include "WinRemoteMessage.h"
 
 HWND hwndForDOMWindow(mozIDOMWindowProxy* window) {

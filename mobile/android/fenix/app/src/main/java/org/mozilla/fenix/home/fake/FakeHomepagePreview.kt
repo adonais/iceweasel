@@ -101,6 +101,8 @@ internal object FakeHomepagePreview {
             override fun onPrivacyReportTapped() { /* no op */ }
 
             override fun onLongfoxEntryPointClicked() { /* no op */ }
+
+            override fun onLongfoxEntryPointShown() { /* no op */ }
         }
 
     internal val sportsInteractor
@@ -181,6 +183,8 @@ internal object FakeHomepagePreview {
             override fun onShowAllTopSitesClicked() { /* no op */ }
 
             override fun onShortcutsLibraryViewed() { /* no op */ }
+
+            override fun onSaveShortcut(title: String, url: String) { /* no op */ }
         }
 
     internal val recentTabInteractor

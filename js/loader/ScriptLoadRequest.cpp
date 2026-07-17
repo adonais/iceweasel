@@ -11,6 +11,7 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/Utf8.h"  // mozilla::Utf8Unit
+#include "mozilla/FlowMarkers.h"
 
 #include "js/SourceText.h"
 
@@ -103,7 +104,10 @@ ScriptLoadRequest::ScriptLoadRequest(ScriptKind aKind,
   }
 }
 
-ScriptLoadRequest::~ScriptLoadRequest() = default;
+ScriptLoadRequest::~ScriptLoadRequest() {
+  PROFILER_MARKER("~ScriptLoadRequest", JS, {}, TerminatingFlowMarker,
+                  Flow::FromPointer(this));
+}
 
 void ScriptLoadRequest::SetReady() {
   MOZ_ASSERT(!IsFinished());
@@ -195,15 +199,14 @@ void ScriptLoadRequest::SetCacheEntry(LoadedScript* aLoadedScript,
 
       mLoadedScript = aLoadedScript;
 
-      // Classic scripts can be set ready once the script itself is ready.
-      mState = State::Ready;
+      mState = State::DelayingReady;
       break;
     case ScriptKind::eImportMap:
       MOZ_ASSERT(aLoadedScript->IsImportMapScript());
 
       mLoadedScript = aLoadedScript;
 
-      mState = State::Ready;
+      mState = State::DelayingReady;
       break;
     case ScriptKind::eModule:
       MOZ_ASSERT(aLoadedScript->IsModuleScript());

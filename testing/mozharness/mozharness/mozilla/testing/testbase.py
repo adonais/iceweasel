@@ -22,7 +22,6 @@ from mozharness.base.python import (
 from mozharness.lib.python.authentication import get_credentials
 from mozharness.mozilla.automation import TBPL_WARNING, AutomationMixin
 from mozharness.mozilla.structuredlog import StructuredOutputParser
-from mozharness.mozilla.testing.try_tools import TryToolsMixin, try_config_options
 from mozharness.mozilla.testing.unittest import DesktopUnittestOutputParser
 from mozharness.mozilla.testing.verify_tools import (
     VerifyToolsMixin,
@@ -148,7 +147,6 @@ testing_config_options = (
         ],
     ]
     + copy.deepcopy(virtualenv_config_options)
-    + copy.deepcopy(try_config_options)
     + copy.deepcopy(verify_config_options)
 )
 
@@ -159,7 +157,6 @@ class TestingMixin(
     AutomationMixin,
     ResourceMonitoringMixin,
     TooltoolMixin,
-    TryToolsMixin,
     VerifyToolsMixin,
 ):
     """

@@ -9,7 +9,7 @@ for (var [key, {get, value = get}] of Object.entries(Object.getOwnPropertyDescri
         if (key !== "constructor") {
             var expectedValue = value.call(locale);
 
-            if (typeof expectedValue === "string" || typeof expectedValue === "boolean") {
+            if (expectedValue === undefined || typeof expectedValue === "string" || typeof expectedValue === "boolean") {
                 assertEq(value.call(ccwLocale), expectedValue, key);
             } else if (expectedValue instanceof Intl.Locale) {
                 assertEq(value.call(ccwLocale).toString(), expectedValue.toString(), key);

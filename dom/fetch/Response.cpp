@@ -394,6 +394,12 @@ already_AddRefed<Response> Response::Clone(JSContext* aCx, ErrorResult& aRv) {
     response->SetReadableStreamBody(aCx, body);
     response->mFetchStreamReader = streamReader;
     ir->SetBody(inputStream, InternalResponse::UNKNOWN_BODY_SIZE);
+  } else {
+    // We didn't tee: an existing, unread native ReadableStream keeps reflecting
+    // this response's body. InternalResponse::Clone() may have replaced the
+    // underlying input stream (a non-cloneable body is now consumed by the
+    // cloning copy), so repoint the reflector at the current stream.
+    MaybeRebindReadableStreamBody();
   }
 
   return response.forget();

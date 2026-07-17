@@ -12,12 +12,14 @@
 
 extern mozilla::LogModule* GetSourceBufferResourceLog();
 
-#define SBR_DEBUG(arg, ...)                                       \
-  MOZ_LOG(GetSourceBufferResourceLog(), mozilla::LogLevel::Debug, \
-          ("ResourceQueue(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
-#define SBR_DEBUGV(arg, ...)                                        \
-  MOZ_LOG(GetSourceBufferResourceLog(), mozilla::LogLevel::Verbose, \
-          ("ResourceQueue(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
+#define SBR_DEBUG(arg, ...)                                            \
+  MOZ_LOG_FMT(GetSourceBufferResourceLog(), mozilla::LogLevel::Debug,  \
+              "ResourceQueue({})::{}: " arg, fmt::ptr(this), __func__, \
+              ##__VA_ARGS__)
+#define SBR_DEBUGV(arg, ...)                                            \
+  MOZ_LOG_FMT(GetSourceBufferResourceLog(), mozilla::LogLevel::Verbose, \
+              "ResourceQueue({})::{}: " arg, fmt::ptr(this), __func__,  \
+              ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -78,18 +80,17 @@ void ResourceQueue::AppendItem(const MediaSpan& aData) {
 }
 
 uint32_t ResourceQueue::Evict(uint64_t aOffset, uint32_t aSizeToEvict) {
-  SBR_DEBUG("Evict(aOffset=%" PRIu64 ", aSizeToEvict=%u)", aOffset,
-            aSizeToEvict);
+  SBR_DEBUG("Evict(aOffset={}, aSizeToEvict={})", aOffset, aSizeToEvict);
   return EvictBefore(std::min(aOffset, mOffset + (uint64_t)aSizeToEvict));
 }
 
 uint32_t ResourceQueue::EvictBefore(uint64_t aOffset) {
-  SBR_DEBUG("EvictBefore(%" PRIu64 ")", aOffset);
+  SBR_DEBUG("EvictBefore({})", aOffset);
   uint32_t evicted = 0;
   while (GetSize()) {
     ResourceItem* item = ResourceAt(0);
-    SBR_DEBUG("item=%p length=%zu offset=%" PRIu64, item, item->mData.Length(),
-              mOffset);
+    SBR_DEBUG("item={} length={} offset={}", fmt::ptr(item),
+              item->mData.Length(), mOffset);
     if (item->mData.Length() + mOffset >= aOffset) {
       if (aOffset <= mOffset) {
         break;
@@ -113,8 +114,8 @@ uint32_t ResourceQueue::EvictAll() {
   uint32_t evicted = 0;
   while (GetSize()) {
     ResourceItem* item = ResourceAt(0);
-    SBR_DEBUG("item=%p length=%zu offset=%" PRIu64, item, item->mData.Length(),
-              mOffset);
+    SBR_DEBUG("item={} length={} offset={}", fmt::ptr(item),
+              item->mData.Length(), mOffset);
     mOffset += item->mData.Length();
     evicted += item->mData.Length();
     delete PopFront();

@@ -16,7 +16,7 @@
   <script type="application/javascript"
           src="../states.js"></script>
   <script type="application/javascript"
-          src="../promisified-events.js"></script>
+          src="../events.js"></script>
 
   <script type="application/javascript">
     function getContextMenuNode() {
@@ -37,9 +37,6 @@
 
     // //////////////////////////////////////////////////////////////////////////
     // Do tests
-
-    // gA11yEventDumpID = "eventdump"; // debug stuff
-    // gA11yEventDumpToConsole = true;
 
     async function doTests() {
       let menuStarted = waitForEvent(

@@ -91,6 +91,7 @@ modules["ERRORRESULT"] = Mod(43)
 modules["WIN32"] = Mod(44)
 modules["WDBA"] = Mod(45)
 modules["DOM_QM"] = Mod(46)
+modules["CLIPBOARD"] = Mod(47)
 
 # NS_ERROR_MODULE_GENERAL should be used by modules that do not
 # care if return code values overlap. Callers of methods that
@@ -1187,6 +1188,7 @@ with modules["DOM_MEDIA"]:
     errors["NS_ERROR_DOM_MEDIA_CDM_NO_SESSION_ERR"] = FAILURE(50)
     errors["NS_ERROR_DOM_MEDIA_CDM_SESSION_OPERATION_ERR"] = FAILURE(51)
     errors["NS_ERROR_DOM_MEDIA_CDM_HDCP_NOT_SUPPORT"] = FAILURE(52)
+    errors["NS_ERROR_DOM_MEDIA_CDM_NOT_FOUND_ERR"] = FAILURE(53)
 
     # Internal platform-related errors
     errors["NS_ERROR_DOM_MEDIA_CUBEB_INITIALIZATION_ERR"] = FAILURE(101)
@@ -1252,6 +1254,12 @@ with modules["WDBA"]:
 # =======================================================================
 with modules["DOM_QM"]:
     errors["NS_ERROR_DOM_QM_CLIENT_INIT_ORIGIN_UNINITIALIZED"] = FAILURE(1)
+
+# =======================================================================
+# 47: NS_ERROR_MODULE_CLIPBOARD
+# =======================================================================
+with modules["CLIPBOARD"]:
+    errors["NS_ERROR_CLIPBOARD_TOO_BIG"] = FAILURE(1)
 
 # =======================================================================
 # 51: NS_ERROR_MODULE_GENERAL

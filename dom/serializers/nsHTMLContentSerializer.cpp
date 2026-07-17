@@ -295,9 +295,10 @@ nsHTMLContentSerializer::AppendElementEnd(Element* aElement,
     }
   }
 
-  if (ns == kNameSpaceID_XHTML) {
-    bool isContainer =
-        nsHTMLElement::IsContainer(nsHTMLTags::CaseSensitiveAtomTagToId(name));
+  if (const mozilla::Maybe<const nsHTMLTag>& tag =
+          aElement->NodeInfo()->HTMLTag()) {
+    MOZ_ASSERT(ns == kNameSpaceID_XHTML);
+    bool isContainer = nsHTMLElement::IsContainer(*tag);
     if (!isContainer) {
       // Keep this in sync with the cleanup at the end of this method.
       MOZ_ASSERT(name != nsGkAtoms::body);

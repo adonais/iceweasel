@@ -30,7 +30,6 @@ import mozilla.components.ui.widgets.withCenterAlignedButtons
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.quicksettings.AutoplayValue
@@ -78,7 +77,7 @@ class SitePermissionsManageExceptionsPhoneFeatureFragment : Fragment(), SystemIn
     internal fun getSitePermission(): SitePermissions = args.sitePermissions
 
     @VisibleForTesting
-    internal fun getSettings(): Settings = requireContext().settings()
+    internal fun getSettings(): Settings = requireComponents.settings
 
     fun initAutoplay(sitePermissions: SitePermissions? = null) {
         val context = requireContext()
@@ -184,7 +183,7 @@ class SitePermissionsManageExceptionsPhoneFeatureFragment : Fragment(), SystemIn
 
     private fun clearAutoplayPermissions() {
         val context = requireContext()
-        val settings = context.settings()
+        val settings = getSettings()
         val defaultValue =
             AutoplayValue.values(context, settings, null).firstOrNull { it.isSelected() }
                 ?: AutoplayValue.getFallbackValue(

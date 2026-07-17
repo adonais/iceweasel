@@ -117,6 +117,80 @@ add_task(async function test_smartbar_keyboard_focus_shows_outline() {
   await BrowserTestUtils.closeWindow(win);
 });
 
+// Bug 2028662: action-button shadow targets must keep the suggestions
+// view open through mousedown (preventDefault to hold focus) and blur
+// (don't close when focus moves into the button's shadow tree).
+add_task(async function test_smartbar_action_buttons_keep_view_open() {
+  const win = await openAIWindow();
+  const browser = win.gBrowser.selectedBrowser;
+
+  await promiseSmartbarSuggestionsOpen(browser, () =>
+    typeInSmartbar(browser, "aaaaaaaaaaaaaa")
+  );
+
+  await SpecialPowers.spawn(browser, [], async () => {
+    const aiWindowElement = content.document.querySelector("ai-window");
+    const smartbar = aiWindowElement.shadowRoot.querySelector(
+      "#ai-window-smartbar"
+    );
+
+    const buttonHosts = [
+      smartbar.querySelector("context-icon-button"),
+      smartbar.querySelector("memories-icon-button"),
+      smartbar.querySelector("input-cta"),
+    ];
+
+    for (const host of buttonHosts) {
+      Assert.ok(host, `${host?.localName ?? "host"} must exist`);
+      const innerTarget = host.shadowRoot?.querySelector("moz-button") ?? host;
+
+      const mousedown = new content.MouseEvent("mousedown", {
+        bubbles: true,
+        composed: true,
+        cancelable: true,
+      });
+      Object.defineProperty(mousedown, "composedTarget", {
+        value: innerTarget,
+        writable: false,
+      });
+      host.dispatchEvent(mousedown);
+
+      Assert.ok(
+        mousedown.defaultPrevented,
+        `mousedown on ${host.localName} should be preventDefault'd ` +
+          "so focus stays on the input"
+      );
+
+      const blur = new content.FocusEvent("blur", {
+        bubbles: false,
+        composed: true,
+        relatedTarget: innerTarget,
+      });
+      smartbar.inputField.dispatchEvent(blur);
+
+      Assert.ok(
+        smartbar.view.isOpen,
+        `View should stay open after blur into ${host.localName}'s shadow`
+      );
+
+      if (host.localName == "context-icon-button") {
+        const innerMousedown = new content.MouseEvent("mousedown", {
+          bubbles: true,
+          composed: true,
+          cancelable: true,
+        });
+        innerTarget.dispatchEvent(innerMousedown);
+        Assert.ok(
+          innerMousedown.defaultPrevented,
+          "context-icon-button's mousedown handler should preventDefault"
+        );
+      }
+    }
+  });
+
+  await BrowserTestUtils.closeWindow(win);
+});
+
 add_task(async function test_smartbar_button_container_click_no_focus() {
   const win = await openAIWindow();
   const browser = win.gBrowser.selectedBrowser;

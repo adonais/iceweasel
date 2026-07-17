@@ -26,7 +26,7 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(Meta)
 namespace mozilla::dom {
 
 HTMLMetaElement::HTMLMetaElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
 HTMLMetaElement::~HTMLMetaElement() = default;

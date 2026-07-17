@@ -90,10 +90,8 @@ class JS_PUBLIC_API Value;
 //   holds the address of a JSObject; if a string, the address of a
 //   JSString; and so on.
 //
-//   To enforce this invariant, anywhere that may provide a numerical value
-//   which may have a non-canonical NaN value (NaN, but not the one we've chosen
-//   for ECMAScript) we must convert that to the canonical NaN. See
-//   JS::CanonicalizeNaN.
+//   To enforce this invariant, setDouble and setNumber canonicalize NaNs before
+//   storing them; see JS::CanonicalizeNaN.
 //
 // We have two boxing modes defined: NUNBOX32 and PUNBOX64.The first is
 // "NaN unboxed boxing" (or Nunboxing), as non-Number payload are stored
@@ -450,7 +448,14 @@ static MOZ_ALWAYS_INLINE double Infinity() {
 // Convert an arbitrary double to one compatible with JS::Value representation
 // by replacing any NaN value with a canonical one.
 static MOZ_ALWAYS_INLINE double CanonicalizeNaN(double d) {
-  if (MOZ_UNLIKELY(std::isnan(d))) {
+  // std::isnan(double) is not inlined on Linux with glibc < 2.23. Use
+  // __builtin_isnan instead to ensure the NaN-check is inlined.
+#if defined(__clang__) || defined(__GNUC__)
+  bool isNaN = __builtin_isnan(d);
+#else
+  bool isNaN = std::isnan(d);
+#endif
+  if (MOZ_UNLIKELY(isNaN)) {
     return GenericNaN();
   }
   return d;
@@ -509,9 +514,7 @@ class Value {
   explicit constexpr Value(uint64_t asBits) : asBits_(asBits) {}
 
   static uint64_t bitsFromDouble(double d) {
-#if defined(JS_NONCANONICAL_HARDWARE_NAN)
     d = CanonicalizeNaN(d);
-#endif
     return mozilla::BitwiseCast<uint64_t>(d);
   }
 
@@ -577,6 +580,23 @@ class Value {
 
   void setDouble(double d) {
     asBits_ = bitsFromDouble(d);
+    MOZ_ASSERT(isDouble());
+  }
+
+  // Like setDouble but only canonicalizes NaNs on architectures with
+  // non-canonical hardware NaNs (see JS_NONCANONICAL_HARDWARE_NAN).
+  void setDoubleAssumeCanonicalNaN(double d) {
+#if defined(JS_NONCANONICAL_HARDWARE_NAN)
+    d = CanonicalizeNaN(d);
+#elif defined(DEBUG)
+    // If the double is a NaN, assert it's the canonical NaN, but allow the sign
+    // bit to be set. See also the CanonicalizedNaNSignBit comment.
+    static_assert(detail::CanonicalizedNaNSignBit == 0);
+    constexpr uint64_t signBit = mozilla::FloatingPoint<double>::kSignBit;
+    uint64_t bits = mozilla::BitwiseCast<uint64_t>(d) & ~signBit;
+    MOZ_ASSERT_IF(std::isnan(d), bits == detail::CanonicalizedNaNBits);
+#endif
+    asBits_ = mozilla::BitwiseCast<uint64_t>(d);
     MOZ_ASSERT(isDouble());
   }
 
@@ -690,6 +710,17 @@ class Value {
     }
   }
 
+  // Like setNumber(double), but skips NaN canonicalization. See
+  // setDoubleAssumeCanonicalNaN.
+  void setNumberAssumeCanonicalNaN(double d) {
+    int32_t i;
+    if (mozilla::NumberIsInt32(d, &i)) {
+      setInt32(i);
+      return;
+    }
+    setDoubleAssumeCanonicalNaN(d);
+  }
+
   void setObjectOrNull(JSObject* arg) {
     if (arg) {
       setObject(*arg);
@@ -703,6 +734,16 @@ class Value {
     rhs.asBits_ = asBits_;
     asBits_ = tmp;
   }
+
+#if JS_BITS_PER_WORD == 64
+  // Relaxed atomic load and store operations on a Value.
+  Value atomicGet() const {
+    return fromRawBits(__atomic_load_n(&asBits_, __ATOMIC_RELAXED));
+  }
+  void atomicSet(const Value& value) {
+    __atomic_store_n(&asBits_, value.asBits_, __ATOMIC_RELAXED);
+  }
+#endif
 
  private:
   JSValueTag toTag() const { return JSValueTag(asBits_ >> JSVAL_TAG_SHIFT); }
@@ -1093,8 +1134,14 @@ static inline Value DoubleValue(double dbl) {
   return v;
 }
 
+static inline Value DoubleValueAssumeCanonicalNaN(double dbl) {
+  Value v;
+  v.setDoubleAssumeCanonicalNaN(dbl);
+  return v;
+}
+
 static inline Value CanonicalizedDoubleValue(double d) {
-  return Value::fromDouble(CanonicalizeNaN(d));
+  return DoubleValue(d);
 }
 
 static inline Value NaNValue() {
@@ -1174,6 +1221,12 @@ template <typename T>
 static inline Value NumberValue(const T t) {
   Value v;
   v.setNumber(t);
+  return v;
+}
+
+static inline Value NumberValueAssumeCanonicalNaN(double d) {
+  Value v;
+  v.setNumberAssumeCanonicalNaN(d);
   return v;
 }
 
@@ -1350,6 +1403,9 @@ class MutableWrappedPtrOperations<JS::Value, Wrapper>
   void setUndefined() { set(JS::UndefinedValue()); }
   void setInt32(int32_t i) { set(JS::Int32Value(i)); }
   void setDouble(double d) { set(JS::DoubleValue(d)); }
+  void setDoubleAssumeCanonicalNaN(double d) {
+    set(JS::DoubleValueAssumeCanonicalNaN(d));
+  }
   void setNaN() { set(JS::NaNValue()); }
   void setInfinity() { set(JS::InfinityValue()); }
   void setBoolean(bool b) { set(JS::BooleanValue(b)); }
@@ -1357,6 +1413,9 @@ class MutableWrappedPtrOperations<JS::Value, Wrapper>
   template <typename T>
   void setNumber(T t) {
     set(JS::NumberValue(t));
+  }
+  void setNumberAssumeCanonicalNaN(double d) {
+    set(JS::NumberValueAssumeCanonicalNaN(d));
   }
   void setString(JSString* str) { set(JS::StringValue(str)); }
   void setSymbol(JS::Symbol* sym) { set(JS::SymbolValue(sym)); }

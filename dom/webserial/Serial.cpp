@@ -43,6 +43,96 @@ static Serial* FindWindowSerialForWorkerPrivate(WorkerPrivate* aWorkerPrivate) {
   return inner->Navigator()->GetExistingSerial();
 }
 
+using TestingIpcPromise =
+    MozPromise<nsresult, mozilla::ipc::ResponseRejectReason, true>;
+
+// Runs aSendFn(child) on the main thread, where |child| is the
+// SerialManagerChild owned by aMainThreadSerial.
+template <typename SendFn>
+static RefPtr<TestingIpcPromise> InvokeTestingSendOnMainThread(
+    Serial* aMainThreadSerial, const SendFn&& aSendFn) {
+  AssertIsOnMainThread();
+  if (!aMainThreadSerial) {
+    return TestingIpcPromise::CreateAndReject(
+        mozilla::ipc::ResponseRejectReason::ChannelClosed, __func__);
+  }
+  SerialManagerChild* child = aMainThreadSerial->GetOrCreateManagerChild();
+  if (!child) {
+    return TestingIpcPromise::CreateAndReject(
+        mozilla::ipc::ResponseRejectReason::ChannelClosed, __func__);
+  }
+  return aSendFn(child);
+}
+
+// Common implementation for the four test-only methods. SerialManagerChild
+// is a main-thread-only IPC actor, so when called from a worker, the Send*
+// call has to be bounced to the main thread (via the window's Serial),
+// and the resulting JS Promise resolved back on the worker.
+//
+// aSendFn is a callable taking SerialManagerChild* and returning
+// RefPtr<TestingIpcPromise> (i.e. the result of one of the Send* methods).
+template <typename SendFn>
+static already_AddRefed<Promise> RunTestingIpc(
+    Serial* aSerial, ErrorResult& aRv, const nsLiteralCString& aIpcErrorMessage,
+    SendFn&& aSendFn) {
+  if (!StaticPrefs::dom_webserial_testing_enabled()) {
+    aRv.ThrowNotSupportedError("Testing is not enabled");
+    return nullptr;
+  }
+
+  nsIGlobalObject* global = aSerial->GetRelevantGlobal();
+  if (!global) {
+    aRv.Throw(NS_ERROR_FAILURE);
+    return nullptr;
+  }
+
+  RefPtr<Promise> promise = Promise::Create(global, aRv);
+  if (aRv.Failed()) {
+    return nullptr;
+  }
+
+  if (NS_IsMainThread()) {
+    InvokeTestingSendOnMainThread(aSerial, std::forward<SendFn>(aSendFn))
+        ->Then(
+            GetMainThreadSerialEventTarget(), __func__,
+            [promise](nsresult) { promise->MaybeResolveWithUndefined(); },
+            [promise, aIpcErrorMessage](mozilla::ipc::ResponseRejectReason) {
+              promise->MaybeRejectWithAbortError(aIpcErrorMessage);
+            });
+    return promise.forget();
+  }
+
+  WorkerPrivate* workerPrivate = GetCurrentThreadWorkerPrivate();
+  if (!workerPrivate) {
+    promise->MaybeRejectWithNotSupportedError("Worker context not available");
+    return promise.forget();
+  }
+
+  RefPtr<StrongWorkerRef> strongRef =
+      StrongWorkerRef::Create(workerPrivate, "Serial::RunTestingIpc");
+  if (!strongRef) {
+    promise->MaybeRejectWithAbortError("Worker is shutting down");
+    return promise.forget();
+  }
+  auto tsRef = MakeRefPtr<ThreadSafeWorkerRef>(strongRef);
+
+  InvokeAsync(GetMainThreadSerialEventTarget(), __func__,
+              [tsRef, sendFn = std::forward<SendFn>(aSendFn)]() {
+                Serial* windowSerial =
+                    FindWindowSerialForWorkerPrivate(tsRef->Private());
+                return InvokeTestingSendOnMainThread(windowSerial,
+                                                     std::move(sendFn));
+              })
+      ->Then(
+          GetCurrentSerialEventTarget(), __func__,
+          [promise](nsresult) { promise->MaybeResolveWithUndefined(); },
+          [promise, aIpcErrorMessage](mozilla::ipc::ResponseRejectReason) {
+            promise->MaybeRejectWithAbortError(aIpcErrorMessage);
+          });
+
+  return promise.forget();
+}
+
 NS_IMPL_CYCLE_COLLECTION_WEAK_PTR_INHERITED(Serial, DOMEventTargetHelper,
                                             mPorts)
 
@@ -687,135 +777,41 @@ void Serial::ForgetPort(const nsAString& aPortId) {
   }
 }
 
-SerialManagerChild* Serial::GetManagerChildForTesting(ErrorResult& aRv) {
-  if (!StaticPrefs::dom_webserial_testing_enabled()) {
-    aRv.ThrowNotSupportedError("Testing is not enabled");
-    return nullptr;
-  }
-  SerialManagerChild* child = GetOrCreateManagerChild();
-  if (!child) {
-    aRv.ThrowNotSupportedError("IPC manager child not available");
-    return nullptr;
-  }
-  return child;
-}
-
 already_AddRefed<Promise> Serial::SimulateDeviceConnection(
     const nsAString& aDeviceId, const nsAString& aDevicePath,
     uint16_t aVendorId, uint16_t aProductId, ErrorResult& aRv) {
-  SerialManagerChild* child = GetManagerChildForTesting(aRv);
-  if (!child) {
-    return nullptr;
-  }
-
-  nsIGlobalObject* global = GetRelevantGlobal();
-  if (!global) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-
-  RefPtr<Promise> promise = Promise::Create(global, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  child
-      ->SendSimulateDeviceConnection(nsString(aDeviceId), nsString(aDevicePath),
-                                     aVendorId, aProductId)
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [promise](nsresult) { promise->MaybeResolveWithUndefined(); },
-          [promise](mozilla::ipc::ResponseRejectReason) {
-            promise->MaybeRejectWithAbortError(
-                "SimulateDeviceConnection IPC error");
-          });
-
-  return promise.forget();
+  return RunTestingIpc(
+      this, aRv, nsLiteralCString("SimulateDeviceConnection IPC error"),
+      [deviceId = nsString(aDeviceId), devicePath = nsString(aDevicePath),
+       aVendorId, aProductId](SerialManagerChild* aChild) {
+        return aChild->SendSimulateDeviceConnection(deviceId, devicePath,
+                                                    aVendorId, aProductId);
+      });
 }
 
 already_AddRefed<Promise> Serial::SimulateDeviceDisconnection(
     const nsAString& aDeviceId, ErrorResult& aRv) {
-  SerialManagerChild* child = GetManagerChildForTesting(aRv);
-  if (!child) {
-    return nullptr;
-  }
-
-  nsIGlobalObject* global = GetRelevantGlobal();
-  if (!global) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-
-  RefPtr<Promise> promise = Promise::Create(global, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  child->SendSimulateDeviceDisconnection(nsString(aDeviceId))
-      ->Then(
-          GetCurrentSerialEventTarget(), __func__,
-          [promise](nsresult) { promise->MaybeResolveWithUndefined(); },
-          [promise](mozilla::ipc::ResponseRejectReason) {
-            promise->MaybeRejectWithAbortError(
-                "SimulateDeviceDisconnection IPC error");
-          });
-
-  return promise.forget();
+  return RunTestingIpc(
+      this, aRv, nsLiteralCString("SimulateDeviceDisconnection IPC error"),
+      [deviceId = nsString(aDeviceId)](SerialManagerChild* aChild) {
+        return aChild->SendSimulateDeviceDisconnection(deviceId);
+      });
 }
 
 already_AddRefed<Promise> Serial::RemoveAllMockDevices(ErrorResult& aRv) {
-  SerialManagerChild* child = GetManagerChildForTesting(aRv);
-  if (!child) {
-    return nullptr;
-  }
-
-  nsIGlobalObject* global = GetRelevantGlobal();
-  if (!global) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-
-  RefPtr<Promise> promise = Promise::Create(global, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  child->SendRemoveAllMockDevices()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [promise](nsresult) { promise->MaybeResolveWithUndefined(); },
-      [promise](mozilla::ipc::ResponseRejectReason) {
-        promise->MaybeRejectWithAbortError("RemoveAllMockDevices IPC error");
-      });
-
-  return promise.forget();
+  return RunTestingIpc(this, aRv,
+                       nsLiteralCString("RemoveAllMockDevices IPC error"),
+                       [](SerialManagerChild* aChild) {
+                         return aChild->SendRemoveAllMockDevices();
+                       });
 }
 
 already_AddRefed<Promise> Serial::ResetToDefaultMockDevices(ErrorResult& aRv) {
-  SerialManagerChild* child = GetManagerChildForTesting(aRv);
-  if (!child) {
-    return nullptr;
-  }
-
-  nsIGlobalObject* global = GetRelevantGlobal();
-  if (!global) {
-    aRv.Throw(NS_ERROR_FAILURE);
-    return nullptr;
-  }
-
-  RefPtr<Promise> promise = Promise::Create(global, aRv);
-  if (aRv.Failed()) {
-    return nullptr;
-  }
-
-  child->SendResetToDefaultMockDevices()->Then(
-      GetCurrentSerialEventTarget(), __func__,
-      [promise](nsresult) { promise->MaybeResolveWithUndefined(); },
-      [promise](mozilla::ipc::ResponseRejectReason) {
-        promise->MaybeRejectWithAbortError(
-            "ResetToDefaultMockDevices IPC error");
-      });
-
-  return promise.forget();
+  return RunTestingIpc(this, aRv,
+                       nsLiteralCString("ResetToDefaultMockDevices IPC error"),
+                       [](SerialManagerChild* aChild) {
+                         return aChild->SendResetToDefaultMockDevices();
+                       });
 }
 
 bool Serial::GetAutoselectPorts(ErrorResult& aRv) const {

@@ -120,9 +120,9 @@ already_AddRefed<DOMSVGLength> DOMSVGLength::GetTearOff(SVGAnimatedLength* aVal,
   return domLength.forget();
 }
 
-DOMSVGLength* DOMSVGLength::Copy() {
+already_AddRefed<DOMSVGLength> DOMSVGLength::Copy() {
   NS_ASSERTION(HasOwner(), "unexpected caller");
-  DOMSVGLength* copy = new DOMSVGLength();
+  RefPtr copy = MakeRefPtr<DOMSVGLength>();
   uint16_t unit;
   float value;
   if (nsCOMPtr<SVGElement> svg = do_QueryInterface(mOwner)) {
@@ -140,7 +140,7 @@ DOMSVGLength* DOMSVGLength::Copy() {
     value = length.GetValueInCurrentUnits();
   }
   copy->NewValueSpecifiedUnits(unit, value, IgnoreErrors());
-  return copy;
+  return copy.forget();
 }
 
 uint16_t DOMSVGLength::UnitType() {

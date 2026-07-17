@@ -70,6 +70,66 @@ export var CrashReports = {
     // Sort reports descending by date
     return Object.values(reports).sort((a, b) => b.date - a.date);
   },
+
+  /**
+   * Deletes `InstallTime<BuildID>` marker files from the crash reports
+   * directory whose last-modified time is older than `maxAgeMs`. Tolerates
+   * a missing crash reports directory (e.g. on a fresh profile).
+   *
+   * @param {number} maxAgeMs Maximum age in milliseconds; files older than
+   *                          this (relative to `Date.now()`) are removed.
+   */
+  async pruneInstallTimeFiles(maxAgeMs) {
+    const threshold = Date.now() - maxAgeMs;
+    let children;
+    try {
+      children = await IOUtils.getChildren(this.reportsDir.path);
+    } catch (e) {
+      if (!DOMException.isInstance(e) || e.name !== "NotFoundError") {
+        throw e;
+      }
+      return;
+    }
+
+    for (const childPath of children) {
+      if (!PathUtils.filename(childPath).startsWith("InstallTime")) {
+        continue;
+      }
+      const stat = await IOUtils.stat(childPath);
+      if (stat.lastModified < threshold) {
+        await IOUtils.remove(childPath);
+      }
+    }
+  },
+
+  /**
+   * Deletes all files belonging to a single pending crash report:
+   * the minidump (`.dmp`), the annotations file (`.extra`), the optional
+   * ignore marker (`.dmp.ignore`), and the optional memory report
+   * (`.memory.json.gz`). Missing files are tolerated.
+   *
+   * @param {string} id The crash report's UUID (without any file extension).
+   */
+  async deletePendingReport(id) {
+    const base = PathUtils.join(this.pendingDir.path, id);
+    for (const suffix of [".dmp", ".extra", ".dmp.ignore", ".memory.json.gz"]) {
+      await IOUtils.remove(base + suffix, { ignoreAbsent: true });
+    }
+  },
+
+  /**
+   * Deletes the `bp-<id>.txt` record of a successfully submitted crash
+   * report. Missing file is tolerated.
+   *
+   * @param {string} id The submitted report identifier as it appears in
+   *                    `bp-<id>.txt` (i.e. the full `bp-<UUID>` string
+   *                    without the `.txt` extension).
+   */
+  async deleteSubmittedReport(id) {
+    await IOUtils.remove(PathUtils.join(this.submittedDir.path, id + ".txt"), {
+      ignoreAbsent: true,
+    });
+  },
 };
 
 function CrashReports_pendingDir() {

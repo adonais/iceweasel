@@ -41,13 +41,13 @@ const execute = (context, details, kind, method) => {
   const { tabManager } = context.extension;
 
   let options = {
-    jsPaths: [],
+    jsExecuteScriptSources: [],
     cssPaths: [],
     removeCSS: method == "removeCSS",
     extensionId: context.extension.id,
   };
 
-  const { tabId, frameIds, allFrames } = details.target;
+  const { tabId, frameIds, allFrames, documentIds } = details.target;
   const tab = tabManager.get(tabId);
 
   options.hasActiveTabPermission = tab.hasActiveTabPermission;
@@ -62,8 +62,12 @@ const execute = (context, details, kind, method) => {
     );
   }
 
-  if (details[codeKey]) {
-    options[`${kind}Code`] = details[codeKey];
+  if (details.func) {
+    // at this point func is already converted into a string including its arguments
+    // see child/ext-scripting.js
+    options.jsExecuteScriptSources.push({ code: details.func });
+  } else if (details.css) {
+    options.cssCode = details.css;
   }
 
   if (details.files) {
@@ -74,18 +78,33 @@ const execute = (context, details, kind, method) => {
           "Files to be injected must be within the extension"
         );
       }
-      options[`${kind}Paths`].push(url);
+      if (kind === "js") {
+        options.jsExecuteScriptSources.push({ file: url });
+      } else if (kind === "css") {
+        options.cssPaths.push(url);
+      }
     }
   }
-
+  if (documentIds && frameIds) {
+    throw new ExtensionUtils.ExtensionError(
+      "Cannot specify both 'documentIds' and 'frameIds'."
+    );
+  }
   if (allFrames && frameIds) {
     throw new ExtensionError("Cannot specify both 'allFrames' and 'frameIds'.");
+  }
+  if (allFrames && documentIds) {
+    throw new ExtensionError(
+      "Cannot specify both 'allFrames' and 'documentIds'."
+    );
   }
 
   if (allFrames) {
     options.allFrames = allFrames;
   } else if (frameIds) {
     options.frameIds = frameIds;
+  } else if (documentIds) {
+    options.documentIds = documentIds;
   } else {
     options.frameIds = [0];
   }

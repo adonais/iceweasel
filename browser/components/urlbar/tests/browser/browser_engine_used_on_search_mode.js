@@ -7,6 +7,11 @@
 
 "use strict";
 
+ChromeUtils.defineESModuleGetters(this, {
+  ConfigSearchEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
+});
+
 const CONFIG = [
   {
     recordType: "engine",
@@ -33,7 +38,7 @@ add_task(async function test_engine_used_on_search_mode_entry() {
   let engine = SearchService.getEngineByName("Example");
 
   Assert.equal(
-    engine.isConfigEngine,
+    engine instanceof ConfigSearchEngine,
     true,
     `${engine.name} should be a config engine.`
   );

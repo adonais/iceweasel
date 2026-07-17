@@ -23,7 +23,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarProviderTopSites:
     "moz-src:///browser/components/urlbar/UrlbarProviderTopSites.sys.mjs",
-  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
   UrlbarTokenizer:
@@ -140,7 +141,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       (queryContext.restrictSource &&
         queryContext.restrictSource == UrlbarUtils.RESULT_SOURCE.SEARCH) ||
       queryContext.tokens.some(
-        t => t.type == lazy.UrlbarTokenizer.TYPE.RESTRICT_SEARCH
+        t => t.type == lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_SEARCH
       ) ||
       (queryContext.searchMode &&
         queryContext.sources.includes(UrlbarUtils.RESULT_SOURCE.SEARCH))
@@ -260,7 +261,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
       lazy.UrlbarTokenizer.isRestrictionToken(queryContext.tokens[0]) &&
       (queryContext.tokens.length > 1 ||
         queryContext.tokens[0].type ==
-          lazy.UrlbarTokenizer.TYPE.RESTRICT_SEARCH)
+          lazy.UrlbarShared.TOKEN_TYPE.RESTRICT_SEARCH)
     ) {
       leadingRestrictionToken = queryContext.tokens[0].value;
     }
@@ -269,7 +270,7 @@ export class UrlbarProviderSearchSuggestions extends UrlbarProvider {
     // when the search shortcut is used and it's not user typed. Don't strip
     // other restriction chars, so that it's possible to search for things
     // including one of those (e.g. "c#").
-    if (leadingRestrictionToken === lazy.UrlbarTokenizer.RESTRICT.SEARCH) {
+    if (leadingRestrictionToken === lazy.UrlbarShared.RESTRICT_TOKENS.SEARCH) {
       query = UrlbarUtils.substringAfter(query, leadingRestrictionToken).trim();
     }
 

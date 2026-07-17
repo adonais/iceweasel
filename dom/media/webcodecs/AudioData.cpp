@@ -33,7 +33,7 @@ namespace mozilla::dom {
   MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Error, fmt, ##__VA_ARGS__)
 
 [[nodiscard]] Result<Ok, nsCString> LogAndReturnErr(const char* aLiteral) {
-  MOZ_LOG(gWebCodecsLog, LogLevel::Debug, ("%s", aLiteral));
+  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug, "{}", aLiteral);
   return Err(nsCString(aLiteral));
 }
 
@@ -42,7 +42,7 @@ template <typename... Args>
     fmt::format_string<Args...> aFmt, Args&&... aArgs) {
   nsAutoCStringN<100> str;
   str.AppendVfmt(aFmt, fmt::make_format_args(aArgs...));
-  MOZ_LOG(gWebCodecsLog, LogLevel::Debug, ("%s", str.get()));
+  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug, "{}", str.get());
   return Err(str);
 }
 

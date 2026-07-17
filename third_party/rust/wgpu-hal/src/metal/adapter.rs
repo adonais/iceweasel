@@ -62,12 +62,12 @@ const MAX_ACCELERATION_STRUCTURES_PER_SHADER_STAGE: u32 = 1;
 // Use the end of the range for vertex buffers.
 pub const VERTEX_BUFFER_SLOT_START: u32 = 31 - 8;
 
-unsafe impl Send for super::Adapter {}
-unsafe impl Sync for super::Adapter {}
-
 impl super::Adapter {
     pub(super) fn new(shared: Arc<super::AdapterShared>) -> Self {
         Self { shared }
+    }
+    pub fn raw_device(&self) -> &ProtocolObject<dyn MTLDevice> {
+        &self.shared.device
     }
 }
 
@@ -1313,6 +1313,10 @@ impl super::CapabilitiesQuery {
         downlevel.flags.set(
             wgt::DownlevelFlags::MSL2_1,
             self.msl_version >= MTLLanguageVersion::Version2_1,
+        );
+        downlevel.flags.set(
+            wgt::DownlevelFlags::TEXTURE_COMPRESSION,
+            self.format_bc || (self.format_eac_etc && self.format_astc),
         );
 
         let limits = crate::auxil::adjust_raw_limits(wgt::Limits {

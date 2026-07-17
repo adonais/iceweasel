@@ -13,7 +13,7 @@ const lazy = XPCOMUtils.declareLazy({
 
 /**
  * @import {LegacySearchOneOffButton} from "moz-src:///browser/components/search/SearchOneOffs.sys.mjs"
- * @import {UrlbarView} from "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs"
+ * @import {UrlbarView} from "chrome://browser/content/urlbar/UrlbarView.mjs"
  */
 
 /**

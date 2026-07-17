@@ -45,7 +45,8 @@ class SerialPlatformService {
     MOZ_DIAGNOSTIC_ASSERT(IOThread()->IsOnCurrentThread());
   }
 
-  nsresult EnumeratePorts(SerialPortList& aPorts);
+  nsresult EnumeratePorts(SerialPortList& aPorts,
+                          bool* aLikelyAccessDenied = nullptr);
   nsresult Open(const nsString& aPortId, const IPCSerialOptions& aOptions);
   nsresult Close(const nsString& aPortId);
   nsresult Write(const nsString& aPortId, Span<const uint8_t> aData);
@@ -70,7 +71,10 @@ class SerialPlatformService {
   void NotifyPortDisconnected(const nsAString& aPortId);
 
  private:
-  virtual nsresult EnumeratePortsImpl(SerialPortList& aPorts) = 0;
+  static already_AddRefed<SerialPlatformService> GetInstanceImpl();
+
+  virtual nsresult EnumeratePortsImpl(SerialPortList& aPorts,
+                                      bool* aLikelyAccessDenied) = 0;
   virtual nsresult OpenImpl(const nsString& aPortId,
                             const IPCSerialOptions& aOptions) = 0;
   virtual nsresult CloseImpl(const nsString& aPortId) = 0;

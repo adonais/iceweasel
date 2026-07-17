@@ -32,11 +32,11 @@ class HTMLAllCollection final : public nsISupports, public nsWrapperCache {
  public:
   explicit HTMLAllCollection(mozilla::dom::Document* aDocument);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(HTMLAllCollection)
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
   nsINode* GetParentObject() const;
 
   uint32_t Length();

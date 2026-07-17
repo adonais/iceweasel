@@ -21,16 +21,17 @@ includes: [testTypedArray.js]
 features: [TypedArray]
 ---*/
 
-testWithTypedArrayConstructors(function(TA) {
+testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   var called = 0;
 
+  var ta = new TA(makeCtorArg(0));
   assert.throws(TypeError, function() {
-    new TA().reduce(function() {
+    ta.reduce(function() {
       called++;
     });
   });
 
   assert.sameValue(called, 0);
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

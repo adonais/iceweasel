@@ -51,7 +51,7 @@ add_task(async function basic() {
       "Top sites should be present initially"
     );
     Assert.ok(
-      !win.gURLBar.panel.hasAttribute("noresults"),
+      !win.gURLBar.hasAttribute("noresults"),
       "Panel has results, therefore should not have noresults attribute"
     );
 
@@ -65,9 +65,8 @@ add_task(async function basic() {
       0,
       "Zero results since no bookmarks exist"
     );
-    Assert.equal(
-      win.gURLBar.panel.getAttribute("noresults"),
-      "true",
+    Assert.ok(
+      win.gURLBar.hasAttribute("noresults"),
       "Panel has no results, therefore should have noresults attribute"
     );
 
@@ -79,7 +78,7 @@ add_task(async function basic() {
       "Top sites should be present again"
     );
     Assert.ok(
-      !win.gURLBar.panel.hasAttribute("noresults"),
+      !win.gURLBar.hasAttribute("noresults"),
       "noresults attribute should be absent again"
     );
 
@@ -104,7 +103,7 @@ add_task(async function autoOpen() {
       "Top sites should be present initially"
     );
     Assert.ok(
-      !win.gURLBar.panel.hasAttribute("noresults"),
+      !win.gURLBar.hasAttribute("noresults"),
       "Panel has results, therefore should not have noresults attribute"
     );
 
@@ -117,9 +116,8 @@ add_task(async function autoOpen() {
       0,
       "Zero results since no bookmarks exist"
     );
-    Assert.equal(
-      win.gURLBar.panel.getAttribute("noresults"),
-      "true",
+    Assert.ok(
+      win.gURLBar.hasAttribute("noresults"),
       "Panel has no results, therefore should have noresults attribute"
     );
 
@@ -139,9 +137,8 @@ add_task(async function autoOpen() {
       0,
       "Still zero results since no bookmarks exist"
     );
-    Assert.equal(
-      win.gURLBar.panel.getAttribute("noresults"),
-      "true",
+    Assert.ok(
+      win.gURLBar.hasAttribute("noresults"),
       "Panel still has no results, therefore should have noresults attribute"
     );
 
@@ -153,7 +150,7 @@ add_task(async function autoOpen() {
       "Top sites should be present again"
     );
     Assert.ok(
-      !win.gURLBar.panel.hasAttribute("noresults"),
+      !win.gURLBar.hasAttribute("noresults"),
       "noresults attribute should be absent again"
     );
 
@@ -177,7 +174,7 @@ add_task(async function backspaceRemainOpen() {
       "At least the heuristic result should be shown"
     );
     Assert.ok(
-      !win.gURLBar.panel.hasAttribute("noresults"),
+      !win.gURLBar.hasAttribute("noresults"),
       "Panel has results, therefore should not have noresults attribute"
     );
 
@@ -194,7 +191,7 @@ add_task(async function backspaceRemainOpen() {
       "No results should be present"
     );
     Assert.ok(
-      win.gURLBar.panel.hasAttribute("noresults"),
+      win.gURLBar.hasAttribute("noresults"),
       "Panel has no results, therefore should have noresults attribute"
     );
 
@@ -212,9 +209,8 @@ add_task(async function backspaceRemainOpen() {
       0,
       "Zero results since no bookmarks exist"
     );
-    Assert.equal(
-      win.gURLBar.panel.getAttribute("noresults"),
-      "true",
+    Assert.ok(
+      win.gURLBar.hasAttribute("noresults"),
       "Panel has no results, therefore should have noresults attribute"
     );
 
@@ -226,7 +222,7 @@ add_task(async function backspaceRemainOpen() {
       "Top sites should be present again"
     );
     Assert.ok(
-      !win.gURLBar.panel.hasAttribute("noresults"),
+      !win.gURLBar.hasAttribute("noresults"),
       "noresults attribute should be absent again"
     );
 
@@ -255,9 +251,8 @@ add_task(async function spaceToEnterSearchMode() {
     await searchPromise;
 
     Assert.equal(UrlbarTestUtils.getResultCount(win), 0, "Zero results");
-    Assert.equal(
-      win.gURLBar.panel.getAttribute("noresults"),
-      "true",
+    Assert.ok(
+      win.gURLBar.hasAttribute("noresults"),
       "Panel has no results, therefore should have noresults attribute"
     );
     await UrlbarTestUtils.assertSearchMode(win, {

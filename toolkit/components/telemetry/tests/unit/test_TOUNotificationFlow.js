@@ -381,7 +381,7 @@ add_task(
       return;
     }
 
-    sinon.stub(Policy, "isEligibleOnLinux").returns(false);
+    sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(false);
     let modalStub = sinon.stub(Policy, "showModal").returns(true);
 
     fakeResetAcceptedPolicy();
@@ -410,7 +410,7 @@ add_task(
       return;
     }
 
-    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
+    sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(true);
     let modalStub = sinon.stub(Policy, "showModal").returns(true);
 
     fakeResetAcceptedPolicy();
@@ -841,9 +841,10 @@ add_task(
 );
 
 add_task(async function test_canUpload_unblocked_by_tou_accepted() {
-  // On Linux, TOU is disabled by default; stub isEligibleOnLinux to enable TOU
+  // On non-Win/Mac platforms, TOU is disabled by default; stub
+  // shouldEnableTOUAtRuntime to enable TOU.
   if (AppConstants.platform === "linux") {
-    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
+    sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(true);
   }
 
   const cleanup = () => {
@@ -1071,7 +1072,7 @@ add_task(
       TelemetryUtils.Preferences.BypassNotification,
       true
     );
-    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
+    sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(true);
     TelemetryReportingPolicy.reset();
 
     Assert.ok(
@@ -1098,7 +1099,7 @@ add_task(
     );
     Services.prefs.setStringPref(TOU_ACCEPTED_DATE_PREF, String(Date.now()));
     Services.prefs.setIntPref(TOU_ACCEPTED_VERSION_PREF, 4);
-    sinon.stub(Policy, "isEligibleOnLinux").returns(true);
+    sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(true);
     TelemetryReportingPolicy.reset();
 
     Assert.ok(
@@ -1123,7 +1124,7 @@ add_task(
       TelemetryUtils.Preferences.BypassNotification,
       true
     );
-    sinon.stub(Policy, "isEligibleOnLinux").returns(false);
+    sinon.stub(Policy, "shouldEnableTOUAtRuntime").returns(false);
     TelemetryReportingPolicy.reset();
 
     Assert.ok(
@@ -1178,14 +1179,14 @@ add_task(
   }
 );
 
-add_task(async function test_isEligibleOnLinux() {
+add_task(async function test_shouldEnableTOUAtRuntime() {
   const defaultBranch = Services.prefs.getDefaultBranch(null);
 
   if (AppConstants.platform !== "linux") {
     defaultBranch.setCharPref("distribution.id", "mozilla-official");
     Assert.ok(
-      !Policy.isEligibleOnLinux(),
-      "isEligibleOnLinux() is always false on non-Linux platforms"
+      !Policy.shouldEnableTOUAtRuntime(),
+      "shouldEnableTOUAtRuntime() is always false on non-Linux platforms"
     );
     defaultBranch.deleteBranch("distribution.id");
     return;
@@ -1206,9 +1207,9 @@ add_task(async function test_isEligibleOnLinux() {
   ]) {
     defaultBranch.setCharPref("distribution.id", id);
     Assert.equal(
-      Policy.isEligibleOnLinux(),
+      Policy.shouldEnableTOUAtRuntime(),
       expected,
-      `isEligibleOnLinux() is ${expected} for distribution.id "${id}"`
+      `shouldEnableTOUAtRuntime() is ${expected} for distribution.id "${id}"`
     );
   }
 

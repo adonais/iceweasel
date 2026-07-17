@@ -34,7 +34,7 @@ SVGElement::LengthInfo SVGLineElement::sLengthInfo[4] = {
 // Implementation
 
 SVGLineElement::SVGLineElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGLineElementBase(std::move(aNodeInfo)) {}
 
 void SVGLineElement::MaybeAdjustForZeroLength(float aX1, float aY1, float& aX2,
@@ -94,8 +94,9 @@ void SVGLineElement::GetMarkPoints(nsTArray<SVGMark>* aMarks) {
 
   float angle = std::atan2(y2 - y1, x2 - x1);
 
-  aMarks->AppendElement(SVGMark(x1, y1, angle, SVGMark::Type::Start));
-  aMarks->AppendElement(SVGMark(x2, y2, angle, SVGMark::Type::End));
+  aMarks->AppendElement(
+      SVGMark(gfx::Point(x1, y1), angle, SVGMark::Type::Start));
+  aMarks->AppendElement(SVGMark(gfx::Point(x2, y2), angle, SVGMark::Type::End));
 }
 
 void SVGLineElement::GetAsSimplePath(SimplePath* aSimplePath) {

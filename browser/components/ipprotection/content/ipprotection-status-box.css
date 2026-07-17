@@ -80,6 +80,7 @@
   display: flex;
   justify-content: space-between;
   gap: var(--space-medium);
+  min-block-size: var(--size-image-small);
 }
 
 #title {
@@ -118,12 +119,12 @@
 ::slotted([slot="content"].location-message) {
   border: none;
   margin-top: var(--space-small);
-  font-size: var(--font-size-small, 11px);
   color: var(--text-color-deemphasized);
   text-align: center;
 }
 
 ::slotted([slot="image"]) {
+  display: block;
   height: var(--size-image-small);
   width: var(--size-image-small);
 }

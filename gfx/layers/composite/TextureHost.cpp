@@ -187,9 +187,9 @@ already_AddRefed<TextureHost> CreateDummyBufferTextureHost(
   const SurfaceDescriptorBuffer& bufferDesc =
       surfDesc.get_SurfaceDescriptorBuffer();
   const MemoryOrShmem& data = bufferDesc.data();
-  RefPtr<TextureHost> host =
-      new MemoryTextureHost(reinterpret_cast<uint8_t*>(data.get_uintptr_t()),
-                            bufferDesc.desc(), aFlags);
+  RefPtr host = MakeRefPtr<MemoryTextureHost>(
+      reinterpret_cast<uint8_t*>(data.get_uintptr_t()), bufferDesc.desc(),
+      aFlags);
   return host.forget();
 }
 
@@ -240,7 +240,8 @@ already_AddRefed<TextureHost> TextureHost::Create(
 
   if (result && WrapWithWebRenderTextureHost(aDeallocator, aBackend, aFlags)) {
     MOZ_ASSERT(aExternalImageId.isSome());
-    result = new WebRenderTextureHost(aFlags, result, aExternalImageId.ref());
+    result = MakeRefPtr<WebRenderTextureHost>(aFlags, result,
+                                              aExternalImageId.ref());
   }
 
   if (result) {
@@ -304,7 +305,8 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
             return nullptr;
           }
 
-          result = new ShmemTextureHost(shmem, desc, aDeallocator, aFlags);
+          result =
+              MakeRefPtr<ShmemTextureHost>(shmem, desc, aDeallocator, aFlags);
           break;
         }
         case MemoryOrShmem::Tuintptr_t: {
@@ -315,7 +317,7 @@ already_AddRefed<TextureHost> CreateBackendIndependentTextureHost(
             return nullptr;
           }
 
-          result = new MemoryTextureHost(
+          result = MakeRefPtr<MemoryTextureHost>(
               reinterpret_cast<uint8_t*>(data.get_uintptr_t()),
               bufferDesc.desc(), aFlags);
           break;
@@ -515,15 +517,15 @@ void BufferTextureHost::CreateRenderTexture(
   RefPtr<wr::RenderTextureHost> texture;
 
   if (UseExternalTextures()) {
-    texture =
-        new wr::RenderExternalTextureHost(GetBuffer(), GetBufferDescriptor());
+    texture = MakeRefPtr<wr::RenderExternalTextureHost>(GetBuffer(),
+                                                        GetBufferDescriptor());
   } else {
-    texture =
-        new wr::RenderBufferTextureHost(GetBuffer(), GetBufferDescriptor());
+    texture = MakeRefPtr<wr::RenderBufferTextureHost>(GetBuffer(),
+                                                      GetBufferDescriptor());
+  }
 
-    if (auto* shmemTextureHost = AsShmemTextureHost()) {
-      shmemTextureHost->OnRenderTextureCreated(texture);
-    }
+  if (auto* shmemTextureHost = AsShmemTextureHost()) {
+    shmemTextureHost->OnRenderTextureCreated(texture);
   }
 
   wr::RenderThread::Get()->RegisterExternalImage(aExternalImageId,
@@ -567,7 +569,12 @@ void BufferTextureHost::PushResourceUpdates(
       return;
     }
 
-    wr::ImageDescriptor descriptor(GetSize(), stride.value(), GetFormat());
+    auto format = wr::SurfaceFormatToImageFormat(GetFormat());
+    if (NS_WARN_IF(!format)) {
+      return;
+    }
+    wr::ImageDescriptor descriptor(GetSize(), stride.value(), *format,
+                                   wr::ToOpacityType(GetFormat()));
     (aResources.*method)(aImageKeys[0], descriptor, aExtID, imageType, 0,
                          /* aNormalizedUvs */ false);
   } else {
@@ -579,11 +586,16 @@ void BufferTextureHost::PushResourceUpdates(
     const layers::YCbCrDescriptor& desc = mDescriptor.get_YCbCrDescriptor();
     gfx::IntSize ySize = desc.display().Size();
     gfx::IntSize cbcrSize = ImageDataSerializer::GetCroppedCbCrSize(desc);
-    wr::ImageDescriptor yDescriptor(
-        ySize, desc.yStride(), SurfaceFormatForColorDepth(desc.colorDepth()));
-    wr::ImageDescriptor cbcrDescriptor(
-        cbcrSize, desc.cbCrStride(),
-        SurfaceFormatForColorDepth(desc.colorDepth()));
+    gfx::SurfaceFormat surfaceFormat =
+        SurfaceFormatForColorDepth(desc.colorDepth());
+    auto format = wr::SurfaceFormatToImageFormat(surfaceFormat);
+    if (NS_WARN_IF(!format)) {
+      return;
+    }
+    auto opacity = wr::ToOpacityType(surfaceFormat);
+    wr::ImageDescriptor yDescriptor(ySize, desc.yStride(), *format, opacity);
+    wr::ImageDescriptor cbcrDescriptor(cbcrSize, desc.cbCrStride(), *format,
+                                       opacity);
     (aResources.*method)(aImageKeys[0], yDescriptor, aExtID, imageType, 0,
                          /* aNormalizedUvs */ false);
     (aResources.*method)(aImageKeys[1], cbcrDescriptor, aExtID, imageType, 1,
@@ -833,7 +845,7 @@ ShmemTextureHost::ShmemTextureHost(const ipc::Shmem& aShmem,
   if (aShmem.IsReadable()) {
     UniquePtr<mozilla::ipc::Shmem> shmem = MakeUnique<ipc::Shmem>(aShmem);
     mShmemDeallocRunnable =
-        new ShmemDeallocRunnable(mDeallocator, std::move(shmem));
+        MakeRefPtr<ShmemDeallocRunnable>(mDeallocator, std::move(shmem));
   } else {
     // This can happen if we failed to map the shmem on this process, perhaps
     // because it was big and we didn't have enough contiguous address space

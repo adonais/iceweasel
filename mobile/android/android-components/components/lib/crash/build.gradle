@@ -42,15 +42,6 @@ android {
         }
     }
 
-    sourceSets {
-        main {
-            java {
-                // Generated files are output in the objdir
-                srcDir "${gradle.mozconfig.topobjdir}/mobile/android/android-components/components/lib/crash/src/main/java"
-            }
-        }
-    }
-
     ksp {
         arg("room.schemaLocation", "$projectDir/schemas".toString())
     }
@@ -61,6 +52,16 @@ android {
     }
 
     namespace = 'mozilla.components.lib.crash'
+}
+
+androidComponents {
+    onVariants(selector().all()) { variant ->
+        // CrashReport.kt and friends are generated into the objdir by the build system (not a
+        // Gradle task), so register the directory as a static source.
+        variant.sources.java.addStaticSourceDirectory(
+            "${gradle.mozconfig.topobjdir}/mobile/android/android-components/components/lib/crash/src/main/java".toString()
+        )
+    }
 }
 
 dependencies {

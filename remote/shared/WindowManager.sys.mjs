@@ -227,17 +227,15 @@ class WindowManager {
       let posMatches = true;
 
       if (
-        width !== null &&
-        height !== null &&
-        (win.outerWidth !== width || win.outerHeight !== height)
+        (width !== null && win.outerWidth !== width) ||
+        (height !== null && win.outerHeight !== height)
       ) {
         sizeMatches = false;
       }
 
       if (
-        x !== null &&
-        y !== null &&
-        (win.screenX !== x || win.screenY !== y)
+        (x !== null && win.screenX !== x) ||
+        (y !== null && win.screenY !== y)
       ) {
         if (lazy.AppInfo.isWayland && !lazy.AppInfo.isHeadless) {
           lazy.logger.info(
@@ -275,7 +273,7 @@ class WindowManager {
       };
       const promises = [];
 
-      const resize = width !== null && height !== null;
+      const resize = width !== null || height !== null;
       if (resize) {
         promises.push(new lazy.EventPromise(win, "resize", options));
       }
@@ -283,8 +281,7 @@ class WindowManager {
       // Wayland doesn't support setting the window position in headful mode.
       const move =
         !(lazy.AppInfo.isWayland && !lazy.AppInfo.isHeadless) &&
-        x !== null &&
-        y !== null;
+        (x !== null || y !== null);
 
       if (move) {
         promises.push(
@@ -293,11 +290,16 @@ class WindowManager {
       }
 
       if (move && resize) {
-        win.moveResize(x, y, width, height);
+        win.moveResize(
+          x ?? win.screenX,
+          y ?? win.screenY,
+          width ?? win.outerWidth,
+          height ?? win.outerHeight
+        );
       } else if (move) {
-        win.moveTo(x, y);
+        win.moveTo(x ?? win.screenX, y ?? win.screenY);
       } else if (resize) {
-        win.resizeTo(width, height);
+        win.resizeTo(width ?? win.outerWidth, height ?? win.outerHeight);
       }
 
       try {

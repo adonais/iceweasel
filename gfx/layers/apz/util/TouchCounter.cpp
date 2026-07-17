@@ -10,13 +10,14 @@
 namespace mozilla {
 namespace layers {
 
-TouchCounter::TouchCounter() : mActiveTouchCount(0) {}
+TouchCounter::TouchCounter() : mActiveTouchCount(0), mFirstMoveSeen(false) {}
 
 void TouchCounter::Update(const MultiTouchInput& aInput) {
   switch (aInput.mType) {
     case MultiTouchInput::MULTITOUCH_START:
       // touch-start event contains all active touches of the current session
       mActiveTouchCount = aInput.mTouches.Length();
+      mFirstMoveSeen = false;
       break;
     case MultiTouchInput::MULTITOUCH_END:
       if (mActiveTouchCount >= aInput.mTouches.Length()) {
@@ -26,11 +27,16 @@ void TouchCounter::Update(const MultiTouchInput& aInput) {
         NS_WARNING("Got an unexpected touchend");
         mActiveTouchCount = 0;
       }
+      if (mActiveTouchCount == 0) {
+        mFirstMoveSeen = false;
+      }
       break;
     case MultiTouchInput::MULTITOUCH_CANCEL:
       mActiveTouchCount = 0;
+      mFirstMoveSeen = false;
       break;
     case MultiTouchInput::MULTITOUCH_MOVE:
+      mFirstMoveSeen = true;
       break;
   }
 }

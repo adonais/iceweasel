@@ -28,7 +28,8 @@ class nsClipboard final : public nsBaseClipboard {
                                     ClipboardType aWhichClipboard) override;
   virtual mozilla::Result<nsCOMPtr<nsISupports>, nsresult>
   GetNativeClipboardData(const nsACString& aFlavor,
-                         ClipboardType aWhichClipboard) override;
+                         ClipboardType aWhichClipboard,
+                         uint64_t aThreshold = 0) override;
   nsresult EmptyNativeClipboardData(ClipboardType aWhichClipboard) override;
   mozilla::Result<bool, nsresult> HasNativeClipboardDataMatchingFlavors(
       const nsTArray<nsCString>& aFlavorList,

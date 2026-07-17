@@ -25,7 +25,6 @@ add_task(async function test_panel_no_error_when_opened_offline() {
       pass: makePass(),
     },
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   // Go offline before opening panel
   Services.io.offline = true;

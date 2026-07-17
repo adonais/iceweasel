@@ -22,6 +22,7 @@
 #include "nsIConsoleService.h"
 #include "nsIPrincipal.h"
 #include "nsIScriptError.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
 #include "nsServiceManagerUtils.h"

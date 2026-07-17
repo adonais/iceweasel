@@ -5,14 +5,16 @@
 package mozilla.components.feature.summarize
 
 import kotlinx.coroutines.ExperimentalCoroutinesApi
+import kotlinx.coroutines.TimeoutCancellationException
+import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.StandardTestDispatcher
 import kotlinx.coroutines.test.runTest
 import mozilla.components.concept.llm.CloudLlmProvider
-import mozilla.components.concept.llm.ErrorCode
 import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.Prompt
 import mozilla.components.feature.summarize.SummarizationState.Error
@@ -176,12 +178,100 @@ class SummarizationStoreTest {
         )
 
         assertEquals(expected, states)
-        assertEquals(Prompt(content, defaultInstructions()), llm.lastPrompt)
+        assertEquals(Prompt(content, defaultInstructions("en")), llm.lastPrompt)
+    }
+
+    @Test
+    fun `page language is forwarded to model for default case`() = runTest {
+        val llm = FakeLlm.successful
+        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(llm))
+        val content = "this is expected content."
+        val pageTitle = "Article Headline"
+        val language = "de"
+        val store = SummarizationStore(
+            initialState = Inert(true),
+            reducer = ::summarizationReducer,
+            middleware = listOf(
+                SummarizationMiddleware(
+                    llmProvider = provider,
+                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                    contentProvider = { Result.success(Content(PageMetadata(listOf("Article"), 0, language, pageTitle = pageTitle), content)) },
+                    errorReporter = noopReporter,
+                    scope = backgroundScope,
+                    dispatcher = StandardTestDispatcher(testScheduler),
+                ),
+            ),
+        )
+
+        val states = mutableListOf<SummarizationState>()
+        backgroundScope.launch {
+            store.stateFlow.toList(states)
+        }
+        testScheduler.advanceTimeBy(1.seconds)
+
+        store.dispatch(ViewAppeared)
+        testScheduler.advanceTimeBy(15.seconds)
+
+        val expected = listOf<SummarizationState>(
+            Inert(true),
+            Loading(provider.info),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+        )
+
+        assertEquals(expected, states)
+        assertEquals(Prompt(content, defaultInstructions(language)), llm.lastPrompt)
+    }
+
+    @Test
+    fun `page language is forwarded to model for recipe case`() = runTest {
+        val llm = FakeLlm.successful
+        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(llm))
+        val content = "this is expected content."
+        val pageTitle = "Article Headline"
+        val language = "de"
+        val store = SummarizationStore(
+            initialState = Inert(true),
+            reducer = ::summarizationReducer,
+            middleware = listOf(
+                SummarizationMiddleware(
+                    llmProvider = provider,
+                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                    contentProvider = { Result.success(Content(PageMetadata(listOf("Recipe"), 0, language, pageTitle = pageTitle), content)) },
+                    errorReporter = noopReporter,
+                    scope = backgroundScope,
+                    dispatcher = StandardTestDispatcher(testScheduler),
+                ),
+            ),
+        )
+
+        val states = mutableListOf<SummarizationState>()
+        backgroundScope.launch {
+            store.stateFlow.toList(states)
+        }
+        testScheduler.advanceTimeBy(1.seconds)
+
+        store.dispatch(ViewAppeared)
+        testScheduler.advanceTimeBy(15.seconds)
+
+        val expected = listOf<SummarizationState>(
+            Inert(true),
+            Loading(provider.info),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\n")),
+            Summarizing(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+            Summarized(provider.info, parser.parse("# $pageTitle\nThis is the article\nThis is some content...\nThis is some *bold* content.\n")),
+        )
+
+        assertEquals(expected, states)
+        assertEquals(Prompt(content, recipeInstructions(language)), llm.lastPrompt)
     }
 
     @Test
     fun `if the page extractor fails, the failure is forwarded as a summarization failure`() = runTest {
-        val failureThrowable = PageContentExtractor.Exception(NullPointerException())
+        val failureThrowable = NullPointerException("extractor failed")
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
         val store = SummarizationStore(
             initialState = Inert(true),
@@ -215,6 +305,44 @@ class SummarizationStoreTest {
 
         assertEquals(expected, states)
         assertEquals(listOf(failureThrowable), reportedErrors)
+    }
+
+    @Test
+    fun `if the llm stream hangs past the timeout, a summarization failure with a TimeoutCancellationException cause is reported`() = runTest {
+        val hangingLlm = object : Llm {
+            override suspend fun prompt(prompt: Prompt): Flow<String> = flow { awaitCancellation() }
+        }
+        val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(hangingLlm))
+        val pageTitle = "Article Headline"
+        val store = SummarizationStore(
+            initialState = Inert(true),
+            reducer = ::summarizationReducer,
+            middleware = listOf(
+                SummarizationMiddleware(
+                    llmProvider = provider,
+                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
+                    contentProvider = { Result.success(Content(PageMetadata(pageTitle = pageTitle), "body")) },
+                    errorReporter = errorReporter,
+                    scope = backgroundScope,
+                    dispatcher = StandardTestDispatcher(testScheduler),
+                ),
+            ),
+        )
+
+        val states = mutableListOf<SummarizationState>()
+        backgroundScope.launch {
+            store.stateFlow.toList(states)
+        }
+
+        store.dispatch(ViewAppeared)
+        testScheduler.advanceTimeBy(65.seconds)
+
+        val terminal = states.last() as Error
+        val failure = terminal.error as SummarizationError.SummarizationFailed
+        assertTrue(failure.exception.cause is TimeoutCancellationException)
+
+        assertEquals(1, reportedErrors.size)
+        assertTrue(reportedErrors.single().cause is TimeoutCancellationException)
     }
 
     @Test
@@ -322,12 +450,12 @@ class SummarizationStoreTest {
 
         assertTrue(usingReaderContent)
         assertEquals(expected, states)
-        assertEquals(Prompt(content, defaultInstructions()), llm.lastPrompt)
+        assertEquals(Prompt(content, defaultInstructions("en")), llm.lastPrompt)
     }
 
     @Test
     fun `dismissing an error screen transitions to the ErrorDismissed finished state`() = runTest {
-        val failureThrowable = PageContentExtractor.Exception(NullPointerException())
+        val failureThrowable = NullPointerException("extractor failed")
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Ready(FakeLlm.successful))
         val store = SummarizationStore(
             initialState = Inert(true),
@@ -370,52 +498,6 @@ class SummarizationStoreTest {
         )
 
         assertEquals(expected, states)
-    }
-
-    @Test
-    fun `dismissing a content too long error screen transitions to the ErrorDismissed finished state`() = runTest {
-        val contentTooLongException = Llm.Exception("Content too long", ErrorCode(1005))
-        val provider = FakeCloudProvider(
-            preparedState = CloudLlmProvider.State.Ready(
-            llm = object : Llm {
-                override suspend fun prompt(prompt: Prompt): Flow<String> = throw contentTooLongException
-            },
-        ),
-        )
-        val store = SummarizationStore(
-            initialState = Inert(true),
-            reducer = ::summarizationReducer,
-            middleware = listOf(
-                SummarizationMiddleware(
-                    llmProvider = provider,
-                    settings = SummarizationSettings.inMemory(hasConsentedToShake = true),
-                    contentProvider = { Result.success(Content()) },
-                    errorReporter = noopReporter,
-                    scope = backgroundScope,
-                ),
-            ),
-        )
-
-        val states = mutableListOf<SummarizationState>()
-        backgroundScope.launch {
-            store.stateFlow.toList(states)
-        }
-
-        store.dispatch(ViewAppeared)
-        testScheduler.advanceTimeBy(15.seconds)
-
-        assertEquals(
-            listOf(Inert(true), Loading(provider.info), Error(SummarizationError.ContentTooLong)),
-            states,
-        )
-
-        store.dispatch(ErrorAction.ErrorDismissed)
-        testScheduler.advanceTimeBy(1.seconds)
-
-        assertEquals(
-            listOf(Inert(true), Loading(provider.info), Error(SummarizationError.ContentTooLong), Finished.ErrorDismissed),
-            states,
-        )
     }
 
     @Test
@@ -512,15 +594,14 @@ class SummarizationStoreTest {
         )
 
         assertEquals(expected, states)
-        assertEquals(Prompt(content, defaultInstructions()), llm.lastPrompt)
+        assertEquals(Prompt(content, defaultInstructions("en")), llm.lastPrompt)
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Test
     fun `llm provider errors are reported`() = runTest {
-        val errorCode = ErrorCode(666)
         val message = "cloud not clouding"
-        val exception = Llm.Exception(message, errorCode)
+        val exception = Llm.Exception(message)
         val provider = FakeCloudProvider(preparedState = CloudLlmProvider.State.Unavailable(exception))
         val store = SummarizationStore(
             initialState = Inert(true),

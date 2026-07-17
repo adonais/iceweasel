@@ -58,7 +58,7 @@ MozExternalRefCountType IFoo::Release() {
 nsresult IFoo::QueryInterface(const nsIID& aIID, void** aResult) {
   total_queries_++;
 
-  nsISupports* rawPtr = 0;
+  nsISupports* rawPtr = nullptr;
   nsresult status = NS_OK;
 
   if (aIID.Equals(NS_GET_IID(IFoo)))
@@ -127,7 +127,7 @@ IBar::~IBar() { total_destructions_++; }
 nsresult IBar::QueryInterface(const nsID& aIID, void** aResult) {
   total_queries_++;
 
-  nsISupports* rawPtr = 0;
+  nsISupports* rawPtr = nullptr;
   nsresult status = NS_OK;
 
   if (aIID.Equals(NS_GET_IID(IBar)))
@@ -172,12 +172,12 @@ using namespace TestCOMPtr;
 TEST(COMPtr, Bloat_Raw_Unsafe)
 {
   // ER: I'm not sure what this is testing...
-  IBar* barP = 0;
+  IBar* barP = nullptr;
   nsresult rv = CreateIBar(reinterpret_cast<void**>(&barP));
   ASSERT_NS_SUCCEEDED(rv);
   ASSERT_TRUE(barP);
 
-  IFoo* fooP = 0;
+  IFoo* fooP = nullptr;
   rv = barP->QueryInterface(NS_GET_IID(IFoo), reinterpret_cast<void**>(&fooP));
   ASSERT_NS_SUCCEEDED(rv);
   ASSERT_TRUE(fooP);

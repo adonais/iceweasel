@@ -34,25 +34,6 @@ async function checkSplitViewPanelVisible(tab, isVisible) {
   );
 }
 
-async function waitForSplitterMoved(splitter) {
-  const valueBefore = splitter.getAttribute("aria-valuenow");
-  await BrowserTestUtils.waitForMutationCondition(
-    splitter,
-    { attributes: true, attributeFilter: ["aria-valuenow"] },
-    () => splitter.getAttribute("aria-valuenow") != valueBefore
-  );
-}
-
-async function dragSplitter(deltaX, splitter) {
-  const movedPromise = waitForSplitterMoved(splitter);
-  AccessibilityUtils.setEnv({ mustHaveAccessibleRule: false });
-  EventUtils.synthesizeMouseAtCenter(splitter, { type: "mousedown" });
-  EventUtils.synthesizeMouse(splitter, deltaX, 0, { type: "mousemove" });
-  EventUtils.synthesizeMouse(splitter, 0, 0, { type: "mouseup" });
-  AccessibilityUtils.resetEnv();
-  await movedPromise;
-}
-
 add_task(async function test_splitViewCreateAndAddTabs() {
   let tab1 = BrowserTestUtils.addTab(gBrowser, "about:blank");
   let tab2 = BrowserTestUtils.addTab(gBrowser, "about:blank");
@@ -429,102 +410,6 @@ add_task(async function test_split_view_preserves_multiple_pairings() {
 
   splitView1.close();
   splitView2.close();
-});
-
-add_task(async function test_resize_split_view_panels() {
-  const tab1 = await addTabAndLoadBrowser();
-  const tab2 = await addTabAndLoadBrowser();
-  const originalTab = gBrowser.selectedTab;
-  await BrowserTestUtils.switchTab(gBrowser, tab1);
-
-  info("Activate split view.");
-  const splitView = gBrowser.addTabSplitView([tab1, tab2]);
-  const { tabpanels } = gBrowser;
-  await BrowserTestUtils.waitForMutationCondition(
-    tabpanels,
-    { childList: true },
-    () => tabpanels.querySelector(".split-view-splitter")
-  );
-  await BrowserTestUtils.waitForMutationCondition(
-    tabpanels.splitViewSplitter,
-    { attributes: true },
-    () => BrowserTestUtils.isVisible(tabpanels.splitViewSplitter)
-  );
-
-  info("Resize split view panels.");
-  const leftPanel = document.getElementById(tab1.linkedPanel);
-  const rightPanel = document.getElementById(tab2.linkedPanel);
-  const originalLeftWidth = leftPanel.getBoundingClientRect().width;
-  const originalRightWidth = rightPanel.getBoundingClientRect().width;
-  await dragSplitter(-100, tabpanels.splitViewSplitter);
-  Assert.less(
-    leftPanel.getBoundingClientRect().width,
-    originalLeftWidth,
-    "Left panel is smaller."
-  );
-  Assert.greater(
-    rightPanel.getBoundingClientRect().width,
-    originalRightWidth,
-    "Right panel is larger."
-  );
-
-  info("Ensure that custom width persists after switching tabs.");
-  await BrowserTestUtils.switchTab(gBrowser, originalTab);
-  await BrowserTestUtils.switchTab(gBrowser, tab1);
-  Assert.less(
-    leftPanel.getBoundingClientRect().width,
-    originalLeftWidth,
-    "Left panel is smaller."
-  );
-  Assert.greater(
-    rightPanel.getBoundingClientRect().width,
-    originalRightWidth,
-    "Right panel is larger."
-  );
-
-  info("Reverse split view panels and resize.");
-  splitView.reverseTabs();
-  await dragSplitter(-100, tabpanels.splitViewSplitter);
-  await BrowserTestUtils.waitForMutationCondition(
-    leftPanel,
-    { attributeFilter: ["width"] },
-    () => !leftPanel.hasAttribute("width")
-  );
-
-  info("Separate split view panels to remove the custom width.");
-  splitView.unsplitTabs();
-  for (const panel of [leftPanel, rightPanel]) {
-    await BrowserTestUtils.waitForMutationCondition(
-      panel,
-      { attributeFilter: ["width"] },
-      () => !panel.hasAttribute("width")
-    );
-  }
-
-  BrowserTestUtils.removeTab(tab1);
-  BrowserTestUtils.removeTab(tab2);
-});
-
-add_task(async function test_resize_split_view_panels_exceeds_max_width() {
-  const tab1 = await addTabAndLoadBrowser();
-  const tab2 = await addTabAndLoadBrowser();
-  await BrowserTestUtils.switchTab(gBrowser, tab1);
-
-  info("Activate split view.");
-  const splitView = gBrowser.addTabSplitView([tab1, tab2]);
-  const splitter = gBrowser.tabpanels.splitViewSplitter;
-
-  const leftPanel = document.getElementById(tab1.linkedPanel);
-  await dragSplitter(9000, splitter);
-  Assert.lessOrEqual(
-    Number(leftPanel.getAttribute("width")),
-    Number(splitter.getAttribute("aria-valuemax")),
-    "Stored width should not exceed max width after resizing."
-  );
-
-  splitView.close();
-  BrowserTestUtils.removeTab(tab1);
-  BrowserTestUtils.removeTab(tab2);
 });
 
 add_task(async function test_click_findbar_to_select_panel() {

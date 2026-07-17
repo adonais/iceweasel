@@ -612,12 +612,13 @@ void nsCanvasFrame::Reflow(nsPresContext* aPresContext,
   NS_FRAME_TRACE_REFLOW_OUT("nsCanvasFrame::Reflow", aStatus);
 }
 
-nsIContent* nsCanvasFrame::GetContentForEvent(const WidgetEvent* aEvent) const {
-  if (nsIContent* content = nsIFrame::GetContentForEvent(aEvent)) {
+nsIContent* nsCanvasFrame::GetExplicitEventTargetContent(
+    const WidgetEvent* aEvent /* = nullptr */) const {
+  if (nsIContent* content = nsIFrame::GetExplicitEventTargetContent(aEvent)) {
     return content;
   }
   if (const nsIFrame* kid = mFrames.FirstChild()) {
-    return kid->GetContentForEvent(aEvent);
+    return kid->GetExplicitEventTargetContent(aEvent);
   }
   return nullptr;
 }

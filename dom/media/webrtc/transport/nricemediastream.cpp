@@ -158,6 +158,7 @@ static bool ToNrIceCandidate(const nr_ice_candidate& candc,
   out->tcp_type = tcp_type;
   out->codeword = candc.codeword;
   out->label = candc.label;
+  out->foundation = candc.foundation;
   out->trickled = candc.trickled;
   out->priority = candc.priority;
   return true;
@@ -168,7 +169,7 @@ static bool ToNrIceCandidate(const nr_ice_candidate& candc,
 // defn of nr_ice_candidate but we pass by reference.
 static UniquePtr<NrIceCandidate> MakeNrIceCandidate(
     const nr_ice_candidate& candc) {
-  UniquePtr<NrIceCandidate> out(new NrIceCandidate());
+  auto out = MakeUnique<NrIceCandidate>();
 
   if (!ToNrIceCandidate(candc, out.get())) {
     return nullptr;
@@ -462,6 +463,8 @@ nsresult NrIceMediaStream::GetCandidatePairs(
         !ToNrIceCandidate(*(p1->remote), &pair.remote)) {
       return NS_ERROR_FAILURE;
     }
+    pair.local.username_fragment = stream_->ufrag;
+    pair.remote.username_fragment = peer_stream->ufrag;
 
     out_pairs->push_back(pair);
   }
@@ -496,6 +499,13 @@ nsresult NrIceMediaStream::GetDefaultCandidate(
   }
 
   return NS_OK;
+}
+
+std::string NrIceMediaStream::GetUfrag() const {
+  if (!stream_ || !stream_->ufrag) {
+    return "";
+  }
+  return stream_->ufrag;
 }
 
 std::vector<std::string> NrIceMediaStream::GetAttributes() const {
@@ -538,6 +548,7 @@ static nsresult GetCandidatesFromStream(
         // yet). For the purposes of this code, this isn't a candidate we're
         // interested in, since it is not fully baked yet.
         if (ToNrIceCandidate(*cand, &new_cand)) {
+          new_cand.username_fragment = stream->ufrag;
           candidates->push_back(std::move(new_cand));
         }
         cand = TAILQ_NEXT(cand, entry_comp);

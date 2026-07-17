@@ -23,11 +23,13 @@ SOURCES += [
 
 LOCAL_INCLUDES += [
     "../../../",
+    "../../../../../../third_party/abseil-cpp",
     "../../../../../../third_party/content_analysis_sdk",
     "../../../../../../third_party/content_analysis_sdk/agent/include/",
 ]
 
 USE_LIBS += [
+    "abseil",
     "mozglue",
     "protobuf",
     "zlib",

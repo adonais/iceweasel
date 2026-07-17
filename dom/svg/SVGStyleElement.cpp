@@ -5,6 +5,7 @@
 #include "mozilla/dom/SVGStyleElement.h"
 
 #include "mozilla/RefPtr.h"
+#include "mozilla/StyleSheet.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/FetchPriority.h"
@@ -45,7 +46,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_END
 // Implementation
 
 SVGStyleElement::SVGStyleElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGStyleElementBase(std::move(aNodeInfo)) {
   AddMutationObserver(this);
   SetEnabledCallbacks(kCharacterDataChanged | kContentAppended |

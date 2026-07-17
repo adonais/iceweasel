@@ -151,8 +151,8 @@ void DOMSVGTransform::SetTranslate(float tx, float ty, ErrorResult& aRv) {
     return;
   }
 
-  if (Transform().Type() == SVG_TRANSFORM_TRANSLATE && Matrixgfx()._31 == tx &&
-      Matrixgfx()._32 == ty) {
+  if (Transform().Type() == SVG_TRANSFORM_TRANSLATE &&
+      Transform().GetMatrix().GetTranslation() == gfxPoint(tx, ty)) {
     return;
   }
 
@@ -166,8 +166,8 @@ void DOMSVGTransform::SetScale(float sx, float sy, ErrorResult& aRv) {
     return;
   }
 
-  if (Transform().Type() == SVG_TRANSFORM_SCALE && Matrixgfx()._11 == sx &&
-      Matrixgfx()._22 == sy) {
+  if (Transform().Type() == SVG_TRANSFORM_SCALE &&
+      Transform().GetMatrix().ExactlyEquals(gfxMatrix::Scaling(sx, sy))) {
     return;
   }
   AutoChangeTransformListNotifier notifier(this);
@@ -287,7 +287,7 @@ void DOMSVGTransform::SetMatrix(const gfxMatrix& aMatrix) {
   MOZ_ASSERT(!mIsAnimValItem, "Attempting to modify read-only transform");
 
   if (Transform().Type() == SVG_TRANSFORM_MATRIX &&
-      SVGTransform::MatricesEqual(Matrixgfx(), aMatrix)) {
+      aMatrix.ExactlyEquals(Transform().GetMatrix())) {
     return;
   }
 

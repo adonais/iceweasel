@@ -14,6 +14,48 @@ newtab-personalize-icon-label =
 newtab-personalize-dialog-label =
     .aria-label = Անհատականացնել
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Նոր Ներդիրներ
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } տող
+           *[other] { $num } տողեր
+        }
+home-restore-defaults-srd =
+    .label = Վերականգնել սկզբնադիր
+    .accesskey = Վ
+home-mode-choice-custom-srd =
+    .label = Յարմարեցուած URL-ներ...
+home-mode-choice-blank-srd =
+    .label = Դատարկ էջ
+home-prefs-shortcuts-header-srd =
+    .label = Դիւրանցումներ
+home-prefs-shortcuts-select =
+    .aria-label = Դիւրանցումներ
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Հովանաւորուած դիւրանցումներ
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Հովանաւորուած կայքեր
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Այցելած էջեր
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Էջանիշեր
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Ամենավերջին ներբեռնումը
+home-prefs-recent-activity-header-srd =
+    .label = Վերջին գործողութիւնը
+home-prefs-recent-activity-select =
+    .aria-label = Վերջին գործողութիւնը
+
 ## Search box component.
 
 # "Search" is a verb/action

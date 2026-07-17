@@ -189,8 +189,9 @@ class DictionaryCacheEntry final : public nsICacheEntryOpenCallback,
   // Populated on MainThread after hash validation succeeds
   Vector<uint8_t> mDictionaryData;
 
-  // Atomic flag indicating dictionary data is complete and validated
-  Atomic<bool, Relaxed> mDictionaryDataComplete{false};
+  // Publishes mDictionaryData to reader threads. ReleaseAcquire so that
+  // the non-atomic mDictionaryData write is visible before readers see true.
+  Atomic<bool, ReleaseAcquire> mDictionaryDataComplete{false};
 
   // Temporary buffer for accumulating dictionary data during cache reads
   // Only accessed by cache I/O thread during stream callbacks (serialized)

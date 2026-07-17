@@ -70,6 +70,7 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "windows":
     ]
 elif CONFIG["MOZ_WIDGET_TOOLKIT"] == "cocoa":
     EXPORTS.mozilla += [
+        "MacAutoreleasePool.h",
         "MacRunFromDmgUtils.h",
     ]
     UNIFIED_SOURCES += [
@@ -275,5 +276,9 @@ if CONFIG["MOZ_WIDGET_TOOLKIT"] == "gtk":
 
 DEFINES["TOPOBJDIR"] = TOPOBJDIR
 FINAL_TARGET_PP_FILES += ["platform.ini"]
+# `platform.ini` does `#include @TOPOBJDIR@/source-repo.h` and
+# `#include @TOPOBJDIR@/buildid.h`. The preprocessor opens those at
+# build time so they must exist before the preprocess step runs.
+PP_FILES_EXTRA_DEPS += ["!/buildid.h", "!/source-repo.h"]
 
 TEST_DIRS += ["test/gtest"]

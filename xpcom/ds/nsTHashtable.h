@@ -573,6 +573,13 @@ class MOZ_NEEDS_NO_VTABLE_TYPE nsTHashtable {
   void Clear() { mTable.Clear(); }
 
   /**
+   * Remove all entries but keep the entry storage allocated, retaining the
+   * current capacity. Prefer this over Clear() when the table is about to be
+   * re-populated and repeated free/realloc of the storage would be wasteful.
+   */
+  void ClearAndRetainStorage() { mTable.ClearAndRetainStorage(); }
+
+  /**
    * Measure the size of the table's entry storage. Does *not* measure anything
    * hanging off table entries; hence the "Shallow" prefix. To measure that,
    * either use SizeOfExcludingThis() or iterate manually over the entries,

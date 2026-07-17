@@ -291,6 +291,7 @@ class nsBaseChannel
   bool mOpenRedirectChannel{false};
   uint32_t mRedirectFlags{0};
   RefPtr<CMimeType> mFullMimeType;
+  RefPtr<mozilla::dom::ParentProcessChannelHandle> mParentProcessChannelHandle;
 
  protected:
   nsCString mContentType;

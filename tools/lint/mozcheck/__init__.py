@@ -63,7 +63,7 @@ def _find_mozcheck_binary(log, root, topobjdir=None):
         )
     except (subprocess.CalledProcessError, FileNotFoundError) as e:
         if log:
-            log.error("Failed to build mozcheck: %s", e)
+            log.error(f"Failed to build mozcheck: {e}")
         return None
 
     if os.path.isfile(target_binary):
@@ -123,9 +123,7 @@ def lint(paths, config, fix=None, **lintargs):
 
     if proc.returncode != 0 and proc.stderr:
         log.warning(
-            "mozcheck exited with code %d: %s",
-            proc.returncode,
-            proc.stderr.strip(),
+            f"mozcheck exited with code {proc.returncode}: {proc.stderr.strip()}"
         )
 
     results = []

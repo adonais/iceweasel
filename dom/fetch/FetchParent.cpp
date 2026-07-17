@@ -15,6 +15,7 @@
 #include "mozilla/dom/ProcessIsolation.h"
 #include "mozilla/dom/ServiceWorkerDescriptor.h"
 #include "mozilla/ipc/BackgroundParent.h"
+#include "nsIContentPolicy.h"
 #include "nsThreadUtils.h"
 
 using namespace mozilla::ipc;
@@ -121,6 +122,14 @@ IPCResult FetchParent::RecvFetchOp(FetchOpArgs&& aArgs) {
       return IPC_FAIL(this,
                       "RecvFetchOp principal not allowed for remote type");
     }
+  }
+
+  if (contentHandle &&
+      aArgs.request().contentPolicyType() ==
+          nsIContentPolicy::TYPE_INTERNAL_FORCE_ALLOWED_DTD &&
+      !StaticPrefs::dom_fetch_allow_force_allowed_dtd()) {
+    return IPC_FAIL(this,
+                    "RecvFetchOp FORCE_ALLOWED_DTD not allowed from content");
   }
 
   mRequest = MakeSafeRefPtr<InternalRequest>(std::move(aArgs.request()));

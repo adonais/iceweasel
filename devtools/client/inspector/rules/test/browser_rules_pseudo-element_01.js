@@ -12,6 +12,7 @@ add_task(async function () {
   await pushPref(PSEUDO_PREF, true);
   await pushPref("dom.text_fragments.enabled", true);
   await pushPref("layout.css.modern-range-pseudos.enabled", true);
+  await pushPref("dom.select.customizable_select.enabled", true);
   await pushPref("full-screen-api.transition-duration.enter", "0 0");
   await pushPref("full-screen-api.transition-duration.leave", "0 0");
 
@@ -30,6 +31,7 @@ add_task(async function () {
   await testSlider(inspector, view);
   await testUrlFragmentTextDirective(inspector, view);
   await testDetailsContent(inspector, view);
+  await testCustomizableSelect(inspector, view);
   // keep this one last as it makes the browser go fullscreen and seem to impact other tests
   await testBackdrop(inspector, view);
 });
@@ -485,6 +487,33 @@ async function testDetailsContent(inspector, view) {
   assertHeaders(view);
 }
 
+async function testCustomizableSelect(inspector, view) {
+  info("Test ::picker-icon and ::picker for select element");
+  await assertPseudoElementRulesNumbersForSelector(
+    "#customizable-select",
+    inspector,
+    view,
+    {
+      elementRules: 3,
+      pickerIconRules: 1,
+      pickerRules: 1,
+    }
+  );
+  assertHeaders(view);
+
+  info("Test ::checkmark for option element");
+  await assertPseudoElementRulesNumbersForSelector(
+    "#customizable-select-option",
+    inspector,
+    view,
+    {
+      elementRules: 3,
+      checkmarkRules: 1,
+    }
+  );
+  assertHeaders(view);
+}
+
 function convertTextPropsToString(textProps) {
   return textProps
     .map(
@@ -510,6 +539,9 @@ const PSEUDO_DICT = {
   sliderTrackRules: "::slider-track",
   targetTextRules: "::target-text",
   detailsContentRules: "::details-content",
+  pickerIconRules: "::picker-icon",
+  pickerRules: "::picker",
+  checkmarkRules: "::checkmark",
 };
 
 async function assertPseudoElementRulesNumbersForSelector(

@@ -64,8 +64,8 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/dom/UserActivation.h"
 #include "mozilla/dom/nsCSPContext.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/DocumentChannel.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
 #include "mozilla/widget/IMEData.h"
 #include "nsChannelClassifier.h"
 #include "nsFocusManager.h"
@@ -324,7 +324,7 @@ nsObjectLoadingContent::OnStartRequest(nsIRequest* aRequest) {
     return NS_ERROR_FAILURE;
   }
 
-  if (UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(status)) {
+  if (ChannelClassifierUtils::IsClassifierBlockingErrorCode(status)) {
     mContentBlockingEnabled = true;
     return NS_ERROR_FAILURE;
   }
@@ -351,7 +351,7 @@ nsObjectLoadingContent::OnStopRequest(nsIRequest* aRequest,
   // fingerprinting, cryptomining, etc.).
   // We make a note of this object node by including it in a dedicated
   // array of blocked tracking nodes under its parent document.
-  if (UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(aStatusCode)) {
+  if (ChannelClassifierUtils::IsClassifierBlockingErrorCode(aStatusCode)) {
     nsCOMPtr<nsIContent> thisNode =
         do_QueryInterface(static_cast<nsIObjectLoadingContent*>(this));
     if (thisNode && thisNode->IsInComposedDoc()) {
@@ -421,7 +421,7 @@ class ObjectInterfaceRequestorShim final : public nsIInterfaceRequestor,
                                            public nsIChannelEventSink,
                                            public nsIStreamListener {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS_AMBIGUOUS(ObjectInterfaceRequestorShim,
                                            nsIInterfaceRequestor)
   NS_DECL_NSIINTERFACEREQUESTOR

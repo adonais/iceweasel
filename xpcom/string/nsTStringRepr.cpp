@@ -26,7 +26,7 @@ typename nsTStringRepr<T>::char_type nsTStringRepr<T>::Last() const {
 template <typename T>
 bool nsTStringRepr<T>::Equals(const self_type& aStr) const {
   return this->mLength == aStr.mLength &&
-         char_traits::compare(this->mData, aStr.mData, this->mLength) == 0;
+         char_traits::equals(this->mData, aStr.mData, this->mLength);
 }
 
 template <typename T>
@@ -58,7 +58,7 @@ bool nsTStringRepr<T>::Equals(const char_type* aData) const {
   // XXX avoid length calculation?
   size_type length = char_traits::length(aData);
   return this->mLength == length &&
-         char_traits::compare(this->mData, aData, this->mLength) == 0;
+         char_traits::equals(this->mData, aData, this->mLength);
 }
 
 template <typename T>

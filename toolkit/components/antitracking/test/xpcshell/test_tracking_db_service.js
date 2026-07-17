@@ -111,45 +111,49 @@ const LOG = {
   ],
 };
 
-do_get_profile();
+add_setup(function () {
+  Services.prefs.setBoolPref("browser.contentblocking.database.enabled", true);
+  Services.prefs.setBoolPref(
+    "privacy.socialtracking.block_cookies.enabled",
+    true
+  );
+  Services.prefs.setBoolPref(
+    "privacy.trackingprotection.fingerprinting.enabled",
+    true
+  );
+  Services.prefs.setBoolPref("privacy.fingerprintingProtection", true);
+  Services.prefs.setBoolPref(
+    "browser.contentblocking.cfr-milestone.enabled",
+    true
+  );
+  Services.prefs.setIntPref(
+    "browser.contentblocking.cfr-milestone.update-interval",
+    0
+  );
+  Services.prefs.setStringPref(
+    "browser.contentblocking.cfr-milestone.milestones",
+    "[1000, 5000, 10000, 25000, 100000, 500000]"
+  );
 
-Services.prefs.setBoolPref("browser.contentblocking.database.enabled", true);
-Services.prefs.setBoolPref(
-  "privacy.socialtracking.block_cookies.enabled",
-  true
-);
-Services.prefs.setBoolPref(
-  "privacy.trackingprotection.fingerprinting.enabled",
-  true
-);
-Services.prefs.setBoolPref("privacy.fingerprintingProtection", true);
-Services.prefs.setBoolPref(
-  "browser.contentblocking.cfr-milestone.enabled",
-  true
-);
-Services.prefs.setIntPref(
-  "browser.contentblocking.cfr-milestone.update-interval",
-  0
-);
-Services.prefs.setStringPref(
-  "browser.contentblocking.cfr-milestone.milestones",
-  "[1000, 5000, 10000, 25000, 100000, 500000]"
-);
-
-registerCleanupFunction(() => {
-  Services.prefs.clearUserPref("browser.contentblocking.database.enabled");
-  Services.prefs.clearUserPref("privacy.socialtracking.block_cookies.enabled");
-  Services.prefs.clearUserPref(
-    "privacy.trackingprotection.fingerprinting.enabled"
-  );
-  Services.prefs.clearUserPref("privacy.fingerprintingProtection");
-  Services.prefs.clearUserPref("browser.contentblocking.cfr-milestone.enabled");
-  Services.prefs.clearUserPref(
-    "browser.contentblocking.cfr-milestone.update-interval"
-  );
-  Services.prefs.clearUserPref(
-    "browser.contentblocking.cfr-milestone.milestones"
-  );
+  registerCleanupFunction(() => {
+    Services.prefs.clearUserPref("browser.contentblocking.database.enabled");
+    Services.prefs.clearUserPref(
+      "privacy.socialtracking.block_cookies.enabled"
+    );
+    Services.prefs.clearUserPref(
+      "privacy.trackingprotection.fingerprinting.enabled"
+    );
+    Services.prefs.clearUserPref("privacy.fingerprintingProtection");
+    Services.prefs.clearUserPref(
+      "browser.contentblocking.cfr-milestone.enabled"
+    );
+    Services.prefs.clearUserPref(
+      "browser.contentblocking.cfr-milestone.update-interval"
+    );
+    Services.prefs.clearUserPref(
+      "browser.contentblocking.cfr-milestone.milestones"
+    );
+  });
 });
 
 // This tests that data is added successfully, different types of events should get

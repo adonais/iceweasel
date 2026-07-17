@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
@@ -40,7 +41,7 @@ fun SettingsSearchResultItem(
     query: String,
     onClick: () -> Unit,
 ) {
-    val backgroundColor = FirefoxTheme.colors.layer3
+    val backgroundColor = MaterialTheme.colorScheme.secondaryContainer
     val defaultSpanStyle = remember(backgroundColor) {
         SpanStyle(
             fontWeight = FontWeight.Bold,
@@ -72,19 +73,19 @@ fun SettingsSearchResultItem(
         item.preferenceFileInformation,
         topBreadcrumb,
         secondaryBreadcrumb,
-        ) {
-            val text = if (shouldShowSummary(item)) {
-                item.summary
-            } else {
-                buildString {
-                    append(topBreadcrumb)
-                    if (secondaryBreadcrumb.isNotBlank()) {
-                        append(" > ")
-                        append(secondaryBreadcrumb)
-                    }
+    ) {
+        val text = if (shouldShowSummary(item)) {
+            item.summary
+        } else {
+            buildString {
+                append(topBreadcrumb)
+                if (secondaryBreadcrumb.isNotBlank()) {
+                    append(" > ")
+                    append(secondaryBreadcrumb)
                 }
             }
-            AnnotatedString(text)
+        }
+        AnnotatedString(text)
     }
 
     Column(
@@ -192,10 +193,12 @@ private fun SettingsSearchResultItemFullPreview(
     @PreviewParameter(SettingsSearchResultItemParameterProvider::class) item: SettingsSearchItem,
 ) {
     FirefoxTheme {
-        SettingsSearchResultItem(
-            item = item,
-            "a",
-            onClick = {},
-        )
+        Surface {
+            SettingsSearchResultItem(
+                item = item,
+                "a",
+                onClick = {},
+            )
+        }
     }
 }

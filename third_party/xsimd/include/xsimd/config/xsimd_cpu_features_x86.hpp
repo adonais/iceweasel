@@ -17,7 +17,7 @@
 #include <cstdint>
 #include <cstring>
 #include <type_traits>
-#if __cplusplus >= 201703L
+#if XSIMD_CPP_VERSION >= 201703L
 #include <string_view>
 #endif
 
@@ -138,55 +138,55 @@ namespace xsimd
                 enum class type {};
             };
 
-            using eax_or_empty = typename std::conditional<std::is_void<eax>::value, typename m_empty_reg<0>::type, eax>::type;
-            using ebx_or_empty = typename std::conditional<std::is_void<ebx>::value, typename m_empty_reg<1>::type, ebx>::type;
-            using ecx_or_empty = typename std::conditional<std::is_void<ecx>::value, typename m_empty_reg<2>::type, ecx>::type;
-            using edx_or_empty = typename std::conditional<std::is_void<edx>::value, typename m_empty_reg<3>::type, edx>::type;
+            using eax_or_empty = std::conditional_t<std::is_void<eax>::value, typename m_empty_reg<0>::type, eax>;
+            using ebx_or_empty = std::conditional_t<std::is_void<ebx>::value, typename m_empty_reg<1>::type, ebx>;
+            using ecx_or_empty = std::conditional_t<std::is_void<ecx>::value, typename m_empty_reg<2>::type, ecx>;
+            using edx_or_empty = std::conditional_t<std::is_void<edx>::value, typename m_empty_reg<3>::type, edx>;
 
         public:
-            template <eax_or_empty... bits, typename T = eax, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
+            template <eax_or_empty... bits, typename T = eax, std::enable_if_t<!std::is_void<T>::value, int> = 0>
             constexpr bool all_bits_set() const noexcept
             {
                 return x86_reg32_bitset<eax>::template all_bits_set<bits...>();
             }
 
-            template <eax_or_empty start, eax_or_empty end, typename T = eax, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
+            template <eax_or_empty start, eax_or_empty end, typename T = eax, std::enable_if_t<!std::is_void<T>::value, int> = 0>
             constexpr x86_reg32_t get_range() const noexcept
             {
                 return x86_reg32_bitset<eax>::template get_range<start, end>();
             }
 
-            template <ebx_or_empty... bits, typename T = ebx, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
+            template <ebx_or_empty... bits, typename T = ebx, std::enable_if_t<!std::is_void<T>::value, int> = 0>
             constexpr bool all_bits_set() const noexcept
             {
                 return x86_reg32_bitset<ebx>::template all_bits_set<bits...>();
             }
 
-            template <ebx_or_empty start, ebx_or_empty end, typename T = ebx, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
+            template <ebx_or_empty start, ebx_or_empty end, typename T = ebx, std::enable_if_t<!std::is_void<T>::value, int> = 0>
             constexpr x86_reg32_t get_range() const noexcept
             {
                 return x86_reg32_bitset<ebx>::template get_range<start, end>();
             }
 
-            template <ecx_or_empty... bits, typename T = ecx, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
+            template <ecx_or_empty... bits, typename T = ecx, std::enable_if_t<!std::is_void<T>::value, int> = 0>
             constexpr bool all_bits_set() const noexcept
             {
                 return x86_reg32_bitset<ecx>::template all_bits_set<bits...>();
             }
 
-            template <ecx_or_empty start, ecx_or_empty end, typename T = ecx, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
+            template <ecx_or_empty start, ecx_or_empty end, typename T = ecx, std::enable_if_t<!std::is_void<T>::value, int> = 0>
             constexpr x86_reg32_t get_range() const noexcept
             {
                 return x86_reg32_bitset<ecx>::template get_range<start, end>();
             }
 
-            template <edx_or_empty... bits, typename T = edx, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
+            template <edx_or_empty... bits, typename T = edx, std::enable_if_t<!std::is_void<T>::value, int> = 0>
             constexpr bool all_bits_set() const noexcept
             {
                 return x86_reg32_bitset<edx>::template all_bits_set<bits...>();
             }
 
-            template <edx_or_empty start, edx_or_empty end, typename T = edx, typename std::enable_if<!std::is_void<T>::value, int>::type = 0>
+            template <edx_or_empty start, edx_or_empty end, typename T = edx, std::enable_if_t<!std::is_void<T>::value, int> = 0>
             constexpr x86_reg32_t get_range() const noexcept
             {
                 return x86_reg32_bitset<edx>::template get_range<start, end>();
@@ -249,7 +249,7 @@ namespace xsimd
                 return m_manufacturer_id;
             }
 
-#if __cplusplus >= 201703L
+#if XSIMD_CPP_VERSION >= 201703L
             constexpr std::string_view manufacturer_id() const noexcept
             {
                 return { m_manufacturer_id.data(), m_manufacturer_id.size() };
@@ -397,10 +397,16 @@ namespace xsimd
             sse4_2 = 20,
             /* Population count instruction (POPCNT). */
             popcnt = 23,
+            /* Advanced Encryption Standard instruction set. */
+            aes_ni = 25,
             /* OS has enabled XSAVE/XRSTOR for extended processor state management. */
             osxsave = 27,
             /* Advanced Vector Extensions (256-bit SIMD). */
             avx = 28,
+            /* Half to single floating point conversion. */
+            f16c = 29,
+            /* On-chip random number generator. */
+            rdrnd = 30,
         };
         enum class edx
         {
@@ -449,6 +455,10 @@ namespace xsimd
             avx512f = 16,
             /* AVX-512 Doubleword and Quadword instructions. */
             avx512dq = 17,
+            /* Low-level access to the entropy-generating hardware. */
+            rdseed = 18,
+            /* Intel arbitrary precision add carry. */
+            adx = 19,
             /* AVX-512 Integer Fused Multiply-Add instructions. */
             avx512ifma = 21,
             /* AVX-512 Prefetch instructions. */
@@ -457,8 +467,12 @@ namespace xsimd
             avx512er = 27,
             /* AVX-512 Conflict Detection instructions. */
             avx512cd = 28,
+            /* Sha-1 and Sha-256 extension. */
+            sha = 29,
             /* AVX-512 Byte and Word instructions. */
             avx512bw = 30,
+            /* AVX-512 Vector Length Extensions for xmm and ymm registers. */
+            avx512vl = 31,
         };
         enum class ecx
         {
@@ -466,14 +480,37 @@ namespace xsimd
             avx512vbmi = 1,
             /* AVX-512 Vector Bit Manipulation instructions 2. */
             avx512vbmi2 = 6,
+            /* Galois Field instructions. */
+            gfni = 8,
+            /* Vector Advanced Encryption Standard instructions. */
+            vaes = 9,
+            /* Carry-less multiplication quadword instruction. */
+            vpclmulqdq = 10,
             /* AVX-512 Vector Neural Network instructions. */
             avx512vnni_bw = 11,
+            /* AVX-512 bit algorithm instructions (BITALG). */
+            avx512_bitalg = 12,
+            /* AVX-512 vector population count for doubleword and quadword. */
+            avx512_vpopcntdq = 14,
+        };
+        enum class edx
+        {
+            /* AVX-512 4-register neural network instructions (word variable precision). */
+            avx512_4vnniw = 2,
+            /* AVX-512 4-register multiply-accumulate single precision. */
+            avx512_4fmaps = 3,
+            /* AVX-512 intersect pairs of packed doubleword/quadword integers. */
+            avx512_vp2intersect = 8,
+            /* AVX-512 16-bit floating-point instructions. */
+            avx512_fp16 = 23,
+
         };
 
         using regs_t = detail::x86_cpuid_regs<leaf, subleaf,
                                               detail::x86_reg_id<eax, 0>,
                                               detail::x86_reg_id<ebx, 1>,
-                                              detail::x86_reg_id<ecx, 2>>;
+                                              detail::x86_reg_id<ecx, 2>,
+                                              detail::x86_reg_id<edx, 3>>;
     };
 
     /**
@@ -497,6 +534,8 @@ namespace xsimd
         {
             /* AVX (VEX-encoded) Vector Neural Network instructions. */
             avxvnni = 4,
+            /* AVX-512 BFloat16 instructions. */
+            avx512_bf16 = 5,
         };
 
         using regs_t = detail::x86_cpuid_regs<leaf, subleaf,
@@ -777,7 +816,7 @@ namespace xsimd
             return leaf0().manufacturer_id_raw();
         }
 
-#if __cplusplus >= 201703L
+#if XSIMD_CPP_VERSION >= 201703L
         inline std::string_view manufacturer_id() const noexcept
         {
             return leaf0().manufacturer_id();
@@ -818,15 +857,29 @@ namespace xsimd
 
         inline bool avx() const noexcept { return avx_enabled() && leaf1().all_bits_set<x86_cpuid_leaf1::ecx::avx>(); }
 
+        inline bool avx_128() const noexcept { return sse_enabled() && leaf1().all_bits_set<x86_cpuid_leaf1::ecx::avx>(); }
+
+        inline bool aes_ni() const noexcept { return sse_enabled() && leaf1().all_bits_set<x86_cpuid_leaf1::ecx::aes_ni>(); }
+
+        inline bool f16c() const noexcept { return avx_enabled() && leaf1().all_bits_set<x86_cpuid_leaf1::ecx::f16c>(); }
+
+        inline bool rdrnd() const noexcept { return leaf1().all_bits_set<x86_cpuid_leaf1::ecx::rdrnd>(); }
+
         inline bool bmi1() const noexcept { return leaf7().all_bits_set<x86_cpuid_leaf7::ebx::bmi1>(); }
 
         inline bool avx2() const noexcept { return avx_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx2>(); }
+
+        inline bool avx2_128() const noexcept { return sse_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx2>(); }
 
         inline bool bmi2() const noexcept { return leaf7().all_bits_set<x86_cpuid_leaf7::ebx::bmi2>(); }
 
         inline bool avx512f() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx512f>(); }
 
         inline bool avx512dq() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx512dq>(); }
+
+        inline bool rdseed() const noexcept { return leaf7().all_bits_set<x86_cpuid_leaf7::ebx::rdseed>(); }
+
+        inline bool adx() const noexcept { return leaf7().all_bits_set<x86_cpuid_leaf7::ebx::adx>(); }
 
         inline bool avx512ifma() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx512ifma>(); }
 
@@ -836,15 +889,39 @@ namespace xsimd
 
         inline bool avx512cd() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx512cd>(); }
 
+        inline bool sha() const noexcept { return leaf7().all_bits_set<x86_cpuid_leaf7::ebx::sha>(); }
+
         inline bool avx512bw() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx512bw>(); }
+
+        inline bool avx512vl() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ebx::avx512vl>(); }
 
         inline bool avx512vbmi() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ecx::avx512vbmi>(); }
 
         inline bool avx512vbmi2() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ecx::avx512vbmi2>(); }
 
+        inline bool gfni() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ecx::gfni>(); }
+
+        inline bool vaes() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ecx::vaes>(); }
+
+        inline bool vpclmulqdq() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ecx::vpclmulqdq>(); }
+
         inline bool avx512vnni_bw() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ecx::avx512vnni_bw>(); }
 
+        inline bool avx512_bitalg() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ecx::avx512_bitalg>(); }
+
+        inline bool avx512_vpopcntdq() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::ecx::avx512_vpopcntdq>(); }
+
+        inline bool avx512_4vnniw() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::edx::avx512_4vnniw>(); }
+
+        inline bool avx512_4fmaps() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::edx::avx512_4fmaps>(); }
+
+        inline bool avx512_vp2intersect() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::edx::avx512_vp2intersect>(); }
+
+        inline bool avx512_fp16() const noexcept { return avx512_enabled() && leaf7().all_bits_set<x86_cpuid_leaf7::edx::avx512_fp16>(); }
+
         inline bool avxvnni() const noexcept { return avx_enabled() && leaf7sub1().all_bits_set<x86_cpuid_leaf7sub1::eax::avxvnni>(); }
+
+        inline bool avx512_bf16() const noexcept { return avx512_enabled() && leaf7sub1().all_bits_set<x86_cpuid_leaf7sub1::eax::avx512_bf16>(); }
 
         inline bool fma4() const noexcept { return avx_enabled() && leaf80000001().all_bits_set<x86_cpuid_leaf80000001::ecx::fma4>(); }
     };

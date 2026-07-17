@@ -39,9 +39,20 @@ TlsHandshaker::CertVerificationDone() {
 }
 
 NS_IMETHODIMP
+TlsHandshaker::ClientAuthCertificateRequested() {
+  LOG(("TlsHandshaker::ClientAuthCertificateRequested mOwner=%p",
+       mOwner.get()));
+  if (mOwner) {
+    mOwner->OnClientAuthCertificateRequested();
+  }
+  return NS_OK;
+}
+
+NS_IMETHODIMP
 TlsHandshaker::ClientAuthCertificateSelected() {
   LOG(("TlsHandshaker::ClientAuthCertificateSelected mOwner=%p", mOwner.get()));
   if (mOwner) {
+    mOwner->OnClientAuthCertificateSelected();
     (void)mOwner->ResumeSend();
   }
   return NS_OK;

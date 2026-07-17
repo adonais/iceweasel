@@ -8,10 +8,15 @@
 #include "mozilla/ContentEvents.h"
 #include "mozilla/EventDispatcher.h"
 #include "mozilla/EventListenerManager.h"
+#include "mozilla/StaticPrefs_layout.h"
+#include "mozilla/dom/Animation.h"
 #include "mozilla/dom/AnimationEffect.h"
 #include "mozilla/dom/AnimationPlaybackEvent.h"
 #include "mozilla/dom/CSSAnimation.h"
+#include "mozilla/dom/CSSNumericValueBinding.h"
 #include "mozilla/dom/CSSTransition.h"
+#include "mozilla/dom/CSSUnitValue.h"
+#include "mozilla/dom/ScrollTimeline.h"  // For PROGRESS_TIMELINE_DURATION_MILLISEC
 #include "nsCSSProps.h"
 #include "nsGlobalWindowInner.h"
 #include "nsPresContext.h"
@@ -255,7 +260,18 @@ void AnimationEventInfo::Dispatch(nsPresContext* aPresContext) {
     }
 
     dom::AnimationPlaybackEventInit init;
-    init.mCurrentTime = data.mCurrentTime;
+    if (!data.mCurrentTime.IsNull()) {
+      if (mAnimation->AcceptsPercentageBasedTime()) {
+        const double progress =
+            data.mCurrentTime.Value() /
+            static_cast<double>(PROGRESS_TIMELINE_DURATION_MILLISEC) * 100.0;
+        init.mCurrentTime.SetValue().SetAsCSSNumericValue() =
+            MakeRefPtr<dom::CSSUnitValue>(mAnimation->GetParentObject(),
+                                          progress, "percent"_ns);
+      } else {
+        init.mCurrentTime.SetValue().SetAsDouble() = data.mCurrentTime.Value();
+      }
+    }
     init.mTimelineTime = data.mTimelineTime;
     MOZ_ASSERT(nsDependentAtomString(data.mOnEvent).Find(u"on"_ns) == 0,
                "mOnEvent atom should start with 'on'!");

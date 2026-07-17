@@ -39,6 +39,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   });
 
   assert.sameValue(calls, 1, "immediately returned");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

@@ -98,7 +98,8 @@ child:
   async OnConnectionStateChange(string transportId, RTCIceTransportState state);
   async OnPacketReceived(string transportId, MediaPacket packet);
   async OnEncryptedSending(string transportId, MediaPacket packet);
-  async OnStateChange(string transportId, TransportLayerState state);
+  async OnStateChange(string transportId, TransportLayerState state,
+                      uint8_t[][] remoteCerts);
   async OnRtcpStateChange(string transportId, TransportLayerState state);
 
 #endif // MOZ_WEBRTC

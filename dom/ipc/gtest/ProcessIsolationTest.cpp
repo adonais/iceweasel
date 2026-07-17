@@ -202,9 +202,14 @@ TEST(ProcessIsolationTest, WorkerOptions)
         "browser.tabs.remote.separatePrivilegedMozillaWebContentProcess"));
   });
 
+  OriginAttributes containerOA;
+  containerOA.mUserContextId = 1;
+
   nsCOMPtr<nsIPrincipal> systemPrincipal = SystemPrincipal::Get();
   nsCOMPtr<nsIPrincipal> nullPrincipal =
       NullPrincipal::CreateWithoutOriginAttributes();
+  nsCOMPtr<nsIPrincipal> nullContainerPrincipal =
+      NullPrincipal::Create(containerOA);
   nsCOMPtr<nsIPrincipal> secureComPrincipal =
       MakeTestPrincipal("https://example.com");
   nsCOMPtr<nsIPrincipal> secureOrgPrincipal =
@@ -247,6 +252,9 @@ TEST(ProcessIsolationTest, WorkerOptions)
       {.mPrincipal = nullPrincipal,
        .mWorkerKind = WorkerKindService,
        .mExpected = Err(NS_ERROR_UNEXPECTED)},
+      {.mPrincipal = nullContainerPrincipal,
+       .mWorkerKind = WorkerKindService,
+       .mExpected = Err(NS_ERROR_UNEXPECTED)},
       {.mPrincipal = nullSecureComPrecursorPrincipal,
        .mWorkerKind = WorkerKindService,
        .mExpected = Err(NS_ERROR_UNEXPECTED)},
@@ -283,17 +291,20 @@ TEST(ProcessIsolationTest, WorkerOptions)
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{WEB_REMOTE_TYPE, WEB_REMOTE_TYPE},
        .mCurrentRemoteType = CoopCoepRemoteType(secureComPrincipal)},
+      {.mPrincipal = nullContainerPrincipal,
+       .mWorkerKind = WorkerKindShared,
+       .mExpected = RemoteTypes{WEB_REMOTE_TYPE "=^userContextId=1"_ns,
+                                WEB_REMOTE_TYPE "=^userContextId=1"_ns},
+       .mCurrentRemoteType = CoopCoepRemoteType(secureComPrincipal)},
 
-      // System principal shared workers can only load in the parent process or
-      // the privilegedabout remote type.
+      // System principal shared workers can only load in the parent process.
       {.mPrincipal = systemPrincipal,
        .mWorkerKind = WorkerKindShared,
        .mExpected = RemoteTypes{NOT_REMOTE_TYPE, NOT_REMOTE_TYPE},
        .mCurrentRemoteType = NOT_REMOTE_TYPE},
       {.mPrincipal = systemPrincipal,
        .mWorkerKind = WorkerKindShared,
-       .mExpected = RemoteTypes{PRIVILEGEDABOUT_REMOTE_TYPE,
-                                PRIVILEGEDABOUT_REMOTE_TYPE},
+       .mExpected = Err(NS_ERROR_UNEXPECTED),
        .mCurrentRemoteType = PRIVILEGEDABOUT_REMOTE_TYPE},
       {.mPrincipal = systemPrincipal,
        .mWorkerKind = WorkerKindShared,
@@ -337,13 +348,13 @@ TEST(ProcessIsolationTest, WorkerOptions)
        .mWorkerKind = WorkerKindShared,
        .mJitDisabled = true,
        .mExpected = RemoteTypes{WebIsolatedRemoteType(secureComPrincipal, true),
-                                WEB_REMOTE_TYPE}},
+                                SharedWebRemoteType(OriginAttributes{}, true)}},
       {.mPrincipal = secureComPrincipal,
        .mWorkerKind = WorkerKindService,
        .mJitDisabled = true,
        .mExpected = RemoteTypes{ServiceWorkerIsolatedRemoteType(
                                     secureComPrincipal, true),
-                                WEB_REMOTE_TYPE}},
+                                SharedWebRemoteType(OriginAttributes{}, true)}},
   };
 
   RegisterMockPolicyService();

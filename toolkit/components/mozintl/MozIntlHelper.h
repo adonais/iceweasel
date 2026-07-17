@@ -17,7 +17,7 @@ class MozIntlHelper final : public mozIMozIntlHelper {
   MozIntlHelper();
 
  private:
-  ~MozIntlHelper();
+  ~MozIntlHelper() = default;
 };
 
 }  // namespace mozilla

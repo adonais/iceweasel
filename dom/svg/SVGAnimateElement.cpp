@@ -19,7 +19,7 @@ JSObject* SVGAnimateElement::WrapNode(JSContext* aCx,
 // Implementation
 
 SVGAnimateElement::SVGAnimateElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGAnimationElement(std::move(aNodeInfo)) {}
 
 //----------------------------------------------------------------------

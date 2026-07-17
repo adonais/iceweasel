@@ -48,6 +48,7 @@
 #include "nsISupportsPrimitives.h"
 #include "nsIXPConnect.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPresContext.h"
 #include "nsQueryObject.h"
 #include "nsReadableUtils.h"

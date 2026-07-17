@@ -13,6 +13,7 @@
 #include "mozilla/RefPtr.h"
 #include "mozilla/TimeStamp.h"
 #include "mozilla/dom/Document.h"
+#include "mozilla/dom/ParentProcessChannelHandle.h"
 #include "mozilla/net/DocumentChannelChild.h"
 #include "mozilla/net/ParentProcessDocumentChannel.h"
 #include "nsCOMPtr.h"
@@ -77,6 +78,8 @@ DocumentChannel::DocumentChannel(nsDocShellLoadState* aLoadState,
   RefPtr<nsHttpHandler> handler = nsHttpHandler::GetInstance();
   mChannelId = handler->NewChannelId();
 }
+
+DocumentChannel::~DocumentChannel() = default;
 
 NS_IMETHODIMP
 DocumentChannel::AsyncOpen(nsIStreamListener* aListener) {
@@ -451,6 +454,24 @@ NS_IMETHODIMP DocumentChannel::GetLoadInfo(nsILoadInfo** aLoadInfo) {
 NS_IMETHODIMP DocumentChannel::SetLoadInfo(nsILoadInfo* aLoadInfo) {
   MOZ_CRASH("If we get here, something is broken");
   return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP DocumentChannel::GetParentProcessChannelHandle(
+    dom::ParentProcessChannelHandle** aValue) {
+  *aValue = do_AddRef(mParentProcessChannelHandle).take();
+  return NS_OK;
+}
+
+NS_IMETHODIMP DocumentChannel::SetParentProcessChannelHandle(
+    dom::ParentProcessChannelHandle* aValue) {
+  if (XRE_IsParentProcess()) {
+    MOZ_ASSERT_UNREACHABLE(
+        "SetParentProcessChannelHandle in the parent process would leak");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  mParentProcessChannelHandle = aValue;
+  return NS_OK;
 }
 
 NS_IMETHODIMP DocumentChannel::GetIsDocument(bool* aIsDocument) {

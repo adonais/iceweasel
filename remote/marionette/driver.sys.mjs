@@ -24,6 +24,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "chrome://remote/content/marionette/actors/MarionetteCommandsParent.sys.mjs",
   isParentProcess:
     "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
+  isWebdriverSafeNavigationURL:
+    "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs",
   l10n: "chrome://remote/content/marionette/l10n.sys.mjs",
   Log: "chrome://remote/content/shared/Log.sys.mjs",
   Marionette: "chrome://remote/content/components/Marionette.sys.mjs",
@@ -2364,10 +2366,21 @@ export class GeckoDriver {
 
     let { url } = cmd.parameters;
 
-    let validURL = URL.parse(url);
-    if (!validURL) {
+    const targetURL = URL.parse(url);
+    if (!targetURL) {
       throw new lazy.error.InvalidArgumentError(
         lazy.truncate`Expected "url" to be a valid URL, got ${url}`
+      );
+    }
+
+    // Disallow navigations to unsafe URLs unless
+    // system access is explicitly allowed.
+    if (
+      !lazy.RemoteAgent.allowSystemAccess &&
+      !lazy.isWebdriverSafeNavigationURL(targetURL.URI, browsingContext)
+    ) {
+      throw new lazy.error.UnsupportedOperationError(
+        lazy.truncate`Navigation to "${targetURL.href}" is not allowed in this context`
       );
     }
 
@@ -2377,13 +2390,13 @@ export class GeckoDriver {
     const loadEventExpected = lazy.navigate.isLoadEventExpected(
       this._getCurrentURL(),
       {
-        future: validURL,
+        future: targetURL,
       }
     );
 
     await lazy.navigate.waitForNavigationCompleted(
       this,
-      () => lazy.navigate.navigateTo(browsingContext, validURL),
+      () => lazy.navigate.navigateTo(browsingContext, targetURL),
       { loadEventExpected }
     );
 

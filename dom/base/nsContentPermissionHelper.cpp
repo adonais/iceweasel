@@ -29,6 +29,7 @@
 #include "nsISupportsPrimitives.h"
 #include "nsIWeakReferenceUtils.h"
 #include "nsJSUtils.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsServiceManagerUtils.h"
 
 using namespace mozilla::dom;

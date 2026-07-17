@@ -41,14 +41,7 @@ add_task(async function test_measure() {
   await miscDataBackupResource.measure(tempDir);
 
   let measurement = Glean.browserBackup.miscDataSize.testGetValue();
-  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, false);
 
-  TelemetryTestUtils.assertScalar(
-    scalars,
-    "browser.backup.misc_data_size",
-    measurement,
-    "Glean and telemetry measurements for misc data should be equal"
-  );
   Assert.equal(
     measurement,
     EXPECTED_MISC_KILOBYTES_SIZE,

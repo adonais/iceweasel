@@ -24,6 +24,8 @@ import mozilla.components.feature.prompts.dialog.LoginDialogFacts
 import mozilla.components.feature.prompts.facts.AddressAutofillDialogFacts
 import mozilla.components.feature.prompts.facts.CreditCardAutofillDialogFacts
 import mozilla.components.feature.prompts.facts.LoginAutofillDialogFacts
+import mozilla.components.feature.protection.dashboard.TrackerCategory
+import mozilla.components.feature.protection.dashboard.facts.ProtectionDashboardFacts
 import mozilla.components.feature.pwa.ProgressiveWebAppFacts
 import mozilla.components.feature.search.telemetry.ads.AdsTelemetry
 import mozilla.components.feature.search.telemetry.incontent.InContentTelemetry
@@ -62,6 +64,7 @@ import org.mozilla.fenix.GleanMetrics.SitePermissions
 import org.mozilla.fenix.GleanMetrics.Sync
 import org.mozilla.fenix.GleanMetrics.SyncedTabs
 import org.mozilla.fenix.GleanMetrics.Toolbar
+import org.mozilla.fenix.GleanMetrics.TrackingProtection
 import org.mozilla.fenix.telemetry.ACTION_TAB_COUNTER_CLICKED
 import org.mozilla.fenix.telemetry.ACTION_TAB_COUNTER_LONG_CLICKED
 import org.mozilla.fenix.telemetry.SOURCE_ADDRESS_BAR
@@ -178,6 +181,19 @@ internal class ReleaseMetricController(
             when (action) {
                 Action.PLAY -> MediaNotification.play.record(NoExtras())
                 Action.PAUSE -> MediaNotification.pause.record(NoExtras())
+                else -> Unit
+            }
+        }
+        Component.FEATURE_PROTECTION_DASHBOARD to ProtectionDashboardFacts.Items.TRACKER_CATEGORY -> {
+            when (value) {
+                TrackerCategory.CROSS_SITE_COOKIES.name ->
+                    TrackingProtection.privacyReportTrackingCookiesTapped.record(NoExtras())
+                TrackerCategory.SOCIAL_MEDIA_TRACKERS.name ->
+                    TrackingProtection.privacyReportSocialTapped.record(NoExtras())
+                TrackerCategory.FINGERPRINTERS.name ->
+                    TrackingProtection.privacyReportFingerprintsTapped.record(NoExtras())
+                TrackerCategory.TRACKING_CONTENT.name ->
+                    TrackingProtection.privacyReportTrackingContentTapped.record(NoExtras())
                 else -> Unit
             }
         }

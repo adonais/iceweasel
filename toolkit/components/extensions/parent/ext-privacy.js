@@ -19,6 +19,7 @@ const getBoolPref = p => Services.prefs.getBoolPref(p, undefined);
 const TLS_MIN_PREF = "security.tls.version.min";
 const TLS_MAX_PREF = "security.tls.version.max";
 
+// TODO(Bug 2040431): Intent to change with updates to FPI and cookieModes in Gecko
 const cookieBehaviorValues = new Map([
   ["allow_all", cookieSvc.BEHAVIOR_ACCEPT],
   ["reject_third_party", cookieSvc.BEHAVIOR_REJECT_FOREIGN],
@@ -27,7 +28,7 @@ const cookieBehaviorValues = new Map([
   ["reject_trackers", cookieSvc.BEHAVIOR_REJECT_TRACKER],
   [
     "reject_trackers_and_partition_foreign",
-    cookieSvc.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+    cookieSvc.BEHAVIOR_PARTITION_FOREIGN,
   ],
 ]);
 
@@ -230,7 +231,7 @@ ExtensionPreferencesManager.addSetting("websites.cookieConfig", {
     if (
       needUpdate &&
       getBoolPref("privacy.firstparty.isolate") &&
-      cookieBehavior === cookieSvc.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+      cookieBehavior === cookieSvc.BEHAVIOR_PARTITION_FOREIGN
     ) {
       throw new ExtensionError(
         `Invalid cookieConfig '${value.behavior}' when firstPartyIsolate is enabled`
@@ -273,7 +274,7 @@ ExtensionPreferencesManager.addSetting("websites.firstPartyIsolate", {
     if (
       needUpdate &&
       value &&
-      cookieBehavior === cookieSvc.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN
+      cookieBehavior === cookieSvc.BEHAVIOR_PARTITION_FOREIGN
     ) {
       const behavior = Array.from(cookieBehaviorValues.entries()).find(
         entry => entry[1] === cookieBehavior

@@ -33,7 +33,7 @@ const TIMES_SHOWN_PREF = "quickactions.timesShownOnboardingLabel";
 
 ChromeUtils.defineESModuleGetters(lazy, {
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
-  UrlbarResult: "moz-src:///browser/components/urlbar/UrlbarResult.sys.mjs",
+  UrlbarResult: "chrome://browser/content/urlbar/UrlbarResult.mjs",
 });
 
 import { ActionsProviderQuickActions } from "moz-src:///browser/components/urlbar/ActionsProviderQuickActions.sys.mjs";
@@ -191,6 +191,10 @@ export class UrlbarProviderGlobalActions extends UrlbarProvider {
       if (action.dataset?.providesSearchMode) {
         btn.attributes["data-provides-searchmode"] = "true";
         btn.attributes["data-engine"] = action.engine;
+      }
+
+      if (action.dataset?.immediateSearch) {
+        btn.attributes["data-immediate-search"] = "true";
       }
 
       return btn;

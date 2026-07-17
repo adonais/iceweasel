@@ -21,12 +21,12 @@ SVGAnimatedRect::~SVGAnimatedRect() {
   SVGAnimatedViewBox::sSVGAnimatedRectTearoffTable.RemoveTearoff(mVal);
 }
 
-already_AddRefed<SVGRect> SVGAnimatedRect::GetBaseVal() {
-  return mVal->ToDOMBaseVal(mSVGElement);
+already_AddRefed<SVGRect> SVGAnimatedRect::BaseVal() {
+  return mVal->ToDOMBaseVal(mSVGElement).unwrapBasePtr().forget();
 }
 
-already_AddRefed<SVGRect> SVGAnimatedRect::GetAnimVal() {
-  return mVal->ToDOMAnimVal(mSVGElement);
+already_AddRefed<SVGRect> SVGAnimatedRect::AnimVal() {
+  return mVal->ToDOMAnimVal(mSVGElement).unwrapBasePtr().forget();
 }
 
 JSObject* SVGAnimatedRect::WrapObject(JSContext* aCx,

@@ -21,6 +21,7 @@
 #include "nsGlobalWindowInner.h"
 #include "nsIScriptObjectPrincipal.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 
 using namespace mozilla;
 using namespace mozilla::dom;
@@ -43,7 +44,7 @@ class nsDeviceSensorData final : public nsIDeviceSensorData {
   nsDeviceSensorData(unsigned long type, double x, double y, double z);
 
  private:
-  ~nsDeviceSensorData();
+  ~nsDeviceSensorData() = default;
 
  protected:
   unsigned long mType;
@@ -60,8 +61,6 @@ NS_INTERFACE_MAP_END
 
 NS_IMPL_ADDREF(nsDeviceSensorData)
 NS_IMPL_RELEASE(nsDeviceSensorData)
-
-nsDeviceSensorData::~nsDeviceSensorData() = default;
 
 NS_IMETHODIMP nsDeviceSensorData::GetType(uint32_t* aType) {
   NS_ENSURE_ARG_POINTER(aType);

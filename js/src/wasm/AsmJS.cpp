@@ -6459,8 +6459,8 @@ static SharedModule CheckModule(FrontendContext* fc,
   ScriptedCaller scriptedCaller;
   if (parser.ss->filename()) {
     scriptedCaller.line = 0;  // unused
-    scriptedCaller.filename = DuplicateString(parser.ss->filename());
-    if (!scriptedCaller.filename) {
+    scriptedCaller.source = DuplicateString(parser.ss->filename());
+    if (!scriptedCaller.source) {
       return nullptr;
     }
   }

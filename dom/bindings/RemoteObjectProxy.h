@@ -158,6 +158,10 @@ class RemoteObjectProxy : public RemoteObjectProxyBase {
     }
   }
 
+  // Remote DOM proxies are the target side of PrepareForProcessChange's
+  // TransplantObjectNukingXrayWaiver.
+  bool mayBeSwapped() const override { return true; }
+
  protected:
   using RemoteObjectProxyBase::RemoteObjectProxyBase;
 

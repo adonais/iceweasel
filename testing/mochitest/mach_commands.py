@@ -314,10 +314,6 @@ def run_mochitest_general(
     from mozlog.handlers import ResourceHandler, StreamHandler
     from moztest.resolve import get_suite_definition
 
-    # TODO: This is only strictly necessary while mochitest is using Python
-    # 2 and can be removed once the command is migrated to Python 3.
-    command_context.activate_virtualenv()
-
     buildapp = None
     for app in SUPPORTED_APPS:
         if conditions.is_buildapp_in(command_context, apps=[app]):
@@ -328,7 +324,7 @@ def run_mochitest_general(
     if kwargs.get("android"):
         buildapp = "android"
 
-    flavors = None
+    flavors = []
     if flavor:
         for fname, fobj in ALL_FLAVORS.items():
             if flavor in fobj["aliases"]:

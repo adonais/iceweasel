@@ -16,7 +16,7 @@ class HTMLEmbedElement final : public nsGenericHTMLElement,
                                public nsObjectLoadingContent {
  public:
   explicit HTMLEmbedElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
       mozilla::dom::FromParser aFromParser = mozilla::dom::NOT_FROM_PARSER);
 
   // nsISupports

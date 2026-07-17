@@ -912,6 +912,58 @@ static void AddV4l2Dependencies(SandboxBroker::Policy* policy) {
 }
 #endif  // MOZ_ENABLE_V4L2
 
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+
+static void AddVulkanDependencies(SandboxBroker::Policy* policy) {
+  // RDD Vulkan Video decode: ICD manifests (paths beyond AddGLDependencies).
+  // No MAY_CONNECT rules needed: Vulkan initialisation is done before the
+  // sandbox starts (VA-API also does not need display-server connections).
+  policy->AddTree(rdonly, "/usr/share/vulkan/icd.d");
+  policy->AddTree(rdonly, "/usr/local/share/vulkan/icd.d");
+  policy->AddTree(rdonly, "/etc/vulkan/icd.d");
+
+  // Allow user-provided optional extra ICD JSON manifests for the Vulkan loader
+  // (colon-separated list, used as the input for the Vulkan loader).
+  const char* vkDriverFiles = PR_GetEnv("VK_DRIVER_FILES");
+  if (vkDriverFiles && vkDriverFiles[0] != '\0') {
+    nsAutoCString paths(vkDriverFiles);
+    for (const nsACString& path : paths.Split(':')) {
+      if (!path.IsEmpty()) {
+        char* resolvedPath = realpath(PromiseFlatCString(path).get(), nullptr);
+        if (resolvedPath) {
+          policy->AddTree(rdonly, resolvedPath);
+          free(resolvedPath);
+        }
+      }
+    }
+  }
+
+  // Custom Mesa prefix to allow user-provided Intel ANV Mesa build dir (binary
+  // files location)
+  const char* mesaBuildDir = PR_GetEnv("MESA_BUILD_DIR");
+  if (mesaBuildDir && mesaBuildDir[0] != '\0') {
+    policy->AddTree(rdonly, nsPrintfCString("%s", mesaBuildDir).get());
+  }
+
+  // Custom Vulkan SDK prefix to allow user-provided Vulkan SDK dir (binary and
+  // source files location)
+  const char* vulkanSdkDir = PR_GetEnv("VULKAN_SDK");
+  if (vulkanSdkDir && vulkanSdkDir[0] != '\0') {
+    policy->AddTree(rdonly, nsPrintfCString("%s", vulkanSdkDir).get());
+  }
+
+  policy->AddPath(rdwr, "/dev/nvidiactl", SandboxBroker::Policy::AddAlways);
+  policy->AddPath(rdwr, "/dev/nvidia-uvm", SandboxBroker::Policy::AddAlways);
+  policy->AddPath(rdwr, "/dev/nvidia-modeset",
+                  SandboxBroker::Policy::AddAlways);
+  policy->AddTree(rdonly, "/dev/nvidia-caps");
+  for (int i = 0; i < 8; i++) {
+    policy->AddPath(rdwr, nsPrintfCString("/dev/nvidia%d", i).get(),
+                    SandboxBroker::Policy::AddIfExistsNow);
+  }
+}
+#endif  // MOZ_ENABLE_VULKAN_VIDEO
+
 /* static */ UniquePtr<SandboxBroker::Policy>
 SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   auto policy = MakeUnique<SandboxBroker::Policy>();
@@ -973,6 +1025,10 @@ SandboxBrokerPolicyFactory::GetRDDPolicy(int aPid) {
   // FFmpeg and GPU drivers may need general-case library loading
   AddLdconfigPaths(policy.get());
   AddLdLibraryEnvPaths(policy.get());
+
+#ifdef MOZ_ENABLE_VULKAN_VIDEO
+  AddVulkanDependencies(policy.get());
+#endif  // MOZ_ENABLE_VULKAN_VIDEO
 
 #ifdef MOZ_ENABLE_V4L2
   AddV4l2Dependencies(policy.get());

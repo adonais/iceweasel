@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "SVGElement.h"
-#include "SVGPoint.h"
+#include "mozilla/gfx/Point.h"
 #include "nsCOMPtr.h"
 #include "nsDebug.h"
 #include "nsIContent.h"
@@ -33,6 +33,7 @@ class DOMSVGPointList;
  * The DOM wrapper class for this class is DOMSVGPointList.
  */
 class SVGPointList {
+  using Point = gfx::Point;
   friend class SVGAnimatedPointList;
   friend class dom::DOMSVGPointList;
   friend class dom::DOMSVGPoint;
@@ -60,13 +61,20 @@ class SVGPointList {
 
   uint32_t Length() const { return mItems.Length(); }
 
-  const SVGPoint& operator[](uint32_t aIndex) const { return mItems[aIndex]; }
+  const Point& operator[](uint32_t aIndex) const { return mItems[aIndex]; }
+
+  [[nodiscard]] FallibleTArray<Point>::const_iterator begin() const {
+    return mItems.begin();
+  }
+  [[nodiscard]] FallibleTArray<Point>::const_iterator end() const {
+    return mItems.end();
+  }
 
   bool operator==(const SVGPointList& rhs) const {
     // memcmp can be faster than |mItems == rhs.mItems|
     return mItems.Length() == rhs.mItems.Length() &&
            memcmp(mItems.Elements(), rhs.mItems.Elements(),
-                  mItems.Length() * sizeof(SVGPoint)) == 0;
+                  mItems.Length() * sizeof(Point)) == 0;
   }
 
   bool SetCapacity(uint32_t aSize) {
@@ -90,7 +98,7 @@ class SVGPointList {
   nsresult CopyFrom(const SVGPointList& rhs);
   void SwapWith(SVGPointList& aRhs) { mItems.SwapElements(aRhs.mItems); }
 
-  SVGPoint& operator[](uint32_t aIndex) { return mItems[aIndex]; }
+  Point& operator[](uint32_t aIndex) { return mItems[aIndex]; }
 
   /**
    * This may fail (return false) on OOM if the internal capacity is being
@@ -109,14 +117,14 @@ class SVGPointList {
 
   void Clear() { mItems.Clear(); }
 
-  bool InsertItem(uint32_t aIndex, const SVGPoint& aPoint) {
+  bool InsertItem(uint32_t aIndex, const Point& aPoint) {
     if (aIndex >= mItems.Length()) {
       aIndex = mItems.Length();
     }
     return !!mItems.InsertElementAt(aIndex, aPoint, fallible);
   }
 
-  void ReplaceItem(uint32_t aIndex, const SVGPoint& aPoint) {
+  void ReplaceItem(uint32_t aIndex, const Point& aPoint) {
     MOZ_ASSERT(aIndex < mItems.Length(),
                "DOM wrapper caller should have raised INDEX_SIZE_ERR");
     mItems[aIndex] = aPoint;
@@ -128,15 +136,19 @@ class SVGPointList {
     mItems.RemoveElementAt(aIndex);
   }
 
-  bool AppendItem(SVGPoint aPoint) {
+  bool AppendItem(const Point& aPoint) {
     return !!mItems.AppendElement(aPoint, fallible);
   }
 
  protected:
-  /* See SVGLengthList for the rationale for using FallibleTArray<SVGPoint>
-   * instead of FallibleTArray<SVGPoint, 1>.
+  [[nodiscard]] FallibleTArray<Point>::iterator begin() {
+    return mItems.begin();
+  }
+  [[nodiscard]] FallibleTArray<Point>::iterator end() { return mItems.end(); }
+  /* See SVGLengthList for the rationale for using FallibleTArray<Point>
+   * instead of FallibleTArray<Point, 1>.
    */
-  FallibleTArray<SVGPoint> mItems;
+  FallibleTArray<Point> mItems;
 };
 
 /**
@@ -188,18 +200,11 @@ class SVGPointListAndInfo : public SVGPointList {
    * SVGPointListAndInfo objects. Note that callers should also call
    * SetElement() when using this method!
    */
-  nsresult CopyFrom(const SVGPointList& rhs) {
-    return SVGPointList::CopyFrom(rhs);
-  }
-  const SVGPoint& operator[](uint32_t aIndex) const {
-    return SVGPointList::operator[](aIndex);
-  }
-  SVGPoint& operator[](uint32_t aIndex) {
-    return SVGPointList::operator[](aIndex);
-  }
-  bool SetLength(uint32_t aNumberOfItems) {
-    return SVGPointList::SetLength(aNumberOfItems);
-  }
+  using SVGPointList::CopyFrom;
+  using SVGPointList::operator[];
+  using SVGPointList::begin;
+  using SVGPointList::end;
+  using SVGPointList::SetLength;
 
  private:
   // We must keep a weak reference to our element because we may belong to a

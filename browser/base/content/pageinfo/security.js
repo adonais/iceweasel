@@ -8,6 +8,9 @@ const { SiteDataManager } = ChromeUtils.importESModule(
 const { DownloadUtils } = ChromeUtils.importESModule(
   "resource://gre/modules/DownloadUtils.sys.mjs"
 );
+const { QWACs } = ChromeUtils.importESModule(
+  "resource://gre/modules/psm/QWACs.sys.mjs"
+);
 
 /* import-globals-from pageInfo.js */
 
@@ -16,14 +19,13 @@ ChromeUtils.defineESModuleGetters(this, {
 });
 
 var security = {
-  async init(uri, windowInfo) {
+  async init(uri, windowInfo, browsingContext) {
     this.uri = uri;
     this.windowInfo = windowInfo;
-    this.securityInfo = await this._getSecurityInfo();
+    this.securityInfo = await this._getSecurityInfo(browsingContext);
   },
 
-  viewCert() {
-    let certChain = this.securityInfo.certChain;
+  viewCert(certChain = this.securityInfo.certChain) {
     let certs = certChain.map(elem =>
       encodeURIComponent(elem.getBase64DERString())
     );
@@ -38,7 +40,11 @@ var security = {
     }
   },
 
-  async _getSecurityInfo() {
+  viewQWAC() {
+    this.viewCert([this.securityInfo.qwac]);
+  },
+
+  async _getSecurityInfo(browsingContext) {
     // We don't have separate info for a frame, return null until further notice
     // (see bug 138479)
     if (!this.windowInfo.isTopWindow) {
@@ -66,6 +72,7 @@ var security = {
       isMixed,
       isEV,
       cert: null,
+      qwac: null,
       certificateTransparency: null,
     };
 
@@ -94,6 +101,12 @@ var security = {
       certChainArray = secInfo.handshakeCertificates;
     }
 
+    let qwac = await QWACs.determineQWACStatus(
+      secInfo,
+      this.uri,
+      browsingContext
+    );
+
     retval = {
       cAName: issuerName,
       encryptionAlgorithm: undefined,
@@ -103,6 +116,7 @@ var security = {
       isMixed,
       isEV,
       cert,
+      qwac,
       certChain: certChainArray,
       certificateTransparency: undefined,
     };
@@ -229,8 +243,8 @@ var security = {
   },
 };
 
-async function securityOnLoad(uri, windowInfo) {
-  await security.init(uri, windowInfo);
+async function securityOnLoad(uri, windowInfo, browsingContext) {
+  await security.init(uri, windowInfo, browsingContext);
 
   let info = security.securityInfo;
   if (
@@ -252,7 +266,10 @@ async function securityOnLoad(uri, windowInfo) {
     // Try to pull out meaningful values.  Technically these fields are optional
     // so we'll employ fallbacks where appropriate.  The EV spec states that Org
     // fields must be specified for subject and issuer so that case is simpler.
-    if (info.isEV) {
+    if (info.qwac) {
+      setText("security-identity-owner-value", info.qwac.organization);
+      setText("security-identity-verifier-value", info.qwac.issuerOrganization);
+    } else if (info.isEV) {
       setText("security-identity-owner-value", info.cert.organization);
       setText("security-identity-verifier-value", info.cAName);
     } else {
@@ -290,11 +307,10 @@ async function securityOnLoad(uri, windowInfo) {
 
   /* Manage the View Cert button*/
   var viewCert = document.getElementById("security-view-cert");
-  if (info.cert) {
-    viewCert.collapsed = false;
-  } else {
-    viewCert.collapsed = true;
-  }
+  viewCert.collapsed = !info.cert;
+
+  let viewQWAC = document.getElementById("security-view-qwac");
+  viewQWAC.collapsed = !info.qwac;
 
   /* Set Privacy & History section text */
 

@@ -44,7 +44,7 @@
   @media not (forced-colors) {
     --aiwindow-text-accent: light-dark(var(--color-violet-90), var(--color-white));
 
-    --aiwindow-memory-item-bg: light-dark(var(--color-gray-05), var(--color-gray-80));
+    --aiwindow-memory-item-bg: light-dark(var(--color-gray-0), var(--color-gray-80));
     --aiwindow-memory-item-border: none;
 
     --aiwindow-memories-icon-fill: light-dark(var(--color-gray-70), var(--color-white));
@@ -72,7 +72,6 @@
 
 /* TODO: Bug 2033070 -  Nova tokens were implemented as the default value for the custom properties, and the fallbacks (and lint exceptions) will need to be removed after launch */
 :host {
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     --button-font-size: var(--font-size-small);
 
@@ -145,7 +144,6 @@
 
 :host([data-open]) moz-button.memories-trigger {
   @media not (forced-colors) {
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       --button-icon-fill: var(--aiwindow-text-accent);
       --button-background-color-ghost: var(--memories-accent-bg-hover);
@@ -157,7 +155,6 @@
       --button-border-color-ghost-hover: var(--memories-accent-border);
     }
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       --button-icon-fill: var(--button-text-color-ghost-hover);
     }
@@ -172,7 +169,6 @@
 moz-button.memories-trigger {
   --button-padding: var(--space-small);
   @media not (forced-colors) {
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       --button-icon-fill: var(--aiwindow-memories-icon-fill);
       --button-background-color-ghost-hover: var(--memories-accent-bg-hover);
@@ -182,7 +178,6 @@ moz-button.memories-trigger {
       --button-text-color-ghost: var(--text-color-deemphasized);
     }
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       --button-icon-fill: var(--smartwindow-icon-color-accent-primary-desaturated);
 

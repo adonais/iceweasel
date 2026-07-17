@@ -51,7 +51,9 @@ def run_crash_test(configuration, geckodriver, crash_callback, reason=None):
         # Use a custom temporary minidump save path to only see
         # the minidump files related to this test
         driver = geckodriver(
-            config=config, extra_env={"MINIDUMP_SAVE_PATH": tmpdirname}
+            config=config,
+            extra_args=["--allow-system-access"],
+            extra_env={"MINIDUMP_SAVE_PATH": tmpdirname},
         )
 
         driver.new_session()

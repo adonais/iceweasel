@@ -481,7 +481,8 @@ int32_t TimeoutManager::GetTimeoutId(Timeout::Reason aReason) {
       default:
         return -1;  // no cancellation support
     }
-  } while (mTimeouts.GetTimeout(timeoutId, aReason));
+  } while (mTimeouts.GetTimeout(timeoutId, aReason) ||
+           mIdleTimeouts.GetTimeout(timeoutId, aReason));
 
   return timeoutId;
 }

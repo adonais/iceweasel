@@ -147,25 +147,26 @@ def make_task_description(config, jobs):
             "build": upstream_deps[build_name],
             "signing": upstream_deps[signing_name],
         }
-        if repackage_name in upstream_deps:
-            dependencies["repackage"] = upstream_deps[repackage_name]
-        if mar_signing_name in upstream_deps:
-            dependencies["mar-signing"] = upstream_deps[mar_signing_name]
-        if "partials-signing" in upstream_deps:
-            dependencies["partials-signing"] = upstream_deps["partials-signing"]
-        if msi_signing_name in upstream_deps:
-            dependencies[msi_signing_name] = upstream_deps[msi_signing_name]
-        if msix_signing_name in upstream_deps:
-            dependencies[msix_signing_name] = upstream_deps[msix_signing_name]
-        if repackage_signing_name in upstream_deps:
-            dependencies["repackage-signing"] = upstream_deps[repackage_signing_name]
-        if attribution_name in upstream_deps:
-            dependencies[attribution_name] = upstream_deps[attribution_name]
-        if repackage_deb_name in upstream_deps:
-            dependencies[repackage_deb_name] = upstream_deps[repackage_deb_name]
-        for kind in ("upload-symbols", "upload-symbols-dummy"):
-            if kind in upstream_deps:
-                dependencies[kind] = upstream_deps[kind]
+        # Optional dependencies: (dep_key, upstream_name) pairs.
+        # When the dep_key differs from the upstream name, the dependency is
+        # aliased (e.g. repackage_name -> "repackage").
+        optional_deps = [
+            ("repackage", repackage_name),
+            ("mar-signing", mar_signing_name),
+            ("partials-signing", "partials-signing"),
+            (msi_signing_name, msi_signing_name),
+            (msix_signing_name, msix_signing_name),
+            ("repackage-signing", repackage_signing_name),
+            (attribution_name, attribution_name),
+            (repackage_deb_name, repackage_deb_name),
+            ("repackage-pkg-notarization", "repackage-pkg-notarization"),
+            ("repackage-l10n-pkg-notarization", "repackage-l10n-pkg-notarization"),
+            ("upload-symbols", "upload-symbols"),
+            ("upload-symbols-dummy", "upload-symbols-dummy"),
+        ]
+        for dep_key, upstream_name in optional_deps:
+            if upstream_name in upstream_deps:
+                dependencies[dep_key] = upstream_deps[upstream_name]
 
         attributes = copy_attributes_from_dependent_job(dep_job)
         attributes.update(job.get("attributes", {}))

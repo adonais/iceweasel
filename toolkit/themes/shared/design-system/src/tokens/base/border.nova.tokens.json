@@ -3,7 +3,7 @@
     "@base": {
       "value": {
         "light": "{color.gray.30}",
-        "dark": "{color.gray.50}",
+        "dark": "{color.gray.45}",
         "forcedColors": "CanvasText"
       }
     },
@@ -17,7 +17,7 @@
       "@base": {
         "value": {
           "light": "{color.gray.20}",
-          "dark": "{color.gray.60}",
+          "dark": "{color.gray.55}",
           "forcedColors": "CanvasText"
         }
       }
@@ -25,14 +25,15 @@
     "interactive": {
       "@base": {
         "value": {
-          "default": "{color.gray.40}",
+          "light": "{color.gray.35}",
+          "dark": "{color.gray.45}",
           "forcedColors": "ButtonText"
         }
       },
       "disabled": {
         "value": {
           "light": "{color.gray.25}",
-          "dark": "{color.gray.50}",
+          "dark": "{color.gray.60}",
           "forcedColors": "GrayText"
         }
       }

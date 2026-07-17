@@ -39,10 +39,11 @@ for (let toBuffer of toBufferOpts) {
     assertErrorMessage(() => wasmEval(toBuffer([42])), CompileError, magicError);
     assertErrorMessage(() => wasmEval(toBuffer([magic0, magic1, magic2])), CompileError, magicError);
     assertErrorMessage(() => wasmEval(toBuffer([1,2,3,4])), CompileError, magicError);
-    assertErrorMessage(() => wasmEval(toBuffer([magic0, magic1, magic2, magic3])), CompileError, versionError(0x6d736100));
-    assertErrorMessage(() => wasmEval(toBuffer([magic0, magic1, magic2, magic3, 1])), CompileError, versionError(0x6d736100));
-    assertErrorMessage(() => wasmEval(toBuffer([magic0, magic1, magic2, magic3, ver0])), CompileError, versionError(0x6d736100));
-    assertErrorMessage(() => wasmEval(toBuffer([magic0, magic1, magic2, magic3, ver0, ver1, ver2])), CompileError, versionError(0x6d736100));
+    assertErrorMessage(() => wasmEval(toBuffer([magic0, magic1, magic2, magic3])), CompileError, /failed to read version/);
+    assertErrorMessage(() => wasmEval(toBuffer([magic0, magic1, magic2, magic3, 1])), CompileError, /failed to read version/);
+    assertErrorMessage(() => wasmEval(toBuffer([magic0, magic1, magic2, magic3, ver0])), CompileError, /failed to read version/);
+    assertErrorMessage(() => wasmEval(toBuffer([magic0, magic1, magic2, magic3, ver0, ver1, ver2])), CompileError, /failed to read version/);
+    assertErrorMessage(() => wasmEval(toBuffer([magic0, magic1, magic2, magic3, 1, 2, 3, 4])), CompileError, versionError(0x4030201));
 
     var o = wasmEval(toBuffer(moduleHeaderThen()));
     assertEq(Object.getOwnPropertyNames(o).length, 0);

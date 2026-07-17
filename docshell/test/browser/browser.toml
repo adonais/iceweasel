@@ -51,7 +51,6 @@ support-files = [
   "print_postdata.sjs",
   "test-form_sjis.html",
   "head.js",
-  "file_data_load_inherit_csp.html",
   "file_click_link_within_view_source.html",
   "onload_message.html",
   "onpageshow_message.html",
@@ -96,13 +95,13 @@ skip-if = [
 
 ["browser_bfcache_after_auxiliary.js"]
 
-["browser_bug2011921.js"]
-
 ["browser_bfcache_copycommand.js"]
 skip-if = [
   "os == 'linux' && os_version == '24.04' && arch == 'x86_64' && display == 'x11' && opt", # Bug 1730593
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64'", # Bug 1775931
 ]
+
+["browser_bfcache_page_restored_telemetry.js"]
 
 ["browser_browsingContext-01.js"]
 https_first_disabled = true
@@ -294,6 +293,8 @@ skip-if = [
   "debug", # bug 2005202
 ]
 
+["browser_bug2011921.js"]
+
 ["browser_click_link_within_view_source.js"]
 
 ["browser_closewatcher_integration.js"]
@@ -320,8 +321,6 @@ support-files = [
 
 ["browser_dataURI_unique_opaque_origin.js"]
 https_first_disabled = true
-
-["browser_data_load_inherit_csp.js"]
 
 ["browser_fall_back_to_https.js"]
 https_first_disabled = true

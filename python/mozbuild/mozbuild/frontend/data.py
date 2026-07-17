@@ -374,6 +374,7 @@ class Linkable(ContextDerived):
 
     __slots__ = (
         "cxx_link",
+        "extra_link_deps",
         "lib_defines",
         "linked_libraries",
         "linked_system_libs",
@@ -387,6 +388,7 @@ class Linkable(ContextDerived):
         self.linked_system_libs = []
         self.lib_defines = Defines(context, OrderedDict())
         self.sources = defaultdict(list)
+        self.extra_link_deps = []
 
     @property
     def output_path(self):
@@ -1238,13 +1240,18 @@ class FinalTargetPreprocessedFiles(ContextDerived):
     this object fills that role. It just has a reference to the underlying
     HierarchicalStringList, which is created when parsing
     FINAL_TARGET_PP_FILES.
+
+    `extra_deps` carries the per-directory ``PP_FILES_EXTRA_DEPS`` value
+    so backends can wire it as build-graph order on the preprocess edge
+    for each file in ``files``.
     """
 
-    __slots__ = ("files",)
+    __slots__ = ("files", "extra_deps")
 
-    def __init__(self, sandbox, files):
+    def __init__(self, sandbox, files, extra_deps=()):
         ContextDerived.__init__(self, sandbox)
         self.files = files
+        self.extra_deps = list(extra_deps)
 
     @staticmethod
     def get_obj_basename(f):
@@ -1287,6 +1294,20 @@ class MozSrcFiles(FinalTargetFiles):
         # and/or XPI_NAME, whereas we want all moz-src content packaged in
         # the same place.
         return mozpath.join("dist/bin/moz-src", self._context.relsrcdir)
+
+
+class JsShellArchive(ContextDerived):
+    """Sandbox container object for JS_SHELL_ARCHIVE_FILES.
+
+    Holds the list of basenames (relative to $(DIST)/bin) that the build
+    backend should pack into the JS shell zip archive.
+    """
+
+    __slots__ = ("files",)
+
+    def __init__(self, context, files):
+        ContextDerived.__init__(self, context)
+        self.files = tuple(files)
 
 
 class ObjdirFiles(FinalTargetFiles):
@@ -1341,6 +1362,7 @@ class GeneratedFile(ContextDerived):
         "method",
         "outputs",
         "inputs",
+        "extra_deps",
         "flags",
         "required_before_export",
         "required_before_compile",
@@ -1360,6 +1382,7 @@ class GeneratedFile(ContextDerived):
         localized=False,
         force=False,
         required_during_compile=None,
+        extra_deps=(),
     ):
         ContextDerived.__init__(self, context)
         self.script = script
@@ -1367,6 +1390,7 @@ class GeneratedFile(ContextDerived):
         self.outputs = outputs if isinstance(outputs, tuple) else (outputs,)
         self.inputs = inputs
         self.flags = flags
+        self.extra_deps = extra_deps
         self.localized = localized
         self.force = force
 
@@ -1424,6 +1448,7 @@ class GeneratedFile(ContextDerived):
                     ".m",
                     ".mm",
                     ".def",
+                    ".plist",
                     ".s",
                     ".S",
                     "symverscript",

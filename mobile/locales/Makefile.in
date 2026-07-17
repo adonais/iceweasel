@@ -27,3 +27,4 @@ chrome-%: AB_CD=$*
 chrome-%:
 	@$(MAKE) chrome AB_CD=$*
 	@$(MAKE) -C $(DEPTH)/$(MOZ_BRANDING_DIRECTORY)/locales chrome AB_CD=$*
+	$(call INSTALL_L10N_COVERAGE,$(FINAL_TARGET))

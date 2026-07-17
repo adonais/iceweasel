@@ -299,6 +299,19 @@ interface nsIAlertsService : nsISupports
    * Close all alerts opened for Private Browsing Mode.
    */
   void pbmTeardown();
+
+  /**
+   * Returns whether full-screen mode is enabled.
+   *
+   * @retval true On Windows if any of these apply:
+   *              - App is in full-screen mode (F11).
+   *              - App is in presentation mode.
+   *              - Videogame is in full-screen mode.
+   *              - Videogame is in exclusive full-screen mode.
+   *
+   * @retval false On Windows if none of the above apply, or on other platforms.
+   */
+  boolean isFullscreen();
 };
 
 [scriptable, uuid(c5d63e3a-259d-45a8-b964-8377967cb4d2)]

@@ -17,7 +17,7 @@ import mozilla.components.support.remotesettings.into
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.utils.view.addToRadioGroup
 
@@ -52,7 +52,7 @@ class RemoteSettingsServerFragment : PreferenceFragmentCompat(), SystemInsetsPad
     }
 
     private fun setupPreferences() {
-        when (requireContext().settings().remoteSettingsServer) {
+        when (requireComponents.settings.remoteSettingsServer) {
             getString(R.string.remote_settings_server_prod) ->
                 radioProduction.setCheckedWithoutClickListener(true)
             getString(R.string.remote_settings_server_stage) ->
@@ -105,7 +105,7 @@ class RemoteSettingsServerFragment : PreferenceFragmentCompat(), SystemInsetsPad
     private fun updateRemoteSettingsServer(serverValue: String) {
         setRadioButtonsEnabled(false)
 
-        requireContext().settings().remoteSettingsServer = serverValue
+        requireComponents.settings.remoteSettingsServer = serverValue
 
         syncingToast = Toast.makeText(
             requireContext(),

@@ -16,6 +16,18 @@ const { AppInfo } = ChromeUtils.importESModule(
 
 const isWayland = AppInfo.isWayland;
 
+// Bug 2037084: Apple Virtualization Framework VMs (macosx1500-aarch64-vms) have
+// no display attached, so window operations that depend on a real desktop don't
+// behave the same as on bare-metal hardware.
+const isMacosVm = (() => {
+  try {
+    const modelId = Services.sysinfo.getProperty("appleModelId");
+    return !!modelId && modelId.startsWith("VirtualMac");
+  } catch (e) {
+    return false;
+  }
+})();
+
 async function setInitialWindowRect(win) {
   const rect = await windowManager.adjustWindowGeometry(
     win,
@@ -178,7 +190,7 @@ add_task(async function test_adjustWindowGeometry_floatValues() {
   }
 });
 
-add_task(async function test_fullscreenWindow() {
+add_task({ skip_if: () => isMacosVm }, async function test_fullscreenWindow() {
   const testWin = await BrowserTestUtils.openNewBrowserWindow();
 
   try {

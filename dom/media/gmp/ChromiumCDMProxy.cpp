@@ -32,7 +32,7 @@ ChromiumCDMProxy::ChromiumCDMProxy(dom::MediaKeys* aKeys,
 }
 
 ChromiumCDMProxy::~ChromiumCDMProxy() {
-  EME_LOG("ChromiumCDMProxy::~ChromiumCDMProxy(this=%p)", this);
+  EME_LOG("ChromiumCDMProxy::~ChromiumCDMProxy(this={})", fmt::ptr(this));
 }
 
 void ChromiumCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
@@ -44,12 +44,12 @@ void ChromiumCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
 
   NS_ENSURE_TRUE_VOID(!mKeys.IsNull());
 
-  EME_LOG("ChromiumCDMProxy::Init(this=%p, pid=%" PRIu32
-          ", origin=%s, topLevelOrigin=%s, "
-          "gmp=%s)",
-          this, aPromiseId, NS_ConvertUTF16toUTF8(aOrigin).get(),
-          NS_ConvertUTF16toUTF8(aTopLevelOrigin).get(),
-          NS_ConvertUTF16toUTF8(aGMPName).get());
+  EME_LOG(
+      "ChromiumCDMProxy::Init(this={}, pid={}, origin={}, topLevelOrigin={}, "
+      "gmp={})",
+      fmt::ptr(this), aPromiseId, NS_ConvertUTF16toUTF8(aOrigin).get(),
+      NS_ConvertUTF16toUTF8(aTopLevelOrigin).get(),
+      NS_ConvertUTF16toUTF8(aGMPName).get());
 
   if (!mGMPThread) {
     RejectPromiseWithStateError(
@@ -144,9 +144,8 @@ void ChromiumCDMProxy::Init(PromiseId aPromiseId, const nsAString& aOrigin,
 }
 
 void ChromiumCDMProxy::OnCDMCreated(uint32_t aPromiseId) {
-  EME_LOG("ChromiumCDMProxy::OnCDMCreated(this=%p, pid=%" PRIu32
-          ") isMainThread=%d",
-          this, aPromiseId, NS_IsMainThread());
+  EME_LOG("ChromiumCDMProxy::OnCDMCreated(this={}, pid={}) isMainThread={}",
+          fmt::ptr(this), aPromiseId, NS_IsMainThread());
   MOZ_ASSERT(NS_IsMainThread());
   if (mKeys.IsNull()) {
     return;
@@ -167,8 +166,8 @@ void ChromiumCDMProxy::OnCDMCreated(uint32_t aPromiseId) {
 
 void ChromiumCDMProxy::ShutdownCDMIfExists() {
   EME_LOG(
-      "ChromiumCDMProxy::ShutdownCDMIfExists(this=%p) mCDM=%p, mIsShutdown=%s",
-      this, mCDM.get(), mIsShutdown ? "true" : "false");
+      "ChromiumCDMProxy::ShutdownCDMIfExists(this={}) mCDM={}, mIsShutdown={}",
+      fmt::ptr(this), fmt::ptr(mCDM.get()), mIsShutdown ? "true" : "false");
   MOZ_ASSERT(NS_IsMainThread());
   MOZ_ASSERT(mGMPThread);
   MOZ_ASSERT(mIsShutdown,
@@ -225,12 +224,11 @@ void ChromiumCDMProxy::CreateSession(uint32_t aCreateSessionToken,
                                      const nsAString& aInitDataType,
                                      nsTArray<uint8_t>& aInitData) {
   MOZ_ASSERT(NS_IsMainThread());
-  EME_LOG("ChromiumCDMProxy::CreateSession(this=%p, token=%" PRIu32
-          ", type=%d, pid=%" PRIu32
-          ") "
-          "initDataLen=%zu",
-          this, aCreateSessionToken, (int)aSessionType, aPromiseId,
-          aInitData.Length());
+  EME_LOG(
+      "ChromiumCDMProxy::CreateSession(this={}, token={}, type={}, pid={}) "
+      "initDataLen={}",
+      fmt::ptr(this), aCreateSessionToken, (int)aSessionType, aPromiseId,
+      aInitData.Length());
 
   cdm::SessionType sessionType = ToCDMSessionType(aSessionType);
   cdm::InitDataType initDataType = ToCDMInitDataType(aInitDataType);
@@ -269,9 +267,8 @@ void ChromiumCDMProxy::LoadSession(PromiseId aPromiseId,
 void ChromiumCDMProxy::SetServerCertificate(PromiseId aPromiseId,
                                             nsTArray<uint8_t>& aCert) {
   MOZ_ASSERT(NS_IsMainThread());
-  EME_LOG("ChromiumCDMProxy::SetServerCertificate(this=%p, pid=%" PRIu32
-          ") certLen=%zu",
-          this, aPromiseId, aCert.Length());
+  EME_LOG("ChromiumCDMProxy::SetServerCertificate(this={}, pid={}) certLen={}",
+          fmt::ptr(this), aPromiseId, aCert.Length());
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
@@ -290,11 +287,11 @@ void ChromiumCDMProxy::UpdateSession(const nsAString& aSessionId,
                                      PromiseId aPromiseId,
                                      nsTArray<uint8_t>& aResponse) {
   MOZ_ASSERT(NS_IsMainThread());
-  EME_LOG("ChromiumCDMProxy::UpdateSession(this=%p, sid='%s', pid=%" PRIu32
-          ") "
-          "responseLen=%zu",
-          this, NS_ConvertUTF16toUTF8(aSessionId).get(), aPromiseId,
-          aResponse.Length());
+  EME_LOG(
+      "ChromiumCDMProxy::UpdateSession(this={}, sid='{}', pid={}) "
+      "responseLen={}",
+      fmt::ptr(this), NS_ConvertUTF16toUTF8(aSessionId).get(), aPromiseId,
+      aResponse.Length());
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
@@ -311,8 +308,8 @@ void ChromiumCDMProxy::UpdateSession(const nsAString& aSessionId,
 void ChromiumCDMProxy::CloseSession(const nsAString& aSessionId,
                                     PromiseId aPromiseId) {
   MOZ_ASSERT(NS_IsMainThread());
-  EME_LOG("ChromiumCDMProxy::CloseSession(this=%p, sid='%s', pid=%" PRIu32 ")",
-          this, NS_ConvertUTF16toUTF8(aSessionId).get(), aPromiseId);
+  EME_LOG("ChromiumCDMProxy::CloseSession(this={}, sid='{}', pid={})",
+          fmt::ptr(this), NS_ConvertUTF16toUTF8(aSessionId).get(), aPromiseId);
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
@@ -328,8 +325,8 @@ void ChromiumCDMProxy::CloseSession(const nsAString& aSessionId,
 void ChromiumCDMProxy::RemoveSession(const nsAString& aSessionId,
                                      PromiseId aPromiseId) {
   MOZ_ASSERT(NS_IsMainThread());
-  EME_LOG("ChromiumCDMProxy::RemoveSession(this=%p, sid='%s', pid=%" PRIu32 ")",
-          this, NS_ConvertUTF16toUTF8(aSessionId).get(), aPromiseId);
+  EME_LOG("ChromiumCDMProxy::RemoveSession(this={}, sid='{}', pid={})",
+          fmt::ptr(this), NS_ConvertUTF16toUTF8(aSessionId).get(), aPromiseId);
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {
@@ -344,13 +341,14 @@ void ChromiumCDMProxy::RemoveSession(const nsAString& aSessionId,
 
 void ChromiumCDMProxy::QueryOutputProtectionStatus() {
   MOZ_ASSERT(NS_IsMainThread());
-  EME_LOG("ChromiumCDMProxy::QueryOutputProtectionStatus(this=%p)", this);
+  EME_LOG("ChromiumCDMProxy::QueryOutputProtectionStatus(this={})",
+          fmt::ptr(this));
 
   if (mKeys.IsNull()) {
     EME_LOG(
-        "ChromiumCDMProxy::QueryOutputProtectionStatus(this=%p), mKeys "
+        "ChromiumCDMProxy::QueryOutputProtectionStatus(this={}), mKeys "
         "missing!",
-        this);
+        fmt::ptr(this));
     // If we can't get mKeys, we're probably in shutdown. But do our best to
     // respond to the request and indicate the check failed.
     NotifyOutputProtectionStatus(OutputProtectionCheckStatus::CheckFailed,
@@ -372,9 +370,9 @@ void ChromiumCDMProxy::NotifyOutputProtectionStatus(
   MOZ_ASSERT_IF(aCheckStatus == OutputProtectionCheckStatus::CheckSuccessful,
                 aCaptureStatus != OutputProtectionCaptureStatus::Unused);
   EME_LOG(
-      "ChromiumCDMProxy::NotifyOutputProtectionStatus(this=%p) "
-      "aCheckStatus=%" PRIu8 " aCaptureStatus=%" PRIu8,
-      this, static_cast<uint8_t>(aCheckStatus),
+      "ChromiumCDMProxy::NotifyOutputProtectionStatus(this={}) "
+      "aCheckStatus={} aCaptureStatus={}",
+      fmt::ptr(this), static_cast<uint8_t>(aCheckStatus),
       static_cast<uint8_t>(aCaptureStatus));
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
@@ -408,8 +406,8 @@ void ChromiumCDMProxy::NotifyOutputProtectionStatus(
 
 void ChromiumCDMProxy::Shutdown() {
   MOZ_ASSERT(NS_IsMainThread());
-  EME_LOG("ChromiumCDMProxy::Shutdown(this=%p) mCDM=%p, mIsShutdown=%s", this,
-          mCDM.get(), mIsShutdown ? "true" : "false");
+  EME_LOG("ChromiumCDMProxy::Shutdown(this={}) mCDM={}, mIsShutdown={}",
+          fmt::ptr(this), fmt::ptr(mCDM.get()), mIsShutdown ? "true" : "false");
   if (mIsShutdown) {
     return;
   }
@@ -432,10 +430,10 @@ void ChromiumCDMProxy::RejectPromise(PromiseId aId, ErrorResult&& aException,
         NS_DISPATCH_NORMAL);
     return;
   }
-  EME_LOG("ChromiumCDMProxy::RejectPromise(this=%p, pid=%" PRIu32
-          ", code=0x%x, "
-          "reason='%s')",
-          this, aId, aException.ErrorCodeAsInt(), aReason.get());
+  EME_LOG(
+      "ChromiumCDMProxy::RejectPromise(this={}, pid={}, code=0x{:x}, "
+      "reason='{}')",
+      fmt::ptr(this), aId, aException.ErrorCodeAsInt(), aReason.get());
   if (!mKeys.IsNull()) {
     mKeys->RejectPromise(aId, std::move(aException), aReason);
   } else {
@@ -472,7 +470,7 @@ void ChromiumCDMProxy::ResolvePromise(PromiseId aId) {
     return;
   }
 
-  EME_LOG("ChromiumCDMProxy::ResolvePromise(this=%p, pid=%" PRIu32 ")", this,
+  EME_LOG("ChromiumCDMProxy::ResolvePromise(this={}, pid={})", fmt::ptr(this),
           aId);
   if (!mKeys.IsNull()) {
     mKeys->ResolvePromise(aId);
@@ -484,9 +482,9 @@ void ChromiumCDMProxy::ResolvePromise(PromiseId aId) {
 void ChromiumCDMProxy::OnSetSessionId(uint32_t aCreateSessionToken,
                                       const nsAString& aSessionId) {
   MOZ_ASSERT(NS_IsMainThread());
-  EME_LOG("ChromiumCDMProxy::OnSetSessionId(this=%p, token=%" PRIu32
-          ", sid='%s')",
-          this, aCreateSessionToken, NS_ConvertUTF16toUTF8(aSessionId).get());
+  EME_LOG("ChromiumCDMProxy::OnSetSessionId(this={}, token={}, sid='{}')",
+          fmt::ptr(this), aCreateSessionToken,
+          NS_ConvertUTF16toUTF8(aSessionId).get());
 
   if (mKeys.IsNull()) {
     return;
@@ -614,9 +612,9 @@ RefPtr<DecryptPromise> ChromiumCDMProxy::Decrypt(MediaRawData* aSample) {
 void ChromiumCDMProxy::GetStatusForPolicy(
     PromiseId aPromiseId, const dom::HDCPVersion& aMinHdcpVersion) {
   MOZ_ASSERT(NS_IsMainThread());
-  EME_LOG("ChromiumCDMProxy::GetStatusForPolicy(this=%p, pid=%" PRIu32
-          ") minHdcpVersion=%s",
-          this, aPromiseId, dom::GetEnumString(aMinHdcpVersion).get());
+  EME_LOG(
+      "ChromiumCDMProxy::GetStatusForPolicy(this={}, pid={}) minHdcpVersion={}",
+      fmt::ptr(this), aPromiseId, dom::GetEnumString(aMinHdcpVersion).get());
 
   RefPtr<gmp::ChromiumCDMParent> cdm = GetCDMParent();
   if (!cdm) {

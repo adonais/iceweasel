@@ -32,7 +32,6 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.input.ImeAction
@@ -44,8 +43,8 @@ import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
 import org.mozilla.fenix.components.appstate.sports.SportsWidgetState
+import org.mozilla.fenix.components.components
 import org.mozilla.fenix.compose.list.SwitchListItem
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.home.sports.MatchCard
 import org.mozilla.fenix.home.sports.MatchStatus
 import org.mozilla.fenix.home.sports.SportCardErrorState
@@ -137,7 +136,7 @@ private fun SportsWidgetDebugToolContent(
 
 @Composable
 private fun MockServerSection(appStore: AppStore) {
-    val settings = LocalContext.current.settings()
+    val settings = components.settings
     val focusManager = LocalFocusManager.current
     var useMockServer by remember { mutableStateOf(settings.useMockWorldCupServer) }
     var sessionId by remember { mutableStateOf(settings.mockWorldCupServerSession) }

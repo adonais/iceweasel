@@ -52,6 +52,8 @@ class gfxHarfBuzzShaper : public gfxFontShaper {
                                      hb_codepoint_t first_glyph,
                                      hb_codepoint_t second_glyph,
                                      void* user_data);
+  static hb_bool_t HBGetHExtents(hb_font_t* font, void* font_data,
+                                 hb_font_extents_t* extents, void* user_data);
 
  public:
   explicit gfxHarfBuzzShaper(gfxFont* aFont);

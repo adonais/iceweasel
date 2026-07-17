@@ -307,6 +307,10 @@ std::string SanitizeRenderer(const std::string& raw_renderer) {
     // e.g. "ANGLE (Samsung Xclipse 940) on Vulkan 1.3.264"
     static const std::regex kReAngleVulkan(
         "ANGLE [(]+(.*)[)]( on Vulkan) [0-9\\.]*[)]*");
+    // e.g. "ANGLE (Apple, ANGLE Metal Renderer: Apple M4, Version 15.3 (Build
+    // 24D60))"
+    static const std::regex kReAngleMetal(
+        "ANGLE [(]([^,]*), ANGLE Metal Renderer: ([^,]*), Version .*[)]");
 
     if (std::regex_match(raw_renderer, m, kReAngleDirect3D)) {
       const auto& vendor = m.str(1);
@@ -332,6 +336,18 @@ std::string SanitizeRenderer(const std::string& raw_renderer) {
         renderer2 = GENERIC_RENDERER;
       }
       return std::string("ANGLE (") + *renderer2 + ")" + vulkan_suffix;
+    } else if (std::regex_match(raw_renderer, m, kReAngleMetal)) {
+      const auto& vendor = m.str(1);
+      const auto& renderer = m.str(2);
+
+      auto renderer2 = ChooseDeviceReplacement(renderer);
+      if (!renderer2) {
+        gfxCriticalNote << "Couldn't sanitize Metal ANGLE renderer \""
+                        << renderer << "\" from GL_RENDERER \"" << raw_renderer;
+        renderer2 = GENERIC_RENDERER;
+      }
+      return std::string("ANGLE (") + vendor +
+             ", ANGLE Metal Renderer: " + *renderer2 + ")";
     } else if (Contains(raw_renderer, "ANGLE")) {
       gfxCriticalError() << "Failed to parse ANGLE renderer: " << raw_renderer;
       return {};

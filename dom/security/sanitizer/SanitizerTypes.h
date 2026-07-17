@@ -111,6 +111,7 @@ std::ostream& operator<<(std::ostream& aStream, const CanonicalElement& aName);
 
 using CanonicalAttributeSet = nsTHashSet<CanonicalAttribute>;
 using CanonicalElementSet = nsTHashSet<CanonicalElement>;
+using CanonicalPISet = nsTHashSet<RefPtr<nsAtom>>;
 
 struct CanonicalElementAttributes {
   Maybe<CanonicalAttributeSet> mAttributes;
@@ -141,6 +142,11 @@ inline const auto& GetAsDictionary(
 }
 
 inline const auto& GetAsDictionary(
+    const OwningStringOrSanitizerProcessingInstruction& aOwning) {
+  return aOwning.GetAsSanitizerProcessingInstruction();
+}
+
+inline const auto& GetAsDictionary(
     const StringOrSanitizerElementNamespace& aElement) {
   return aElement.GetAsSanitizerElementNamespace();
 }
@@ -148,6 +154,11 @@ inline const auto& GetAsDictionary(
 inline const auto& GetAsDictionary(
     const StringOrSanitizerElementNamespaceWithAttributes& aElement) {
   return aElement.GetAsSanitizerElementNamespaceWithAttributes();
+}
+
+inline const auto& GetAsDictionary(
+    const StringOrSanitizerProcessingInstruction& aElement) {
+  return aElement.GetAsSanitizerProcessingInstruction();
 }
 
 template <typename SanitizerNameNamespace>
@@ -197,6 +208,25 @@ class MOZ_STACK_CLASS SanitizerComparator final {
 
     // Step 3. Return itemA["name"] is code unit less thanitemB["name"].
     return itemA.mName < itemB.mName;
+  }
+};
+
+class MOZ_STACK_CLASS PIComparator final {
+ public:
+  bool Equals(
+      const OwningStringOrSanitizerProcessingInstruction& aItemA,
+      const OwningStringOrSanitizerProcessingInstruction& aItemB) const {
+    const auto& itemA = GetAsDictionary(aItemA);
+    const auto& itemB = GetAsDictionary(aItemB);
+    return itemA.mTarget == itemB.mTarget;
+  }
+
+  bool LessThan(
+      const OwningStringOrSanitizerProcessingInstruction& aItemA,
+      const OwningStringOrSanitizerProcessingInstruction& aItemB) const {
+    const auto& itemA = GetAsDictionary(aItemA);
+    const auto& itemB = GetAsDictionary(aItemB);
+    return itemA.mTarget < itemB.mTarget;
   }
 };
 

@@ -17,7 +17,6 @@ import com.intellij.psi.PsiMethod
 import com.intellij.psi.PsiTypes
 import org.jetbrains.uast.UBinaryExpressionWithType
 import org.jetbrains.uast.UCallExpression
-import org.jetbrains.uast.UExpression
 import org.jetbrains.uast.UastBinaryExpressionWithTypeKind.InstanceCheck
 import org.jetbrains.uast.skipParenthesizedExprDown
 import java.util.EnumSet
@@ -59,15 +58,10 @@ class AssertIsDetector : Detector(), Detector.UastScanner {
     ) {
         // JUnit: assertTrue(Boolean) or assertTrue(String, Boolean)
         // kotlin.test: assertTrue(Boolean) or assertTrue(Boolean, String?)
-        val args = node.valueArguments.map(UExpression::skipParenthesizedExprDown)
-        val booleanArg = args.firstOrNull {
-            it.skipParenthesizedExprDown().getExpressionType() == PsiTypes.booleanType()
-        }
+        val args = node.valueArguments.map { it.skipParenthesizedExprDown() }
+        val booleanArg = args.firstOrNull { it.getExpressionType() == PsiTypes.booleanType() }
         val stringArg = args.firstOrNull {
-            (
-                it.skipParenthesizedExprDown()
-                .getExpressionType() as? PsiClassType
-            )?.name == String::class.simpleName
+            (it.getExpressionType() as? PsiClassType)?.name == String::class.simpleName
         }
 
         if (booleanArg is UBinaryExpressionWithType && booleanArg.operationKind is InstanceCheck) {
@@ -84,11 +78,13 @@ class AssertIsDetector : Detector(), Detector.UastScanner {
             }
 
             val quickFix = replacementText?.let {
+                val fullyQualified = "kotlin.test.$replacementText"
                 LintFix.create()
                     .name("Replace with $replacementText")
                     .replace()
                     .all()
-                    .with(replacementText)
+                    .with(fullyQualified)
+                    .shortenNames()
                     .build()
             }
 

@@ -11,7 +11,7 @@ import android.view.View.VISIBLE
 import android.widget.ImageView
 import androidx.preference.PreferenceViewHolder
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 
 const val NO_SHORTCUT_SIMPLE_TOOLBAR_TYPE = "simple_no_shortcut"
 
@@ -27,10 +27,10 @@ internal class ToolbarSimpleNoShortcutPreference @JvmOverloads constructor(
      */
     var optionChangedListener: ((ShortcutOption?) -> Unit)? = null
 
-    override fun readSelectedKey(): String = context.settings().toolbarSimpleShortcutKey
+    override fun readSelectedKey(): String = context.components.settings.toolbarSimpleShortcutKey
 
     override fun writeSelectedKey(key: String) {
-        context.settings().toolbarSimpleShortcutKey = key
+        context.components.settings.toolbarSimpleShortcutKey = key
         optionChangedListener?.invoke((options.firstOrNull { it.key.value == key }))
     }
 

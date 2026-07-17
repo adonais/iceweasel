@@ -529,7 +529,7 @@ URIFixup.prototype = {
       info.postData = submissionPostDataStream;
     }
 
-    info.keywordProviderName = engine.name;
+    info.keywordProviderId = engine.id;
     info.keywordAsSent = keyword;
     info.preferredURI = submission.uri;
     return info;
@@ -670,11 +670,11 @@ URIFixupInfo.prototype = {
     return this._fixedURI || null;
   },
 
-  set keywordProviderName(name) {
-    this._keywordProviderName = name;
+  set keywordProviderId(id) {
+    this._keywordProviderId = id;
   },
-  get keywordProviderName() {
-    return this._keywordProviderName || "";
+  get keywordProviderId() {
+    return this._keywordProviderId || "";
   },
 
   set keywordAsSent(keyword) {
@@ -858,7 +858,7 @@ function tryKeywordFixupForURIInfo(uriString, fixupInfo, isPrivateContext) {
       uriString,
       isPrivateContext
     );
-    fixupInfo.keywordProviderName = keywordInfo.keywordProviderName;
+    fixupInfo.keywordProviderId = keywordInfo.keywordProviderId;
     fixupInfo.keywordAsSent = keywordInfo.keywordAsSent;
     fixupInfo.preferredURI = keywordInfo.preferredURI;
     return true;

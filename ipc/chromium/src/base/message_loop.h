@@ -458,7 +458,7 @@ class MessageLoopForUI : public MessageLoop {
   // Returns the MessageLoopForUI of the current thread.
   static MessageLoopForUI* current() {
     MessageLoop* loop = MessageLoop::current();
-    if (!loop) return NULL;
+    if (!loop) return nullptr;
     Type type = loop->type();
     DCHECK(type == MessageLoop::TYPE_UI ||
            type == MessageLoop::TYPE_MOZILLA_PARENT ||

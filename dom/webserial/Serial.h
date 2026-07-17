@@ -72,8 +72,6 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
   bool GetAutoselectPorts(ErrorResult& aRv) const;
   void SetAutoselectPorts(bool aAutoselect, ErrorResult& aRv);
 
-  bool AutoselectPorts() const { return mAutoselectPorts; }
-
   static bool IsValidBluetoothUUID(const nsAString& aString);
 
   // Returns whether the filter validated successfully. If this function
@@ -85,10 +83,6 @@ class Serial final : public DOMEventTargetHelper, public SupportsWeakPtr {
 
  private:
   ~Serial() override;
-
-  // Returns the manager child if the testing preference is enabled, otherwise
-  // sets a NotSupportedError on aRv and returns nullptr.
-  SerialManagerChild* GetManagerChildForTesting(ErrorResult& aRv);
 
   // The single list of granted SerialPort objects for this context.
   nsTArray<RefPtr<SerialPort>> mPorts;

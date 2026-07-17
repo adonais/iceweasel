@@ -55,8 +55,7 @@ MathMLElement::MathMLElement(
     already_AddRefed<mozilla::dom::NodeInfo>& aNodeInfo)
     : MathMLElementBase(std::move(aNodeInfo)), Link(this) {}
 
-MathMLElement::MathMLElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+MathMLElement::MathMLElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : MathMLElementBase(std::move(aNodeInfo)), Link(this) {}
 
 nsresult MathMLElement::BindToTree(BindContext& aContext, nsINode& aParent) {

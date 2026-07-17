@@ -45,6 +45,8 @@ constexpr const char* stateFlags[] = {
   "WP:CPSF ",
 };
 
+ThreadCallback WaylandProxy::sThreadStartCallback = nullptr;
+ThreadCallback WaylandProxy::sThreadStopCallback = nullptr;
 CompositorUnavailableHandler WaylandProxy::sCompositorUnavailableHandler =
     nullptr;
 CompositorSilentDisconnectHandler
@@ -986,7 +988,13 @@ void* WaylandProxy::RunProxyThread(WaylandProxy* aProxy) {
 #if defined(__linux__) || defined(__FreeBSD__)
   pthread_setname_np(pthread_self(), "WaylandProxy");
 #endif
+  if (sThreadStartCallback) {
+    sThreadStartCallback();
+  }
   aProxy->Run();
+  if (sThreadStopCallback) {
+    sThreadStopCallback();
+  }
   Print("[%d] WaylandProxy [%p]: thread exited.\n", getpid(), aProxy);
   return nullptr;
 }
@@ -1054,6 +1062,14 @@ bool WaylandProxy::RunThread() {
 }
 
 void WaylandProxy::SetVerbose(bool aVerbose) { sPrintInfo = aVerbose; }
+
+void WaylandProxy::SetThreadStartCallback(ThreadCallback aCallback) {
+  sThreadStartCallback = aCallback;
+}
+
+void WaylandProxy::SetThreadStopCallback(ThreadCallback aCallback) {
+  sThreadStopCallback = aCallback;
+}
 
 void WaylandProxy::Info(const char* aFormat, ...) {
   if (!sPrintInfo) {

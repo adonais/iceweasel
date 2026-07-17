@@ -7,6 +7,14 @@ load(libdir + "asserts.js");
 const MAX_REPORTED_STACK_DEPTH = 128;
 assertEq(Error.stackTraceLimit, MAX_REPORTED_STACK_DEPTH);
 
+const desc = Object.getOwnPropertyDescriptor(Error, "stackTraceLimit");
+assertEq(typeof desc.value, "number");
+assertEq(desc.writable, true);
+assertEq(desc.enumerable, true);
+assertEq(desc.configurable, true);
+assertEq(desc.get, undefined);
+assertEq(desc.set, undefined);
+
 function rec(a) {
     if (a === MAX_REPORTED_STACK_DEPTH + 10) {
       throw new Error();
@@ -34,6 +42,42 @@ try { rec(0); } catch (e) { assertEq(countFrames(e), 0); }
 Error.stackTraceLimit = -Infinity;
 assertEq(Error.stackTraceLimit, -Infinity);
 try { rec(0); } catch (e) { assertEq(countFrames(e), 0); }
+
+Error.stackTraceLimit = true;
+assertEq(Error.stackTraceLimit, true);
+try { rec(0); } catch (e) { assertEq(countFrames(e), 0); }
+
+Error.stackTraceLimit = false;
+assertEq(Error.stackTraceLimit, false);
+try { rec(0); } catch (e) { assertEq(countFrames(e), 0); }
+
+const sym = Symbol("hello");
+Error.stackTraceLimit = sym;
+assertEq(Error.stackTraceLimit, sym);
+try { rec(0); } catch (e) { assertEq(countFrames(e), 0); }
+
+const arr = [1, 2, 3];
+Error.stackTraceLimit = arr;
+assertEq(Error.stackTraceLimit, arr);
+try { rec(0); } catch (e) { assertEq(countFrames(e), 0); }
+
+const valObj = { valueOf() { return 5; } };
+Error.stackTraceLimit = valObj;
+assertEq(Error.stackTraceLimit, valObj);
+try { rec(0); } catch (e) { assertEq(countFrames(e), 0); }
+
+Error.stackTraceLimit = undefined;
+assertEq(Error.stackTraceLimit, undefined);
+try { rec(0); } catch (e) {
+  assertEq(typeof e.stack, "undefined");
+  assertEq("stack" in e, true);
+}
+assertEq(typeof new Error("test").stack, "undefined");
+assertEq("stack" in new Error("test"), true);
+const captureObj = {};
+Error.captureStackTrace(captureObj);
+assertEq(typeof captureObj.stack, "undefined");
+assertEq("stack" in captureObj, true);
 
 Error.stackTraceLimit = -0;
 assertEq(Error.stackTraceLimit, -0);
@@ -83,9 +127,19 @@ function deep(n) {
 function caller() { return deep(5); }
 assertEq(countFrames(caller()), 1);
 
+// With stackTraceLimit=1 and a constructorOpt that skips the topmost
+// JS frame, we must still capture one frame (the global frame).
+Error.stackTraceLimit = 1;
+function smallLimitCaller() {
+    const target = {};
+    Error.captureStackTrace(target, smallLimitCaller);
+    return target;
+}
+assertEq(countFrames(smallLimitCaller()), 1);
+
 delete Error.stackTraceLimit;
 assertEq("stackTraceLimit" in Error, false);
-try { rec(0); } catch (e) { assertEq(countFrames(e), MAX_REPORTED_STACK_DEPTH); }
+try { rec(0); } catch (e) { assertEq(typeof e.stack, "undefined"); }
 
 let getterCalled = false;
 Object.defineProperty(Error, "stackTraceLimit", {
@@ -109,5 +163,23 @@ assertEq(getterCalled, false);
 Object.defineProperty(Error, "stackTraceLimit", {
     value: 3, writable: true, enumerable: true, configurable: true
 });
+
+// Exercise JSContext::setPendingException's stack capture path with
+// non-Error throws across different stackTraceLimit values. The realm
+// captures stacks for the first ~50 throws, so these all go through
+// CaptureStack with the resolved limit.
+Error.stackTraceLimit = undefined;
+try { throw "string error"; } catch (e) { assertEq(e, "string error"); }
+try { throw 42; } catch (e) { assertEq(e, 42); }
+try { throw null; } catch (e) { assertEq(e, null); }
+try { throw { value: 1 }; } catch (e) { assertEq(e.value, 1); }
+
+Error.stackTraceLimit = 0;
+try { throw "string error"; } catch (e) { assertEq(e, "string error"); }
+
+Error.stackTraceLimit = 5;
+try { throw "string error"; } catch (e) { assertEq(e, "string error"); }
+
+Error.stackTraceLimit = 3;
 Error = "";
 try { rec(0); } catch (e) { assertEq(countFrames(e), 3); }

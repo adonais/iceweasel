@@ -47,6 +47,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
       [0n, 4n, 5n, 3n, 4n, 5n]
     )
   );
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

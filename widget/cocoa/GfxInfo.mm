@@ -87,7 +87,7 @@ static uint32_t IntValueOfCFData(CFDataRef d) {
 
   if (d) {
     const uint32_t* vp = reinterpret_cast<const uint32_t*>(CFDataGetBytePtr(d));
-    if (vp != NULL) value = *vp;
+    if (vp != nullptr) value = *vp;
   }
 
   return value;

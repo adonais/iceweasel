@@ -11,7 +11,6 @@ import androidx.preference.SwitchPreferenceCompat
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 
 /**
@@ -23,10 +22,10 @@ class RemoteImprovementsFragment : PreferenceFragmentCompat(), SystemInsetsPadde
         setPreferencesFromResource(R.xml.remote_improvements_preferences, rootKey)
 
         requirePreference<SwitchPreferenceCompat>(R.string.pref_key_rollouts).apply {
-            isChecked = context.settings().isRolloutsEnabled
+            isChecked = context.components.settings.isRolloutsEnabled
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { _, newValue ->
                 val enabled = newValue as? Boolean ?: false
-                context.settings().isRolloutsEnabled = enabled
+                context.components.settings.isRolloutsEnabled = enabled
                 context.components.nimbus.sdk.rolloutParticipation = enabled
                 true
             }

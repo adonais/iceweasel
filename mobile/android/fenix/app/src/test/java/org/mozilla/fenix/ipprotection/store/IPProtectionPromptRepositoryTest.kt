@@ -7,9 +7,12 @@ package org.mozilla.fenix.ipprotection.store
 import junit.framework.TestCase.assertFalse
 import junit.framework.TestCase.assertTrue
 import mozilla.components.support.test.robolectric.testContext
+import org.json.JSONObject
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.experiments.nimbus.HardcodedNimbusFeatures
+import org.mozilla.fenix.nimbus.FxNimbus
 import org.mozilla.fenix.utils.Settings
 import org.mozilla.fenix.utils.Settings.Companion.ONE_WEEK_MS
 import org.robolectric.RobolectricTestRunner
@@ -53,6 +56,17 @@ class IPProtectionPromptRepositoryTest {
 
     @Test
     fun `WHEN the IP Protection feature is not available THEN do not show the prompt`() {
+        val hardcodedNimbus = HardcodedNimbusFeatures(
+            testContext,
+            "ip-protection" to JSONObject(
+                """
+                {
+                    "enabled": false
+                }
+                """.trimIndent(),
+            ),
+        )
+        hardcodedNimbus.connectWith(FxNimbus)
         settings.isIPProtectionEnabled = false
         repository.isShowingPrompt = false
 

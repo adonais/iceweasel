@@ -198,6 +198,10 @@ class NetworkEventWatcher {
     this.listener.removeOverride(url);
   }
 
+  setLocalModeMappings(mappings) {
+    this.listener.setLocalModeMappings(mappings);
+  }
+
   /**
    * Watch for previous document being unloaded in order to clear
    * all related network events, in case persist is disabled.
@@ -365,6 +369,9 @@ class NetworkEventWatcher {
         resourceUpdates.mimeType = updateResource.mimeType;
         resourceUpdates.waitingTime = updateResource.waitingTime;
         resourceUpdates.isResolvedByTRR = updateResource.isResolvedByTRR;
+        if (Number.isInteger(updateResource.priority)) {
+          resourceUpdates.priority = updateResource.priority;
+        }
         resourceUpdates.proxyHttpVersion = updateResource.proxyHttpVersion;
         resourceUpdates.proxyStatus = updateResource.proxyStatus;
         resourceUpdates.proxyStatusText = updateResource.proxyStatusText;
@@ -392,6 +399,9 @@ class NetworkEventWatcher {
       case NETWORK_EVENT_TYPES.RESPONSE_CONTENT_COMPLETE:
         resourceUpdates.extension = updateResource.extension;
         resourceUpdates.blockedReason = updateResource.blockedReason;
+        if (Number.isInteger(updateResource.priority)) {
+          resourceUpdates.priority = updateResource.priority;
+        }
         break;
       case NETWORK_EVENT_TYPES.EVENT_TIMINGS:
         resourceUpdates.totalTime = updateResource.totalTime;

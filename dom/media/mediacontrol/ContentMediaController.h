@@ -7,6 +7,7 @@
 
 #include "MediaControlKeySource.h"
 #include "MediaStatusManager.h"
+#include "mozilla/dom/AudioSessionBinding.h"
 
 namespace mozilla::dom {
 
@@ -52,7 +53,8 @@ class ContentMediaAgent : public IMediaInfoUpdater {
                                   MediaPlaybackState aState) override;
   void NotifyMediaAudibleChanged(
       uint64_t aBrowsingContextId, MediaAudibleState aState,
-      ControlType aType = ControlType::eControllable) override;
+      ControlType aType = ControlType::eControllable,
+      AudioSessionType aSessionType = AudioSessionType::Playback) override;
   void SetIsInPictureInPictureMode(uint64_t aBrowsingContextId,
                                    bool aIsInPictureInPictureMode) override;
   void SetDeclaredPlaybackState(uint64_t aBrowsingContextId,

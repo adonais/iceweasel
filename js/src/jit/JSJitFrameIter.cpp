@@ -657,6 +657,7 @@ void JSJitProfilingFrameIterator::moveToNextFrame(CommonFrameLayout* frame) {
       frame = GetPreviousRawFrame<TrampolineNativeFrameLayout*>(frame);
       MOZ_ASSERT(frame->prevType() == FrameType::IonJS ||
                  frame->prevType() == FrameType::BaselineStub ||
+                 frame->prevType() == FrameType::IonICCall ||
                  frame->prevType() == FrameType::WasmToJSJit ||
                  frame->prevType() == FrameType::CppToJSJit);
       continue;

@@ -16,7 +16,7 @@ smartwindow-assistant-error-capacity-header = Smart Window is at capacity right 
 smartwindow-assistant-error-budget-body = You can still browse in this window. Chat will be available again after midnight ET.
 smartwindow-assistant-error-many-requests-header = Please wait a moment and try again. Too many messages were sent in a short time.
 smartwindow-assistant-error-max-length-header = It’s time to start a new chat. This one’s reached its length limit.
-smartwindow-assistant-error-page-content-header = This request didn’t go through because something in the page or your message was flagged as potentially unsafe. Try a different request.
+smartwindow-assistant-error-request-blocked-header = Smart Window couldn’t reach the server. Try a different network, or disable your VPN.
 # Variables:
 #   $status (Number) - HTTP status code returned by the inference back-end
 smartwindow-assistant-error-http-header = Server error (HTTP { $status }). Please try again.
@@ -39,6 +39,9 @@ aiwindow-retry =
 aiwindow-copy-message =
     .tooltiptext = Copy
     .aria-label = Copy message
+aiwindow-copy-table =
+    .tooltiptext = Copy table
+    .aria-label = Copy table
 aiwindow-thumbs-up =
     .tooltiptext = Share positive feedback
     .aria-label = Share positive feedback
@@ -49,6 +52,10 @@ aiwindow-applied-memories-popover =
     .aria-label = Memories panel
 aiwindow-applied-memories-list =
     .aria-label = Memories
+# Variables:
+#   $summary (String) - The memory text that will be deleted
+aiwindow-delete-memory-button =
+    .aria-label = Delete { $summary }
 
 ## Jump to Bottom Button
 
@@ -64,6 +71,8 @@ smartwindow-nl-retry-tool-button =
 smartwindow-nl-retry-message = If you still want to close tabs, choose <strong>Retry</strong> and make your selection in the card that opens.
 
 smartwindow-nl-thinking = Looking for matching tabs…
+smartwindow-loading-assistant-response =
+    .aria-label = Loading assistant response
 smartwindow-nl-undo-button =
     .label = Undo
 
@@ -120,3 +129,10 @@ action-log-completed-steps =
         [one] Completed 1 step
        *[other] Completed { $count } steps
     }
+
+## Assistant Loader
+
+# Shown while the assistant analyzes search results that it loaded into the
+# current tab on the user's behalf. Communicates both that the tab's content
+# changed and that the assistant is reviewing the results before responding.
+smartwindow-search-loader-text = Loaded search results in this tab. Analyzing…

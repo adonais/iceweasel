@@ -10,6 +10,12 @@ const { getFxAccountsSingleton } = ChromeUtils.importESModule(
   "resource://gre/modules/FxAccounts.sys.mjs"
 );
 
+const { MODEL_FEATURES, SERVICE_TYPES, PURPOSES } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+);
+
+const TEST_MODEL = "test-model";
+
 add_task(async function test_getFxAccountToken_passes_correct_scope() {
   const fakeToken = "fake-oauth-token";
   const fxAccounts = getFxAccountsSingleton();
@@ -74,7 +80,13 @@ add_task(async function test_getFxAccountToken_returns_null_on_error() {
 
 // Success run with no errors should return response from engine.run.
 add_task(async function test_runWithAuth_success_no_errors() {
-  const engine = await openAIEngine.build("chat");
+  const engine = await openAIEngine.build({
+    model: TEST_MODEL,
+    serviceType: SERVICE_TYPES.AI,
+    purpose: PURPOSES.CHAT,
+    flowId: null,
+    feature: MODEL_FEATURES.CHAT,
+  });
   const testContent = { messages: [{ role: "user", content: "test" }] };
   const expectedResponse = { success: true, data: "response" };
 
@@ -103,7 +115,13 @@ add_task(async function test_runWithAuth_success_no_errors() {
 
 // Test token refresh works on 401 error with successful retry
 add_task(async function test_runWithAuth_retry_on_401_error() {
-  const engine = await openAIEngine.build("chat");
+  const engine = await openAIEngine.build({
+    model: TEST_MODEL,
+    serviceType: SERVICE_TYPES.AI,
+    purpose: PURPOSES.CHAT,
+    flowId: null,
+    feature: MODEL_FEATURES.CHAT,
+  });
   const oldToken = "old-token";
   const newToken = "new-token";
   const testContent = {
@@ -164,7 +182,13 @@ add_task(async function test_runWithAuth_retry_on_401_error() {
 
 // Test token revocation and throw error if 401 error on both attempts
 add_task(async function test_runWithAuth_fails_after_retry_401() {
-  const engine = await openAIEngine.build("chat");
+  const engine = await openAIEngine.build({
+    model: TEST_MODEL,
+    serviceType: SERVICE_TYPES.AI,
+    purpose: PURPOSES.CHAT,
+    flowId: null,
+    feature: MODEL_FEATURES.CHAT,
+  });
   const oldToken = "old-token";
   const newToken = "new-token";
   const testContent = {
@@ -218,11 +242,20 @@ add_task(async function test_runWithAuth_fails_after_retry_401() {
 // Test 401 error is thrown immediately when custom endpoint is set (no retry)
 add_task(async function test_runWithAuth_throws_401_with_custom_endpoint() {
   await SpecialPowers.pushPrefEnv({
-    set: [["browser.smartwindow.endpoint", "https://example.test/v1"]],
+    set: [["browser.smartwindow.customEndpoint", "https://example.test/v1"]],
   });
 
   try {
-    const engine = await openAIEngine.build("chat");
+    const { baseURL, apiKey } = openAIEngine.resolveEndpointConfig("0");
+    const engine = await openAIEngine.build({
+      model: TEST_MODEL,
+      serviceType: SERVICE_TYPES.AI,
+      purpose: PURPOSES.CHAT,
+      flowId: null,
+      feature: MODEL_FEATURES.CHAT,
+      baseURL,
+      apiKey,
+    });
     const testContent = { messages: [{ role: "user", content: "test" }] };
     const expectedError = new Error("Request failed with 401 status code");
 
@@ -257,7 +290,13 @@ add_task(async function test_runWithAuth_throws_401_with_custom_endpoint() {
 
 // Test no retry for non-401 errors and error is thrown immediately
 add_task(async function test_runWithAuth_throws_non_401_error() {
-  const engine = await openAIEngine.build("chat");
+  const engine = await openAIEngine.build({
+    model: TEST_MODEL,
+    serviceType: SERVICE_TYPES.AI,
+    purpose: PURPOSES.CHAT,
+    flowId: null,
+    feature: MODEL_FEATURES.CHAT,
+  });
   const testContent = { messages: [{ role: "user", content: "test" }] };
   const expectedError = new Error("Network error");
 
@@ -289,7 +328,13 @@ add_task(async function test_runWithAuth_throws_non_401_error() {
 
 // Test async generator streaming success with no errors
 add_task(async function test_runWithGeneratorAuth_success_no_errors() {
-  const engine = await openAIEngine.build("chat");
+  const engine = await openAIEngine.build({
+    model: TEST_MODEL,
+    serviceType: SERVICE_TYPES.AI,
+    purpose: PURPOSES.CHAT,
+    flowId: null,
+    feature: MODEL_FEATURES.CHAT,
+  });
   const testOptions = { messages: [{ role: "user", content: "test" }] };
   const expectedChunks = [{ text: "Hello" }, { text: " world" }, { text: "!" }];
 
@@ -330,7 +375,13 @@ add_task(async function test_runWithGeneratorAuth_success_no_errors() {
 
 // Test generator token refresh works on 401 error with successful retry
 add_task(async function test_runWithGeneratorAuth_retry_on_401_error() {
-  const engine = await openAIEngine.build("chat");
+  const engine = await openAIEngine.build({
+    model: TEST_MODEL,
+    serviceType: SERVICE_TYPES.AI,
+    purpose: PURPOSES.CHAT,
+    flowId: null,
+    feature: MODEL_FEATURES.CHAT,
+  });
   const oldToken = "old-token";
   const newToken = "new-token";
   const testOptions = {
@@ -411,7 +462,13 @@ add_task(async function test_runWithGeneratorAuth_retry_on_401_error() {
 
 // Test generator token revocation and throw error if 401 error on both attempts
 add_task(async function test_runWithGeneratorAuth_fails_after_retry_401() {
-  const engine = await openAIEngine.build("chat");
+  const engine = await openAIEngine.build({
+    model: TEST_MODEL,
+    serviceType: SERVICE_TYPES.AI,
+    purpose: PURPOSES.CHAT,
+    flowId: null,
+    feature: MODEL_FEATURES.CHAT,
+  });
   const oldToken = "old-token";
   const newToken = "new-token";
   const testOptions = {
@@ -489,7 +546,13 @@ add_task(async function test_runWithGeneratorAuth_fails_after_retry_401() {
 
 // Test generator no retry for non-401 errors and error is thrown immediately
 add_task(async function test_runWithGeneratorAuth_throws_non_401_error() {
-  const engine = await openAIEngine.build("chat");
+  const engine = await openAIEngine.build({
+    model: TEST_MODEL,
+    serviceType: SERVICE_TYPES.AI,
+    purpose: PURPOSES.CHAT,
+    flowId: null,
+    feature: MODEL_FEATURES.CHAT,
+  });
   const testOptions = { messages: [{ role: "user", content: "test" }] };
   const expectedError = new Error("Network error");
 

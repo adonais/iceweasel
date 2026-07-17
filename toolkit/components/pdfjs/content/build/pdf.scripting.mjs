@@ -21,8 +21,8 @@
  */
 
 /**
- * pdfjsVersion = 6.0.109
- * pdfjsBuild = d27b9ab5f
+ * pdfjsVersion = 6.0.346
+ * pdfjsBuild = e75a7cfd6
  */
 
 ;// ./src/scripting_api/constants.js
@@ -971,7 +971,7 @@ class AForm {
     this._app = app;
     this._util = util;
     this._color = color;
-    this._emailRegex = new RegExp("^[a-zA-Z0-9.!#$%&'*+\\/=?^_`{|}~-]+" + "@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?" + "(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
+    this._emailRegex = new RegExp("^[\\w.!#$%&'*+/=?^`{|}~-]+" + "@[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?" + "(?:\\.[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$");
   }
   _mkTargetName(event) {
     return event.target ? `[ ${event.target.name} ]` : "";
@@ -1079,9 +1079,9 @@ class AForm {
     value = value.trim();
     let pattern;
     if (sepStyle > 1) {
-      pattern = event.willCommit ? /^[+-]?(\d+(,\d*)?|,\d+)$/ : /^[+-]?\d*,?\d*$/;
+      pattern = event.willCommit ? /^[+-]?(\d+(,\d*)?|,\d+)$/ : /^[+-]?\d*(?:,\d*)?$/;
     } else {
-      pattern = event.willCommit ? /^[+-]?(\d+(\.\d*)?|\.\d+)$/ : /^[+-]?\d*\.?\d*$/;
+      pattern = event.willCommit ? /^[+-]?(\d+(\.\d*)?|\.\d+)$/ : /^[+-]?\d*(?:\.\d*)?$/;
     }
     if (!pattern.test(value)) {
       if (event.willCommit) {
@@ -1379,7 +1379,7 @@ class AForm {
       }
       event.rc = true;
     }
-    const re = /([-()]|\s)+/g;
+    const re = /[-()\s]+/g;
     value = value.replaceAll(re, "");
     for (const format of formats) {
       this.#AFSpecial_KeystrokeEx_helper(format.replaceAll(re, ""), value, false);
@@ -2321,7 +2321,7 @@ class PrintParams {
       suppressBG: 1 << 8,
       suppressCenter: 1 << 9,
       suppressCJKFontSubst: 1 << 10,
-      suppressCropClip: 1 << 1,
+      suppressCropClip: 1 << 11,
       suppressRotate: 1 << 12,
       suppressTransfer: 1 << 13,
       suppressUCR: 1 << 14,

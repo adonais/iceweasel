@@ -275,9 +275,8 @@ add_task(async function () {
     expected: {
       text: `attr(unknown, attr(data-x type(<color>), attr(data-y type(<color>), tomato)))`,
       attributeName: "data-x",
-      // Should be true, see Bug 2014751
-      attributeUnmatched: false,
-      tooltipText: `"10"`,
+      attributeUnmatched: true,
+      tooltipText: `Attribute value ("10") does not match expected "<color>" syntax`,
       fallback: `attr(data-y type(<color>), tomato)`,
     },
   });
@@ -290,7 +289,6 @@ add_task(async function () {
     expected: {
       text: `attr(unknown, attr(data-x type(<color>), attr(data-y type(<color>), tomato)))`,
       attributeName: "data-y",
-      // Should be true, see Bug 2014751
       attributeUnmatched: false,
       tooltipText: `"gold"`,
       fallback: "tomato",

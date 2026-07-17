@@ -6,6 +6,7 @@ package org.mozilla.fenix.ui
 
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.openAppFromExternalLink
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -113,6 +114,11 @@ class SettingsHomepageTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1564999
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsHomepageTest#verifyJumpBackInSectionTest"],
+        bug = 2042363,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun jumpBackInOptionTest() {
@@ -133,6 +139,11 @@ class SettingsHomepageTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1565000
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsHomepageTest#recentBookmarksOptionTest"],
+        bug = 2042363,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun recentBookmarksOptionTest() {

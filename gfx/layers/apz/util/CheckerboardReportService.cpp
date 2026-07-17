@@ -101,7 +101,7 @@ void CheckerboardEventStorage::ReportCheckerboard(uint32_t aSeverity,
   // list.
   if (severe.mSeverity) {
     MOZ_ASSERT(recent.mSeverity == 0, "recent should be empty here");
-    recent = severe;
+    recent = std::move(severe);
   }  // else |recent| may hold a report that got knocked out of the severe list.
 
   if (recent.mSeverity == 0) {
@@ -119,7 +119,7 @@ void CheckerboardEventStorage::ReportCheckerboard(uint32_t aSeverity,
     for (int j = RECENT_MAX_INDEX - 1; j > i; j--) {
       mCheckerboardReports[j] = mCheckerboardReports[j - 1];
     }
-    mCheckerboardReports[i] = recent;
+    mCheckerboardReports[i] = std::move(recent);
     break;
   }
 }
@@ -165,8 +165,7 @@ bool CheckerboardReportService::IsEnabled(JSContext* aCtx, JSObject* aGlobal) {
 /*static*/
 already_AddRefed<CheckerboardReportService>
 CheckerboardReportService::Constructor(const dom::GlobalObject& aGlobal) {
-  RefPtr<CheckerboardReportService> ces =
-      new CheckerboardReportService(aGlobal.GetAsSupports());
+  RefPtr ces = MakeRefPtr<CheckerboardReportService>(aGlobal.GetAsSupports());
   return ces.forget();
 }
 

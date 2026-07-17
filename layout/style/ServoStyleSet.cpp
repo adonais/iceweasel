@@ -480,15 +480,21 @@ already_AddRefed<ComputedStyle> ServoStyleSet::ResolvePseudoElementStyle(
       return nullptr;
     }
     if (cacheable) {
-      // Don't cache styles with viewport units if the parent style differs from
-      // the element's primary frame style. This can happen with ::first-line,
-      // where text frames have a combined style. Cached lazy pseudos on such
-      // combined styles aren't findable during viewport invalidation, so we
-      // must recompute them each time to ensure correct values.
-      // Note: Container units that fall back to viewport size already set the
-      // USES_VIEWPORT_UNITS flag, so we only need to check that.
       const bool shouldCache = [&] {
+        if (style->HasAttrReferences()) {
+          // We can't cache styles referencing attr() functions here, because we
+          // don't make the relevant attribute part of the cache key.
+          return false;
+        }
         if (style->UsesViewportUnits()) {
+          // Don't cache styles with viewport units if the parent style differs
+          // from the element's primary frame style. This can happen with
+          // ::first-line, where text frames have a combined style. Cached lazy
+          // pseudos on such combined styles aren't findable during viewport
+          // invalidation, so we must recompute them each time to ensure correct
+          // values. Note: Container units that fall back to viewport size
+          // already set the USES_VIEWPORT_UNITS flag, so we only need to check
+          // that.
           if (const auto* primaryFrame =
                   aOriginatingElement.GetPrimaryFrame()) {
             if (primaryFrame->Style() != aParentStyle) {
@@ -771,9 +777,10 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
       return false;
     }
   }
-  // For ::before and ::after pseudo-elements, no 'content' items is
-  // equivalent to not having the pseudo-element at all.
-  if (type == PseudoStyleType::Before || type == PseudoStyleType::After) {
+  // For ::before, ::after, and ::checkmark pseudo-elements, no 'content'
+  // items is equivalent to not having the pseudo-element at all.
+  if (type == PseudoStyleType::Before || type == PseudoStyleType::After ||
+      type == PseudoStyleType::Checkmark) {
     if (!aPseudoStyle.StyleContent()->mContent.IsItems()) {
       return false;
     }
@@ -781,7 +788,9 @@ bool ServoStyleSet::GeneratedContentPseudoExists(
                "IsItems() implies we have at least one item");
   }
   if (type == PseudoStyleType::Before || type == PseudoStyleType::After ||
-      type == PseudoStyleType::Marker || type == PseudoStyleType::Backdrop) {
+      type == PseudoStyleType::Marker || type == PseudoStyleType::Backdrop ||
+      type == PseudoStyleType::Checkmark ||
+      type == PseudoStyleType::PickerIcon) {
     // display:none is equivalent to not having a pseudo at all.
     if (aPseudoStyle.StyleDisplay()->mDisplay == StyleDisplay::None) {
       return false;

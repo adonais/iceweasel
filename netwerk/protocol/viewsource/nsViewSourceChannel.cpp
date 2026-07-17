@@ -617,6 +617,22 @@ nsViewSourceChannel::SetLoadInfo(nsILoadInfo* aLoadInfo) {
 }
 
 NS_IMETHODIMP
+nsViewSourceChannel::GetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle** aValue) {
+  NS_ENSURE_TRUE(mChannel, NS_ERROR_FAILURE);
+
+  return mChannel->GetParentProcessChannelHandle(aValue);
+}
+
+NS_IMETHODIMP
+nsViewSourceChannel::SetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle* aValue) {
+  NS_ENSURE_TRUE(mChannel, NS_ERROR_FAILURE);
+
+  return mChannel->SetParentProcessChannelHandle(aValue);
+}
+
+NS_IMETHODIMP
 nsViewSourceChannel::GetIsDocument(bool* aIsDocument) {
   NS_ENSURE_TRUE(mChannel, NS_ERROR_FAILURE);
 

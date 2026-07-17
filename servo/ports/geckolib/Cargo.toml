@@ -28,6 +28,7 @@ num-traits = "0.2"
 selectors = {path = "../../components/selectors"}
 servo_arc = {path = "../../components/servo_arc"}
 smallvec = "1.0"
+static_prefs = { path = "../../../modules/libpref/init/static_prefs" }
 style = {path = "../../components/style", features = ["gecko"]}
 style_traits = {path = "../../components/style_traits"}
 thin-vec = { version = "0.2.1", features = ["gecko-ffi"] }

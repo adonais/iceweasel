@@ -40,7 +40,6 @@
 #include "audio/audio_receive_stream.h"
 #include "call/audio_receive_stream.h"
 #include "call/audio_send_stream.h"
-#include "call/call_basic_stats.h"
 #include "domstubs.h"
 #include "jsapi/RTCStatsReport.h"
 #include "media/base/media_constants.h"
@@ -552,7 +551,7 @@ Maybe<webrtc::AudioSendStream::Stats> WebrtcAudioConduit::GetSenderStats()
   return Some(mSendStream->GetStats());
 }
 
-Maybe<webrtc::CallBasicStats> WebrtcAudioConduit::GetCallStats() const {
+Maybe<webrtc::Call::Stats> WebrtcAudioConduit::GetCallStats() const {
   MOZ_ASSERT(mCallThread->IsOnCurrentThread());
   if (!mCall->Call()) {
     return Nothing();

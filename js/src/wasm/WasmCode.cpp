@@ -952,7 +952,7 @@ static JS::UniqueChars DescribeCodeRangeForProfiler(
   }
 
   const char* category = "";
-  const char* filename = codeMeta.scriptedCaller().filename.get();
+  const char* filename = codeMeta.scriptedCaller().source.get();
   const char* suffix = "";
   if (codeRange.isFunction()) {
     category = "Wasm";
@@ -1416,7 +1416,7 @@ bool Code::appendProfilingLabels(
       return false;
     }
 
-    if (const char* filename = codeMeta().scriptedCaller().filename.get()) {
+    if (const char* filename = codeMeta().scriptedCaller().source.get()) {
       if (!name.append(filename, strlen(filename))) {
         return false;
       }

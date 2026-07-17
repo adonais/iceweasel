@@ -3,11 +3,11 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 .asrouter-newtab-message {
-  background-color: var(--background-color-canvas);
+  background-color: var(--background-color-box);
   box-sizing: border-box;
   color: var(--text-color);
   padding: var(--space-large);
-  border-radius: var(--border-radius-medium);
+  border-radius: var(--border-radius-large);
   position: relative;
   overflow: hidden;
 }
@@ -73,8 +73,8 @@
   }
 
   .message-inner img {
-    width: 116px;
-    height: 116px;
+    width: 98px;
+    height: 98px;
   }
 
   .message-content {
@@ -84,7 +84,7 @@
 
 @media (min-width: 1122px) {
   .message-inner img {
-    width: 98px;
-    height: 98px;
+    width: 140px;
+    height: 111px;
   }
 }

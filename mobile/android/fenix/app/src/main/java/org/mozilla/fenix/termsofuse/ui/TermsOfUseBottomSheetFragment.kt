@@ -14,8 +14,8 @@ import androidx.fragment.compose.content
 import androidx.navigation.fragment.navArgs
 import com.google.android.material.bottomsheet.BottomSheetDialogFragment
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.termsofuse.experimentation.getTermsOfUsePromptContent
 import org.mozilla.fenix.termsofuse.store.TermsOfUsePromptAction
@@ -72,7 +72,7 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
             FirefoxTheme {
                 val termsOfUsePromptContent = getTermsOfUsePromptContent(
                     context = requireActivity().applicationContext,
-                    id = context.settings().termsOfUsePromptContentOptionId,
+                    id = context.components.settings.termsOfUsePromptContentOptionId,
                     onLearnMoreClicked = {
                         termsOfUsePromptStore.dispatch(
                             TermsOfUsePromptAction.OnLearnMoreClicked(args.surface),
@@ -89,7 +89,7 @@ class TermsOfUseBottomSheetFragment : BottomSheetDialogFragment() {
                 )
 
                 TermsOfUseBottomSheet(
-                    showDragHandle = context.settings().shouldShowTermsOfUsePromptDragHandle,
+                    showDragHandle = context.components.settings.shouldShowTermsOfUsePromptDragHandle,
                     termsOfUsePromptContent = termsOfUsePromptContent,
                     onDismiss = { dismiss() },
                     onDismissRequest = {

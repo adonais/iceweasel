@@ -244,7 +244,6 @@ private fun MatchStatus.penaltyScores(): Pair<Int?, Int?>? = when (this) {
 // Mirrors the featured match card: announces each score next to its team ("France 2 South
 // Africa 2") rather than the visual "2 - 2" dash form, then the shootout result.
 @Composable
-@Suppress("ReturnCount")
 private fun penaltyRowContentDescription(match: Match, homeName: String, awayName: String): String? {
     val (homePenalty, awayPenalty) = match.matchStatus.penaltyScores() ?: return null
     if (homePenalty == null || awayPenalty == null) return null

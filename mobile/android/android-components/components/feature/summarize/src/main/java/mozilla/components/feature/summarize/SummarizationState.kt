@@ -4,7 +4,6 @@
 
 package mozilla.components.feature.summarize
 
-import mozilla.components.concept.llm.Llm
 import mozilla.components.concept.llm.LlmProvider
 import mozilla.components.feature.summarize.SummarizationState.Finished
 import mozilla.components.lib.state.State
@@ -100,14 +99,11 @@ sealed class SummarizationState : State {
 * Describes the possible failure modes of the summarization feature.
 */
 sealed class SummarizationError {
-    /** The page content exceeds the maximum supported length. */
-    data object ContentTooLong : SummarizationError()
-
     /** The model download did not complete successfully. */
     data object DownloadFailed : SummarizationError()
 
     /** The summarization model failed to produce a result. */
-    data class SummarizationFailed(val exception: Llm.Exception) : SummarizationError()
+    data class SummarizationFailed(val exception: Throwable) : SummarizationError()
 }
 
 val SummarizationState.isLoading get() = this is SummarizationState.Loading

@@ -37,6 +37,9 @@ mozilla::PresShell* nsICanvasRenderingContextInternal::GetPresShell() {
 
 nsIGlobalObject* nsICanvasRenderingContextInternal::GetParentObject() const {
   if (mCanvasElement) {
+    if (auto* original = mCanvasElement->GetOriginalCanvas()) {
+      return original->OwnerDoc()->GetScopeObject();
+    }
     return mCanvasElement->OwnerDoc()->GetScopeObject();
   }
   if (mOffscreenCanvas) {

@@ -169,7 +169,7 @@ class NonShrinkingValueVector
       if (value.isGCThing()) {
         Zone* zone = value.toGCThing()->zoneFromAnyThread();
         if (zone->isGCSweeping() || zone->isGCCompacting()) {
-          TraceWeakEdge(trc, &value, "NonShrinkingValueVector element");
+          TraceOrClearWeakEdge(trc, &value, "NonShrinkingValueVector element");
         }
       }
     }
@@ -194,10 +194,6 @@ struct ShellContext {
   ~ShellContext();
 
   JSContext* cx_;
-
-  // If true, new globals should not be visible to the Debugger and should not
-  // define the Debugger API.
-  bool disableDebuggerForNewGlobal = false;
 
   const IsWorkerEnum isWorker;
   bool lastWarningEnabled;

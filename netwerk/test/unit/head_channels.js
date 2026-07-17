@@ -405,10 +405,20 @@ async function asyncStartTLSTestServer(
   });
 
   let serverBin = _getBinaryUtil(serverBinName);
+  let certDir = do_get_file(certsPath, /* allowNonexistent */ true);
+  if (!certDir.exists()) {
+    // The cert directory is not present in this build's test package (e.g.
+    // comm-central). Skip silently rather than launching a server that will
+    // fail InitializeNSS and never send the startup callback, which would
+    // cause the caller to hang until the per-test timeout fires.
+    info(
+      `asyncStartTLSTestServer: cert dir not found (${certDir.path}), ` +
+        `skipping TLS server startup`
+    );
+    return false;
+  }
   let process = Cc["@mozilla.org/process/util;1"].createInstance(Ci.nsIProcess);
   process.init(serverBin);
-  let certDir = do_get_file(certsPath, false);
-  Assert.ok(certDir.exists(), `certificate folder (${certsPath}) should exist`);
   // Using "sql:" causes the SQL DB to be used so we can run tests on Android.
   process.run(false, ["sql:" + certDir.path, Services.appinfo.processID], 2);
 
@@ -417,6 +427,7 @@ async function asyncStartTLSTestServer(
   });
 
   await serverReady;
+  return true;
 }
 
 function _getBinaryUtil(binaryUtilName) {

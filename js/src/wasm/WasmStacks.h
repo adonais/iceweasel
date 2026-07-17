@@ -30,6 +30,7 @@
 #include "util/TrailingArray.h"
 #include "vm/NativeObject.h"
 #include "wasm/WasmAnyRef.h"
+#include "wasm/WasmCode.h"
 #include "wasm/WasmConstants.h"
 #include "wasm/WasmFrame.h"
 
@@ -199,6 +200,9 @@ class ContStack {
   // The initial resume target and callee for the base frame to use.
   SwitchTarget initialResumeTarget_{};
   HeapPtr<JSFunction*> initialResumeCallee_;
+  // Keeps the creator module's code alive while initialResumeTarget_.resumePC
+  // points into it (before the first resume).
+  SharedCode initialResumeCode_;
 
   // A target useable when switching to this stack.
   StackTarget target_{};
@@ -240,7 +244,7 @@ class ContStack {
   // Prepare a stack for execution. Must be called after init, poison, or
   // decommit. Transitions pageState_ to Ready.
   void prepare(Handle<ContObject*> continuation, Handle<JSFunction*> target,
-               void* contBaseFrameStub);
+               void* contBaseFrameStub, const Code* creatorCode);
   // Reset the fields for returning to a ContStackArena. Can call poison or
   // decommit after this. Must call prepare before executing.
   void reset();
@@ -436,7 +440,8 @@ class ContStackArena {
   // Allocate a ContStack. The stack will be returned automatically to the pool
   // through ContStackDeleter when the UniquePtr goes out of scope.
   UniqueContStack allocate(Handle<ContObject*> continuation,
-                           Handle<JSFunction*> target, void* contBaseFrameStub);
+                           Handle<JSFunction*> target, void* contBaseFrameStub,
+                           const Code* creatorCode);
 
   // Find the stack that would belong to this SP, if any.
   ContStack* findForAddress(uintptr_t address) const;
@@ -513,7 +518,8 @@ class ContStackAllocator {
   // Allocate a ContStack. The stack will be returned automatically to the pool
   // through ContStackDeleter when the UniquePtr goes out of scope.
   UniqueContStack allocate(JSContext* cx, Handle<ContObject*> continuation,
-                           Handle<JSFunction*> target, void* contBaseFrameStub);
+                           Handle<JSFunction*> target, void* contBaseFrameStub,
+                           const Code* creatorCode);
 
   // Find the ContStack whose stack region contains `address`.
   ContStack* findForAddress(uintptr_t address) const;
@@ -552,7 +558,7 @@ class ContObject : public NativeObject {
   // function. `contBaseFrameStub` is the corresponding stub created by
   // wasm::GenerateContBaseFrameStub for the wasm function type.
   static ContObject* create(JSContext* cx, Handle<JSFunction*> target,
-                            void* contBaseFrameStub);
+                            void* contBaseFrameStub, const Code* creatorCode);
   // Create a continuation that is empty and cannot be resumed.
   static ContObject* createEmpty(JSContext* cx);
 

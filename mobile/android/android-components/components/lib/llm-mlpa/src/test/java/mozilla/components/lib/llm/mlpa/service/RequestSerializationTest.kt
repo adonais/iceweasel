@@ -6,6 +6,8 @@ package mozilla.components.lib.llm.mlpa.service
 
 import kotlinx.serialization.json.Json
 import mozilla.components.concept.integrity.IntegrityToken
+import mozilla.components.concept.llm.LlmProvider
+import mozilla.components.lib.llm.mlpa.mozSummarization
 import org.junit.Assert.assertEquals
 import org.junit.Test
 
@@ -34,7 +36,7 @@ class RequestSerializationTest {
     @Test
     fun `chat service completion request gets serialized to json correctly`() {
         val request = ChatService.Request(
-            model = ChatService.Request.ModelID.mozSummarization,
+            model = LlmProvider.ModelID.mozSummarization,
             messages = listOf(
                 ChatService.Request.Message.system("system prompt"),
                 ChatService.Request.Message.user("hello"),

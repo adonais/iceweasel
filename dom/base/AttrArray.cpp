@@ -120,6 +120,17 @@ inline nsresult AttrArray::AddNewAttribute(Name* aName, nsAttrValue& aValue) {
   return NS_OK;
 }
 
+const nsAttrValue* AttrArray::AddNewAttributeAssumeAvailableSlot(
+    RefPtr<nsAtom>& aName, nsAttrValue& aValue) {
+  MOZ_ASSERT(HasImpl());
+  MOZ_ASSERT(GetImpl()->mAttrCount < GetImpl()->mCapacity);
+  InternalAttr& attr = mImpl->mBuffer[mImpl->mAttrCount++];
+  new (&attr.mName) nsAttrName(aName.forget());
+  new (&attr.mValue) nsAttrValue();
+  attr.mValue.SwapValueWith(aValue);
+  return &attr.mValue;
+}
+
 nsresult AttrArray::SetAndSwapAttr(nsAtom* aLocalName, nsAttrValue& aValue,
                                    bool* aHadValue) {
   *aHadValue = false;

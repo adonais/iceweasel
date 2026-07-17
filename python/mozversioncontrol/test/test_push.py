@@ -217,5 +217,33 @@ def test_push_dest_branch(repo, with_dest):
         assert "second commit" in result.stdout
 
 
+def test_jj_push_change_id_with_dest_branch(repo):
+    """Simulate push_to_try: a change ID as ref is resolved to a commit SHA
+    when dest_branch is set, allowing git to push it to a named remote branch.
+    """
+    if repo.vcs != "jj":
+        pytest.skip("Only relevant for jj repos")
+
+    vcs = get_repository_object(repo.dir)
+    repo.execute_next_step()
+
+    change_id = vcs._resolve_to_change(vcs.HEAD_REVSET)
+    vcs.push(remote="upstream", ref=change_id, dest_branch="test-bookmark")
+
+    subprocess.run(
+        ["jj", "git", "fetch", "--remote", "upstream"],
+        cwd=str(repo.dir),
+        check=True,
+    )
+    result = subprocess.run(
+        ["jj", "bookmark", "list", "--remote", "upstream", "test-bookmark"],
+        cwd=str(repo.dir),
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    assert "second commit" in result.stdout
+
+
 if __name__ == "__main__":
     mozunit.main()

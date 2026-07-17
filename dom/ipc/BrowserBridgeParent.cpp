@@ -96,7 +96,7 @@ nsresult BrowserBridgeParent::InitWithProcess(
   }
 
   RefPtr<WindowGlobalParent> windowParent =
-      WindowGlobalParent::CreateDisconnected(aWindowInit);
+      WindowGlobalParent::CreateDisconnected(aWindowInit, aContentParent);
   if (!windowParent) {
     return NS_ERROR_UNEXPECTED;
   }

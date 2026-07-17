@@ -324,12 +324,6 @@
   result_type: WordSized
   num_temps: 1
 
-- name: WasmRefCastInfallible
-  mir_op: true
-  operands:
-    ref: WordSized
-  result_type: WordSized
-
 - name: WasmNewStructObject
   mir_op: true
   operands:
@@ -3066,7 +3060,7 @@
   operands:
     ptr: WordSized
     memoryBase: WordSized
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
   num_temps: 1
 #endif
   mir_op: true
@@ -3078,7 +3072,7 @@
     memoryBase: WordSized
 #ifdef JS_CODEGEN_ARM
   num_temps: 2
-#elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
+#elif defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
   num_temps: 1
 #endif
   mir_op: WasmLoad
@@ -3088,7 +3082,7 @@
     ptr: WordSized
     value: WordSized
     memoryBase: WordSized
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
   num_temps: 1
 #endif
   mir_op: true
@@ -3098,7 +3092,7 @@
     ptr: WordSized
     value: Int64
     memoryBase: WordSized
-#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64) || defined(JS_CODEGEN_RISCV64)
+#if defined(JS_CODEGEN_ARM) || defined(JS_CODEGEN_MIPS64) || defined(JS_CODEGEN_LOONG64)
   num_temps: 1
 #endif
   mir_op: WasmStore
@@ -4535,7 +4529,7 @@
   arguments:
     isSigned: bool
 #ifdef JS_CODEGEN_X64
-  num_temps: 1
+  num_temps: 2
 #endif
   mir_op: WasmMulI64WideHI64
 #endif

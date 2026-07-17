@@ -93,7 +93,6 @@ import mozilla.components.browser.state.action.AwesomeBarAction
 import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.store.BrowserStore
 import mozilla.components.compose.base.annotation.FlexibleWindowLightDarkPreview
-import mozilla.components.compose.base.button.FilledButton
 import mozilla.components.compose.base.button.FloatingActionButton
 import mozilla.components.compose.base.button.IconButton
 import mozilla.components.compose.base.button.OutlinedButton
@@ -152,6 +151,7 @@ private const val MATERIAL_DESIGN_SCRIM = "#52000000"
  * @param bookmarksSearchEngine [SearchEngine] the default search engine to use when searching bookmarks.
  * @param profiler app profiler used to access firefox profile features.
  * @param startDestination the screen on which to initialize [BookmarksScreen] with.
+ * @param bookmarkToLoad The guid of a bookmark to load when landing on the edit screen.
  */
 @Composable
 internal fun BookmarksScreen(
@@ -163,6 +163,7 @@ internal fun BookmarksScreen(
     bookmarksSearchEngine: SearchEngine?,
     profiler: Profiler? = components.core.engine.profiler,
     startDestination: String = BookmarksDestinations.LIST,
+    bookmarkToLoad: String? = null,
 ) {
     val navController = rememberNavController()
     val store = remember { buildStore(navController) }
@@ -170,6 +171,10 @@ internal fun BookmarksScreen(
     val isPrivateModeLocked by remember {
         appStore.stateFlow.map { appState -> appState.isPrivateScreenLocked }
     }.collectAsState(initial = appStore.state.isPrivateScreenLocked)
+
+    LaunchedEffect(Unit) {
+        store.dispatch(ViewAppeared(bookmarkToLoad = bookmarkToLoad))
+    }
 
     LaunchedEffect(isPrivateModeLocked) {
         if (!isPrivateModeLocked) {
@@ -379,10 +384,10 @@ private fun BookmarksList(
             EmptyList(
                 state = emptyListState,
                 dispatcher = store::dispatch,
-                showBookmarksImport = state.showBookmarksImport,
             )
             return@Scaffold
         }
+        val inSelectionMode = state.selectedItems.isNotEmpty()
 
         saveableStateHolder.SaveableStateProvider(state.currentFolder.guid) {
             LazyColumn(
@@ -414,7 +419,9 @@ private fun BookmarksList(
                             beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
                             modifier = Modifier
                                 .semantics(mergeDescendants = true) {
-                                    selected = isSelected
+                                    if (inSelectionMode) {
+                                        selected = isSelected
+                                    }
                                     collectionItemInfo = CollectionItemInfo(
                                         rowIndex = index,
                                         rowSpan = 1,
@@ -438,7 +445,9 @@ private fun BookmarksList(
                             beforeIconPainter = painterResource(iconsR.drawable.mozac_ic_folder_24),
                             modifier = Modifier
                                 .semantics(mergeDescendants = true) {
-                                    selected = isSelected
+                                    if (inSelectionMode) {
+                                        selected = isSelected
+                                    }
                                     collectionItemInfo = CollectionItemInfo(
                                         rowIndex = index,
                                         rowSpan = 1,
@@ -494,7 +503,9 @@ private fun BookmarksList(
                         onLongClick = { store.dispatch(BookmarkLongClicked(item)) },
                         modifier = Modifier
                             .semantics(mergeDescendants = true) {
-                                selected = isSelected
+                                if (inSelectionMode) {
+                                    selected = isSelected
+                                }
                                 collectionItemInfo = CollectionItemInfo(
                                     rowIndex = index,
                                     rowSpan = 1,
@@ -1000,7 +1011,6 @@ private fun BookmarksState.emptyListState(): EmptyListState? {
 @Composable
 private fun EmptyList(
     state: EmptyListState,
-    showBookmarksImport: Boolean,
     dispatcher: (BookmarksAction) -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -1018,12 +1028,10 @@ private fun EmptyList(
                 is EmptyListState.NotAuthenticated -> RootEmptyContent(
                     dispatcher,
                     showSignIn = true,
-                    showBookmarksImport = showBookmarksImport,
                 )
                 EmptyListState.Authenticated -> RootEmptyContent(
                     dispatcher,
                     showSignIn = false,
-                    showBookmarksImport = showBookmarksImport,
                 )
                 EmptyListState.Folder -> FolderEmptyContent()
             }
@@ -1035,7 +1043,6 @@ private fun EmptyList(
 private fun RootEmptyContent(
     dispatcher: (BookmarksAction) -> Unit,
     showSignIn: Boolean,
-    showBookmarksImport: Boolean,
 ) {
     Image(
         painter = painterResource(R.drawable.ic_kit_bookmarks_empty_state),
@@ -1053,16 +1060,6 @@ private fun RootEmptyContent(
     )
 
     Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static300))
-
-    if (showBookmarksImport) {
-        FilledButton(
-            text = stringResource(R.string.bookmark_import_menu_button),
-            onClick = { dispatcher(ImportAction.ImportFileClicked.FromButton) },
-            modifier = Modifier
-                .heightIn(40.dp)
-                .fillMaxWidth(),
-        )
-    }
 
     if (showSignIn) {
         Spacer(modifier = Modifier.height(FirefoxTheme.layout.space.static200))

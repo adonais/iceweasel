@@ -1529,6 +1529,7 @@ def x11_libs(webrtc):
         "xcb-shm",
         "x11-xcb",
         "xext",
+        "xfixes",
         "xrandr >= 1.4.0",
     ]
     if webrtc:
@@ -1538,7 +1539,6 @@ def x11_libs(webrtc):
             "xcomposite",
             "xcursor",
             "xdamage",
-            "xfixes",
             "xi",
         ]
     return libs
@@ -1623,6 +1623,8 @@ with only_when(compile_environment & depends(target.os)(lambda os: os != "WINNT"
     set_define("HAVE_SYSIOCCOM_H", check_header("sys/ioccom.h"))
 
     set_config("HAVE_EXECINFO", check_header("execinfo.h"))
+
+    set_config("HAVE_SINGLE_THREADED_H", check_header("sys/single_threaded.h"))
 
 # Elfhack
 # ==============================================================
@@ -3169,12 +3171,6 @@ set_config("MOZ_BACKGROUNDTASKS", True, when="--enable-backgroundtasks")
 set_define("MOZ_BACKGROUNDTASKS", True, when="--enable-backgroundtasks")
 
 
-# Update-related programs: updater, maintenance service, update agent,
-# default browser agent.
-# ==============================================================
-include("../build/moz.configure/update-programs.configure")
-
-
 # Mobile optimizations
 # ==============================================================
 option(
@@ -3665,6 +3661,134 @@ option(env="MOZ_PKG_SPECIAL", nargs=1, help="Name of special moz flavor")
 set_config("MOZ_PKG_SPECIAL", depends_if("MOZ_PKG_SPECIAL")(lambda x: x[0]))
 
 
+option(env="MOZ_PKG_PLATFORM", nargs=1, help="Override the package platform name")
+
+
+@depends(target, build_project, "MOZ_PKG_PLATFORM", "MOZ_PKG_SPECIAL")
+def moz_pkg_platform(target, build_project, override, special):
+    if override:
+        platform = override[0]
+    else:
+        # target.raw_os and target.raw_cpu can be unintuitive; hardcode
+        # the well-known platforms.
+        platform = f"{target.raw_os}-{target.raw_cpu}"
+        if build_project == "mobile/android":
+            platform = f"android-{target.raw_cpu}"
+        if target.kernel == "WINNT":
+            if target.cpu == "x86":
+                platform = "win32"
+            elif target.cpu == "aarch64":
+                platform = "win64-aarch64"
+            else:
+                platform = "win64"
+        if target.kernel == "Darwin":
+            platform = "mac"
+        if target.raw_os == "linux-gnu":
+            platform = f"linux-{target.raw_cpu}"
+    if special:
+        platform = f"{platform}-{special[0]}"
+    return platform
+
+
+set_config("MOZ_PKG_PLATFORM", moz_pkg_platform)
+
+
+@depends(moz_pkg_platform, "MOZ_SIMPLE_PACKAGE_NAME")
+def pkg_langpack_path(platform, simple_name):
+    if simple_name:
+        return ""
+    return f"{platform}/xpi/"
+
+
+set_config("PKG_LANGPACK_PATH", pkg_langpack_path)
+
+
+option(
+    env="MOZ_PKG_APPNAME",
+    nargs=1,
+    help="Override the application name used in package file names",
+)
+
+
+@depends("MOZ_PKG_APPNAME", moz_app_name)
+def moz_pkg_appname(override, app_name):
+    if override:
+        return override[0]
+    return app_name
+
+
+set_config("MOZ_PKG_APPNAME", moz_pkg_appname)
+
+
+option(
+    env="MOZ_PKG_VERSION",
+    nargs=1,
+    help="Override the version used in package file names",
+)
+
+
+@depends("MOZ_PKG_VERSION", milestone.app_version)
+def moz_pkg_version(override, app_version):
+    if override:
+        return override[0]
+    return app_version
+
+
+set_config("MOZ_PKG_VERSION", moz_pkg_version)
+
+
+option(
+    env="MOZ_PKG_FORMAT",
+    nargs=1,
+    help="Override the package container format (TAR, TGZ, XZ, BZ2, ZIP, DMG, APK)",
+)
+
+
+@depends("MOZ_PKG_FORMAT", target, toolkit)
+def moz_pkg_format(override, target, toolkit):
+    if override:
+        return override[0]
+    if toolkit == "cocoa":
+        return "DMG"
+    if target.kernel == "WINNT":
+        return "7Z"
+    if target.kernel == "SunOS":
+        return "XZ"
+    if toolkit == "gtk":
+        return "XZ"
+    if toolkit == "android":
+        return "APK"
+    return "TGZ"
+
+
+set_config("MOZ_PKG_FORMAT", moz_pkg_format)
+
+
+@depends(moz_pkg_format)
+@imports(_from="mozbuild.action.package", _import="FORMAT_SUFFIX")
+def pkg_suffix(pkg_format):
+    return FORMAT_SUFFIX[pkg_format]
+
+
+set_config("PKG_SUFFIX", pkg_suffix)
+
+
+@depends("MOZ_DEV_EDITION")
+def moz_langpack_eid_host(dev_edition):
+    if dev_edition:
+        return "devedition.mozilla.org"
+    return "firefox.mozilla.org"
+
+
+set_config("MOZ_LANGPACK_EID_HOST", moz_langpack_eid_host)
+
+
+# Every other platform just winds up in dist/bin
+non_macos_pkg_path = dependable("bin")
+set_config("MOZ_PKG_BINPATH", non_macos_pkg_path, when=~target_is_osx)
+set_config("MOZ_PKG_RESPATH", non_macos_pkg_path, when=~target_is_osx)
+
+
 # Smart card support
 # ==============================================================
 @depends(target)
@@ -3694,6 +3818,19 @@ with only_when(target_is_osx):
         return f"{prefix}{app_displayname}{suffix}.app"
 
     set_config("MOZ_MACBUNDLE_NAME", mac_bundle_name)
+
+    @depends(mac_bundle_name)
+    def moz_pkg_binpath(mac_bundle_name):
+        return f"{mac_bundle_name}/Contents/MacOS"
+
+    set_config("MOZ_PKG_BINPATH", moz_pkg_binpath)
+
+    # Resource path for the precomplete file
+    @depends(mac_bundle_name)
+    def moz_pkg_respath(mac_bundle_name):
+        return f"{mac_bundle_name}/Contents/Resources"
+
+    set_config("MOZ_PKG_RESPATH", moz_pkg_respath)
 
     @depends(
         "MOZ_MACBUNDLE_ID", moz_app_displayname, "--with-distribution-id", moz_debug
@@ -3815,6 +3952,55 @@ with only_when(target_is_osx):
             )
 
         set_config("MOZ_PKCS11_PROCESS_BUNDLEID", moz_pkcs11_process_bundle_id)
+
+
+# Update-related programs: updater, maintenance service, update agent,
+# default browser agent.
+# ==============================================================
+include("../build/moz.configure/update-programs.configure")
+
+
+# Per-format extra args passed to mozbuild.action.package
+# ==============================================================
+@depends(
+    moz_pkg_format,
+    toolkit,
+    enable_profile_use,
+    mac_bundle_name,
+    moz_branding_directory,
+    moz_app_displayname,
+    build_environment.topsrcdir,
+)
+@imports(_from="os.path", _import="join")
+@imports("shlex")
+def moz_package_extra_args(
+    pkg_format,
+    toolkit,
+    profile_use,
+    macbundle_name,
+    branding_dir,
+    app_displayname,
+    topsrcdir,
+):
+    args = []
+    # For non-shippable builds, we would rather finish the build sooner
+    # than have optimal compression.
+    if pkg_format == "XZ" and profile_use:
+        args.append("--strong-compression")
+    if pkg_format == "BZ2" and toolkit == "cocoa":
+        args += ["--app-name", macbundle_name]
+    if pkg_format == "DMG" and branding_dir:
+        brand = join(topsrcdir, branding_dir)
+        args += [
+            "--dsstore", join(brand, "dsstore"),
+            "--background", join(brand, "background.png"),
+            "--icon", join(brand, "disk.icns"),
+            "--volume-name", app_displayname,
+        ]
+    return " ".join(shlex.quote(a) for a in args)
+
+
+set_config("MOZ_PACKAGE_EXTRA_ARGS", moz_package_extra_args)
 
 
 # JS Packaging

@@ -15,10 +15,11 @@ import {
   PREF_CLOCKS_SIZE,
   PREF_WIDGETS_CLOCKS_ENABLED,
 } from "common/WidgetsRegistry.mjs";
-import { useIntersectionObserver } from "../../../lib/utils";
+import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
 import { AddClockForm } from "./AddClockForm";
 import { ClocksRow } from "./ClocksRow";
 import { EditClocksPanel } from "./EditClocksPanel";
+import { MoveSubmenu } from "../MoveSubmenu";
 import {
   backfillClockLabelColors,
   buildNextClockZones,
@@ -78,7 +79,7 @@ function getClockWidgetDisplayState({ activePanel, hourFormatPref, size }) {
  * @param {Function} props.dispatch
  * @param {"small"|"medium"|"large"} [props.size] Defaults to "medium".
  */
-function Clocks({ dispatch, size }) {
+function Clocks({ dispatch, size, widgetEnabledMap }) {
   const clocksZonesPref = useSelector(
     state => state.Prefs.values[PREF_CLOCKS_ZONES]
   );
@@ -88,7 +89,6 @@ function Clocks({ dispatch, size }) {
 
   const [now, setNow] = useState(null);
   const impressionFired = useRef(false);
-  const sizeSubmenuRef = useRef(null);
   const contextMenuRef = useRef(null);
   const contextMenuButtonRef = useRef(null);
   // Suppress hover-reveal after a menu action; cleared on mouseleave.
@@ -182,22 +182,7 @@ function Clocks({ dispatch, size }) {
     [dispatch, closeContextMenu]
   );
 
-  // moz-panel-list moves the submenu into shadow DOM, so React synthetic
-  // events don't reach inner items. Listen directly and use composedPath.
-  useEffect(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
 
   const handleToggleHourFormat = useCallback(() => {
     const nextFormat = use12HourFormat ? "24" : "12";
@@ -463,6 +448,7 @@ function Clocks({ dispatch, size }) {
 
   const isClockFormOpen = activePanel === CLOCKS_PANEL.FORM;
   const isEditingClocks = activePanel === CLOCKS_PANEL.EDIT;
+  const hasAnyLabel = clockZones.some(c => !!c.label);
 
   return (
     <article
@@ -472,7 +458,7 @@ function Clocks({ dispatch, size }) {
         isClockFormOpen ? " is-clock-form-open" : ""
       }${isEditingClocks ? " is-editing-clocks" : ""}${
         activePanel ? " is-panel-open" : ""
-      }`}
+      }${hasAnyLabel ? "" : " has-no-labels"}`}
       data-clock-count={clockZones.length}
       onMouseLeave={() => setIsDismissed(false)}
       ref={el => {
@@ -520,6 +506,7 @@ function Clocks({ dispatch, size }) {
               ))}
             </panel-list>
           </panel-item>
+          <MoveSubmenu widgetId="clocks" widgetEnabledMap={widgetEnabledMap} />
           <panel-item
             data-l10n-id="newtab-clock-widget-menu-edit"
             onClick={() => {
@@ -554,6 +541,7 @@ function Clocks({ dispatch, size }) {
           }
           canAddClock={canAddClock}
           supportedTimeZones={supportedTimeZones}
+          locale={locale}
           onSave={handleSaveClock}
           onCancel={handleCloseClockForm}
         />

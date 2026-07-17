@@ -54,7 +54,6 @@ class TextInputHandler;
 
   NSRect mDirtyRect;
 
-  BOOL mBeingShown;
   BOOL mIsAnimationSuppressed;
 
   nsTouchBar* mTouchBar;
@@ -84,8 +83,7 @@ class TextInputHandler;
 - (void)createTrackingArea;
 - (void)removeTrackingArea;
 
-- (void)setIsBeingShown:(BOOL)aValue;
-- (BOOL)isBeingShown;
+@property(nonatomic) BOOL isBeingShown;
 - (BOOL)isVisibleOrBeingShown;
 
 - (void)setIsAnimationSuppressed:(BOOL)aValue;
@@ -261,13 +259,13 @@ class nsCocoaWindow final : public nsIWidget {
 
   nsresult SynthesizeNativeKeyEvent(
       int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
-      uint32_t aModifierFlags, const nsAString& aCharacters,
+      nsIWidget::NativeModifiers aModifierFlags, const nsAString& aCharacters,
       const nsAString& aUnmodifiedCharacters,
       nsISynthesizedEventCallback* aCallback) override;
 
   nsresult SynthesizeNativeMouseEvent(
       LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-      mozilla::MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
+      mozilla::MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
       nsISynthesizedEventCallback* aCallback) override;
 
   nsresult SynthesizeNativeMouseMove(
@@ -275,7 +273,7 @@ class nsCocoaWindow final : public nsIWidget {
       nsISynthesizedEventCallback* aCallback) override;
   nsresult SynthesizeNativeMouseScrollEvent(
       LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
-      double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
+      double aDeltaY, double aDeltaZ, nsIWidget::NativeModifiers aModifierFlags,
       uint32_t aAdditionalFlags,
       nsISynthesizedEventCallback* aCallback) override;
   nsresult SynthesizeNativeTouchPoint(
@@ -544,6 +542,11 @@ class nsCocoaWindow final : public nsIWidget {
 
   void DoResize(double aX, double aY, double aWidth, double aHeight,
                 bool aRepaint, bool aConstrainToCurrentScreen);
+
+  // If the window's NSWindow frame doesn't intersect any currently-attached
+  // NSScreen, relocate the window onto the main screen so the user can reach
+  // it.
+  void EnsureFrameIsOnScreen();
 
   void UpdateFullscreenState(bool aFullScreen, bool aNativeMode);
   nsresult DoMakeFullScreen(bool aFullScreen, bool aUseSystemTransition);

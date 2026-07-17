@@ -4222,22 +4222,6 @@ class Assembler : public MozBaseAssembler {
                             LoadStoreScalingOption option);
 
  protected:
-  // Prevent generation of a literal pool for the next |maxInst| instructions.
-  // Guarantees instruction linearity.
-  class AutoBlockLiteralPool {
-    ARMBuffer* armbuffer_;
-
-   public:
-    AutoBlockLiteralPool(Assembler* assembler, size_t maxInst)
-      : armbuffer_(&assembler->armbuffer_) {
-      armbuffer_->enterNoPool(maxInst);
-    }
-    ~AutoBlockLiteralPool() {
-      armbuffer_->leaveNoPool();
-    }
-  };
-
- protected:
   // Buffer where the code is emitted.
   PositionIndependentCodeOption pic_;
 

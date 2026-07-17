@@ -14,7 +14,6 @@
     color-scheme: dark;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.revamp") {
     min-width: var(--size-layout-small);
     width: 340px;
@@ -32,12 +31,11 @@
   }
 }
 
-#sidebar-main,
+#sidebar-container,
 #sidebar-box {
   text-shadow: none;
   max-width: 75vw;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.revamp") {
     background-color: var(--sidebar-background-color);
     color: var(--sidebar-text-color);
@@ -67,7 +65,6 @@
 #sidebar {
   flex: 1;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.revamp") {
     border-radius: var(--border-radius-medium);
     box-shadow: var(--content-area-shadow);
@@ -83,11 +80,9 @@
   position: relative;
   z-index: var(--browser-area-z-index-sidebar-splitter);
   --splitter-width: 4px;
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media (-moz-overlay-scrollbars) and (not -moz-pref("browser.nova.enabled")) {
     --splitter-width: 2px;
   }
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     border-radius: var(--border-radius-large);
   }
@@ -99,7 +94,6 @@
   transition: background-color 0.5s ease-in-out;
   margin-inline: 0;
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.revamp") {
     background-color: transparent;
     &:hover {
@@ -107,7 +101,6 @@
     }
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.revamp") {
     border: 0 solid;
     border-color: var(--sidebar-border-color);
@@ -125,7 +118,6 @@
   &:focus-visible {
     outline: auto;
   }
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("sidebar.revamp") {
     width: var(--space-medium);
     border-inline: calc((var(--space-medium) - var(--splitter-width)) / 2) solid transparent;
@@ -134,7 +126,6 @@
     margin-block-end: var(--space-small);
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     width: var(--splitter-width);
     border-inline: none;
@@ -147,36 +138,33 @@
   @media not (-moz-platform: linux) {
     margin-inline-start: calc(-1 * var(--splitter-width));
 
-    #sidebar-main[sidebar-positionend] + & {
+    #sidebar-container[sidebar-positionend] + & {
       margin-inline: 0 calc(-1 * var(--splitter-width));
     }
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     /* Pull the splitter fully over sidebar-main so sidebar-main and sidebar-box
      * sit flush. The factor 2 absorbs both the flexbox gap (--chrome-window-gap)
      * and the splitter's own width. */
     margin-inline-start: calc(-2 * var(--splitter-width));
 
-    #sidebar-main[sidebar-positionend] + & {
+    #sidebar-container[sidebar-positionend] + & {
       margin-inline: 0 calc(-2 * var(--splitter-width));
     }
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media not -moz-pref("sidebar.verticalTabs") {
     display: none;
   }
 
-  /* stylelint-disable-next-line media-query-no-invalid */
   @media -moz-pref("browser.nova.enabled") {
     /* The splitter already has a negative margin-inline-start that makes it
      * overlap the sidebar (see above). Cancel the gap on the tabbox side too so
      * the splitter sits entirely within the gap rather than adding to it. */
     margin-inline-end: calc(-1 * var(--chrome-window-gap));
 
-    #sidebar-main[sidebar-positionend] + & {
+    #sidebar-container[sidebar-positionend] + & {
       margin-inline-start: calc(-1 * var(--chrome-window-gap));
     }
   }
@@ -276,7 +264,7 @@ menuseparator + #sidebar-extensions-separator {
 
 /* Sidebar animation */
 
-#sidebar-main,
+#sidebar-container,
 sidebar-main,
 #sidebar-box,
 #sidebar-splitter,
@@ -287,7 +275,7 @@ sidebar-main,
   translate: 0;
 }
 
-#sidebar-main {
+#sidebar-container {
   /* Prevent overflow during sidebar animation when the sidebar is reordered */
   overflow: clip;
 
@@ -299,7 +287,7 @@ sidebar-main,
 /* Expand on hover */
 
 :root[sidebar-expand-on-hover] {
-  #sidebar-main {
+  #sidebar-container {
     border-radius: inherit;
     background-color: inherit;
     position: relative;
@@ -319,7 +307,7 @@ sidebar-main,
        * opaque. Make sure there's some opaque backdrop that matches our color
        * scheme. These colors match the "transparency effects disabled" mica
        * backdrop on Windows 11, which is as good as we can make it. */
-      background-image: linear-gradient(var(--toolbox-background-color));
+      background-image: image(var(--toolbox-background-color));
       background-color: light-dark(#e8e8e8, #202020);
 
       &:not([sidebar-positionend]) {
@@ -348,7 +336,6 @@ sidebar-main,
       inset-inline-end: 0;
     }
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       border-radius: var(--chrome-block-radius);
       background-color: var(--toolbar-background-color);
@@ -386,7 +373,6 @@ sidebar-main,
   The element next to it can be the sidebar box or the tabbox,
   depending on whether the sidebar box is expanded */
   #tabbrowser-tabbox {
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       &:not([sidebar-positionend]) {
         &:not([sidebar-panel-open]) {
@@ -411,7 +397,6 @@ sidebar-main,
       }
     }
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       &:not([sidebar-positionend], [sidebar-panel-open]) {
         margin-inline-start: calc(var(--sidebar-launcher-collapsed-width) + var(--chrome-window-gap));
@@ -423,7 +408,6 @@ sidebar-main,
   }
 
   #sidebar-box {
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media not -moz-pref("browser.nova.enabled") {
       &:not([sidebar-positionend]) {
         &[sidebar-panel-open] {
@@ -448,7 +432,6 @@ sidebar-main,
       }
     }
 
-    /* stylelint-disable-next-line media-query-no-invalid */
     @media -moz-pref("browser.nova.enabled") {
       &:not([sidebar-positionend])[sidebar-panel-open] {
         margin-inline-start: calc(var(--sidebar-launcher-collapsed-width) + var(--chrome-window-gap));
@@ -460,7 +443,6 @@ sidebar-main,
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("sidebar.visibility", "expand-on-hover") {
   /* We need these rules to apply at all times when the sidebar.visibility
     pref is set to "expand-on-hover" as opposed to when the "sidebar-expand-on-hover" attribute
@@ -473,7 +455,6 @@ sidebar-main,
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   #sidebar-box {
     background-color: var(--sidebar-background-color);
@@ -502,7 +483,7 @@ sidebar-main,
   /* When no panel is open, the launcher splitter sits between sidebar-main and
    * the content area. Match the in-gap layout of #sidebar-splitter so the gap
    * between sidebar-main and the content area matches the sidebar-box case. */
-  #sidebar-main:not([sidebar-panel-open]) + #sidebar-launcher-splitter {
+  #sidebar-container:not([sidebar-panel-open]) + #sidebar-launcher-splitter {
     margin-inline: calc(-1 * var(--chrome-window-gap) + 1px);
   }
 
@@ -513,21 +494,21 @@ sidebar-main,
    * column-1 when the sidebar is on the inline-end side. */
   :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="0"].deck-selected) #sidebar-box:not([sidebar-positionend]) + #sidebar-splitter,
   :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="0"].deck-selected)
-    #sidebar-main:not([sidebar-panel-open]):not([sidebar-positionend])
+    #sidebar-container:not([sidebar-panel-open]):not([sidebar-positionend])
     + #sidebar-launcher-splitter {
     margin-inline-end: calc(-1 * var(--chrome-window-gap) + 3px);
   }
 
   :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="1"].deck-selected) #sidebar-box[sidebar-positionend] + #sidebar-splitter,
   :root:has(#tabbrowser-tabpanels[splitview] .split-view-panel[column="1"].deck-selected)
-    #sidebar-main[sidebar-positionend]:not([sidebar-panel-open])
+    #sidebar-container[sidebar-positionend]:not([sidebar-panel-open])
     + #sidebar-launcher-splitter {
     margin-inline-start: calc(-1 * var(--chrome-window-gap) + 3px);
   }
 
   /* When a panel is open, square the corners where sidebar-main and sidebar-box
    * meet so they read as one continuous surface. */
-  #sidebar-main[sidebar-panel-open] {
+  #sidebar-container[sidebar-panel-open] {
     &:not([sidebar-positionend]) {
       border-start-end-radius: 0;
       border-end-end-radius: 0;

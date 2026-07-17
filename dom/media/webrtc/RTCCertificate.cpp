@@ -302,7 +302,7 @@ already_AddRefed<Promise> RTCCertificate::GenerateCertificate(
   if (aRv.Failed()) {
     return nullptr;
   }
-  RefPtr<WebCryptoTask> task = new GenerateRTCCertificateTask(
+  RefPtr task = MakeRefPtr<GenerateRTCCertificateTask>(
       global, aGlobal.Context(), aOptions, usages, expires);
   task->DispatchWithPromise(p);
   return p.forget();
@@ -358,8 +358,8 @@ RefPtr<DtlsIdentity> RTCCertificate::CreateDtlsIdentity() const {
   }
   UniqueSECKEYPrivateKey key(SECKEY_CopyPrivateKey(mPrivateKey.get()));
   UniqueCERTCertificate cert(CERT_DupCertificate(mCertificate.get()));
-  RefPtr<DtlsIdentity> id =
-      new DtlsIdentity(std::move(key), std::move(cert), mAuthType);
+  RefPtr id =
+      MakeRefPtr<DtlsIdentity>(std::move(key), std::move(cert), mAuthType);
   return id;
 }
 

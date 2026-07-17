@@ -29,6 +29,8 @@ kind-dependencies:
     - partials-signing
     - repackage-signing-msi
     - repackage-signing-shippable-l10n-msix
+    - repackage-pkg-notarization
+    - repackage-l10n-pkg-notarization
     - mar-signing
     - mar-signing-l10n
     - attribution

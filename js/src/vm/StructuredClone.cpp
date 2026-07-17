@@ -3047,12 +3047,11 @@ bool JSStructuredCloneReader::readSharedWasmMemory(uint32_t nbytes,
     return false;
   }
   if (!payload.isObject() ||
-      !payload.toObject().is<SharedArrayBufferObject>() ||
-      payload.toObject().as<SharedArrayBufferObject>().isGrowable()) {
+      !payload.toObject().is<SharedArrayBufferObject>()) {
     JS_ReportErrorNumberASCII(context(), GetErrorMessage, nullptr,
                               JSMSG_SC_BAD_SERIALIZED_DATA,
                               "shared wasm memory must be backed by a "
-                              "non-growable SharedArrayBuffer");
+                              "SharedArrayBuffer");
     return false;
   }
 
@@ -3195,7 +3194,7 @@ bool JSStructuredCloneReader::startReadUnchecked(
       if (!in.readDouble(&d)) {
         return false;
       }
-      vp.setDouble(CanonicalizeNaN(d));
+      vp.setDouble(d);
       if (!PrimitiveToObject(context(), vp)) {
         return false;
       }
@@ -3410,7 +3409,7 @@ bool JSStructuredCloneReader::startReadUnchecked(
     default: {
       if (tag <= SCTAG_FLOAT_MAX) {
         double d = ReinterpretPairAsDouble(tag, data);
-        vp.setNumber(CanonicalizeNaN(d));
+        vp.setNumber(d);
         break;
       }
 

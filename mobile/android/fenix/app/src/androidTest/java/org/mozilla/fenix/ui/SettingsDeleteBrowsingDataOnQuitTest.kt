@@ -11,6 +11,7 @@ import androidx.test.rule.GrantPermissionRule
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.setNetworkEnabled
 import org.mozilla.fenix.helpers.FenixTestRule
@@ -45,9 +46,7 @@ class SettingsDeleteBrowsingDataOnQuitTest {
     @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides(
-                skipOnboarding = true,
-            ),
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
     @get:Rule(order = 2)
@@ -176,6 +175,11 @@ class SettingsDeleteBrowsingDataOnQuitTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1243096
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsDeleteBrowsingDataOnQuitTest#deleteDownloadsOnQuitTest"],
+        bug = 2040277,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun deleteDownloadsOnQuitTest() {
@@ -207,6 +211,11 @@ class SettingsDeleteBrowsingDataOnQuitTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/416053
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.SettingsDeleteBrowsingDataOnQuitTest#deleteSitePermissionsOnQuitTest"],
+        bug = 2040277,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun deleteSitePermissionsOnQuitTest() {

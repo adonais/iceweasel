@@ -14,6 +14,7 @@ transforms:
 kind-dependencies:
     - partials
     - partials-zucchini
+    - partials-zucchini-l10n
 
 task-defaults:
     run-on-repo-type: [hg]

@@ -6,6 +6,10 @@
 #include "nsISelectionDisplay.idl"
 
 %{C++
+
+#include <ostream>
+#include <string>
+
 using SelectionRegion = short;
 
 namespace mozilla {
@@ -328,6 +332,7 @@ interface nsISelectionController : nsISelectionDisplay
 namespace mozilla {
 
 // SelectionType should be used in internal handling code as it is type safe.
+// NOTE: Maintain format_as() and operator<<() if you change this enum class.
 enum class SelectionType : RawSelectionType {
   eInvalid = -1,
   eNone = nsISelectionController::SELECTION_NONE,
@@ -368,6 +373,10 @@ constexpr bool IsValidRawSelectionType(RawSelectionType aRawSelectionType);
 constexpr SelectionType ToSelectionType(RawSelectionType aRawSelectionType);
 constexpr RawSelectionType ToRawSelectionType(SelectionType aSelectionType);
 constexpr SelectionTypeMask ToSelectionTypeMask(SelectionType aSelectionType);
+
+// These are defined in Selection.cpp.
+std::string format_as(SelectionType);
+std::ostream& operator<<(std::ostream&, SelectionType);
 
 } // namespace mozilla
 %}

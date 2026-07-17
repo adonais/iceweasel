@@ -618,8 +618,7 @@ static void setup_block_rdmult(const AV1_COMP *const cpi, MACROBLOCK *const x,
   }
 
 #if !CONFIG_REALTIME_ONLY
-  if (cpi->common.delta_q_info.delta_q_present_flag &&
-      !cpi->sf.rt_sf.use_nonrd_pick_mode) {
+  if (cpi->cb_delta_rdmult_enabled && !cpi->sf.rt_sf.use_nonrd_pick_mode) {
     x->rdmult = av1_get_cb_rdmult(cpi, x, bsize, mi_row, mi_col);
   }
 #endif  // !CONFIG_REALTIME_ONLY
@@ -4048,12 +4047,80 @@ static void prune_4_partition_using_split_info(
   }
 }
 
+static void prune_part4_using_sms(AV1_COMP *const cpi, MACROBLOCK *x,
+                                  const PartitionSearchState *part_search_state,
+                                  SIMPLE_MOTION_DATA_TREE *sms_tree, int mi_row,
+                                  int mi_col, BLOCK_SIZE bsize,
+                                  int *part4_search_allowed) {
+  if (!part4_search_allowed[HORZ4] || !part4_search_allowed[VERT4]) return;
+
+  unsigned int sms_h_part4_sse[4];
+  unsigned int sms_v_part4_sse[4];
+
+  const BLOCK_SIZE subsize_h4 = get_partition_subsize(bsize, PARTITION_HORZ_4);
+  const BLOCK_SIZE subsize_v4 = get_partition_subsize(bsize, PARTITION_VERT_4);
+
+  const int h_mi = mi_size_high[bsize];
+  const int w_mi = mi_size_wide[bsize];
+
+  const int ref = cpi->rc.is_src_frame_alt_ref ? ALTREF_FRAME : LAST_FRAME;
+  if (!(cpi->ref_frame_flags & av1_ref_frame_flag_list[ref])) return;
+
+  int64_t part4_h_sse_sum = 0;
+  int64_t part4_v_sse_sum = 0;
+
+  // ---- HORZ_4 ----
+  for (int r_idx = 0; r_idx < SUB_PARTITIONS_PART4; r_idx++) {
+    unsigned int part_var;
+    const int sub_mi_row = mi_row + r_idx * h_mi / 4;
+    const int sub_mi_col = mi_col;
+
+    av1_simple_motion_search_sse_var(cpi, x, sub_mi_row, sub_mi_col, subsize_h4,
+                                     ref, sms_tree->start_mvs[ref],
+                                     /*num_planes=*/1, /*use_subpixel=*/1,
+                                     &sms_h_part4_sse[r_idx], &part_var);
+
+    (void)part_var;
+
+    part4_h_sse_sum += sms_h_part4_sse[r_idx];
+  }
+
+  // ---- VERT_4 ----
+  for (int r_idx = 0; r_idx < SUB_PARTITIONS_PART4; r_idx++) {
+    unsigned int part_var;
+    const int sub_mi_row = mi_row;
+    const int sub_mi_col = mi_col + r_idx * w_mi / 4;
+
+    av1_simple_motion_search_sse_var(cpi, x, sub_mi_row, sub_mi_col, subsize_v4,
+                                     ref, sms_tree->start_mvs[ref],
+                                     /*num_planes=*/1, /*use_subpixel=*/1,
+                                     &sms_v_part4_sse[r_idx], &part_var);
+    (void)part_var;
+
+    part4_v_sse_sum += sms_v_part4_sse[r_idx];
+  }
+
+  // ---- Skip RD calculation ----
+  const int64_t part4_h_rd =
+      RDCOST(x->rdmult, part_search_state->partition_cost[PARTITION_HORZ_4],
+             part4_h_sse_sum);
+
+  const int64_t part4_v_rd =
+      RDCOST(x->rdmult, part_search_state->partition_cost[PARTITION_VERT_4],
+             part4_v_sse_sum);
+
+  // ---- pruning ----
+  if (part4_h_rd > part4_v_rd) part4_search_allowed[HORZ4] = 0;
+
+  if (part4_v_rd > part4_h_rd) part4_search_allowed[VERT4] = 0;
+}
+
 // Prune 4-way partition search.
 static void prune_4_way_partition_search(
     AV1_COMP *const cpi, MACROBLOCK *x, PC_TREE *pc_tree,
-    PartitionSearchState *part_search_state, RD_STATS *best_rdc,
-    int pb_source_variance, int prune_ext_part_state,
-    int part4_search_allowed[NUM_PART4_TYPES]) {
+    PartitionSearchState *part_search_state, SIMPLE_MOTION_DATA_TREE *sms_tree,
+    RD_STATS *best_rdc, int pb_source_variance, int prune_ext_part_state,
+    int mi_row, int mi_col, int part4_search_allowed[NUM_PART4_TYPES]) {
   const PartitionBlkParams blk_params = part_search_state->part_blk_params;
   const BLOCK_SIZE bsize = blk_params.bsize;
 
@@ -4132,6 +4199,15 @@ static void prune_4_way_partition_search(
   // in the current block and sub-blocks in PARTITION_SPLIT.
   prune_4_partition_using_split_info(cpi, x, part_search_state,
                                      part4_search_allowed);
+
+  if (cpi->sf.part_sf.prune_h_or_v_4part_using_sms_info && partition4_allowed &&
+      best_rdc->rdcost != INT64_MAX &&
+      av1_is_whole_blk_in_frame(&part_search_state->part_blk_params,
+                                &cpi->common.mi_params) &&
+      !frame_is_intra_only(&cpi->common)) {
+    prune_part4_using_sms(cpi, x, part_search_state, sms_tree, mi_row, mi_col,
+                          bsize, part4_search_allowed);
+  }
 }
 
 // Set params needed for PARTITION_NONE search.
@@ -5834,8 +5910,9 @@ BEGIN_PARTITION_SEARCH:
   // 4-way partitions search stage.
   int part4_search_allowed[NUM_PART4_TYPES] = { 1, 1 };
   // Prune 4-way partition search.
-  prune_4_way_partition_search(cpi, x, pc_tree, &part_search_state, &best_rdc,
-                               pb_source_variance, prune_ext_part_state,
+  prune_4_way_partition_search(cpi, x, pc_tree, &part_search_state, sms_tree,
+                               &best_rdc, pb_source_variance,
+                               prune_ext_part_state, mi_row, mi_col,
                                part4_search_allowed);
 
 #if CONFIG_COLLECT_COMPONENT_TIMING

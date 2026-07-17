@@ -28,6 +28,7 @@ DevToolsModules(
     "devtools-browser.js",
     "devtools.js",
     "local-tab-commands-factory.js",
+    "LocalModeMappings.sys.mjs",
     "menu-item.js",
     "menu.js",
     "selection.js",

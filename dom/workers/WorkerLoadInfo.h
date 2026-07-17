@@ -13,6 +13,7 @@
 #include "mozilla/dom/OffThreadCSPContext.h"
 #include "mozilla/dom/ServiceWorkerRegistrationDescriptor.h"
 #include "mozilla/dom/WorkerCommon.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/net/NeckoChannelParams.h"
 #include "nsIInterfaceRequestor.h"
 #include "nsILoadContext.h"
@@ -70,6 +71,11 @@ struct WorkerLoadInfoData {
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   UniquePtr<OffThreadCSPContext> mCSPContext;
 
+  // IP address space inherited from the parent document's policy container.
+  // Stored as uint16_t to avoid including nsILoadInfo.h in this header.
+  // Maps to nsILoadInfo::IPAddressSpace enum values.
+  uint16_t mIPAddressSpace = 0;  // nsILoadInfo::Unknown
+
   nsCOMPtr<nsIChannel> mChannel;
   nsCOMPtr<nsILoadGroup> mLoadGroup;
 
@@ -123,6 +129,26 @@ struct WorkerLoadInfoData {
 
   uint64_t mWindowID;
   uint64_t mAssociatedBrowsingContextID;
+
+  // mLanguageOverrideLocale and mLanguageOverride are used to propagate JS
+  // locale and navigator.language/s overrides in workers if the override is set
+  // on a related browsing context via browsingContext.languageOverride. They're
+  // set for the new workers and updated if the browsingContext.languageOverride
+  // is changed. At the moment it will only affect dedicated and shared workers.
+  // Service workers will be handled in bug 2040904. For the SharedWorker the
+  // behavior is if page A with override A creates a SharedWorker S and then
+  // page B with override B also tries to create the same SharedWorker S, S has
+  // already been created with the A overrides and will not automatically change
+  // to the overrides on B. However, any page with a live SharedWorker binding
+  // that experiences a change to its overrides will then send an update to all
+  // related SharedWorkers.
+  nsCString mLanguageOverrideLocale;
+  nsTArray<nsString> mLanguageOverride;
+  // mTimezoneOverride is used to propagate JS timezone override in workers
+  // if the override is set on a related browsing context via
+  // browsingContext.timezoneOverride. It's applied the same was as for
+  // mLanguageOverrideLocale and mLanguageOverride.
+  nsString mTimezoneOverride;
 
   nsCOMPtr<nsIReferrerInfo> mReferrerInfo;
   OriginTrials mTrials;

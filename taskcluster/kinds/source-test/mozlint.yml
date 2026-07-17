@@ -515,6 +515,21 @@ rst:
             - '**/*.rst'
             - 'tools/lint/rst.yml'
 
+rumdl:
+    description: rumdl Markdown linter run over the gecko codebase
+    treeherder:
+        symbol: doc(rumdl)
+        # Allow follow-ups for Markdown style issues rather than backing patches out.
+        tier: 2
+    run:
+        mach: lint -v -l rumdl -f treeherder -f json:/builds/worker/mozlint.json .
+    when:
+        files-changed:
+            - '**/*.md'
+            - 'tools/lint/rumdl.yml'
+            - 'tools/lint/rumdl.toml'
+            - 'tools/lint/python/rumdl.py'
+
 shellcheck:
     description: shellcheck run over the gecko codebase
     treeherder:

@@ -29,7 +29,7 @@ add_task(async function test_button_removed() {
     "Sidebar button is shown."
   );
   ok(sidebarButton, "Sidebar button is shown.");
-  let sidebarMain = document.getElementById("sidebar-main");
+  let sidebarMain = document.getElementById("sidebar-container");
   ok(sidebarMain, "Sidebar launcher is shown.");
   let sidebarBox = await BrowserTestUtils.waitForCondition(
     () => document.getElementById("sidebar-box"),
@@ -75,7 +75,7 @@ add_task(async function test_button_moved() {
   await SidebarController.show("viewBookmarksSidebar");
 
   let sidebarButton = document.getElementById("sidebar-button");
-  let sidebarMain = document.getElementById("sidebar-main");
+  let sidebarContainer = document.getElementById("sidebar-container");
   let sidebarBox = document.getElementById("sidebar-box");
 
   await startCustomizing();
@@ -99,7 +99,7 @@ add_task(async function test_button_moved() {
   await finishedCustomizing;
 
   ok(sidebarButton, "Sidebar button has not been removed.");
-  ok(!sidebarMain.hidden, "Sidebar launcher has not been hidden.");
+  ok(!sidebarContainer.hidden, "Sidebar launcher has not been hidden.");
   ok(!sidebarBox.hidden, "Sidebar panel has not been hidden.");
 
   CustomizableUI.reset();

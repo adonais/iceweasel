@@ -55,7 +55,7 @@ class MessagePumpWin : public MessagePump {
     virtual bool Dispatch(const MSG& msg) = 0;
   };
 
-  MessagePumpWin() : have_work_(0), state_(NULL) {}
+  MessagePumpWin() : have_work_(0), state_(nullptr) {}
   virtual ~MessagePumpWin() {}
 
   // Add an Observer, which will start receiving notifications immediately.
@@ -74,7 +74,7 @@ class MessagePumpWin : public MessagePump {
   void RunWithDispatcher(Delegate* delegate, Dispatcher* dispatcher);
 
   // MessagePump methods:
-  virtual void Run(Delegate* delegate) { RunWithDispatcher(delegate, NULL); }
+  virtual void Run(Delegate* delegate) { RunWithDispatcher(delegate, nullptr); }
   virtual void Quit();
 
  protected:

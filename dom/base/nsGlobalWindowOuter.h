@@ -963,7 +963,7 @@ class nsGlobalWindowOuter final : public mozilla::dom::EventTarget,
   }
 
   // Dispatch a runnable related to the global.
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&&) const final;
+  nsresult Dispatch(already_AddRefed<nsIRunnable>) const final;
   nsISerialEventTarget* SerialEventTarget() const final;
 
  protected:

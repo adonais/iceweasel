@@ -1024,14 +1024,12 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CanvasRenderingContext2D)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mCanvasElement)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mOffscreenCanvas)
   NS_IMPL_CYCLE_COLLECTION_UNLINK(mDocShell)
-  for (uint32_t i = 0; i < tmp->mStyleStack.Length(); i++) {
-    ImplCycleCollectionUnlink(tmp->mStyleStack[i].patternStyles[Style::STROKE]);
-    ImplCycleCollectionUnlink(tmp->mStyleStack[i].patternStyles[Style::FILL]);
-    ImplCycleCollectionUnlink(
-        tmp->mStyleStack[i].gradientStyles[Style::STROKE]);
-    ImplCycleCollectionUnlink(tmp->mStyleStack[i].gradientStyles[Style::FILL]);
-    if (auto* autoSVGFiltersObserver =
-            tmp->mStyleStack[i].autoSVGFiltersObserver.get()) {
+  for (ContextState& state : tmp->mStyleStack) {
+    ImplCycleCollectionUnlink(state.patternStyles[Style::STROKE]);
+    ImplCycleCollectionUnlink(state.patternStyles[Style::FILL]);
+    ImplCycleCollectionUnlink(state.gradientStyles[Style::STROKE]);
+    ImplCycleCollectionUnlink(state.gradientStyles[Style::FILL]);
+    if (auto* autoSVGFiltersObserver = state.autoSVGFiltersObserver.get()) {
       /*
        * XXXjwatt: I don't think this is doing anything useful.  All we do under
        * this function is clear a raw C-style (i.e. not strong) pointer.  That's
@@ -1042,7 +1040,7 @@ NS_IMPL_CYCLE_COLLECTION_UNLINK_BEGIN(CanvasRenderingContext2D)
        */
       autoSVGFiltersObserver->Detach();
     }
-    ImplCycleCollectionUnlink(tmp->mStyleStack[i].autoSVGFiltersObserver);
+    ImplCycleCollectionUnlink(state.autoSVGFiltersObserver);
   }
   NS_IMPL_CYCLE_COLLECTION_UNLINK_PRESERVED_WRAPPER
   NS_IMPL_CYCLE_COLLECTION_UNLINK_WEAK_PTR
@@ -1052,20 +1050,16 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_BEGIN(CanvasRenderingContext2D)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mCanvasElement)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mOffscreenCanvas)
   NS_IMPL_CYCLE_COLLECTION_TRAVERSE(mDocShell)
-  for (uint32_t i = 0; i < tmp->mStyleStack.Length(); i++) {
-    ImplCycleCollectionTraverse(
-        cb, tmp->mStyleStack[i].patternStyles[Style::STROKE],
-        "Stroke CanvasPattern");
-    ImplCycleCollectionTraverse(cb,
-                                tmp->mStyleStack[i].patternStyles[Style::FILL],
+  for (ContextState& state : tmp->mStyleStack) {
+    ImplCycleCollectionTraverse(cb, state.patternStyles[Style::STROKE],
+                                "Stroke CanvasPattern");
+    ImplCycleCollectionTraverse(cb, state.patternStyles[Style::FILL],
                                 "Fill CanvasPattern");
-    ImplCycleCollectionTraverse(
-        cb, tmp->mStyleStack[i].gradientStyles[Style::STROKE],
-        "Stroke CanvasGradient");
-    ImplCycleCollectionTraverse(cb,
-                                tmp->mStyleStack[i].gradientStyles[Style::FILL],
+    ImplCycleCollectionTraverse(cb, state.gradientStyles[Style::STROKE],
+                                "Stroke CanvasGradient");
+    ImplCycleCollectionTraverse(cb, state.gradientStyles[Style::FILL],
                                 "Fill CanvasGradient");
-    ImplCycleCollectionTraverse(cb, tmp->mStyleStack[i].autoSVGFiltersObserver,
+    ImplCycleCollectionTraverse(cb, state.autoSVGFiltersObserver,
                                 "RAII SVG Filters Observer");
   }
 NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
@@ -1236,6 +1230,12 @@ CanvasRenderingContext2D::~CanvasRenderingContext2D() {
   RemovePostRefreshObserver();
   RemoveShutdownObserver();
   ResetBitmap();
+
+  for (ContextState& state : mStyleStack) {
+    if (auto* obs = state.autoSVGFiltersObserver.get()) {
+      obs->Detach();
+    }
+  }
 
   sNumLivingContexts.set(sNumLivingContexts.get() - 1);
   if (sNumLivingContexts.get() == 0 && sErrorTarget.get()) {
@@ -5171,13 +5171,20 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
     }
   }
 
+  gfx::ShapedTextFlags runOrientation =
+      (processor.mTextRunFlags & gfx::ShapedTextFlags::TEXT_ORIENT_MASK);
+  nsFontMetrics::FontOrientation fontOrientation =
+      (runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED ||
+       runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT)
+          ? nsFontMetrics::eVertical
+          : nsFontMetrics::eHorizontal;
+
   nscoord totalWidthCoord;
 
   processor.mFontgrp
       ->UpdateUserFonts();  // ensure user font generation is current
   RefPtr<gfxFont> font = processor.mFontgrp->GetFirstValidFont();
-  const gfxFont::Metrics& fontMetrics =
-      font->GetMetrics(nsFontMetrics::eHorizontal);
+  const gfxFont::Metrics& fontMetrics = font->GetMetrics(fontOrientation);
 
   // calls bidi algo twice since it needs the full text width and the
   // bounding boxes before rendering anything
@@ -5215,14 +5222,6 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
   float offsetX = anchorX * totalWidth;
   processor.mPt.x -= offsetX;
 
-  gfx::ShapedTextFlags runOrientation =
-      (processor.mTextRunFlags & gfx::ShapedTextFlags::TEXT_ORIENT_MASK);
-  nsFontMetrics::FontOrientation fontOrientation =
-      (runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_MIXED ||
-       runOrientation == gfx::ShapedTextFlags::TEXT_ORIENT_VERTICAL_UPRIGHT)
-          ? nsFontMetrics::eVertical
-          : nsFontMetrics::eHorizontal;
-
   // offset pt.y (or pt.x, for vertical text) based on text baseline
   gfxFloat baselineAnchor;
 
@@ -5253,11 +5252,6 @@ UniquePtr<TextMetrics> CanvasRenderingContext2D::DrawOrMeasureText(
   // We can't query the textRun directly, as it may not have been created yet;
   // so instead we check the flags that will be used to initialize it.
   if (runOrientation != gfx::ShapedTextFlags::TEXT_ORIENT_HORIZONTAL) {
-    if (fontOrientation == nsFontMetrics::eVertical) {
-      // Adjust to account for mTextRun being shaped using center baseline
-      // rather than alphabetic.
-      baselineAnchor -= (fontMetrics.emAscent - fontMetrics.emDescent) * .5f;
-    }
     processor.mPt.x -= baselineAnchor;
   } else {
     processor.mPt.y += baselineAnchor;

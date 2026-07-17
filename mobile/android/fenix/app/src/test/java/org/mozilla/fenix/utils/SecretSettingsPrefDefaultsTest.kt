@@ -16,7 +16,7 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
@@ -32,7 +32,7 @@ class SecretSettingsPrefDefaultsTest {
     @Before
     fun setUp() {
         settings = Settings(testContext)
-        every { testContext.settings() } returns settings
+        every { testContext.components.settings } returns settings
     }
 
     @Test
@@ -48,7 +48,7 @@ class SecretSettingsPrefDefaultsTest {
             putBoolean(prefKey2, true)
         }
 
-        SecretSettingsPrefDefaults(testContext).resetAll(screen)
+        SecretSettingsPrefDefaults(settings).resetAll(screen)
 
         assertFalse(settings.preferences.contains(prefKey1))
         assertFalse(settings.preferences.contains(prefKey2))
@@ -69,7 +69,7 @@ class SecretSettingsPrefDefaultsTest {
             putBoolean(nestedPrefKey2, true)
         }
 
-        SecretSettingsPrefDefaults(testContext).resetAll(screen)
+        SecretSettingsPrefDefaults(settings).resetAll(screen)
 
         assertFalse(settings.preferences.contains(nestedPrefKey1))
         assertFalse(settings.preferences.contains(nestedPrefKey2))
@@ -87,7 +87,7 @@ class SecretSettingsPrefDefaultsTest {
             putBoolean(unrelatedPrefKey, true)
         }
 
-        SecretSettingsPrefDefaults(testContext).resetAll(screen)
+        SecretSettingsPrefDefaults(settings).resetAll(screen)
 
         assertFalse(settings.preferences.contains(secretSettingsPrefKey))
         assertTrue(settings.preferences.contains(unrelatedPrefKey))
@@ -102,7 +102,7 @@ class SecretSettingsPrefDefaultsTest {
         screen.addPreference(SwitchPreferenceCompat(testContext).apply { key = settingsPrefKey })
         settings.preferences.edit { putBoolean(settingsPrefKey, true) }
 
-        SecretSettingsPrefDefaults(testContext).resetAll(screen)
+        SecretSettingsPrefDefaults(settings).resetAll(screen)
 
         assertFalse(settings.preferences.contains(settingsPrefKey))
     }

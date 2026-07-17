@@ -105,8 +105,8 @@ const SMARTBLOCK_EMBED_INFO = [
   },
   {
     matchPatterns: ["https://www.tiktok.com/*"],
-    shimId: "TiktokEmbed",
-    displayName: "Tiktok",
+    shimId: "TikTokEmbed",
+    displayName: "TikTok",
   },
   {
     matchPatterns: ["https://platform.twitter.com/*"],

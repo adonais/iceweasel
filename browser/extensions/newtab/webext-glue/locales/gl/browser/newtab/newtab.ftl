@@ -28,6 +28,62 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Novas lapelas
+
+## Firefox Home content
+
+home-prefs-firefox-logo-header =
+    .label = Logotipo de { -brand-short-name }
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } fila
+           *[other] { $num } filas
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Extensión ({ $extension })
+home-restore-defaults-srd =
+    .label = Restaurar a configuración predeterminada
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (Predeterminado)
+home-mode-choice-custom-srd =
+    .label = URLs personalizados...
+home-mode-choice-blank-srd =
+    .label = Páxina en branco
+home-prefs-shortcuts-header-srd =
+    .label = Atallos
+home-prefs-shortcuts-select =
+    .aria-label = Atallos
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Atallos patrocinados
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Historias patrocinadas
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Páxinas visitadas
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Marcadores
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = A descarga máis recente
+home-prefs-recent-activity-header-srd =
+    .label = Actividade recente
+home-prefs-recent-activity-select =
+    .aria-label = Actividade recente
+home-prefs-weather-header-srd =
+    .label = Tempo
+home-prefs-support-firefox-header-srd =
+    .label = Apoiar a { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = Descubre como
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -140,6 +196,8 @@ newtab-menu-report = Informar
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Bloquear
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Máis información
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Deixa de seguir o tema
@@ -646,8 +704,6 @@ newtab-widget-lists-button-add-item = Engadir un elemento
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Engadir un elemento
     .aria-label = Engadir un elemento
-newtab-widget-lists-input-add-an-item =
-    .placeholder = Engadir un elemento
 
 ## Strings introduced by the Nova redesign of the Timer widget
 

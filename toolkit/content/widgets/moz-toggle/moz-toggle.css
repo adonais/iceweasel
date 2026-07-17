@@ -130,5 +130,5 @@
 }
 
 :host(:state(disabled)) .toggle-button {
-  opacity: var(--button-opacity-disabled);
+  opacity: var(--toggle-opacity-disabled);
 }

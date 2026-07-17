@@ -8,6 +8,7 @@ import androidx.test.espresso.Espresso.pressBack
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
@@ -95,6 +96,11 @@ class BookmarksTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833691
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.BookmarksTest#editBookmarksNameAndUrlTest"],
+        bug = 2024690,
+        since = "2026-03",
+    )
     @SmokeTest
     @Test
     fun editBookmarksNameAndUrlTest() {

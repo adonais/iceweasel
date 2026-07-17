@@ -58,7 +58,7 @@ add_task(async function test_initOnUpdateEventsFire() {
       NimbusTestUtils.factories.recipe.withFeatureConfig("testFeature-1", {
         featureId: "testFeature",
       }),
-      { store }
+      { store, extra: { source: "test" } }
     );
     NimbusTestUtils.addEnrollmentForRecipe(
       NimbusTestUtils.factories.recipe.withFeatureConfig(
@@ -68,7 +68,7 @@ add_task(async function test_initOnUpdateEventsFire() {
         },
         { isRollout: true }
       ),
-      { store }
+      { store, extra: { source: "test" } }
     );
     NimbusTestUtils.addEnrollmentForRecipe(
       NimbusTestUtils.factories.recipe.withFeatureConfig("nimbus-qa-1", {
@@ -76,7 +76,7 @@ add_task(async function test_initOnUpdateEventsFire() {
       }),
       {
         store,
-        extra: { active: false },
+        extra: { active: false, source: "test" },
       }
     );
     NimbusTestUtils.addEnrollmentForRecipe(
@@ -87,7 +87,7 @@ add_task(async function test_initOnUpdateEventsFire() {
       ),
       {
         store,
-        extra: { active: false },
+        extra: { active: false, source: "test" },
       }
     );
 
@@ -95,25 +95,25 @@ add_task(async function test_initOnUpdateEventsFire() {
       NimbusTestUtils.factories.recipe.withFeatureConfig("coenroll-1", {
         featureId: "no-feature-firefox-desktop",
       }),
-      { store }
+      { store, extra: { source: "test" } }
     );
     NimbusTestUtils.addEnrollmentForRecipe(
       NimbusTestUtils.factories.recipe.withFeatureConfig("coenroll-2", {
         featureId: "no-feature-firefox-desktop",
       }),
-      { store }
+      { store, extra: { source: "test" } }
     );
     NimbusTestUtils.addEnrollmentForRecipe(
       NimbusTestUtils.factories.recipe.withFeatureConfig("coenroll-3", {
         featureId: "no-feature-firefox-desktop",
       }),
-      { store }
+      { store, extra: { source: "test" } }
     );
     NimbusTestUtils.addEnrollmentForRecipe(
       NimbusTestUtils.factories.recipe.withFeatureConfig("coenroll-4", {
         featureId: "no-feature-firefox-desktop",
       }),
-      { store }
+      { store, extra: { source: "test" } }
     );
   });
 
@@ -881,18 +881,18 @@ add_task(async function test_restore() {
     storePath: await NimbusTestUtils.createStoreWith(store => {
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe("experiment"),
-        { store, branchSlug: "control" }
+        { store, branchSlug: "control", extra: { source: "test" } }
       );
       NimbusTestUtils.addEnrollmentForRecipe(
         NimbusTestUtils.factories.recipe("rollout", { isRollout: true }),
-        { store }
+        { store, extra: { source: "test" } }
       );
     }),
     migrationState: NimbusTestUtils.migrationState.LATEST,
   });
 
-  Assert.ok(store.get("experiment"));
-  Assert.ok(store.get("rollout"));
+  Assert.ok(store.get("experiment")?.active);
+  Assert.ok(store.get("rollout")?.active);
 
   await NimbusTestUtils.cleanupManager(["experiment", "rollout"]);
   await cleanup();
@@ -918,11 +918,17 @@ add_task(async function test_restoreDatabaseConsistency() {
       { featureId: "no-feature-firefox-desktop" }
     );
 
-    NimbusTestUtils.addEnrollmentForRecipe(experimentRecipe, { store });
-    NimbusTestUtils.addEnrollmentForRecipe(rolloutRecipe, { store });
+    NimbusTestUtils.addEnrollmentForRecipe(experimentRecipe, {
+      store,
+      extra: { source: "test" },
+    });
+    NimbusTestUtils.addEnrollmentForRecipe(rolloutRecipe, {
+      store,
+      extra: { source: "test" },
+    });
     NimbusTestUtils.addEnrollmentForRecipe(inactiveRecipe, {
       store,
-      extra: { active: false },
+      extra: { active: false, source: "test" },
     });
   });
 

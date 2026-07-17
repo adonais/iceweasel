@@ -3797,9 +3797,6 @@ void nsHttpConnectionMgr::RegisterOriginCoalescingKey(HttpConnectionBase* conn,
 
 bool nsHttpConnectionMgr::GetConnectionData(nsTArray<HttpRetParams>* aArg) {
   for (const RefPtr<ConnectionEntry>& ent : mCT.Values()) {
-    if (ent->mConnInfo->GetPrivate()) {
-      continue;
-    }
     aArg->AppendElement(ent->GetConnectionData());
   }
 
@@ -4042,7 +4039,6 @@ nsHttpConnectionMgr::GetServerCertHashes(nsHttpConnectionInfo* aConnInfo) {
 }
 
 void nsHttpConnectionMgr::CheckTransInPendingQueue(nsHttpTransaction* aTrans) {
-#ifdef MOZ_DIAGNOSTIC_ASSERT_ENABLED
   // We only do this check on socket thread. When this function is called on
   // main thread, the transaction is newly created, so we can skip this check.
   if (!OnSocketThread()) {
@@ -4056,8 +4052,10 @@ void nsHttpConnectionMgr::CheckTransInPendingQueue(nsHttpTransaction* aTrans) {
   }
 
   bool foundInPendingQ = RemoveTransFromConnEntry(aTrans, hashKey);
-  MOZ_DIAGNOSTIC_ASSERT(!foundInPendingQ);
-#endif
+  if (foundInPendingQ) {
+    glean::networking::trans_found_in_pending_queue.Add(1);
+  }
+  MOZ_ASSERT(!foundInPendingQ);
 }
 
 bool nsHttpConnectionMgr::AllowToRetryDifferentIPFamilyForHttp3(

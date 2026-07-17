@@ -21,7 +21,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -31,12 +30,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalFocusManager
-import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
+import mozilla.components.compose.base.button.TextButton
 import mozilla.components.lib.state.ext.observeAsComposableState
 import org.mozilla.fenix.R
 import org.mozilla.fenix.settings.settingssearch.ui.SettingsSearchSectionHeader
@@ -212,23 +211,18 @@ private fun RecentSearchesContent(
             Text(
                 text = stringResource(R.string.settings_search_recent_searches_section_header),
                 style = FirefoxTheme.typography.headline8,
-                color = colorResource(RECENT_SEARCHES_HEADER_TEXT_COLOR),
+                color = MaterialTheme.colorScheme.onSurface,
             )
             TextButton(
+                text = stringResource(R.string.settings_search_clear_recent_searches_message),
                 onClick = {
                     store.dispatch(SettingsSearchAction.ClearRecentSearchesClicked)
                 },
-                colors = ButtonDefaults.textButtonColors(),
                 modifier = Modifier.heightIn(min = 48.dp),
-                enabled = true,
-            ) {
-               Text(
-                   text = stringResource(R.string.settings_search_clear_recent_searches_message),
-                   color = MaterialTheme.colorScheme.secondary,
-                   style = FirefoxTheme.typography.button,
-                   maxLines = 1,
-               )
-            }
+                colors = ButtonDefaults.textButtonColors(
+                    contentColor = MaterialTheme.colorScheme.secondary,
+                ),
+            )
         }
         LazyColumn(
             state = listState,
@@ -417,5 +411,4 @@ private fun SettingsSearchScreenNoResultsPreview() {
     }
 }
 
-private val RECENT_SEARCHES_HEADER_TEXT_COLOR = mozilla.components.ui.colors.R.color.photonLightGrey40
 private const val VERTICAL_BIAS_OFFSET_IMAGE_MESSAGE = -0.33f

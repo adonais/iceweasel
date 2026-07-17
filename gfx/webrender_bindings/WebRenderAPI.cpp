@@ -1203,7 +1203,6 @@ void DisplayListBuilder::DumpSerializedDisplayList() {
 void DisplayListBuilder::Begin() {
   wr_api_begin_builder(mWrState);
 
-  mScrollIds.clear();
   mASRToSpatialIdMap.clear();
   mCurrentSpaceAndClipChain = wr::RootScrollNodeWithChain();
   mCachedTextDT = nullptr;
@@ -1234,7 +1233,7 @@ void DisplayListBuilder::End(layers::DisplayListData& aOutTransaction) {
 
 Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
     const wr::StackingContextParams& aParams, const wr::LayoutRect& aBounds,
-    const wr::RasterSpace& aRasterSpace, wr::SpatialTreeItemKey aSCOriginKey) {
+    const wr::RasterSpace& aRasterSpace) {
   WRDL_LOG(
       "PushStackingContext b=%s t=%s id=0x%" PRIx64 "\n", mWrState,
       ToString(aBounds).c_str(),
@@ -1260,7 +1259,7 @@ Maybe<wr::WrSpatialId> DisplayListBuilder::PushStackingContext(
       mWrState, aBounds, mCurrentSpaceAndClipChain.space, &aParams,
       aParams.mTransformPtr, aParams.mFilters.Elements(),
       aParams.mFilters.Length(), aParams.mFilterDatas.Elements(),
-      aParams.mFilterDatas.Length(), aRasterSpace, aSCOriginKey);
+      aParams.mFilterDatas.Length(), aRasterSpace);
 
   return spatialId.id != 0 ? Some(spatialId) : Nothing();
 }
@@ -1332,12 +1331,12 @@ wr::WrSpatialId DisplayListBuilder::DefineStickyFrame(
     const float* aBottomMargin, const float* aLeftMargin,
     const StickyOffsetBounds& aVerticalBounds,
     const StickyOffsetBounds& aHorizontalBounds,
-    const wr::LayoutVector2D& aAppliedOffset, wr::SpatialTreeItemKey aKey,
+    const wr::LayoutVector2D& aAppliedOffset,
     const WrAnimationProperty* aAnimation) {
   auto spatialId = wr_dp_define_sticky_frame(
       mWrState, aParentSpatialId.valueOr(mCurrentSpaceAndClipChain.space),
       aContentRect, aTopMargin, aRightMargin, aBottomMargin, aLeftMargin,
-      aVerticalBounds, aHorizontalBounds, aAppliedOffset, aKey, aAnimation);
+      aVerticalBounds, aHorizontalBounds, aAppliedOffset, aAnimation);
 
   mASRToSpatialIdMap.emplace(aStickyAsr, spatialId);
 
@@ -1354,23 +1353,12 @@ wr::WrSpatialId DisplayListBuilder::DefineStickyFrame(
   return spatialId;
 }
 
-Maybe<wr::WrSpatialId> DisplayListBuilder::GetScrollIdForDefinedScrollLayer(
-    layers::ScrollableLayerGuid::ViewID aViewId) const {
-  if (aViewId == layers::ScrollableLayerGuid::NULL_SCROLL_ID) {
+Maybe<wr::WrSpatialId> DisplayListBuilder::GetSpatialIdForDefinedLayer(
+    const ActiveScrolledRoot* aASR) const {
+  if (aASR == nullptr) {
     return Some(wr::RootScrollNode());
   }
 
-  auto it = mScrollIds.find(aViewId);
-  if (it == mScrollIds.end()) {
-    return Nothing();
-  }
-
-  return Some(it->second);
-}
-
-Maybe<wr::WrSpatialId> DisplayListBuilder::GetSpatialIdForDefinedStickyLayer(
-    const ActiveScrolledRoot* aASR) const {
-  MOZ_ASSERT(aASR->mKind == ActiveScrolledRoot::ASRKind::Sticky);
   auto it = mASRToSpatialIdMap.find(aASR);
   if (it == mASRToSpatialIdMap.end()) {
     return Nothing();
@@ -1380,14 +1368,14 @@ Maybe<wr::WrSpatialId> DisplayListBuilder::GetSpatialIdForDefinedStickyLayer(
 }
 
 wr::WrSpatialId DisplayListBuilder::DefineScrollLayer(
+    const ActiveScrolledRoot* aAsr,
     const layers::ScrollableLayerGuid::ViewID& aViewId,
     const Maybe<wr::WrSpatialId>& aParent, const wr::LayoutRect& aContentRect,
     const wr::LayoutRect& aClipRect, const wr::LayoutVector2D& aScrollOffset,
     wr::APZScrollGeneration aScrollOffsetGeneration,
-    wr::HasScrollLinkedEffect aHasScrollLinkedEffect,
-    wr::SpatialTreeItemKey aKey) {
-  auto it = mScrollIds.find(aViewId);
-  if (it != mScrollIds.end()) {
+    wr::HasScrollLinkedEffect aHasScrollLinkedEffect) {
+  auto it = mASRToSpatialIdMap.find(aAsr);
+  if (it != mASRToSpatialIdMap.end()) {
     return it->second;
   }
 
@@ -1396,8 +1384,8 @@ wr::WrSpatialId DisplayListBuilder::DefineScrollLayer(
 
   auto space = wr_dp_define_scroll_layer(
       mWrState, aViewId, aParent ? aParent.ptr() : &defaultParent, aContentRect,
-      aClipRect, aScrollOffset, aScrollOffsetGeneration, aHasScrollLinkedEffect,
-      aKey);
+      aClipRect, aScrollOffset, aScrollOffsetGeneration,
+      aHasScrollLinkedEffect);
 
   WRDL_LOG("DefineScrollLayer id=%" PRIu64
            "/%zu p=%s co=%s cl=%s generation=%s hasScrollLinkedEffect=%s\n",
@@ -1407,7 +1395,7 @@ wr::WrSpatialId DisplayListBuilder::DefineScrollLayer(
            ToString(aScrollOffsetGeneration).c_str(),
            ToString(aHasScrollLinkedEffect).c_str());
 
-  mScrollIds[aViewId] = space;
+  mASRToSpatialIdMap[aAsr] = space;
   return space;
 }
 
@@ -1443,7 +1431,8 @@ void DisplayListBuilder::PushRoundedRect(const wr::LayoutRect& aBounds,
   float h = aBounds.width() * 0.6f;
   float v = aBounds.height() * 0.6f;
   wr::LayoutSideOffsets widths = {v, h, v, h};
-  wr::BorderRadius radii = {{h, v}, {h, v}, {h, v}, {h, v}};
+  wr::BorderRadius radii = {{h, v}, {h, v}, {h, v}, {h, v},
+                            1.0f,   1.0f,   1.0f,   1.0f};
 
   // Anti-aliased borders are required for rounded borders.
   wr_dp_push_border(mWrState, aBounds, aClip, aIsBackfaceVisible,

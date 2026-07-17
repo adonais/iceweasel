@@ -46,8 +46,10 @@ EXPORTS.mozilla.storage += [
     "mozStorageAsyncStatementParams.h",
     "mozStorageStatementParams.h",
     "mozStorageStatementRow.h",
+    "SQLiteEncryption.h",
     "SQLiteMutex.h",
     "StatementCache.h",
+    "StoragePathUtil.h",
     "Variant.h",
     "Variant_inl.h",
 ]
@@ -75,7 +77,9 @@ UNIFIED_SOURCES += [
     "ObfuscatingVFS.cpp",
     "QuotaVFS.cpp",
     "ReadOnlyNoLockVFS.cpp",
+    "SQLiteEncryption.cpp",
     "StorageBaseStatementInternal.cpp",
+    "StoragePathUtil.cpp",
     "VacuumManager.cpp",
     "Variant.cpp",
 ]

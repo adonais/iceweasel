@@ -126,6 +126,8 @@ class WebExtensionPolicyCore final {
     mPermissions = std::move(newPermissions);
   }
 
+  bool FileSchemeAllowed() const;
+
   bool CanAccessURI(const URLInfo& aURI, bool aExplicit = false,
                     bool aCheckRestricted = true,
                     bool aAllowFilePermission = false) const;
@@ -340,6 +342,8 @@ class WebExtensionPolicy final : public nsISupports, public nsWrapperCache {
   void SetPermissions(const nsTArray<nsString>& aPermissions) {
     mCore->SetPermissions(aPermissions);
   }
+
+  bool FileSchemeAllowed() const { return mCore->FileSchemeAllowed(); }
 
   bool IgnoreQuarantine() const { return mCore->IgnoreQuarantine(); }
   void SetIgnoreQuarantine(bool aIgnore);

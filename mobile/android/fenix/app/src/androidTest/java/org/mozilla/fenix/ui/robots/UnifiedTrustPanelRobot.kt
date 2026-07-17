@@ -18,6 +18,7 @@ import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestHelper.appName
 import org.mozilla.fenix.helpers.TestHelper.mDevice
+import org.mozilla.fenix.helpers.TestHelper.shortAppName
 import org.mozilla.fenix.helpers.TestHelper.waitForAppWindowToBeUpdated
 
 class UnifiedTrustPanelRobot {
@@ -42,7 +43,7 @@ class UnifiedTrustPanelRobot {
             Log.i(TAG, "verifyUnifiedTrustPanelItems: Verified that the web site url: $webSiteURL is displayed")
         }
         verifyTheEnhancedTrackingProtectionState(composeTestRule, isEnhancedTrackingProtectionEnabled, isTheWebSiteSecure)
-        verifyTheTrackersBlockedOptionState(composeTestRule, isTrackerBlockingEnabled, areTrackersBlocked)
+        verifyTheTrackersBlockedOptionState(composeTestRule, isTheWebSiteSecure, isTrackerBlockingEnabled, areTrackersBlocked)
         verifyTheSiteSecurityOption(composeTestRule, isTheWebSiteSecure)
         Log.i(TAG, "verifyUnifiedTrustPanelItems: Trying to verify that the \"Clear cookies and site data\" option is displayed")
         composeTestRule.onNodeWithText(getStringResource(R.string.clear_site_data), useUnmergedTree = true).assertIsDisplayed()
@@ -57,15 +58,14 @@ class UnifiedTrustPanelRobot {
             Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Verified that \"Enhanced tracking protection\" is enabled")
             if (isTheWebSiteSecure) {
                 Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Verified that the website is secure")
-                Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Trying to verify that the \"$appName is on guard\" banner title and message are displayed")
-                composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_banner_protected_title, argument = appName), useUnmergedTree = true).assertIsDisplayed()
-                composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_banner_protected_description), useUnmergedTree = true).assertIsDisplayed()
-                Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Verified that the \"$appName is on guard\" banner title and message are displayed")
+                Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Trying to verify that the \"$shortAppName is on guard\" banner title is displayed")
+                composeTestRule.onNodeWithContentDescription(getStringResource(R.string.protection_panel_banner_protected_title, argument = shortAppName), substring = true).assertIsDisplayed()
+                Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Verified that the \"$shortAppName is on guard\" banner title is displayed")
             } else {
                 Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Verified that the website is not secure")
                 Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Trying to verify that the \"Be careful on this site\" banner title and message are displayed")
-                composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_banner_not_secure_title, argument = appName), useUnmergedTree = true).assertIsDisplayed()
-                composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_banner_not_secure_description), useUnmergedTree = true).assertIsDisplayed()
+                composeTestRule.onNodeWithContentDescription(getStringResource(R.string.protection_panel_banner_not_secure_title, argument = appName), substring = true).assertIsDisplayed()
+                composeTestRule.onNodeWithContentDescription(getStringResource(R.string.protection_panel_banner_not_secure_description), substring = true).assertIsDisplayed()
                 Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Verified that the \"Be careful on this site\" banner title and message are displayed")
             }
             Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Trying to verify that the \"Enhanced tracking protection\" option, message and \"On\" state are displayed")
@@ -78,14 +78,14 @@ class UnifiedTrustPanelRobot {
             if (isTheWebSiteSecure) {
                 Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Verified that the website is secure")
                 Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Trying to verify that the \"You turned off protection\" banner title and message are displayed")
-                composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_banner_not_protected_title), useUnmergedTree = true).assertIsDisplayed()
-                composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_banner_not_protected_description, argument = appName), useUnmergedTree = true).assertIsDisplayed()
+                composeTestRule.onNodeWithContentDescription(getStringResource(R.string.protection_panel_banner_not_protected_title), substring = true).assertIsDisplayed()
+                composeTestRule.onNodeWithContentDescription(getStringResource(R.string.protection_panel_banner_not_protected_description, argument = shortAppName), substring = true).assertIsDisplayed()
                 Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Verified that the \"You turned off protection\" banner title and message are displayed")
             } else {
                 Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Verified that the website is not secure")
                 Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Trying to verify that the \"Be careful on this site\" banner title and message are displayed")
-                composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_banner_not_secure_title, argument = appName), useUnmergedTree = true).assertIsDisplayed()
-                composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_banner_not_secure_description), useUnmergedTree = true).assertIsDisplayed()
+                composeTestRule.onNodeWithContentDescription(getStringResource(R.string.protection_panel_banner_not_secure_title, argument = appName), substring = true).assertIsDisplayed()
+                composeTestRule.onNodeWithContentDescription(getStringResource(R.string.protection_panel_banner_not_secure_description), substring = true).assertIsDisplayed()
                 Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Verified that the \"Be careful on this site\" banner title and message are displayed")
             }
             Log.i(TAG, "verifyTheEnhancedTrackingProtectionState: Trying to verify that the \"Enhanced tracking protection\" option, message and \"Off\" state are displayed")
@@ -96,24 +96,26 @@ class UnifiedTrustPanelRobot {
         }
     }
 
-    fun verifyTheTrackersBlockedOptionState(composeTestRule: ComposeTestRule, isTrackerBlockingEnabled: Boolean, areTrackersBlocked: Boolean) {
-        if (isTrackerBlockingEnabled) {
-            Log.i(TAG, "verifyTheTrackersBlockedOptionState: Verified that the tracker blocking is enabled")
-            if (areTrackersBlocked) {
-                Log.i(TAG, "verifyTheTrackersBlockedOptionState: Verified that trackers are blocked")
-                Log.i(TAG, "verifyTheTrackersBlockedOptionState: Trying to verify that the \"Trackers blocked\" option is displayed")
-                composeTestRule.onNodeWithText("Trackers blocked:", useUnmergedTree = true, substring = true).assertIsDisplayed()
-                Log.i(TAG, "verifyTheTrackersBlockedOptionState: Verified that the \"Trackers blocked\" option is displayed")
-            } else {
-                Log.i(TAG, "verifyTheTrackersBlockedOptionState: Trying to verify that the \"No trackers found\" option is displayed")
-                composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_no_trackers_blocked), useUnmergedTree = true).assertIsDisplayed()
-                Log.i(TAG, "verifyTheTrackersBlockedOptionState: Verified that the \"No trackers found\" option is displayed")
-            }
-        } else {
+    fun verifyTheTrackersBlockedOptionState(composeTestRule: ComposeTestRule, isTheWebSiteSecure: Boolean, isTrackerBlockingEnabled: Boolean, areTrackersBlocked: Boolean) {
+        if (!isTrackerBlockingEnabled) {
             Log.i(TAG, "verifyTheTrackersBlockedOptionState: Verified that the tracker blocking is not enabled")
             Log.i(TAG, "verifyTheTrackersBlockedOptionState: Trying to verify that the \"Trackers aren't blocked\" option is displayed")
             composeTestRule.onNodeWithText(getStringResource(R.string.protection_panel_etp_disabled_no_trackers_blocked), useUnmergedTree = true).assertIsDisplayed()
             Log.i(TAG, "verifyTheTrackersBlockedOptionState: Verified that the \"Trackers aren't blocked\" option is displayed")
+        } else if (isTheWebSiteSecure) {
+            Log.i(TAG, "verifyTheTrackersBlockedOptionState: Verified that the tracker blocking is enabled")
+            if (areTrackersBlocked) {
+                Log.i(TAG, "verifyTheTrackersBlockedOptionState: Verified that trackers are blocked")
+                Log.i(TAG, "verifyTheTrackersBlockedOptionState: Trying to verify that the blocked trackers banner description is displayed")
+                composeTestRule.onNodeWithContentDescription("blocked on this site", substring = true).assertIsDisplayed()
+                Log.i(TAG, "verifyTheTrackersBlockedOptionState: Verified that the blocked trackers banner description is displayed")
+            } else {
+                Log.i(TAG, "verifyTheTrackersBlockedOptionState: Trying to verify that the \"You're protected\" banner description is displayed")
+                composeTestRule.onNodeWithContentDescription(getStringResource(R.string.protection_panel_banner_protected_no_blocked_trackers_description), substring = true).assertIsDisplayed()
+                Log.i(TAG, "verifyTheTrackersBlockedOptionState: Verified that the \"You're protected\" banner description is displayed")
+            }
+        } else {
+            Log.i(TAG, "verifyTheTrackersBlockedOptionState: The website is not secure, the tracker count is not shown in the not-secure banner")
         }
     }
 

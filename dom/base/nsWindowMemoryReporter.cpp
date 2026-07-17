@@ -16,6 +16,7 @@
 #include "nsGlobalWindowInner.h"
 #include "nsGlobalWindowOuter.h"
 #include "nsNetCID.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPrintfCString.h"
 #include "nsQueryObject.h"
 #include "nsServiceManagerUtils.h"

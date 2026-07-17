@@ -569,7 +569,7 @@ async function testContextMenu(
   let offsetX = contentRect.x + rect.x + rect.width / 2;
   let offsetY = contentRect.y + rect.y + rect.height / 4;
 
-  await EventUtils.synthesizeMouseAtPoint(
+  EventUtils.synthesizeMouseAtPoint(
     offsetX,
     offsetY,
     {

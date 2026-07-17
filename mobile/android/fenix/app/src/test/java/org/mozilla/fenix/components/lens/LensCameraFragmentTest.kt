@@ -6,6 +6,7 @@ package org.mozilla.fenix.components.lens
 
 import android.content.Context
 import android.graphics.Insets
+import android.graphics.Matrix
 import android.graphics.Point
 import android.graphics.Rect
 import android.hardware.camera2.CameraAccessException
@@ -15,6 +16,7 @@ import android.media.Image
 import android.media.ImageReader
 import android.net.Uri
 import android.os.Build
+import android.os.Bundle
 import android.os.Handler
 import android.os.HandlerThread
 import android.util.Size
@@ -29,8 +31,10 @@ import io.mockk.Runs
 import io.mockk.every
 import io.mockk.just
 import io.mockk.mockk
+import io.mockk.slot
 import io.mockk.spyk
 import io.mockk.verify
+import mozilla.components.feature.qr.QrAnalyzer
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -443,6 +447,49 @@ class LensCameraFragmentTest {
         verify { fragment.getScreenRotation() }
     }
 
+    @Test
+    fun `GIVEN portrait rotation and QR mode WHEN configureTransform is called THEN matrix uses center-crop scale`() {
+        val fragment = spyk(LensCameraFragment())
+        val textureView: AutoFitTextureView = mockk(relaxed = true)
+        val matrixSlot = slot<Matrix>()
+        every { textureView.setTransform(capture(matrixSlot)) } just Runs
+        every { fragment.getScreenRotation() } returns Surface.ROTATION_0
+        fragment.textureView = textureView
+        // Landscape camera buffer mapped into a portrait view.
+        fragment.previewSize = Size(1920, 1080)
+        fragment.cameraMode.value = CameraMode.QR
+
+        fragment.configureTransform(viewWidth = 1080, viewHeight = 2400)
+
+        // QR mode picks max(scaleX, scaleY) so the buffer is cropped to fill the viewfinder.
+        // Effective scale = max(1080 / 1080, 2400 / 1920) = 1.25.
+        // postScale args = (1.25 * 1080/1080, 1.25 * 1920/2400) = (1.25, 1.0).
+        val values = FloatArray(9).also { matrixSlot.captured.getValues(it) }
+        assertEquals(1.25f, values[Matrix.MSCALE_X], 0.001f)
+        assertEquals(1.0f, values[Matrix.MSCALE_Y], 0.001f)
+    }
+
+    @Test
+    fun `GIVEN portrait rotation and LENS mode WHEN configureTransform is called THEN matrix uses letterbox scale`() {
+        val fragment = spyk(LensCameraFragment())
+        val textureView: AutoFitTextureView = mockk(relaxed = true)
+        val matrixSlot = slot<Matrix>()
+        every { textureView.setTransform(capture(matrixSlot)) } just Runs
+        every { fragment.getScreenRotation() } returns Surface.ROTATION_0
+        fragment.textureView = textureView
+        fragment.previewSize = Size(1920, 1080)
+        fragment.cameraMode.value = CameraMode.LENS
+
+        fragment.configureTransform(viewWidth = 1080, viewHeight = 2400)
+
+        // LENS mode picks min(scaleX, scaleY) so the buffer fits inside the view, leaving
+        // letterbox bands. Effective scale = min(1.0, 1.25) = 1.0.
+        // postScale args = (1.0 * 1080/1080, 1.0 * 1920/2400) = (1.0, 0.8).
+        val values = FloatArray(9).also { matrixSlot.captured.getValues(it) }
+        assertEquals(1.0f, values[Matrix.MSCALE_X], 0.001f)
+        assertEquals(0.8f, values[Matrix.MSCALE_Y], 0.001f)
+    }
+
     // --- Background thread and executor tests ---
 
     @Test
@@ -476,6 +523,49 @@ class LensCameraFragmentTest {
 
         fragment.backgroundThread?.quitSafely()
         fragment.backgroundThread?.join()
+    }
+
+    @Test
+    fun `GIVEN background thread is running WHEN stopBackgroundThread is called THEN fields are cleared`() {
+        val fragment = LensCameraFragment()
+        val thread = HandlerThread("test").apply { start() }
+        fragment.backgroundThread = thread
+        fragment.backgroundHandler = Handler(thread.looper)
+
+        fragment.stopBackgroundThread()
+
+        assertNull(fragment.backgroundThread)
+        assertNull(fragment.backgroundHandler)
+    }
+
+    @Test
+    fun `GIVEN join is interrupted WHEN stopBackgroundThread is called THEN fields are still cleared`() {
+        val fragment = LensCameraFragment()
+        val thread = HandlerThread("test").apply { start() }
+        fragment.backgroundThread = thread
+        fragment.backgroundHandler = Handler(thread.looper)
+
+        try {
+            Thread.currentThread().interrupt()
+            fragment.stopBackgroundThread()
+
+            assertNull(fragment.backgroundThread)
+            assertNull(fragment.backgroundHandler)
+
+            thread.quitSafely()
+            thread.join()
+
+            // After clearing, maybeStartBackgroundThread must produce a fresh, started thread
+            // rather than re-using a dead reference (which would throw IllegalThreadStateException).
+            fragment.maybeStartBackgroundThread()
+            assertNotNull(fragment.backgroundThread)
+            assertTrue(fragment.backgroundThread!!.isAlive)
+            fragment.backgroundThread?.quitSafely()
+            fragment.backgroundThread?.join()
+        } finally {
+            // Clear interrupted flag so a failed assertion doesn't leak it to subsequent tests.
+            Thread.interrupted()
+        }
     }
 
     @Test
@@ -566,5 +656,252 @@ class LensCameraFragmentTest {
         verify { mockImage.close() }
 
         tempDir.deleteRecursively()
+    }
+
+    // --- cameraMode and QR scanning tests ---
+
+    @Test
+    fun `WHEN a fragment is created THEN cameraMode defaults to LENS`() {
+        val fragment = LensCameraFragment()
+
+        assertEquals(CameraMode.LENS, fragment.cameraMode.value)
+    }
+
+    @Test
+    fun `GIVEN cameraMode is LENS WHEN qrImageAvailableListener fires THEN the image is drained without invoking the analyzer`() {
+        val fragment = spyk(LensCameraFragment())
+        val analyzer: QrAnalyzer = mockk()
+        fragment.qrAnalyzer = analyzer
+        fragment.cameraMode.value = CameraMode.LENS
+
+        val mockImage: Image = mockk(relaxed = true)
+        val mockReader: ImageReader = mockk()
+        every { mockReader.acquireLatestImage() } returns mockImage
+        every { mockImage.close() } just Runs
+
+        fragment.qrImageAvailableListener.onImageAvailable(mockReader)
+
+        verify { mockImage.close() }
+        verify(exactly = 0) { analyzer.analyze(any<Image>()) }
+        verify(exactly = 0) { fragment.handleQrResult(any()) }
+    }
+
+    @Test
+    fun `GIVEN cameraMode is QR AND analyzer returns a string WHEN qrImageAvailableListener fires THEN handleQrResult is posted`() {
+        val fragment = LensCameraFragment()
+        val analyzer: QrAnalyzer = mockk()
+        every { analyzer.analyze(any<Image>()) } returns "https://example.com"
+        fragment.qrAnalyzer = analyzer
+        fragment.cameraMode.value = CameraMode.QR
+
+        val mockImage: Image = mockk(relaxed = true)
+        val mockReader: ImageReader = mockk()
+        every { mockReader.acquireLatestImage() } returns mockImage
+        every { mockImage.close() } just Runs
+
+        fragment.qrImageAvailableListener.onImageAvailable(mockReader)
+        ShadowLooper.idleMainLooper()
+
+        assertTrue(fragment.qrResultSent)
+        verify { mockImage.close() }
+    }
+
+    @Test
+    fun `GIVEN cameraMode is QR AND analyzer returns null WHEN qrImageAvailableListener fires THEN handleQrResult is not invoked`() {
+        val fragment = LensCameraFragment()
+        val analyzer: QrAnalyzer = mockk()
+        every { analyzer.analyze(any<Image>()) } returns null
+        fragment.qrAnalyzer = analyzer
+        fragment.cameraMode.value = CameraMode.QR
+
+        val mockImage: Image = mockk(relaxed = true)
+        val mockReader: ImageReader = mockk()
+        every { mockReader.acquireLatestImage() } returns mockImage
+        every { mockImage.close() } just Runs
+
+        fragment.qrImageAvailableListener.onImageAvailable(mockReader)
+        ShadowLooper.idleMainLooper()
+
+        assertFalse(fragment.qrResultSent)
+        verify { mockImage.close() }
+    }
+
+    @Test
+    fun `GIVEN cameraMode is QR AND qrInFlight is already true WHEN qrImageAvailableListener fires THEN the frame is not acquired`() {
+        val fragment = LensCameraFragment()
+        fragment.cameraMode.value = CameraMode.QR
+        fragment.qrInFlight.set(true)
+
+        val mockReader: ImageReader = mockk(relaxed = true)
+
+        fragment.qrImageAvailableListener.onImageAvailable(mockReader)
+
+        verify(exactly = 0) { mockReader.acquireLatestImage() }
+        assertTrue(fragment.qrInFlight.get())
+    }
+
+    @Test
+    fun `GIVEN qrResultSent is false WHEN handleQrResult is called THEN qrResultSent becomes true`() {
+        val fragment = LensCameraFragment()
+        fragment.cameraMode.value = CameraMode.QR
+        assertFalse(fragment.qrResultSent)
+
+        fragment.handleQrResult("https://example.com")
+
+        assertTrue(fragment.qrResultSent)
+    }
+
+    @Test
+    fun `GIVEN qrResultSent is already true WHEN handleQrResult is called again THEN it remains a no-op`() {
+        val fragment = LensCameraFragment()
+        fragment.cameraMode.value = CameraMode.QR
+        fragment.qrResultSent = true
+
+        // Second call must not throw and must not flip any state.
+        fragment.handleQrResult("https://example.com")
+
+        assertTrue(fragment.qrResultSent)
+    }
+
+    @Test
+    fun `GIVEN cameraMode is LENS WHEN handleQrResult is called THEN it is a no-op`() {
+        val fragment = LensCameraFragment()
+        fragment.cameraMode.value = CameraMode.LENS
+        assertFalse(fragment.qrResultSent)
+
+        fragment.handleQrResult("https://example.com")
+
+        assertFalse(fragment.qrResultSent)
+    }
+
+    // --- handleModeChanged tests ---
+
+    @Test
+    fun `GIVEN cameraMode is LENS WHEN handleModeChanged QR is called THEN analyzer is reset and qrResultSent is cleared`() {
+        val fragment = LensCameraFragment()
+        val analyzer: QrAnalyzer = mockk(relaxed = true)
+        fragment.qrAnalyzer = analyzer
+        fragment.cameraMode.value = CameraMode.LENS
+        fragment.qrResultSent = true
+
+        fragment.handleModeChanged(CameraMode.QR)
+
+        assertEquals(CameraMode.QR, fragment.cameraMode.value)
+        assertFalse(fragment.qrResultSent)
+        verify { analyzer.reset() }
+    }
+
+    @Test
+    fun `GIVEN cameraMode is QR WHEN handleModeChanged LENS is called THEN analyzer is not reset`() {
+        val fragment = LensCameraFragment()
+        val analyzer: QrAnalyzer = mockk(relaxed = true)
+        fragment.qrAnalyzer = analyzer
+        fragment.cameraMode.value = CameraMode.QR
+
+        fragment.handleModeChanged(CameraMode.LENS)
+
+        assertEquals(CameraMode.LENS, fragment.cameraMode.value)
+        verify(exactly = 0) { analyzer.reset() }
+    }
+
+    @Test
+    fun `GIVEN mode is unchanged WHEN handleModeChanged is called THEN analyzer is not reset and qrResultSent is preserved`() {
+        val fragment = LensCameraFragment()
+        val analyzer: QrAnalyzer = mockk(relaxed = true)
+        fragment.qrAnalyzer = analyzer
+        fragment.cameraMode.value = CameraMode.QR
+        fragment.qrResultSent = true
+
+        fragment.handleModeChanged(CameraMode.QR)
+
+        assertTrue(fragment.qrResultSent)
+        verify(exactly = 0) { analyzer.reset() }
+    }
+
+    // --- onSaveInstanceState / onCreate tests ---
+
+    @Test
+    fun `GIVEN cameraMode is QR WHEN onSaveInstanceState is called THEN the mode name is written to the bundle`() {
+        val fragment = LensCameraFragment()
+        fragment.cameraMode.value = CameraMode.QR
+        val outState = Bundle()
+
+        fragment.onSaveInstanceState(outState)
+
+        assertEquals("QR", outState.getString("camera_mode"))
+    }
+
+    @Test
+    fun `GIVEN savedInstanceState contains QR WHEN restoreFromState is called THEN cameraMode is restored to QR`() {
+        val fragment = LensCameraFragment()
+        val savedState = Bundle().apply { putString("camera_mode", "QR") }
+
+        fragment.restoreFromState(savedState)
+
+        assertEquals(CameraMode.QR, fragment.cameraMode.value)
+    }
+
+    @Test
+    fun `GIVEN savedInstanceState is null WHEN restoreFromState is called THEN cameraMode stays at LENS default`() {
+        val fragment = LensCameraFragment()
+
+        fragment.restoreFromState(null)
+
+        assertEquals(CameraMode.LENS, fragment.cameraMode.value)
+    }
+
+    @Test
+    fun `GIVEN qrResultSent is true WHEN onSaveInstanceState is called THEN it is written to the bundle`() {
+        val fragment = LensCameraFragment()
+        fragment.qrResultSent = true
+        val outState = Bundle()
+
+        fragment.onSaveInstanceState(outState)
+
+        assertTrue(outState.getBoolean("qr_result_sent"))
+    }
+
+    @Test
+    fun `GIVEN savedInstanceState contains qrResultSent true WHEN restoreFromState is called THEN qrResultSent is restored`() {
+        val fragment = LensCameraFragment()
+        val savedState = Bundle().apply { putBoolean("qr_result_sent", true) }
+
+        fragment.restoreFromState(savedState)
+
+        assertTrue(fragment.qrResultSent)
+    }
+
+    @Test
+    fun `GIVEN savedInstanceState lacks qrResultSent WHEN restoreFromState is called THEN qrResultSent defaults to false`() {
+        val fragment = LensCameraFragment()
+        val savedState = Bundle()
+
+        fragment.restoreFromState(savedState)
+
+        assertFalse(fragment.qrResultSent)
+    }
+
+    // --- buildGalleryRequestBundle tests ---
+
+    @Test
+    fun `GIVEN cameraMode is LENS WHEN buildGalleryRequestBundle is called THEN it signals the LENS gallery request`() {
+        val fragment = LensCameraFragment()
+        fragment.cameraMode.value = CameraMode.LENS
+
+        val bundle = fragment.buildGalleryRequestBundle()
+
+        assertTrue(bundle.getBoolean(LensCameraFragment.RESULT_GALLERY_REQUEST))
+        assertFalse(bundle.getBoolean(LensCameraFragment.RESULT_QR_GALLERY_REQUEST))
+    }
+
+    @Test
+    fun `GIVEN cameraMode is QR WHEN buildGalleryRequestBundle is called THEN it signals the QR gallery request`() {
+        val fragment = LensCameraFragment()
+        fragment.cameraMode.value = CameraMode.QR
+
+        val bundle = fragment.buildGalleryRequestBundle()
+
+        assertTrue(bundle.getBoolean(LensCameraFragment.RESULT_QR_GALLERY_REQUEST))
+        assertFalse(bundle.getBoolean(LensCameraFragment.RESULT_GALLERY_REQUEST))
     }
 }

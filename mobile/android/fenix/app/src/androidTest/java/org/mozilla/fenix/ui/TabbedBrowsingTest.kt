@@ -4,12 +4,11 @@
 
 package org.mozilla.fenix.ui
 
-import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.MockBrowserDataHelper
@@ -56,9 +55,7 @@ class TabbedBrowsingTest {
     @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
-            HomeActivityIntentTestRule.withDefaultSettingsOverrides(
-                skipOnboarding = true,
-            ),
+            HomeActivityIntentTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
     @get:Rule(order = 2)
@@ -261,6 +258,11 @@ class TabbedBrowsingTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/903587
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.TabbedBrowsingTest#verifyPrivateTabsTrayWithOpenTabTest"],
+        bug = 2043491,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun verifyPrivateTabsTrayWithOpenTabTest() {
@@ -522,7 +524,8 @@ class TabbedBrowsingTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/3024942
     @Test
     fun verifyTabsTrayListViewTest() {
-        appContext.settings().gridTabView = false
+        appContext.components.settings.gridTabView = false
+        appContext.components.settings.tabGroupsOnboardingEnabled = false
 
         val webPages = mockWebServer.genericAssets
 
@@ -552,7 +555,8 @@ class TabbedBrowsingTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1126911
     @Test
     fun verifyTabsTrayGridViewTest() {
-        appContext.settings().gridTabView = true
+        appContext.components.settings.gridTabView = true
+        appContext.components.settings.tabGroupsOnboardingEnabled = false
 
         val webPages = mockWebServer.genericAssets
 

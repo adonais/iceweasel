@@ -41,6 +41,7 @@
 #include "jit/JitCode.h"
 #include "jit/JitOptions.h"
 #include "jit/JitRuntime.h"
+#include "jit/JitZone.h"
 #include "js/CharacterEncoding.h"  // JS_EncodeStringToUTF8
 #include "js/ColumnNumber.h"  // JS::LimitedColumnNumberOneOrigin, JS::ColumnNumberOneOrigin, JS::ColumnNumberOffset
 #include "js/CompileOptions.h"
@@ -119,48 +120,14 @@ void js::BaseScript::setEnclosingScope(Scope* enclosingScope) {
 }
 
 void js::BaseScript::finalize(JS::GCContext* gcx) {
-  // Scripts with bytecode may have optional data stored in per-runtime or
-  // per-zone maps. Note that a failed compilation must not have entries since
-  // the script itself will not be marked as having bytecode.
-  if (hasBytecode()) {
-    JSScript* script = this->asJSScript();
-
-    if (coverage::IsLCovEnabled()) {
-      coverage::CollectScriptCoverage(script, true);
-    }
-
-    script->destroyScriptCounts();
-  }
-
-  {
-    JSRuntime* rt = gcx->runtime();
-    if (rt->hasJitRuntime() && rt->jitRuntime()->hasInterpreterEntryMap()) {
-      rt->jitRuntime()->getInterpreterEntryMap()->remove(this);
-    }
-
-    rt->geckoProfiler().onScriptFinalized(this);
-  }
-
-#ifdef MOZ_VTUNE
-  if (zone()->scriptVTuneIdMap) {
-    // Note: we should only get here if the VTune JIT profiler is running.
-    zone()->scriptVTuneIdMap->remove(this);
-  }
-#endif
+  // Per-zone script side-tables such as scriptCountsMap, scriptLCovMap,
+  // scriptVTuneIdMap, scriptFinalWarmUpCountMap are WeakCaches and are swept
+  // automatically.
 
   if (warmUpData_.isJitScript()) {
     JSScript* script = this->asJSScript();
-#ifdef JS_CACHEIR_SPEW
-    maybeUpdateWarmUpCount(script);
-#endif
     script->releaseJitScriptOnFinalize(gcx);
   }
-
-#ifdef JS_CACHEIR_SPEW
-  if (hasBytecode()) {
-    maybeSpewScriptFinalWarmUpCount(this->asJSScript());
-  }
-#endif
 
   freeSharedData();
 }
@@ -174,13 +141,7 @@ js::Scope* js::BaseScript::releaseEnclosingScope() {
 void js::BaseScript::swapData(MutableHandleBuffer<PrivateScriptData> other) {
   PrivateScriptData* old = data_;
 
-  // Write barrier for the buffer allocation.
-  if (data_ && zone()->needsMarkingBarrier()) {
-    JSTracer* trc = zone()->barrierTracer();
-    TraceBufferEdge(trc, this, &data_, "BaseScript::swapData barrier");
-  }
-
-  // GCStructPtr performs write barrier for the data.
+  // GCBuffer performs write barrier for the buffer and the data.
   data_.set(zone(), other);
 
   other.set(old);
@@ -189,7 +150,7 @@ void js::BaseScript::swapData(MutableHandleBuffer<PrivateScriptData> other) {
 void js::BaseScript::freeData() {
   PrivateScriptData* old = data_;
 
-  // GCStructPtr performs write barrier for the data.
+  // GCBuffer performs write barrier for the buffer and the data.
   data_.set(zone(), nullptr);
 
   gc::FreeBuffer(zone(), old);
@@ -462,7 +423,7 @@ bool JSScript::initScriptCounts(JSContext* cx) {
 
   // Create zone's scriptCountsMap if necessary.
   if (!zone()->scriptCountsMap) {
-    auto map = cx->make_unique<ScriptCountsMap>();
+    auto map = cx->make_unique<JS::WeakCache<ScriptCountsMap>>(zone());
     if (!map) {
       return false;
     }
@@ -479,7 +440,7 @@ bool JSScript::initScriptCounts(JSContext* cx) {
   MOZ_ASSERT(this->hasBytecode());
 
   // Register the current ScriptCounts in the zone's map.
-  if (!zone()->scriptCountsMap->putNew(this, std::move(sc))) {
+  if (!zone()->scriptCountsMap->get().putNew(this, std::move(sc))) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -500,7 +461,8 @@ bool JSScript::initScriptCounts(JSContext* cx) {
 
 static inline ScriptCountsMap::Ptr GetScriptCountsMapEntry(JSScript* script) {
   MOZ_ASSERT(script->hasScriptCounts());
-  ScriptCountsMap::Ptr p = script->zone()->scriptCountsMap->lookup(script);
+  ScriptCountsMap::Ptr p =
+      script->zone()->scriptCountsMap->get().lookup(script);
   MOZ_ASSERT(p);
   return p;
 }
@@ -658,7 +620,7 @@ jit::IonScriptCounts* JSScript::getIonCounts() {
 void JSScript::releaseScriptCounts(ScriptCounts* counts) {
   ScriptCountsMap::Ptr p = GetScriptCountsMapEntry(this);
   *counts = std::move(*p->value().get());
-  zone()->scriptCountsMap->remove(p);
+  zone()->scriptCountsMap->get().remove(p);
   clearHasScriptCounts();
 }
 
@@ -2561,7 +2523,7 @@ JSScript* JSScript::Create(JSContext* cx, JS::Handle<JSFunction*> function,
 #ifdef MOZ_VTUNE
 uint32_t JSScript::vtuneMethodID() {
   if (!zone()->scriptVTuneIdMap) {
-    auto map = MakeUnique<ScriptVTuneIdMap>();
+    auto map = MakeUnique<JS::WeakCache<ScriptVTuneIdMap>>(zone());
     if (!map) {
       MOZ_CRASH("Failed to allocate ScriptVTuneIdMap");
     }
@@ -2569,7 +2531,8 @@ uint32_t JSScript::vtuneMethodID() {
     zone()->scriptVTuneIdMap = std::move(map);
   }
 
-  ScriptVTuneIdMap::AddPtr p = zone()->scriptVTuneIdMap->lookupForAdd(this);
+  ScriptVTuneIdMap::AddPtr p =
+      zone()->scriptVTuneIdMap->get().lookupForAdd(this);
   if (p) {
     return p->value();
   }
@@ -2577,7 +2540,7 @@ uint32_t JSScript::vtuneMethodID() {
   MOZ_ASSERT(this->hasBytecode());
 
   uint32_t id = vtune::GenerateUniqueMethodID();
-  if (!zone()->scriptVTuneIdMap->add(p, this, id)) {
+  if (!zone()->scriptVTuneIdMap->get().add(p, this, id)) {
     MOZ_CRASH("Failed to add vtune method id");
   }
 
@@ -3013,45 +2976,42 @@ JS_PUBLIC_API unsigned js::GetScriptLineExtent(
 #ifdef JS_CACHEIR_SPEW
 void js::maybeUpdateWarmUpCount(JSScript* script) {
   if (script->needsFinalWarmUpCount()) {
-    ScriptFinalWarmUpCountMap* map =
-        script->zone()->scriptFinalWarmUpCountMap.get();
     // If needsFinalWarmUpCount is true, ScriptFinalWarmUpCountMap must have
     // already been created and thus must be asserted.
-    MOZ_ASSERT(map);
-    ScriptFinalWarmUpCountMap::Ptr p = map->lookup(script);
+    MOZ_ASSERT(script->zone()->scriptFinalWarmUpCountMap);
+    ScriptFinalWarmUpCountMap& map =
+        script->zone()->scriptFinalWarmUpCountMap->get();
+    ScriptFinalWarmUpCountMap::Ptr p = map.lookup(script);
     MOZ_ASSERT(p);
 
     std::get<0>(p->value()) += script->jitScript()->warmUpCount();
   }
 }
 
+// Spew the accumulated final warm-up count for `script`.
 void js::maybeSpewScriptFinalWarmUpCount(JSScript* script) {
-  if (script->needsFinalWarmUpCount()) {
-    ScriptFinalWarmUpCountMap* map =
-        script->zone()->scriptFinalWarmUpCountMap.get();
-    // If needsFinalWarmUpCount is true, ScriptFinalWarmUpCountMap must have
-    // already been created and thus must be asserted.
-    MOZ_ASSERT(map);
-    ScriptFinalWarmUpCountMap::Ptr p = map->lookup(script);
-    MOZ_ASSERT(p);
-    auto& tuple = p->value();
-    uint32_t warmUpCount = std::get<0>(tuple);
-    SharedImmutableString& scriptName = std::get<1>(tuple);
-
-    JSContext* cx = TlsContext.get();
-    cx->spewer().enableSpewing();
-
-    // In the case that we care about a script's final warmup count but the
-    // spewer is not enabled, AutoSpewChannel automatically sets and unsets
-    // the proper channel for the duration of spewing a health report's warm
-    // up count.
-    AutoSpewChannel channel(cx, SpewChannel::CacheIRHealthReport, script);
-    jit::CacheIRHealth cih;
-    cih.spewScriptFinalWarmUpCount(cx, scriptName.chars(), script, warmUpCount);
-
-    script->zone()->scriptFinalWarmUpCountMap->remove(script);
-    script->setNeedsFinalWarmUpCount(false);
+  if (!script->needsFinalWarmUpCount()) {
+    return;
   }
+  MOZ_ASSERT(script->zone()->scriptFinalWarmUpCountMap);
+  ScriptFinalWarmUpCountMap& map =
+      script->zone()->scriptFinalWarmUpCountMap->get();
+  ScriptFinalWarmUpCountMap::Ptr p = map.lookup(script);
+  MOZ_ASSERT(p);
+  auto& tuple = p->value();
+  uint32_t warmUpCount = std::get<0>(tuple);
+  SharedImmutableString& scriptName = std::get<1>(tuple);
+
+  JSContext* cx = TlsContext.get();
+  cx->spewer().enableSpewing();
+
+  // In the case that we care about a script's final warmup count but the
+  // spewer is not enabled, AutoSpewChannel automatically sets and unsets
+  // the proper channel for the duration of spewing a health report's warm
+  // up count.
+  AutoSpewChannel channel(cx, SpewChannel::CacheIRHealthReport, script);
+  jit::CacheIRHealth cih;
+  cih.spewScriptFinalWarmUpCount(cx, scriptName.chars(), script, warmUpCount);
 }
 #endif
 
@@ -3458,11 +3418,16 @@ void JSScript::updateJitCodeRaw(JSRuntime* rt) {
     setJitCodeRaw(baselineScript()->method()->raw());
   } else if (hasJitScript() && js::jit::IsBaselineInterpreterEnabled()) {
     bool usingEntryTrampoline = false;
-    if (js::jit::JitOptions.emitInterpreterEntryTrampoline) {
-      auto p = rt->jitRuntime()->getInterpreterEntryMap()->lookup(this);
-      if (p) {
-        setJitCodeRaw(p->value().raw());
-        usingEntryTrampoline = true;
+    if (jit::JitOptions.emitInterpreterEntryTrampoline) {
+      if (jit::JitZone* jz = zone()->jitZone()) {
+        if (jit::EntryTrampolineMap* map = jz->maybeInterpreterEntryMap()) {
+          // Unbarriered because the JitCode doesn't escape and we can be called
+          // from inside GC.
+          if (auto ptr = map->lookupUnbarriered(this)) {
+            setJitCodeRaw(ptr->value()->raw());
+            usingEntryTrampoline = true;
+          }
+        }
       }
     }
     if (!usingEntryTrampoline) {
@@ -3945,24 +3910,6 @@ bool JSScript::dumpGCThings(JSContext* cx, JS::Handle<JSScript*> script,
 }
 
 #endif  // defined(DEBUG) || defined(JS_JITSPEW)
-
-void JSScript::AutoDelazify::holdScript(JS::HandleFunction fun) {
-  if (fun) {
-    JSAutoRealm ar(cx_, fun);
-    script_ = JSFunction::getOrCreateScript(cx_, fun);
-    if (script_) {
-      oldAllowRelazify_ = script_->allowRelazify();
-      script_->clearAllowRelazify();
-    }
-  }
-}
-
-void JSScript::AutoDelazify::dropScript() {
-  if (script_) {
-    script_->setAllowRelazify(oldAllowRelazify_);
-  }
-  script_ = nullptr;
-}
 
 JS::ubi::Base::Size JS::ubi::Concrete<BaseScript>::size(
     mozilla::MallocSizeOf mallocSizeOf) const {

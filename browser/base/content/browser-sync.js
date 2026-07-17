@@ -1223,15 +1223,6 @@ var gSync = {
     }
   },
 
-  _shouldShowSyncOffIndicator() {
-    // We only ever want to show the user the dot once, once they've clicked into the panel
-    // we do not show them the dot anymore
-    return !Services.prefs.getBoolPref(
-      "identity.fxaccounts.toolbar.syncSetup.panelAccessed",
-      false
-    );
-  },
-
   updateFxAPanel(state = {}) {
     const expandedSignInCopy =
       NimbusFeatures.expandSignInButton.getVariable("ctaCopyVariant");
@@ -1416,12 +1407,8 @@ var gSync = {
           cadButtonEl.removeAttribute("hidden");
           syncSetupEl.setAttribute("hidden", "true");
         } else {
-          if (this._shouldShowSyncOffIndicator()) {
-            fxaToolbarMenuButton?.setAttribute("badge-status", "sync-disabled");
-          }
           syncSetupEl.removeAttribute("hidden");
         }
-
         if (state.syncEnabled) {
           cadButtonEl.removeAttribute("hidden");
           syncSetupSeparator.removeAttribute("hidden");
@@ -2272,7 +2259,7 @@ var gSync = {
   _appendSendTabVerify(fragment, createDeviceNodeFn) {
     const [notVerified, verifyAccount] = this.fluentStrings.formatValuesSync([
       "account-send-tab-to-device-verify-status",
-      "account-send-tab-to-device-verify",
+      "account-send-tab-to-device-verify2",
     ]);
     const actions = [
       { label: verifyAccount, command: () => this.openPrefs("sendtab") },

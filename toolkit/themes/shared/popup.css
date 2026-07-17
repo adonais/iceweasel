@@ -10,20 +10,18 @@
   --panel-background-color: Menu;
   --panel-text-color: MenuText;
   --panel-padding: var(--panel-padding-block) 0;
-  /* This should match GetMenuCornerRadius() on macOS, or be overridden below */
-  --panel-border-radius: 6px;
   --panel-border-color: ThreeDShadow;
+
+  /* Nova's design tokens already provide a larger --panel-border-radius, so
+     only apply the platform default when Nova is disabled. */
+  @media not -moz-pref("browser.nova.enabled") {
+    /* This should match GetMenuCornerRadius() on macOS, or be overridden below */
+    --panel-border-radius: 6px;
+  }
 
   @media (-moz-platform: linux) {
     @media (prefers-contrast) {
       --panel-border-color: color-mix(in srgb, currentColor 60%, transparent);
-    }
-
-    /* On some linux WMs we need to draw square and opaque menus because alpha
-     * is not available */
-    @media not (-moz-gtk-csd-transparency-available) {
-      --panel-box-shadow-margin: 0px !important;
-      --panel-border-radius: 0px !important;
     }
   }
 
@@ -51,8 +49,10 @@
 
   @media (-moz-platform: linux) and (not (-moz-gtk-csd-transparency-available)) {
     /* On some linux WMs we need to draw square and opaque menus because alpha
-     * is not available */
+     * is not available. */
     opacity: 1 !important;
+    --panel-box-shadow-margin: 0px !important;
+    --panel-border-radius: 0px !important;
   }
 
   @media (-moz-platform: macos) {

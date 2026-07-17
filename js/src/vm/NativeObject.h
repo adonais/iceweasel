@@ -243,10 +243,11 @@ class ObjectElements {
 
   // The flags word stores both the flags and the number of shifted elements.
   // Allow shifting 2047 elements before actually moving the elements.
-  static const size_t NumShiftedElementsBits = 11;
-  static const size_t MaxShiftedElements = (1 << NumShiftedElementsBits) - 1;
-  static const size_t NumShiftedElementsShift = 32 - NumShiftedElementsBits;
-  static const size_t FlagsMask = (1 << NumShiftedElementsShift) - 1;
+  static constexpr size_t NumShiftedElementsBits = 11;
+  static constexpr size_t MaxShiftedElements =
+      (1 << NumShiftedElementsBits) - 1;
+  static constexpr size_t NumShiftedElementsShift = 32 - NumShiftedElementsBits;
+  static constexpr size_t FlagsMask = (1 << NumShiftedElementsShift) - 1;
   static_assert(MaxShiftedElements == 2047,
                 "MaxShiftedElements should match the comment");
 
@@ -266,7 +267,7 @@ class ObjectElements {
   // The NumShiftedElementsBits high bits of this are used to store the
   // number of shifted elements, the other bits are available for the flags.
   // See Flags enum above.
-  uint32_t flags;
+  GCData<uint32_t> flags;
 
   /*
    * Number of initialized elements. This is <= the capacity, and for arrays
@@ -274,7 +275,7 @@ class ObjectElements {
    * uninitialized, but values between the initialized length and the proper
    * length are conceptually holes.
    */
-  uint32_t initializedLength;
+  GCData<uint32_t> initializedLength;
 
   /* Number of allocated slots. */
   uint32_t capacity;
@@ -452,9 +453,9 @@ static_assert(ObjectElements::VALUES_PER_HEADER * sizeof(HeapSlot) ==
  * slot data follows in memory.
  */
 class alignas(HeapSlot) ObjectSlots {
-  uint32_t capacity_;
-  uint32_t dictionarySlotSpan_;
-  uint64_t maybeUniqueId_;
+  GCData<uint32_t> capacity_;
+  GCData<uint32_t> dictionarySlotSpan_;
+  GCData<uint64_t> maybeUniqueId_;
 
  public:
   // Special values for maybeUniqueId_ to indicate no unique ID is present.
@@ -671,10 +672,10 @@ inline bool IsNativeObjectDynamicElements(HeapSlot* elements) {
 class NativeObject : public JSObject {
  protected:
   /* Slots for object properties. */
-  js::HeapSlot* slots_;
+  GCData<HeapSlot*> slots_;
 
   /* Slots for object dense elements. */
-  js::HeapSlot* elements_;
+  GCData<HeapSlot*> elements_;
 
   friend class ::JSObject;
 
@@ -1464,6 +1465,8 @@ class NativeObject : public JSObject {
     return ObjectElements::fromElements(elements_);
   }
 
+  Value* unbarrieredElements() { return elements_->unbarrieredAddress(); }
+
   // Returns a pointer to the first element, including shifted elements.
   inline HeapSlot* unshiftedElements() const {
     return elements_ - getElementsHeader()->numShiftedElements();
@@ -1986,7 +1989,7 @@ inline void TraceBufferSlot(JSTracer* trc, NativeObject* obj, uint32_t slot,
   }
 
   void* buffer = value.toPrivate();
-  TraceBufferEdge(trc, obj, &buffer, name);
+  TraceBufferEdge(trc, &buffer, name);
   if (buffer != value.toPrivate()) {
     obj->setSlot(slot, PrivateValue(buffer));
   }

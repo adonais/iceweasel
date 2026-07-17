@@ -130,6 +130,7 @@ class WindowTracker extends WindowTrackerBase {
     // In GeckoView the popup is on a separate window so getCurrentWindow for
     // the popup should return whatever is the topWindow.
     if (context?.viewType === "popup") {
+      // TODO bug 2040609: Improve tracking of "current window" for popups.
       return this.topWindow;
     }
     return super.getCurrentWindow(context);
@@ -257,41 +258,38 @@ class TabTracker extends TabTrackerBase {
     throw new ExtensionError(`Invalid tab ID: ${id}`);
   }
 
+  getTabForBrowser(browser) {
+    const window = browser.documentGlobal;
+    // isBrowserWindow check excludes "navigator:popup" and background pages.
+    if (windowTracker.isBrowserWindow(window)) {
+      // There is currently a 1:1 relation between window and tab (bug 1584252).
+      return window.tab;
+    }
+    return null;
+  }
+
   getBrowserData(browser) {
     const window = browser.documentGlobal;
-    const tab = window?.tab;
-    if (!tab) {
-      return {
-        tabId: -1,
-        windowId: -1,
-      };
+    if (!window) {
+      return { tabId: -1, windowId: -1 };
     }
-
-    const windowId = windowTracker.getId(window);
-
-    if (!windowTracker.isBrowserWindow(window)) {
-      return {
-        windowId,
-        tabId: -1,
-      };
+    const nativeTab = this.getTabForBrowser(browser);
+    if (!nativeTab) {
+      let wintype = window.document.documentElement.getAttribute("windowtype");
+      if (wintype === "navigator:popup") {
+        // TODO bug 2040609: Improve tracking of "current window" for popups.
+        let currentWindow = windowTracker.topWindow;
+        if (currentWindow) {
+          return { tabId: -1, windowId: windowTracker.getId(currentWindow) };
+        }
+      }
+      return { tabId: -1, windowId: -1 };
     }
 
     return {
-      windowId,
-      tabId: this.getId(tab),
+      tabId: this.getId(nativeTab),
+      windowId: windowTracker.getId(window),
     };
-  }
-
-  getBrowserDataForContext(context) {
-    if (["tab", "background"].includes(context.viewType)) {
-      return this.getBrowserData(context.xulBrowser);
-    } else if (context.viewType === "popup") {
-      const chromeWindow = windowTracker.getCurrentWindow(context);
-      const windowId = chromeWindow ? windowTracker.getId(chromeWindow) : -1;
-      return { tabId: -1, windowId };
-    }
-
-    return { tabId: -1, windowId: -1 };
   }
 
   get activeTab() {
@@ -510,6 +508,7 @@ class Window extends WindowBase {
     // In GeckoView the popup is on a separate window so the current window for
     // the popup is whatever is the topWindow.
     if (context?.viewType === "popup") {
+      // TODO bug 2040609: Improve tracking of "current window" for popups.
       return mobileWindowTracker.topWindow == this.window;
     }
     return super.isCurrentFor(context);
@@ -635,6 +634,8 @@ extensions.on("startup", (type, extension) => {
 
 /* eslint-disable mozilla/balanced-listeners */
 extensions.on("page-shutdown", (type, context) => {
+  // The logic here aims to close extension tabs when an extension unloads, but
+  // due to lazy context creation, this does not always happen (bug 1399655).
   if (context.viewType == "tab") {
     const window = context.xulBrowser.documentGlobal;
     if (!windowTracker.isBrowserWindow(window)) {

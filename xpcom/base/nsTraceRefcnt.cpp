@@ -731,6 +731,8 @@ static void InitTraceLog() {
   DoInitTraceLog(XRE_GetProcessTypeString());
 }
 
+void nsTraceRefcnt::EarlyInit() { InitTraceLog(); }
+
 extern "C" {
 
 static void EnsureWrite(FILE* aStream, const char* aBuf, size_t aLen) {

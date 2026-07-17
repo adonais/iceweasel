@@ -11,9 +11,7 @@ const TEST_URL = "data:text/html,new-tab";
 
 add_task(async () => {
   // Allow logging all RDP packets
-  await pushPref("devtools.debugger.log", true);
-  // Really all of them
-  await pushPref("devtools.debugger.log.verbose", true);
+  await pushPref("logging.devtools_rdp", 3);
 
   // Instantiate a DevTools server
   DevToolsServer.init();

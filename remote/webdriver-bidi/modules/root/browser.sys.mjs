@@ -24,6 +24,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   ProxyTypes: "chrome://remote/content/shared/webdriver/Capabilities.sys.mjs",
   RootMessageHandler:
     "chrome://remote/content/shared/messagehandler/RootMessageHandler.sys.mjs",
+  SessionDataCategory:
+    "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
   TabManager: "chrome://remote/content/shared/TabManager.sys.mjs",
   UserContextManager:
     "chrome://remote/content/shared/UserContextManager.sys.mjs",
@@ -382,7 +384,7 @@ class BrowserModule extends RootBiDiModule {
       destination: { type: lazy.RootMessageHandler.type },
       params: {
         async: false,
-        category: "download-behavior-override",
+        category: lazy.SessionDataCategory.DownloadBehaviorOverride,
         resetValue: null,
         supportsGlobalConfiguration: true,
         userContextIds,

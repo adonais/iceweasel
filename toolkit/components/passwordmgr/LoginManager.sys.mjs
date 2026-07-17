@@ -221,6 +221,8 @@ LoginManager.prototype = {
         throw new Error("Can't add a login with invalid date properties.");
       }
     }
+
+    lazy.LoginHelper.checkLoginValues(login);
   },
 
   /* ---------- Primary Public interfaces ---------- */
@@ -267,18 +269,6 @@ LoginManager.prototype = {
 
   /**
    * Remove the specified login from the stored logins.
-   * Deprecated: use removeLoginAsync instead
-   */
-  removeLogin(login) {
-    lazy.log.debug(
-      "Removing login",
-      login.QueryInterface(Ci.nsILoginMetaInfo).guid
-    );
-    return this._storage.removeLogin(login);
-  },
-
-  /**
-   * Remove the specified login from the stored logins.
    */
   async removeLoginAsync(login) {
     lazy.log.debug(
@@ -286,18 +276,6 @@ LoginManager.prototype = {
       login.QueryInterface(Ci.nsILoginMetaInfo).guid
     );
     return this._storage.removeLoginAsync(login);
-  },
-
-  /**
-   * Change the specified login to match the new login or new properties.
-   * Deprecated: use modifyLoginAsync instead.
-   */
-  modifyLogin(oldLogin, newLogin) {
-    lazy.log.debug(
-      "Modifying login",
-      oldLogin.QueryInterface(Ci.nsILoginMetaInfo).guid
-    );
-    return this._storage.modifyLogin(oldLogin, newLogin);
   },
 
   /**
@@ -309,28 +287,6 @@ LoginManager.prototype = {
       oldLogin.QueryInterface(Ci.nsILoginMetaInfo).guid
     );
     await this._storage.modifyLoginAsync(oldLogin, newLogin);
-  },
-
-  /**
-   * Record that the password of a saved login was used (e.g. submitted or copied).
-   */
-  recordPasswordUse(
-    login,
-    privateContextWithoutExplicitConsent,
-    loginType,
-    filled
-  ) {
-    lazy.log.debug(
-      "Recording password use",
-      loginType,
-      login.QueryInterface(Ci.nsILoginMetaInfo).guid
-    );
-    if (!privateContextWithoutExplicitConsent) {
-      // don't record non-interactive use in private browsing
-      this._storage.recordPasswordUse(login);
-    }
-
-    Glean.pwmgr["savedLoginUsed" + loginType].record({ filled });
   },
 
   async recordPasswordUseAsync(
@@ -374,16 +330,6 @@ LoginManager.prototype = {
 
   /**
    * Remove all user facing stored logins.
-   * Deprecated: Use removeAllUserFacingLoginsAsync() instead.
-   * This will not remove the FxA Sync key, which is stored with the rest of a user's logins.
-   */
-  removeAllUserFacingLogins() {
-    lazy.log.debug("Removing all user facing logins.");
-    this._storage.removeAllUserFacingLogins();
-  },
-
-  /**
-   * Remove all user facing stored logins.
    *
    * This will not remove the FxA Sync key, which is stored with the rest of a user's logins.
    */
@@ -394,21 +340,8 @@ LoginManager.prototype = {
 
   /**
    * Remove all logins from data store, including the FxA Sync key.
-   * Deprecated: Use removeAllLoginsAsync() instead.
    *
-   * NOTE: You probably want `removeAllUserFacingLogins()` instead of this function.
-   * This function will remove the FxA Sync key, which will break syncing of saved user data
-   * e.g. bookmarks, history, open tabs, logins and passwords, add-ons, and options
-   */
-  removeAllLogins() {
-    lazy.log.debug("Removing all logins from local store, including FxA key.");
-    this._storage.removeAllLogins();
-  },
-
-  /**
-   * Remove all logins from data store, including the FxA Sync key.
-   *
-   * NOTE: You probably want `removeAllUserFacingLogins()` instead of this function.
+   * NOTE: You probably want `removeAllUserFacingLoginsAsync()` instead of this function.
    * This function will remove the FxA Sync key, which will break syncing of saved user data
    * e.g. bookmarks, history, open tabs, logins and passwords, add-ons, and options
    */
@@ -445,17 +378,11 @@ LoginManager.prototype = {
   /**
    * Search for the known logins for entries matching the specified criteria.
    */
-  findLogins(origin, formActionOrigin, httpRealm) {
-    lazy.log.debug(
-      "Searching for logins matching origin:",
-      origin,
-      "formActionOrigin:",
-      formActionOrigin,
-      "httpRealm:",
-      httpRealm
+  findLogins() {
+    throw new Components.Exception(
+      "LoginManager.findLogins() was removed. Use searchLoginsAsync() instead.",
+      Cr.NS_ERROR_NOT_IMPLEMENTED
     );
-
-    return this._storage.findLogins(origin, formActionOrigin, httpRealm);
   },
 
   async searchLoginsAsync(matchData) {
@@ -470,43 +397,6 @@ LoginManager.prototype = {
     }
 
     return this._storage.searchLoginsAsync(matchData);
-  },
-
-  /**
-   * @return {nsILoginInfo[]} which are decrypted.
-   * Deprecated: use searchLoginsAsync instead
-   */
-  searchLogins(matchData) {
-    lazy.log.debug(
-      `Searching for matching logins for origin: ${matchData.origin}`
-    );
-
-    matchData.QueryInterface(Ci.nsIPropertyBag2);
-    if (!matchData.hasKey("guid")) {
-      if (!matchData.hasKey("origin")) {
-        lazy.log.warn("An `origin` field is recommended.");
-      }
-    }
-
-    return this._storage.searchLogins(matchData);
-  },
-
-  /**
-   * Search for the known logins for entries matching the specified criteria,
-   * returns only the count.
-   */
-  countLogins(origin, formActionOrigin, httpRealm) {
-    const loginsCount = this._storage.countLogins(
-      origin,
-      formActionOrigin,
-      httpRealm
-    );
-
-    lazy.log.debug(
-      `Found ${loginsCount} matching origin: ${origin}, formActionOrigin: ${formActionOrigin} and realm: ${httpRealm}`
-    );
-
-    return loginsCount;
   },
 
   async countLoginsAsync(origin, formActionOrigin, httpRealm) {

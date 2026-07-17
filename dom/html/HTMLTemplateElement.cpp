@@ -32,7 +32,7 @@ static constexpr const nsAttrValue::EnumTableEntry* kSlotAssignmentDefault =
     &kSlotAssignmentTable[0];
 
 HTMLTemplateElement::HTMLTemplateElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {
   SetHasWeirdParserInsertionMode();
 

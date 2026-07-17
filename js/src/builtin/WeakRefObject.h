@@ -19,6 +19,7 @@ class WeakRefObject : public gc::ObserverListObject {
 
   Value target();
 
+  void setTarget(Value target);
   void setTargetUnbarriered(Value target);
   void clearTargetAndUnlink();
 

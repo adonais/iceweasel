@@ -396,6 +396,21 @@ interface Engine :
     )
 
     /**
+     * Clear all persisted data about trackers blocked in previous browsing sessions.
+     *
+     * @param onSuccess optional callback invoked when the data has been cleared.
+     * @param onError optional callback invoked if clearing failed.
+     */
+    fun clearTrackingProtectionData(
+        onSuccess: () -> Unit = { },
+        onError: (Throwable) -> Unit = { },
+    ): Unit = onError(
+        UnsupportedOperationException(
+            "clearTrackingProtectionData is not supported by this engine.",
+        ),
+    )
+
+    /**
      * Provides access to the tracking protection exception list for this engine.
      */
     val trackingProtectionExceptionStore: TrackingProtectionExceptionStorage

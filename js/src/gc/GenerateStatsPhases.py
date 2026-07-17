@@ -201,6 +201,7 @@ PhaseKindGraphRoots = [
                     getPhaseKind("JOIN_PARALLEL_TASKS"),
                 ],
             ),
+            addPhaseKind("SWEEP_SCRIPT_MAPS", "Sweep Script Maps"),
             addPhaseKind("SWEEP_PROP_MAP", "Sweep PropMap Tree"),
             addPhaseKind("FINALIZE_END", "Finalize End Callback"),
             addPhaseKind("DESTROY", "Deallocate"),

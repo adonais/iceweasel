@@ -10,7 +10,7 @@
 namespace mozilla::dom {
 class HTMLMarqueeElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLMarqueeElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo)
+  explicit HTMLMarqueeElement(already_AddRefed<dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLMarqueeElement, marquee);

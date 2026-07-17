@@ -4147,9 +4147,9 @@ void CodeGenerator::visitWasmReduceAndBranchSimd128(
 
   switch (ins->simdOp()) {
     case wasm::SimdOp::V128AnyTrue:
-      masm.Addp(Simd1D(scratch), Simd2D(src));
-      masm.Umov(ARMRegister(test, 64), Simd1D(scratch), 0);
-      masm.branch64(Assembler::Equal, Register64(test), Imm64(0),
+      masm.Umaxv(SimdReg(scratch).S(), Simd4S(src));
+      masm.Umov(ARMRegister(test, 32), SimdReg(scratch).S(), 0);
+      masm.branch32(Assembler::Equal, test, Imm32(0),
                     getJumpLabelForBranch(ins->ifFalse()));
       jumpToBlock(ins->ifTrue());
       break;

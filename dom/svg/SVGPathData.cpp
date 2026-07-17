@@ -694,9 +694,7 @@ void SVGPathData::GetMarkerPositioningData(Span<const StylePathCommand> aPath,
     // Add the mark at the end of this segment, and set its position:
     // XXX(Bug 1631371) Check if this should use a fallible operation as it
     // pretended earlier.
-    aMarks->AppendElement(SVGMark(static_cast<float>(segEnd.x),
-                                  static_cast<float>(segEnd.y), 0.0f,
-                                  SVGMark::Type::Mid));
+    aMarks->AppendElement(SVGMark(segEnd, 0.0f, SVGMark::Type::Mid));
 
     if (cmd.IsClose() && !(prevSeg && prevSeg->IsClose())) {
       aMarks->LastElement().angle = aMarks->ElementAt(pathStartIndex).angle =

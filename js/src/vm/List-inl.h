@@ -34,6 +34,19 @@ inline bool js::ListObject::append(JSContext* cx, Value value) {
   return true;
 }
 
+inline bool js::ListObject::append(JSContext* cx, Value v1, Value v2) {
+  uint32_t len = length();
+
+  if (!ensureElements(cx, len + 2)) {
+    return false;
+  }
+
+  ensureDenseInitializedLength(len, 2);
+  setDenseElement(len, v1);
+  setDenseElement(len + 1, v2);
+  return true;
+}
+
 inline JS::Value js::ListObject::popFirst(JSContext* cx) {
   uint32_t len = length();
   MOZ_ASSERT(len > 0);

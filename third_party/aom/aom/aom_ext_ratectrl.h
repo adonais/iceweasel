@@ -12,6 +12,7 @@
 /*!\file
  * \brief Defines structs and callbacks needed for external rate control.
  *
+ * \attention Experimental. Not part of the stable API.
  */
 #ifndef AOM_AOM_AOM_EXT_RATECTRL_H_
 #define AOM_AOM_AOM_EXT_RATECTRL_H_
@@ -144,7 +145,7 @@ typedef void *aom_rc_model_t;
 #define AOM_DEFAULT_RDMULT -1
 
 /*!\brief Superblock quantization parameters
- * Store the superblock quantiztaion parameters
+ * Store the superblock quantization parameters
  */
 typedef struct aom_sb_parameters {
   int q_index; /**< Quantizer step index [0..255]*/
@@ -240,7 +241,7 @@ typedef struct aom_rc_frame_stats {
   /*!
    * Weight assigned to this frame (or total weight for the collection of
    * frames) currently based on intra factor and brightness factor. This is used
-   * to distribute bits betweeen easier and harder frames.
+   * to distribute bits between easier and harder frames.
    */
   double weight;
   /*!

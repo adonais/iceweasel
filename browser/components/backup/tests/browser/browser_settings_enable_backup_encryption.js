@@ -118,19 +118,6 @@ add_task(async function test_enable_backup_encryption_checkbox_confirm() {
       "Backup reason is set"
     );
 
-    let legacyEvents = TelemetryTestUtils.getEvents(
-      {
-        category: "browser.backup",
-        method: "password_added",
-        object: "BackupService",
-      },
-      { process: "parent" }
-    );
-    Assert.equal(
-      legacyEvents.length,
-      1,
-      "Found the password_added legacy event."
-    );
     let events = Glean.browserBackup.passwordAdded.testGetValue();
     Assert.equal(events.length, 1, "Found the passwordAdded Glean event.");
 
@@ -247,19 +234,6 @@ add_task(
           "A new backup was started for the right reason"
         );
 
-        let legacyEvents = TelemetryTestUtils.getEvents(
-          {
-            category: "browser.backup",
-            method: "password_changed",
-            object: "BackupService",
-          },
-          { process: "parent" }
-        );
-        Assert.equal(
-          legacyEvents.length,
-          1,
-          "Found the password_changed legacy event."
-        );
         let events = Glean.browserBackup.passwordChanged.testGetValue();
         Assert.equal(
           events.length,

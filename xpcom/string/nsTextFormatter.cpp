@@ -829,8 +829,8 @@ void nsTextFormatter::vssprintf(nsAString& aOut, const char16_t* aFmt,
                                 mozilla::Span<BoxedValue> aValues) {
   SprintfStateStr ss;
   ss.stuff = StringStuff;
-  ss.base = 0;
-  ss.cur = 0;
+  ss.base = nullptr;
+  ss.cur = nullptr;
   ss.maxlen = 0;
   ss.stuffclosure = &aOut;
 

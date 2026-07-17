@@ -16,15 +16,15 @@ extern LogModule* GetGMPLibraryLog();
 extern GMPLogLevel GetGMPLibraryLogLevel();
 
 #define GMP_LOG_ERROR(msg, ...) \
-  MOZ_LOG(GetGMPLog(), LogLevel::Error, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(GetGMPLog(), LogLevel::Error, msg, ##__VA_ARGS__)
 #define GMP_LOG_WARNING(msg, ...) \
-  MOZ_LOG(GetGMPLog(), LogLevel::Warning, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(GetGMPLog(), LogLevel::Warning, msg, ##__VA_ARGS__)
 #define GMP_LOG_INFO(msg, ...) \
-  MOZ_LOG(GetGMPLog(), LogLevel::Info, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(GetGMPLog(), LogLevel::Info, msg, ##__VA_ARGS__)
 #define GMP_LOG_DEBUG(msg, ...) \
-  MOZ_LOG(GetGMPLog(), LogLevel::Debug, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(GetGMPLog(), LogLevel::Debug, msg, ##__VA_ARGS__)
 #define GMP_LOG_VERBOSE(msg, ...) \
-  MOZ_LOG(GetGMPLog(), LogLevel::Verbose, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(GetGMPLog(), LogLevel::Verbose, msg, ##__VA_ARGS__)
 
 }  // namespace mozilla
 

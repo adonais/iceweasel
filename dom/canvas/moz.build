@@ -33,8 +33,11 @@ MOCHITEST_MANIFESTS += [
     "test/crash/mochitest.toml",
     "test/crossorigin/mochitest.toml",
     "test/mochitest.toml",
-    "test/webgl-conf/generated-mochitest.toml",
     "test/webgl-mochitest/mochitest.toml",
+]
+
+DIRS += [
+    "test/webgl-conf/generated",
 ]
 
 MOCHITEST_CHROME_MANIFESTS += ["test/chrome/chrome.toml"]
@@ -44,7 +47,6 @@ EXPORTS += [
 ]
 
 EXPORTS.mozilla += [
-    "ParamTraits_STL.h",
     "ParamTraits_TiedFields.h",
     "TiedFields.h",
     "TupleUtils.h",

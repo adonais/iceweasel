@@ -188,13 +188,13 @@ void nsFrameManager::CaptureFrameState(nsIFrame* aFrame,
   }
 }
 
-// Restore state for a given frame.
-// Accept a content id here, in some cases we may not have content (scroll
-// position)
 void nsFrameManager::RestoreFrameStateFor(nsIFrame* aFrame,
                                           nsILayoutHistoryState* aState) {
-  if (!aFrame || !aState) {
-    NS_WARNING("null frame or state");
+  MOZ_ASSERT(aFrame);
+  MOZ_ASSERT(aState);
+
+  if (!aState->HasStates()) {
+    // Nothing to restore.
     return;
   }
 
@@ -234,21 +234,6 @@ void nsFrameManager::RestoreFrameStateFor(nsIFrame* aFrame,
 
   // If we restore ok, remove the state from the state table
   aState->RemoveState(stateKey);
-}
-
-void nsFrameManager::RestoreFrameState(nsIFrame* aFrame,
-                                       nsILayoutHistoryState* aState) {
-  MOZ_ASSERT(nullptr != aFrame && nullptr != aState,
-             "null parameters passed in");
-
-  RestoreFrameStateFor(aFrame, aState);
-
-  // Now restore state recursively for the frame hierarchy rooted at aFrame
-  for (const auto& childList : aFrame->ChildLists()) {
-    for (nsIFrame* child : childList.mList) {
-      RestoreFrameState(child, aState);
-    }
-  }
 }
 
 void nsFrameManager::AddSizeOfIncludingThis(nsWindowSizes& aSizes) const {

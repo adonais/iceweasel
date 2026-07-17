@@ -83,7 +83,7 @@ subprojects {
             }
 
             if (project.name != "support-test") {
-                android.buildTypes.all { buildType ->
+                android.buildTypes.configureEach { buildType ->
                     tasks.withType(Test).configureEach() {
                         jacoco {
                             includeNoLocationClasses = true

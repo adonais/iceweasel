@@ -42,14 +42,15 @@
 #include <utility>
 
 #include "jit/IonTypes.h"
+#include "jit/riscv64/base/base-assembler-riscv.h"
+#include "jit/riscv64/base/Vector.h"
 #include "jit/riscv64/constant/Constant-riscv64.h"
-#include "jit/riscv64/constant/util-riscv64.h"
 #include "jit/riscv64/disasm/Disasm-riscv64.h"
-#include "jit/riscv64/extension/base-assembler-riscv.h"
 #include "js/ProfilingFrameIterator.h"
 #include "js/Utility.h"
 #include "js/Vector.h"
 #include "threading/Thread.h"
+#include "vm/Float16.h"
 #include "vm/MutexIDs.h"
 #include "wasm/WasmSignalHandlers.h"
 
@@ -61,6 +62,31 @@ template <class Dest, class Source>
 inline Dest bit_cast(const Source& source) {
   return mozilla::BitwiseCast<Dest>(source);
 }
+
+class Float16 {
+ public:
+  Float16() = default;
+
+  explicit Float16(float16 value) : bit_pattern_(bit_cast<uint16_t>(value)) {
+    // Check that the provided value is not a NaN to match Float32/64.
+    MOZ_ASSERT(value == value);
+  }
+
+  uint16_t get_bits() const { return bit_pattern_; }
+
+  float16 get_scalar() const { return bit_cast<float16>(bit_pattern_); }
+
+  static constexpr Float16 FromBits(uint16_t bits) { return Float16(bits); }
+
+ private:
+  uint16_t bit_pattern_ = 0;
+
+  explicit constexpr Float16(uint16_t bit_pattern)
+      : bit_pattern_(bit_pattern) {}
+};
+
+static_assert(std::is_trivially_copyable_v<Float16>,
+              "Float16 should be trivially copyable");
 
 // Safety wrapper for a 32-bit floating-point value to make sure we don't lose
 // the exact bit pattern during deoptimization when passing this value.
@@ -145,6 +171,8 @@ using sreg_t = int64_t;
 using reg_t = uint64_t;
 using freg_t = uint64_t;
 using sfreg_t = int64_t;
+
+inline constexpr sreg_t sext16(sreg_t x) { return sreg_t(int16_t(x)); }
 
 inline constexpr sreg_t sext32(sreg_t x) { return sreg_t(int32_t(x)); }
 
@@ -240,36 +268,30 @@ inline Float64 fsgnj64(Float64 rs1, Float64 rs2, bool n, bool x) {
   return detail::fsgnj(rs1, rs2, n, x);
 }
 
+inline bool is_boxed_float16(int64_t v) {
+  return (uint16_t)((v >> 16) + 1) == 0;
+}
+
 inline bool is_boxed_float(int64_t v) { return (uint32_t)((v >> 32) + 1) == 0; }
 
+inline int64_t box_float16(float16 v) {
+  return (0xFFFFFFFFFFFF0000 | bit_cast<int16_t>(v));
+}
 inline int64_t box_float(float v) {
   return (0xFFFFFFFF00000000 | bit_cast<int32_t>(v));
 }
 
 inline uint64_t box_float(uint32_t v) { return (0xFFFFFFFF00000000 | v); }
+inline uint64_t box_float16(uint16_t v) { return (0xFFFFFFFFFFFF0000 | v); }
 
 // -----------------------------------------------------------------------------
 // Utility functions
 
-class SimInstructionBase : public InstructionBase {
- public:
-  Type InstructionType() const { return type_; }
-  inline Instruction* instr() const { return instr_; }
-  inline int32_t operand() const { return operand_; }
+class SimInstruction : public InstructionBase {
+  int32_t operand_ = -1;
+  Instruction* instr_ = nullptr;
+  Type type_ = kUnsupported;
 
- protected:
-  SimInstructionBase() : operand_(-1), instr_(nullptr), type_(kUnsupported) {}
-  explicit SimInstructionBase(Instruction* instr) {}
-
-  int32_t operand_;
-  Instruction* instr_;
-  Type type_;
-
- private:
-  SimInstructionBase& operator=(const SimInstructionBase&) = delete;
-};
-
-class SimInstruction : public InstructionGetters<SimInstructionBase> {
  public:
   SimInstruction() = default;
 
@@ -282,6 +304,12 @@ class SimInstruction : public InstructionGetters<SimInstructionBase> {
     MOZ_ASSERT(reinterpret_cast<void*>(&operand_) == this);
     return *this;
   }
+
+  SimInstruction& operator=(const SimInstruction&) = delete;
+
+  Type InstructionType() const { return type_; }
+  inline Instruction* instr() const { return instr_; }
+  inline int32_t operand() const { return operand_; }
 };
 
 // std::vector shim for breakpoints
@@ -515,19 +543,18 @@ class Simulator {
   int64_t getRegister(int reg) const;
   // Same for FPURegisters.
   void setFpuRegister(int fpureg, int64_t value);
-  void setFpuRegisterLo(int fpureg, int32_t value);
-  void setFpuRegisterHi(int fpureg, int32_t value);
+  void setFpuRegisterFloat16(int fpureg, float16 value);
   void setFpuRegisterFloat(int fpureg, float value);
   void setFpuRegisterDouble(int fpureg, double value);
+  void setFpuRegisterFloat16(int fpureg, Float16 value);
   void setFpuRegisterFloat(int fpureg, Float32 value);
   void setFpuRegisterDouble(int fpureg, Float64 value);
 
   int64_t getFpuRegister(int fpureg) const;
-  int32_t getFpuRegisterLo(int fpureg) const;
-  int32_t getFpuRegisterHi(int fpureg) const;
   float getFpuRegisterFloat(int fpureg) const;
   double getFpuRegisterDouble(int fpureg) const;
-  Float32 getFpuRegisterFloat32(int fpureg) const;
+  Float16 getFpuRegisterFloat16(int fpureg, bool check_nanbox = true) const;
+  Float32 getFpuRegisterFloat32(int fpureg, bool check_nanbox = true) const;
   Float64 getFpuRegisterFloat64(int fpureg) const;
 
   inline int16_t shamt6() const { return (imm12() & 0x3F); }
@@ -546,6 +573,11 @@ class Simulator {
   void set_pc(int64_t value);
   int64_t get_pc() const;
 
+  template <typename T>
+  T get_pc_as() const {
+    return reinterpret_cast<T>(get_pc());
+  }
+
   SimInstruction instr_;
   // RISCV utlity API to access register value
   // Helpers for data value tracing.
@@ -561,6 +593,9 @@ class Simulator {
   };
   inline int32_t rs1_reg() const { return instr_.Rs1Value(); }
   inline sreg_t rs1() const { return getRegister(rs1_reg()); }
+  inline float16 hrs1() const {
+    return getFpuRegisterFloat16(rs1_reg()).get_scalar();
+  }
   inline float frs1() const { return getFpuRegisterFloat(rs1_reg()); }
   inline double drs1() const { return getFpuRegisterDouble(rs1_reg()); }
   inline Float32 frs1_boxed() const { return getFpuRegisterFloat32(rs1_reg()); }
@@ -623,6 +658,7 @@ class Simulator {
   void TraceMemRdDouble(sreg_t addr, double value, int64_t reg_value);
   void TraceMemRdDouble(sreg_t addr, Float64 value, int64_t reg_value);
   void TraceMemRdFloat(sreg_t addr, Float32 value, int64_t reg_value);
+  void TraceMemRdFloat16(sreg_t addr, Float16 value, int64_t reg_value);
 
   template <typename T>
   void TraceLr(sreg_t addr, T value, sreg_t reg_value);
@@ -637,6 +673,14 @@ class Simulator {
   inline void set_rd(sreg_t value, bool trace = true) {
     setRegister(rd_reg(), value);
     if (trace) TraceRegWr(getRegister(rd_reg()), DWORD);
+  }
+  inline void set_frd(float16 value, bool trace = true) {
+    setFpuRegisterFloat16(rd_reg(), value);
+    if (trace) TraceRegWr(getFpuRegister(rd_reg()), FLOAT);
+  }
+  inline void set_frd(Float16 value, bool trace = true) {
+    setFpuRegisterFloat16(rd_reg(), value);
+    if (trace) TraceRegWr(getFpuRegister(rd_reg()), FLOAT);
   }
   inline void set_frd(float value, bool trace = true) {
     setFpuRegisterFloat(rd_reg(), value);
@@ -788,12 +832,10 @@ class Simulator {
   T FMaxMinHelper(T a, T b, MaxMinKind kind);
 
   template <typename T>
-  bool CompareFHelper(T input1, T input2, FPUCondition cc);
+  T FMaxMinMHelper(T a, T b, MaxMinKind kind);
 
   template <typename T>
-  T get_pc_as() const {
-    return reinterpret_cast<T>(get_pc());
-  }
+  bool CompareFHelper(T input1, T input2, FPUCondition cc);
 
   void enable_single_stepping(SingleStepCallback cb, void* arg);
   void disable_single_stepping();
@@ -1001,26 +1043,64 @@ class Simulator {
   template <typename Func>
   inline float CanonicalizeDoubleToFloatOperation(Func fn, double frs) {
     float alu_out = fn(frs);
-    if (std::isnan(alu_out) || std::isnan(drs1())) {
+    if (std::isnan(alu_out) || std::isnan(frs)) {
       alu_out = std::numeric_limits<float>::quiet_NaN();
     }
     return alu_out;
   }
 
   template <typename Func>
-  inline float CanonicalizeFloatToDoubleOperation(Func fn, float frs) {
+  inline double CanonicalizeFloatToDoubleOperation(Func fn, float frs) {
     double alu_out = fn(frs);
-    if (std::isnan(alu_out) || std::isnan(frs1())) {
+    if (std::isnan(alu_out) || std::isnan(frs)) {
       alu_out = std::numeric_limits<double>::quiet_NaN();
     }
     return alu_out;
   }
 
   template <typename Func>
-  inline float CanonicalizeFloatToDoubleOperation(Func fn) {
+  inline double CanonicalizeFloatToDoubleOperation(Func fn) {
     double alu_out = fn(frs1());
     if (std::isnan(alu_out) || std::isnan(frs1())) {
       alu_out = std::numeric_limits<double>::quiet_NaN();
+    }
+    return alu_out;
+  }
+
+  static inline bool IsNaN(float16 f16) { return f16 != f16; }
+
+  template <typename Func>
+  inline float16 CanonicalizeDoubleToFloat16Operation(Func fn) {
+    float16 alu_out = fn(drs1());
+    if (IsNaN(alu_out) || std::isnan(drs1())) {
+      alu_out = std::numeric_limits<float16>::quiet_NaN();
+    }
+    return alu_out;
+  }
+
+  template <typename Func>
+  inline float16 CanonicalizeFloatToFloat16Operation(Func fn) {
+    float16 alu_out = fn(frs1());
+    if (IsNaN(alu_out) || std::isnan(frs1())) {
+      alu_out = std::numeric_limits<float16>::quiet_NaN();
+    }
+    return alu_out;
+  }
+
+  template <typename Func>
+  inline double CanonicalizeFloat16ToDoubleOperation(Func fn) {
+    double alu_out = fn(hrs1());
+    if (std::isnan(alu_out) || IsNaN(hrs1())) {
+      alu_out = std::numeric_limits<double>::quiet_NaN();
+    }
+    return alu_out;
+  }
+
+  template <typename Func>
+  inline float CanonicalizeFloat16ToFloatOperation(Func fn) {
+    float alu_out = fn(hrs1());
+    if (std::isnan(alu_out) || IsNaN(hrs1())) {
+      alu_out = std::numeric_limits<float>::quiet_NaN();
     }
     return alu_out;
   }

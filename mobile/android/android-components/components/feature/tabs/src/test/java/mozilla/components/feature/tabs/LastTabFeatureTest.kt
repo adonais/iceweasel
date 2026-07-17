@@ -101,6 +101,6 @@ class LastTabFeatureTest {
         )
 
         assertFalse(feature.onBackPressed())
-        verify(useCase, never()).invoke(any(), anyBoolean())
+        verify(useCase, never()).invoke(any(), anyBoolean(), any())
     }
 }

@@ -321,10 +321,12 @@ add_task(async function testMouseSupport() {
   let panel = card.querySelector("panel-list");
 
   ok(!panel.open, "The panel is initially closed");
-  await BrowserTestUtils.synthesizeMouseAtCenter(
-    "addon-card[addon-id$='@mochi.test'] button[action='more-options']",
+  EventUtils.synthesizeMouseAtCenter(
+    AboutAddonsTestUtils.getAddonCardMoreOptionsButton(win, {
+      addonCard: card,
+    }),
     { type: "mousedown" },
-    win.docShell.browsingContext
+    win
   );
   ok(panel.open, "The panel is now open");
 
@@ -361,7 +363,10 @@ add_task(async function testKeyboardSupport() {
   is(card.addon.id, "test@mochi.test", "The right card is found");
 
   // Focus the more options menu button.
-  let moreOptionsButton = card.querySelector('[action="more-options"]');
+  let moreOptionsButton = AboutAddonsTestUtils.getAddonCardMoreOptionsButton(
+    win,
+    { addonCard: card }
+  );
   moreOptionsButton.focus();
   isFocused(moreOptionsButton, "The more options button is focused");
 
@@ -739,7 +744,10 @@ add_task(async function testSideloadRemoveButton() {
   let card = getCardByAddonId(doc, id);
 
   let moreOptionsPanel = card.querySelector("panel-list");
-  let moreOptionsButton = card.querySelector('[action="more-options"]');
+  let moreOptionsButton = AboutAddonsTestUtils.getAddonCardMoreOptionsButton(
+    win,
+    { addonCard: card }
+  );
   let panelOpened = BrowserTestUtils.waitForEvent(moreOptionsPanel, "shown");
   EventUtils.synthesizeMouseAtCenter(moreOptionsButton, {}, win);
   await panelOpened;

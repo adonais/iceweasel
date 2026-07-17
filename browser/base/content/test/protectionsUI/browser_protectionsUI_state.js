@@ -132,7 +132,7 @@ function areTrackersBlocked(isPrivateBrowsing) {
   );
   let blockedByTPC = [
     Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-    Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+    Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
   ].includes(Services.prefs.getIntPref(TPC_PREF));
   return blockedByTP || blockedByTPC;
 }
@@ -392,7 +392,7 @@ add_task(async function testThirdPartyCookies() {
     ThirdPartyCookies.enabled,
     [
       Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER,
-      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+      Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
     ].includes(Services.prefs.getIntPref(TPC_PREF)),
     "TPC.enabled is based on the original pref value"
   );

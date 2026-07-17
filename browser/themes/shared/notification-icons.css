@@ -5,7 +5,7 @@
 @namespace html url("http://www.w3.org/1999/xhtml");
 
 #notification-popup-box {
-  height: calc(var(--urlbar-min-height) - 2 * var(--urlbar-container-inset));
+  height: var(--urlbar-basic-component-size);
   -moz-context-properties: fill, fill-opacity;
   fill: currentColor;
   fill-opacity: var(--urlbar-icon-fill-opacity);

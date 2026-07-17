@@ -22,7 +22,7 @@ class WebVTTListener final : public nsIWebVTTListener,
                              public nsIStreamListener,
                              public nsIChannelEventSink,
                              public nsIInterfaceRequestor {
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_NSIWEBVTTLISTENER
   NS_DECL_NSIREQUESTOBSERVER
   NS_DECL_NSISTREAMLISTENER

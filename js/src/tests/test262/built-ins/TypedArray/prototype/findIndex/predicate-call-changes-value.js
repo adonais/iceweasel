@@ -64,6 +64,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
     return val === 7;
   });
   assert.sameValue(result, -1, "value not found - changed after call");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

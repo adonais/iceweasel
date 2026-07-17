@@ -37,12 +37,7 @@
 inline void js::BaseScript::traceChildren(JSTracer* trc) {
   TraceEdge(trc, &function_, "function");
   TraceEdge(trc, &sourceObject_, "sourceObject");
-
-  if (data_) {
-    TraceBufferEdge(trc, this, &data_, "PrivateScriptData");
-    data_->trace(trc);
-  }
-
+  TraceEdgeAndBuffer(trc, &data_, "PrivateScriptData");
   warmUpData_.trace(trc);
 }
 
@@ -273,7 +268,7 @@ inline void js::Scope::traceChildren(JSTracer* trc) {
   TraceEdge(trc, &enclosingScope_, "scope enclosing");
   BaseScopeData* data = rawData();
   if (data) {
-    TraceBufferEdge(trc, this, &data, "Scope data");
+    TraceBufferEdge(trc, &data, "Scope data");
     if (data != rawData()) {
       setHeaderPtr(data);
     }
@@ -448,7 +443,7 @@ void js::gc::MarkingTracerT<opts>::eagerlyMarkChildren(PropMap* map) {
 
 inline void JS::BigInt::traceChildren(JSTracer* trc) {
   if (!hasInlineDigits()) {
-    js::TraceBufferEdge(trc, this, &heapDigits_, "BigInt::heapDigits_");
+    js::TraceBufferEdge(trc, &heapDigits_, "BigInt::heapDigits_");
   }
 }
 

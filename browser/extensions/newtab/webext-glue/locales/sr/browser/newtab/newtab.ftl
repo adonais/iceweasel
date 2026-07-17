@@ -31,6 +31,128 @@ newtab-card-dismiss-button =
     .title = Одбаци
     .aria-label = Одбаци
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-title =
+    .label = Почетна страница
+home-homepage-new-windows =
+    .label = Нови прозори
+home-homepage-new-tabs =
+    .label = Нови језичци:
+# This option leads to the "Custom Homepage" subpage
+home-homepage-custom-homepage-button =
+    .label = Изаберите одређени сајт
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = Адреса(е) веб сајта
+home-custom-homepage-address =
+    .placeholder = Унесите адресу
+home-custom-homepage-address-button =
+    .label = Додај адресу
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-results =
+    .label = Још увек нема додатих веб сајтова.
+home-custom-homepage-delete-address-button =
+    .aria-label = Обриши адресу
+    .title = Обриши адресу
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with-prompt =
+    .label = Замени са
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-current-pages-button =
+    .label = Тренутно отворене странице
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-bookmarks-button =
+    .label = Обележивачи…
+
+## Firefox Home content
+
+home-prefs-content-header =
+    .label = { -firefox-home-brand-name }
+home-prefs-search-header2 =
+    .label = Претрага
+home-prefs-stories-header2 =
+    .label = Приче
+    .description = Изузетан садржај који припрема { -brand-product-name } породица
+home-prefs-widgets-header =
+    .label = Елементи
+# Lists is a widget on New Tab, similar to a to-do widget
+home-prefs-lists-header =
+    .label = Спискови
+# Timer is a widget on New Tab, similar to the Pomodoro timer.
+home-prefs-timer-header =
+    .label = Одбројавач
+# Sports is a widget on New Tab showing sports scores and schedules.
+home-prefs-sports-widget-header =
+    .label = Спорт
+# Clock is a widget on New Tab that displays time zones around the world.
+home-prefs-clocks-header =
+    .label = Часовник
+home-prefs-mission-message2 =
+    .message = Наши спонзори подржавају нашу мисију изградње бољег веба.
+home-prefs-manage-topics-link2 =
+    .label = Управљај темама
+home-prefs-choose-wallpaper-link2 =
+    .label = Изаберите позадину
+home-prefs-firefox-logo-header =
+    .label = Логотип { -brand-short-name }-а
+# Informational message bar that appears in the Firefox Home section when the options are disabled.
+# The user must select Firefox Home as their homepage for either new tabs or new windows to enable
+# the features in settings.
+home-prefs-firefox-home-disabled-notice =
+    .message = Да бисте употребили ове могућности, подесите нове језичке картице или нове прозоре на { -firefox-home-brand-name }.
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } ред
+            [few] { $num } реда
+           *[other] { $num } редова
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Додатак ({ $extension })
+home-restore-defaults-srd =
+    .label = Врати на подразумевано
+    .accesskey = В
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (Подразумевано)
+home-mode-choice-custom-srd =
+    .label = прилагођена адреса…
+home-mode-choice-blank-srd =
+    .label = празна страница
+home-prefs-shortcuts-header-srd =
+    .label = Пречице
+home-prefs-shortcuts-select =
+    .aria-label = Пречице
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Спонзорисане пречице
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Спонзорисане приче
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Посећене странице
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Обележивачи
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Најновије преузимање
+home-prefs-recent-activity-header-srd =
+    .label = Недавна активност
+home-prefs-recent-activity-select =
+    .aria-label = Недавна активност
+home-prefs-weather-header-srd =
+    .label = Време
+home-prefs-support-firefox-header-srd =
+    .label = Подржите { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = Сазнајте како
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -151,6 +273,8 @@ newtab-menu-section-block = Блокирај
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow-topic = Прекини праћење
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Сазнајте више
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Престани да пратиш тему
@@ -369,6 +493,8 @@ newtab-custom-widget-sports-toggle =
     .label = Светско првенство
 newtab-custom-widget-clock-toggle =
     .label = Часовник
+newtab-custom-widget-sports-toggle2 =
+    .label = Спорт
 newtab-custom-widget-section-title = Елементи
 newtab-custom-widget-section-toggle =
     .label = Елементи
@@ -713,7 +839,7 @@ newtab-report-submit = Пошаљи
 newtab-toast-thanks-for-reporting =
     .message = Хвала вам што сте ово пријавили.
 newtab-toast-widgets-hidden =
-    .message = Изаберите иконицу оловке да бисте поново додали виџете било када.
+    .message = Изаберите иконицу оловке да бисте поново додали елементе било када.
 # Variables:
 #   $topic (string) - Topic that the user has followed
 newtab-section-toast-follow =
@@ -759,8 +885,6 @@ newtab-widget-lists-button-add-item = Додај ставку
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Додај ставку
     .aria-label = Додај ставку
-newtab-widget-lists-input-add-an-item =
-    .placeholder = Додај ставку
 newtab-widget-lists-input-error = Укључите текст да бисте додали ставку.
 newtab-widget-lists-input-menu-open-link = Отвори везу
 newtab-widget-lists-input-menu-move-up = Премести горе
@@ -769,6 +893,9 @@ newtab-widget-lists-input-menu-delete = Обриши
 newtab-widget-lists-input-menu-edit = Уреди
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = Уреди ставку
+newtab-widget-lists-edit-clear =
+    .aria-label = Откажи
+    .title = Откажи
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Направи нови списак
@@ -785,14 +912,18 @@ newtab-widget-lists-name-placeholder-checklist2 =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = Нови списак
     .aria-label = Уреди назив списка
-newtab-widget-lists-name-placeholder-checklist =
-    .placeholder = Списак задатака
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Нови списак
 newtab-widget-section-title = Елементи
 newtab-widget-menu-hide = Сакриј елемент
 newtab-widget-menu-change-size = Промени величину
+# Parent label for a submenu in the widget menu that reorders the widget
+# among its siblings. "Left" and "Right" appear as items inside this submenu.
+newtab-widget-menu-move = Помери
+# Submenu item under "Move"; moves the widget one position to the left.
+# RTL locales should translate this as "Right".
+newtab-widget-menu-move-left = Лево
+# Submenu item under "Move"; moves the widget one position to the right.
+# RTL locales should translate this as "Left".
+newtab-widget-menu-move-right = Десно
 newtab-widget-size-small = Мала
 newtab-widget-size-medium = Средња
 newtab-widget-size-large = Велика
@@ -809,10 +940,21 @@ newtab-widget-section-minimize =
 newtab-widget-section-menu-button =
     .title = Мени елемената
     .aria-label = Отвори мени елемената
+newtab-widget-add-widgets-button =
+    .aria-label = Додај елемент
+    .title = Додај елемент
 newtab-widget-section-menu-manage = Управљај елементима
 newtab-widget-section-menu-hide-all = Сакриј елементе
 newtab-widget-section-menu-learn-more = Сазнајте више
 newtab-widget-section-feedback = Реците нам шта мислите
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Прикажи више елемената
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Прикажи мање елемената
 newtab-widget-lists-name-default = Списак задатака
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -848,6 +990,9 @@ newtab-daily-briefing-card-timestamp =
 newtab-widget-message-title = Останите фокусирани уз спискове и уграђени тајмер
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Од брзих подсетника до дневних задатака, сесија фокуса до пауза за протезање - останите на задатку и на време.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = Једно место за фокус, прогнозе и још много тога
+newtab-widget-message-focus-forecasts-body = Нека ваш дан тече глатко уз { -brand-product-name } елементе. Проверите прогнозу, останите фокусирани на задатке или пратите време широм света.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -903,9 +1048,10 @@ newtab-widget-timer-celebration-message-focus = Треба ли вам одмо�
 # Message shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-message-break = Спремни за фокус?
 
-## Sports widget
+##
 
 newtab-sports-widget-menu-follow-teams = Прати екипе
+newtab-sports-widget-menu-view-schedule = Прикажи распоред
 newtab-sports-widget-menu-view-upcoming = Прикажи предстојеће
 newtab-sports-widget-menu-view-results = Прикажи резултате
 # Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
@@ -935,9 +1081,63 @@ newtab-sports-widget-search-country =
     .placeholder = Претражи државу
     .aria-label = Претражи државу
 newtab-sports-widget-cancel = Откажи
+newtab-sports-widget-back-button =
+    .aria-label = Назад
 newtab-sports-widget-done-button =
     .label = Готово
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (испала)
+newtab-sports-widget-view-all =
+    .label = Прикажи све
+newtab-sports-widget-show-less =
+    .label = Прикажи мање
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = Само праћени тимови
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = Гледај
+    .title = Гледајте уживо
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = Гледајте уживо
+    .title = Гледајте уживо
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = Затвори
+    .title = Затвори
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = Бесплатно
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = Бесплатна проба
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = Бесплатно и плаћено
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = Плаћено
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = Само одређене утакмице
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = Доступно у вашој области
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = Остале области
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = Отвори ток
+    .title = Отвори ток
 newtab-sports-widget-group-stage = Групна фаза
+newtab-sports-widget-group-a = Група А
+newtab-sports-widget-group-b = Група Б
+newtab-sports-widget-group-c = Група Ц
+newtab-sports-widget-group-d = Група Д
+newtab-sports-widget-group-e = Група Е
+newtab-sports-widget-group-f = Група Ф
+newtab-sports-widget-group-g = Група Г
+newtab-sports-widget-group-h = Група Х
+newtab-sports-widget-group-i = Група И
+newtab-sports-widget-group-j = Група Ј
+newtab-sports-widget-group-k = Група К
+newtab-sports-widget-group-l = Група Л
 newtab-sports-widget-round-32 = Шеснаестина финала
 newtab-sports-widget-round-16 = Осмина финала
 newtab-sports-widget-quarter-finals = Четвртфинале
@@ -949,6 +1149,8 @@ newtab-custom-widget-live-refresh =
 # Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
 newtab-sports-widget-key-dates = Кључни датуми
 newtab-sports-widget-upcoming = Предстојећи
+# Used for a match currently ongoing
+newtab-sports-widget-now = Сада
 newtab-sports-widget-results = Резултати
 newtab-sports-widget-semi-finals = Полуфинале
 newtab-sports-widget-bronze-finals = Меч за треће место
@@ -973,6 +1175,110 @@ newtab-sports-widget-third-place = Треће место
 newtab-sports-widget-runner-up = Други
 newtab-sports-widget-champions = Шампиони
 newtab-sports-widget-world-cup-champions = Шампиони Светског првенства 2026.
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Крај
+newtab-sports-widget-match-halftime = Полувреме
+newtab-sports-widget-match-extra-time = Продужетак
+newtab-sports-widget-match-penalties = Пенали
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = против
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = Пратите нас за појединости о предстојећим утакмицама
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Претходна
+    .title = Претходна
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Следећа
+    .title = Следећа
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Утакмица уживо { $index } од { $total }
+    .title = Утакмица уживо { $index } од { $total }
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } против земље { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) против земље { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = УЖИВО: { $homeTeam }, { $homeScore } против земље { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } против земље { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } против земље { $awayTeam }, одложено
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } против земље { $awayTeam }, одложено
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } против земље { $awayTeam }, обустављено
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } против земље { $awayTeam }, отказано
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Босна и Херцеговина
+newtab-sports-widget-team-name-label-civ =
+    .label = Обала Слоноваче
+newtab-sports-widget-team-name-label-cod =
+    .label = ДР Конго
+newtab-sports-widget-team-name-label-eng =
+    .label = Енглеска
+newtab-sports-widget-team-name-label-sco =
+    .label = Шкотска
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = Биће познато касније
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = Започните Светско првенство новим позадинама
+newtab-sports-widget-message-wallpapers-body = Донесите енергију дана утакмице у свој прегледач за овај турнир.
+newtab-sports-widget-message-wallpapers-cta = Изаберите позадину
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Додај елементе
+newtab-sports-widget-message-day-in-play-title = Останите у игри током дана уз елементе за { -brand-product-name }
+newtab-sports-widget-message-day-in-play-body = Пратите Светско првенство, останите фокусирани на своје задатке, пратите време широм света и још много тога.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Истражите елементе
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1034,6 +1340,19 @@ newtab-clock-widget-button-save = Сачувај
 newtab-clock-widget-button-remove-clock =
     .title = Уклони часовник
     .aria-label = Уклони часовник
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, надимак: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Додај часовник
 newtab-clock-widget-edit-clock-form =
@@ -1043,6 +1362,10 @@ newtab-clock-widget-edit-clock-form =
 # It means "results of the search", not "search within the results".
 newtab-clock-widget-search-results =
     .aria-label = Резултати претраге
+# Shown in place of the search results when the user's query does not match any
+# supported city — e.g. typing a misspelled name or a place not in the IANA
+# time zone list.
+newtab-clock-widget-search-no-results = Нема подударања
 # "Open menu for clock" is an icon-only button in the widget toolbar — the
 # attributes are consumed as tooltip/screen-reader label only. The button
 # never renders visible text.

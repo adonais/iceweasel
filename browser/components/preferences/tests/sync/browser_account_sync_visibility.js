@@ -69,6 +69,7 @@ add_task(async function testAccountGroupSignedOut() {
 
       // Other account groups should be hidden
       assertAccountGroupsHidden(doc, [
+        "fxaAccountDisabled",
         "fxaSignedInGroup",
         "fxaUnverifiedGroup",
         "fxaLoginRejectedGroup",
@@ -265,6 +266,14 @@ add_task(async function testAccountsDisabled() {
         "Sync section is hidden when Firefox Accounts is disabled."
       );
 
+      let accountDisabledGroup = doc.querySelector(
+        'setting-group[groupid="accountDisabled"]'
+      );
+      ok(
+        BrowserTestUtils.isVisible(accountDisabledGroup),
+        "Account disabled section is visible when Firefox Accounts is disabled."
+      );
+
       // Category nav button should still be visible
       let categoryButton = doc.getElementById("category-sync");
       ok(
@@ -328,6 +337,9 @@ add_task(async function testImportSectionHiddenWhenBlocked() {
   );
 
   BrowserTestUtils.removeTab(gBrowser.selectedTab);
+
+  // Reset the policy so it doesn't leak into other tests.
+  await setupPolicyEngineWithJson("");
 });
 
 // Profiles section visibility test. Additional visibility tests in

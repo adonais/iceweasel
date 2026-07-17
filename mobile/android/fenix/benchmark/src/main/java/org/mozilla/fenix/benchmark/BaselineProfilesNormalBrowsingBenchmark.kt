@@ -16,6 +16,7 @@ import org.mozilla.fenix.benchmark.utils.FENIX_HOME_DEEP_LINK
 import org.mozilla.fenix.benchmark.utils.HtmlAsset
 import org.mozilla.fenix.benchmark.utils.MockWebServerRule
 import org.mozilla.fenix.benchmark.utils.TARGET_PACKAGE
+import org.mozilla.fenix.benchmark.utils.completeOnboarding
 import org.mozilla.fenix.benchmark.utils.dismissWallpaperOnboarding
 import org.mozilla.fenix.benchmark.utils.enterSearchMode
 import org.mozilla.fenix.benchmark.utils.isWallpaperOnboardingShown
@@ -77,6 +78,7 @@ class BaselineProfilesNormalBrowsingBenchmark {
         ) {
             val intent = Intent(Intent.ACTION_VIEW, FENIX_HOME_DEEP_LINK)
             startActivityAndWait(intent = intent)
+            device.completeOnboarding()
 
             if (device.isWallpaperOnboardingShown()) {
                 device.dismissWallpaperOnboarding()

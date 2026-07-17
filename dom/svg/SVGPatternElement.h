@@ -16,7 +16,7 @@
 #include "mozilla/dom/SVGElement.h"
 
 nsresult NS_NewSVGPatternElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla {
 class SVGPatternFrame;
@@ -32,9 +32,9 @@ class SVGPatternElement final : public SVGPatternElementBase {
  protected:
   friend nsresult(::NS_NewSVGPatternElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
   explicit SVGPatternElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 
  public:

@@ -12,8 +12,8 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.distinctUntilChangedBy
+import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.flow.mapNotNull
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import mozilla.appservices.fxaclient.FxaException
@@ -25,7 +25,7 @@ import mozilla.components.concept.engine.ipprotection.ServiceState
 import mozilla.components.feature.ipprotection.IPProtectionFxaAuthFlow.Companion.SCOPE_IPPROTECTION
 import mozilla.components.feature.ipprotection.store.IPProtectionAction
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
-import mozilla.components.feature.ipprotection.store.InternalAction.FirstEnrollmentChanged
+import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.lib.state.ext.flow
@@ -72,18 +72,30 @@ class IPProtectionFeature(
         }
     }
 
-    private fun observeEligibilityAndService(store: IPProtectionStore, mainDispatcher: CoroutineDispatcher) {
+    private fun observeEligibilityAndService(
+        store: IPProtectionStore,
+        mainDispatcher: CoroutineDispatcher,
+    ) {
         store.flowScoped(dispatcher = mainDispatcher) { flow ->
-            flow.map { it.eligibilityStatus to it.serviceStatus }
+            flow.map { Triple(it.eligibilityStatus, it.serviceStatus, it.accountState.status) }
                 .distinctUntilChanged()
                 // We use `collectLatest` only because of the nested `observeToggle` that
                 // should be canceled on new observation.
-                .collectLatest { (eligibilityStatus, serviceStatus) ->
+                .collectLatest { (eligibilityStatus, serviceStatus, accountStatus) ->
                     when (eligibilityStatus) {
                         EligibilityStatus.Eligible -> {
                             if (serviceStatus == ServiceState.Uninitialized) {
                                 logger.info("Registering and initializing with IPProtectionController.")
                                 registerAndInit()
+                            }
+
+                            // When the app starts with an already signed-in user, the account state
+                            // is likely to be ready faster than the service, so we should notify
+                            // a ready account state after initializing the handler.
+                            if (serviceStatus == ServiceState.Unauthenticated &&
+                                accountStatus == AccountStatus.Authenticated
+                            ) {
+                                handler?.notifyAccountStatus(true)
                             }
                             observeToggle()
                         }
@@ -107,31 +119,40 @@ class IPProtectionFeature(
             flow.distinctUntilChangedBy { it.accountState.status }
                 .collect { state ->
                     when (state.accountState.status) {
-                        // FIXME(IPP) not all of these states need to invoke notifyAccountStatus.
                         AccountStatus.AuthFailed,
                         AccountStatus.Uninitialized,
+                            -> {
+                            handler?.notifyAccountStatus(false)
+                        }
+
+                        AccountStatus.Authenticated -> {
+                            handler?.notifyAccountStatus(true)
+                        }
+
+                        AccountStatus.AwaitingEnrollment -> {
+                            handler?.enroll { enrollInfo ->
+                                store.dispatch(
+                                    InternalAction.FinishingEnrollment(
+                                        success = enrollInfo.isEnrolledAndEntitled,
+                                    ),
+                                )
+                            }
+                        }
+
+                        AccountStatus.TryAgain -> {
+                            handler?.notifyAccountStatus(true)
+                        }
+
                         AccountStatus.WarmingUp,
                         AccountStatus.NeedsAuthentication,
                         AccountStatus.RequestingAuthentication,
                         AccountStatus.NeedsAuthorization,
                         AccountStatus.RequestingAuthorization,
+                        AccountStatus.AwaitingAuthentication,
+                        AccountStatus.AwaitingAuthorization,
+                        AccountStatus.EnrolledAndEntitled,
                             -> {
-                            handler?.notifyAccountStatus(false)
-                        }
-
-                        AccountStatus.Ready -> {
-                            if (state.accountState.isFirstEnrollment) {
-                                handler?.enroll { enrollInfo ->
-                                    if (enrollInfo.isEnrolledAndEntitled) {
-                                        store.dispatch(FirstEnrollmentChanged(false))
-                                    }
-                                }
-                            }
-                            handler?.notifyAccountStatus(true)
-                        }
-
-                        AccountStatus.TryAgain -> {
-                            handler?.notifyAccountStatus(true)
+                            // no-op when we are in transient states.
                         }
                     }
                 }
@@ -168,7 +189,9 @@ class IPProtectionFeature(
                 },
             )
             // Initialization needs to be done ASAP whether we are using the service or not to avoid start-up delays.
-            // We do need to register our
+            // We do need to register our listeners first to avoid dropping a message because,
+            // as a side effect, the init call triggers `IPProtectionController#onServiceStateChanged`
+            // that can trigger the account manager that leads to `AuthProvider#getToken`.
             init()
         }
     }
@@ -178,14 +201,21 @@ class IPProtectionFeature(
     }
 
     private suspend fun observeToggle() = withContext(Dispatchers.Main) {
+        // Dedupe over the nullable so `true -> null -> true` reads as two edges, not one.
         store.flow()
-            .mapNotNull { it.activate }
+            .map { it.activate }
             .distinctUntilChanged()
+            .filterNotNull()
             .collect { activate ->
+                val onResult: (Throwable?) -> Unit = { err ->
+                    if (err != null) {
+                        store.dispatch(IPProtectionAction.ToggleFailed)
+                    }
+                }
                 if (activate) {
-                    handler?.activate()
+                    handler?.activate(onResult)
                 } else {
-                    handler?.deactivate()
+                    handler?.deactivate(onResult)
                 }
             }
     }

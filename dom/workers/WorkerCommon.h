@@ -49,6 +49,9 @@ void ResumeWorkersForWindow(const nsPIDOMWindowInner& aWindow);
 void PropagateStorageAccessPermissionGrantedToWorkers(
     const nsPIDOMWindowInner& aWindow);
 
+void UpdateTimezoneOverrideForWorkers(const nsPIDOMWindowInner& aWindow,
+                                      const nsAString& aTimezone);
+
 // All of these are implemented in WorkerScope.cpp
 
 bool IsWorkerGlobal(JSObject* global);

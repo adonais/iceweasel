@@ -49,6 +49,9 @@ skip-if = [
 
 ["browser_1880230_hideInNonPrivateBrowsing.js"]
 
+["browser_2041653_non_removable_overflow_reset.js"]
+tags = "overflowable-toolbar"
+
 ["browser_873501_handle_specials.js"]
 
 ["browser_876926_customize_mode_wrapping.js"]
@@ -367,6 +370,8 @@ tags = "fullscreen"
 ["browser_panel_locationSpecific.js"]
 
 ["browser_panel_menulist.js"]
+
+["browser_panel_role_and_label.js"]
 
 ["browser_panel_toggle.js"]
 

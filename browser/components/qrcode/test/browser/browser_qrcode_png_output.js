@@ -256,6 +256,57 @@ add_task(async function test_qrcode_png_no_logo() {
   );
 });
 
+add_task(async function test_qrcode_png_embed_logo_pref() {
+  const refDataURI = await loadReferenceDataURI("reference-qr-no-logo.png");
+
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shareqrcode.embed_logo", false]],
+  });
+  await assertImagesMatch(
+    await QRCodeGenerator.generateQRCode(TEST_URL),
+    refDataURI,
+    "browser.shareqrcode.embed_logo=false should omit the logo"
+  );
+  await SpecialPowers.popPrefEnv();
+
+  const worker = new QRCodeWorker();
+  let placement;
+  try {
+    const { dotCount } = await worker.generateQRMatrix(TEST_URL);
+    placement = await worker.getLogoPlacement(dotCount, MARGIN);
+  } finally {
+    await worker.terminate();
+  }
+
+  // When embedding a logo, we clear the QR code dots ("modules") below where
+  // it'll go so they aren't half-shown and instead are just white. Sample for
+  // non-white pixels in the inner 30% of the logo to ensure we're getting the
+  // embedded logo.
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.shareqrcode.embed_logo", true]],
+  });
+  const { getPixel } = await renderToSamplingCanvas(TEST_URL);
+  await SpecialPowers.popPrefEnv();
+
+  const sampleRadius = placement.logoSize * 0.3;
+  const steps = 5;
+  let nonWhitePixels = 0;
+  for (let dy = -steps; dy <= steps; dy++) {
+    for (let dx = -steps; dx <= steps; dx++) {
+      const x = placement.centerX + (dx / steps) * sampleRadius;
+      const y = placement.centerY + (dy / steps) * sampleRadius;
+      if (!isNearWhite(getPixel(x, y))) {
+        nonWhitePixels++;
+      }
+    }
+  }
+  Assert.greater(
+    nonWhitePixels,
+    0,
+    "browser.shareqrcode.embed_logo=true should embed the logo at the center"
+  );
+});
+
 add_task(async function test_qrcode_png_logo_clear_zone() {
   // Only assert on modules that would have rendered dark without the clear zone,
   // so the suppression check is relevant.

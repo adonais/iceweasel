@@ -19,7 +19,7 @@ JSObject* SVGDefsElement::WrapNode(JSContext* aCx,
 // Implementation
 
 SVGDefsElement::SVGDefsElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGGraphicsElement(std::move(aNodeInfo)) {}
 
 //----------------------------------------------------------------------

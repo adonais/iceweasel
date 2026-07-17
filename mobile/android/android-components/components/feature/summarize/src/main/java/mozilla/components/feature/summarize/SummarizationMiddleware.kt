@@ -4,14 +4,16 @@
 
 package mozilla.components.feature.summarize
 
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineDispatcher
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.onCompletion
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeout
 import mozilla.components.concept.llm.CloudLlmProvider
-import mozilla.components.concept.llm.ErrorCode
 import mozilla.components.concept.llm.Llm
 import mozilla.components.feature.summarize.content.ContentProvider
 import mozilla.components.feature.summarize.ext.fetchLlm
@@ -20,6 +22,7 @@ import mozilla.components.feature.summarize.ext.prompt
 import mozilla.components.feature.summarize.settings.SummarizationSettings
 import mozilla.components.lib.state.Middleware
 import mozilla.components.lib.state.Store
+import kotlin.time.Duration.Companion.seconds
 
 const val TAG = "SummarizationMiddleware"
 
@@ -67,19 +70,30 @@ class SummarizationMiddleware(
         next(action)
     }
 
-    private suspend fun observePrompt(store: SummarizationStore, llm: Llm) = runCatching {
-        val content = contentProvider.getContent().getOrThrow()
+    @Suppress("TooGenericExceptionCaught")
+    private suspend fun observePrompt(store: SummarizationStore, llm: Llm) {
+        try {
+            withTimeout(SUMMARIZE_TIMEOUT) {
+                val content = contentProvider.getContent().getOrThrow()
 
-        store.dispatch(ContentExtracted(content))
+                store.dispatch(ContentExtracted(content))
 
-        llm.prompt(content.prompt)
-            .mapToRichDocument(
-                pageTitle = content.metadata.pageTitle,
-                dispatcher = dispatcher,
-            )
-            .onCompletion { if (it == null) store.dispatch(SummarizationCompleted) }
-            .collect { store.dispatch(ReceivedParsedDocument(it)) }
-    }.onFailure { store.dispatch(SummarizationFailed(it.asLlmException())) }
+                llm.prompt(content.prompt)
+                    .mapToRichDocument(
+                        pageTitle = content.metadata.pageTitle,
+                        dispatcher = dispatcher,
+                    )
+                    .onCompletion { if (it == null) store.dispatch(SummarizationCompleted) }
+                    .collect { store.dispatch(ReceivedParsedDocument(it)) }
+            }
+        } catch (e: TimeoutCancellationException) {
+            store.dispatch(SummarizationFailed(e))
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: Throwable) {
+            store.dispatch(SummarizationFailed(e))
+        }
+    }
 
     private suspend fun observeCloudLlmProvider(
         store: SummarizationStore,
@@ -91,11 +105,7 @@ class SummarizationMiddleware(
             state.initializedWithShake &&
             !settings.getHasConsentedToShake().first()
 
-    private fun Throwable.asLlmException(): Llm.Exception =
-        (this as? Llm.Exception) ?: Llm.Exception(
-            message = "Unknown error in SummarizationMiddleware: ${this::class.java}",
-            errorCode = middlewareErrorCode,
-        )
-
-    private val middlewareErrorCode = ErrorCode(4001)
+    private companion object {
+        val SUMMARIZE_TIMEOUT = 60.seconds
+    }
 }

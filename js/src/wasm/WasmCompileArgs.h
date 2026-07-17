@@ -187,21 +187,27 @@ MOZ_MAKE_ENUM_CLASS_BITWISE_OPERATORS(FeatureUsage);
 
 // Describes the JS scripted caller of a request to compile a wasm module.
 
-struct ScriptedCaller {
-  UniqueChars filename;  // UTF-8 encoded
-  bool filenameIsURL;
-  uint32_t line;
+enum class ScriptedCallerKind : uint8_t {
+  IntroducedFilename,
+  Url,
+  SelfHosted,
+};
 
-  ScriptedCaller() : filenameIsURL(false), line(0) {}
-  ScriptedCaller(UniqueChars&& filename, bool filenameIsURL, uint32_t line)
-      : filename(std::move(filename)),
-        filenameIsURL(filenameIsURL),
-        line(line) {}
+struct ScriptedCaller {
+  UniqueChars source;  // UTF-8 encoded filename or URL
+  uint32_t line;
+  ScriptedCallerKind kind;
+
+  ScriptedCaller() : line(0), kind(ScriptedCallerKind::IntroducedFilename) {}
+  ScriptedCaller(UniqueChars&& source, ScriptedCallerKind kind, uint32_t line)
+      : source(std::move(source)), line(line), kind(kind) {}
 
   // Use a ScriptedCaller that is 'self-hosted'. Frames from this module will
   // be treated like JS self-hosted frames and hidden from user facing error
   // stacks.
   static ScriptedCaller selfHosted(JSContext* cx);
+
+  bool isSelfHosted() const { return kind == ScriptedCallerKind::SelfHosted; }
 };
 
 // Describes the reasons we cannot compute compile args

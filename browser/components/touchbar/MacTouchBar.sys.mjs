@@ -8,8 +8,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
+  UrlbarShared: "chrome://browser/content/urlbar/UrlbarShared.mjs",
 });
 
 XPCOMUtils.defineLazyServiceGetter(
@@ -185,7 +184,7 @@ var gBuiltInInputs = {
             type: kInputTypes.BUTTON,
             callback: () =>
               lazy.touchBarHelper.insertRestrictionInUrlbar(
-                lazy.UrlbarTokenizer.RESTRICT.BOOKMARK
+                lazy.UrlbarShared.RESTRICT_TOKENS.BOOKMARK
               ),
           },
           OpenTabs: {
@@ -193,7 +192,7 @@ var gBuiltInInputs = {
             type: kInputTypes.BUTTON,
             callback: () =>
               lazy.touchBarHelper.insertRestrictionInUrlbar(
-                lazy.UrlbarTokenizer.RESTRICT.OPENPAGE
+                lazy.UrlbarShared.RESTRICT_TOKENS.OPENPAGE
               ),
           },
           History: {
@@ -201,7 +200,7 @@ var gBuiltInInputs = {
             type: kInputTypes.BUTTON,
             callback: () =>
               lazy.touchBarHelper.insertRestrictionInUrlbar(
-                lazy.UrlbarTokenizer.RESTRICT.HISTORY
+                lazy.UrlbarShared.RESTRICT_TOKENS.HISTORY
               ),
           },
           Tags: {
@@ -209,7 +208,7 @@ var gBuiltInInputs = {
             type: kInputTypes.BUTTON,
             callback: () =>
               lazy.touchBarHelper.insertRestrictionInUrlbar(
-                lazy.UrlbarTokenizer.RESTRICT.TAG
+                lazy.UrlbarShared.RESTRICT_TOKENS.TAG
               ),
           },
         },
@@ -426,7 +425,7 @@ export class TouchBarHelper {
    *
    * @param {string} restrictionToken
    *        The restriction token to be inserted into the Urlbar. Preferably
-   *        sourced from UrlbarTokenizer.RESTRICT.
+   *        sourced from RESTRICT_TOKENS.
    */
   insertRestrictionInUrlbar(restrictionToken) {
     if (!TouchBarHelper.window) {
@@ -438,7 +437,9 @@ export class TouchBarHelper {
     ) {
       searchString = TouchBarHelper.window.gURLBar.lastSearchString.trimStart();
       if (
-        Object.values(lazy.UrlbarTokenizer.RESTRICT).includes(searchString[0])
+        Object.values(lazy.UrlbarShared.RESTRICT_TOKENS).includes(
+          searchString[0]
+        )
       ) {
         searchString = searchString.substring(1).trimStart();
       }

@@ -36,14 +36,7 @@ already_AddRefed<CompositionTransaction> CompositionTransaction::Create(
   //     in it.
   EditorDOMPointInText pointToInsert;
   if (Text* textNode = composition->GetContainerTextNode()) {
-    pointToInsert.Set(textNode, composition->XPOffsetInTextNode());
-    NS_WARNING_ASSERTION(
-        pointToInsert.GetContainerAs<Text>() ==
-            composition->GetContainerTextNode(),
-        "The editor tries to insert composition string into different node");
-    NS_WARNING_ASSERTION(
-        pointToInsert.Offset() == composition->XPOffsetInTextNode(),
-        "The editor tries to insert composition string into different offset");
+    pointToInsert.Set(textNode, composition->ClampedStartOffsetInTextNode());
   } else {
     pointToInsert = aPointToInsert;
   }
@@ -60,7 +53,10 @@ CompositionTransaction::CompositionTransaction(
     EditorBase& aEditorBase, const nsAString& aStringToInsert,
     const EditorDOMPointInText& aPointToInsert)
     : mOffset(aPointToInsert.Offset()),
-      mReplaceLength(aEditorBase.GetComposition()->XPLengthInTextNode()),
+      mReplaceOffset(
+          aEditorBase.GetComposition()->StartOffsetMaybeInFollowingTextNode()),
+      mReplaceLength(
+          aEditorBase.GetComposition()->LengthMaybeInFollowingTextNode()),
       mRanges(aEditorBase.GetComposition()->GetRanges()),
       mStringToInsert(aStringToInsert),
       mEditorBase(&aEditorBase),
@@ -112,10 +108,11 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
   if (NS_WARN_IF(!mEditorBase)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
-  const RefPtr<Text> textNode = GetTextNode();
+  RefPtr<Text> textNode = GetTextNode();
   if (NS_WARN_IF(!textNode)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
+  uint32_t offsetInTextNode = mOffset;
 
   // Fail before making any changes if there's no selection controller
   if (NS_WARN_IF(!mEditorBase->GetSelectionController())) {
@@ -142,17 +139,55 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
     //       that composition string has never touched by JS.  However, it
     //       would occur if the web app is a corroboration software which
     //       multiple users can modify anyware in an editor.
-    // TODO: And if composition starts from a following text node, the offset
-    //       here is outdated and it will cause inserting composition string
-    //       **before** the proper point from point of view of the users.
-    const uint32_t replaceableLengthInFirstText =
-        std::min(mReplaceLength, static_cast<uint32_t>(std::max<int64_t>(
-                                     textNode->TextDataLength() - mOffset, 0)));
+    const auto [replaceStartInFirstText, replaceableLengthInFirstText] =
+        [&]() MOZ_NEVER_INLINE_DEBUG -> std::pair<uint32_t, uint32_t> {
+      // TextEditor always works with a single `Text` which cannot be split by
+      // the app. Therefore, we can just clamp the range into the `Text`.
+      if (mReplaceOffset <= textNode->TextDataLength() ||
+          mEditorBase->IsTextEditor()) [[likely]] {
+        const uint32_t lengthInFirstText =
+            std::min(mReplaceLength,
+                     static_cast<uint32_t>(std::max<int64_t>(
+                         textNode->TextDataLength() - mReplaceOffset, 0)));
+        return {std::min(mReplaceOffset, textNode->TextDataLength()),
+                lengthInFirstText};
+      }
+      // If the editor is an HTMLEditor, we're CompositionInTextNodeTransaction
+      // and its mTextNode may not have the composition string already. If the
+      // range is still in the following `Text`, we should adjust the range in
+      // the following `Text`.
+      Text* compositionStartTextNode = textNode;
+      uint32_t startOffsetOfCompositionStartTextNode = 0;
+      uint32_t endOffsetOfCompositionStartTextNode =
+          compositionStartTextNode->TextDataLength();
+      for (RefPtr<Text> text =
+               Text::FromNodeOrNull(compositionStartTextNode->GetNextSibling());
+           text; text = Text::FromNodeOrNull(
+                     compositionStartTextNode->GetNextSibling())) {
+        compositionStartTextNode = text;
+        startOffsetOfCompositionStartTextNode =
+            endOffsetOfCompositionStartTextNode;
+        endOffsetOfCompositionStartTextNode +=
+            compositionStartTextNode->TextDataLength();
+        if (mReplaceOffset <= endOffsetOfCompositionStartTextNode) [[likely]] {
+          break;
+        }
+      }
+      textNode = compositionStartTextNode;
+      offsetInTextNode = mReplaceOffset - startOffsetOfCompositionStartTextNode;
+      const uint32_t replaceEndOffset = mReplaceOffset + mReplaceLength;
+      const uint32_t replaceEndOffsetInCompositionStartTextNode =
+          std::min(replaceEndOffset - startOffsetOfCompositionStartTextNode,
+                   endOffsetOfCompositionStartTextNode);
+      return {offsetInTextNode,
+              replaceEndOffsetInCompositionStartTextNode - offsetInTextNode};
+    }();
     IgnoredErrorResult error;
     // FIXME: If mStringToInsert is empty string and mOffset is 0 in HTMLEditor,
     // we should delete the `Text` instead. See bug 2019186.
-    editorBase->DoReplaceText(*textNode, mOffset, replaceableLengthInFirstText,
-                              mStringToInsert, error);
+    editorBase->DoReplaceText(*textNode, replaceStartInFirstText,
+                              replaceableLengthInFirstText, mStringToInsert,
+                              error);
     if (error.Failed()) [[unlikely]] {
       NS_WARNING("EditorBase::DoReplaceText() failed");
       return error.StealNSResult();
@@ -163,11 +198,11 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
     // selection should be restored at start of composition string.
     // XXX Perhaps, this is a bug of our selection management at undoing.
     editorBase->RangeUpdaterRef().SelAdjDeleteText(
-        *textNode, mOffset, replaceableLengthInFirstText);
+        *textNode, replaceStartInFirstText, replaceableLengthInFirstText);
     // But some ranges which after the composition string should be restored
     // as-is.
-    editorBase->RangeUpdaterRef().SelAdjInsertText(*textNode, mOffset,
-                                                   mStringToInsert.Length());
+    editorBase->RangeUpdaterRef().SelAdjInsertText(
+        *textNode, replaceStartInFirstText, mStringToInsert.Length());
 
     if (replaceableLengthInFirstText < mReplaceLength) {
       // XXX Perhaps, scanning following sibling text nodes with composition
@@ -194,14 +229,19 @@ NS_IMETHODIMP CompositionTransaction::DoTransaction() {
     }
   }
 
-  nsresult rv = SetSelectionForRanges();
+  nsresult rv = SetSelectionForRanges(*textNode, offsetInTextNode);
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rv),
       "CompositionTransaction::SetSelectionForRanges() failed");
 
   if (TextComposition* composition = editorBase->GetComposition()) {
     composition->OnUpdateCompositionInEditor(mStringToInsert, *textNode,
-                                             mOffset);
+                                             offsetInTextNode);
+  }
+
+  if (GetTextNode() != textNode) [[unlikely]] {
+    MOZ_ASSERT(editorBase->IsHTMLEditor());
+    UpdateTextNodeAndOffset(*textNode, offsetInTextNode);
   }
 
   return rv;
@@ -290,17 +330,14 @@ void CompositionTransaction::MarkFixed() { mFixed = true; }
 
 /* ============ private methods ================== */
 
-nsresult CompositionTransaction::SetSelectionForRanges() {
+nsresult CompositionTransaction::SetSelectionForRanges(Text& aText,
+                                                       uint32_t aOffset) {
   if (NS_WARN_IF(!mEditorBase)) {
-    return NS_ERROR_NOT_AVAILABLE;
-  }
-  const RefPtr<Text> textNode = GetTextNode();
-  if (NS_WARN_IF(!textNode)) {
     return NS_ERROR_NOT_AVAILABLE;
   }
   const OwningNonNull<EditorBase> editorBase = *mEditorBase;
   RefPtr<TextRangeArray> ranges = mRanges;
-  nsresult rv = SetIMESelection(editorBase, textNode, mOffset,
+  nsresult rv = SetIMESelection(editorBase, &aText, aOffset,
                                 mStringToInsert.Length(), ranges);
   NS_WARNING_ASSERTION(NS_SUCCEEDED(rv),
                        "CompositionTransaction::SetIMESelection() failed");

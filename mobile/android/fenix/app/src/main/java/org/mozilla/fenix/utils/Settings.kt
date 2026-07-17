@@ -71,6 +71,7 @@ import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_ALL
 import org.mozilla.fenix.settings.sitepermissions.AUTOPLAY_BLOCK_AUDIBLE
 import org.mozilla.fenix.tabstray.DefaultTabManagementFeatureHelper
 import org.mozilla.fenix.termsofuse.TOU_VERSION
+import org.mozilla.fenix.utils.Settings.Companion.LONGFOX_PEEK_ANIMATION_MAX_SHOWS
 import org.mozilla.fenix.wallpapers.Wallpaper
 import java.security.InvalidParameterException
 import java.util.concurrent.TimeUnit.MILLISECONDS
@@ -101,6 +102,9 @@ class Settings(
         private const val ASK_TO_ALLOW_INT = 1
         private const val ALLOWED_INT = 2
         private const val INACTIVE_TAB_MINIMUM_TO_SHOW_AUTO_CLOSE_DIALOG = 20
+
+        const val LONGFOX_PEEK_ANIMATION_MAX_SHOWS = 5
+        const val LONGFOX_PEEK_ANIMATION_LAUNCH_INTERVAL = 3
 
         const val THIRTY_SECONDS_MS = 30 * 1000L
         const val FOUR_HOURS_MS = 60 * 60 * 4 * 1000L
@@ -274,6 +278,14 @@ class Settings(
     var showPrivacyReportFeature by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_privacy_report),
         default = { homescreenSections[HomeScreenSection.PRIVACY_REPORT] == true },
+    )
+
+    /**
+     * Indicates whether or not the privacy report should be shown in the tab manager.
+     */
+    var showPrivacyReportInTabManager by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_privacy_report_tab_manager),
+        default = true,
     )
 
     private val homescreenSections: Map<HomeScreenSection, Boolean>
@@ -551,11 +563,6 @@ class Settings(
         default = false,
     )
 
-    val appIconSelection by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_app_icon_selection_enabled),
-        default = { FxNimbus.features.appIconSelection.value().enabled },
-    )
-
     var privateBrowsingLockedFeatureEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_private_browsing_locked_enabled),
         default = { FxNimbus.features.privateBrowsingLock.value().enabled },
@@ -573,7 +580,7 @@ class Settings(
 
     var shouldShowMenuBanner by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_show_menu_banner),
-        default = { FxNimbus.features.menuRedesign.value().menuBanner },
+        default = true,
     )
 
     var defaultSearchEngineName by stringPreference(
@@ -897,6 +904,19 @@ class Settings(
         default = 0L,
     )
 
+    /**
+     * Indicates the last time when the user was interacting with the [HomeFragment],
+     * This is useful to determine if the user has to start on the [HomeFragment]
+     * or it should go directly to the [BrowserFragment].
+     *
+     * This value defaults to 0L because we want to know if the user never had any interaction
+     * with the [HomeFragment]
+     */
+    var lastHomeActivity by longPreference(
+        appContext.getPreferenceKey(R.string.pref_key_last_home_activity_time),
+        default = 0L,
+    )
+
     private val openingScreenDefault: OpeningScreenOption
         get() = FxNimbus.features.homepageOpeningScreenDefault.value().defaultOption
 
@@ -975,10 +995,22 @@ class Settings(
      */
     fun shouldStartOnHome(): Boolean {
         return when {
-            openHomepageAfterFourHoursOfInactivity -> timeNowInMillis() - lastBrowseActivity >= FOUR_HOURS_MS
-            alwaysOpenTheHomepageWhenOpeningTheApp -> true
-            alwaysOpenTheLastTabWhenOpeningTheApp -> false
-            else -> false
+            openHomepageAfterFourHoursOfInactivity -> {
+                timeNowInMillis() - lastBrowseActivity >= FOUR_HOURS_MS
+            }
+            alwaysOpenTheHomepageWhenOpeningTheApp -> {
+                true
+            }
+            alwaysOpenTheLastTabWhenOpeningTheApp -> {
+                if (lastHomeActivity > lastBrowseActivity) {
+                    true
+                } else {
+                    false
+                }
+            }
+            else -> {
+                false
+            }
         }
     }
 
@@ -1151,11 +1183,6 @@ class Settings(
     var shouldUseTrackingProtection by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_tracking_protection),
         default = true,
-    )
-
-    var shouldShowTrackingProtectionDashboard by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_tracking_protection_dashboard_status),
-        default = false,
     )
 
     var shouldEnableGlobalPrivacyControl by booleanPreference(
@@ -2029,11 +2056,6 @@ class Settings(
         default = true,
     )
 
-    var isSettingsSearchEnabled by booleanPreference(
-        key = appContext.getPreferenceKey(R.string.pref_key_allow_settings_search),
-        default = { FxNimbus.features.settingsSearch.value().enabled },
-    )
-
     var isSearchOptimizationEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_search_optimization_feature),
         default = { FxNimbus.features.searchOptimizationOption.value().enabled },
@@ -2149,16 +2171,6 @@ class Settings(
     )
 
     /**
-     * Stores the user choice from the "Autofill" settings for whether
-     * credit cards should be synced across devices or not, when the user is authenticated.
-     * If set to `true`, then the credit cards will be synced across devices.
-     */
-    var shouldSyncCreditCardsAcrossDevices by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_credit_cards_sync_cards_across_devices),
-        default = false,
-    )
-
-    /**
      * Stores the user choice from the "Autofill Addresses" settings for whether
      * save and autofill addresses should be enabled or not.
      * If set to `true` when the user focuses on address fields in a webpage an Android prompt is shown,
@@ -2167,16 +2179,6 @@ class Settings(
     var shouldAutofillAddressDetails by booleanPreference(
         appContext.getPreferenceKey(R.string.pref_key_addresses_save_and_autofill_addresses),
         default = true,
-    )
-
-    /**
-     * Stores the user choice from the "Autofill" settings for whether
-     * addresses should be synced across devices or not, when the user is authenticated.
-     * If set to `true`, then the addresses will be synced across devices.
-     */
-    var shouldSyncAddressesAcrossDevices by booleanPreference(
-        appContext.getPreferenceKey(R.string.pref_key_addresses_sync_cards_across_devices),
-        default = false,
     )
 
     /**
@@ -2198,17 +2200,14 @@ class Settings(
     /**
      * Returns whether onboarding should be shown to the user.
      *
-     * @param featureEnabled Boolean to indicate whether the feature is enabled.
      * @param hasUserBeenOnboarded Boolean to indicate whether the user has been onboarded.
-     * @param isLauncherIntent Boolean to indicate whether the app was launched on tapping on the
-     * app icon.
+     * @param featureEnabled Boolean to indicate whether the feature is enabled.
      */
     fun shouldShowOnboarding(
-        featureEnabled: Boolean = onboardingFeatureEnabled,
         hasUserBeenOnboarded: Boolean,
-        isLauncherIntent: Boolean,
+        featureEnabled: Boolean = onboardingFeatureEnabled,
     ): Boolean {
-        val shouldShowByDefaultConditions = featureEnabled && !hasUserBeenOnboarded && isLauncherIntent
+        val shouldShowByDefaultConditions = featureEnabled && !hasUserBeenOnboarded
 
         val shouldShow = shouldShowByDefaultConditions || enablePersistentOnboarding
 
@@ -2483,7 +2482,7 @@ class Settings(
      */
     var enableUnifiedTrustPanel by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_unified_trust_panel),
-        default = { FxNimbus.features.unifiedTrustPanel.value().enabled },
+        default = true,
     )
 
     /**
@@ -2734,7 +2733,7 @@ class Settings(
      */
     var importBookmarksFeatureFlagEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_import_bookmarks),
-        default = Config.channel.isNightlyOrDebug,
+        default = { FxNimbus.features.importBookmarks.value().enabled },
     )
 
     /**
@@ -3170,6 +3169,14 @@ class Settings(
     )
 
     /**
+     * Whether onboarding is enabled for the Tab Groups feature.
+     */
+    var tabGroupsOnboardingEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_tab_groups_onboarding),
+        default = { DefaultTabManagementFeatureHelper.tabGroupsOnboardingEnabled },
+    )
+
+    /**
      * Whether the Native Share Sheet feature is enabled.
      */
     var nativeShareSheetEnabled by booleanPreference(
@@ -3183,12 +3190,58 @@ class Settings(
     )
 
     /**
+     * User preference (local only) controlling whether the Google Lens integration is active
+     * when [googleLensIntegrationEnabled] is on. When false, the standard QR scanner is used
+     * and the "Open with Google Lens" image context menu entry is hidden.
+     */
+    var googleLensIntegrationUserEnabled by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_google_lens_integration_user_enabled),
+        default = true,
+    )
+
+    /**
+     * Whether the voice search entry point is shown in the display-mode browser toolbar.
+     */
+    var showVoiceSearchInDisplayToolbar by booleanPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_show_voice_search_in_display_toolbar),
+        default = { FxNimbus.features.voiceSearchInDisplayMode.value().enabled },
+    )
+
+    /**
      * Whether Longfox is enabled.
      */
     var longfoxEnabled by booleanPreference(
         key = appContext.getPreferenceKey(R.string.pref_key_enable_longfox),
-        default = false,
+        default = { FxNimbus.features.longfox.value().enabled },
     )
+
+    /**
+     * Number of times the app has been foregrounded (cold start or returned from background).
+     * Used to gate the longfox peek animation.
+     */
+    var appLaunchCount by intPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_app_launch_count),
+        default = 0,
+    )
+
+    /**
+     * Number of times the longfox peek animation has been shown on the homepage.
+     * Capped at [LONGFOX_PEEK_ANIMATION_MAX_SHOWS]; once reached the animation is no longer shown.
+     */
+    var longfoxPeekAnimationShownCount by intPreference(
+        key = appContext.getPreferenceKey(R.string.pref_key_longfox_peek_animation_shown_count),
+        default = 0,
+    )
+
+    /**
+     * Returns true when the longfox peek animation should be armed for the current
+     * app foreground: feature enabled, not yet reached the show cap, and on every Nth launch.
+     */
+    fun shouldShowLongfoxPeekAnimationThisTime(): Boolean =
+        longfoxEnabled &&
+            longfoxPeekAnimationShownCount < LONGFOX_PEEK_ANIMATION_MAX_SHOWS &&
+            appLaunchCount > 0 &&
+            appLaunchCount % LONGFOX_PEEK_ANIMATION_LAUNCH_INTERVAL == 0
 
     /**
      * Indicates whether the app should automatically clean up downloaded files.
@@ -3202,5 +3255,13 @@ class Settings(
     var downloadsDefaultLocation by stringPreference(
         appContext.getPreferenceKey(R.string.pref_key_downloads_default_location),
         default = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path,
+    )
+
+    /**
+     * Whether WebCompat Reporter enhancements is enabled.Í
+     */
+    var webCompatReporterEnhancementsEnabled by booleanPreference(
+        appContext.getPreferenceKey(R.string.pref_key_webcompat_reporter_enhancements),
+        default = { FxNimbus.features.webcompatReporterEnhancements.value().enabled },
     )
 }

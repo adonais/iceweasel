@@ -16,9 +16,11 @@ import androidx.navigation.fragment.findNavController
 import mozilla.components.lib.state.helpers.StoreProvider.Companion.fragmentStore
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.hideToolbar
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.labs.middleware.LabsMiddleware
+import org.mozilla.fenix.settings.labs.middleware.LabsTelemetryMiddleware
+import org.mozilla.fenix.settings.labs.store.LabsAction
 import org.mozilla.fenix.settings.labs.store.LabsState
 import org.mozilla.fenix.settings.labs.store.LabsStore
 import org.mozilla.fenix.settings.labs.ui.FirefoxLabsScreen
@@ -41,9 +43,11 @@ class FirefoxLabsFragment : Fragment(), SystemInsetsPaddedFragment {
             initialState = it,
             middleware = listOf(
                 LabsMiddleware(
-                    settings = requireContext().settings(),
+                    settings = requireComponents.settings,
                     onRestart = ::restartFenix,
+                    onOpenFeedback = ::openFeedbackLink,
                 ),
+                LabsTelemetryMiddleware(),
             ),
         )
     }
@@ -59,7 +63,9 @@ class FirefoxLabsFragment : Fragment(), SystemInsetsPaddedFragment {
                 onNavigationIconClick = {
                     findNavController().popBackStack()
                 },
-                onShareFeedbackClick = ::openFeedbackLink,
+                onShareFeedbackClick = { item ->
+                    labsStore.dispatch(LabsAction.ShareFeedbackClicked(item))
+                },
             )
         }
     }

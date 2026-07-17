@@ -27,7 +27,7 @@ index 25efcb8f92..5ce56a16f4 100644
    stats.header_and_padding_bytes_sent =
        channel_stats.header_and_padding_bytes_sent;
 diff --git a/audio/channel_send.cc b/audio/channel_send.cc
-index 528bd26851..a84110e934 100644
+index 4b5264ca8a..a58ea31979 100644
 --- a/audio/channel_send.cc
 +++ b/audio/channel_send.cc
 @@ -82,6 +82,32 @@ constexpr TimeDelta kMinRetransmissionWindow = TimeDelta::Millis(30);
@@ -72,7 +72,7 @@ index 528bd26851..a84110e934 100644
    PacketRouter* packet_router_ RTC_GUARDED_BY(worker_thread_) = nullptr;
    const std::unique_ptr<RtpPacketSenderProxy> rtp_packet_pacer_proxy_;
    const std::unique_ptr<RateLimiter> retransmission_rate_limiter_;
-@@ -511,6 +539,7 @@ ChannelSend::ChannelSend(
+@@ -510,6 +538,7 @@ ChannelSend::ChannelSend(
      : env_(env),
        worker_thread_(TaskQueueBase::Current()),
        ssrc_(ssrc),
@@ -80,7 +80,7 @@ index 528bd26851..a84110e934 100644
        rtp_packet_pacer_proxy_(new RtpPacketSenderProxy()),
        retransmission_rate_limiter_(
            new RateLimiter(&env_.clock(), kMaxRetransmissionWindow.ms())),
-@@ -534,6 +563,8 @@ ChannelSend::ChannelSend(
+@@ -533,6 +562,8 @@ ChannelSend::ChannelSend(
  
    configuration.paced_sender = rtp_packet_pacer_proxy_.get();
    configuration.rtt_stats = rtcp_rtt_stats;
@@ -89,7 +89,7 @@ index 528bd26851..a84110e934 100644
    if (env_.field_trials().IsDisabled("WebRTC-DisableRtxRateLimiter")) {
      configuration.retransmission_rate_limiter =
          retransmission_rate_limiter_.get();
-@@ -818,6 +849,7 @@ ChannelSendStatistics ChannelSend::GetRTCPStatistics() const {
+@@ -817,6 +848,7 @@ ChannelSendStatistics ChannelSend::GetRTCPStatistics() const {
    RTC_DCHECK_RUN_ON(worker_thread_);
    ChannelSendStatistics stats = {
        .round_trip_time = rtp_rtcp_->LastRtt().value_or(TimeDelta::Zero())};

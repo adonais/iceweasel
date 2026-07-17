@@ -125,7 +125,7 @@ static void EnsureAppLockerCacheIsWarm(const wchar_t* aWidePath) {
       aWidePath, FILE_READ_DATA | FILE_EXECUTE | SYNCHRONIZE,
       FILE_SHARE_READ | FILE_SHARE_DELETE, nullptr, OPEN_EXISTING, 0, nullptr));
   if (fileHandle.get() == INVALID_HANDLE_VALUE) {
-    GMP_LOG_WARNING("EnsureAppLockerCacheIsWarm: CreateFileW failed (%lu)",
+    GMP_LOG_WARNING("EnsureAppLockerCacheIsWarm: CreateFileW failed ({})",
                     GetLastError());
     return;
   }
@@ -155,9 +155,8 @@ static void EnsureAppLockerCacheIsWarm(const wchar_t* aWidePath) {
                   FILE_SHARE_READ | FILE_SHARE_WRITE | FILE_SHARE_DELETE,
                   nullptr, OPEN_EXISTING, 0, nullptr));
   if (srpDevice.get() == INVALID_HANDLE_VALUE) {
-    GMP_LOG_WARNING(
-        "EnsureAppLockerCacheIsWarm: opening SrpDevice failed (%lu)",
-        GetLastError());
+    GMP_LOG_WARNING("EnsureAppLockerCacheIsWarm: opening SrpDevice failed ({})",
+                    GetLastError());
     return;
   }
 
@@ -166,7 +165,7 @@ static void EnsureAppLockerCacheIsWarm(const wchar_t* aWidePath) {
   if (!DeviceIoControl(srpDevice.get(), IOCTL_SRP_VERIFY_DLL, srp, ioctlSize,
                        &outBuf, sizeof(outBuf), &bytesReturned, nullptr)) {
     GMP_LOG_DEBUG(
-        "EnsureAppLockerCacheIsWarm: DeviceIoControl failed (%lu), "
+        "EnsureAppLockerCacheIsWarm: DeviceIoControl failed ({}), "
         "AppLocker may not be enabled",
         GetLastError());
   }

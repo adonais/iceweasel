@@ -70,6 +70,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
     ),
     '[0, 1, 2, 3, 4, 5].copyWithin(1, 3, 5) -> [0, 3, 4, 3, 4, 5]'
   );
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

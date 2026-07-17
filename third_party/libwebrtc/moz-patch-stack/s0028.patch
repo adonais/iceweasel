@@ -9,10 +9,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/ef548d7758c7de6e7
  1 file changed, 2 insertions(+)
 
 diff --git a/media/engine/internal_decoder_factory.cc b/media/engine/internal_decoder_factory.cc
-index ed05e71572..855d7be82d 100644
+index 111ca43fbb..0d8a0a4c7b 100644
 --- a/media/engine/internal_decoder_factory.cc
 +++ b/media/engine/internal_decoder_factory.cc
-@@ -55,10 +55,12 @@ std::vector<SdpVideoFormat> InternalDecoderFactory::GetSupportedFormats()
+@@ -57,10 +57,12 @@ std::vector<SdpVideoFormat> InternalDecoderFactory::GetSupportedFormats()
    for (const SdpVideoFormat& h264_format : SupportedH264DecoderCodecs())
      formats.push_back(h264_format);
  

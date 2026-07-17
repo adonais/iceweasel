@@ -148,15 +148,13 @@ class _MachCommand:
         else:
             if self.name not in Registrar.command_handlers:
                 raise MachError(
-                    "Command referenced by sub-command does not exist: %s" % self.name
+                    f"Command referenced by sub-command does not exist: {self.name}"
                 )
-
             self.func = func
             parent = Registrar.command_handlers[self.name]
 
             if self.subcommand in parent.subcommand_handlers:
-                raise MachError("sub-command already defined: %s" % self.subcommand)
-
+                raise MachError(f"sub-command already defined: {self.subcommand}")
             parent.subcommand_handlers[self.subcommand] = self
 
 

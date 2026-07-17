@@ -180,7 +180,6 @@
                    overflows="false"/>
       <toolbaritem id="urlbar-container"
                    class="urlbar-container"
-                   context="urlbarView-context-menu"
                    removable="false"
                    overflows="false">
         <menupopup id="urlbarView-context-menu">
@@ -381,7 +380,8 @@
                 <image class="urlbar-icon"/>
               </hbox>
             </hbox>
-            <hbox id="userContext-icons" hidden="true">
+            <hbox id="userContext-icons" hidden="true"
+                  role="button">
               <label id="userContext-label"/>
               <image id="userContext-indicator"/>
             </hbox>

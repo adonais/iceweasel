@@ -20,8 +20,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/ipprotection/IPProtectionPanel.sys.mjs",
   IPProtectionService:
     "moz-src:///toolkit/components/ipprotection/IPProtectionService.sys.mjs",
-  IPPFxaAuthProvider:
-    "moz-src:///toolkit/components/ipprotection/fxa/IPPFxaAuthProvider.sys.mjs",
+  IPPDummyAuthProvider:
+    "resource://testing-common/ipprotection/IPPDummyAuthProvider.sys.mjs",
   IPPNimbusHelper:
     "moz-src:///toolkit/components/ipprotection/IPPNimbusHelper.sys.mjs",
 });
@@ -42,7 +42,14 @@ const PANELSTATES = {
 };
 
 async function setAuthenticated(content, isReady, sandbox) {
-  sandbox.stub(lazy.IPPFxaAuthProvider, "isReady").get(() => isReady);
+  if (isReady) {
+    lazy.IPPDummyAuthProvider.simulateSignIn(true);
+    lazy.IPPDummyAuthProvider.setEntitlement(createTestEntitlement(), {
+      silent: true,
+    });
+  } else {
+    lazy.IPPDummyAuthProvider.simulateSignIn(false);
+  }
   sandbox.stub(lazy.IPPNimbusHelper, "isEligible").get(() => true);
   lazy.IPProtectionService.updateState();
   content.requestUpdate();
@@ -298,7 +305,6 @@ add_task(async function test_enrolling_transitions_to_ready() {
       pass: makePass(),
     },
   });
-  await IPPFxaAuthProvider.checkForUpgrade();
 
   let content = await openPanel({
     unauthenticated: false,

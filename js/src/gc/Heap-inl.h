@@ -12,21 +12,19 @@
 #include "util/Poison.h"
 #include "vm/Runtime.h"
 
-inline void js::gc::Arena::init(GCRuntime* gc, JS::Zone* zone, AllocKind kind) {
-  MOZ_ASSERT(zone);
+inline void js::gc::Arena::init(GCRuntime* gc, AllocKind kind) {
   MOZ_ASSERT(IsValidAllocKind(kind));
 
   MOZ_MAKE_MEM_UNDEFINED(this, ArenaSize);
 
   allocKind = kind;
-  zone_ = zone;
   next = nullptr;
   isNewlyCreated_ = 1;
   onDelayedMarkingList_ = 0;
   hasDelayedBlackMarking_ = 0;
   hasDelayedGrayMarking_ = 0;
   nextDelayedMarkingArena_ = 0;
-  if (zone_->isAtomsZone()) {
+  if (zone()->isAtomsZone()) {
     atomBitmapStart() = gc->atomMarking.allocateIndex(gc);
   } else {
     bufferedCells() = &ArenaCellSet::Empty;
@@ -39,9 +37,11 @@ inline void js::gc::Arena::init(GCRuntime* gc, JS::Zone* zone, AllocKind kind) {
 #endif
 }
 
+inline JS::Zone* js::gc::Arena::zone() const { return chunk()->info.zone; }
+
 inline void js::gc::Arena::freeAtomMarkingBitmapIndex(GCRuntime* gc,
                                                       const AutoLockGC& lock) {
-  MOZ_ASSERT(zone_->isAtomsZone());
+  MOZ_ASSERT(zone()->isAtomsZone());
   gc->atomMarking.freeIndex(atomBitmapStart(), lock);
 #ifdef DEBUG
   atomBitmapStart() = 0;  // Also zeroed by write to bufferedCells_ in release.
@@ -52,11 +52,7 @@ inline void js::gc::Arena::release() {
   MOZ_ASSERT(allocated());
 
   // Clients should call freeAtomMarkingBitmapIndex() if necessary.
-  MOZ_ASSERT_IF(zone_->isAtomsZone(), atomBitmapStart_ == 0);
-
-  // Poison zone pointer to highlight UAF on released arenas in crash data.
-  AlwaysPoison(&zone_, JS_FREED_ARENA_PATTERN, sizeof(zone_),
-               MemCheckKind::MakeNoAccess);
+  MOZ_ASSERT_IF(zone()->isAtomsZone(), atomBitmapStart_ == 0);
 
   firstFreeSpan.initAsEmpty();
   allocKind = AllocKind::LIMIT;
@@ -70,12 +66,12 @@ inline void js::gc::Arena::release() {
 }
 
 inline js::gc::ArenaCellSet*& js::gc::Arena::bufferedCells() {
-  MOZ_ASSERT(zone_ && !zone_->isAtomsZone());
+  MOZ_ASSERT(!zone()->isAtomsZone());
   return bufferedCells_;
 }
 
 inline size_t& js::gc::Arena::atomBitmapStart() {
-  MOZ_ASSERT(zone_ && zone_->isAtomsZone());
+  MOZ_ASSERT(zone()->isAtomsZone());
   return atomBitmapStart_;
 }
 

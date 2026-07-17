@@ -16,8 +16,12 @@
     NS_WARNING(s.get());                                                       \
   } while (0)
 
-#define IDB_REPORT_INTERNAL_ERR() \
-  mozilla::dom::indexedDB::ReportInternalError(__FILE__, __LINE__, "UnknownErr")
+#define IDB_REPORT_INTERNAL_ERR()                                          \
+  do {                                                                     \
+    nsPrintfCString idbInternalErrMsg("UnknownErr in %s", __func__);       \
+    mozilla::dom::indexedDB::ReportInternalError(__FILE__, __LINE__,       \
+                                                 idbInternalErrMsg.get()); \
+  } while (0)
 
 #define IDB_REPORT_INTERNAL_ERR_LAMBDA \
   [](const auto&) { IDB_REPORT_INTERNAL_ERR(); }

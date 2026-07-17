@@ -18,3 +18,12 @@ interface nsIWebAuthnSignPromise : nsISupports
     [noscript] void resolve(in nsIWebAuthnSignResult aResult);
     [noscript] void reject(in nsresult error);
 };
+
+interface nsIWebAuthnAutoFillEntry;
+
+[scriptable, uuid(8a4d4f7b-7c39-4f7e-9ad5-2f3c1d4a9b0c)]
+interface nsIWebAuthnAutoFillEntriesCallback : nsISupports
+{
+    void resolve(in Array<nsIWebAuthnAutoFillEntry> entries);
+    void reject(in nsresult error);
+};

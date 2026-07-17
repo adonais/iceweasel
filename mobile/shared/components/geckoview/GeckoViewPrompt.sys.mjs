@@ -345,7 +345,10 @@ export class PromptFactory {
       },
       ({ response }) => {
         if (response && dwi) {
-          dwi.top.location.href = redirectURISpec;
+          const actor = dwi.windowGlobalChild.getActor("GeckoViewPrompt");
+          actor.sendAsyncMessage("GeckoView:UnblockRedirect", {
+            redirectURISpec,
+          });
         }
       }
     );

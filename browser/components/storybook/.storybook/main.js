@@ -34,6 +34,8 @@ module.exports = {
     `${projectRoot}/browser/components/search/**/*.stories.mjs`,
     // Reader View components stories
     `${projectRoot}/toolkit/components/reader/**/*.stories.mjs`,
+    // Password Manager doorhanger components stories
+    `${projectRoot}/browser/components/passwordmgr/content/**/*.stories.mjs`,
     // megalist components stories
     `${projectRoot}/toolkit/components/satchel/megalist/content/**/*.stories.mjs`,
     // autocomplete-row-item stories

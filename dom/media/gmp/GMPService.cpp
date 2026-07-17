@@ -173,7 +173,7 @@ GeckoMediaPluginService::GeckoMediaPluginService()
     if (NS_SUCCEEDED(appInfo->GetVersion(version)) &&
         NS_SUCCEEDED(appInfo->GetAppBuildID(buildID))) {
       GMP_LOG_DEBUG(
-          "GeckoMediaPluginService created; Gecko version=%s buildID=%s",
+          "GeckoMediaPluginService created; Gecko version={} buildID={}",
           version.get(), buildID.get());
     }
   }
@@ -185,7 +185,7 @@ NS_IMETHODIMP
 GeckoMediaPluginService::RunPluginCrashCallbacks(
     uint32_t aPluginId, const nsACString& aPluginName) {
   MOZ_ASSERT(NS_IsMainThread());
-  GMP_LOG_DEBUG("%s::%s(%i)", __CLASS__, __FUNCTION__, aPluginId);
+  GMP_LOG_DEBUG("{}::{}({})", __CLASS__, __FUNCTION__, aPluginId);
 
   mozilla::UniquePtr<nsTArray<RefPtr<GMPCrashHelper>>> helpers;
   {
@@ -193,7 +193,7 @@ GeckoMediaPluginService::RunPluginCrashCallbacks(
     mPluginCrashHelpers.Remove(aPluginId, &helpers);
   }
   if (!helpers) {
-    GMP_LOG_DEBUG("%s::%s(%i) No crash helpers, not handling crash.", __CLASS__,
+    GMP_LOG_DEBUG("{}::{}({}) No crash helpers, not handling crash.", __CLASS__,
                   __FUNCTION__, aPluginId);
     return NS_OK;
   }
@@ -362,7 +362,7 @@ GeckoMediaPluginService::GetContentParentForTest() {
 #endif
 
 void GeckoMediaPluginService::ShutdownGMPThread() {
-  GMP_LOG_DEBUG("%s::%s", __CLASS__, __FUNCTION__);
+  GMP_LOG_DEBUG("{}::{}", __CLASS__, __FUNCTION__);
   nsCOMPtr<nsIThread> gmpThread;
   {
     MutexAutoLock lock(mMutex);

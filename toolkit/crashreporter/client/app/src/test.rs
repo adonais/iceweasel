@@ -7,7 +7,7 @@
 //! whole.
 
 use super::*;
-use crate::config::{test::MINIDUMP_PRUNE_SAVE_COUNT, Config};
+use crate::config::Config;
 use crate::settings::Settings;
 use crate::std::{
     ffi::OsString,
@@ -1720,26 +1720,6 @@ fn report_response_failed() {
 #[test]
 fn response_indicates_discarded() {
     let mut test = GuiTest::new();
-    // A response indicating discarded triggers a prune of the directory containing the minidump.
-    // Since there is one more minidump (the main one, minidump.dmp), pruning should keep all but
-    // the first 3, which will be the oldest.
-    const SHOULD_BE_PRUNED: usize = 3;
-
-    for i in 0..MINIDUMP_PRUNE_SAVE_COUNT + SHOULD_BE_PRUNED - 1 {
-        test.files.add_dir("data_dir/pending").add_file_result(
-            format!("data_dir/pending/minidump{i}.dmp"),
-            Ok("contents".into()),
-            ::std::time::SystemTime::UNIX_EPOCH + ::std::time::Duration::from_secs(1234 + i as u64),
-        );
-        if i % 2 == 0 {
-            test.files
-                .add_file(format!("data_dir/pending/minidump{i}.extra"), "{}");
-        }
-        if i % 5 == 0 {
-            test.files
-                .add_file(format!("data_dir/pending/minidump{i}.memory.json.gz"), "{}");
-        }
-    }
     test.mock.set(
         Command::mock("curl"),
         Box::new(|_| {
@@ -1754,15 +1734,6 @@ fn response_indicates_discarded() {
 
     let mut assert_files = test.assert_files();
     assert_files.saved_settings(Settings::default()).pending();
-    for i in SHOULD_BE_PRUNED..MINIDUMP_PRUNE_SAVE_COUNT + SHOULD_BE_PRUNED - 1 {
-        assert_files.check_exists(format!("data_dir/pending/minidump{i}.dmp"));
-        if i % 2 == 0 {
-            assert_files.check_exists(format!("data_dir/pending/minidump{i}.extra"));
-        }
-        if i % 5 == 0 {
-            assert_files.check_exists(format!("data_dir/pending/minidump{i}.memory.json.gz"));
-        }
-    }
 }
 
 #[test]
@@ -1917,14 +1888,21 @@ impl TestCrashReportServer {
                 .expect("failed to create tokio runtime");
             let _guard = rt.enter();
 
-            let (addr, server) =
-                warp::serve(submit).bind_with_graceful_shutdown(([127, 0, 0, 1], 0), async move {
-                    rx.await.ok();
-                });
+            rt.block_on(async move {
+                let listener = tokio::net::TcpListener::bind("127.0.0.1:0")
+                    .await
+                    .expect("failed to bind");
+                let addr = listener.local_addr().expect("failed to get local addr");
+                addr_channel_tx.send(addr).unwrap();
 
-            addr_channel_tx.send(addr).unwrap();
-
-            rt.block_on(server)
+                warp::serve(submit)
+                    .incoming(listener)
+                    .graceful(async move {
+                        rx.await.ok();
+                    })
+                    .run()
+                    .await;
+            })
         });
 
         let addr = addr_channel_rx.recv().unwrap();

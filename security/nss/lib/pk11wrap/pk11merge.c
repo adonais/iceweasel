@@ -561,7 +561,7 @@ pk11_mergeSecretKey(PK11SlotInfo *targetSlot, PK11SlotInfo *sourceSlot,
         goto done;
     }
     input.len = blockSize;
-    if (input.len == 0) {
+    if (input.len == 0 || input.len > sizeof(testString)) {
         input.len = sizeof(testString);
     }
     while (targetKeyID != CK_INVALID_HANDLE) {

@@ -145,7 +145,7 @@ class Thread : PlatformThread::Delegate {
 
   // We piggy-back on the startup_data_ member to know if we successfully
   // started the thread.  This way we know that we need to call Join.
-  bool thread_was_started() const { return startup_data_ != NULL; }
+  bool thread_was_started() const { return startup_data_ != nullptr; }
 
   // Used to pass data to ThreadMain.
   struct StartupData;

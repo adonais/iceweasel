@@ -334,7 +334,8 @@ DefaultAgent::SendPing(const nsAString& aDefaultBrowser,
                        const nsAString& aDefaultPdfHandler,
                        const nsAString& aNotificationShown,
                        const nsAString& aNotificationAction,
-                       uint32_t daysSinceLastAppLaunch) {
+                       uint32_t daysSinceLastAppLaunch,
+                       const nsAString& aIsTaskbarPinned) {
   DefaultBrowserInfo browserInfo = {
       GetBrowserFromString(std::string(NS_ConvertUTF16toUTF8(aDefaultBrowser))),
       GetBrowserFromString(
@@ -351,8 +352,9 @@ DefaultAgent::SendPing(const nsAString& aDefaultBrowser,
   NotificationActivities activitiesPerformed = {NotificationType::Initial,
                                                 shown, action};
 
+  std::string isTaskbarPinned{NS_ConvertUTF16toUTF8(aIsTaskbarPinned).get()};
   HRESULT hr = SendDefaultAgentPing(browserInfo, pdfInfo, activitiesPerformed,
-                                    daysSinceLastAppLaunch);
+                                    daysSinceLastAppLaunch, isTaskbarPinned);
   return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
 }
 

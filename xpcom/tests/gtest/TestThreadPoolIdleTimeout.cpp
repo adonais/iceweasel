@@ -55,9 +55,20 @@ class ScopedTimingChecker {
           double maxDeviation = 0.0;
           for (size_t i = 0; i < repeats; i++) {
             TimeStamp before = TimeStamp::Now();
+            TimeStamp deadline = before + TimeDuration::FromMilliseconds(ms);
             {
               MutexAutoLock lock(mutex);
-              condVar.Wait(TimeDuration::FromMilliseconds(ms));
+              // This condvar is never notified; we wait on it (rather than
+              // using e.g. PR_Sleep) precisely because nsThreadPool's idle
+              // timeout waits on a CondVar too, so measuring this primitive
+              // reflects the timing characteristics of the code under test.
+              // Like nsThreadPool::Run, we re-check the elapsed wall-clock time
+              // against the deadline and keep waiting until it has truly
+              // passed, so a spurious wakeup doesn't cut the measurement short.
+              for (TimeStamp now = before; now < deadline;
+                   now = TimeStamp::Now()) {
+                condVar.Wait(deadline - now);
+              }
             }
             double elapsed = (TimeStamp::Now() - before).ToMilliseconds();
             maxDeviation = std::max(maxDeviation, std::abs(elapsed - ms));
@@ -143,7 +154,8 @@ TEST(ThreadPoolIdleTimeout, Test)
   TimeStamp execStart = TimeStamp::Now();
   Atomic<uint32_t> numberOfThreads(0);
   Atomic<uint32_t> numberOfThreadsCreated(0);
-  Atomic<uint32_t> numberOfActiviationRunnables(0);
+  Atomic<uint32_t> numberOfActivationRunnables(0);
+  bool peakReached = false;
 
   nsCOMPtr<nsIThreadPool> pool = new nsThreadPool();
 
@@ -177,10 +189,12 @@ TEST(ThreadPoolIdleTimeout, Test)
   auto activateThreads = [&](uint32_t aNumThreads) MOZ_REQUIRES(waitMutex) {
     // Ramp up to have all 4 threads running.
     // The pool must be completely idle before calling this!
-    MOZ_ASSERT(!numberOfActiviationRunnables);
+    MOZ_ASSERT(!numberOfActivationRunnables);
     printf("%u Activate %u threads.\n",
            (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds(),
            (uint32_t)aNumThreads);
+
+    peakReached = false;
 
     // We dispatch a runnable per thread that will wait for us unless we are
     // the last to run.
@@ -188,15 +202,18 @@ TEST(ThreadPoolIdleTimeout, Test)
       nsCOMPtr<nsIRunnable> runnable =
           NS_NewRunnableFunction("TestRunnable", [&]() {
             MutexAutoLock lock(waitMutex);
-            numberOfActiviationRunnables++;
-            if (numberOfActiviationRunnables >= aNumThreads) {
+            numberOfActivationRunnables++;
+            if (numberOfActivationRunnables >= aNumThreads) {
+              peakReached = true;
               waitForPeak.NotifyAll();
             } else {
               // Block this thread until we reach our max.
-              waitForPeak.Wait();
+              while (!peakReached) {
+                waitForPeak.Wait();
+              }
             }
-            numberOfActiviationRunnables--;
-            if (numberOfActiviationRunnables == 0) {
+            numberOfActivationRunnables--;
+            if (numberOfActivationRunnables == 0) {
               waitForIdleAfterPeak.NotifyAll();
             }
           });
@@ -206,8 +223,10 @@ TEST(ThreadPoolIdleTimeout, Test)
       ASSERT_NS_SUCCEEDED(rv);
     }
     // Ensure all runnables were executed. Should be immediate.
-    waitForPeak.Wait();
-    if (numberOfActiviationRunnables > 0) {
+    while (!peakReached) {
+      waitForPeak.Wait();
+    }
+    while (numberOfActivationRunnables) {
       waitForIdleAfterPeak.Wait();
     }
   };
@@ -238,7 +257,9 @@ TEST(ThreadPoolIdleTimeout, Test)
              (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds());
       {
         MutexAutoLock lock(waitMutex);
-        waitForGrace.Wait();
+        while (numberOfThreads > NUMBER_OF_IDLE_THREADS) {
+          waitForGrace.Wait();
+        }
       }
       printf("%u Found %u threads alive.\n",
              (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds(),
@@ -267,7 +288,9 @@ TEST(ThreadPoolIdleTimeout, Test)
              (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds());
       {
         MutexAutoLock lock(waitMutex);
-        waitForMaximum.Wait();
+        while (numberOfThreads > 0) {
+          waitForMaximum.Wait();
+        }
       }
     }
     printf("%u Found %u threads alive.\n",
@@ -292,6 +315,7 @@ TEST(ThreadPoolIdleTimeout, Test)
   // with short pauses and see how many threads are created and/or shutdown.
   TimeStamp started = TimeStamp::Now();
   CondVar waitForRepeats(waitMutex, "WaitForRepeats");
+  bool repeatsDone = false;
   {
     numberOfThreadsCreated = 0;
 
@@ -302,6 +326,7 @@ TEST(ThreadPoolIdleTimeout, Test)
           activateThreads(NUMBER_OF_MAX_THREADS);
           if (TimeStamp::Now() - started >
               TimeDuration::FromMilliseconds(2.0 * IDLE_THREAD_GRACE_TIMEOUT)) {
+            repeatsDone = true;
             waitForRepeats.Notify();
           }
         },
@@ -315,7 +340,9 @@ TEST(ThreadPoolIdleTimeout, Test)
            (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds());
     {
       MutexAutoLock lock(waitMutex);
-      waitForRepeats.Wait();
+      while (!repeatsDone) {
+        waitForRepeats.Wait();
+      }
       timer->Cancel();
     }
 
@@ -347,8 +374,9 @@ TEST(ThreadPoolIdleTimeout, Test)
 
       // Create some low level noise that should need only 1 idle thread at
       // a time (1 runnable every 50ms for 625ms).
-      numberOfActiviationRunnables = 0;
+      numberOfActivationRunnables = 0;
       started = TimeStamp::Now();
+      repeatsDone = false;
       CondVar waitForRepeatExecutions(waitMutex, "waitForRepeatExecutions");
       Atomic<uint32_t> numberOfNoiseRunnables(0);
 
@@ -358,6 +386,7 @@ TEST(ThreadPoolIdleTimeout, Test)
             if (TimeStamp::Now() - started >
                 TimeDuration::FromMilliseconds(2.5 *
                                                IDLE_THREAD_GRACE_TIMEOUT)) {
+              repeatsDone = true;
               waitForRepeats.Notify();
             } else {
               // Decouple the dispatch to the tested pool from the timer
@@ -398,9 +427,11 @@ TEST(ThreadPoolIdleTimeout, Test)
              (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds());
       {
         MutexAutoLock lock(waitMutex);
-        waitForRepeats.Wait();
+        while (!repeatsDone) {
+          waitForRepeats.Wait();
+        }
         timer->Cancel();
-        if (numberOfNoiseRunnables) {
+        while (numberOfNoiseRunnables) {
           printf("%u Runnables in flight after cancel: %u, wait...\n",
                  (uint32_t)(TimeStamp::Now() - execStart).ToMilliseconds(),
                  (uint32_t)numberOfNoiseRunnables);

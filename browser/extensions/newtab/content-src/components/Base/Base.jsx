@@ -32,6 +32,9 @@ import {
 } from "../../lib/asrouter-message-utils.mjs";
 import {
   WIDGET_REGISTRY,
+  isWidgetEnabled,
+  isWidgetToggleVisible,
+  isWidgetsContainerVisible,
   resolveWidgetHasSidebar,
   resolveWidgetSize,
 } from "common/WidgetsRegistry.mjs";
@@ -129,6 +132,9 @@ export class BaseContent extends React.PureComponent {
     this.toggleWidgetsManagementPanel =
       this.toggleWidgetsManagementPanel.bind(this);
     this.openWidgetsPanel = this.openWidgetsPanel.bind(this);
+    this.attachSearchSentinel = this.attachSearchSentinel.bind(this);
+    this.onSearchSentinelIntersect = this.onSearchSentinelIntersect.bind(this);
+    this.searchStickyObserver = null;
     this.state = {
       fixedSearch: false,
       colorMode: "",
@@ -140,6 +146,30 @@ export class BaseContent extends React.PureComponent {
       showWidgetsManagementPanel: false,
     };
     this.spocPlaceholderStartTime = null;
+  }
+
+  attachSearchSentinel(el) {
+    if (this.searchStickyObserver) {
+      this.searchStickyObserver.disconnect();
+      this.searchStickyObserver = null;
+    }
+    if (el) {
+      this.searchStickyObserver = new IntersectionObserver(
+        this.onSearchSentinelIntersect,
+        { threshold: 0 }
+      );
+      this.searchStickyObserver.observe(el);
+    } else if (this.state.fixedSearch) {
+      this.setState({ fixedSearch: false });
+    }
+  }
+
+  onSearchSentinelIntersect(entries) {
+    const entry = entries[entries.length - 1];
+    const stuck = !entry.isIntersecting && entry.boundingClientRect.top < 0;
+    if (stuck !== this.state.fixedSearch) {
+      this.setState({ fixedSearch: stuck });
+    }
   }
 
   onVisible() {
@@ -421,9 +451,19 @@ export class BaseContent extends React.PureComponent {
     if (this._onHashChange) {
       globalThis.removeEventListener("hashchange", this._onHashChange);
     }
+    if (this.searchStickyObserver) {
+      this.searchStickyObserver.disconnect();
+      this.searchStickyObserver = null;
+    }
   }
 
   onWindowScroll() {
+    if (this.props.Prefs.values[PREF_NOVA_ENABLED]) {
+      // Nova restores sticky search via IntersectionObserver
+      // (attachSearchSentinel); the scroll-based fixed-search math below
+      // is classic-only.
+      return;
+    }
     if (window.innerHeight <= 700) {
       // Bug 1937296: Only apply fixed-search logic
       // if the page is tall enough to support it.
@@ -799,6 +839,9 @@ export class BaseContent extends React.PureComponent {
     const topSitesEnabled = prefs["feeds.topsites"];
     const pocketEnabled =
       prefs["feeds.section.topstories"] && prefs["feeds.system.topstories"];
+    // @nova-cleanup(remove): pre-Nova; `filteredSections` is the legacy
+    // Sections redux slice that no longer drives Nova layout. Nova uses
+    // `noContentSectionsEnabled` (declared in the Nova branch below).
     const noSectionsEnabled =
       !topSitesEnabled &&
       !pocketEnabled &&
@@ -817,51 +860,28 @@ export class BaseContent extends React.PureComponent {
     const pocketRegion = prefs["feeds.system.topstories"];
     const mayHaveInferredPersonalization =
       prefs[PREF_INFERRED_PERSONALIZATION_SYSTEM];
+    // Weather's visibility gate differs from the other widgets (it keys off
+    // system.showWeather / trainhopConfig.weather), so it keeps its own check
+    // plus the additive widgetsSettings.weatherVisible override.
     const mayHaveWeather =
-      prefs["system.showWeather"] || prefs.trainhopConfig?.weather?.enabled;
+      prefs["system.showWeather"] ||
+      prefs.trainhopConfig?.weather?.enabled ||
+      prefs.trainhopConfig?.widgetsSettings?.weatherVisible;
     const supportUrl = prefs["support.url"];
 
-    // Widgets experiment pref check
-    const nimbusWidgetsEnabled = prefs.widgetsConfig?.enabled;
-    const nimbusListsEnabled = prefs.widgetsConfig?.listsEnabled;
-    const nimbusTimerEnabled = prefs.widgetsConfig?.timerEnabled;
-    const nimbusClocksEnabled = prefs.widgetsConfig?.clocksEnabled;
-    const nimbusWidgetsTrainhopEnabled = prefs.trainhopConfig?.widgets?.enabled;
-    const nimbusListsTrainhopEnabled =
-      prefs.trainhopConfig?.widgets?.listsEnabled;
-    const nimbusTimerTrainhopEnabled =
-      prefs.trainhopConfig?.widgets?.timerEnabled;
-    const nimbusClocksTrainhopEnabled =
-      prefs.trainhopConfig?.widgets?.clocksEnabled;
-
-    const mayHaveWidgets =
-      prefs["widgets.system.enabled"] ||
-      nimbusWidgetsEnabled ||
-      nimbusWidgetsTrainhopEnabled;
-    const mayHaveListsWidget =
-      prefs["widgets.system.lists.enabled"] ||
-      nimbusListsEnabled ||
-      nimbusListsTrainhopEnabled;
-    const mayHaveTimerWidget =
-      prefs["widgets.system.focusTimer.enabled"] ||
-      nimbusTimerEnabled ||
-      nimbusTimerTrainhopEnabled;
-    const mayHaveClocksWidget =
-      prefs["widgets.system.clocks.enabled"] ||
-      nimbusClocksEnabled ||
-      nimbusClocksTrainhopEnabled;
-
-    const mayHaveWeatherWidget =
-      prefs["widgets.system.weather.enabled"] ||
-      prefs.trainhopConfig?.widgets?.weatherEnabled;
-
-    const nimbusSportsWidgetEnabled = prefs.widgetsConfig?.sportsWidgetEnabled;
-    const nimbusSportsWidgetTrainhopEnabled =
-      prefs.trainhopConfig?.widgets?.sportsWidgetEnabled;
-    const mayHaveSportsWidget =
-      prefs["widgets.system.sportsWidget.enabled"] ||
-      nimbusSportsWidgetEnabled ||
-      nimbusSportsWidgetTrainhopEnabled;
+    // Widget toggle visibility is resolved by the shared registry helpers, which
+    // are additive across the system pref, the legacy widgetsConfig variable,
+    // trainhopConfig.widgets (addable), and trainhopConfig.widgetsSettings.
+    const widgetVisibleById = id =>
+      isWidgetToggleVisible(
+        WIDGET_REGISTRY.find(w => w.id === id),
+        prefs
+      );
+    const mayHaveWidgets = isWidgetsContainerVisible(prefs);
+    const mayHaveListsWidget = widgetVisibleById("lists");
+    const mayHaveTimerWidget = widgetVisibleById("focusTimer");
+    const mayHaveClocksWidget = widgetVisibleById("clocks");
+    const mayHaveSportsWidget = widgetVisibleById("sportsWidget");
 
     // These prefs set the initial values on the Customize panel toggle switches
     const enabledWidgets = {
@@ -971,31 +991,43 @@ export class BaseContent extends React.PureComponent {
     //  mobileDownloadPromo*, etc.) will become dead code and should
     // be deleted — expect lint errors for unused vars.
     if (novaEnabled) {
-      // Logo renders in .content (above search/topsites) when no Pocket content
-      // feed and no content-area widgets are present. When either is enabled,
-      // the sidebar provides a better visual anchor.
+      // Logo placement: when there's no Pocket feed and no content-area
+      // widget, the Logo renders centered in .content; otherwise it
+      // anchors the inline-start sidebar. If the page has nothing on it
+      // (no content sections, no search, no widgets), the Logo is
+      // suppressed entirely via `isPageEmpty`.
       const weatherWidget = WIDGET_REGISTRY.find(w => w.id === "weather");
       const weatherGoesToSidebar =
         resolveWidgetHasSidebar(weatherWidget, prefs) &&
         resolveWidgetSize(weatherWidget, prefs) === "small";
-      const hasContentWidgets =
-        (mayHaveListsWidget && enabledWidgets.listsEnabled) ||
-        (mayHaveTimerWidget && enabledWidgets.timerEnabled) ||
-        (mayHaveClocksWidget && enabledWidgets.clocksEnabled) ||
-        (mayHaveWeatherWidget &&
-          enabledWidgets.weatherEnabled &&
-          !weatherGoesToSidebar) ||
-        (mayHaveSportsWidget && enabledWidgets.sportsWidgetEnabled);
-      const logoShouldBeCentered = !pocketEnabled && !hasContentWidgets;
+      const widgetsEnabled = prefs["widgets.enabled"];
+      const hasAnyEnabledWidget = WIDGET_REGISTRY.some(w =>
+        isWidgetEnabled(w, prefs, widgetsEnabled)
+      );
+      const hasContentWidgets = WIDGET_REGISTRY.some(
+        w =>
+          isWidgetEnabled(w, prefs, widgetsEnabled) &&
+          !(w.id === "weather" && weatherGoesToSidebar)
+      );
+      const highlightsEnabled = prefs["feeds.section.highlights"];
+      const noContentSectionsEnabled =
+        !topSitesEnabled && !pocketEnabled && !highlightsEnabled;
+      const isPageEmpty =
+        noContentSectionsEnabled && !prefs.showSearch && !hasAnyEnabledWidget;
+      const hasManyTopSitesRows = topSitesEnabled && prefs.topSitesRows > 2;
+      const logoShouldBeCentered =
+        !pocketEnabled && !hasContentWidgets && !hasManyTopSitesRows;
 
       return (
         <BaseContext.Provider value={baseContextValue}>
-          <div className="nova-outer-wrapper">
+          <div
+            className={`nova-outer-wrapper${this.state.fixedSearch ? " stuck-search" : ""}`}
+          >
             <div
               className={`container nova-enabled${logoShouldBeCentered ? " logo-in-content" : ""}`}
             >
               <aside className="sidebar-inline-start">
-                {!logoShouldBeCentered && (
+                {!prefs.hideLogo && !logoShouldBeCentered && !isPageEmpty && (
                   <ErrorBoundary>
                     <Logo />
                   </ErrorBoundary>
@@ -1012,7 +1044,7 @@ export class BaseContent extends React.PureComponent {
                 )}
               </aside>
               <main className="content">
-                {logoShouldBeCentered && (
+                {!prefs.hideLogo && logoShouldBeCentered && !isPageEmpty && (
                   <ErrorBoundary>
                     <Logo />
                   </ErrorBoundary>
@@ -1020,9 +1052,16 @@ export class BaseContent extends React.PureComponent {
 
                 {/* Search */}
                 {prefs.showSearch && (
-                  <ErrorBoundary>
-                    <Search showLogo={false} {...props.Search} />
-                  </ErrorBoundary>
+                  <>
+                    <div
+                      ref={this.attachSearchSentinel}
+                      className="sticky-search-sentinel"
+                      aria-hidden="true"
+                    />
+                    <ErrorBoundary>
+                      <Search showLogo={false} {...props.Search} />
+                    </ErrorBoundary>
+                  </>
                 )}
 
                 {/* ASRouterNewTabMessage (ASROUTER_NEWTAB_MESSAGE_POSITIONS.ABOVE_TOPSITES) */}
@@ -1148,10 +1187,14 @@ export class BaseContent extends React.PureComponent {
                 widgetsEnabled={prefs["widgets.enabled"]}
                 dispatch={this.props.dispatch}
               />
-              {shouldShowOMCHighlight(
+              {(shouldShowOMCHighlight(
                 this.props.Messages,
                 "CustomWallpaperHighlight"
-              ) && (
+              ) ||
+                shouldShowOMCHighlight(
+                  this.props.Messages,
+                  "WorldCupWallpaperHighlight"
+                )) && (
                 <MessageWrapper dispatch={this.props.dispatch}>
                   <WallpaperFeatureHighlight
                     position="inset-block-start inset-inline-start"

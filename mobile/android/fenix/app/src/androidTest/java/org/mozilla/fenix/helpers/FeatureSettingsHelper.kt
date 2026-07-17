@@ -6,7 +6,7 @@ package org.mozilla.fenix.helpers
 
 import androidx.test.platform.app.InstrumentationRegistry
 import mozilla.components.feature.sitepermissions.SitePermissionsRules
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 
 /**
  * Helper for querying the status and modifying various features and settings in the application.
@@ -130,9 +130,24 @@ interface FeatureSettingsHelper {
     var hasSeenShakeToSummarizeToolbarCfr: Boolean
 
     /**
+     * Enable or disable the shake to summarize feature flag.
+     */
+    var shakeToSummarizeFeatureFlagEnabled: Boolean
+
+    /**
      * Enable or disable expanded toolbar layout.
      */
     var shouldUseExpandedToolbar: Boolean
+
+    /**
+     * Whether the Native Share Sheet feature is enabled.
+     */
+    var nativeShareSheetEnabled: Boolean
+
+    /**
+     * Whether the voice search entry point is shown in the display-mode browser toolbar.
+     */
+    var showVoiceSearchInDisplayToolbar: Boolean
 
     /**
      * Enable or disable the translations prompt after a page that can be translated is loaded.
@@ -145,12 +160,23 @@ interface FeatureSettingsHelper {
         }
     }
 
+    /**
+     * Enable or disable the IP Protection feature.
+     */
+    fun enableOrDisableIPProtection(enableIPProtection: Boolean) {
+        if (enableIPProtection) {
+            FxNimbusHelper.enableIPProtection()
+        } else {
+            FxNimbusHelper.disableIPProtection()
+        }
+    }
+
     fun applyFlagUpdates()
 
     fun resetAllFeatureFlags()
 
     companion object {
-        val settings = InstrumentationRegistry.getInstrumentation().targetContext.settings()
+        val settings = InstrumentationRegistry.getInstrumentation().targetContext.components.settings
     }
 }
 

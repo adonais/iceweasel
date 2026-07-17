@@ -22,7 +22,7 @@ add_setup(async function () {
   });
 });
 
-add_task(async function open() {
+add_task(async function basic() {
   const TEST_CASES = [
     {
       preferences: [["browser.tabs.loadInBackground", true]],
@@ -161,4 +161,82 @@ add_task(async function open() {
   }
 
   await PlacesUtils.history.clear();
+});
+
+add_task(async function toolbar_context_menu() {
+  let TEST_TARGETS = [
+    ".searchmode-switcher",
+    "#trust-icon-container",
+    "#identity-box",
+  ];
+
+  await BrowserTestUtils.withNewTab("https://example.com/", async () => {
+    for (let target of TEST_TARGETS) {
+      info(`Test for ${target}`);
+      let element = document.querySelector(target);
+      let onPopupShown = BrowserTestUtils.waitForEvent(document, "popupshown");
+      EventUtils.synthesizeMouseAtCenter(element, {
+        type: "contextmenu",
+        button: 2,
+      });
+      let { target: popup } = await onPopupShown;
+      Assert.equal(popup.id, "toolbar-context-menu");
+      popup.hidePopup();
+    }
+  });
+});
+
+add_task(async function no_context_menu() {
+  let TEST_DATA = [
+    {
+      featureGate: false,
+      target: ".urlbarView-row",
+    },
+    {
+      featureGate: false,
+      target: ".urlbar-background",
+    },
+    {
+      featureGate: true,
+      target: ".urlbar-background",
+    },
+  ];
+
+  for (let { featureGate, target } of TEST_DATA) {
+    info(`Test for ${JSON.stringify({ featureGate, target })}`);
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.urlbar.contextMenu.featureGate", featureGate]],
+    });
+
+    await UrlbarTestUtils.promiseAutocompleteResultPopup({
+      value: "exa",
+      window,
+      fireInputEvent: true,
+    });
+
+    let onContextMenu = BrowserTestUtils.waitForEvent(window, "contextmenu");
+    let popupShown = false;
+    let popupListener = () => {
+      popupShown = true;
+    };
+    window.addEventListener("popupshowing", popupListener, true);
+
+    document.querySelector(target).dispatchEvent(
+      new PointerEvent("contextmenu", {
+        bubbles: true,
+        cancelable: true,
+        button: 2,
+        view: window,
+      })
+    );
+
+    info("Waiting for context menu");
+    let event = await onContextMenu;
+    Assert.ok(event.defaultPrevented);
+
+    Assert.ok(!popupShown);
+    window.removeEventListener("popupshowing", popupListener, true);
+
+    await SpecialPowers.popPrefEnv();
+  }
 });

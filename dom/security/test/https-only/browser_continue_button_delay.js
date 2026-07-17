@@ -52,7 +52,7 @@ async function waitForEnabledButtonAndCheckTiming() {
 
   Assert.greater(
     observedDelay,
-    specifiedDelay - 100,
+    specifiedDelay - 300,
     `The observed delay (${observedDelay}ms) should be roughly the same or greater than the delay specified in "security.dialog_enable_delay" (${specifiedDelay}ms)`
   );
 }

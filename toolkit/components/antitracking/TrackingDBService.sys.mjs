@@ -134,7 +134,7 @@ TrackingDBService.prototype = {
   _db: null,
   waitingTasks: new Set(),
   finishedShutdown: true,
-  _flushingLiveLogs: false,
+  _flushingLiveLogsPromise: null,
 
   async ensureDB() {
     await this._initPromise;
@@ -209,24 +209,40 @@ TrackingDBService.prototype = {
    * Force every live top-level WindowGlobalParent to flush its in-memory
    * ContentBlockingLog to the database, then wait for those writes to settle.
    * Called before read paths so long-lived tabs contribute up-to-date data.
+   *
    */
   async _flushLiveLogs() {
-    if (
-      this.finishedShutdown ||
-      !lazy.flushOnQueryEnabled ||
-      this._flushingLiveLogs
-    ) {
-      return;
+    if (this.finishedShutdown || !lazy.flushOnQueryEnabled) {
+      return undefined;
     }
-    this._flushingLiveLogs = true;
+
+    // Concurrent callers share a single in-flight flush: if a flush is already
+    // running, additional callers await the same promise rather than triggering
+    // a redundant flush or returning early and reading stale data.
+    if (this._flushingLiveLogsPromise) {
+      return this._flushingLiveLogsPromise;
+    }
+    const { promise: flushPromise, resolve, reject } = Promise.withResolvers();
+    this._flushingLiveLogsPromise = flushPromise;
     try {
       WindowGlobalParent.flushAllContentBlockingLogs();
-      if (this.waitingTasks.size) {
+      // Drain until empty rather than awaiting a single snapshot. ActorDestroy
+      // on a tab teardown also routes through recordContentBlockingLog and can
+      // add new tasks to waitingTasks while we're awaiting the current batch;
+      // those would otherwise be missed by both this caller and any concurrent
+      // callers sharing the in-flight flush promise.
+      while (this.waitingTasks.size) {
         await Promise.all([...this.waitingTasks].map(task => task.finalize()));
       }
+      resolve();
+    } catch (e) {
+      reject(e);
+      throw e;
     } finally {
-      this._flushingLiveLogs = false;
+      this._flushingLiveLogsPromise = null;
     }
+
+    return undefined;
   },
 
   identifyType(events) {
@@ -376,7 +392,10 @@ TrackingDBService.prototype = {
       return;
     }
     this.lastChecked = Date.now();
-    let totalSaved = await this.sumAllEvents();
+    // Query the DB directly rather than going through sumAllEvents(): we're
+    // inside the flush triggered by _flushLiveLogs, and re-entering it would
+    // deadlock on the in-flight shared promise.
+    let totalSaved = await this.sumAllEventsWithoutFlushing(db);
 
     let reachedMilestone = null;
     let nextMilestone = null;
@@ -439,6 +458,10 @@ TrackingDBService.prototype = {
   async sumAllEvents() {
     let db = await this.ensureDB();
     await this._flushLiveLogs();
+    return this.sumAllEventsWithoutFlushing(db);
+  },
+
+  async sumAllEventsWithoutFlushing(db) {
     let results = await db.execute(SQL.sumAllEvents);
     if (!results[0]) {
       return 0;

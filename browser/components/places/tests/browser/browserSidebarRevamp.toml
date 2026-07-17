@@ -14,8 +14,6 @@ support-files = [
 ]
 prefs = [
   "sidebar.revamp=true",
-  # TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this pref
-  "sidebar.updatedBookmarks.enabled=false",
 ]
 
 ["browser_bookmark_context_menu_contents.js"]

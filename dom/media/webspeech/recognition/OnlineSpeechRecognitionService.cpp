@@ -92,7 +92,7 @@ OnlineSpeechRecognitionService::OnStopRequest(nsIRequest* aRequest,
   nsAutoCString errorMsg;
   SpeechRecognitionErrorCode errorCode;
 
-  SR_LOG("STT Result: %s", mBuf.get());
+  SR_LOG("STT Result: {}", mBuf.get());
 
   if (NS_FAILED(aStatusCode)) {
     success = false;

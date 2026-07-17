@@ -7,6 +7,7 @@
 package org.mozilla.fenix.longfox
 
 import android.content.Context
+import android.content.Intent
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
@@ -20,12 +21,15 @@ private val Context.dataStore: DataStore<Preferences> by preferencesDataStore(na
 /**
  * A preferences style key-value data store for the game settings.
  */
-class LongFoxDataStore(private val context: Context) {
+class LongFoxDataStore(
+    private val context: Context,
+    private val initialHiscore: Int = 0,
+) {
     private val hiscoreKey = intPreferencesKey("hiscore")
     private val soundOnKey = booleanPreferencesKey("soundOn")
 
     fun hiscoreFlow(): Flow<Int> = context.dataStore.data.map { preferences ->
-        preferences[hiscoreKey] ?: 0
+        preferences[hiscoreKey] ?: initialHiscore
     }
 
     fun soundOnFlow(): Flow<Boolean> = context.dataStore.data.map { preferences ->
@@ -55,5 +59,22 @@ class LongFoxDataStore(private val context: Context) {
                 preferences[soundOnKey] = !(preferences[soundOnKey] ?: false)
             }
         }
+    }
+
+    /**
+     * Allow hiscore to be shared to other social apps.
+     *
+     * @param hiscore the highest score you have currently been able to manage
+     */
+    fun shareHiscore(hiscore: Int) {
+        val sendIntent: Intent = Intent().apply {
+            action = Intent.ACTION_SEND
+            val longestFox = "🦊${"🟧".repeat(hiscore)}"
+            val hiscoreString = context.getString(R.string.my_longest_fox_is, hiscore, longestFox)
+            putExtra(Intent.EXTRA_TEXT, hiscoreString)
+            type = "text/plain"
+        }
+        val shareIntent = Intent.createChooser(sendIntent, null)
+        context.startActivity(shareIntent, null)
     }
 }

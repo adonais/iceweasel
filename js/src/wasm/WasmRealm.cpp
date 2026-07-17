@@ -90,7 +90,9 @@ bool wasm::Realm::registerInstance(JSContext* cx,
   }
 
   // Notify the debugger after wasmInstances is unlocked.
-  DebugAPI::onNewWasmInstance(cx, instanceObj);
+  if (!instance.codeMeta().isSelfHostedModule()) {
+    DebugAPI::onNewWasmInstance(cx, instanceObj);
+  }
   return true;
 }
 

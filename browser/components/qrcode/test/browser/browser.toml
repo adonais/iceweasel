@@ -9,4 +9,8 @@ support-files = ["reference-qr-no-logo.png", "reference-long-url-no-logo.png"]
 
 ["browser_qrcode_png_output.js"]
 
+["browser_qrcode_save_filename.js"]
+
 ["browser_qrcode_share_menu.js"]
+
+["browser_qrcode_share_menu_non_focused_tab.js"]

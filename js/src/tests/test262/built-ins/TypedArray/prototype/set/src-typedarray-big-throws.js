@@ -34,6 +34,6 @@ testWithBigIntTypedArrayConstructors(function(BTA, makeCtorArg) {
     });
   });
 
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

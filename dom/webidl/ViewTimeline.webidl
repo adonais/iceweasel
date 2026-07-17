@@ -9,12 +9,29 @@
  * liability, trademark and document use rules apply.
  */
 
-[Exposed=Window, Pref="layout.css.scroll-driven-animations.viewtimeline.enabled"]
+dictionary ViewTimelineOptions {
+  Element subject;
+  ScrollAxis axis = "block";
+  // The spec expects to use CSSKeywordValue. However, per the spec issue, Blink
+  // and WebKit would like to support the string in the sequence as well, so we
+  // follow the proposal in the spec issue to use CSSKeywordish instead of
+  // CSSKeywordValue. Also, we use CSSOMString instead of DOMString to avoid the
+  // extra conversion from UTF-16 to UTF-8.
+  // https://github.com/w3c/csswg-drafts/issues/11477
+  (UTF8String or sequence<(CSSKeywordish or CSSNumericValue)>) inset = "auto";
+};
+
+[Exposed=Window, Pref="layout.css.scroll-driven-animations.enabled"]
 interface ViewTimeline : ScrollTimeline {
-  // FIXME: Bug 2016879 - Add the constructor.
-  readonly attribute Element subject;
-  // FIXME: Bug 2016880 - Use CSSNumericValue, not double.
-  // Also see https://github.com/w3c/csswg-drafts/issues/13844 re nullability.
-  readonly attribute double? startOffset;
-  readonly attribute double? endOffset;
+  [Throws]
+  constructor(optional ViewTimelineOptions options = {});
+  // FIXME: The spec expects that this is not nullable, but ViewTimelineOptions
+  // may not provide a subject, and both Blink and WebKit make this attribute
+  // nullable, so we follow others for now.
+  // https://github.com/w3c/csswg-drafts/issues/9584
+  readonly attribute Element? subject;
+  [GetterThrows]
+  readonly attribute CSSNumericValue? startOffset;
+  [GetterThrows]
+  readonly attribute CSSNumericValue? endOffset;
 };

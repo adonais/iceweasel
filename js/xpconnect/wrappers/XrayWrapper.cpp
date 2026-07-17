@@ -28,6 +28,7 @@
 
 #include "mozilla/FloatingPoint.h"
 #include "mozilla/dom/BindingUtils.h"
+#include "mozilla/dom/ObservableArrayProxyHandler.h"
 #include "mozilla/dom/ProxyHandlerUtils.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "mozilla/dom/XrayExpandoClass.h"
@@ -140,6 +141,10 @@ XrayType GetXrayType(JSObject* obj) {
   // though, we need to make an exception for compatibility.
   if (IsSandbox(obj)) {
     return NotXray;
+  }
+
+  if (mozilla::dom::IsObservableArrayProxy(obj)) {
+    return XrayForJSObject;
   }
 
   return XrayForOpaqueObject;
@@ -1148,6 +1153,18 @@ JSObject* JSXrayTraits::createHolder(JSContext* cx, JSObject* wrapper) {
   // JSProto_Object, and since Arguments would otherwise get JSProto_Object,
   // this does not cause any behavior change at those sites.
   if (key == JSProto_Object && js::IsArgumentsObject(target)) {
+    key = JSProto_Array;
+  }
+
+  // An ObservableArray is a Proxy wrapping an Array, which should behave like
+  // an Array from the consumer's perspective. To do so, its prototype must be
+  // Array.prototype. But when JSXrayTraits::getPrototype() calls
+  // JS_GetClassPrototype(), js::GlobalObject::getPrototype fails to resolve
+  // the prototype because an ObservableArray is a Proxy without prototype
+  // instead of a standard JS class (that would have a standard prototype).
+  // To get JSXrayTraits::getPrototype() to return Array.prototype, set the key
+  // on the holder to JSProto_Array here.
+  if (key == JSProto_Proxy && mozilla::dom::IsObservableArrayProxy(target)) {
     key = JSProto_Array;
   }
 

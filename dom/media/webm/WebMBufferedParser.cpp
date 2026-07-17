@@ -10,9 +10,10 @@
 #include "mozilla/CheckedInt.h"
 #include "nsThreadUtils.h"
 
-#define WEBM_DEBUG(arg, ...)                          \
-  MOZ_LOG(gMediaDemuxerLog, mozilla::LogLevel::Debug, \
-          ("WebMBufferedParser(%p)::%s: " arg, this, __func__, ##__VA_ARGS__))
+#define WEBM_DEBUG(arg, ...)                                                \
+  MOZ_LOG_FMT(gMediaDemuxerLog, mozilla::LogLevel::Debug,                   \
+              "WebMBufferedParser({})::{}: " arg, fmt::ptr(this), __func__, \
+              ##__VA_ARGS__)
 
 namespace mozilla {
 
@@ -68,7 +69,7 @@ WebMBufferedParser::WebMBufferedParser(int64_t aOffset)
 
 void WebMBufferedParser::SetTimecodeScale(uint32_t aTimecodeScale) {
   mTimecodeScale = aTimecodeScale;
-  WEBM_DEBUG("%" PRIu32, mTimecodeScale);
+  WEBM_DEBUG("{}", mTimecodeScale);
   mGotTimecodeScale = true;
 }
 
@@ -108,7 +109,7 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
         if (mVInt.mLength > mEBMLMaxIdLength) {
           nsPrintfCString detail("Invalid element id of length %" PRIu64,
                                  mVInt.mLength);
-          WEBM_DEBUG("%s", detail.get());
+          WEBM_DEBUG("{}", detail.get());
           return MediaResult(NS_ERROR_FAILURE, detail);
         }
         mVIntRaw = false;
@@ -132,7 +133,7 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
         if (mVInt.mLength > mEBMLMaxSizeLength) {
           nsPrintfCString detail("Invalid element size of length %" PRIu64,
                                  mVInt.mLength);
-          WEBM_DEBUG("%s", detail.get());
+          WEBM_DEBUG("{}", detail.get());
           return MediaResult(NS_ERROR_FAILURE, detail);
         }
         mElement.mSize = mVInt;
@@ -207,7 +208,7 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
                                   mElement.mID.mValue == EBML_MAX_ID_LENGTH_ID
                                       ? "EBMLMaxIdLength"
                                       : "EBMLMaxSizeLength");
-              WEBM_DEBUG("%s", str.get());
+              WEBM_DEBUG("{}", str.get());
               return MediaResult(NS_ERROR_FAILURE, str);
             }
             if (mElement.mSize.mValue > 8) {
@@ -218,7 +219,7 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
                                   mElement.mID.mValue == EBML_MAX_ID_LENGTH_ID
                                       ? "EBMLMaxIdLength"
                                       : "EBMLMaxSizeLength");
-              WEBM_DEBUG("%s", str.get());
+              WEBM_DEBUG("{}", str.get());
               return MediaResult(NS_ERROR_FAILURE, str);
             }
             mVInt = VInt();
@@ -269,7 +270,7 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
                              "TimecodeScale appeared before SegmentInfo");
         }
         mTimecodeScale = mVInt.mValue;
-        WEBM_DEBUG("READ_TIMECODESCALE %" PRIu32, mTimecodeScale);
+        WEBM_DEBUG("READ_TIMECODESCALE {}", mTimecodeScale);
         mState = READ_ELEMENT_ID;
         break;
       case READ_CLUSTER_TIMECODE:
@@ -304,8 +305,7 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
                 if (!checkedTimecode.isValid() ||
                     checkedTimecode.value() >
                         static_cast<uint64_t>(INT64_MAX)) {
-                  WEBM_DEBUG("Timecode overflow: %" PRIu64
-                             " in Cluster at %" PRId64 " ignored",
+                  WEBM_DEBUG("Timecode overflow: {} in Cluster at {} ignored",
                              checkedTimecode.isValid() ? checkedTimecode.value()
                                                        : UINT64_MAX,
                              mClusterOffset);
@@ -320,9 +320,9 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
                                              mClusterOffset, mClusterEndOffset);
                     aMapping.InsertElementAt(idx, entry);
                   } else {
-                    WEBM_DEBUG("Out of order timecode %" PRIu64
-                               " in Cluster at %" PRId64 " ignored",
-                               absTimecode, mClusterOffset);
+                    WEBM_DEBUG(
+                        "Out of order timecode {} in Cluster at {} ignored",
+                        absTimecode, mClusterOffset);
                   }
                 }
               }
@@ -357,7 +357,7 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
           //   in the EBML header.
           nsPrintfCString detail("Invalid EMBLMaxIdLength %" PRIu64,
                                  mVInt.mValue);
-          WEBM_DEBUG("%s", detail.get());
+          WEBM_DEBUG("{}", detail.get());
           return MediaResult(NS_ERROR_FAILURE, detail);
         }
         mEBMLMaxIdLength = mVInt.mValue;
@@ -378,7 +378,7 @@ MediaResult WebMBufferedParser::Append(const unsigned char* aBuffer,
           //   "8" inclusive.
           nsPrintfCString detail("Invalid EMBLMaxSizeLength %" PRIu64,
                                  mVInt.mValue);
-          WEBM_DEBUG("%s", detail.get());
+          WEBM_DEBUG("{}", detail.get());
           return MediaResult(NS_ERROR_FAILURE, detail);
         }
         mEBMLMaxSizeLength = mVInt.mValue;

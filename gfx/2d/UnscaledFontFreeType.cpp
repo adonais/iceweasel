@@ -208,7 +208,7 @@ already_AddRefed<ScaledFont> UnscaledFontFreeType::CreateScaledFont(
     ApplyVariationsToFace(aVariations, aNumVariations, face->GetFace());
   }
 
-  RefPtr<ScaledFontFreeType> scaledFont = new ScaledFontFreeType(
+  RefPtr scaledFont = MakeRefPtr<ScaledFontFreeType>(
       std::move(face), this, aGlyphSize, instanceData.mApplySyntheticBold);
 
   return scaledFont.forget();
@@ -230,8 +230,8 @@ already_AddRefed<UnscaledFont> UnscaledFontFreeType::CreateFromFontDescriptor(
     return nullptr;
   }
   const char* path = reinterpret_cast<const char*>(aData);
-  RefPtr<UnscaledFont> unscaledFont =
-      new UnscaledFontFreeType(std::string(path, aDataLength), aIndex);
+  RefPtr unscaledFont =
+      MakeRefPtr<UnscaledFontFreeType>(std::string(path, aDataLength), aIndex);
   return unscaledFont.forget();
 }
 

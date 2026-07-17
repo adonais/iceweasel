@@ -104,7 +104,7 @@ nsHttpResponseHead::nsHttpResponseHead(nsHttpResponseHead&& aOther) {
   mCacheControlMaxAgeSet = std::move(other.mCacheControlMaxAgeSet);
   mCacheControlMaxAge = std::move(other.mCacheControlMaxAge);
   mPragmaNoCache = std::move(other.mPragmaNoCache);
-  mInVisitHeaders = false;
+  mInVisitHeaders = 0;
 }
 
 HttpVersion nsHttpResponseHead::Version() const {
@@ -1200,9 +1200,9 @@ nsresult nsHttpResponseHead::ParseResponseContentLength(
 nsresult nsHttpResponseHead::VisitHeaders(
     nsIHttpHeaderVisitor* visitor, nsHttpHeaderArray::VisitorFilter filter) {
   RecursiveMutexAutoLock monitor(mRecursiveMutex);
-  mInVisitHeaders = true;
+  ++mInVisitHeaders;
   nsresult rv = mHeaders.VisitHeaders(visitor, filter);
-  mInVisitHeaders = false;
+  --mInVisitHeaders;
   return rv;
 }
 
@@ -1241,9 +1241,9 @@ NS_IMPL_ISUPPORTS(ContentTypeOptionsVisitor, nsIHttpHeaderVisitor)
 nsresult nsHttpResponseHead::GetOriginalHeader(const nsHttpAtom& aHeader,
                                                nsIHttpHeaderVisitor* aVisitor) {
   RecursiveMutexAutoLock monitor(mRecursiveMutex);
-  mInVisitHeaders = true;
+  ++mInVisitHeaders;
   nsresult rv = mHeaders.GetOriginalHeader(aHeader, aVisitor);
-  mInVisitHeaders = false;
+  --mInVisitHeaders;
   return rv;
 }
 

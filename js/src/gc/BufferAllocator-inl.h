@@ -128,10 +128,9 @@ inline bool IsBufferAllocMarkedBlack(JS::Zone* zone, void* alloc) {
   return zone->bufferAllocator.isMarkedBlack(alloc);
 }
 
-inline void TraceBufferEdgeInternal(JSTracer* trc, JS::Zone* zone,
-                                    Cell* maybeOwner, void** bufferp,
-                                    const char* name) {
-  zone->bufferAllocator.traceEdge(trc, maybeOwner, bufferp, name);
+inline void* TraceBufferEdgeInternal(JSTracer* trc, void** bufferp,
+                                     const char* name) {
+  return BufferAllocator::TraceEdge(trc, bufferp, name);
 }
 
 inline void MarkTenuredBuffer(JS::Zone* zone, void* alloc) {

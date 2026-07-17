@@ -31,7 +31,7 @@ class MOZ_STACK_CLASS nsGetInterface final : public nsCOMPtr_helper {
 };
 
 inline const nsGetInterface do_GetInterface(nsISupports* aSource,
-                                            nsresult* aError = 0) {
+                                            nsresult* aError = nullptr) {
   return nsGetInterface(aSource, aError);
 }
 

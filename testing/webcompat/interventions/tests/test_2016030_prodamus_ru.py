@@ -6,12 +6,14 @@ FRAME_CSS = "iframe[src*=pdf]"
 
 
 async def is_pdf_full_height(client):
-    await client.navigate(URL, wait="none", timeout=120)
+    await client.navigate(URL, wait="none", timeout=60)
+    frame = client.await_css(FRAME_CSS)
+    await client.stall(1)
     return client.execute_script(
         """
         return arguments[0].getBoundingClientRect().height >= window.innerHeight;
     """,
-        client.await_css(FRAME_CSS, timeout=60),
+        frame,
     )
 
 

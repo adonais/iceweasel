@@ -8,7 +8,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import kotlin.test.assertIs
-import kotlin.test.assertTrue
 
 class ContentProviderTest {
     @Test
@@ -25,17 +24,6 @@ class ContentProviderTest {
     }
 
     @Test
-    fun `when the content extractor provides a module error type, it is preserved`() = runTest {
-        val content = ContentProvider.fromPage(
-            "",
-            { Result.failure(PageContentExtractor.Exception(IllegalStateException())) },
-            { Result.success(PageMetadata()) },
-        ).getContent().exceptionOrNull()
-
-        assertIs<PageContentExtractor.Exception>(content)
-    }
-
-    @Test
     fun `that if extracting page metadata fails we recover with default metadata`() = runTest {
         val content = ContentProvider.fromPage(
             "",
@@ -48,15 +36,15 @@ class ContentProviderTest {
     }
 
     @Test
-    fun `that if page content provider provides a platform error type, it is mapped to a module type`() = runTest {
+    fun `when the content extractor fails, the raw throwable is forwarded`() = runTest {
         val title = "title"
         val result = ContentProvider.fromPage(
             pageTitle = title,
-            { Result.failure(NullPointerException()) },
+            { Result.failure(NullPointerException("boom")) },
             { Result.success(PageMetadata(wordCount = 500)) },
         ).getContent().exceptionOrNull()
 
-        assertIs<ContentProvider.Exception>(result)
-        assertEquals(true, result.message?.contains("Could not extract content"))
+        assertIs<NullPointerException>(result)
+        assertEquals("boom", result.message)
     }
 }

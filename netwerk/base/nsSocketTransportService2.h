@@ -201,8 +201,7 @@ class nsSocketTransportService final : public nsPISocketTransportService,
 
   class SocketContext {
    public:
-    SocketContext(PRFileDesc* aFD,
-                  already_AddRefed<nsASocketHandler>&& aHandler,
+    SocketContext(PRFileDesc* aFD, already_AddRefed<nsASocketHandler> aHandler,
                   PRIntervalTime aPollStartEpoch)
         : mFD(aFD), mHandler(aHandler), mPollStartEpoch(aPollStartEpoch) {}
     SocketContext(PRFileDesc* aFD, nsASocketHandler* aHandler,

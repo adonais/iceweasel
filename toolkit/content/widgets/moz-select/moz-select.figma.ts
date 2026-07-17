@@ -3,7 +3,7 @@ import figma, { html } from "@figma/code-connect/html";
 // Nova Components
 // Dropdown
 figma.connect(
-  "https://www.figma.com/design/PqfaOcMGbX5liEXTTUzeYX/Nova-Components--Experimental-?node-id=5858-8186",
+  "https://www.figma.com/design/PqfaOcMGbX5liEXTTUzeYX/Nova-Components--Experimental-?node-id=5858-8185",
   {
     props: {
       label: figma.nestedProps("Label", {

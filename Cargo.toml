@@ -289,9 +289,6 @@ utf16_iter = { path = "third_party/rust/utf16_iter" }
 icu_properties = { path = "third_party/rust/icu_properties" }
 icu_properties_data = { path = "third_party/rust/icu_properties_data" }
 
-# Patch nix 0.29 to 0.30+
-nix = { path = "build/rust/nix" }
-
 # Patch autocfg to hide rustc output. Workaround for https://github.com/cuviper/autocfg/issues/30
 autocfg = { path = "third_party/rust/autocfg" }
 
@@ -301,8 +298,8 @@ goblin = { path = "build/rust/goblin" }
 # Implement getrandom 0.2 in terms of 0.3
 getrandom = { path = "build/rust/getrandom" }
 
-# Patch mio to 1.1.1 with windows-sys 0.52 backport
-mio = { git = "https://github.com/kinetiknz/mio", rev = "5e8b202db39facecc343170f50a07916640a607c" }
+# Implement procfs-core 0.17.0 in terms of 0.18.0
+procfs-core = { path = "build/rust/procfs-core" }
 
 # Patch rustc-hash 1.1.0 to 2.1.1
 rustc-hash = { path = "build/rust/rustc-hash" }
@@ -317,7 +314,10 @@ hashbrown_0_13 = { package = "hashbrown", path = "build/rust/hashbrown-0.13" }
 hashbrown_0_14 = { package = "hashbrown", path = "build/rust/hashbrown-0.14" }
 
 # Patch `hashbrown` 0.15.* to depend on 0.16.*
-hashbrown_0_15 = { package = "hashbrown", path = "build/rust/hashbrown" }
+hashbrown_0_15 = { package = "hashbrown", path = "build/rust/hashbrown-0.15" }
+
+# Patch `hashbrown` 0.16.* to depend on 0.17.*
+hashbrown_0_16 = { package = "hashbrown", path = "build/rust/hashbrown" }
 
 # Patch `hashlink` 0.10.* to 0.11.*
 # This technically breaks `hashbrown::DefaultHashBuilder: Copy`, but it's not something we use.
@@ -342,9 +342,6 @@ core-foundation = { path = "build/rust/core-foundation" }
 core-graphics-types = { path = "build/rust/core-graphics-types" }
 # Patch `dispatch2` to an empty crate that cannot be built.
 dispatch2 = { path = "build/rust/dispatch2" }
-
-# Patch `half` 1.* to 2.
-half = { path = "build/rust/half" }
 
 # Upgrade `rusqlite` 0.31 to 0.33.
 rusqlite = { path = "build/rust/rusqlite" }
@@ -419,10 +416,3 @@ zip = { path = "third_party/rust/zip" }
 
 # Patch libcrux-traits to avoid unnecessary unused dependencies and conflicts.
 libcrux-traits = { path = "build/rust/libcrux-traits" }
-
-# Redirect any `nss-rs` git dependency (notably the one pinned inside upstream
-# `mls-rs-crypto-nss` in mozilla/mls-platform-api) to the in-tree vendored copy.
-# This way bumping nss-rs in tree does not require a matching update to the
-# pin in mls-platform-api on GitHub.
-[patch."https://github.com/mozilla/nss-rs"]
-nss-rs = { path = "third_party/rust/nss-rs" }

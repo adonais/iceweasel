@@ -57,7 +57,7 @@ class PDFViewerTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemContainingText("PDF form file"))
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             verifyPageContent("Washington Crossing the Delaware")
             verifyTabCounter("1")
         }
@@ -73,7 +73,7 @@ class PDFViewerTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
         }.clickDownloadPDFButton {
             verifyDownloadCompleteSnackbar(fileName = downloadFile)
             clickSnackbarButton(composeTestRule = composeTestRule, "OPEN")
@@ -89,7 +89,7 @@ class PDFViewerTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
         }.openThreeDotMenu {
         }.clickFindInPageButton {
             verifyFindInPageNextButton()
@@ -141,7 +141,7 @@ class PDFViewerTest {
         navigationToolbar(composeTestRule) {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             verifyTabCounter("1")
         }.openThreeDotMenu {
             clickTheMoreButton()
@@ -165,7 +165,7 @@ class PDFViewerTest {
             navigationToolbar(composeTestRule) {
             }.enterURLAndEnterToBrowser(genericURL.url) {
                 clickPageObject(composeTestRule, itemWithText("PDF form file"))
-                clickPageObject(composeTestRule, itemContainingText("Cancel"))
+                clickPageObject(composeTestRule, itemContainingText("Stay in"))
             }.clickDownloadPDFButton {
             }
 

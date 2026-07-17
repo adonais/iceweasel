@@ -410,6 +410,79 @@ static void CopyAndInflateUTF8IntoBuffer(JSContext* cx, const UTF8Chars& src,
   }
 }
 
+// Fast UTF-8 -> UTF-16 inflation backed by encoding_rs: a single SIMD pass
+// over the input, no separate counting pass. Allocates srclen + 1 char16_t
+// code units, which is the upper bound for UTF-16 output (each UTF-8 byte
+// produces at most one code unit), plus a slot for the trailing NUL.
+template <OnUTF8Error ErrorAction>
+static TwoByteCharsZ InflateUTF8ToNewTwoByteCharsZ(JSContext* cx,
+                                                   const UTF8Chars& src,
+                                                   size_t* outlen,
+                                                   arena_id_t destArenaId) {
+  static_assert(ErrorAction == OnUTF8Error::Throw ||
+                    ErrorAction == OnUTF8Error::InsertReplacementCharacter,
+                "only Throw and InsertReplacementCharacter are supported");
+
+  *outlen = 0;
+
+  mozilla::CheckedInt<size_t> capacity = src.length();
+  capacity += 1;
+  if (!capacity.isValid()) {
+    ReportAllocationOverflow(cx);
+    return TwoByteCharsZ();
+  }
+  char16_t* dst = cx->pod_arena_malloc<char16_t>(destArenaId, capacity.value());
+  if (!dst) {
+    ReportOutOfMemory(cx);
+    return TwoByteCharsZ();
+  }
+
+  Span<const char> srcSpan(reinterpret_cast<const char*>(src.begin().get()),
+                           src.length());
+  Span<char16_t> dstSpan(dst, capacity.value());
+
+  size_t len;
+  if constexpr (ErrorAction == OnUTF8Error::Throw) {
+    mozilla::Maybe<size_t> written =
+        mozilla::ConvertUtf8toUtf16WithoutReplacement(srcSpan, dstSpan);
+    if (MOZ_UNLIKELY(written.isNothing())) {
+      // Invalid UTF-8. Run the slow validator just to report the offset of
+      // the first bad byte; it will set a pending exception and return false.
+      js_free(dst);
+      auto discard = [](char16_t) -> LoopDisposition {
+        return LoopDisposition::Continue;
+      };
+      mozilla::DebugOnly<bool> ok =
+          InflateUTF8ToUTF16<OnUTF8Error::Throw>(cx, src, discard);
+      MOZ_ASSERT(!ok,
+                 "encoding_rs and the JS validator disagreed about UTF-8 "
+                 "validity");
+      return TwoByteCharsZ();
+    }
+    len = *written;
+  } else {
+    len = mozilla::ConvertUtf8toUtf16(srcSpan, dstSpan);
+  }
+
+  // Multi-byte UTF-8 sequences collapse to fewer UTF-16 code units, so the
+  // upper-bound allocation above can leave a lot of slack that adopting
+  // JSStrings would retain. Shrink when the waste is large.
+  size_t usedCapacity = len + 1;
+  size_t unusedCapacity = capacity.value() - usedCapacity;
+  constexpr size_t MinShrinkCodeUnits = 512;
+  if (unusedCapacity >= MinShrinkCodeUnits &&
+      unusedCapacity > usedCapacity / 2) {
+    if (char16_t* shrunk = cx->maybe_pod_arena_realloc<char16_t>(
+            destArenaId, dst, capacity.value(), usedCapacity)) {
+      dst = shrunk;
+    }
+  }
+
+  dst[len] = char16_t('\0');
+  *outlen = len;
+  return TwoByteCharsZ(dst, len);
+}
+
 template <OnUTF8Error ErrorAction, typename CharsT>
 static CharsT InflateUTF8StringHelper(JSContext* cx, const UTF8Chars& src,
                                       size_t* outlen, arena_id_t destArenaId) {
@@ -417,6 +490,11 @@ static CharsT InflateUTF8StringHelper(JSContext* cx, const UTF8Chars& src,
   static_assert(
       std::is_same_v<CharT, char16_t> || std::is_same_v<CharT, Latin1Char>,
       "bad CharT");
+
+  if constexpr (std::is_same_v<CharT, char16_t>) {
+    return InflateUTF8ToNewTwoByteCharsZ<ErrorAction>(cx, src, outlen,
+                                                      destArenaId);
+  }
 
   *outlen = 0;
 
@@ -440,11 +518,8 @@ static CharsT InflateUTF8StringHelper(JSContext* cx, const UTF8Chars& src,
     return CharsT();
   }
 
-  constexpr OnUTF8Error errorMode =
-      std::is_same_v<CharT, Latin1Char>
-          ? OnUTF8Error::InsertQuestionMark
-          : OnUTF8Error::InsertReplacementCharacter;
-  CopyAndInflateUTF8IntoBuffer<errorMode>(cx, src, dst, *outlen, allASCII);
+  CopyAndInflateUTF8IntoBuffer<OnUTF8Error::InsertQuestionMark>(
+      cx, src, dst, *outlen, allASCII);
   dst[*outlen] = CharT('\0');
 
   return CharsT(dst, *outlen);

@@ -1,8 +1,7 @@
-// |jit-test| --disable-tosource; --setpref=legacy_tosource_lookup=false
+// |jit-test| --disable-tosource
 
-// Ensure the object.toSource() path in ValueToSource is disabled if the
-// legacy_tosource_lookup pref is false and we're not defining the toSource/uneval
-// builtins.
+// Ensure the object.toSource() path in ValueToSource is disabled when the
+// toSource/uneval builtins are not defined.
 
 function testPlain() {
   var toSourceCalled = false;

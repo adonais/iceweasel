@@ -23,7 +23,7 @@ class HTMLDetailsElement final : public nsGenericHTMLElement {
   using NodeInfo = mozilla::dom::NodeInfo;
   using Element::Command;
 
-  explicit HTMLDetailsElement(already_AddRefed<NodeInfo>&& aNodeInfo);
+  explicit HTMLDetailsElement(already_AddRefed<NodeInfo> aNodeInfo);
 
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLDetailsElement, details)
 

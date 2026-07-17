@@ -224,6 +224,9 @@ default-features = false
 version = "0.6.2"
 default-features = false
 
+[dependencies.static_assertions]
+version = "1.1"
+
 [dependencies.thiserror]
 version = "2.0.12"
 default-features = false
@@ -242,7 +245,7 @@ version = "0.11"
 default-features = false
 
 [dev-dependencies.glam]
-version = "0.32.0"
+version = "0.33.0"
 
 [dev-dependencies.naga]
 version = "29.0.0"

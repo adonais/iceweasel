@@ -275,7 +275,7 @@ NS_IMPL_ISUPPORTS(nsAndroidBridge, nsIGeckoViewEventDispatcher,
 
 nsAndroidBridge::nsAndroidBridge() {
   if (jni::IsAvailable()) {
-    RefPtr<widget::EventDispatcher> dispatcher = new widget::EventDispatcher();
+    auto dispatcher = MakeRefPtr<widget::EventDispatcher>();
     dispatcher->Attach(java::EventDispatcher::GetInstance());
     mEventDispatcher = dispatcher;
   }
@@ -288,7 +288,7 @@ nsAndroidBridge::GetDispatcherByName(const char* aName,
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<widget::EventDispatcher> dispatcher = new widget::EventDispatcher();
+  auto dispatcher = MakeRefPtr<widget::EventDispatcher>();
   dispatcher->Attach(java::EventDispatcher::ByName(aName));
   dispatcher.forget(aResult);
   return NS_OK;

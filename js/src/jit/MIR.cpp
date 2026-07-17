@@ -714,6 +714,16 @@ void MInstruction::stealResumePoint(MInstruction* other) {
   setResumePoint(resumePoint);
 }
 
+bool MInstruction::copyResumePointFrom(TempAllocator& alloc,
+                                       MInstruction* previous) {
+  MResumePoint* rp = previous->resumePoint_->clone(alloc);
+  if (!rp) {
+    return false;
+  }
+  setResumePoint(rp);
+  return true;
+}
+
 void MInstruction::moveResumePointAsEntry() {
   MOZ_ASSERT(isNop());
   block()->clearEntryResumePoint();
@@ -4431,6 +4441,19 @@ MResumePoint* MResumePoint::New(TempAllocator& alloc, MBasicBlock* block,
   return resume;
 }
 
+MResumePoint* MResumePoint::clone(TempAllocator& alloc) {
+  MResumePoint* resume = new (alloc) MResumePoint(block(), pc_, mode_);
+  size_t n = this->numOperands();
+  if (!resume->operands_.init(alloc, n)) {
+    return nullptr;
+  }
+  for (size_t i = 0; i < n; i++) {
+    resume->initOperand(i, getOperand(i));
+  }
+  resume->stores_.copy(this->stores_);
+  return resume;
+}
+
 MResumePoint::MResumePoint(MBasicBlock* block, jsbytecode* pc, ResumeMode mode)
     : MNode(block, Kind::ResumePoint),
       pc_(pc),
@@ -6695,7 +6718,11 @@ static bool AddIsANonZeroAdditionOf(MAdd* add, MDefinition* ins) {
   if (!other->isConstant()) {
     return false;
   }
-  if (other->toConstant()->numberToDouble() == 0) {
+  // The constant must be representable as a non-zero int32. Other doubles may
+  // leave the index unchanged after conversion.
+  int32_t n;
+  if (!mozilla::NumberIsInt32(other->toConstant()->numberToDouble(), &n) ||
+      n == 0) {
     return false;
   }
   return true;

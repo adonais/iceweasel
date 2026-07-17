@@ -11,7 +11,9 @@
 #include "CacheStorage.h"
 #include "CacheEntry.h"
 #include "CacheFileUtils.h"
+#include "mozilla/net/NoVarySearchUtils.h"
 
+#include "nsQueryObject.h"
 #include "ErrorList.h"
 #include "nsICacheStorageVisitor.h"
 #include "nsIObserverService.h"
@@ -1201,6 +1203,39 @@ void CacheStorageService::MarkForcedValidEntryUse(nsACString const& aContextKey,
   mForcedValidEntries.InsertOrUpdate(aContextKey + aEntryKey, data);
 }
 
+// Registers a cache entry in the No-Vary-Search secondary index so that
+// future cache lookups for variant URLs can find it without scanning the
+// entire entry table.
+//
+// When a response carrying a No-Vary-Search header is stored, this method
+// is called to record the mapping:
+//   aBasePath (scheme://host:port/path) → aFullKey (the full cache entry key)
+//
+// On a subsequent exact-key cache miss, AddStorageEntry() consults this index
+// to find candidate entries sharing the same base path and checks each one for
+// URL equivalence under its stored NVS header
+// (see "equivalent modulo variation config",
+// https://www.ietf.org/archive/id/draft-ietf-httpbis-no-vary-search-05.html#section-6).
+//
+// Must be called with sLock NOT held; acquires sLock internally.
+void CacheStorageService::NoteNoVarySearchEntry(const nsACString& aContextKey,
+                                                const nsACString& aBasePath,
+                                                const nsACString& aFullKey) {
+  StaticMutexAutoLock lock(sLock);
+  CacheEntryTable* entries = sGlobalEntryTables->Get(aContextKey);
+  if (entries) {
+    entries->NoteNoVarySearchEntry(aBasePath, aFullKey);
+  }
+}
+
+void CacheStorageService::NoteNoVarySearchEntry(nsICacheEntry* aEntry,
+                                                nsIURI* aURI) {
+  RefPtr<CacheEntryHandle> handle = do_QueryObject(aEntry);
+  if (handle) {
+    handle->Entry()->NoteNoVarySearchEntry(aURI);
+  }
+}
+
 // Allows a cache entry to be loaded directly from cache without further
 // validation - see nsICacheEntry.idl for further details
 void CacheStorageService::ForceEntryValidFor(nsACString const& aContextKey,
@@ -1634,6 +1669,63 @@ nsresult CacheStorageService::AddStorageEntry(
         StaticPrefs::network_cache_bug1708673()) {
       return NS_ERROR_CACHE_KEY_NOT_FOUND;
     }
+
+    // No-Vary-Search secondary lookup on exact-key miss.
+    // Implements the "equivalent modulo variation config" algorithm:
+    // https://www.ietf.org/archive/id/draft-ietf-httpbis-no-vary-search-05.html#section-6
+    //
+    // On an exact-key miss, consult mNoVarySearchIndex to find cached entries
+    // that share the same base path (scheme://host:port/path) and carry a
+    // No-Vary-Search header. For each candidate, parse its stored NVS header
+    // and check whether the incoming URL is equivalent to the candidate URL
+    // under those NVS rules. The first matching candidate is used as the cache
+    // hit. OPEN_TRUNCATE is excluded because truncation always creates a new
+    // entry regardless of equivalence.
+    // TODO (bug 2042810): NS_NewURI calls here are needed because the cache
+    // stores URIs as strings (a legacy of bug 1271019, when nsIURI was not
+    // thread-safe). Threading nsIURI through the cache APIs would eliminate
+    // this reparsing.
+    if (StaticPrefs::network_cache_no_vary_search() && !entryExists &&
+        !(aFlags & nsICacheStorage::OPEN_TRUNCATE)) {
+      nsCOMPtr<nsIURI> incomingURI;
+      nsAutoCString basePath;
+      if (NS_SUCCEEDED(NS_NewURI(getter_AddRefs(incomingURI), aURI)) &&
+          NS_SUCCEEDED(ExtractNoVarySearchBasePath(incomingURI, basePath))) {
+        auto candidates = entries->mNoVarySearchIndex.Lookup(basePath);
+        if (candidates) {
+          for (const auto& fullKey : *candidates) {
+            RefPtr<CacheEntry> candidate;
+            if (!entries->Get(fullKey, getter_AddRefs(candidate))) {
+              continue;
+            }
+
+            nsAutoCString nvsVal;
+            candidate->GetMetaDataElement("no-vary-search",
+                                          getter_Copies(nvsVal));
+            if (nvsVal.IsEmpty()) {
+              continue;
+            }
+
+            nsAutoCString candidateSpec;
+            candidate->GetKey(candidateSpec);
+            nsCOMPtr<nsIURI> candidateURI;
+            if (NS_FAILED(
+                    NS_NewURI(getter_AddRefs(candidateURI), candidateSpec))) {
+              continue;
+            }
+
+            auto data = ParseNoVarySearchHeader(nvsVal);
+            if (URLsAreEquivalentModuloVariationConfig(incomingURI,
+                                                       candidateURI, data)) {
+              entry = candidate;
+              entryExists = true;
+              break;
+            }
+          }
+        }
+      }
+    }
+
     if (entryExists && (aFlags & nsICacheStorage::OPEN_COMPLETE_ONLY)) {
       bool ready = false;
       // We're looking for complete files, even if they're being revalidated

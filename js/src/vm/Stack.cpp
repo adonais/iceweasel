@@ -372,20 +372,19 @@ void InterpreterFrame::traceValues(JSTracer* trc, unsigned start,
   }
 }
 
-static void TraceInterpreterActivation(JSTracer* trc,
-                                       InterpreterActivation* act) {
-  for (InterpreterFrameIterator frames(act); !frames.done(); ++frames) {
+void InterpreterActivation::trace(JSTracer* trc) {
+  traceCommon(trc);
+
+  for (InterpreterFrameIterator frames(this); !frames.done(); ++frames) {
     InterpreterFrame* fp = frames.frame();
     fp->trace(trc, frames.sp(), frames.pc());
   }
 }
 
-void js::TraceInterpreterActivations(JSContext* cx, JSTracer* trc) {
+void js::TraceActivations(JSContext* cx, JSTracer* trc) {
   for (ActivationIterator iter(cx); !iter.done(); ++iter) {
     Activation* act = iter.activation();
-    if (act->isInterpreter()) {
-      TraceInterpreterActivation(trc, act->asInterpreter());
-    }
+    act->trace(trc);
   }
 }
 

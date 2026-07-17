@@ -19,6 +19,8 @@ mod err;
 #[macro_use]
 mod exp;
 pub mod ext;
+#[cfg(all(not(feature = "disable-encryption"), feature = "blapi"))]
+pub(crate) mod freebl;
 pub mod hkdf;
 pub mod hp;
 
@@ -38,7 +40,6 @@ mod ssl;
 pub mod time;
 
 use std::{
-    env,
     ffi::CString,
     path::{Path, PathBuf},
     ptr::null,
@@ -54,7 +55,7 @@ mod _link_anchor {
 }
 
 pub use self::{
-    aead::RecordProtection,
+    aead::{Mode, RecordProtection, RecordProtectionOps},
     agent::{
         Agent, AllowZeroRtt, Client, HandshakeState, Record, RecordList, ResumptionToken,
         SecretAgent, SecretAgentInfo, SecretAgentPreInfo, Server, ZeroRttCheckResult,
@@ -189,15 +190,18 @@ pub fn init() -> Res<()> {
     res.as_ref().map(|_| ()).map_err(Clone::clone)
 }
 
+/// The path to the default NSS database used for testing.
+pub const TEST_FIXTURE_DB: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test-fixture/db");
+
+/// The path to the FIPS-mode NSS database used for testing.
+pub const TEST_FIXTURE_DB_FIPS: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/test-fixture/db-fips");
+
 /// Initialize with a database.
 ///
 /// # Errors
 ///
 /// If NSS cannot be initialized.
 pub fn init_db<P: Into<PathBuf>>(dir: P) -> Res<()> {
-    // Allow overriding the NSS database path with an environment variable.
-    let dir =
-        env::var("NSS_DB_PATH").unwrap_or(dir.into().to_str().ok_or(Error::Internal)?.to_string());
     let res = INITIALIZED.get_or_init(|| init_once(Some(dir.into())));
     res.as_ref().map(|_| ()).map_err(Clone::clone)
 }

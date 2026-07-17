@@ -29,9 +29,16 @@ add_task(async function setOverrideInDebugger_removeOverrideInNetmonitor() {
 
   info("Switch to debugger and setup an override for a script");
   await toolbox.selectTool("jsdebugger");
-  const dbg = createDebuggerContext(toolbox);
 
-  await waitForSourcesInSourceTree(dbg, ["script.js"], {
+  const dbg = createDebuggerContext(toolbox);
+  const isStylesheetsInDebuggerEnabled = Services.prefs.getBoolPref(
+    "devtools.debugger.features.stylesheets-in-debugger"
+  );
+  const treeSources = ["script.js"];
+  if (isStylesheetsInDebuggerEnabled) {
+    treeSources.push("style.css");
+  }
+  await waitForSourcesInSourceTree(dbg, treeSources, {
     noExpand: false,
   });
 
@@ -121,8 +128,14 @@ add_task(async function setOverrideInNetmonitor_removeOverrideInDebugger() {
   info("Switch to debugger and check the override for a script");
   await toolbox.selectTool("jsdebugger");
   const dbg = createDebuggerContext(toolbox);
-
-  await waitForSourcesInSourceTree(dbg, ["script.js"], {
+  const isStylesheetsInDebuggerEnabled = Services.prefs.getBoolPref(
+    "devtools.debugger.features.stylesheets-in-debugger"
+  );
+  const treeSources = ["script.js"];
+  if (isStylesheetsInDebuggerEnabled) {
+    treeSources.push("style.css");
+  }
+  await waitForSourcesInSourceTree(dbg, treeSources, {
     noExpand: false,
   });
 

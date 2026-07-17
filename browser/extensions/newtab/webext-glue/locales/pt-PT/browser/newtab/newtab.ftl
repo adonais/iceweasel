@@ -31,6 +31,127 @@ newtab-card-dismiss-button =
     .title = Dispensar
     .aria-label = Dispensar
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-title =
+    .label = Página inicial
+home-homepage-new-windows =
+    .label = Novas janelas
+home-homepage-new-tabs =
+    .label = Novos separadores
+# This option leads to the "Custom Homepage" subpage
+home-homepage-custom-homepage-button =
+    .label = Escolha um site específico
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = Endereço(s) do site
+home-custom-homepage-address =
+    .placeholder = Inserir endereço
+home-custom-homepage-address-button =
+    .label = Adicionar endereço
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-results =
+    .label = Ainda não foram adicionados sites.
+home-custom-homepage-delete-address-button =
+    .aria-label = Eliminar endereço
+    .title = Eliminar endereço
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with-prompt =
+    .label = Substituir por
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-current-pages-button =
+    .label = Páginas atualmente abertas
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-bookmarks-button =
+    .label = Marcadores…
+
+## Firefox Home content
+
+home-prefs-content-header =
+    .label = { -firefox-home-brand-name }
+home-prefs-search-header2 =
+    .label = Pesquisar
+home-prefs-stories-header2 =
+    .label = Histórias
+    .description = Conteúdo excecional selecionado pela família { -brand-product-name }
+home-prefs-widgets-header =
+    .label = Widgets
+# Lists is a widget on New Tab, similar to a to-do widget
+home-prefs-lists-header =
+    .label = Listas
+# Timer is a widget on New Tab, similar to the Pomodoro timer.
+home-prefs-timer-header =
+    .label = Temporizador
+# Sports is a widget on New Tab showing sports scores and schedules.
+home-prefs-sports-widget-header =
+    .label = Desportos
+# Clock is a widget on New Tab that displays time zones around the world.
+home-prefs-clocks-header =
+    .label = Relógio
+home-prefs-mission-message2 =
+    .message = Os nossos patrocinadores apoiam a nossa missão para construir uma Internet melhor.
+home-prefs-manage-topics-link2 =
+    .label = Gerir tópicos
+home-prefs-choose-wallpaper-link2 =
+    .label = Escolha um fundo
+home-prefs-firefox-logo-header =
+    .label = Logótipo do { -brand-short-name }
+# Informational message bar that appears in the Firefox Home section when the options are disabled.
+# The user must select Firefox Home as their homepage for either new tabs or new windows to enable
+# the features in settings.
+home-prefs-firefox-home-disabled-notice =
+    .message = Para utilizar estas funcionalidades, defina os novos separadores ou as novas janelas para o { -firefox-home-brand-name }.
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } linha
+           *[other] { $num } linhas
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Extensão ({ $extension })
+home-restore-defaults-srd =
+    .label = Restaurar predefinições
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = (Padrão) { -firefox-home-brand-name }
+home-mode-choice-custom-srd =
+    .label = URLs personalizados...
+home-mode-choice-blank-srd =
+    .label = Página em branco
+home-prefs-shortcuts-header-srd =
+    .label = Atalhos
+home-prefs-shortcuts-select =
+    .aria-label = Atalhos
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Atalhos patrocinados
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Histórias patrocinadas
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Páginas visitadas
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Marcadores
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Transferência mais recente
+home-prefs-recent-activity-header-srd =
+    .label = Atividade recente
+home-prefs-recent-activity-select =
+    .aria-label = Atividade recente
+home-prefs-weather-header-srd =
+    .label = Meteorologia
+home-prefs-support-firefox-header-srd =
+    .label = Apoiar o { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = Descubra como
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -151,6 +272,8 @@ newtab-menu-section-block = Bloquear
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow-topic = Deixar de seguir
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Saber mais
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Deixar de seguir tópico
@@ -367,6 +490,10 @@ newtab-custom-widget-lists-toggle =
     .label = Listas
 newtab-custom-widget-timer-toggle =
     .label = Temporizador
+newtab-custom-widget-sports-toggle =
+    .label = Mundial de Futebol
+newtab-custom-widget-clock-toggle =
+    .label = Relógio
 newtab-custom-widget-section-title = Widgets
 newtab-custom-widget-section-toggle =
     .label = Widgets
@@ -738,6 +865,8 @@ newtab-widget-lists-label-beta =
 # Variables:
 #   $number (number) - Amount of list items marked complete
 newtab-widget-lists-completed-list = Concluídas ({ $number })
+newtab-widget-lists-celebration-headline = Bom trabalho
+newtab-widget-lists-celebration-subhead = Tudo feito
 newtab-widget-task-list-menu-copy = Copiar
 newtab-widget-lists-menu-edit = Editar nome da lista
 newtab-widget-lists-menu-edit2 =
@@ -750,14 +879,14 @@ newtab-widget-lists-button-add-item = Adicionar um item
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Adicionar um item
     .aria-label = Adicionar um item
-newtab-widget-lists-input-add-an-item =
-    .placeholder = Adicionar um item
 newtab-widget-lists-input-error = Por favor, inclua texto para adicionar um item.
 newtab-widget-lists-input-menu-open-link = Abrir ligação
 newtab-widget-lists-input-menu-move-up = Mover para cima
 newtab-widget-lists-input-menu-move-down = Mover para baixo
 newtab-widget-lists-input-menu-delete = Eliminar
 newtab-widget-lists-input-menu-edit = Editar
+newtab-widget-lists-input-menu-edit2 =
+    .aria-label = Editar item
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Criar uma nova lista
@@ -774,11 +903,6 @@ newtab-widget-lists-name-placeholder-checklist2 =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = Nova lista
     .aria-label = Editar nome da lista
-newtab-widget-lists-name-placeholder-checklist =
-    .placeholder = Lista de verificação
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Nova lista
 newtab-widget-section-title = Widgets
 newtab-widget-menu-hide = Ocultar widget
 newtab-widget-menu-change-size = Alterar tamanho
@@ -845,6 +969,110 @@ newtab-promo-card-dismiss-button =
     .title = Dispensar
     .aria-label = Dispensar
 
+## Strings introduced by the Nova redesign of the Timer widget
+
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-start-aria =
+    .aria-label =
+        { $minutes ->
+            [one] Iniciar o temporizador de { $minutes } minuto
+           *[other] Iniciar o temporizador de { $minutes } minutos
+        }
+newtab-widget-timer-pause-aria =
+    .aria-label = Pausar temporizador
+# Variables:
+#   $minutes (number) - The currently selected timer duration in minutes
+newtab-widget-timer-spinbutton-name =
+    .aria-label =
+        { $minutes ->
+            [one] { $minutes } minuto
+           *[other] { $minutes } minutos
+        }
+newtab-widget-timer-decrease-min =
+    .title = Diminuir 1 minuto
+newtab-widget-timer-increase-min =
+    .title = Aumentar 1 minuto
+newtab-widget-timer-mode-group =
+    .aria-label = Modo de temporizador
+# Small label shown beneath the live time while the focus timer is running or paused.
+newtab-widget-timer-running-focus = Foco
+# Small label shown beneath the live time while the break timer is running or paused.
+newtab-widget-timer-running-break = Pausa
+# Context-menu item to hide the Timer widget. Replaces the shared "Hide widget"
+# copy with a widget-specific string per the Nova design.
+newtab-widget-timer-menu-hide = Ocultar temporizador
+# Heading shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-heading-focus = Bom trabalho
+# Heading shown inside the Timer widget after a break session ends.
+newtab-widget-timer-celebration-heading-break = A sua pausa terminou
+# Message shown inside the Timer widget after a focus session ends.
+newtab-widget-timer-celebration-message-focus = Precisa de uma pausa?
+# Message shown inside the Timer widget after a break session ends.
+newtab-widget-timer-celebration-message-break = Pronto para se focar?
+
+##
+
+newtab-sports-widget-menu-follow-teams = Seguir equipas
+newtab-sports-widget-menu-view-upcoming = Ver próximos
+newtab-sports-widget-menu-view-results = Ver resultados
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-menu-key-dates = Datas-chave
+newtab-sports-widget-menu-learn-more = Saber mais
+# “Keep tabs on” is an informal expression meaning to stay updated on, stay informed on, or regularly follow something (in this case, World Cup matches and updates).
+newtab-sports-widget-keep-tabs = Mantenha os separadores do Mundial de Futebol
+newtab-sports-widget-get-updates = Obtenha atualizações dos jogos em direto e muito mais.
+newtab-sports-widget-view-schedule =
+    .label = Ver programa
+newtab-sports-widget-follow-teams =
+    .label = Seguir equipas
+# Variables:
+#   $number (number) - Maximum number of teams a user can choose to follow in the team selection state
+newtab-sports-widget-follow-teams-title =
+    { $number ->
+        [one] Acompanhe até { $number } equipa
+       *[other] Acompanhe até { $number } equipas
+    }
+newtab-sports-widget-choose-wallpaper =
+    .label = Escolha um fundo
+newtab-sports-widget-skip = Ignorar
+newtab-sports-widget-search-country =
+    .placeholder = Pesquisar país
+    .aria-label = Pesquisar país
+newtab-sports-widget-cancel = Cancelar
+newtab-sports-widget-done-button =
+    .label = Feito
+newtab-sports-widget-group-stage = Fase de grupos
+newtab-sports-widget-round-16 = Oitavos de final
+newtab-sports-widget-quarter-finals = Quartos de final
+# The "LIVE" string is meant to be uppercase in English, but other languages and locales may vary in how they handle this.
+newtab-sports-widget-live = EM DIRETO
+newtab-custom-widget-live-refresh =
+    .title = Atualizar pontuações
+    .aria-label = Atualizar pontuações
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-key-dates = Datas-chave
+newtab-sports-widget-upcoming = Brevemente
+newtab-sports-widget-results = Resultados
+newtab-sports-widget-semi-finals = Meias-finais
+# Final is the final match for 1st place.
+newtab-sports-widget-final = Final
+# Variables:
+#   $date (Date) - Date of a single tournament event
+newtab-sports-widget-key-date = { DATETIME($date, month: "short", day: "numeric") }
+newtab-sports-widget-delayed = Atrasado
+newtab-sports-widget-postponed = Adiado
+newtab-sports-widget-suspended = Suspenso
+newtab-sports-widget-cancelled = Cancelado
+newtab-sports-widget-information = Informações sobre o jogo
+newtab-sports-widget-no-live-data = Os dados dos jogos em direto não estão a ser atualizados neste momento
+newtab-sports-widget-view-results-link = Ver resultados
+newtab-sports-widget-third-place = 3.º lugar
+# Runner-up is the team in 2nd place.
+newtab-sports-widget-runner-up = Vice-campeões
+newtab-sports-widget-champions = Liga dos Campeões
+newtab-sports-widget-world-cup-champions = Campeões do Mundial de 2026
+
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
 ## for the first 48 hours of a new profile's lifetime. Some messages include buttons with
@@ -866,3 +1094,52 @@ newtab-activation-window-message-customization-focus-primary-button =
 # the existing widgetry that appears on it.
 newtab-activation-window-message-values-focus-header = Este espaço segue as suas regras
 newtab-activation-window-message-values-focus-message = O { -brand-product-name } permite que navegue como gosta, com uma forma mais pessoal de começar o seu dia na Internet. Torne o { -brand-product-name } seu.
+
+## Strings for the Clock widget
+
+# Context menu item: toggle the clock card off.
+newtab-clock-widget-menu-hide = Ocultar relógio
+newtab-clock-widget-menu-learn-more = Saber mais
+newtab-clock-widget-menu-edit = Editar relógios
+newtab-clock-widget-menu-switch-to-12h = Mudar para o formato de 12 horas
+newtab-clock-widget-menu-switch-to-24h = Mudar para o formato de 24 horas
+newtab-clock-widget-label-your-clocks = Os seus relógios
+newtab-clock-widget-search-location-input =
+    .label = Localização
+    .placeholder = Pesquisar por cidade
+    .aria-label = Pesquisar por cidade
+# "Add new clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-button-add =
+    .title = Adicionar novo relógio
+    .aria-label = Adicionar novo relógio
+newtab-clock-widget-button-add-clock = Adicionar
+newtab-clock-widget-button-cancel = Cancelar
+newtab-clock-widget-button-back =
+    .title = Voltar
+    .aria-label = Voltar
+newtab-clock-widget-button-edit-clock =
+    .title = Editar relógio
+    .aria-label = Editar relógio
+newtab-clock-widget-button-save = Guardar
+newtab-clock-widget-button-remove-clock =
+    .title = Remover relógio
+    .aria-label = Remover relógio
+newtab-clock-widget-add-clock-form =
+    .aria-label = Adicionar relógio
+newtab-clock-widget-edit-clock-form =
+    .aria-label = Editar relógio
+# "Search results" is the accessible label for the listbox dropdown that appears
+# below the location search field, listing matching cities as the user types.
+# It means "results of the search", not "search within the results".
+newtab-clock-widget-search-results =
+    .aria-label = Resultados da pesquisa
+# "Open menu for clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-menu-button =
+    .title = Abrir menu para o relógio
+    .aria-label = Abrir menu para o relógio
+# $nickname (String) - The user-defined nickname for a saved clock location (e.g., "Home", "Office").
+newtab-clock-widget-label-nickname-with-value = Nome alternativo: { $nickname }

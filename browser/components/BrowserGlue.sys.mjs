@@ -113,6 +113,7 @@ ChromeUtils.defineLazyGetter(
 
 if (AppConstants.MOZ_CRASHREPORTER) {
   ChromeUtils.defineESModuleGetters(lazy, {
+    CrashFileCleaner: "resource:///modules/ContentCrashHandlers.sys.mjs",
     UnsubmittedCrashHandler: "resource:///modules/ContentCrashHandlers.sys.mjs",
   });
 }
@@ -275,7 +276,7 @@ BrowserGlue.prototype = {
         // URI that it's been asked to load into a keyword search.
         let engine = null;
         try {
-          engine = lazy.SearchService.getEngineByName(
+          engine = lazy.SearchService.getEngineById(
             subject.QueryInterface(Ci.nsISupportsString).data
           );
         } catch (ex) {
@@ -863,9 +864,10 @@ BrowserGlue.prototype = {
         // This usually happens after the test harness is done collecting
         // test errors, thus we can't easily add a failure to it. The only
         // noticeable solution we have is crashing.
+        // See bug 2034905 for filename / fileName shenanigans.
         Cc["@mozilla.org/xpcom/debug;1"]
           .getService(Ci.nsIDebug2)
-          .abort(ex.filename, ex.lineNumber);
+          .abort(ex.filename || ex.fileName, ex.lineNumber);
       }
     }
 
@@ -940,6 +942,8 @@ BrowserGlue.prototype = {
     }
 
     if (AppConstants.MOZ_CRASHREPORTER) {
+      lazy.CrashFileCleaner.init();
+      lazy.CrashFileCleaner.scheduleCleanup();
       lazy.UnsubmittedCrashHandler.init();
       lazy.UnsubmittedCrashHandler.scheduleCheckForUnsubmittedCrashReports();
     }
@@ -1596,7 +1600,7 @@ BrowserGlue.prototype = {
     // Use an increasing number to keep track of the current state of the user's
     // profile, so we can move data around as needed as the browser evolves.
     // Completely unrelated to the current Firefox release number.
-    const APP_DATA_VERSION = 172;
+    const APP_DATA_VERSION = 175;
     const PREF = "browser.migration.version";
 
     let profileDataVersion = Services.prefs.getIntPref(PREF, -1);

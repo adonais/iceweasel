@@ -16,7 +16,7 @@ namespace mozilla::dom {
 
 class WebIdentityHandler final : public AbortFollower {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(WebIdentityHandler)
 
   explicit WebIdentityHandler(nsPIDOMWindowInner* aWindow) : mWindow(aWindow) {

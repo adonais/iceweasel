@@ -96,7 +96,7 @@ class nrappkitTimerCallback : public nrappkitCallback,
                         int line)
       : nrappkitCallback(cb, cb_arg, function, line), timer_(nullptr) {}
 
-  void SetTimer(already_AddRefed<nsITimer>&& timer) { timer_ = timer; }
+  void SetTimer(already_AddRefed<nsITimer> timer) { timer_ = timer; }
 
   virtual void Cancel() override {
     AddRef();  // Cancelling the timer causes the callback it holds to

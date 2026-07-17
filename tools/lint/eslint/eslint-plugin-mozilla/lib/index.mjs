@@ -125,6 +125,9 @@ let plugin = {
     "reject-multiple-getters-calls": (
       await import("./rules/reject-multiple-getters-calls.mjs")
     ).default,
+    "reject-import-preferences-module": (
+      await import("./rules/reject-import-preferences-module.mjs")
+    ).default,
     "reject-scriptableunicodeconverter": (
       await import("./rules/reject-scriptableunicodeconverter.mjs")
     ).default,

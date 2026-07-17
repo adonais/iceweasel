@@ -41,11 +41,13 @@ static const char SandboxPolicyRDD[] = R"SANDBOX_LITERAL(
     (subpath "/Library/GPUBundles")
     (subpath app-path))
 
+  ; bug 2045105 - required for initializing video encoders.
+  (allow file-read-metadata (subpath "/"))
+
   (if (string? crashPort)
     (allow mach-lookup (global-name crashPort)))
 
   (allow signal (target self))
-  (allow sysctl-read)
   (allow file-read*
     (literal "/dev/random")
     (literal "/dev/urandom")

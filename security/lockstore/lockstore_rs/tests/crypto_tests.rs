@@ -13,7 +13,7 @@ use lockstore_rs::{LockstoreError, DEFAULT_CIPHER_SUITE};
 use std::sync::Arc;
 
 fn make_store() -> Arc<Store> {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     Arc::new(Store::new(StorePath::for_in_memory()))
 }
 
@@ -105,7 +105,7 @@ fn test_cipher_suite_from_str_unknown() {
 
 #[test]
 fn test_encrypt_decrypt_roundtrip_aes256gcm() {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     let key = generate_random_key(CipherSuite::Aes256Gcm);
     let plaintext = b"hello, world!";
 
@@ -121,7 +121,7 @@ fn test_encrypt_decrypt_roundtrip_aes256gcm() {
 
 #[test]
 fn test_encrypt_decrypt_roundtrip_chacha20() {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     let key = generate_random_key(CipherSuite::ChaCha20Poly1305);
     let plaintext = b"hello, chacha!";
 
@@ -134,7 +134,7 @@ fn test_encrypt_decrypt_roundtrip_chacha20() {
 
 #[test]
 fn test_encrypt_empty_plaintext() {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     let key = generate_random_key(CipherSuite::Aes256Gcm);
 
     let ciphertext = encrypt_with_key(b"", &key, CipherSuite::Aes256Gcm).expect("encrypt failed");
@@ -145,7 +145,7 @@ fn test_encrypt_empty_plaintext() {
 
 #[test]
 fn test_encrypt_large_plaintext() {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     let key = generate_random_key(CipherSuite::Aes256Gcm);
     let plaintext = vec![0xABu8; 1_000_000];
 
@@ -174,7 +174,7 @@ fn test_decrypt_wrong_key_size() {
 
 #[test]
 fn test_decrypt_truncated_ciphertext() {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     let key = generate_random_key(CipherSuite::Aes256Gcm);
     // byte 0 = Aes256Gcm id, then only 3 more bytes (less than nonce_size=12)
     let too_short = vec![0u8; 4];
@@ -184,7 +184,7 @@ fn test_decrypt_truncated_ciphertext() {
 
 #[test]
 fn test_decrypt_wrong_key() {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     let key1 = generate_random_key(CipherSuite::Aes256Gcm);
     let key2 = generate_random_key(CipherSuite::Aes256Gcm);
 
@@ -197,7 +197,7 @@ fn test_decrypt_wrong_key() {
 
 #[test]
 fn test_encrypt_produces_different_ciphertexts() {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     let key = generate_random_key(CipherSuite::Aes256Gcm);
     let plaintext = b"same input";
 
@@ -212,7 +212,7 @@ fn test_encrypt_produces_different_ciphertexts() {
 
 #[test]
 fn test_generate_random_key_length() {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     for cs in [CipherSuite::Aes256Gcm, CipherSuite::ChaCha20Poly1305] {
         let key = generate_random_key(cs);
         assert_eq!(key.len(), cs.key_size());
@@ -221,7 +221,7 @@ fn test_generate_random_key_length() {
 
 #[test]
 fn test_generate_random_key_unique() {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     let k1 = generate_random_key(CipherSuite::Aes256Gcm);
     let k2 = generate_random_key(CipherSuite::Aes256Gcm);
     assert_ne!(k1, k2);
@@ -229,7 +229,7 @@ fn test_generate_random_key_unique() {
 
 #[test]
 fn test_generate_random_nonce_length() {
-    nss_gk_api::init();
+    nss_rs::init().expect("nss_rs::init");
     for cs in [CipherSuite::Aes256Gcm, CipherSuite::ChaCha20Poly1305] {
         let nonce = generate_random_nonce(cs);
         assert_eq!(nonce.len(), cs.nonce_size());

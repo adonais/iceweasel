@@ -4,6 +4,7 @@
 
 import {
   html,
+  nothing,
   repeat,
   styleMap,
 } from "chrome://global/content/vendor/lit.all.mjs";
@@ -217,14 +218,14 @@ export class InputCta extends MozLitElement {
         href="chrome://browser/content/aiwindow/components/input-cta.css"
       />
       <moz-button
-        type=${this.action && !isStop ? "split" : "default"}
+        type=${this.action && !isStop ? "split" : "ghost"}
         class="input-cta"
         .menuId=${this.action && !isStop ? this._menuId : undefined}
         .iconSrc=${this.buttonIconSrc}
         @click=${this.#onAction}
         ?disabled=${!this.action}
-        .ariaLabel=${isStop ? "Stop response generation" : ""}
-        .title=${isStop ? "Stop response" : ""}
+        data-l10n-id=${isStop ? "aiwindow-input-cta-stop-button" : nothing}
+        data-l10n-attrs=${isStop ? "aria-label title" : nothing}
       >
         ${isStop
           ? ""

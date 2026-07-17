@@ -46,16 +46,18 @@ class EdgeToEdgeFragmentLifecycleCallbacks(
         savedInstanceState: Bundle?,
     ) {
         // Dialog fragments have their own edge-to-edge behavior, separate from Fenix's main activity.
-        if (f is DialogFragment) return
-
         // DialogFragments which cycle through inner fragments should not change the edge-to-edge strategy for
         // Fenix's main activity. One such example is the calendar picker handled in a MaterialDatePicker dialog
         // which then uses a normal fragment for the actual picker functionality.
-        if (f.parentFragment is DialogFragment) return
+        if (f is DialogFragment || f.parentFragment is DialogFragment) return
 
         // QRFragment is a generic Android Components fragment that is nested in Fenix.
         // As such the edge-to-edge behavior is to be controlled only through its Fenix container.
         if (f is QrFragment) return
+
+        // NavHostFragment loads fragments into it, and when we set the edge to edge strategy for a
+        // NavHostFragment there ends up a race condition between the competing fragments.
+        if (f is NavHostFragment) return
 
         setEdgeToEdgeStrategy(f)
     }
@@ -65,7 +67,7 @@ class EdgeToEdgeFragmentLifecycleCallbacks(
             // Change the edge-to-edge behavior immediately after the new fragment is attached
             // to ensure an immediate change.
             fragment.view?.doOnAttach {
-                when (fragment is SystemInsetsPaddedFragment || fragment is NavHostFragment) {
+                when (fragment is SystemInsetsPaddedFragment) {
                     true -> setupPersistentInsets()
                     else -> clearPersistentInsets()
                 }

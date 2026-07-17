@@ -2619,7 +2619,6 @@ head_rev: f0a0beee64e4d7c59661174f1678b1da77e32a23
 head_tag: ''
 hg_branch: default
 level: '3'
-message: ''
 moz_build_date: '20260415090442'
 next_version: 150.0b11
 optimize_strategies: gecko_taskgraph.optimize:project.beta

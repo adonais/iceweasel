@@ -4,6 +4,7 @@
 
 LOCAL_INCLUDES += [
     "../..",
+    "../../../../../third_party/abseil-cpp",
     "../../../../../third_party/content_analysis_sdk/browser/include/",
 ]
 

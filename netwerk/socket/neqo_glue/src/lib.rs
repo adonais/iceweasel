@@ -659,9 +659,16 @@ impl NeqoHttp3Conn {
             add("datagram", s.datagram);
         }
 
+        // Only record the metrics below for connections that established. Not
+        // gating on `stats.packets_rx` as it counts garbage too, so it would
+        // still admit a network that replies to every UDP packet with junk
+        // without ever speaking QUIC.
+        if stats.frame_rx.handshake_done == 0 {
+            return;
+        }
+
         if !static_prefs::pref!("network.http.http3.use_nspr_for_io")
             && static_prefs::pref!("network.http.http3.ecn_report")
-            && stats.frame_rx.handshake_done != 0
         {
             let rx_ect0_sum: u64 = stats.ecn_rx.into_values().map(|v| v[Ecn::Ect0]).sum();
             let rx_ce_sum: u64 = stats.ecn_rx.into_values().map(|v| v[Ecn::Ce]).sum();
@@ -678,7 +685,6 @@ impl NeqoHttp3Conn {
 
         if !static_prefs::pref!("network.http.http3.use_nspr_for_io")
             && static_prefs::pref!("network.http.http3.ecn_mark")
-            && stats.frame_rx.handshake_done != 0
         {
             let tx_ect0_sum: u64 = stats.ecn_tx_acked.into_values().map(|v| v[Ecn::Ect0]).sum();
             let tx_ce_sum: u64 = stats.ecn_tx_acked.into_values().map(|v| v[Ecn::Ce]).sum();
@@ -723,195 +729,189 @@ impl NeqoHttp3Conn {
             }
         }
 
-        // Ignore connections into the void for metrics where it makes sense.
-        if stats.packets_rx != 0 {
-            // Calculate and collect packet loss ratio. The value is used later to also record the filtered loss ratio for connections that used the congestion controller.
-            let loss_ratio =
-                match i64::try_from((stats.lost * PRECISION_FACTOR_USIZE) / stats.packets_tx) {
-                    Ok(v) => {
-                        glean::http_3_loss_ratio.accumulate_single_sample_signed(v);
-                        Some(v)
+        // Calculate and collect packet loss ratio. The value is used later to also record the filtered loss ratio for connections that used the congestion controller.
+        let loss_ratio =
+            match i64::try_from((stats.lost * PRECISION_FACTOR_USIZE) / stats.packets_tx) {
+                Ok(v) => {
+                    glean::http_3_loss_ratio.accumulate_single_sample_signed(v);
+                    Some(v)
+                }
+                Err(e) => {
+                    qwarn!("Failed to convert ratio to i64 for use with glean: {e}");
+                    debug_assert!(
+                        false,
+                        "Failed to convert ratio to i64 for use with glean: {e}"
+                    );
+                    None
+                }
+            };
+        // Records the unfiltered (old) slow start exit ratio
+        if stats.cc.slow_start_exit_cwnd.is_some() {
+            glean::http_3_slow_start_exited.get("exited").add(1);
+        } else {
+            glean::http_3_slow_start_exited.get("not_exited").add(1);
+        }
+
+        let cwnd_that_grew = stats.cc.cwnd.filter(|&c| c > MAX_INITIAL_CWND);
+        let growth_label = match (cwnd_that_grew, stats.cc.slow_start_exit_cwnd) {
+            (Some(_), Some(exit_cwnd)) if exit_cwnd < MAX_INITIAL_CWND => {
+                "no_growth_then_exit_then_growth"
+            }
+            (Some(_), _) => "had_growth",
+            (None, Some(_)) => "no_growth_but_exit",
+            (None, None) => "no_growth",
+        };
+        glean::http_3_congestion_window_growth
+            .get(growth_label)
+            .add(1);
+        // Filtered: only record CC metrics for connections that grew past the initial window.
+        if let Some(final_cwnd) = cwnd_that_grew {
+            glean::http_3_final_cwnd.accumulate(final_cwnd as u64);
+            if let Some(loss) = loss_ratio {
+                glean::http_3_loss_ratio_filtered.accumulate_single_sample_signed(loss);
+            }
+            // Record metrics concerning the slow start exit point below this filter.
+            debug_assert_eq!(
+                stats.cc.slow_start_exit_cwnd.is_some(),
+                stats.cc.slow_start_exit_reason.is_some(),
+                "slow_start_exit_cwnd and slow_start_exit_reason must always be set together"
+            );
+            let mut hystart_label = "not_exited";
+            let mut search_label = "not_exited";
+            if let (Some(exit_cwnd), Some(reason)) = (
+                stats.cc.slow_start_exit_cwnd,
+                stats.cc.slow_start_exit_reason,
+            ) {
+                glean::http_3_slow_start_exit_cwnd.accumulate(exit_cwnd as u64);
+                glean::http_3_slow_start_exited_filtered
+                    .get("exited")
+                    .add(1);
+                let accuracy_cwnd =
+                    ((exit_cwnd.abs_diff(final_cwnd) as f64) / final_cwnd as f64) * 100.0;
+                let accuracy_w_max = if let Some(final_w_max) = stats.cc.w_max {
+                    assert!(final_w_max > 0.0, "w_max can never be non-positive");
+                    glean::http_3_final_w_max.accumulate(final_w_max as u64);
+                    Some(((exit_cwnd as f64 - final_w_max).abs() / final_w_max) * 100.0)
+                } else {
+                    None
+                };
+                let direction_label = match exit_cwnd.cmp(&final_cwnd) {
+                    Ordering::Greater => "overshoot",
+                    Ordering::Less => "undershoot",
+                    Ordering::Equal => "exact",
+                };
+                let (reason_label, accuracy_label) = match reason {
+                    SlowStartExitReason::CongestionEvent => {
+                        glean::http_3_slow_start_exit_direction_loss
+                            .get(direction_label)
+                            .add(1);
+                        hystart_label = "exited_ce";
+                        search_label = "exited_ce";
+                        ("ce", "ce_exit")
                     }
-                    Err(e) => {
-                        qwarn!("Failed to convert ratio to i64 for use with glean: {e}");
-                        debug_assert!(
-                            false,
-                            "Failed to convert ratio to i64 for use with glean: {e}"
-                        );
-                        None
+                    SlowStartExitReason::Heuristic => {
+                        glean::http_3_slow_start_exit_direction_heuristic
+                            .get(direction_label)
+                            .add(1);
+                        hystart_label = "exited_hystart";
+                        search_label = "exited_search";
+                        ("heuristic", "heuristic_exit")
                     }
                 };
-            // Records the unfiltered (old) slow start exit ratio
-            if stats.cc.slow_start_exit_cwnd.is_some() {
-                glean::http_3_slow_start_exited.get("exited").add(1);
-            } else {
-                glean::http_3_slow_start_exited.get("not_exited").add(1);
-            }
-
-            let cwnd_that_grew = stats.cc.cwnd.filter(|&c| c > MAX_INITIAL_CWND);
-            let growth_label = match (cwnd_that_grew, stats.cc.slow_start_exit_cwnd) {
-                (Some(_), Some(exit_cwnd)) if exit_cwnd < MAX_INITIAL_CWND => {
-                    "no_growth_then_exit_then_growth"
-                }
-                (Some(_), _) => "had_growth",
-                (None, Some(_)) => "no_growth_but_exit",
-                (None, None) => "no_growth",
-            };
-            glean::http_3_congestion_window_growth
-                .get(growth_label)
-                .add(1);
-            // Filtered: only record CC metrics for connections that grew past the initial window.
-            if let Some(final_cwnd) = cwnd_that_grew {
-                glean::http_3_final_cwnd.accumulate(final_cwnd as u64);
-                if let Some(loss) = loss_ratio {
-                    glean::http_3_loss_ratio_filtered.accumulate_single_sample_signed(loss);
-                }
-                // Record metrics concerning the slow start exit point below this filter.
-                debug_assert_eq!(
-                    stats.cc.slow_start_exit_cwnd.is_some(),
-                    stats.cc.slow_start_exit_reason.is_some(),
-                    "slow_start_exit_cwnd and slow_start_exit_reason must always be set together"
-                );
-                let mut hystart_label = "not_exited";
-                let mut search_label = "not_exited";
-                if let (Some(exit_cwnd), Some(reason)) = (
-                    stats.cc.slow_start_exit_cwnd,
-                    stats.cc.slow_start_exit_reason,
-                ) {
-                    glean::http_3_slow_start_exit_cwnd.accumulate(exit_cwnd as u64);
-                    glean::http_3_slow_start_exited_filtered
-                        .get("exited")
-                        .add(1);
-                    let accuracy_cwnd =
-                        ((exit_cwnd.abs_diff(final_cwnd) as f64) / final_cwnd as f64) * 100.0;
-                    let accuracy_w_max = if let Some(final_w_max) = stats.cc.w_max {
-                        assert!(final_w_max > 0.0, "w_max can never be non-positive");
-                        glean::http_3_final_w_max.accumulate(final_w_max as u64);
-                        Some(((exit_cwnd as f64 - final_w_max).abs() / final_w_max) * 100.0)
-                    } else {
-                        None
-                    };
-                    let direction_label = match exit_cwnd.cmp(&final_cwnd) {
-                        Ordering::Greater => "overshoot",
-                        Ordering::Less => "undershoot",
-                        Ordering::Equal => "exact",
-                    };
-                    let (reason_label, accuracy_label) = match reason {
-                        SlowStartExitReason::CongestionEvent => {
-                            glean::http_3_slow_start_exit_direction_loss
-                                .get(direction_label)
-                                .add(1);
-                            hystart_label = "exited_ce";
-                            search_label = "exited_ce";
-                            ("ce", "ce_exit")
-                        }
-                        SlowStartExitReason::Heuristic => {
-                            glean::http_3_slow_start_exit_direction_heuristic
-                                .get(direction_label)
-                                .add(1);
-                            hystart_label = "exited_hystart";
-                            search_label = "exited_search";
-                            ("heuristic", "heuristic_exit")
-                        }
-                    };
-                    glean::http_3_slow_start_exit_reason
-                        .get(reason_label)
-                        .add(1);
-                    glean::http_3_slow_start_exit_accuracy
+                glean::http_3_slow_start_exit_reason
+                    .get(reason_label)
+                    .add(1);
+                glean::http_3_slow_start_exit_accuracy
+                    .get(accuracy_label)
+                    .accumulate_single_sample_signed(accuracy_cwnd as i64);
+                if let Some(accuracy_w_max) = accuracy_w_max {
+                    glean::http_3_slow_start_exit_accuracy_w_max
                         .get(accuracy_label)
-                        .accumulate_single_sample_signed(accuracy_cwnd as i64);
-                    if let Some(accuracy_w_max) = accuracy_w_max {
-                        glean::http_3_slow_start_exit_accuracy_w_max
-                            .get(accuracy_label)
-                            .accumulate_single_sample_signed(accuracy_w_max as i64);
-                    }
+                        .accumulate_single_sample_signed(accuracy_w_max as i64);
+                }
+            } else {
+                glean::http_3_slow_start_exited_filtered
+                    .get("not_exited")
+                    .add(1);
+            }
+            // Only record HyStart metrics when HyStart is enabled (1 == HyStart, see constructor).
+            if static_prefs::pref!("network.http.http3.slow_start_algorithm") == 1 {
+                glean::http_3_hystart_css_rounds_finished
+                    .get(hystart_label)
+                    .accumulate_single_sample_signed(stats.cc.hystart_css_rounds_finished as i64);
+                glean::http_3_hystart_css_entries
+                    .get(hystart_label)
+                    .accumulate_single_sample_signed(stats.cc.hystart_css_entries as i64);
+            }
+
+            // Only record SEARCH metrics when SEARCH is enabled (2 == SEARCH, see constructor).
+            if static_prefs::pref!("network.http.http3.slow_start_algorithm") == 2 {
+                // Metrics for drain phase evaluation
+                if let Some(empty_buffer_bdp) = stats.cc.search_empty_buffer_target {
+                    glean::http_3_search_empty_buffer_bdp_estimate.accumulate(empty_buffer_bdp);
+                }
+                if let Some(full_buffer_bdp) = stats.cc.search_full_buffer_target {
+                    glean::http_3_search_full_buffer_bdp_estimate.accumulate(full_buffer_bdp);
+                }
+                // Metrics to tune EXTRA_BINS
+                if let Some(lookback_bins) = stats.cc.search_lookback_bins_needed {
+                    glean::http_3_search_lookback_bins
+                        .accumulate_single_sample_signed(lookback_bins as i64);
+                    glean::http_3_search_rtt_inflated.get("inflated").add(1);
                 } else {
-                    glean::http_3_slow_start_exited_filtered
-                        .get("not_exited")
+                    glean::http_3_search_rtt_inflated
+                        .get("never_inflated")
                         .add(1);
                 }
-                // Only record HyStart metrics when HyStart is enabled (1 == HyStart, see constructor).
-                if static_prefs::pref!("network.http.http3.slow_start_algorithm") == 1 {
-                    glean::http_3_hystart_css_rounds_finished
-                        .get(hystart_label)
-                        .accumulate_single_sample_signed(
-                            stats.cc.hystart_css_rounds_finished as i64,
-                        );
-                    glean::http_3_hystart_css_entries
-                        .get(hystart_label)
-                        .accumulate_single_sample_signed(stats.cc.hystart_css_entries as i64);
+                // Metrics to tune THRESH
+                if let Some(max_norm_diff) = stats.cc.search_max_norm_diff {
+                    glean::http_3_search_max_norm_diff
+                        .get(search_label)
+                        .accumulate_single_sample_signed(max_norm_diff as i64);
                 }
+                // Metrics to calibrate reset mechanism
+                glean::http_3_search_reset_count
+                    .get(search_label)
+                    .accumulate_single_sample_signed(stats.cc.search_reset.count as i64);
+                if let Some(max_passed_bins) = stats.cc.search_reset.max_passed_bins {
+                    glean::http_3_search_max_passed_bins
+                        .accumulate_single_sample_signed(max_passed_bins as i64);
+                }
+                // Metrics to gain insights into app-limited behavior during SEARCH slow start
+                glean::http_3_search_zero_bytes_sent
+                    .get(search_label)
+                    .accumulate_single_sample_signed(stats.cc.search_zero_sent_bytes as i64);
 
-                // Only record SEARCH metrics when SEARCH is enabled (2 == SEARCH, see constructor).
-                if static_prefs::pref!("network.http.http3.slow_start_algorithm") == 2 {
-                    // Metrics for drain phase evaluation
-                    if let Some(empty_buffer_bdp) = stats.cc.search_empty_buffer_target {
-                        glean::http_3_search_empty_buffer_bdp_estimate.accumulate(empty_buffer_bdp);
+                // Metrics to evaluate whether the first RTT used to initialize SEARCH is inflated
+                if let Some(first_rtt) = stats.cc.search_first_rtt {
+                    let first_us = u64::try_from(first_rtt.as_micros()).unwrap_or(u64::MAX);
+                    let min_us = u64::try_from(stats.min_rtt.as_micros()).unwrap_or(u64::MAX);
+                    if min_us > 0 {
+                        glean::http_3_search_first_rtt_vs_min_rtt
+                            .accumulate_single_sample_signed((first_us * 100 / min_us) as i64);
                     }
-                    if let Some(full_buffer_bdp) = stats.cc.search_full_buffer_target {
-                        glean::http_3_search_full_buffer_bdp_estimate.accumulate(full_buffer_bdp);
-                    }
-                    // Metrics to tune EXTRA_BINS
-                    if let Some(lookback_bins) = stats.cc.search_lookback_bins_needed {
-                        glean::http_3_search_lookback_bins
-                            .accumulate_single_sample_signed(lookback_bins as i64);
-                        glean::http_3_search_rtt_inflated.get("inflated").add(1);
-                    } else {
-                        glean::http_3_search_rtt_inflated
-                            .get("never_inflated")
-                            .add(1);
-                    }
-                    // Metrics to tune THRESH
-                    if let Some(max_norm_diff) = stats.cc.search_max_norm_diff {
-                        glean::http_3_search_max_norm_diff
-                            .get(search_label)
-                            .accumulate_single_sample_signed(max_norm_diff as i64);
-                    }
-                    // Metrics to calibrate reset mechanism
-                    glean::http_3_search_reset_count
-                        .get(search_label)
-                        .accumulate_single_sample_signed(stats.cc.search_reset.count as i64);
-                    if let Some(max_passed_bins) = stats.cc.search_reset.max_passed_bins {
-                        glean::http_3_search_max_passed_bins
-                            .accumulate_single_sample_signed(max_passed_bins as i64);
-                    }
-                    // Metrics to gain insights into app-limited behavior during SEARCH slow start
-                    glean::http_3_search_zero_bytes_sent
-                        .get(search_label)
-                        .accumulate_single_sample_signed(stats.cc.search_zero_sent_bytes as i64);
-
-                    // Metrics to evaluate whether the first RTT used to initialize SEARCH is inflated
-                    if let Some(first_rtt) = stats.cc.search_first_rtt {
-                        let first_us = u64::try_from(first_rtt.as_micros()).unwrap_or(u64::MAX);
-                        let min_us = u64::try_from(stats.min_rtt.as_micros()).unwrap_or(u64::MAX);
-                        if min_us > 0 {
-                            glean::http_3_search_first_rtt_vs_min_rtt
-                                .accumulate_single_sample_signed((first_us * 100 / min_us) as i64);
-                        }
-                        // And whether using `min(first, second)` would be a viable fix
-                        if let Some(second_rtt) = stats.cc.search_second_rtt {
-                            let second_us =
-                                u64::try_from(second_rtt.as_micros()).unwrap_or(u64::MAX);
-                            if second_us > 0 {
-                                glean::http_3_search_first_rtt_vs_second_rtt
-                                    .accumulate_single_sample_signed(
-                                        (first_us * 100 / second_us) as i64,
-                                    );
-                            }
+                    // And whether using `min(first, second)` would be a viable fix
+                    if let Some(second_rtt) = stats.cc.search_second_rtt {
+                        let second_us = u64::try_from(second_rtt.as_micros()).unwrap_or(u64::MAX);
+                        if second_us > 0 {
+                            glean::http_3_search_first_rtt_vs_second_rtt
+                                .accumulate_single_sample_signed(
+                                    (first_us * 100 / second_us) as i64,
+                                );
                         }
                     }
                 }
             }
+        }
 
-            glean::http_3_congestion_event_count.accumulate_single_sample_signed(
-                (stats.cc.congestion_events.ecn + stats.cc.congestion_events.loss)
-                    .saturating_sub(stats.cc.congestion_events.spurious) as i64,
-            );
+        glean::http_3_congestion_event_count.accumulate_single_sample_signed(
+            (stats.cc.congestion_events.ecn + stats.cc.congestion_events.loss)
+                .saturating_sub(stats.cc.congestion_events.spurious) as i64,
+        );
 
-            if let Some(peer_max) = stats.pmtud_peer_max_udp_payload {
-                if let Ok(v) = i64::try_from(peer_max) {
-                    glean::http_3_peer_max_udp_payload.accumulate_single_sample_signed(v);
-                }
+        if let Some(peer_max) = stats.pmtud_peer_max_udp_payload {
+            if let Ok(v) = i64::try_from(peer_max) {
+                glean::http_3_peer_max_udp_payload.accumulate_single_sample_signed(v);
             }
         }
 
@@ -2981,31 +2981,24 @@ fn probe_apple_fast_path_inner(send_fd: c_int, recv_fd: c_int) -> io::Result<()>
     use neqo_common::Ecn;
     use rustix::{
         fs::{fcntl_getfl, fcntl_setfl, OFlags},
-        net::{
-            getsockname,
-            sockopt::{set_socket_timeout, Timeout},
-            SocketAddrAny,
-        },
+        net::{getsockname, sockopt::{set_socket_timeout, Timeout}},
     };
 
     // Wrap a raw fd in neqo_udp::Socket, enable the fast path, restore blocking
     // mode (UdpSocketState::new sets non-blocking), and return the socket's
     // local address.
-    let make_socket =
-        |fd: c_int| -> io::Result<(neqo_udp::Socket<BorrowedFd<'static>>, SocketAddr)> {
-            let bfd = unsafe { BorrowedFd::borrow_raw(fd) };
-            let socket = neqo_udp::Socket::new(bfd)?;
-            // SAFETY: The C++ caller has verified via dlsym that the APIs are present.
-            unsafe { socket.enable_apple_fast_path() };
-            fcntl_setfl(bfd, fcntl_getfl(bfd)? & !OFlags::NONBLOCK)?;
-            set_socket_timeout(bfd, Timeout::Recv, Some(Duration::from_secs(1)))?;
-            let addr: SocketAddr = match getsockname(bfd)? {
-                SocketAddrAny::V4(a) => a.into(),
-                SocketAddrAny::V6(a) => a.into(),
-                _ => return Err(io::Error::other("unexpected address family")),
-            };
-            Ok((socket, addr))
-        };
+    let make_socket = |fd: c_int| -> io::Result<(neqo_udp::Socket<BorrowedFd<'static>>, SocketAddr)> {
+        let bfd = unsafe { BorrowedFd::borrow_raw(fd) };
+        let socket = neqo_udp::Socket::new(bfd)?;
+        // SAFETY: The C++ caller has verified via dlsym that the APIs are present.
+        unsafe { socket.enable_apple_fast_path() };
+        fcntl_setfl(bfd, fcntl_getfl(bfd)? & !OFlags::NONBLOCK)?;
+        set_socket_timeout(bfd, Timeout::Recv, Some(Duration::from_secs(1)))?;
+        let addr: SocketAddr = getsockname(bfd)?
+            .try_into()
+            .map_err(|e: rustix::io::Errno| io::Error::from_raw_os_error(e.raw_os_error()))?;
+        Ok((socket, addr))
+    };
     let (sender, send_addr) = make_socket(send_fd)?;
     let (receiver, recv_addr) = make_socket(recv_fd)?;
 

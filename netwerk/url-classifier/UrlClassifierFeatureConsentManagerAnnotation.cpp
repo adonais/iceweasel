@@ -9,6 +9,7 @@
 #include "mozilla/StaticPrefs_privacy.h"
 #include "mozilla/StaticPtr.h"
 #include "mozilla/ScopedPrefs.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/UrlClassifierCommon.h"
 #include "nsIChannel.h"
 #include "nsILoadInfo.h"
@@ -164,7 +165,7 @@ UrlClassifierFeatureConsentManagerAnnotation::ProcessChannel(
 
   UrlClassifierCommon::SetTrackingInfo(aChannel, aList, aHashes);
 
-  UrlClassifierCommon::AnnotateChannelWithoutNotifying(aChannel, flags);
+  ChannelClassifierUtils::AnnotateChannelWithoutNotifying(aChannel, flags);
 
   return NS_OK;
 }

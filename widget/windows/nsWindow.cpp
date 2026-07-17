@@ -98,6 +98,7 @@
 #include "prtime.h"
 #include "prenv.h"
 
+#include "nsComponentManagerUtils.h"
 #include "nsContentUtils.h"
 #include "nsISupportsPrimitives.h"
 #include "nsITheme.h"
@@ -6252,7 +6253,7 @@ LRESULT nsWindow::ProcessKeyDownMessage(const MSG& aMsg,
 
 nsresult nsWindow::SynthesizeNativeKeyEvent(
     int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
-    uint32_t aModifierFlags, const nsAString& aCharacters,
+    nsIWidget::NativeModifiers aModifierFlags, const nsAString& aCharacters,
     const nsAString& aUnmodifiedCharacters,
     nsISynthesizedEventCallback* aCallback) {
   AutoSynthesizedEventCallbackNotifier notifier(aCallback);
@@ -6265,7 +6266,7 @@ nsresult nsWindow::SynthesizeNativeKeyEvent(
 
 nsresult nsWindow::SynthesizeNativeMouseEvent(
     LayoutDeviceIntPoint aPoint, NativeMouseMessage aNativeMessage,
-    MouseButton aButton, nsIWidget::Modifiers aModifierFlags,
+    MouseButton aButton, nsIWidget::NativeModifiers aModifierFlags,
     nsISynthesizedEventCallback* aCallback) {
   AutoSynthesizedEventCallbackNotifier notifier(aCallback);
 
@@ -6330,7 +6331,7 @@ nsresult nsWindow::SynthesizeNativeMouseEvent(
 
 nsresult nsWindow::SynthesizeNativeMouseScrollEvent(
     LayoutDeviceIntPoint aPoint, uint32_t aNativeMessage, double aDeltaX,
-    double aDeltaY, double aDeltaZ, uint32_t aModifierFlags,
+    double aDeltaY, double aDeltaZ, nsIWidget::NativeModifiers aModifierFlags,
     uint32_t aAdditionalFlags, nsISynthesizedEventCallback* aCallback) {
   AutoSynthesizedEventCallbackNotifier notifier(aCallback);
   return MouseScrollHandler::SynthesizeNativeMouseScrollEvent(

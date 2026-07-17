@@ -45,6 +45,10 @@
   --button-min-height: 24px;
 }
 
+.fxview-tab-row-button.dismiss-button {
+  --icon-size: var(--icon-size-xsmall);
+}
+
 .attention > #fxview-tab-row-favicon::after {
   background-image: radial-gradient(circle, var(--favicon-badge-color), var(--favicon-badge-color) 2px, transparent 2px);
   /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */

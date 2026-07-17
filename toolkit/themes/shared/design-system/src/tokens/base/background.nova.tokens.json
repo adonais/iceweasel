@@ -11,15 +11,15 @@
       "info": {
         "value": {
           "light": "{color.gray.15}",
-          "dark": "{color.gray.60}",
+          "dark": "{color.gray.65}",
           "forcedColors": "{background.color.canvas}"
         }
       }
     },
     "canvas": {
       "value": {
-        "light": "{color.gray.05}",
-        "dark": "{color.gray.85}",
+        "light": "{color.gray.0}",
+        "dark": "{color.gray.90}",
         "forcedColors": "Canvas"
       }
     },

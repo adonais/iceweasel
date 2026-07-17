@@ -38,7 +38,7 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
   .search-inner-wrapper {
     cursor: default;
     display: flex;
-    min-height: $search-height-new;
+    height: $search-height-new;
     margin: 0 auto;
     position: relative;
     width: 304px;
@@ -211,6 +211,55 @@ $glyph-forward: url('chrome://browser/skin/forward.svg');
     @include at-content-cols(10) {
       width: calc(10 * var(--col-width) + 9 * var(--space-medium));
     }
+  }
+
+  // Sentinel observed by IntersectionObserver in Base.jsx — when it
+  // leaves the viewport the search-wrapper is stuck at the top.
+  .sticky-search-sentinel {
+    grid-column: 1 / -1;
+    block-size: 1px;
+    // Compensate for the 1px sentinel so it doesn't shift search-wrapper. We
+    // use a negative margin to do that, so that it's technically laid out,
+    // and can trigger an IntersectionObserver, but doesn't actually take space.
+    // stylelint-disable-next-line declaration-property-value-disallowed-list
+    margin-block-end: -1px;
+    visibility: hidden;
+    pointer-events: none;
+  }
+
+  @media (height > 700px) {
+    .search-wrapper {
+      position: sticky;
+      inset-block-start: 0;
+      z-index: 3;
+      // Reserved always (not just when stuck) so the input's viewport-relative
+      // Y is identical pre- and post-sticky, eliminating the snap at activation.
+      padding-block: var(--space-xlarge);
+    }
+  }
+}
+
+@media (height > 700px) {
+  // Full-bleed backdrop drawn via pseudo-element on .nova-outer-wrapper
+  // (which has no containment) so position: fixed anchors to the viewport.
+  // Mounting the pseudo on .search-wrapper instead doesn't work because
+  // .content and .container set container-type: inline-size, which makes
+  // them the containing block for fixed-positioned descendants — the
+  // backdrop would then track the wrapper's off-center position in narrow
+  // viewports instead of spanning the full viewport width.
+  .nova-outer-wrapper.stuck-search::before {
+    content: '';
+    position: fixed;
+    inset-block-start: 0;
+    inset-inline: 0;
+    block-size: calc(#{$search-height-new} + 2 * var(--space-xlarge));
+    background-color: var(--newtab-overlay-color);
+    border-block-end: var(--border-width) solid var(--border-color);
+    // Above .weather (z-index 1) and any other absolutely-positioned page
+    // chrome, below the sticky search-wrapper (z-index 3) so the input
+    // still paints on top, and below .personalizeButtonWrapper (z-index 5).
+    z-index: 2;
+    pointer-events: none;
   }
 }
 

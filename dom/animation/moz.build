@@ -39,7 +39,6 @@ EXPORTS.mozilla += [
     "KeyframeUtils.h",
     "PostRestyleMode.h",
     "PseudoElementHashEntry.h",
-    "ScrollTimelineAnimationTracker.h",
     "TimingParams.h",
 ]
 
@@ -61,7 +60,6 @@ UNIFIED_SOURCES += [
     "KeyframeEffect.cpp",
     "KeyframeUtils.cpp",
     "ScrollTimeline.cpp",
-    "ScrollTimelineAnimationTracker.cpp",
     "TimingParams.cpp",
     "ViewTimeline.cpp",
 ]

@@ -1,3 +1,4 @@
+// |reftest| skip-if(!this.hasOwnProperty('Temporal')) -- Temporal is not enabled unconditionally
 // Copyright (C) 2018 Bloomberg LP. All rights reserved.
 // This code is governed by the BSD license found in the LICENSE file.
 
@@ -28,6 +29,7 @@ info: |
            d. Perform ! CreateDataPropertyOrThrow(result, ! ToString(𝔽(n)), O).
            e. Increment n by 1.
     5. Return result.
+features: [Temporal]
 locale: [en-US, de-AT]
 ---*/
 

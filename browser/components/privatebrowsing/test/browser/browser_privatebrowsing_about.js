@@ -135,13 +135,10 @@ add_task(async function test_search_icon_legacy() {
 });
 
 /**
- * Tests that we have the correct icon (the searchglass icon) displayed with the
- * browser.privatebrowsing.felt-privacy-v1 pref set to `true`.
+ * Tests that we have the correct icon (the searchglass icon) displayed in
+ * about:privatebrowsing.
  */
 add_task(async function test_search_icon() {
-  await SpecialPowers.pushPrefEnv({
-    set: [["browser.privatebrowsing.felt-privacy-v1", true]],
-  });
   let { win, tab } = await openAboutPrivateBrowsing();
 
   await SpecialPowers.spawn(tab, [], async function () {
@@ -158,7 +155,6 @@ add_task(async function test_search_icon() {
   });
 
   await BrowserTestUtils.closeWindow(win);
-  await SpecialPowers.popPrefEnv();
 });
 
 /**

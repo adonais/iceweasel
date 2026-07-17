@@ -43,6 +43,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs",
   MemoriesManager:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesManager.sys.mjs",
+  loadPrompt:
+    "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   ToolUI: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
   UI_TYPES: "moz-src:///browser/components/aiwindow/ui/modules/ToolUI.sys.mjs",
 });
@@ -59,7 +61,26 @@ ChromeUtils.defineLazyGetter(lazy, "console", function () {
 
 const CHAT_ROLES = [MESSAGE_ROLE.USER, MESSAGE_ROLE.ASSISTANT];
 const RESTORABLE_ROLES = [...CHAT_ROLES, MESSAGE_ROLE.TOOL];
-const TABLES_PREF = "browser.smartwindow.allowTables";
+
+let _savedLoadPromptDescriptor = null;
+export function _setLoadPromptForTesting(fn) {
+  if (fn !== null) {
+    _savedLoadPromptDescriptor = Object.getOwnPropertyDescriptor(
+      lazy,
+      "loadPrompt"
+    );
+    lazy.loadPrompt = async (...args) => {
+      const result = await fn(...args);
+      return typeof result === "string"
+        ? { prompt: result, version: "" }
+        : result;
+    };
+  } else if (_savedLoadPromptDescriptor) {
+    // eslint-disable-next-line mozilla/valid-lazy
+    Object.defineProperty(lazy, "loadPrompt", _savedLoadPromptDescriptor);
+    _savedLoadPromptDescriptor = null;
+  }
+}
 
 /**
  * A conversation containing messages.
@@ -73,6 +94,7 @@ export class ChatConversation extends EventEmitter {
   createdDate;
   updatedDate;
   status;
+  /** @type {SecurityProperties} */
   securityProperties;
   /** @type {ChatMessage[]} */
   #messages;
@@ -214,6 +236,7 @@ export class ChatConversation extends EventEmitter {
       updatedDate = Date.now(),
       messages = [],
       seenUrls,
+      serpUrlsForAnonymousFetch,
       memoriesToggled = null,
     } = params;
 
@@ -228,6 +251,9 @@ export class ChatConversation extends EventEmitter {
     this.updatedDate = updatedDate;
     this.#messages = messages;
     this.seenUrls = seenUrls ? new Set(seenUrls) : new Set();
+    this.serpUrlsForAnonymousFetch = serpUrlsForAnonymousFetch
+      ? new Set(serpUrlsForAnonymousFetch)
+      : new Set();
     this.memoriesToggled = memoriesToggled;
 
     // transient: tracks the URL the current starter prompts were generated
@@ -396,13 +422,11 @@ export class ChatConversation extends EventEmitter {
       this.emit("chat-conversation:message-update", currentMessage);
     }
 
-    if (currentMessage._pendingMemoryIds?.length) {
+    if (currentMessage.memoriesApplied?.length) {
       currentMessage.memoriesApplied =
         await lazy.MemoriesManager.getMemoriesByID(
-          new Set(currentMessage._pendingMemoryIds)
+          new Set(currentMessage.memoriesApplied)
         );
-
-      delete currentMessage._pendingMemoryIds;
 
       this.emit("chat-conversation:message-update", currentMessage);
     }
@@ -440,6 +464,15 @@ export class ChatConversation extends EventEmitter {
           message?.content?.type === "text"
       )
       .at(-1);
+  }
+
+  get chatPromptVersion() {
+    const sysMsg = this.messages.find(
+      message =>
+        message.role === MESSAGE_ROLE.SYSTEM &&
+        message.content?.type === SYSTEM_PROMPT_TYPE.TEXT
+    );
+    return sysMsg?.content?.version ?? "";
   }
 
   /**
@@ -714,10 +747,11 @@ export class ChatConversation extends EventEmitter {
    *
    * @param {string} type - The assistant message type: text|injected_memories|injected_real_time_info
    * @param {string} contentBody - The system message object to be saved as JSON
+   * @param {string} [version] - Prompt version for SYSTEM_PROMPT_TYPE.TEXT messages
    * @returns {ChatMessage} The newly created system message
    */
-  addSystemMessage(type, contentBody) {
-    const content = { type, body: contentBody };
+  addSystemMessage(type, contentBody, version) {
+    const content = { type, body: contentBody, ...(version && { version }) };
 
     return this.addMessage(
       MESSAGE_ROLE.SYSTEM,
@@ -728,12 +762,49 @@ export class ChatConversation extends EventEmitter {
   }
 
   /**
+   * Loads and renders the system prompt for the current chat model.
+   *
+   * @param {object} [opts]
+   * @param {string} [opts.modelChoiceIdOverride] - Override the user's model-choice pref
+   * @returns {Promise<{body: string, version: string}>} The rendered system prompt and its version
+   */
+  async #loadSystemPrompt(opts = {}) {
+    const { prompt, version } = await lazy.loadPrompt(
+      MODEL_FEATURES.CHAT,
+      opts
+    );
+    return { body: prompt, version };
+  }
+
+  /**
+   * Updates the main system prompt for a new model.
+   * Used when the model changes mid-conversation.
+   *
+   * @param {string} [modelChoiceIdOverride] - Model choice ID for the new model
+   */
+  async updateSystemPromptForModel(modelChoiceIdOverride) {
+    const systemMessage = this.messages.find(
+      message =>
+        message.role === MESSAGE_ROLE.SYSTEM &&
+        message.content?.type === SYSTEM_PROMPT_TYPE.TEXT
+    );
+    if (!systemMessage) {
+      return;
+    }
+
+    const { body, version } = await this.#loadSystemPrompt({
+      modelChoiceIdOverride,
+    });
+    systemMessage.content.body = body;
+    systemMessage.content.version = version;
+  }
+
+  /**
    * Takes a new prompt and generates LLM context messages before
    * adding new user prompt to messages.
    *
    * @param {string} prompt - new user prompt
    * @param {?URL} pageUrl - The URL of the page when prompt was submitted
-   * @param {openAIEngine} engineInstance
    * @param {UserRoleOpts} [userOpts]
    * @param {boolean} [skipUserDispatch=false] - If true, do not emit the
    *   message-update event after adding the user message (used for retries
@@ -742,7 +813,6 @@ export class ChatConversation extends EventEmitter {
   async generatePrompt(
     prompt,
     pageUrl,
-    engineInstance,
     userOpts = undefined,
     skipUserDispatch = false
   ) {
@@ -750,21 +820,8 @@ export class ChatConversation extends EventEmitter {
     this.removeSystemTimeMemoriesMessages();
 
     if (!this.messages.length) {
-      const _systemPrompt = await engineInstance.loadPrompt(
-        MODEL_FEATURES.CHAT
-      );
-      let tableInstructions;
-      if (Services.prefs.getBoolPref(TABLES_PREF, false)) {
-        tableInstructions = await engineInstance.loadPrompt(
-          MODEL_FEATURES.ENABLE_TABLE_INSTRUCTIONS
-        );
-      } else {
-        tableInstructions = await engineInstance.loadPrompt(
-          MODEL_FEATURES.DISABLE_TABLE_INSTRUCTIONS
-        );
-      }
-      const systemPrompt = renderPrompt(_systemPrompt, { tableInstructions });
-      this.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, systemPrompt);
+      const { body, version } = await this.#loadSystemPrompt();
+      this.addSystemMessage(SYSTEM_PROMPT_TYPE.TEXT, body, version);
     }
 
     // userContext starts empty so the user message can be added and dispatched
@@ -778,13 +835,10 @@ export class ChatConversation extends EventEmitter {
       this.emit("chat-conversation:message-update", this.messages.at(-1));
     }
 
-    const realTimeContext = await ChatConversation.getRealTimeInfo(
-      engineInstance,
-      {
-        contextMentions: userOpts?.contextMentions,
-        securityProperties: this.securityProperties,
-      }
-    );
+    const realTimeContext = await ChatConversation.getRealTimeInfo({
+      contextMentions: userOpts?.contextMentions,
+      securityProperties: this.securityProperties,
+    });
     if (realTimeContext) {
       userContext.realTimeContext = realTimeContext;
     }
@@ -793,7 +847,6 @@ export class ChatConversation extends EventEmitter {
       try {
         const memoriesContext = await this.getMemoriesContext(
           prompt,
-          engineInstance,
           undefined,
           this.securityProperties
         );
@@ -827,7 +880,9 @@ export class ChatConversation extends EventEmitter {
    */
   async retryMessage(message) {
     if (message.role !== MESSAGE_ROLE.USER) {
-      throw new Error("Not a user message");
+      const err = new Error("Not a user message");
+      err.clientReason = "retryInvalidMessage";
+      throw err;
     }
 
     // Capture ephemeral system messages before removal so we can return them.
@@ -852,7 +907,9 @@ export class ChatConversation extends EventEmitter {
     );
 
     if (retryMessageIndex === -1) {
-      throw new Error("Unrelated message");
+      const err = new Error("Unrelated message");
+      err.clientReason = "retryInvalidMessage";
+      throw err;
     }
 
     const toDeleteMessages = this.#messages.splice(retryMessageIndex);
@@ -887,7 +944,6 @@ export class ChatConversation extends EventEmitter {
    *   (contextMentions: Array<ContextWebsite>) => Promise<{url, title, description, locale, timezone, isoTimestamp, todayDate, hasTabInfo}>
    * } RealTimeApiFunction
    *
-   * @param {openAIEngine} engineInstance - The initialized engine instance
    * @param {object} [options]
    * @param {RealTimeApiFunction} [options.getRealTimeMapping=constructRealTimeInfoInjectionMessage]
    * @param {ContextWebsite[]} [options.contextMentions]
@@ -896,22 +952,19 @@ export class ChatConversation extends EventEmitter {
    *
    * @returns {Promise<string|null>} - Promise that resolves with real time info or null
    */
-  static async getRealTimeInfo(
-    engineInstance,
-    {
-      getRealTimeMapping = constructRealTimeInfoInjectionMessage,
-      contextMentions,
-      securityProperties,
-    } = {}
-  ) {
+  static async getRealTimeInfo({
+    getRealTimeMapping = constructRealTimeInfoInjectionMessage,
+    contextMentions,
+    securityProperties,
+  } = {}) {
     const realTimeInfoMapping = await getRealTimeMapping(contextMentions);
     if (realTimeInfoMapping) {
-      let realTimePromptRaw = await engineInstance.loadPrompt(
+      let { prompt: realTimePromptRaw } = await lazy.loadPrompt(
         MODEL_FEATURES.REAL_TIME_CONTEXT_DATE
       );
       if (realTimeInfoMapping.hasTabInfo) {
         securityProperties.setPrivateData();
-        const realTimeTabPromptRaw = await engineInstance.loadPrompt(
+        const { prompt: realTimeTabPromptRaw } = await lazy.loadPrompt(
           MODEL_FEATURES.REAL_TIME_CONTEXT_TAB
         );
         realTimePromptRaw += realTimeTabPromptRaw;
@@ -930,7 +983,7 @@ export class ChatConversation extends EventEmitter {
           )
           .join("\n");
         realTimeInfoMapping.contextUrls = contextUrls;
-        const contextMentionsPrompt = await engineInstance.loadPrompt(
+        const { prompt: contextMentionsPrompt } = await lazy.loadPrompt(
           MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS
         );
         realTimePromptRaw += contextMentionsPrompt;
@@ -964,7 +1017,6 @@ export class ChatConversation extends EventEmitter {
    *  } MemoriesApiFunction
    *
    * @param {message} message
-   * @param {openAIEngine} engineInstance
    * @param {MemoriesApiFunction} [constructMemories=constructRelevantMemoriesContextMessage]
    * @param {SecurityProperties} [securityProperties]
    *
@@ -972,11 +1024,10 @@ export class ChatConversation extends EventEmitter {
    */
   async getMemoriesContext(
     message,
-    engineInstance,
     constructMemories = constructRelevantMemoriesContextMessage,
     securityProperties
   ) {
-    const memoriesContext = await constructMemories(message, engineInstance);
+    const memoriesContext = await constructMemories(message);
     if (memoriesContext != null) {
       securityProperties.setPrivateData();
       return memoriesContext.content;
@@ -1119,6 +1170,17 @@ export class ChatConversation extends EventEmitter {
       this.seenUrls.add(url);
     }
     this.emit("chat-conversation:seen-urls-updated", this.seenUrls);
+  }
+
+  /**
+   * Add an iterable of URLs to the serpUrlsForAnonymousFetch ledger
+   *
+   * @param {Iterable<string>} urls
+   */
+  addSerpUrlsForAnonymousFetch(urls) {
+    for (const url of urls) {
+      this.serpUrlsForAnonymousFetch.add(url);
+    }
   }
 
   /**

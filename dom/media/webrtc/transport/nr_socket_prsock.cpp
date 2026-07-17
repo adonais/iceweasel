@@ -243,7 +243,7 @@ static nsIThread* GetIOThreadAndAddUse_s() {
 #if defined(MOZILLA_INTERNAL_API)
   // We need to safely release this on shutdown to avoid leaks
   if (!sThread) {
-    sThread = new SingletonThreadHolder("mtransport"_ns);
+    sThread = MakeRefPtr<SingletonThreadHolder>("mtransport"_ns);
     NS_DispatchToMainThread(mozilla::WrapRunnableNM(&ClearSingletonOnShutdown));
   }
   // Mark that we're using the shared thread and need it to stick around
@@ -1095,7 +1095,7 @@ NS_IMETHODIMP NrUdpSocketIpc::CallListenerReceivedData(
 
   auto buf = MakeUnique<MediaPacket>();
   buf->Copy(data.Elements(), data.Length());
-  RefPtr<nr_udp_message> msg(new nr_udp_message(addr, std::move(buf)));
+  RefPtr msg = MakeRefPtr<nr_udp_message>(addr, std::move(buf));
 
   RUN_ON_THREAD(sts_thread_,
                 mozilla::WrapRunnable(RefPtr<NrUdpSocketIpc>(this),
@@ -1274,7 +1274,7 @@ int NrUdpSocketIpc::sendto(const void* msg, size_t len, int flags,
     return R_WOULDBLOCK;
   }
 
-  UniquePtr<MediaPacket> buf(new MediaPacket);
+  auto buf = MakeUnique<MediaPacket>();
   buf->Copy(static_cast<const uint8_t*>(msg), len);
 
   RUN_ON_THREAD(
@@ -1416,7 +1416,7 @@ void NrUdpSocketIpc::create_i(const nsACString& host, const uint16_t port) {
   ASSERT_ON_THREAD(io_thread_);
 
   uint32_t minBuffSize = 0;
-  RefPtr<dom::UDPSocketChild> socketChild = new dom::UDPSocketChild();
+  RefPtr socketChild = MakeRefPtr<dom::UDPSocketChild>();
 
   ReentrantMonitorAutoEnter mon(monitor_);
   if (!socket_child_) {
@@ -1427,7 +1427,7 @@ void NrUdpSocketIpc::create_i(const nsACString& host, const uint16_t port) {
     socketChild = nullptr;
   }
 
-  RefPtr<NrUdpSocketIpcProxy> proxy(new NrUdpSocketIpcProxy);
+  RefPtr proxy = MakeRefPtr<NrUdpSocketIpcProxy>();
   nsresult rv = proxy->Init(this);
   if (NS_FAILED(rv)) {
     err_ = true;
@@ -1453,7 +1453,7 @@ void NrUdpSocketIpc::connect_i(const nsACString& host, const uint16_t port) {
   nsresult rv;
   ReentrantMonitorAutoEnter mon(monitor_);
 
-  RefPtr<NrUdpSocketIpcProxy> proxy(new NrUdpSocketIpcProxy);
+  RefPtr proxy = MakeRefPtr<NrUdpSocketIpcProxy>();
   rv = proxy->Init(this);
   if (NS_FAILED(rv)) {
     err_ = true;

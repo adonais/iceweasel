@@ -27,7 +27,7 @@
 namespace mozilla::dom {
 
 nsXULElement* NS_NewXULPopupElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();
   return new (nim) XULPopupElement(nodeInfo.forget());

@@ -11,6 +11,9 @@ const { AppConstants } = ChromeUtils.importESModule(
 );
 
 import { SearchModeSwitcher } from "chrome://browser/content/urlbar/SearchModeSwitcher.mjs";
+import { UrlbarEventBufferer } from "chrome://browser/content/urlbar/UrlbarEventBufferer.mjs";
+import { UrlbarView } from "chrome://browser/content/urlbar/UrlbarView.mjs";
+import { UrlbarShared } from "chrome://browser/content/urlbar/UrlbarShared.mjs";
 
 /**
  * @import { UrlbarSearchOneOffs } from "moz-src:///browser/components/urlbar/UrlbarSearchOneOffs.sys.mjs"
@@ -48,6 +51,8 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/search/BrowserSearchTelemetry.sys.mjs",
   BrowserUIUtils: "resource:///modules/BrowserUIUtils.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  ConfigSearchEngine:
+    "moz-src:///toolkit/components/search/ConfigSearchEngine.sys.mjs",
   CustomizableUI:
     "moz-src:///browser/components/customizableui/CustomizableUI.sys.mjs",
   ExtensionSearchHandler:
@@ -63,8 +68,6 @@ const lazy = XPCOMUtils.declareLazy({
   SearchUtils: "moz-src:///toolkit/components/search/SearchUtils.sys.mjs",
   UrlbarController:
     "moz-src:///browser/components/urlbar/UrlbarController.sys.mjs",
-  UrlbarEventBufferer:
-    "moz-src:///browser/components/urlbar/UrlbarEventBufferer.sys.mjs",
   UrlbarPrefs: "moz-src:///browser/components/urlbar/UrlbarPrefs.sys.mjs",
   UrlbarQueryContext:
     "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
@@ -74,12 +77,9 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///browser/components/urlbar/UrlbarProviderOpenTabs.sys.mjs",
   UrlbarSearchUtils:
     "moz-src:///browser/components/urlbar/UrlbarSearchUtils.sys.mjs",
-  UrlbarTokenizer:
-    "moz-src:///browser/components/urlbar/UrlbarTokenizer.sys.mjs",
   UrlbarUtils: "moz-src:///browser/components/urlbar/UrlbarUtils.sys.mjs",
   UrlbarValueFormatter:
     "moz-src:///browser/components/urlbar/UrlbarValueFormatter.sys.mjs",
-  UrlbarView: "moz-src:///browser/components/urlbar/UrlbarView.sys.mjs",
   UrlbarSearchTermsPersistence:
     "moz-src:///browser/components/urlbar/UrlbarSearchTermsPersistence.sys.mjs",
   UrlUtils: "resource://gre/modules/UrlUtils.sys.mjs",
@@ -365,7 +365,7 @@ ${
     }
 
     this.controller = new lazy.UrlbarController({ input: this });
-    this.view = new lazy.UrlbarView(this);
+    this.view = new UrlbarView(this);
     this.searchModeSwitcher = new SearchModeSwitcher(this);
 
     let searchModeSwitcherDescription = this.querySelector(
@@ -384,7 +384,7 @@ ${
     // muscle memory; for example quickly pressing DOWN+ENTER should end up
     // on a predictable result, regardless of the search status. The event
     // bufferer will invoke the handling code at the right time.
-    this.eventBufferer = new lazy.UrlbarEventBufferer(this);
+    this.eventBufferer = new UrlbarEventBufferer(this);
 
     // Forward certain properties.
     // Note if you are extending these, you'll also need to extend the inline
@@ -1519,7 +1519,8 @@ ${
 
     if (
       result.providerName == lazy.UrlbarProviderGlobalActions.name &&
-      this.#providesSearchMode(result)
+      this.#providesSearchMode(result) &&
+      !this.view.selectedElement?.dataset.immediateSearch
     ) {
       this.maybeConfirmSearchModeFromResult({
         result,
@@ -1536,7 +1537,8 @@ ${
     // engineering effort. See review discussion at bug 1667766.
     if (
       (this.searchMode?.isPreview &&
-        result.providerName == lazy.UrlbarProviderGlobalActions.name) ||
+        result.providerName == lazy.UrlbarProviderGlobalActions.name &&
+        !this.view.selectedElement?.dataset.immediateSearch) ||
       (result.heuristic &&
         this.searchMode?.isPreview &&
         this.view.oneOffSearchButtons?.selectedButton)
@@ -1610,23 +1612,24 @@ ${
         }
       }
 
-      if (
-        where == "tab" &&
-        Services.prefs.getBoolPref("browser.tabs.loadInBackground")
-      ) {
-        openParams.avoidBrowserFocus = true;
-        openParams.keepView = true;
-        openParams.inBackground = true;
-      }
+      openParams.forceForeground = false;
     } else {
       where = this._whereToOpen(event);
       if (resultUrl && where == "current") {
         // Open help links in a new tab.
         where = "tab";
       }
+
+      openParams.forceForeground = true;
     }
 
-    if (!this.#providesSearchMode(result)) {
+    let keepViewOpen = lazy.BrowserUtils.willLoadInBackground(
+      where,
+      openParams
+    );
+    openParams.avoidBrowserFocus = keepViewOpen;
+
+    if (!this.#providesSearchMode(result) && !keepViewOpen) {
       this.view.close({ elementPicked: true });
     }
 
@@ -2080,7 +2083,8 @@ ${
         type: result.type,
         searchTerm: result.payload.suggestion ?? result.payload.query,
       },
-      browser
+      browser,
+      keepViewOpen
     );
   }
 
@@ -2454,11 +2458,11 @@ ${
         value = value.slice(1);
       }
     } else if (
-      Object.values(lazy.UrlbarTokenizer.RESTRICT).includes(firstToken)
+      Object.values(UrlbarShared.RESTRICT_TOKENS).includes(firstToken)
     ) {
       this.searchMode = null;
       // If the entire value is a restricted token, append a space.
-      if (Object.values(lazy.UrlbarTokenizer.RESTRICT).includes(value)) {
+      if (Object.values(UrlbarShared.RESTRICT_TOKENS).includes(value)) {
         value += " ";
       }
     }
@@ -2488,14 +2492,14 @@ ${
    * Returns a search mode object if a token should enter search mode when
    * typed. This does not handle engine aliases.
    *
-   * @param {Values<typeof lazy.UrlbarTokenizer.RESTRICT>} token
+   * @param {Values<typeof UrlbarShared.RESTRICT_TOKENS>} token
    *   A restriction token to convert to search mode.
    * @returns {?object}
    *   A search mode object. Null if search mode should not be entered. See
    *   setSearchMode documentation for details.
    */
   searchModeForToken(token) {
-    if (token == lazy.UrlbarTokenizer.RESTRICT.SEARCH) {
+    if (token == UrlbarShared.RESTRICT_TOKENS.SEARCH) {
       return {
         engineName: lazy.UrlbarSearchUtils.getDefaultEngine(this.isPrivate)
           ?.name,
@@ -2950,9 +2954,8 @@ ${
       return;
     }
 
-    this.#updateTextboxPosition();
-
     this.toggleAttribute("breakout-extend", true);
+    this.#updateTextboxPosition();
 
     // Enable the animation only after the first extend call to ensure it
     // doesn't run when opening a new window.
@@ -2995,7 +2998,7 @@ ${
       return;
     }
 
-    if (this.focused || (this.view.isOpen && this.view.visibleRowCount)) {
+    if (this.focused || this.view.isOpen) {
       this.startLayoutExtend();
     } else {
       this.endLayoutExtend();
@@ -3111,14 +3114,19 @@ ${
   }
 
   /**
-   * @param {{wrappedJSObject: SearchEngine}} subject
+   * @param {{wrappedJSObject: SearchEngine} | Window} subject
    * @param {"browser-search-engine-modified"|"ai-window-state-changed"} topic
    * @param {string} data
    */
   observe(subject, topic, data) {
     switch (topic) {
+      // nav-bar-visible event is unique to Smart Window and emits when the urlbar is shown on new tab.
+      // This ensures consistent height and padding around the urlbar
       case "ai-window-state-changed":
-        if (subject == this.window && data == "classic") {
+        if (
+          subject == this.window &&
+          (data == "classic" || data == "nav-bar-visible")
+        ) {
           this.#updateLayoutBreakout();
         }
         break;
@@ -3300,10 +3308,7 @@ ${
   }
 
   #updateTextboxPosition() {
-    if (
-      !this.view.isOpen &&
-      !Services.prefs.getBoolPref("browser.nova.enabled", false)
-    ) {
+    if (!this.hasAttribute("breakout-extend")) {
       this.style.top = "";
       return;
     }
@@ -4281,6 +4286,8 @@ ${
    * @param {Values<typeof lazy.UrlbarUtils.RESULT_SOURCE>} [resultDetails.source]
    *   Details of the result source, if any.
    * @param {object} browser [optional] the browser to use for the load.
+   * @param {boolean} keepViewOpen [optional]
+   *   Whether the view should remain open.
    */
   _loadURL(
     url,
@@ -4288,7 +4295,8 @@ ${
     openUILinkWhere,
     params,
     resultDetails = null,
-    browser = this.window.gBrowser.selectedBrowser
+    browser = this.window.gBrowser.selectedBrowser,
+    keepViewOpen = false
   ) {
     if (this.#isAddressbar) {
       this.#prepareAddressbarLoad(
@@ -4360,9 +4368,11 @@ ${
       }
     }
 
-    // If we show the focus border after closing the view, it would appear to
-    // flash since this._on_blur would remove it immediately after.
-    this.view.close({ showFocusBorder: false });
+    if (!keepViewOpen) {
+      // If we show the focus border after closing the view, it would appear to
+      // flash since this._on_blur would remove it immediately after.
+      this.view.close({ showFocusBorder: false });
+    }
   }
 
   /**
@@ -4696,9 +4706,16 @@ ${
     insertLocation.insertAdjacentElement("afterend", separator);
 
     contextMenu.addEventListener("popupshowing", () => {
-      let browser = this.window.gBrowser?.selectedBrowser;
+      let gBrowser = this.window.gBrowser;
+      let browser = gBrowser?.selectedBrowser;
       if (browser) {
-        lazy.SharingUtils.ensureShareMenu(browser, null, separator);
+        lazy.SharingUtils.ensureShareMenu(
+          browser,
+          gBrowser.selectedTabs.length > 1
+            ? gBrowser.selectedTabs.map(t => t.linkedBrowser)
+            : null,
+          separator
+        );
       }
     });
   }
@@ -4780,7 +4797,7 @@ ${
       if (result.type == lazy.UrlbarUtils.RESULT_TYPE.RESTRICT) {
         searchMode.restrictType = "keyword";
       } else if (
-        lazy.UrlbarTokenizer.SEARCH_MODE_RESTRICT.has(result.payload.keyword)
+        UrlbarShared.SEARCH_MODE_RESTRICT.has(result.payload.keyword)
       ) {
         searchMode.restrictType = "symbol";
       }
@@ -5058,8 +5075,9 @@ ${
    * @param {boolean} available If true Unified Search Button will be available.
    */
   setUnifiedSearchButtonAvailability(available) {
-    this.toggleAttribute("unifiedsearchbutton-available", available);
+    available ||= lazy.UrlbarPrefs.get("unifiedSearchButton.always");
     const switcher = this.querySelector(".searchmode-switcher");
+    switcher.toggleAttribute("offscreen", !available);
     if (available) {
       switcher.removeAttribute("aria-hidden");
     } else {
@@ -5109,7 +5127,7 @@ ${
     }
 
     let engine = lazy.SearchService.getEngineByName(engineName);
-    if (engine.isConfigEngine) {
+    if (engine instanceof lazy.ConfigSearchEngine) {
       this._setPlaceholder(engineName);
     } else {
       // Display the default placeholder string.

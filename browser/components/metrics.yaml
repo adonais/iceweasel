@@ -216,7 +216,6 @@ browser.startup:
       - perf-telemetry-alerts@mozilla.com
     expires: never
     unit: CACHE_RESULT_SCALARS
-    telemetry_mirror: BROWSER_STARTUP_ABOUTHOME_CACHE_RESULT
     no_lint:
       - COMMON_PREFIX
 
@@ -251,7 +250,6 @@ browser.startup:
       - mconley@mozilla.com
       - perf-telemetry-alerts@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_STARTUP_ABOUTHOME_CACHE_SHUTDOWNWRITE
     no_lint:
       - COMMON_PREFIX
   kiosk_mode:
@@ -1031,6 +1029,66 @@ browser:
     expires: never
 
 
+  set_default_protocol_handler_attempt:
+    type: event
+    description: >
+      Recorded once per call to ShellService.setAsDefaultProtocolHandler.
+      Captures the last method that was attempted, whether that method's
+      API call succeeded without throwing, the protocol that was targeted,
+      and whether Firefox is the default protocol handler when the OS state
+      is sampled after
+      browser.shell.setDefaultProtocolHandler.attemptWaitTimeMs has elapsed.
+      The wait gives the user time to interact with any picker or settings
+      dialog that the chosen method launched.
+    extra_keys:
+      method:
+        type: string
+        description: >
+          Which method was last attempted. One of "open_with"
+          (IOpenWithLauncher API) or "settings" (ms-settings:defaultapps
+          modern settings dialog).
+      success:
+        type: boolean
+        description: >
+          Whether the API call for the chosen method returned without
+          throwing. This only means the launcher was invoked, not that the
+          user picked Firefox.
+      protocol:
+        type: string
+        description: >
+          The protocol that was targeted (e.g. "https", "mailto").
+      result_is_default:
+        type: boolean
+        description: >
+          Whether Firefox is the default handler for `protocol` when sampled
+          after the attemptWaitTimeMs delay.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2041764
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2041764
+    notification_emails:
+      - hsohaney@mozilla.com
+      - application-update-telemetry-alerts@mozilla.com
+    expires: never
+
+  set_default_protocol_handler_modern_settings_result:
+    type: labeled_counter
+    description: >
+      Result of each attempt to set the default protocol handler by opening
+      modern settings through the ms-settings protocol
+      (ms-settings:defaultapps).
+    labels:
+      - Success
+      - Failure
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2041764
+    data_reviews:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2041764
+    notification_emails:
+      - hsohaney@mozilla.com
+      - application-update-telemetry-alerts@mozilla.com
+    expires: never
+
   set_default_pdf_handler_user_choice_result:
     type: labeled_counter
     description: >
@@ -1155,7 +1213,7 @@ browser:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2013077
     notification_emails:
-      - nimbus-team@mozilla.com
+      - project-nimbus@mozilla.com
     data_sensitivity:
       - interaction
     expires: never
@@ -1189,7 +1247,7 @@ browser:
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2012214
     notification_emails:
-      - nimbus-team@mozilla.com
+      - project-nimbus@mozilla.com
     data_sensitivity:
       - interaction
     expires: never

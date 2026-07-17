@@ -838,46 +838,47 @@ nsresult TextEditor::OnFocus(const nsINode& aOriginalEventTargetNode) {
           ("%p: OnFocus(aOriginalEventTargetNode=%s)", this,
            ToString(RefPtr{&aOriginalEventTargetNode}).c_str()));
 
-  RefPtr<PresShell> presShell = GetPresShell();
-  if (MOZ_UNLIKELY(!presShell)) {
-    LogOrWarn(this, gTextEditorLog, LogLevel::Error, "!presShell");
-    return NS_ERROR_FAILURE;
-  }
-  // Let's update the layout information right now because there are some
-  // pending notifications and flushing them may cause destroying the editor.
-  presShell->FlushPendingNotifications(FlushType::Layout);
-  if (MOZ_UNLIKELY(!CanKeepHandlingFocusEvent(aOriginalEventTargetNode))) {
-    MOZ_LOG(gTextEditorLog, LogLevel::Debug,
-            ("%p: CanKeepHandlingFocusEvent() returned false", this));
-    return NS_OK;
-  }
-
   AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
   if (MOZ_UNLIKELY(!editActionData.CanHandle())) {
     LogOrWarn(this, gTextEditorLog, LogLevel::Error,
               "AutoEditActionDataSetter::CanHandle() failed");
     return NS_ERROR_FAILURE;
   }
+  return EditorBase::OnFocus(aOriginalEventTargetNode);
+}
+
+void TextEditor::PostHandleFocusEvent(const nsINode& aFocusEventTargetNode) {
+  MOZ_LOG(gTextEditorLog, LogLevel::Info,
+          ("%p: PostHandleFocusEvent(aFocusEvent={ "
+           "GetOriginalEventTarget()=%s }), %s",
+           this, ToString(RefPtr{&aFocusEventTargetNode}).c_str(),
+           GetFocusedElement() ? "but already lost focus" : "still has focus"));
+
+  AutoEditActionDataSetter editActionData(*this, EditAction::eNotEditing);
+  if (MOZ_UNLIKELY(!editActionData.CanHandle())) {
+    LogOrWarn(this, gTextEditorLog, LogLevel::Error,
+              "AutoEditActionDataSetter::CanHandle() failed");
+    return;
+  }
 
   // Spell check a textarea the first time that it is focused.
   nsresult rv = FlushPendingSpellCheck();
-  if (MOZ_UNLIKELY(rv == NS_ERROR_EDITOR_DESTROYED)) {
+  if (rv == NS_ERROR_EDITOR_DESTROYED) [[unlikely]] {
     LogOrWarn(this, gTextEditorLog, LogLevel::Error,
               "EditorBase::FlushPendingSpellCheck() failed");
-    return NS_ERROR_EDITOR_DESTROYED;
+    return;
   }
   NS_WARNING_ASSERTION(
       NS_SUCCEEDED(rv),
       "EditorBase::FlushPendingSpellCheck() failed, but ignored");
-  if (MOZ_UNLIKELY(!CanKeepHandlingFocusEvent(aOriginalEventTargetNode))) {
+  if (!CanKeepHandlingFocusEvent(aFocusEventTargetNode)) [[unlikely]] {
     MOZ_LOG(gTextEditorLog, LogLevel::Debug,
             ("%p: CanKeepHandlingFocusEvent() returned false after "
              "FlushPendingSpellCheck()",
              this));
-    return NS_OK;
+    return;
   }
-
-  return EditorBase::OnFocus(aOriginalEventTargetNode);
+  EditorBase::PostHandleFocusEvent(aFocusEventTargetNode);
 }
 
 nsresult TextEditor::OnBlur(const EventTarget* aEventTarget) {

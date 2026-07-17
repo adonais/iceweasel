@@ -16,6 +16,7 @@
 #include <stdint.h>  // IWYU pragma: export
 
 #include "mozilla/RefCountType.h"
+#include "mozilla/SEH.h"
 
 /* Core XPCOM declarations. */
 
@@ -237,17 +238,6 @@ inline Result<Ok, E> ToResult(nsresult aValue);
  */
 #if defined(XPCOM_GLUE) && !defined(XPCOM_GLUE_USE_NSPR)
 #  define XPCOM_GLUE_AVOID_NSPR
-#endif
-
-/*
- * SEH exception macros.
- */
-#ifdef HAVE_SEH_EXCEPTIONS
-#  define MOZ_SEH_TRY __try
-#  define MOZ_SEH_EXCEPT(expr) __except (expr)
-#else
-#  define MOZ_SEH_TRY if (true)
-#  define MOZ_SEH_EXCEPT(expr) else
 #endif
 
 #endif /* nscore_h_ */

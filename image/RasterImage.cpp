@@ -1681,10 +1681,12 @@ void RasterImage::NotifyDecodeComplete(
     }
 
     if (mAnimationState && LoadHasBeenDecoded()) {
-      // We've finished a full decode of all animation frames and our
-      // AnimationState has been notified about them all, so let it know not to
-      // expect anymore.
-      mAnimationState->NotifyDecodeComplete();
+      // If we've successfully finished a full decode of all animation frames
+      // then let our animation state know it is complete and to not expect
+      // anymore frames.
+      if (aStatus.mFinished && !aStatus.mHadError) {
+        mAnimationState->NotifyDecodeComplete();
+      }
 
       IntRect rect = mAnimationState->UpdateState(this, mSize.ToUnknownSize());
 

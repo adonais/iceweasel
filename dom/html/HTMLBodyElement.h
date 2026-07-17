@@ -18,7 +18,7 @@ class HTMLBodyElement final : public nsGenericHTMLElement {
  public:
   using Element::GetCharacterDataBuffer;
 
-  explicit HTMLBodyElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit HTMLBodyElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   // nsISupports

@@ -108,9 +108,30 @@ class PerformanceMainThread final : public Performance,
 
   static constexpr uint32_t kMaxLargestContentfulPaintBufferSize = 150;
 
+  static constexpr size_t kMaxInteractionDurations = 2048;
+
+  // Matches web-vitals.js's INP durationThreshold for RUM comparability.
+  static constexpr double kInpEventDurationThreshold = 40.0;
+
   class EventCounts* EventCounts() override;
 
   uint64_t InteractionCount() override;
+
+  // Aggregates for the perf.page_load event, populated by
+  // UpdateInteractionTelemetry as event-timing entries are finalized.
+  struct InteractionTelemetry {
+    uint32_t inpLongest = 0;
+    uint32_t keypressMaxDuration = 0;
+    uint32_t mouseClick = 0;
+
+    // Ascending durations of interaction-tagged events; backs inpP75/inpP98.
+    // Values are clamped to UINT16_MAX (~65 s) on insert; inpLongest still
+    // tracks the unclamped max.
+    nsTArray<uint16_t> interactionEventDurations;
+  };
+  const InteractionTelemetry& GetInteractionTelemetry() const {
+    return mInteractionTelemetry;
+  }
 
   bool IsGlobalObjectWindow() const override { return true; };
 
@@ -210,6 +231,10 @@ class PerformanceMainThread final : public Performance,
   // mTextFrameUnions's key is the containing block, and
   // the value is the unioned area.
   TextFrameUnions mTextFrameUnions;
+
+  // Updates mInteractionTelemetry from a popped PerformanceEventTiming entry.
+  void UpdateInteractionTelemetry(PerformanceEventTiming* aEntry);
+  InteractionTelemetry mInteractionTelemetry;
 };
 
 inline void ImplCycleCollectionTraverse(

@@ -560,3 +560,34 @@ TEST_F(APZCPanningTester, HoldGesture_DuringAutoscrollAnimation) {
   // Check that this did NOT cancel the autoscroll animation.
   apzc->AssertStateIsAutoscroll();
 }
+TEST_F(APZCPanningTester, Autoscroll_ScrollWheelCooldown) {
+  auto cooldownMS = StaticPrefs::apz_autoscroll_scroll_wheel_cooldown();
+  // Tell APZ about the current mouse position. This is needed for
+  // autoscroll to work correctly.
+  tm->SetCurrentMousePosition(ScreenPoint(5, 5));
+
+  // Start an autoscroll animation.
+  apzc->StartAutoscroll(ScreenPoint(5, 5));
+  apzc->AssertStateIsAutoscroll();
+
+  // Send a scroll wheel and check that this did NOT cancel the autoscroll
+  // animation.
+  Wheel(apzc, ScreenIntPoint(10, 10), ScreenPoint(0, 10), mcc->Time());
+  apzc->AssertStateIsAutoscroll();
+
+  // Advance to right before cooldown ends
+  if (cooldownMS - 1 > 0) {
+    mcc->AdvanceByMillis(cooldownMS - 1);
+    // Send a scroll wheel and check that this did NOT cancel the autoscroll
+    // animation.
+    Wheel(apzc, ScreenIntPoint(10, 10), ScreenPoint(0, 10), mcc->Time());
+    apzc->AssertStateIsAutoscroll();
+  }
+  // Advance the time to right after cooldown
+  mcc->AdvanceByMillis(2);
+
+  // Send a scroll wheel and check that this DID cancel the autoscroll
+  // animation.
+  Wheel(apzc, ScreenIntPoint(10, 10), ScreenPoint(0, 10), mcc->Time());
+  apzc->AssertStateIsReset();
+}

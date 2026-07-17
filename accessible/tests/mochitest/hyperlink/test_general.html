@@ -17,7 +17,7 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=418368
   <script type="application/javascript"
           src="../states.js"></script>
   <script type="application/javascript"
-          src="../promisified-events.js"></script>
+          src="../events.js"></script>
 
   <script type="application/javascript">
     function testThis(aID, aAcc, aRole, aAnchors, aName, aValid, aStartIndex,
@@ -78,8 +78,6 @@ https://bugzilla.mozilla.org/show_bug.cgi?id=418368
         : 0;
       testStates(aID, expectedStatesAfter, 0, unexpectedStatesAfter, 0);
     }
-
-    // gA11yEventDumpToConsole = true; // debug stuff
 
     async function doTest() {
       // Wait for image map to be built before running tests.

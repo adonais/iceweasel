@@ -13,6 +13,21 @@
           "default": "{toolbox.background.color.@base}",
           "nativeTheme": "-moz-headerbarinactive"
         }
+      },
+      "gradient-leading": {
+        "override": true,
+        "value": "unset"
+      },
+      "gradient-trailing": {
+        "override": true,
+        "value": "unset"
+      }
+    },
+    "nova-gradient": {
+      "comment": "This gradient is only used for Nova",
+      "value": {
+        "default": "linear-gradient(96deg, color-mix({toolbox.background.color.gradient-leading} 50%, transparent) 39.84%, color-mix({toolbox.background.color.gradient-trailing} 50%, transparent) 101.72%)",
+        "forcedColors": "image(transparent)"
       }
     }
   },
@@ -21,7 +36,7 @@
       "@base": {
         "value": {
           "light": "{color.gray.100}",
-          "dark": "{color.gray.05}",
+          "dark": "{color.gray.0}",
           "nativeTheme": "-moz-headerbartext"
         }
       },

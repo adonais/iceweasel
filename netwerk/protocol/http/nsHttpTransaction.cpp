@@ -547,6 +547,16 @@ void nsHttpTransaction::SetConnection(nsAHttpConnection* conn) {
         mTRRSkipReason = mConnection->TRRSkipReason();
         mEchConfigUsed = mConnection->GetEchConfigUsed();
       }
+
+      // On a reused HTTP/1.1 CONNECT tunnel OnProxyConnectComplete is not
+      // called again, so pick up the head the connection captured during
+      // tunnel setup. This is just a RefPtr addref, not a copy.
+      if (mConnInfo && mConnInfo->UsingConnect()) {
+        RefPtr<HttpConnectionBase> httpConn = mConnection->HttpConnection();
+        if (httpConn) {
+          mProxyConnectResponseHead = httpConn->GetProxyConnectResponseHead();
+        }
+      }
     }
   }
 }
@@ -1423,6 +1433,12 @@ void nsHttpTransaction::Close(nsresult reason) {
   MaybeCancelFallbackTimer();
 
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
+
+  if (mTokenBucketCancel) {
+    mTokenBucketCancel->Cancel(reason);
+    mTokenBucketCancel = nullptr;
+  }
+
   if (reason == NS_BINDING_RETARGETED) {
     LOG(("  close %p skipped due to ERETARGETED\n", this));
     return;
@@ -1434,11 +1450,6 @@ void nsHttpTransaction::Close(nsresult reason) {
   }
 
   NotifyTransactionObserver(reason);
-
-  if (mTokenBucketCancel) {
-    mTokenBucketCancel->Cancel(reason);
-    mTokenBucketCancel = nullptr;
-  }
 
   // report the reponse is complete if not already reported
   if (!mResponseIsComplete) {
@@ -3281,6 +3292,18 @@ void nsHttpTransaction::GetNetworkAddresses(
   aEchConfigUsed = mEchConfigUsed;
 }
 
+void nsHttpTransaction::RemoveSSLTokens(nsITransportSecurityInfo* aSecInfo) {
+  if (!aSecInfo) {
+    return;
+  }
+  // Always evict regardless of
+  // network_http_remove_resumption_token_when_early_data_failed: skipping
+  // eviction causes an infinite Finish0RTT(restart=1) loop.
+  nsAutoCString key;
+  aSecInfo->GetPeerId(key);
+  SSLTokensCache::RemoveAll(key);
+}
+
 bool nsHttpTransaction::Do0RTT(bool aCanSendEarlyData) {
   LOG(("nsHttpTransaction::Do0RTT [aCanSendEarlyData=%d]", aCanSendEarlyData));
   mResumptionAttempted = true;
@@ -3442,16 +3465,22 @@ bool nsHttpTransaction::IsWebsocketUpgrade() {
   return result;
 }
 
-void nsHttpTransaction::OnProxyConnectComplete(int32_t aResponseCode) {
+void nsHttpTransaction::OnProxyConnectComplete(
+    ProxyConnectResponseHead* aResponseHead) {
   MOZ_ASSERT(OnSocketThread(), "not on socket thread");
   MOZ_ASSERT(mConnInfo->UsingConnect());
+  MOZ_ASSERT(aResponseHead);
 
+  int32_t status = aResponseHead->Head().Status();
   LOG(("nsHttpTransaction::OnProxyConnectComplete %p aResponseCode=%d", this,
-       aResponseCode));
+       status));
 
-  mProxyConnectResponseCode = aResponseCode;
+  {
+    MutexAutoLock lock(mLock);
+    mProxyConnectResponseHead = aResponseHead;
+  }
 
-  if (mConnInfo->IsHttp3() && mProxyConnectResponseCode == 200 &&
+  if (mConnInfo->IsHttp3() && status == 200 &&
       !mHttp3TunnelFallbackTimerCreated) {
     mHttp3TunnelFallbackTimerCreated = true;
     CreateAndStartTimer(mHttp3TunnelFallbackTimer, this,
@@ -3460,11 +3489,19 @@ void nsHttpTransaction::OnProxyConnectComplete(int32_t aResponseCode) {
 }
 
 int32_t nsHttpTransaction::GetProxyConnectResponseCode() {
-  return mProxyConnectResponseCode;
+  MutexAutoLock lock(mLock);
+  return mProxyConnectResponseHead ? mProxyConnectResponseHead->Head().Status()
+                                   : 0;
+}
+
+RefPtr<ProxyConnectResponseHead>
+nsHttpTransaction::GetProxyConnectResponseHead() {
+  MutexAutoLock lock(mLock);
+  return mProxyConnectResponseHead;
 }
 
 void nsHttpTransaction::SetFlat407Headers(const nsACString& aHeaders) {
-  MOZ_ASSERT(mProxyConnectResponseCode == 407);
+  MOZ_ASSERT(GetProxyConnectResponseCode() == 407);
   MOZ_ASSERT(!mResponseHead);
 
   LOG(("nsHttpTransaction::SetFlat407Headers %p", this));

@@ -71,8 +71,8 @@ void PermissionStatus::PermissionChanged(uint32_t aAction) {
 
   // Step 4: Queue a task on the permissions task source to fire an
   // event named change at status.
-  RefPtr<AsyncEventDispatcher> eventDispatcher =
-      new AsyncEventDispatcher(this, u"change"_ns, CanBubble::eNo);
+  RefPtr eventDispatcher =
+      MakeRefPtr<AsyncEventDispatcher>(this, u"change"_ns, CanBubble::eNo);
   eventDispatcher->PostDOMEvent();
 }
 
@@ -86,8 +86,8 @@ void PermissionStatus::SystemPermissionChanged(
     return;
   }
 
-  RefPtr<AsyncEventDispatcher> eventDispatcher =
-      new AsyncEventDispatcher(this, u"change"_ns, CanBubble::eNo);
+  RefPtr eventDispatcher =
+      MakeRefPtr<AsyncEventDispatcher>(this, u"change"_ns, CanBubble::eNo);
   eventDispatcher->PostDOMEvent();
 }
 
@@ -107,9 +107,7 @@ void PermissionStatus::GetType(nsACString& aName) const {
 }
 
 already_AddRefed<PermissionStatusSink> PermissionStatus::CreateSink() {
-  RefPtr<PermissionStatusSink> sink =
-      new PermissionStatusSink(this, mName, GetPermissionType());
-  return sink.forget();
+  return MakeAndAddRef<PermissionStatusSink>(this, mName, GetPermissionType());
 }
 
 PermissionState PermissionStatus::ComputeStateFromAction(uint32_t aAction) {

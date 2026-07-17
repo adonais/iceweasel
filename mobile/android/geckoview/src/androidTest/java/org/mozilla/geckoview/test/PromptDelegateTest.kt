@@ -150,7 +150,7 @@ class PromptDelegateTest : BaseSessionTest(
         })
 
         mainSession.loadUri(FRAMEBUSTING_PARENT_URI)
-        sessionRule.waitForPageStop()
+        sessionRule.waitForPageStops(2)
         mainSession.waitForRoundTrip()
     }
 

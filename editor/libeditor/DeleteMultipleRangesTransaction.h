@@ -21,8 +21,7 @@ namespace mozilla {
 class DeleteMultipleRangesTransaction final : public EditAggregateTransaction {
  public:
   static already_AddRefed<DeleteMultipleRangesTransaction> Create() {
-    RefPtr<DeleteMultipleRangesTransaction> transaction =
-        new DeleteMultipleRangesTransaction();
+    RefPtr transaction = MakeRefPtr<DeleteMultipleRangesTransaction>();
     return transaction.forget();
   }
 

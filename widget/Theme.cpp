@@ -895,7 +895,7 @@ void Theme::PaintRange(nsIFrame* aFrame, PaintBackendData& aPaintData,
   tickMarkOrigin -=
       LayoutDevicePoint(tickMarkSize.width, tickMarkSize.height) / 2;
   auto tickMarkRect = LayoutDeviceRect(tickMarkOrigin, tickMarkSize);
-  for (auto tickMark : tickMarks) {
+  for (const auto& tickMark : tickMarks) {
     auto tickMarkOffset =
         tickMarkDirection *
         float(rangeFrame->GetDoubleAsFractionOfRange(tickMark));

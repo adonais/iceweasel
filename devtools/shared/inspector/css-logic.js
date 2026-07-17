@@ -899,4 +899,5 @@ exports.isCssVariable = isCssVariable;
 exports.ELEMENT_BACKED_PSEUDO_ELEMENTS = new Set([
   "::details-content",
   "::file-selector-button",
+  "::picker",
 ]);

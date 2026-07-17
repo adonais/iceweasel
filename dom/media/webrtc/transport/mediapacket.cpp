@@ -24,7 +24,7 @@ void MediaPacket::Copy(const uint8_t* data, size_t len, size_t capacity) {
   if (capacity < len) {
     capacity = len;
   }
-  data_.reset(new uint8_t[capacity]);
+  data_ = MakeUnique<uint8_t[]>(capacity);
   len_ = len;
   capacity_ = capacity;
   memcpy(data_.get(), data, len);
@@ -70,7 +70,7 @@ bool MediaPacket::Deserialize(IPC::MessageReader* aReader) {
   }
 
   if (capacity_) {
-    data_.reset(new uint8_t[capacity_]);
+    data_ = MakeUnique<uint8_t[]>(capacity_);
     if (len_) {
       if (!aReader->ReadBytesInto(data_.get(), len_)) {
         return false;
@@ -79,7 +79,7 @@ bool MediaPacket::Deserialize(IPC::MessageReader* aReader) {
   }
 
   if (encrypted_len_) {
-    encrypted_data_.reset(new uint8_t[encrypted_len_]);
+    encrypted_data_ = MakeUnique<uint8_t[]>(encrypted_len_);
     if (!aReader->ReadBytesInto(encrypted_data_.get(), encrypted_len_)) {
       return false;
     }

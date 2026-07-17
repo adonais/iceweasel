@@ -677,8 +677,8 @@ void TISInputSourceWrapper::InitByInputSourceID(const CFStringRef aID) {
   if (!aID) return;
   const void* keys[] = {kTISPropertyInputSourceID};
   const void* values[] = {aID};
-  CFDictionaryRef filter =
-      ::CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1, NULL, NULL);
+  CFDictionaryRef filter = ::CFDictionaryCreate(kCFAllocatorDefault, keys,
+                                                values, 1, nullptr, nullptr);
   NS_ASSERTION(filter, "failed to create the filter");
   mInputSourceList = ::TISCreateInputSourceList(filter, true);
   ::CFRelease(filter);
@@ -1743,8 +1743,8 @@ NSUInteger TextInputHandler::sLastModifierState = 0;
 CFArrayRef TextInputHandler::CreateAllKeyboardLayoutList() {
   const void* keys[] = {kTISPropertyInputSourceType};
   const void* values[] = {kTISTypeKeyboardLayout};
-  CFDictionaryRef filter =
-      ::CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1, NULL, NULL);
+  CFDictionaryRef filter = ::CFDictionaryCreate(kCFAllocatorDefault, keys,
+                                                values, 1, nullptr, nullptr);
   NS_ASSERTION(filter, "failed to create the filter");
   CFArrayRef list = ::TISCreateInputSourceList(filter, true);
   ::CFRelease(filter);
@@ -3218,12 +3218,13 @@ void IMEInputHandler::InitStaticMembers() {
   // Mac Dev Center's document doesn't say how to remove the observer if
   // the second parameter is NULL.
   ::CFNotificationCenterAddObserver(
-      center, NULL, OnCurrentTextInputSourceChange,
-      kTISNotifySelectedKeyboardInputSourceChanged, NULL,
+      center, nullptr, OnCurrentTextInputSourceChange,
+      kTISNotifySelectedKeyboardInputSourceChanged, nullptr,
       CFNotificationSuspensionBehaviorDeliverImmediately);
   // Initiailize with the current keyboard layout
-  OnCurrentTextInputSourceChange(
-      NULL, NULL, kTISNotifySelectedKeyboardInputSourceChanged, NULL, NULL);
+  OnCurrentTextInputSourceChange(nullptr, nullptr,
+                                 kTISNotifySelectedKeyboardInputSourceChanged,
+                                 nullptr, nullptr);
 }
 
 // static
@@ -3333,8 +3334,8 @@ void IMEInputHandler::FlushPendingMethods(nsITimer* aTimer, void* aClosure) {
 CFArrayRef IMEInputHandler::CreateAllIMEModeList() {
   const void* keys[] = {kTISPropertyInputSourceType};
   const void* values[] = {kTISTypeKeyboardInputMode};
-  CFDictionaryRef filter =
-      ::CFDictionaryCreate(kCFAllocatorDefault, keys, values, 1, NULL, NULL);
+  CFDictionaryRef filter = ::CFDictionaryCreate(kCFAllocatorDefault, keys,
+                                                values, 1, nullptr, nullptr);
   NS_ASSERTION(filter, "failed to create the filter");
   CFArrayRef list = ::TISCreateInputSourceList(filter, true);
   ::CFRelease(filter);
@@ -3704,8 +3705,7 @@ already_AddRefed<mozilla::TextRangeArray> IMEInputHandler::CreateTextRangeArray(
     NSAttributedString* aAttrString, NSRange& aSelectedRange) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
-  RefPtr<mozilla::TextRangeArray> textRangeArray =
-      new mozilla::TextRangeArray();
+  auto textRangeArray = MakeRefPtr<mozilla::TextRangeArray>();
 
   // Note that we shouldn't append ranges when composition string
   // is empty because it may cause TextComposition confused.
@@ -5453,13 +5453,12 @@ void TextInputHandlerBase::InitKeyEvent(NSEvent* aNativeKeyEvent,
 
 nsresult TextInputHandlerBase::SynthesizeNativeKeyEvent(
     int32_t aNativeKeyboardLayout, int32_t aNativeKeyCode,
-    uint32_t aModifierFlags, const nsAString& aCharacters,
+    nsIWidget::NativeModifiers aModifierFlags, const nsAString& aCharacters,
     const nsAString& aUnmodifiedCharacters) {
   NS_OBJC_BEGIN_TRY_BLOCK_RETURN;
 
   uint32_t modifierFlags =
-      nsCocoaUtils::ConvertWidgetModifiersToMacModifierFlags(
-          static_cast<nsIWidget::Modifiers>(aModifierFlags));
+      nsCocoaUtils::ConvertWidgetModifiersToMacModifierFlags(aModifierFlags);
   NSInteger windowNumber = [[mView window] windowNumber];
   bool sendFlagsChangedEvent = IsModifierKey(aNativeKeyCode);
   NSEventType eventType =

@@ -819,7 +819,7 @@ already_AddRefed<UnscaledFont> UnscaledFontMac::CreateFromFontDescriptor(
     font = CTFontCopyGraphicsFont(newFont, nullptr);
   }
 
-  RefPtr<UnscaledFont> unscaledFont = new UnscaledFontMac(font);
+  RefPtr unscaledFont = MakeRefPtr<UnscaledFontMac>(font);
   CFRelease(font);
   return unscaledFont.forget();
 }

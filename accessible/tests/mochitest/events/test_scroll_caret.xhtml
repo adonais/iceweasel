@@ -16,7 +16,7 @@
   <script type="application/javascript"
           src="../states.js" />
   <script type="application/javascript"
-          src="../promisified-events.js" />
+          src="../events.js" />
   <script type="application/javascript"
           src="../browser.js"></script>
 
@@ -30,8 +30,6 @@
       const tabDoc = aTabIdx ? tabDocumentAt(aTabIdx) : currentTabDocument();
       return tabDoc.querySelector("h1[id='heading_1']");
     }
-
-    //gA11yEventDumpToConsole = true; // debug stuff
 
     async function doTest() {
       const url = "http://mochi.test:8888/a11y/accessible/tests/mochitest/events/scroll.html#heading_1";

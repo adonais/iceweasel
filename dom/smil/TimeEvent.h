@@ -10,6 +10,7 @@
 #include "mozilla/dom/TimeEventBinding.h"
 #include "mozilla/dom/WindowProxyHolder.h"
 #include "nsDocShell.h"
+#include "nsPIDOMWindowInlines.h"  // FIXME: Stop including inline definitions!
 
 class nsGlobalWindowInner;
 

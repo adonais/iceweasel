@@ -450,6 +450,11 @@ function loadCallgraph(files, verbose)
 }
 
 function saveCallgraph(functions, calleesOf) {
+    // The first line has `!` followed by a JSON blob describing all of the
+    // attribute/property bit flags used in the rest of the file. Useful for
+    // documentation and interactive exploration.
+    print(`! ${JSON.stringify({ Version: 1, Properties: ATTR_Names })}`);
+
     // Write out all the ids and their readable names.
     let id = -1;
     for (const name of functions.name) {

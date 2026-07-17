@@ -39,7 +39,7 @@ use crate::profiler::TransactionProfile;
 use crate::renderer::GpuBufferBuilderF;
 use crate::resource_cache::{ResourceCache, ImageRequest};
 use crate::scene_building::SliceFlags;
-use crate::space::SpaceMapper;
+use crate::space::{SpaceMapper, SpaceSnapper};
 use crate::spatial_tree::{SpatialNodeIndex, SpatialTree};
 use crate::surface::{SubpixelMode, SurfaceInfo};
 use crate::util::{ScaleOffset, MatrixHelpers, MaxRect};
@@ -64,6 +64,10 @@ pub use api::units::TileRange as TileRect;
 /// is an arbitrary number that should be enough for common cases, but low enough to
 /// prevent performance and memory usage drastically degrading in pathological cases.
 pub const MAX_COMPOSITOR_SURFACES: usize = 4;
+
+/// The maximum number of compositor underlay surfaces that are allowed per picture cache.
+/// This is an arbitrary number that should be enough for most cases.
+pub const MAX_COMPOSITOR_UNDERLAY_SURFACES: usize = 5;
 
 /// The size in device pixels of a normal cached tile.
 pub const TILE_SIZE_DEFAULT: DeviceIntSize = DeviceIntSize {
@@ -1077,10 +1081,13 @@ impl TileCacheInstance {
                 pic_rect,
             );
 
+            let mut clip_snapper = SpaceSnapper::new(surface, frame_context.spatial_tree);
+
             frame_state.clip_store.set_active_clips(
                 self.spatial_node_index,
                 map_local_to_picture.ref_spatial_node_index,
                 surface.visibility_spatial_node_index,
+                &mut clip_snapper,
                 shared_clip_leaf_id,
                 frame_context.spatial_tree,
                 &mut frame_state.data_stores.clip,
@@ -1143,6 +1150,10 @@ impl TileCacheInstance {
                                         top_right: so.map_size(&radius.top_right),
                                         bottom_left: so.map_size(&radius.bottom_left),
                                         bottom_right: so.map_size(&radius.bottom_right),
+                                        shape_top_left: radius.shape_top_left,
+                                        shape_top_right: radius.shape_top_right,
+                                        shape_bottom_left: radius.shape_bottom_left,
+                                        shape_bottom_right: radius.shape_bottom_right,
                                     },
                                 ),
                                 ClipSpaceConversion::Transform(..) => unreachable!(),
@@ -1526,7 +1537,7 @@ impl TileCacheInstance {
         data_stores: &DataStores,
         clip_store: &ClipStore,
         composite_state: &CompositeState,
-        force: bool,
+        color_depth: Option<ColorDepth>,
     ) -> Result<CompositorSurfaceKind, SurfacePromotionFailure> {
         use SurfacePromotionFailure::*;
 
@@ -1575,6 +1586,10 @@ impl TileCacheInstance {
                 }
             }
             CompositorSurfaceKind::Underlay => {
+                // Should we force the promotion of this surface? We'll force it if promotion
+                // is necessary for correct color display of HDR.
+                let force_for_hdr = matches!(color_depth, Some(color_depth) if color_depth.bit_depth() > 8);
+
                 // If a mask is needed, there are some restrictions.
                 if prim_clip_chain.needs_mask {
                     // Need an opaque region behind this prim. The opaque region doesn't
@@ -1583,7 +1598,7 @@ impl TileCacheInstance {
                     if !self.backdrop.opaque_rect.contains_box(&pic_coverage_rect) {
                         let result = Err(UnderlayAlphaBackdrop);
                         // If we aren't forcing, give up and return Err.
-                        if !force {
+                        if !force_for_hdr {
                             return result;
                         }
 
@@ -1591,9 +1606,14 @@ impl TileCacheInstance {
                         self.report_promotion_failure(result, pic_coverage_rect, true);
                     }
 
-                    // Only one masked underlay allowed.
                     if !self.underlays.is_empty() {
-                        return Err(UnderlaySurfaceLimit);
+                        // If we aren't forcing, we limit the number of masked underlays
+                        // Permit more underlays when forced.
+                        // XXX WebRender does not support full HDR yet.
+                        // HDR requires external composite to show correct colors.
+                        if !force_for_hdr || self.underlays.len() > MAX_COMPOSITOR_UNDERLAY_SURFACES {
+                            return Err(UnderlaySurfaceLimit);
+                        }
                     }
                 }
 
@@ -1602,7 +1622,7 @@ impl TileCacheInstance {
                 if self.overlay_region.intersects(&pic_coverage_rect) {
                     let result = Err(UnderlayIntersectsOverlay);
                     // If we aren't forcing, give up and return Err.
-                    if !force {
+                    if !force_for_hdr {
                         return result;
                     }
 
@@ -1922,6 +1942,10 @@ impl TileCacheInstance {
                                 top_right: scale_offset.map_size(&radius.top_right),
                                 bottom_left: scale_offset.map_size(&radius.bottom_left),
                                 bottom_right: scale_offset.map_size(&radius.bottom_right),
+                                shape_top_left: radius.shape_top_left,
+                                shape_top_right: radius.shape_top_right,
+                                shape_bottom_left: radius.shape_bottom_left,
+                                shape_bottom_right: radius.shape_bottom_right,
                             },
                         )
                     }
@@ -2370,7 +2394,7 @@ impl TileCacheInstance {
                                                           data_stores,
                                                           clip_store,
                                                           composite_state,
-                                                          false);
+                                                          None);
                     }
 
                     // Native OS compositors (DC and CA, at least) support premultiplied alpha
@@ -2446,10 +2470,6 @@ impl TileCacheInstance {
                         self.yuv_images_remaining -= 1;
                     }
 
-                    // Should we force the promotion of this surface? We'll force it if promotion
-                    // is necessary for correct color display.
-                    let force = prim_data.kind.color_depth.bit_depth() > 8;
-
                     let promotion_attempts =
                         [CompositorSurfaceKind::Overlay, CompositorSurfaceKind::Underlay];
 
@@ -2467,7 +2487,7 @@ impl TileCacheInstance {
                                                     data_stores,
                                                     clip_store,
                                                     composite_state,
-                                                    force);
+                                                    Some(prim_data.kind.color_depth));
                         if promotion_result.is_ok() {
                             break;
                         }
@@ -2990,12 +3010,30 @@ impl TileCacheInstance {
         });
 
         if !self.underlays.is_empty() && !self.deferred_dirty_tests.is_empty() {
-            // Cancel underlay if underlay intersects with backdrop filter.
-            let (underlays, cancel_underlays): (Vec<_>, Vec<_>) = self.underlays
-                .iter()
-                .partition(|desc| self.deferred_dirty_tests
+            let is_yuv_8bit = |desc: &ExternalSurfaceDescriptor| {
+                matches!(
+                    desc.dependency,
+                    ExternalSurfaceDependency::Yuv {
+                        channel_bit_depth: 8,
+                        ..
+                    }
+                )
+            };
+
+            let intersects_with_dirty_tests = |desc: &ExternalSurfaceDescriptor| {
+                self.deferred_dirty_tests
                     .iter()
-                    .any(|dirty_test| !desc.local_rect.intersects(&dirty_test.prim_rect)));
+                    .any(|dirty_test| dirty_test.prim_rect.intersects(&desc.local_rect))
+            };
+
+            // Cancel underlay if underlay intersects with backdrop filter and bit depth is 8 bits
+            // XXX WebRender does not support full HDR yet. HDR requires external composite to show correct colors.
+            let (underlays, cancel_underlays): (Vec<_>, Vec<_>) =
+                self.underlays
+                    .iter()
+                    .partition(|desc| {
+                        !is_yuv_8bit(desc) || !intersects_with_dirty_tests(desc)
+                    });
 
             if !cancel_underlays.is_empty() {
                 for desc in cancel_underlays {

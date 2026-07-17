@@ -8,7 +8,7 @@
 #include "SVGPolyElement.h"
 
 nsresult NS_NewSVGPolylineElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla::dom {
 
@@ -17,11 +17,11 @@ using SVGPolylineElementBase = SVGPolyElement;
 class SVGPolylineElement final : public SVGPolylineElementBase {
  protected:
   explicit SVGPolylineElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
   friend nsresult(::NS_NewSVGPolylineElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
 
   // SVGGeometryElement methods:
   already_AddRefed<Path> BuildPath(PathBuilder* aBuilder) override;

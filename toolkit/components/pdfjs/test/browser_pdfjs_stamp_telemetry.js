@@ -117,7 +117,7 @@ add_task(async function test() {
 
       await SpecialPowers.spawn(browser, [], async () => {
         const altText = content.document.querySelector(".altText");
-        await EventUtils.synthesizeMouseAtCenter(
+        EventUtils.synthesizeMouseAtCenter(
           altText,
           { type: "mousemove" },
           content

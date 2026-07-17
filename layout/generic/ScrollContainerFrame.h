@@ -308,6 +308,47 @@ class ScrollContainerFrame : public nsContainerFrame,
   nsRect GetScrolledRect() const;
 
   /**
+   * While an instance of this class is alive, GetScrolledRect() caches its
+   * result so that repeated calls don't recompute the (relatively expensive)
+   * snapped rect. This is meant to wrap an operation during which
+   * GetScrolledRect() may be called many times and the scrolled rect is known
+   * not to change, such as building a display list or finishing reflow.
+   *
+   * The cache and the cached value both live in this stack object, so the only
+   * per-frame cost is the stack space and a single pointer, set while an
+   * instance is alive. The value is computed lazily, on the first
+   * GetScrolledRect() call, so using this class when GetScrolledRect() is never
+   * called costs nothing.
+   *
+   * Passing aReferenceFrame is optional but saves time computing it if the
+   * caller has easy access to it.
+   *
+   * In debug builds, the cached value is recomputed (against that same
+   * reference frame) on every subsequent GetScrolledRect() call and asserted to
+   * be unchanged, catching cases where the scrolled rect changes unexpectedly
+   * during the operation.
+   */
+  class MOZ_RAII AutoScrolledRectCache {
+   public:
+    AutoScrolledRectCache(ScrollContainerFrame* aFrame,
+                          const nsIFrame* aReferenceFrame);
+    ~AutoScrolledRectCache();
+
+   private:
+    friend class ScrollContainerFrame;
+    const nsRect& GetOrCompute();
+    // Drop any cached value so the next GetScrolledRect() recomputes it. Used
+    // when an operation legitimately changes the scrolled rect while the cache
+    // is alive.
+    void Invalidate() { mComputed = false; }
+
+    ScrollContainerFrame* const mFrame;
+    const nsIFrame* const mReferenceFrame;
+    nsRect mScrolledRect;
+    bool mComputed = false;
+  };
+
+  /**
    * Get the area of the scrollport relative to the origin of this frame's
    * border-box.
    * This is the area of this frame minus border and scrollbars.
@@ -867,10 +908,9 @@ class ScrollContainerFrame : public nsContainerFrame,
   const ScrollAnchorContainer* Anchor() const { return &mAnchor; }
   ScrollAnchorContainer* Anchor() { return &mAnchor; }
 
-  bool SmoothScrollVisual(
-      const nsPoint& aVisualViewportOffset,
-      layers::FrameMetrics::ScrollOffsetUpdateType aUpdateType,
-      ScrollMode aMode);
+  bool SmoothScrollVisual(const nsPoint& aVisualViewportOffset,
+                          layers::ScrollOffsetUpdateType aUpdateType,
+                          ScrollMode aMode);
 
   /**
    * Returns true if this scroll frame should perform smooth scroll with the
@@ -1006,6 +1046,15 @@ class ScrollContainerFrame : public nsContainerFrame,
    */
   nsRect GetUnsnappedScrolledRectInternal(const nsRect& aScrolledOverflowArea,
                                           const nsSize& aScrollPortSize) const;
+
+  /**
+   * Computes the scrolled rect (for GetScrolledRect), snapping to layer pixels
+   * relative to aReferenceFrame, or relative to
+   * nsLayoutUtils::GetReferenceFrame(this) if aReferenceFrame is null. This is
+   * the uncached implementation backing GetScrolledRect() and
+   * AutoScrolledRectCache.
+   */
+  nsRect ComputeScrolledRect(const nsIFrame* aReferenceFrame) const;
 
   bool IsPhysicalLTR() const { return GetWritingMode().IsPhysicalLTR(); }
   bool IsBidiLTR() const { return GetWritingMode().IsBidiLTR(); }
@@ -1357,11 +1406,15 @@ class ScrollContainerFrame : public nsContainerFrame,
   nsIFrame* mScrolledFrame;
   nsIFrame* mScrollCornerBox;
   nsIFrame* mResizerBox;
-  const nsIFrame* mReferenceFrameDuringPainting;
+  // Non-null while an AutoScrolledRectCache is active for this frame; the cache
+  // itself lives in that stack object. See AutoScrolledRectCache.
+  AutoScrolledRectCache* mScrolledRectCache;
   RefPtr<AsyncScroll> mAsyncScroll;
   RefPtr<AsyncSmoothMSDScroll> mAsyncSmoothMSDScroll;
   RefPtr<layout::ScrollbarActivity> mScrollbarActivity;
-  ScrollOrigin mLastScrollOrigin;
+  // Placed immediately before the 12-byte mApzSmoothScrollDestination so this
+  // 4-byte field fills what would otherwise be alignment padding.
+  nsExpirationState mActivityExpirationState;
   Maybe<nsPoint> mApzSmoothScrollDestination;
   MainThreadScrollGeneration mScrollGeneration;
   APZScrollGeneration mScrollGenerationOnApz;
@@ -1405,8 +1458,6 @@ class ScrollContainerFrame : public nsContainerFrame,
   // and is used to calculate relative scroll offset updates.
   nsPoint mApzScrollPos;
 
-  nsExpirationState mActivityExpirationState;
-
   nsCOMPtr<nsITimer> mScrollActivityTimer;
 
   // The scroll position where we last updated frame visibility.
@@ -1429,6 +1480,18 @@ class ScrollContainerFrame : public nsContainerFrame,
   // re-snapping.
   SnapTargetSet mSnapTargets;
 
+  // The paint sequence number if the scroll frame is the first scrollable frame
+  // encountered.
+  Maybe<uint32_t> mIsFirstScrollableFrameSequenceNumber;
+
+  // Computed style of ::webkit-scrollbar pseudo element for this scroll
+  // container.
+  RefPtr<ComputedStyle> mWebKitScrollbarStyle;
+
+  // mCurrentAPZScrollAnimationType and mLastScrollOrigin are grouped here, just
+  // before the bitfields, so these small fields pack together rather than
+  // leaving padding between larger 8-byte-aligned members.
+
   // Representing there's an APZ animation is in progress and what caused the
   // animation. Note that this is only set when repainted via APZ, which means
   // that there may be a request for an APZ animation in flight for example,
@@ -1437,13 +1500,7 @@ class ScrollContainerFrame : public nsContainerFrame,
   // mApzAnimationRequested, and this type.
   APZScrollAnimationType mCurrentAPZScrollAnimationType;
 
-  // The paint sequence number if the scroll frame is the first scrollable frame
-  // encountered.
-  Maybe<uint32_t> mIsFirstScrollableFrameSequenceNumber;
-
-  // Computed style of ::webkit-scrollbar pseudo element for this scroll
-  // container.
-  RefPtr<ComputedStyle> mWebKitScrollbarStyle;
+  ScrollOrigin mLastScrollOrigin;
 
   // Representing whether the APZC corresponding to this frame is now in the
   // middle of handling a gesture (e.g. a pan gesture).
@@ -1495,6 +1552,14 @@ class ScrollContainerFrame : public nsContainerFrame,
   // If true, the scroll frame should always be active because we always build
   // a scrollable layer. Used for asynchronous scrolling.
   bool mWillBuildScrollableLayer : 1;
+
+  // True if, as of the previous paint, this scroll frame was async-inactive
+  // (ie no displayport) but had descendant async-active scroll frames.
+  bool mInactiveWithActiveDescendantScrollFrames : 1;
+
+  // True if this reflow changed our scroll port or scrolled area bounds (the
+  // amount of scrollable space). Set in Reflow and used in ReflowFinished.
+  bool mScrollPortOrScrolledAreaBoundsChanged : 1;
 
   // If true, the scroll frame is an ancestor of other "active" scrolling
   // frames, where "active" means has a non-minimal display port if

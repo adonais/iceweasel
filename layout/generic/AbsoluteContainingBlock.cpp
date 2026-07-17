@@ -87,14 +87,6 @@ void AbsoluteContainingBlock::RemoveFrame(FrameDestroyContext& aContext,
                                           nsIFrame* aOldFrame) {
   MOZ_ASSERT(aListID == FrameChildListID::Absolute, "unexpected child list");
 
-  if (!aOldFrame->PresContext()->FragmentainerAwarePositioningEnabled()) {
-    if (nsIFrame* nif = aOldFrame->GetNextInFlow()) {
-      nif->GetParent()->DeleteNextInFlowChild(aContext, nif, false);
-    }
-    mAbsoluteFrames.DestroyFrame(aContext, aOldFrame);
-    return;
-  }
-
   AutoTArray<nsIFrame*, 8> delFrames;
   for (nsIFrame* f = aOldFrame; f; f = f->GetNextInFlow()) {
     delFrames.AppendElement(f);
@@ -181,11 +173,6 @@ void AbsoluteContainingBlock::DrainPushedChildList(
 
 bool AbsoluteContainingBlock::PrepareAbsoluteFrames(
     nsContainerFrame* aDelegatingFrame) {
-  if (!aDelegatingFrame->PresContext()
-           ->FragmentainerAwarePositioningEnabled()) {
-    return HasAbsoluteFrames();
-  }
-
   if (const nsIFrame* prevInFlow = aDelegatingFrame->GetPrevInFlow()) {
     AbsoluteContainingBlock* prevAbsCB =
         prevInFlow->GetAbsoluteContainingBlock();
@@ -264,11 +251,6 @@ void AbsoluteContainingBlock::StealFrame(nsIFrame* aFrame) {
 #ifdef DEBUG
 void AbsoluteContainingBlock::SanityCheckChildListsBeforeReflow(
     const nsIFrame* aDelegatingFrame) const {
-  if (!aDelegatingFrame->PresContext()
-           ->FragmentainerAwarePositioningEnabled()) {
-    return;
-  }
-
   // TODO(TYLin): This is potentially O(N^2), where N is the number of
   // continuations that an abspos frame gets. Consider putting this behind an
   // about:config pref if it turns out to slow down debug builds too much.
@@ -632,6 +614,9 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
                                      const nsRect& aContainingBlock,
                                      AbsPosReflowFlags aFlags,
                                      OverflowAreas* aOverflowAreas) {
+  MOZ_ASSERT(aReflowStatus.IsEmpty(),
+             "Caller should pass a fresh reflow status!");
+
   const auto scrollableContainingBlock = ComputeScrollableContainingBlock(
       aDelegatingFrame, aContainingBlock, aOverflowAreas);
   const ContainingBlockRects passedContainingBlock{aContainingBlock,
@@ -676,18 +661,14 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
     mCumulativeContainingBlockBSize = 0;
   }
 
-  nsReflowStatus reflowStatus;
   // Assume all the kids may need a reflow when they are in a fragmented
   // context. We'll perform more targeted check below. For example, skip reflow
   // them when they are positioned in a later fragment.
-  const bool reflowAll =
-      aReflowInput.ShouldReflowAllKids() ||
-      (aPresContext->FragmentainerAwarePositioningEnabled() &&
-       aReflowInput.IsInFragmentedContext());
+  const bool reflowAll = aReflowInput.ShouldReflowAllKids() ||
+                         aReflowInput.IsInFragmentedContext();
   const bool cbWidthChanged = aFlags.contains(AbsPosReflowFlag::CBWidthChanged);
   const bool cbHeightChanged =
       aFlags.contains(AbsPosReflowFlag::CBHeightChanged);
-  nsOverflowContinuationTracker tracker(aDelegatingFrame, true);
   const nscoord availBSize = aReflowInput.AvailableBSize();
   const WritingMode containerWM = aReflowInput.GetWritingMode();
   nsFrameList newPushedAbsoluteFrames;
@@ -699,7 +680,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
     if (kidFrame->HasAnchorPosReference()) {
       AnchorPosReferenceData* referenceData = nullptr;
       if (const auto* firstInFlow = kidFrame->FirstInFlow();
-          aPresContext->FragmentainerAwarePositioningEnabled() &&
           GetUnfragmentedPosition(aReflowInput, firstInFlow)) {
         // Ok, we've done a measuring reflow with no fragmentation, and so the
         // unfragmented position property is now set. Use the existing
@@ -726,43 +706,6 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
     if (kidFrame->IsSubtreeDirty()) {
       MaybeMarkAncestorsAsHavingDescendantDependentOnItsStaticPos(
           kidFrame, aDelegatingFrame);
-    }
-    if (!kidNeedsReflow && availBSize != NS_UNCONSTRAINEDSIZE) {
-      MOZ_ASSERT(
-          !aPresContext->FragmentainerAwarePositioningEnabled(),
-          "We should not be here when "
-          "layout.abspos.fragmentainer-aware-positioning.enabled is enabled!");
-
-      // If we need to redo pagination on the kid, we need to reflow it.
-      // This can happen either if the available height shrunk and the
-      // kid (or its overflow that creates overflow containers) is now
-      // too large to fit in the available height, or if the available
-      // height has increased and the kid has a next-in-flow that we
-      // might need to pull from.
-      WritingMode kidWM = kidFrame->GetWritingMode();
-      if (containerWM.GetBlockDir() != kidWM.GetBlockDir()) {
-        // Not sure what the right test would be here.
-        kidNeedsReflow = true;
-      } else {
-        nscoord kidBEnd =
-            kidFrame
-                ->GetLogicalRect(
-                    unfragmentedContainingBlockRects->mLocal.Size())
-                .BEnd(kidWM);
-        nscoord kidOverflowBEnd =
-            LogicalRect(containerWM,
-                        // Use ...RelativeToSelf to ignore transforms
-                        kidFrame->ScrollableOverflowRectRelativeToSelf() +
-                            kidFrame->GetPosition(),
-                        unfragmentedContainingBlockRects->mLocal.Size())
-                .BEnd(containerWM);
-        NS_ASSERTION(kidOverflowBEnd >= kidBEnd,
-                     "overflow area should be at least as large as frame rect");
-        if (kidOverflowBEnd > availBSize ||
-            (kidBEnd < availBSize && kidFrame->GetNextInFlow())) {
-          kidNeedsReflow = true;
-        }
-      }
     }
     if (kidNeedsReflow && !aPresContext->HasPendingInterrupt()) {
       const LogicalSize cbSize(containerWM,
@@ -825,64 +768,34 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
       }
 
       nsIFrame* nextFrame = kidFrame->GetNextInFlow();
-      if (aPresContext->FragmentainerAwarePositioningEnabled()) {
-        if (kidFrameNeedsPush) {
-          StealFrame(kidFrame);
-          kidFrame->AddStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
-          newPushedAbsoluteFrames.AppendFrame(nullptr, kidFrame);
-        } else if (!kidStatus.IsFullyComplete()) {
-          if (!nextFrame) {
-            nextFrame = aPresContext->PresShell()
-                            ->FrameConstructor()
-                            ->CreateContinuingFrame(kidFrame, aDelegatingFrame);
-            nextFrame->AddStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
-            newPushedAbsoluteFrames.AppendFrame(nullptr, nextFrame);
-          } else if (nextFrame->GetParent() !=
-                     aDelegatingFrame->GetNextInFlow()) {
-            nextFrame->GetParent()->GetAbsoluteContainingBlock()->StealFrame(
-                nextFrame);
-            // nextFrame is in a later absCB continuation. To keep the
-            // continuations in order, append it to mPushedAbsoluteFrames.
-            mPushedAbsoluteFrames.AppendFrame(aDelegatingFrame, nextFrame);
-          }
-          reflowStatus.MergeCompletionStatusFrom(kidStatus);
-        } else if (nextFrame) {
-          // kidFrame is fully-complete. Delete all its next-in-flows.
-          FrameDestroyContext context(aPresContext->PresShell());
-          nextFrame->GetParent()->GetAbsoluteContainingBlock()->RemoveFrame(
-              context, FrameChildListID::Absolute, nextFrame);
+      if (kidFrameNeedsPush) {
+        StealFrame(kidFrame);
+        kidFrame->AddStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
+        newPushedAbsoluteFrames.AppendFrame(nullptr, kidFrame);
+      } else if (!kidStatus.IsFullyComplete()) {
+        if (!nextFrame) {
+          nextFrame = aPresContext->PresShell()
+                          ->FrameConstructor()
+                          ->CreateContinuingFrame(kidFrame, aDelegatingFrame);
+          nextFrame->AddStateBits(NS_FRAME_IS_PUSHED_OUT_OF_FLOW);
+          newPushedAbsoluteFrames.AppendFrame(nullptr, nextFrame);
+        } else if (nextFrame->GetParent() !=
+                   aDelegatingFrame->GetNextInFlow()) {
+          nextFrame->GetParent()->GetAbsoluteContainingBlock()->StealFrame(
+              nextFrame);
+          // nextFrame is in a later absCB continuation. To keep the
+          // continuations in order, append it to mPushedAbsoluteFrames.
+          mPushedAbsoluteFrames.AppendFrame(aDelegatingFrame, nextFrame);
         }
-      } else {
-        if (!kidStatus.IsFullyComplete() &&
-            aDelegatingFrame->CanContainOverflowContainers()) {
-          // Need a continuation
-          if (!nextFrame) {
-            nextFrame = aPresContext->PresShell()
-                            ->FrameConstructor()
-                            ->CreateContinuingFrame(kidFrame, aDelegatingFrame);
-          }
-          // Add it as an overflow container.
-          // XXXfr This is a hack to fix some of our printing dataloss.
-          // See bug 154892. Not sure how to do it "right" yet; probably want
-          // to keep continuations within an AbsoluteContainingBlock eventually.
-          //
-          // NOTE(TYLin): we're now trying to conditionally do this "right" in
-          // the other branch here, inside of the StaticPrefs pref-check.
-          tracker.Insert(nextFrame, kidStatus);
-          reflowStatus.MergeCompletionStatusFrom(kidStatus);
-        } else if (nextFrame) {
-          // Delete any continuations
-          nsOverflowContinuationTracker::AutoFinish fini(&tracker, kidFrame);
-          FrameDestroyContext context(aPresContext->PresShell());
-          nextFrame->GetParent()->DeleteNextInFlowChild(context, nextFrame,
-                                                        true);
-        }
+        aReflowStatus.MergeCompletionStatusFrom(kidStatus);
+      } else if (nextFrame) {
+        // kidFrame is fully-complete. Delete all its next-in-flows.
+        FrameDestroyContext context(aPresContext->PresShell());
+        nextFrame->GetParent()->GetAbsoluteContainingBlock()->RemoveFrame(
+            context, FrameChildListID::Absolute, nextFrame);
       }
     } else {
       if (aOverflowAreas) {
-        if (!aPresContext->FragmentainerAwarePositioningEnabled()) {
-          tracker.Skip(kidFrame, reflowStatus);
-        }
         aDelegatingFrame->ConsiderChildOverflow(*aOverflowAreas, kidFrame);
       }
     }
@@ -920,12 +833,10 @@ void AbsoluteContainingBlock::Reflow(nsContainerFrame* aDelegatingFrame,
 
   // Abspos frames can't cause their parent to be incomplete,
   // only overflow incomplete.
-  if (reflowStatus.IsIncomplete() || mPushedAbsoluteFrames.NotEmpty()) {
-    reflowStatus.SetOverflowIncomplete();
-    reflowStatus.SetNextInFlowNeedsReflow();
+  if (aReflowStatus.IsIncomplete() || mPushedAbsoluteFrames.NotEmpty()) {
+    aReflowStatus.SetOverflowIncomplete();
+    aReflowStatus.SetNextInFlowNeedsReflow();
   }
-
-  aReflowStatus.MergeCompletionStatusFrom(reflowStatus);
 }
 
 static inline bool IsFixedPaddingSize(const LengthPercentage& aCoord) {
@@ -1816,19 +1727,13 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
         // Don't split if told not to (e.g. for fixed frames)
         aFlags.contains(AbsPosReflowFlag::AllowFragmentation) &&
 
-        // XXX we don't handle splitting frames for inline absolute containing
-        // blocks yet
+        // TODO(Bug 2038072): Support splitting abspos frames under inline
+        // absolute containing blocks.
         !aDelegatingFrame->IsInlineFrame() &&
 
         // Bug 1588623: Support splitting absolute positioned multicol
         // containers.
-        !aKidFrame->IsColumnSetWrapperFrame() &&
-
-        // Allow splitting when fragmentainer-aware positioning is enabled, or
-        // when the item starts within the available block-size.
-        (aPresContext->FragmentainerAwarePositioningEnabled() ||
-         aKidFrame->GetLogicalRect(cb.mFinalRect.Size()).BStart(wm) <=
-             aReflowInput.AvailableBSize());
+        !aKidFrame->IsColumnSetWrapperFrame();
 
     // Get the border values
     const LogicalMargin border =
@@ -2238,7 +2143,9 @@ void AbsoluteContainingBlock::ReflowAbsoluteFrame(
       return;
     }
     aKidFrame->SetPosition(rect.TopLeft());
-    aKidFrame->UpdateOverflow();
+    if (aKidFrame->FrameMaintainsOverflow()) {
+      aKidFrame->UpdateOverflow();
+    }
   }();
 
   if (currentFallbackIndex) {

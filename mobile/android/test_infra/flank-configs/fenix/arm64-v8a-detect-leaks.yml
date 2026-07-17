@@ -37,6 +37,7 @@ gcloud:
     - notAnnotation org.mozilla.fenix.customannotations.SkipLeaks
     - notPackage org.mozilla.fenix.ui.efficiency.navigation.reachability.shards
     - notPackage org.mozilla.fenix.ui.efficiency.navigation.pairs.shards
+    - notPackage org.mozilla.fenix.ui.efficiency.navigation.interaction.shards
 
   device:
     - model: MediumPhone.arm

@@ -208,7 +208,7 @@ TEST(DataPipe, Write_AsyncWait)
   rv = writer->Write(inputData.BeginReading(), inputData.Length(), &numWritten);
   ASSERT_EQ(NS_BASE_STREAM_WOULD_BLOCK, rv);
 
-  RefPtr<OutputStreamCallback> cb = new OutputStreamCallback();
+  RefPtr cb = MakeRefPtr<OutputStreamCallback>();
 
   rv = writer->AsyncWait(cb, 0, 0, GetCurrentSerialEventTarget());
   ASSERT_NS_SUCCEEDED(rv);
@@ -240,7 +240,7 @@ TEST(DataPipe, Read_AsyncWait)
   nsCString inputData;
   CreateData(segmentSize, inputData);
 
-  RefPtr<InputStreamCallback> cb = new InputStreamCallback();
+  RefPtr cb = MakeRefPtr<InputStreamCallback>();
 
   rv = reader->AsyncWait(cb, 0, 0, GetCurrentSerialEventTarget());
   ASSERT_NS_SUCCEEDED(rv);
@@ -284,7 +284,7 @@ TEST(DataPipe, Write_AsyncWait_Cancel)
   rv = writer->Write(inputData.BeginReading(), inputData.Length(), &numWritten);
   ASSERT_EQ(NS_BASE_STREAM_WOULD_BLOCK, rv);
 
-  RefPtr<OutputStreamCallback> cb = new OutputStreamCallback();
+  RefPtr cb = MakeRefPtr<OutputStreamCallback>();
 
   // Register a callback and immediately cancel it.
   rv = writer->AsyncWait(cb, 0, 0, GetCurrentSerialEventTarget());
@@ -313,7 +313,7 @@ TEST(DataPipe, Read_AsyncWait_Cancel)
   nsCString inputData;
   CreateData(segmentSize, inputData);
 
-  RefPtr<InputStreamCallback> cb = new InputStreamCallback();
+  RefPtr cb = MakeRefPtr<InputStreamCallback>();
 
   // Register a callback and immediately cancel it.
   rv = reader->AsyncWait(cb, 0, 0, GetCurrentSerialEventTarget());

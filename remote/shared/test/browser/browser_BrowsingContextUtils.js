@@ -3,7 +3,11 @@
 
 "use strict";
 
-const { isBrowsingContextCompatible } = ChromeUtils.importESModule(
+const {
+  isBrowsingContextCompatible,
+  isWebContentProcess,
+  isWebdriverSafeNavigationURL,
+} = ChromeUtils.importESModule(
   "chrome://remote/content/shared/BrowsingContextUtils.sys.mjs"
 );
 const TEST_COM_PAGE = "https://example.com/document-builder.sjs?html=com";
@@ -66,6 +70,111 @@ add_task(async function () {
   gBrowser.removeTab(tab1);
   gBrowser.removeTab(tab2);
   gBrowser.removeTab(tab3);
+  await extension.unload();
+});
+
+add_task(async function test_isWebContentProcess() {
+  const contentTab = BrowserTestUtils.addTab(gBrowser, TEST_COM_PAGE);
+  const contentBrowser = contentTab.linkedBrowser;
+  await BrowserTestUtils.browserLoaded(contentBrowser);
+
+  const { extension, sidebarBrowser } = await installSidebarExtension();
+
+  const extensionTab = BrowserTestUtils.addTab(
+    gBrowser,
+    `moz-extension://${extension.uuid}/tab.html`
+  );
+  await extension.awaitMessage("tab-loaded");
+
+  const parentBrowser = createParentBrowserElement(contentTab, "chrome");
+
+  info("Web content browsing context should be a web content process");
+  is(isWebContentProcess(contentBrowser.browsingContext), true);
+
+  info("Parent process browsing context should not be a web content process");
+  is(isWebContentProcess(parentBrowser.browsingContext), false);
+
+  info("Extension browsing context should not be a web content process");
+  is(isWebContentProcess(sidebarBrowser.browsingContext), false);
+
+  gBrowser.removeTab(contentTab);
+  gBrowser.removeTab(extensionTab);
+  await extension.unload();
+});
+
+add_task(async function test_isWebdriverSafeNavigationURL() {
+  const contentTab = BrowserTestUtils.addTab(gBrowser, TEST_COM_PAGE);
+  const contentBrowser = contentTab.linkedBrowser;
+  await BrowserTestUtils.browserLoaded(contentBrowser);
+
+  const { extension, sidebarBrowser } = await installSidebarExtension();
+
+  const extensionTab = BrowserTestUtils.addTab(
+    gBrowser,
+    `moz-extension://${extension.uuid}/tab.html`
+  );
+  await extension.awaitMessage("tab-loaded");
+
+  const parentBrowser = createParentBrowserElement(contentTab, "chrome");
+
+  const httpURI = Services.io.newURI("https://example.com/");
+  const dataURI = Services.io.newURI("data:text/html,<h1>test</h1>");
+  const aboutBlankURI = Services.io.newURI("about:blank");
+  const aboutAboutURI = Services.io.newURI("about:about");
+  const chromeURI = Services.io.newURI(
+    "chrome://browser/content/browser.xhtml"
+  );
+
+  info("Check webdriver safe schemes are always allowed");
+  is(
+    isWebdriverSafeNavigationURL(httpURI, contentBrowser.browsingContext),
+    true
+  );
+  is(
+    isWebdriverSafeNavigationURL(httpURI, parentBrowser.browsingContext),
+    true
+  );
+  is(
+    isWebdriverSafeNavigationURL(httpURI, sidebarBrowser.browsingContext),
+    true
+  );
+
+  info("Check about:blank is always allowed");
+  is(
+    isWebdriverSafeNavigationURL(aboutBlankURI, contentBrowser.browsingContext),
+    true
+  );
+  is(
+    isWebdriverSafeNavigationURL(aboutBlankURI, parentBrowser.browsingContext),
+    true
+  );
+
+  info("Check privileged schemes are not allowed");
+  is(
+    isWebdriverSafeNavigationURL(aboutAboutURI, contentBrowser.browsingContext),
+    false
+  );
+  is(
+    isWebdriverSafeNavigationURL(chromeURI, contentBrowser.browsingContext),
+    false
+  );
+
+  info("Check data: URL is only allowed in web content process");
+  is(
+    isWebdriverSafeNavigationURL(dataURI, contentBrowser.browsingContext),
+    true
+  );
+  is(
+    isWebdriverSafeNavigationURL(dataURI, parentBrowser.browsingContext),
+    false
+  );
+  is(
+    isWebdriverSafeNavigationURL(dataURI, sidebarBrowser.browsingContext),
+    false
+  );
+
+  gBrowser.removeTab(contentTab);
+  gBrowser.removeTab(extensionTab);
   await extension.unload();
 });
 

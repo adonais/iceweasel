@@ -1493,9 +1493,6 @@ static bool BytecodeIsEffectful(JSScript* script, size_t offset) {
     case JSOp::SetFunName:
     case JSOp::MutateProto:
     case JSOp::DynamicImport:
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-    case JSOp::DynamicImportSource:
-#endif
     case JSOp::InitialYield:
     case JSOp::Yield:
     case JSOp::Await:

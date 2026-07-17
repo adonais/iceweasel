@@ -57,11 +57,7 @@ add_task(async function () {
   await checkTextBox(inspector.panelDoc.activeElement, toolbox);
 
   info("Testing the rule-view new property");
-  // Tabbing out of the value field triggers a ruleview-changed event that we need to wait
-  // for.
-  const onRuleViewChanged = once(ruleView, "ruleview-changed");
   EventUtils.sendKey("tab", inspector.panelWin);
-  await onRuleViewChanged;
   await checkTextBox(inspector.panelDoc.activeElement, toolbox);
 
   info("Switching to the layout-view");

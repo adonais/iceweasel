@@ -22,6 +22,8 @@ vendoring:
     - 0003-audiounit-ios-compile-fixes.patch
     - 0004-disable-cubeb_one_duplex_one_input-macos10.15.patch
     - frame-sample.patch
+    - delay-line-bounds.patch
+    - alsa-drain-contract.patch
   skip-vendoring-steps:
     - update-moz-build
   exclude:

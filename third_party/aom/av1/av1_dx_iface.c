@@ -950,6 +950,7 @@ static aom_codec_err_t ctrl_set_reference(aom_codec_alg_priv_t *ctx,
     av1_ref_frame_t *const frame = data;
     YV12_BUFFER_CONFIG sd;
     AVxWorker *const worker = ctx->frame_worker;
+    if (worker == NULL) return AOM_CODEC_ERROR;
     FrameWorkerData *const frame_worker_data = (FrameWorkerData *)worker->data1;
     image2yuvconfig(&frame->img, &sd);
 
@@ -975,6 +976,7 @@ static aom_codec_err_t ctrl_copy_reference(aom_codec_alg_priv_t *ctx,
   if (frame) {
     YV12_BUFFER_CONFIG sd;
     AVxWorker *const worker = ctx->frame_worker;
+    if (worker == NULL) return AOM_CODEC_ERROR;
     FrameWorkerData *const frame_worker_data = (FrameWorkerData *)worker->data1;
     image2yuvconfig(&frame->img, &sd);
     return av1_copy_reference_dec(frame_worker_data->pbi, frame->idx, &sd);
@@ -989,6 +991,7 @@ static aom_codec_err_t ctrl_get_reference(aom_codec_alg_priv_t *ctx,
   if (data) {
     YV12_BUFFER_CONFIG *fb;
     AVxWorker *const worker = ctx->frame_worker;
+    if (worker == NULL) return AOM_CODEC_ERROR;
     FrameWorkerData *const frame_worker_data = (FrameWorkerData *)worker->data1;
     fb = get_ref_frame(&frame_worker_data->pbi->common, data->idx);
     if (fb == NULL) return AOM_CODEC_ERROR;
@@ -1005,6 +1008,7 @@ static aom_codec_err_t ctrl_get_new_frame_image(aom_codec_alg_priv_t *ctx,
   if (new_img) {
     YV12_BUFFER_CONFIG new_frame;
     AVxWorker *const worker = ctx->frame_worker;
+    if (worker == NULL) return AOM_CODEC_ERROR;
     FrameWorkerData *const frame_worker_data = (FrameWorkerData *)worker->data1;
 
     if (av1_get_frame_to_show(frame_worker_data->pbi, &new_frame) == 0) {
@@ -1024,6 +1028,7 @@ static aom_codec_err_t ctrl_copy_new_frame_image(aom_codec_alg_priv_t *ctx,
   if (img) {
     YV12_BUFFER_CONFIG new_frame;
     AVxWorker *const worker = ctx->frame_worker;
+    if (worker == NULL) return AOM_CODEC_ERROR;
     FrameWorkerData *const frame_worker_data = (FrameWorkerData *)worker->data1;
 
     if (av1_get_frame_to_show(frame_worker_data->pbi, &new_frame) == 0) {
@@ -1326,6 +1331,11 @@ static aom_codec_err_t ctrl_get_tile_data(aom_codec_alg_priv_t *ctx,
       FrameWorkerData *const frame_worker_data =
           (FrameWorkerData *)worker->data1;
       const AV1Decoder *pbi = frame_worker_data->pbi;
+      if (pbi->dec_tile_row < 0 || pbi->dec_tile_row >= MAX_TILE_ROWS ||
+          pbi->dec_tile_col < 0 || pbi->dec_tile_col >= MAX_TILE_COLS) {
+        return AOM_CODEC_ERROR;
+      }
+
       tile_data->coded_tile_data_size =
           pbi->tile_buffers[pbi->dec_tile_row][pbi->dec_tile_col].size;
       tile_data->coded_tile_data =

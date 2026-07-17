@@ -4303,6 +4303,7 @@ ssl_NewSocket(PRBool makeLocks, SSLProtocolVariant protocolVariant)
     }
     ss->additionalShares = 0;
     PR_INIT_CLIST(&ss->ssl3.hs.remoteExtensions);
+    PR_INIT_CLIST(&ss->ssl3.hs.echOuterExtensions);
     PR_INIT_CLIST(&ss->ssl3.hs.lastMessageFlight);
     PR_INIT_CLIST(&ss->ssl3.hs.cipherSpecs);
     PR_INIT_CLIST(&ss->ssl3.hs.bufferedEarlyData);

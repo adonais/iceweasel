@@ -11,11 +11,12 @@
 
 extern mozilla::LazyLogModule sShmemPoolLog;
 #define SHMEMPOOL_LOG(args) \
-  MOZ_LOG(sShmemPoolLog, mozilla::LogLevel::Debug, args)
-#define SHMEMPOOL_LOG_WARN(args) \
-  MOZ_LOG(sShmemPoolLog, mozilla::LogLevel::Warning, args)
+  MOZ_LOG_FMT(sShmemPoolLog, mozilla::LogLevel::Debug, MOZ_LOG_EXPAND_ARGS args)
+#define SHMEMPOOL_LOG_WARN(args)                         \
+  MOZ_LOG_FMT(sShmemPoolLog, mozilla::LogLevel::Warning, \
+              MOZ_LOG_EXPAND_ARGS args)
 #define SHMEMPOOL_LOG_ERROR(args) \
-  MOZ_LOG(sShmemPoolLog, mozilla::LogLevel::Error, args)
+  MOZ_LOG_FMT(sShmemPoolLog, mozilla::LogLevel::Error, MOZ_LOG_EXPAND_ARGS args)
 
 namespace mozilla {
 
@@ -149,7 +150,7 @@ class ShmemPool final {
     if (poolUse > mMaxPoolUse) {
       mMaxPoolUse = poolUse;
       SHMEMPOOL_LOG(
-          ("Maximum ShmemPool use increased: %zu buffers", mMaxPoolUse));
+          ("Maximum ShmemPool use increased: {} buffers", mMaxPoolUse));
     }
 #endif
     return std::move(res);

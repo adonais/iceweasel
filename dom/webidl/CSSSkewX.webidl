@@ -13,6 +13,5 @@
 [Exposed=(Window, Worker), Pref="layout.css.typed-om.enabled"]
 interface CSSSkewX : CSSTransformComponent {
   [Throws] constructor(CSSNumericValue ax);
-  // TODO: Change to [SetterThrows] once the ax attribute is fully implemented
-  [Throws] attribute CSSNumericValue ax;
+  [SetterThrows] attribute CSSNumericValue ax;
 };

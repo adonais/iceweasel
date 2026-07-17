@@ -7,10 +7,12 @@ First we create a file under [tests/inspector](https://searchfox.org/firefox-mai
 We will use a dummy test document here: `data:text/html,click test document`.
 
 We prepare the imports needed to write the test, from head.js and inspector-helper.js:
+
 - `testSetup`, `testTeardown`, `openToolbox` and `runTest` from head.js
 - `reloadInspectorAndLog` from inspector-helper.js
 
 The full code for the test looks as follows:
+
 ```
 const {
   reloadInspectorAndLog,
@@ -51,6 +53,7 @@ module.exports = async function() {
 ```
 
 Finally we add an entry in [damp-tests.js](https://searchfox.org/firefox-main/source/testing/talos/talos/tests/devtools/addon/content/damp-tests.js):
+
 ```
   {
     name: "inspector.click",
@@ -63,6 +66,7 @@ Finally we add an entry in [damp-tests.js](https://searchfox.org/firefox-main/so
 Since this is an inspector test, we add it under `TEST_SUITES.INSPECTOR`, which contains all the tests which will run with the `damp-inspector` test suite in continuous integration. The test is still part of the overall `damp` suite by default, there is no action needed to ensure that.
 
 Then we can run our test with:
+
 ```
 ./mach talos-test --suite damp --subtest inspector.click
 ```

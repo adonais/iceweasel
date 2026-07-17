@@ -331,6 +331,18 @@ NS_IMETHODIMP nsExtProtocolChannel::SetLoadInfo(nsILoadInfo* aLoadInfo) {
   return NS_OK;
 }
 
+NS_IMETHODIMP
+nsExtProtocolChannel::GetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle** aValue) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
+NS_IMETHODIMP
+nsExtProtocolChannel::SetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle* aValue) {
+  return NS_ERROR_NOT_IMPLEMENTED;
+}
+
 ////////////////////////////////////////////////////////////////////////////////
 // From nsIRequest
 ////////////////////////////////////////////////////////////////////////////////

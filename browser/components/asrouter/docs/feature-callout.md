@@ -221,15 +221,39 @@ interface FeatureCallout {
           // "hbox.deck-selected browser::%document%
           //  ai-window::%shadow%context-icon-button"
           selector: string;
-          // An object representing how the callout should be positioned
-          // relative to the anchor element.
+          // panel_position is an object representing how the callout should be
+          // positioned relative to the anchor element.
+          //
+          // Note that the arrow position depends on the *combination* of both
+          // anchor_attachment and callout_attachment. For example, if the
+          // anchor_attachment is bottomcenter and the callout_attachment is
+          // topright, the arrow will be attached to the top edge of the
+          // callout, but towards the right side of that edge. But if
+          // anchor_attachment is changed to leftcenter, then the same
+          // callout_attachment of topright would put the arrow on the right
+          // edge of the callout, towards the top. It's easy to make a
+          // mistake, so you should always test your anchors.
+          //
+          // Note that horizontal attachment points are reversed in RTL mode
+          // (right-to-left scripts like Arabic). "leftcenter rightcenter"
+          // would put the callout to the left of the anchor in LTR, but to
+          // the right of the anchor in RTL. "bottomcenter topright" would put
+          // the callout under the anchor and flowing to the left in LTR, but
+          // under the anchor and flowing to the right in RTL.
           panel_position: {
             // The point on the anchor that the callout should be tied to. See
-            // PopupAttachmentPoint below for the possible values. These are
-            // the same values used by XULPopupElements.
+            // PopupAttachmentPoint below for the possible values. These are the
+            // same values used by XULPopupElement.
             anchor_attachment: PopupAttachmentPoint;
             // The point on the callout that should be tied to the anchor.
             callout_attachment: PopupAttachmentPoint;
+            // The flip behavior to apply to the panel when it would overflow
+            // the screen. "slide" makes the panel slide in the direction it's
+            // overflowing, to keep it on screen. If it overflows in the same
+            // direction it's aligned relative to the anchor, it will flip in
+            // that direction. This is the default behavior. "none" just allows
+            // the panel to bleed out of bounds, without flipping or sliding.
+            flip?: "slide" | "none";
             // Offsets in pixels to apply to the callout position in the
             // horizontal and vertical directions. Generally not needed.
             offset_x?: number;
@@ -484,6 +508,14 @@ interface FeatureCallout {
   };
 }
 
+// Each attachment point corresponds to an attachment point on the edge of a
+// frame. For example, "topleft" corresponds to the frame's top left corner, and
+// "rightcenter" corresponds to the center of the right edge of the frame.
+//
+// @see nsMenuPopupFrame for the canonical alignment points. We also add some
+// aliases based on cardinal directions (like on a compass) to make it easier to
+// reason about. So north is equivalent to topcenter, southwest is equivalent to
+// bottomleft, etc.
 type PopupAttachmentPoint =
   | "topleft"
   | "topright"
@@ -492,7 +524,15 @@ type PopupAttachmentPoint =
   | "leftcenter"
   | "rightcenter"
   | "topcenter"
-  | "bottomcenter";
+  | "bottomcenter"
+  | "north"
+  | "south"
+  | "west"
+  | "east"
+  | "northwest"
+  | "northeast"
+  | "southwest"
+  | "southeast";
 
 interface AutoFocusOptions {
   // A preferred CSS selector, if you want a specific element to be focused. If

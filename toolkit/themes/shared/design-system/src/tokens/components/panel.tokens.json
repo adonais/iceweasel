@@ -10,18 +10,10 @@
       },
       "dimmed": {
         "@base": {
-          "value": {
-            "light": "color-mix(in srgb, currentColor 12%, transparent)",
-            "dark": "color-mix(in srgb, currentColor 17%, transparent)",
-            "nativeTheme": "color-mix(in srgb, currentColor 17%, transparent)"
-          }
+          "value": "{background.color.dimmed.@base}"
         },
         "further": {
-          "value": {
-            "light": "color-mix(in srgb, currentColor 20%, transparent)",
-            "dark": "color-mix(in srgb, currentColor 14%, transparent)",
-            "nativeTheme": "color-mix(in srgb, currentColor 30%, transparent)"
-          }
+          "value": "{background.color.dimmed.further}"
         }
       }
     }

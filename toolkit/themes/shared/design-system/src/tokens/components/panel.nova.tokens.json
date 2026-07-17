@@ -2,13 +2,17 @@
   "background": {
     "color": {
       "@base": {
-        "value": "{background.color.box.@base}"
+        "value": {
+          "nativeTheme": "Field",
+          "default": "{background.color.box.@base}"
+        }
       }
     }
   },
   "border": {
     "color": {
       "value": {
+        "nativeTheme": "ThreeDShadow",
         "light": "{color.gray.10}",
         "dark": "{color.gray.60}",
         "forcedColors": "{border.color.@base}"
@@ -28,7 +32,10 @@
   },
   "text": {
     "color": {
-      "value": "{text.color.@base}"
+      "value": {
+        "nativeTheme": "FieldText",
+        "default": "{text.color.@base}"
+      }
     }
   }
 }

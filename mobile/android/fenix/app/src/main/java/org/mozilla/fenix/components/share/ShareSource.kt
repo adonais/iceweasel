@@ -18,4 +18,6 @@ enum class ShareSource(val value: String) {
     HISTORY("history"),
     HISTORY_METADATA_GROUP("history_metadata_group"),
     RECENTLY_CLOSED("recently_closed"),
+    DEEP_LINK("deep_link"),
+    WEB_SHARE("web_share"),
 }

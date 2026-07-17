@@ -139,7 +139,7 @@ uint32_t nsXULPrototypeAttribute::gNumCacheFills;
 // nsXULElement
 //
 
-nsXULElement::nsXULElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+nsXULElement::nsXULElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsStyledElement(std::move(aNodeInfo)) {
   XUL_PROTOTYPE_ATTRIBUTE_METER(gNumElements);
 }
@@ -148,7 +148,7 @@ nsXULElement::~nsXULElement() = default;
 
 /* static */
 nsXULElement* NS_NewBasicXULElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(std::move(aNodeInfo));
   auto* nim = nodeInfo->NodeInfoManager();
   return new (nim) nsXULElement(nodeInfo.forget());
@@ -156,7 +156,7 @@ nsXULElement* NS_NewBasicXULElement(
 
 /* static */
 nsXULElement* nsXULElement::Construct(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo) {
   // NOTE: If you add elements here, you probably also want to change
   // mozilla::dom::binding_detail::HTMLConstructor in BindingUtils.cpp to take
   // them into account, otherwise you'll start getting "Illegal constructor"
@@ -241,7 +241,7 @@ already_AddRefed<Element> nsXULElement::CreateFromPrototype(
 }
 
 nsresult NS_NewXULElement(Element** aResult,
-                          already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+                          already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                           FromParser aFromParser, nsAtom* aIsAtom,
                           mozilla::dom::CustomElementDefinition* aDefinition) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo = aNodeInfo;
@@ -262,7 +262,7 @@ nsresult NS_NewXULElement(Element** aResult,
 }
 
 void NS_TrustedNewXULElement(
-    Element** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+    Element** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo) {
   RefPtr<mozilla::dom::NodeInfo> ni = aNodeInfo;
   MOZ_ASSERT(ni, "need nodeinfo for non-proto Create");
 

@@ -5,15 +5,16 @@
 #ifndef mozilla_ServoStyleRuleMap_h
 #define mozilla_ServoStyleRuleMap_h
 
-#include "mozilla/StyleSheet.h"
-#include "mozilla/css/Rule.h"
+#include "mozilla/WeakPtr.h"
 #include "nsTHashMap.h"
 
 struct StyleLockedStyleRule;
 
 namespace mozilla {
 class ServoCSSRuleList;
+class StyleSheet;
 class ServoStyleSet;
+struct StyleLockedDeclarationBlock;
 namespace css {
 class Rule;
 }  // namespace css

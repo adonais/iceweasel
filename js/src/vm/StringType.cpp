@@ -876,6 +876,38 @@ bool JSRope::hash(uint32_t* outHash) const {
   return true;
 }
 
+bool JSRope::hashPrefix(size_t budget, uint32_t* outHash) const {
+  Vector<const JSString*, 8, SystemAllocPolicy> nodeStack;
+  const JSString* str = this;
+
+  *outHash = 0;
+
+  while (budget > 0) {
+    if (str->isRope()) {
+      if (!nodeStack.append(str->asRope().rightChild())) {
+        return false;
+      }
+      str = str->asRope().leftChild();
+    } else {
+      AutoCheckCannotGC nogc;
+      const auto& s = str->asLinear();
+      size_t toHash = std::min(s.length(), budget);
+      if (s.hasLatin1Chars()) {
+        AddStringToHash(outHash, s.latin1Chars(nogc), toHash);
+      } else {
+        AddStringToHash(outHash, s.twoByteChars(nogc), toHash);
+      }
+      budget -= toHash;
+      if (nodeStack.empty()) {
+        break;
+      }
+      str = nodeStack.popCopy();
+    }
+  }
+
+  return true;
+}
+
 #if defined(DEBUG) || defined(JS_JITSPEW) || defined(JS_CACHEIR_SPEW)
 void JSRope::dumpOwnRepresentationFields(js::JSONPrinter& json) const {
   json.beginObjectProperty("leftChild");

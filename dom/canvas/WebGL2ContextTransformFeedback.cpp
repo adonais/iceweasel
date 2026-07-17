@@ -19,7 +19,7 @@ RefPtr<WebGLTransformFeedback> WebGL2Context::CreateTransformFeedback() {
   GLuint tf = 0;
   gl->fGenTransformFeedbacks(1, &tf);
 
-  return new WebGLTransformFeedback(this, tf);
+  return MakeRefPtr<WebGLTransformFeedback>(this, tf);
 }
 
 void WebGL2Context::BindTransformFeedback(WebGLTransformFeedback* tf) {

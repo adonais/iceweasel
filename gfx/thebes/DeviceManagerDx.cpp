@@ -677,14 +677,14 @@ void DeviceManagerDx::CreateDirectCompositionDeviceLocked() {
 /* static */
 HANDLE DeviceManagerDx::CreateDCompSurfaceHandle() {
   if (!sDcompCreateSurfaceHandleFn) {
-    return 0;
+    return nullptr;
   }
 
-  HANDLE handle = 0;
+  HANDLE handle = nullptr;
   HRESULT hr = sDcompCreateSurfaceHandleFn(COMPOSITIONOBJECT_ALL_ACCESS,
                                            nullptr, &handle);
   if (FAILED(hr)) {
-    return 0;
+    return nullptr;
   }
 
   return handle;

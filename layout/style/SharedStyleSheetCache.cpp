@@ -266,6 +266,54 @@ void SharedStyleSheetCache::Clear(
   }
 }
 
+void SharedStyleSheetCache::GC() {
+  MOZ_ASSERT(mGCScheduled);
+  for (auto iter = mInlineSheets.Iter(); !iter.Done(); iter.Next()) {
+    for (auto subiter = iter.Data().Iter(); !subiter.Done(); subiter.Next()) {
+      subiter.Data().RemoveElementsBy([](InlineSheetEntry& aEntry) {
+        return aEntry.mSheet->HasUniqueInner();
+      });
+      if (subiter.Data().IsEmpty()) {
+        subiter.Remove();
+      }
+    }
+    if (iter.Data().IsEmpty()) {
+      iter.Remove();
+    }
+  }
+
+  for (auto iter = mComplete.Iter(); !iter.Done(); iter.Next()) {
+    if (iter.Data().mResource->HasUniqueInner()) {
+      iter.Remove();
+    }
+  }
+  mGCScheduled = false;
+}
+
+void SharedStyleSheetCache::DoScheduleGC() {
+  MOZ_ASSERT(!mGCScheduled);
+  if (!mGCTimer) {
+    mGCTimer = NS_NewTimer();
+  }
+  mGCScheduled = NS_SUCCEEDED(mGCTimer->InitWithNamedFuncCallback(
+      [](nsITimer*, void*) {
+        if (sSingleton) {
+          sSingleton->mGCScheduled =
+              NS_SUCCEEDED(NS_DispatchToCurrentThreadQueue(
+                  NS_NewRunnableFunction("SharedStyleSheetCache GC Idle",
+                                         [] {
+                                           if (sSingleton) {
+                                             sSingleton->GC();
+                                           }
+                                         }),
+                  EventQueuePriority::Idle));
+        }
+      },
+      nullptr, StaticPrefs::layout_css_stylesheet_cache_timeout_ms(),
+      nsITimer::TYPE_ONE_SHOT_LOW_PRIORITY,
+      "SharedStyleSheetCache::GC timer"_ns));
+}
+
 }  // namespace mozilla
 
 #undef LOG

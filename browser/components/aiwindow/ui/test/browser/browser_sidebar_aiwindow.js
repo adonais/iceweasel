@@ -38,11 +38,23 @@ add_task(
       const { win: w } = await openAIWindowWithSidebar();
       win = w;
 
+      const box = win.document.getElementById(AIWindowUI.BOX_ID);
+
       Assert.ok(AIWindowUI.isSidebarOpen(win), "Should have sidebar open");
       triggerSidebarToggleKeybind(win);
+      await BrowserTestUtils.waitForMutationCondition(
+        box,
+        { attributes: true, attributeFilter: ["collapsed"] },
+        () => !AIWindowUI.isSidebarOpen(win)
+      );
       Assert.ok(!AIWindowUI.isSidebarOpen(win), "Should toggle sidebar closed");
 
       triggerSidebarToggleKeybind(win);
+      await BrowserTestUtils.waitForMutationCondition(
+        box,
+        { attributes: true, attributeFilter: ["collapsed"] },
+        () => AIWindowUI.isSidebarOpen(win)
+      );
       Assert.ok(AIWindowUI.isSidebarOpen(win), "Should toggle sidebar open");
     } finally {
       if (win) {

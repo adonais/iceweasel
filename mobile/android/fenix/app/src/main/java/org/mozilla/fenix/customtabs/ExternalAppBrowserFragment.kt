@@ -37,7 +37,6 @@ import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.nav
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.runIfFragmentIsAttached
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.quicksettings.protections.cookiebanners.getCookieBannerUIMode
 
 /**
@@ -66,7 +65,7 @@ class ExternalAppBrowserFragment : BaseBrowserFragment(), SystemInsetsPaddedFrag
 
         val browserStore = requireComponents.core.store
         if (browserStore.state.findCustomTab(customTabSessionId)?.content?.private == false) {
-            val settings = requireContext().settings()
+            val settings = requireComponents.settings
             browserScreenStore.updateCustomTabsColors(
                 context = requireContext(),
                 customTab = (tab as? CustomTabSessionState),
@@ -171,12 +170,12 @@ class ExternalAppBrowserFragment : BaseBrowserFragment(), SystemInsetsPaddedFrag
                 val cookieBannersStorage = requireComponents.core.cookieBannersStorage
                 val cookieBannerUIMode = cookieBannersStorage.getCookieBannerUIMode(
                     tab = tab,
-                    isFeatureEnabledInPrivateMode = requireContext().settings().shouldUseCookieBannerPrivateMode,
+                    isFeatureEnabledInPrivateMode = requireComponents.settings.shouldUseCookieBannerPrivateMode,
                     publicSuffixList = requireComponents.publicSuffixList,
                 )
                 withContext(Dispatchers.Main) {
                     runIfFragmentIsAttached {
-                        val directions = if (requireContext().settings().enableUnifiedTrustPanel) {
+                        val directions = if (requireComponents.settings.enableUnifiedTrustPanel) {
                             ExternalAppBrowserFragmentDirections.actionGlobalTrustPanelFragment(
                                 sessionId = tab.id,
                                 url = tab.content.url,

@@ -130,6 +130,8 @@ skip-if = [
 
 ["browser_manageAddressesDialog.js"]
 
+["browser_ml_heuristics.js"]
+
 ["browser_nested_forms.js"]
 
 ["browser_page_navigation_in_subtree.js"]

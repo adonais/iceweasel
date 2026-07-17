@@ -175,6 +175,10 @@ nsresult GetMemoryMappings(nsTArray<MemoryMapping>& aMappings, pid_t aPid) {
     }
 
     const char* rest = strtok_r(nullptr, "\n", &savePtr);
+    if (!rest) {
+      continue;
+    }
+
     size_t value;
     if (sscanf(rest, "%zd kB", &value) > 0) {
       current->ValueForField(*field) = value * 1024;

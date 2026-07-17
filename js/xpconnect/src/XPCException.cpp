@@ -25,7 +25,7 @@ static const struct ResultMap {
 #include "xpc.msg"
 #include "extra_xpc_msg.h"
 #undef XPC_MSG_DEF
-    {NS_OK, 0, 0}  // sentinel to mark end of array
+    {NS_OK, nullptr, nullptr}  // sentinel to mark end of array
 };
 
 #define RESULT_COUNT (std::size(map) - 1)

@@ -49,6 +49,7 @@
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/HTMLAnchorElement.h"
 #include "mozilla/dom/HTMLFormElement.h"
+#include "mozilla/dom/HTMLHeadingElement.h"
 #include "mozilla/dom/HTMLInputElement.h"
 #include "mozilla/dom/NodeList.h"
 #include "mozilla/dom/PopoverData.h"
@@ -745,6 +746,13 @@ nsRect LocalAccessible::BoundsInAppUnits() const {
   nsIFrame* boundingFrame = nullptr;
   nsRect unionRectTwips = RelativeBounds(&boundingFrame);
   if (!boundingFrame) {
+    if (nsCoreUtils::IsDisplayContents(mContent)) {
+      nsRect result;
+      for (uint32_t i = 0, n = ChildCount(); i < n; i++) {
+        result.UnionRect(result, LocalChildAt(i)->BoundsInAppUnits());
+      }
+      return result;
+    }
     return nsRect();
   }
 
@@ -3162,9 +3170,7 @@ Accessible* LocalAccessible::EmbeddedChildAt(uint32_t aIndex) {
     if (!mEmbeddedObjCollector) {
       mEmbeddedObjCollector.reset(new EmbeddedObjCollector(this));
     }
-    return mEmbeddedObjCollector.get()
-               ? mEmbeddedObjCollector->GetAccessibleAt(aIndex)
-               : nullptr;
+    return mEmbeddedObjCollector->GetAccessibleAt(aIndex);
   }
 
   return ChildAt(aIndex);
@@ -3176,9 +3182,7 @@ int32_t LocalAccessible::IndexOfEmbeddedChild(Accessible* aChild) {
     if (!mEmbeddedObjCollector) {
       mEmbeddedObjCollector.reset(new EmbeddedObjCollector(this));
     }
-    return mEmbeddedObjCollector.get()
-               ? mEmbeddedObjCollector->GetIndexAt(aChild->AsLocal())
-               : -1;
+    return mEmbeddedObjCollector->GetIndexAt(aChild->AsLocal());
   }
 
   return GetIndexOf(aChild->AsLocal());
@@ -3509,8 +3513,7 @@ void LocalAccessible::SendCache(uint64_t aCacheDomain,
   }
 
   // Only send cache updates for domains that are active.
-  const uint64_t domainsToSend =
-      nsAccessibilityService::GetActiveCacheDomains() & aCacheDomain;
+  const uint64_t domainsToSend = mDoc->EffectiveCacheDomains() & aCacheDomain;
 
   // Avoid sending cache updates if we have no domains to update.
   if (domainsToSend == CacheDomain::None) {
@@ -4152,6 +4155,13 @@ already_AddRefed<AccAttributes> LocalAccessible::BundleFieldsForCache(
         fields->SetAttribute(attr, DeleteEntry());
       }
     }
+
+    int32_t headingLevel = HeadingLevel();
+    if (headingLevel > 0) {
+      fields->SetAttribute(CacheKey::HeadingLevel, headingLevel);
+    } else if (IsUpdatePush(CacheDomain::GroupInfo)) {
+      fields->SetAttribute(CacheKey::HeadingLevel, DeleteEntry());
+    }
   }
 
   if (aCacheDomain & CacheDomain::Actions) {
@@ -4701,6 +4711,13 @@ void LocalAccessible::DOMNodeClass(nsString& aClass) const {
   if (auto* el = dom::Element::FromNodeOrNull(mContent)) {
     el->GetClassName(aClass);
   }
+}
+
+int32_t LocalAccessible::HeadingLevel() const {
+  if (auto* el = dom::HTMLHeadingElement::FromNodeOrNull(mContent)) {
+    return static_cast<int32_t>(el->ComputedLevel());
+  }
+  return 0;
 }
 
 void LocalAccessible::LiveRegionAttributes(nsAString* aLive,

@@ -408,6 +408,24 @@ static void ParseLoggerOptions(mozilla::Range<const char> mixedCaseOpts) {
   ToLower(mixedCaseOpts.begin().get(), logOpts.get(), len);
   logOpts.get()[len] = '\0';
 
+  // "help" lists every JS_LOG module and exits.
+  if (strstr(logOpts.get(), "help")) {
+    fputs(
+        "JS_LOG modules.\n"
+        "\n"
+        "Set via MOZ_LOG=<name>:<level>,<name>:<level>,... where level is\n"
+        "1..5 (1=Error, 2=Warning, 3=Info, 4=Debug, 5=Verbose). The level may\n"
+        "be omitted, in which case Debug is used.\n"
+        "\n"
+        "Example: MOZ_LOG=IonScripts:5,LICM:5\n"
+        "\n",
+        stderr);
+#define EMIT(X, HELP) fprintf(stderr, "  %-28s %s\n", #X, HELP);
+    FOR_EACH_JS_LOG_MODULE(EMIT)
+#undef EMIT
+    exit(0);
+  }
+
   // This is a really permissive parser, but will suffice!
   for (auto& logger : logModules) {
     if (logger) {
@@ -898,6 +916,7 @@ enum class ShellGlobalKind {
 };
 
 static void SetStandardRealmOptions(JSContext* cx, JS::RealmOptions& options);
+static JSObject* NewStringInterruptCallbackGlobal(JSContext* cx);
 static JSObject* NewGlobalObject(
     JSContext* cx, JS::RealmOptions& options, JSPrincipals* principals,
     ShellGlobalKind kind, bool immutablePrototype,
@@ -1198,12 +1217,13 @@ static bool ShellInterruptCallback(JSContext* cx) {
       // long-running code (eg ArrayJoinKernel) with the expectation that the
       // interrupt handler will not reach into the interrupted realm and modify
       // the contents of the array. As a compromise, when fuzzing, we instead
-      // require a string argument, and evaluate that string in a fresh global.
-      // This prevents the interrupt handler from directly mutating the
-      // interrupted code, but still allows it to do interesting things (get a
-      // backtrace, trigger a GC, etc). Clever ways of circumventing this
-      // sandbox are only interesting to the extent that they correspond with
-      // things that happen in real interrupt handlers in the browser.
+      // require a string argument, and evaluate that string in a fresh global
+      // with a reduced set of shell functions. This prevents the interrupt
+      // handler from directly mutating the interrupted code, but still allows
+      // it to do interesting things (get a backtrace, trigger a GC, etc).
+      // Clever ways of circumventing this sandbox are only interesting to the
+      // extent that they correspond with things that happen in real interrupt
+      // handlers in the browser.
 
       RootedString str(cx, sc->interruptFunc.toString());
 
@@ -1212,20 +1232,7 @@ static bool ShellInterruptCallback(JSContext* cx) {
         are.emplace(cx);
       }
 
-      // Disable the Debugger API in the new global and hide this global from
-      // onNewGlobal hooks, to prevent interrupt callbacks from accessing other
-      // globals with --fuzzing-safe.
-      bool wasDebuggerDisabled = sc->disableDebuggerForNewGlobal;
-      sc->disableDebuggerForNewGlobal = true;
-      auto restore = MakeScopeExit(
-          [&]() { sc->disableDebuggerForNewGlobal = wasDebuggerDisabled; });
-
-      JS::RealmOptions options;
-      SetStandardRealmOptions(cx, options);
-
-      RootedObject glob(cx, NewGlobalObject(cx, options, nullptr,
-                                            ShellGlobalKind::WindowProxy,
-                                            /* immutablePrototype = */ true));
+      RootedObject glob(cx, NewStringInterruptCallbackGlobal(cx));
       if (!glob) {
         return false;
       }
@@ -2365,6 +2372,7 @@ static bool CreateMappedArrayBuffer(JSContext* cx, unsigned argc, Value* vp) {
   RootedObject obj(cx,
                    JS::NewMappedArrayBufferWithContents(cx, size, contents));
   if (!obj) {
+    JS::ReleaseMappedArrayBufferContents(contents, size);
     return false;
   }
 
@@ -4483,10 +4491,6 @@ static void SetStandardRealmOptions(JSContext* cx, JS::RealmOptions& options) {
       .setSharedMemoryAndAtomicsEnabled(enableSharedMemory)
       .setCoopAndCoepEnabled(false)
       .setToSourceEnabled(enableToSource);
-
-  if (GetShellContext(cx)->disableDebuggerForNewGlobal) {
-    options.creationOptions().setInvisibleToDebugger(true);
-  }
 }
 
 [[nodiscard]] static bool CheckRealmOptions(JSContext* cx,
@@ -5228,23 +5232,6 @@ static bool CheckRegExpSyntax(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-static bool IsPrefAvailable(const char* pref) {
-  if (!fuzzingSafe) {
-    // All prefs in fuzzing unsafe mode are enabled.
-    return true;
-  }
-#define WASM_FEATURE(NAME, LOWER_NAME, COMPILE_PRED, COMPILER_PRED, FLAG_PRED, \
-                     FLAG_FORCE_ON, FLAG_FUZZ_ON, PREF)                        \
-  if constexpr (!FLAG_FUZZ_ON) {                                               \
-    if (strcmp("wasm_" #PREF, pref) == 0) {                                    \
-      return false;                                                            \
-    }                                                                          \
-  }
-  JS_FOR_WASM_FEATURES(WASM_FEATURE)
-#undef WASM_FEATURE
-  return true;
-}
-
 template <typename T>
 static bool ParsePrefValue(const char* name, const char* val, T* result) {
   if constexpr (std::is_same_v<T, bool>) {
@@ -5274,7 +5261,8 @@ static bool ParsePrefValue(const char* name, const char* val, T* result) {
 static bool SetPrefToTrueForBool(const char* name) {
   // Search for a matching pref and try to set it to a default value for the
   // type.
-#define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF)      \
+#define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF,      \
+                   FUZZING_SAFE)                                       \
   if (strcmp(name, NAME) == 0) {                                       \
     if constexpr (std::is_same_v<TYPE, bool>) {                        \
       JS::Prefs::SETTER(true);                                         \
@@ -5328,8 +5316,9 @@ static bool SetPrefValue(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   // Search for a matching pref and try to set it to the provided value.
-#define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF)             \
-  if (IsPrefAvailable(NAME) && StringEqualsLiteral(name, NAME)) {             \
+#define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF,             \
+                   FUZZING_SAFE)                                              \
+  if (StringEqualsLiteral(name, NAME)) {                                      \
     if (IS_STARTUP_PREF) {                                                    \
       JS_ReportErrorASCII(cx, "%s is a startup pref and can't be set", NAME); \
       return false;                                                           \
@@ -5357,7 +5346,8 @@ static bool SetPrefValue(JSContext* cx, unsigned argc, Value* vp) {
 static bool SetPrefToValue(const char* name, size_t nameLen,
                            const char* value) {
   // Search for a matching pref and try to set it to the provided value.
-#define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF)         \
+#define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF,         \
+                   FUZZING_SAFE)                                          \
   if (nameLen == strlen(NAME) && memcmp(name, NAME, strlen(NAME)) == 0) { \
     TYPE v;                                                               \
     if (!ParsePrefValue<TYPE>(NAME, value, &v)) {                         \
@@ -5383,7 +5373,7 @@ static bool SetPrefToValue(const char* name, size_t nameLen,
 static bool SetPref(const char* pref) {
   const char* assign = strchr(pref, '=');
   if (!assign) {
-    if (IsPrefAvailable(pref) && !SetPrefToTrueForBool(pref)) {
+    if (!SetPrefToTrueForBool(pref)) {
       return false;
     }
     return true;
@@ -5392,30 +5382,29 @@ static bool SetPref(const char* pref) {
   size_t nameLen = assign - pref;
   const char* valStart = assign + 1;  // Skip '='.
 
-  if (IsPrefAvailable(pref) && !SetPrefToValue(pref, nameLen, valStart)) {
+  if (!SetPrefToValue(pref, nameLen, valStart)) {
     return false;
   }
   return true;
 }
 
 static void ListPrefs() {
-  auto printPref = [](const char* name, auto defaultVal) {
-    if (!IsPrefAvailable(name)) {
-      return;
-    }
+  auto printPref = [](const char* name, auto defaultVal, bool fuzzingSafe) {
+    const char* suffix = fuzzingSafe ? "" : "  [not fuzzing-safe]";
     using T = decltype(defaultVal);
     if constexpr (std::is_same_v<T, bool>) {
-      fprintf(stderr, "%s=%s\n", name, defaultVal ? "true" : "false");
+      fprintf(stderr, "%s=%s%s\n", name, defaultVal ? "true" : "false", suffix);
     } else if constexpr (std::is_same_v<T, int32_t>) {
-      fprintf(stderr, "%s=%d\n", name, defaultVal);
+      fprintf(stderr, "%s=%d%s\n", name, defaultVal, suffix);
     } else {
       static_assert(std::is_same_v<T, uint32_t>);
-      fprintf(stderr, "%s=%u\n", name, defaultVal);
+      fprintf(stderr, "%s=%u%s\n", name, defaultVal, suffix);
     }
   };
 
-#define PRINT_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF) \
-  printPref(NAME, JS::Prefs::CPP_NAME());
+#define PRINT_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF, \
+                   FUZZING_SAFE)                                  \
+  printPref(NAME, JS::Prefs::CPP_NAME(), FUZZING_SAFE);
   FOR_EACH_JS_PREF(PRINT_PREF)
 #undef PRINT_PREF
 }
@@ -7385,7 +7374,7 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
     if (!JS_GetProperty(cx, opts, "invisibleToDebugger", &v)) {
       return false;
     }
-    if (v.isBoolean() && !GetShellContext(cx)->disableDebuggerForNewGlobal) {
+    if (v.isBoolean()) {
       creationOptions.setInvisibleToDebugger(v.toBoolean());
     }
 
@@ -7440,11 +7429,6 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
                                    /* stopAtWindowProxy = */ true);
       if (!existingWindowProxy) {
         ReportAccessDenied(cx);
-        return false;
-      }
-      if (!js::IsWindowProxy(existingWindowProxy)) {
-        JS_ReportErrorASCII(
-            cx, "transplantWindowProxy: argument is not a WindowProxy");
         return false;
       }
       kind = ShellGlobalKind::WindowProxy;
@@ -7535,6 +7519,14 @@ static bool NewGlobal(JSContext* cx, unsigned argc, Value* vp) {
       }
       behaviors.setLocaleOverride(locale.get());
     }
+  }
+
+  // Ensure existingWindowProxy is a WindowProxy. This must be checked after
+  // operations that can run JS and transplant the WindowProxy.
+  if (existingWindowProxy && !js::IsWindowProxy(existingWindowProxy)) {
+    JS_ReportErrorASCII(cx,
+                        "transplantWindowProxy: argument is not a WindowProxy");
+    return false;
   }
 
   if (!CheckRealmOptions(cx, options, principals.get())) {
@@ -7653,7 +7645,6 @@ static bool GetMaxArgs(JSContext* cx, unsigned argc, Value* vp) {
   return true;
 }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 static bool GetAbstractModuleSource(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
   if (JS::Prefs::experimental_source_phase_imports()) {
@@ -7668,7 +7659,6 @@ static bool GetAbstractModuleSource(JSContext* cx, unsigned argc, Value* vp) {
   }
   return true;
 }
-#endif
 
 static bool IsHTMLDDA_Call(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -9073,6 +9063,12 @@ class TransplantableProxyHandler final : public ForwardingProxyHandler {
     return IsProxy(obj) && GetProxyHandler(obj) == &singleton;
   }
 
+  bool mayBeSwapped() const override { return true; }
+
+  // For testing purposes allow these to be allocated in the nursery. This
+  // doesn't (currently) happen in the browser.
+  bool canNurseryAllocate() const override { return true; }
+
   static JSObject* GetAndClearExpandoObject(
       JSObject* obj, JS::MutableHandle<JS::Value> restoreToken) {
     MOZ_ASSERT(TransplantableProxyHandler::is(obj));
@@ -10405,11 +10401,9 @@ JS_FN_HELP("createUserArrayBuffer", CreateUserArrayBuffer, 1, 0,
 "getMaxArgs()",
 "  Return the maximum number of supported args for a call."),
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     JS_FN_HELP("getAbstractModuleSource", GetAbstractModuleSource, 0, 0,
 "getAbstractModuleSource()",
 "  Return the %AbstractModuleSource% intrinsic constructor."),
-#endif
 
     JS_FN_HELP("createIsHTMLDDA", CreateIsHTMLDDA, 0, 0,
 "createIsHTMLDDA()",
@@ -11683,6 +11677,100 @@ static const JSPropertySpec TestingProperties[] = {
     JS_PS_END,
 };
 
+static bool DefineStringInterruptCallbackGlobalFunctions(JSContext* cx,
+                                                         HandleObject global) {
+  RootedObject scratch(cx, JS_NewPlainObject(cx));
+  if (!scratch) {
+    return false;
+  }
+  if (!JS_DefineFunctionsWithHelp(cx, scratch, shell_functions) ||
+      !js::DefineTestingFunctions(cx, scratch, fuzzingSafe,
+                                  disableOOMFunctions)) {
+    return false;
+  }
+
+  static const char* const allowedProperties[] = {
+      "print",
+      "printErr",
+      "interruptIf",
+      "gc",
+      "minorgc",
+      "maybegc",
+      "gcparam",
+      "finishBackgroundFree",
+      "relazifyFunctions",
+      "gczeal",
+      "unsetgczeal",
+      "schedulegc",
+      "selectforgc",
+      "gcstate",
+      "schedulezone",
+      "startgc",
+      "finishgc",
+      "gcslice",
+      "abortgc",
+      "backtrace",
+      "enableGeckoProfiling",
+      "enableGeckoProfilingWithSlowAssertions",
+      "disableGeckoProfiling",
+      "readGeckoProfilingStack",
+      "readGeckoInterpProfilingStack",
+  };
+
+  RootedValue value(cx);
+  for (const char* name : allowedProperties) {
+    bool found;
+    if (!JS_HasProperty(cx, scratch, name, &found)) {
+      return false;
+    }
+    if (!found) {
+      continue;
+    }
+    if (!JS_GetProperty(cx, scratch, name, &value)) {
+      return false;
+    }
+    if (!JS_DefineProperty(cx, global, name, value, 0)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+static JSObject* NewStringInterruptCallbackGlobal(JSContext* cx) {
+  JS::RealmOptions options;
+  SetStandardRealmOptions(cx, options);
+  options.creationOptions().setInvisibleToDebugger(true);
+
+  RootedObject glob(cx,
+                    JS_NewGlobalObject(cx, &global_class, nullptr,
+                                       JS::DontFireOnNewGlobalHook, options));
+  if (!glob) {
+    return nullptr;
+  }
+
+  JSAutoRealm ar(cx, glob);
+  RootedObject proxy(cx, NewShellWindowProxy(cx, glob));
+  if (!proxy) {
+    return nullptr;
+  }
+  js::SetWindowProxy(cx, glob, proxy);
+#ifndef LAZY_STANDARD_CLASSES
+  if (!JS::InitRealmStandardClasses(cx)) {
+    return nullptr;
+  }
+#endif
+  bool succeeded;
+  if (!JS_SetImmutablePrototype(cx, glob, &succeeded)) {
+    return nullptr;
+  }
+  MOZ_ASSERT(succeeded);
+  if (!DefineStringInterruptCallbackGlobalFunctions(cx, glob)) {
+    return nullptr;
+  }
+  return glob;
+}
+
 static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
                                  JSPrincipals* principals, ShellGlobalKind kind,
                                  bool immutablePrototype,
@@ -11691,6 +11779,13 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
                     JS_NewGlobalObject(cx, &global_class, principals,
                                        JS::DontFireOnNewGlobalHook, options));
   if (!glob) {
+    return nullptr;
+  }
+
+  if (existingWindowProxy &&
+      JS::GetCompartment(existingWindowProxy) != JS::GetCompartment(glob) &&
+      !AllowNewWrapper(JS::GetCompartment(existingWindowProxy), glob)) {
+    JS_ReportErrorASCII(cx, "Cannot transplant into nuked compartment");
     return nullptr;
   }
 
@@ -11742,10 +11837,8 @@ static JSObject* NewGlobalObject(JSContext* cx, JS::RealmOptions& options,
     if (!JS_InitReflectParse(cx, glob)) {
       return nullptr;
     }
-    if (!GetShellContext(cx)->disableDebuggerForNewGlobal) {
-      if (!JS_DefineDebuggerObject(cx, glob)) {
-        return nullptr;
-      }
+    if (!JS_DefineDebuggerObject(cx, glob)) {
+      return nullptr;
     }
     if (!JS_DefineFunctionsWithHelp(cx, glob, shell_functions) ||
         !JS_DefineProfilingFunctions(cx, glob)) {
@@ -13129,6 +13222,11 @@ bool InitOptionParser(OptionParser& op) {
 #ifdef JS_CODEGEN_RISCV64
       !op.addBoolOption('\0', "riscv-debug",
                         "Print riscv debugging messages.") ||
+      !op.addStringOption(
+          '\0', "riscv-ext", "[features]",
+          "Specify RISCV code generation features. Starts with ISA (\"rv64g\") "
+          "or profile (\"rva20u64\", \"rva22u64\", \"rva23u64\"), followed by "
+          "extensions separated with '_'.") ||
 #endif
 #ifdef JS_SIMULATOR_RISCV64
       !op.addBoolOption('\0', "riscv-sim-trace",
@@ -13261,6 +13359,8 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
     fuzzingSafe =
         (getenv("MOZ_FUZZING_SAFE") && getenv("MOZ_FUZZING_SAFE")[0] != '0');
   }
+  JS::Prefs::setFuzzingSafe(fuzzingSafe);
+  JS::Prefs::setReportIgnoredFuzzingUnsafePrefs(true);
 
   if (op.getBoolOption("strict-benchmark-mode")) {
     sBenchmarkMode = BenchmarkMode::Strict;
@@ -13306,6 +13406,12 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-legacy-regexp")) {
     JS::Prefs::set_experimental_legacy_regexp(true);
   }
+  if (op.getBoolOption("enable-import-text")) {
+    JS::Prefs::set_experimental_import_text(true);
+  }
+  if (op.getBoolOption("enable-intl-locale-info")) {
+    JS::Prefs::setAtStartup_experimental_intl_locale_info(true);
+  }
 #ifdef NIGHTLY_BUILD
   if (op.getBoolOption("enable-async-iterator-helpers")) {
     JS::Prefs::setAtStartup_experimental_async_iterator_helpers(true);
@@ -13322,9 +13428,6 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-import-bytes")) {
     JS::Prefs::setAtStartup_experimental_import_bytes(true);
   }
-  if (op.getBoolOption("enable-import-text")) {
-    JS::Prefs::set_experimental_import_text(true);
-  }
   if (op.getBoolOption("enable-promise-allkeyed")) {
     JS::Prefs::setAtStartup_experimental_promise_allkeyed(true);
   }
@@ -13340,14 +13443,10 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
   if (op.getBoolOption("enable-error-stack-trace-limit")) {
     JS::Prefs::setAtStartup_experimental_error_stack_trace_limit(true);
   }
-  if (op.getBoolOption("enable-intl-locale-info")) {
-    JS::Prefs::setAtStartup_experimental_intl_locale_info(true);
-  }
   if (op.getBoolOption("enable-wasm-esm-integration")) {
     JS::Prefs::set_experimental_wasm_esm_integration(true);
   }
 #endif
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   if (op.getBoolOption("enable-source-phase-imports")) {
     JS::Prefs::set_experimental_source_phase_imports(true);
   }
@@ -13356,7 +13455,6 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
         setAtStartup_experimental_source_phase_imports_test262_module_source(
             true);
   }
-#endif
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
   if (op.getBoolOption("enable-explicit-resource-management")) {
     JS::Prefs::set_experimental_explicit_resource_management(true);
@@ -13497,6 +13595,11 @@ bool SetGlobalOptionsPreJSInit(const OptionParser& op) {
     jit::ARM64Flags::DisableCPUFeatures(cssc);
   }
 #endif
+#if defined(JS_CODEGEN_RISCV64)
+  if (const char* str = op.getStringOption("riscv-ext")) {
+    jit::SetRISCV64ExtensionsString(str);
+  }
+#endif
 #ifndef __wasi__
   if (op.getBoolOption("disable-wasm-huge-memory")) {
     JS::Prefs::setAtStartup_wasm_disable_huge_memory(true);
@@ -13553,19 +13656,29 @@ bool SetGlobalOptionsPostJSInit(const OptionParser& op) {
   }
 
   if (const char* xdr = op.getStringOption("selfhosted-xdr-path")) {
-    shell::selfHostedXDRPath = xdr;
+    if (fuzzingSafe) {
+      fprintf(stderr,
+              "Warning: ignoring --selfhosted-xdr-path with --fuzzing-safe\n");
+    } else {
+      shell::selfHostedXDRPath = xdr;
+    }
   }
   if (const char* opt = op.getStringOption("selfhosted-xdr-mode")) {
-    if (strcmp(opt, "encode") == 0) {
-      shell::encodeSelfHostedCode = true;
-    } else if (strcmp(opt, "decode") == 0) {
-      shell::encodeSelfHostedCode = false;
-    } else if (strcmp(opt, "off") == 0) {
-      shell::selfHostedXDRPath = nullptr;
+    if (fuzzingSafe) {
+      fprintf(stderr,
+              "Warning: ignoring --selfhosted-xdr-mode with --fuzzing-safe\n");
     } else {
-      MOZ_CRASH(
-          "invalid option value for --selfhosted-xdr-mode, must be "
-          "encode/decode");
+      if (strcmp(opt, "encode") == 0) {
+        shell::encodeSelfHostedCode = true;
+      } else if (strcmp(opt, "decode") == 0) {
+        shell::encodeSelfHostedCode = false;
+      } else if (strcmp(opt, "off") == 0) {
+        shell::selfHostedXDRPath = nullptr;
+      } else {
+        MOZ_CRASH(
+            "invalid option value for --selfhosted-xdr-mode, must be "
+            "encode/decode");
+      }
     }
   }
 

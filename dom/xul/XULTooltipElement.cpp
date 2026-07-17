@@ -18,7 +18,7 @@
 namespace mozilla::dom {
 
 nsXULElement* NS_NewXULTooltipElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo) {
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(aNodeInfo);
   auto* nim = nodeInfo->NodeInfoManager();
   RefPtr<XULTooltipElement> tooltip =

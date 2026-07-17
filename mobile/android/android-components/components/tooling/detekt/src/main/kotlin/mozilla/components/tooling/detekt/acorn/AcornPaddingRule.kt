@@ -19,7 +19,7 @@ import org.jetbrains.kotlin.psi.psiUtil.getParentOfType
 /**
  * Verifies that padding uses Acorn design system spacing tokens.
  */
-class AcornPaddingRule(config: Config = Config.Companion.empty) : Rule(config) {
+class AcornPaddingRule(config: Config = Config.empty) : Rule(config) {
     private val namedParameterRegex = "^[a-zA-Z0-9]+ =".toRegex()
     private val dpRegex = ".[d,D]p$".toRegex()
     override val issue: Issue
@@ -27,7 +27,7 @@ class AcornPaddingRule(config: Config = Config.Companion.empty) : Rule(config) {
             id = "HardcodedPaddingUsage",
             severity = Severity.Maintainability,
             description = "Hardcoded Dp values are prohibited.  Please use Acorn spacing tokens.",
-            debt = Debt.Companion.FIVE_MINS,
+            debt = Debt.FIVE_MINS,
         )
 
     private val allowedValues: List<String>

@@ -253,7 +253,7 @@ static inline void MaybeVerifyBarriers(JSContext* cx, bool always = false) {}
  *
  *  - error reporting
  *  - JIT bailout handling
- *  - brain transplants (JSObject::swap)
+ *  - brain transplants (ProxyObject::swap)
  *  - debugging utilities not exposed to the browser
  *
  * This works by updating the |JSContext::suppressGC| counter which is checked

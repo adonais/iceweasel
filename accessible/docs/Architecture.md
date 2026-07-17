@@ -3,11 +3,13 @@
 This document provides a high-level overview of how the accessibility code is structured. See [the Document Accessibility Lifecycle page](DocumentAccessibilityLifecycle.md#docaccessible-creation) for a lower level description of the code.
 
 ## Process Model
+
 The accessibility component spans multiple processes. In the parent process, it creates an accessibility tree of the Firefox UI and responds to requests from accessibility clients such as screen readers, magnifiers and voice control tools. In content processes, the accessibility component creates accessibility trees from web content.
 
 To respond to accessibility client requests quickly, the accessibility tree from each content process is cached in the parent process.
 
 ## Accessibility Trees
+
 Accessibility trees can carry different kinds of information: informally, there are "local trees" that represent a document in the current process and "remote trees" that mirror a local tree created in a separate process.
 
 A local tree can only contain nodes in the current process, i.e. you can visit any node in the tab document and its in-process iframes. However, out-of-process iframes appear as a separate local tree in a different process.
@@ -20,9 +22,11 @@ An accessibility client communicates only with the parent process.
 It sees the local tree for the Firefox UI and the remote trees for tabs and iframes as a single, unified tree.
 
 ### Tree Nodes
+
 An accessibility tree is composed of nodes represented by the `Accessible` class and its subtypes. Below is an example local accessibility tree from [example.com](https://example.com), as printed by `a11y::logging::Tree` (unfortunately, without type information):
 
 <!-- This isn't very accessible, at least in VoiceOver on Safari: VoiceOver only navigates between each word and I'm not sure if it's even possible to skip the whole block. Ideally, we can improve it. -->
+
 ```
 A11Y TREE: Initial subtree; 44:14.388
   {
@@ -47,6 +51,7 @@ LocalAccessible's direct descendant is `AccessibleWrap`. By convention, a class 
 RemoteAccessible doesn’t have such an extensive type hierarchy. Its primary descendant is `DocAccessibleParent` which is the Document node of a remote tree located in the parent process: its local tree counterpart in a content process is `DocAccessible`.
 
 Below is a graph that displays the same relationships described above. In the graph, solid lines represent direct descendants while dotted lines represent indirect descendants:
+
 ```{mermaid}
 flowchart TD
 accTitle: Graph of the class hierarchy described above
@@ -58,6 +63,7 @@ RemoteAccessible -.-> DocAccessibleParent
 ```
 
 ### Platform-Specific Behavior
+
 Accessibility trees differ by platform. The platform-independent tree, composed of types like `LocalAccessible` and `RemoteAccessible`, is marshalled into a platform-specific tree that makes it easier to implement the platform's accessibility API (or APIs). The platform tree is composed of the following node types:
 
 - Windows: [MsaaAccessible], [ia2Accessible] and [uiaRawElmProvider]

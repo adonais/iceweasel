@@ -51,8 +51,8 @@ let wasmGlobalInterfaces = [
   { name: "CompileError", insecureContext: true },
   { name: "LinkError", insecureContext: true },
   { name: "RuntimeError", insecureContext: true },
-  { name: "SuspendError", insecureContext: true, nightly: true },
-  { name: "Suspending", insecureContext: true, nightly: true },
+  { name: "SuspendError", insecureContext: true },
+  { name: "Suspending", insecureContext: true },
   { name: "Function", insecureContext: true, nightly: true },
   { name: "Exception", insecureContext: true },
   { name: "Tag", insecureContext: true },
@@ -61,7 +61,7 @@ let wasmGlobalInterfaces = [
   { name: "compileStreaming", insecureContext: true },
   { name: "instantiate", insecureContext: true },
   { name: "instantiateStreaming", insecureContext: true },
-  { name: "promising", insecureContext: true, nightly: true },
+  { name: "promising", insecureContext: true },
   { name: "validate", insecureContext: true },
 ];
 // IMPORTANT: Do not change this list without review from
@@ -855,6 +855,8 @@ let interfaceNamesInGlobalScope = [
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "IDBOpenDBRequest", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "IDBRecord", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "IDBRequest", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "IDBTransaction", insecureContext: true },
@@ -1164,6 +1166,10 @@ let interfaceNamesInGlobalScope = [
   { name: "PermissionStatus", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "Permissions", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "PictureInPictureEvent", insecureContext: true, android: false },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "PictureInPictureWindow", insecureContext: true, android: false },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "Plugin", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
@@ -1618,6 +1624,8 @@ let interfaceNamesInGlobalScope = [
   { name: "VideoFrame", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "VideoPlaybackQuality", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "ViewTimeline", insecureContext: true, nightly: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "ViewTransition", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!

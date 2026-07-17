@@ -37,7 +37,7 @@ class WindowGlobalChild final : public WindowGlobalActor,
   friend class PWindowGlobalChild;
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(WindowGlobalChild)
 
   static already_AddRefed<WindowGlobalChild> GetByInnerWindowId(
@@ -198,6 +198,9 @@ class WindowGlobalChild final : public WindowGlobalActor,
   MOZ_CAN_RUN_SCRIPT_BOUNDARY mozilla::ipc::IPCResult RecvRestoreTabContent(
       dom::SessionStoreRestoreData* aData,
       RestoreTabContentResolver&& aResolve);
+
+  mozilla::ipc::IPCResult RecvNotifyAudioSessionStateChanged(
+      const dom::AudioSessionState& aState);
 
   mozilla::ipc::IPCResult RecvNotifyPermissionChange(const nsCString& aType,
                                                      uint32_t aPermission);

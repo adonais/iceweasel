@@ -23,6 +23,7 @@ LOCAL_INCLUDES += [
 UNIFIED_SOURCES += [
     "MockMediaResource.cpp",
     "TestAOMDecoder.cpp",
+    "TestAsyncLogger.cpp",
     "TestAudioBuffer.cpp",
     "TestAudioBufferAddWithScale.cpp",
     "TestAudioBuffers.cpp",
@@ -71,6 +72,7 @@ UNIFIED_SOURCES += [
     "TestOfflineClockDriver.cpp",
     "TestOggWriter.cpp",
     "TestOpusParser.cpp",
+    "TestPDMFactorySupport.cpp",
     "TestRemoteImageHolder.cpp",
     "TestRust.cpp",
     "TestSimpleMap.cpp",
@@ -97,6 +99,7 @@ if CONFIG["MOZ_WEBRTC"]:
     UNIFIED_SOURCES += [
         "TestAudioInputProcessing.cpp",
         "TestCamerasParent.cpp",
+        "TestH264FmtpParser.cpp",
         "TestRTCStatsTimestampMaker.cpp",
         "TestWebrtcTaskQueueWrapper.cpp",
     ]
@@ -106,6 +109,16 @@ if CONFIG["OS_TARGET"] != "Android":
         "TestCDMStorage.cpp",
         "TestGMPCrossOrigin.cpp",
         "TestGMPRemoveAndDelete.cpp",
+    ]
+
+if CONFIG["OS_TARGET"] == "WINNT":
+    LOCAL_INCLUDES += [
+        "/dom/media/platforms/wmf",
+    ]
+    # Not in UNIFIED_SOURCES: WMF.h pulls in <windows.h> which defines a
+    # StrCat macro that conflicts with absl::StrCat in WebRTC unified units.
+    SOURCES += [
+        "TestWMFDeadlock.cpp",
     ]
 
 if CONFIG["MOZ_WEBRTC"] and CONFIG["OS_TARGET"] != "Android":

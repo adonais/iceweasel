@@ -49,7 +49,7 @@ add_task(async function test_fill_creditCard_with_failed_decryption() {
       );
 
       info("Synthesizing click on credit card");
-      await EventUtils.synthesizeMouseAtCenter(ccItem, {});
+      EventUtils.synthesizeMouseAtCenter(ccItem, {});
       info("Awaiting three events");
       await Promise.all([
         osKeyStoreLoginShown.then(() =>

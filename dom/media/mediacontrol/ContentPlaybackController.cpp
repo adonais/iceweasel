@@ -13,9 +13,10 @@
 
 // avoid redefined macro in unified build
 #undef LOG
-#define LOG(msg, ...)                        \
-  MOZ_LOG(gMediaControlLog, LogLevel::Debug, \
-          ("ContentPlaybackController=%p, " msg, this, ##__VA_ARGS__))
+#define LOG(msg, ...)                                               \
+  MOZ_LOG_FMT(gMediaControlLog, LogLevel::Debug,                    \
+              "ContentPlaybackController={}, " msg, fmt::ptr(this), \
+              ##__VA_ARGS__)
 
 namespace mozilla::dom {
 
@@ -44,8 +45,8 @@ void ContentPlaybackController::NotifyContentMediaControlKeyReceiver(
     MediaControlKey aKey, const MediaControlActionParams& aParams) {
   if (RefPtr<ContentMediaControlKeyReceiver> receiver =
           ContentMediaControlKeyReceiver::Get(mBC)) {
-    LOG("Handle '%s' in default behavior for BC %" PRIu64,
-        GetEnumString(aKey).get(), mBC->Id());
+    LOG("Handle '{}' in default behavior for BC {}", GetEnumString(aKey).get(),
+        mBC->Id());
     receiver->HandleMediaKey(aKey, aParams);
   }
 }
@@ -59,7 +60,7 @@ void ContentPlaybackController::NotifyMediaSession(MediaSessionAction aAction) {
 void ContentPlaybackController::NotifyMediaSession(
     const MediaSessionActionDetails& aParams) {
   if (RefPtr<MediaSession> session = GetMediaSession()) {
-    LOG("Handle '%s' in media session behavior for BC %" PRIu64,
+    LOG("Handle '{}' in media session behavior for BC {}",
         GetEnumString(aParams.mAction).get(), mBC->Id());
     MOZ_ASSERT(session->IsActive(), "Notify inactive media session!");
     session->NotifyHandler(aParams);

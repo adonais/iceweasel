@@ -31,10 +31,6 @@ You can test any `privatebrowsing` custom message UI by creating an experiment. 
   "content": {
     "promoEnabled": true,
     "promoType": "VPN",
-    "infoEnabled": true,
-    "infoBody": "Nightly clears your search and browsing history",
-    "infoLinkText": "Click Here to Learn More",
-    "infoTitleEnabled": false,
     "promoLinkType": "button",
     "promoLinkText": "fluent:about-private-browsing-prominent-cta",
     "promoSectionStyle": "below-search",

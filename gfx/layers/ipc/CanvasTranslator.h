@@ -532,7 +532,7 @@ class CanvasTranslator final : public gfx::InlineTranslator,
   };
   std::queue<CanvasShmem> mCanvasShmems;
   CanvasShmem mCurrentShmem;
-  gfx::MemReader mCurrentMemReader{0, 0};
+  gfx::MemReader mCurrentMemReader{nullptr, 0};
   // Track any data surfaces pointing to a shmem mapping.
   struct DataSurfaceShmem {
     ipc::SharedMemoryMapping mShmem;

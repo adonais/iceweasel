@@ -1865,15 +1865,17 @@ class CheckTenuredTracer : public JS::CallbackTracer {
       JS::TraceChildren(this, stack.popCopy());
     }
   }
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     gc::Cell* cell = thing.asCell();
     MOZ_RELEASE_ASSERT(cell->isTenured(), "Expected tenured cell");
     if (!visited.has(cell)) {
       if (!visited.put(cell) || !stack.append(thing)) {
         // Ignore OOM. This can happen during fuzzing.
-        return;
+        return true;
       }
     }
+
+    return true;
   }
 };
 

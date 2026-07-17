@@ -1,5 +1,7 @@
 "use strict";
 
+requestLongerTimeout(4);
+
 ChromeUtils.defineESModuleGetters(this, {
   DoHConfigController: "moz-src:///toolkit/components/doh/DoHConfig.sys.mjs",
   DoHController: "moz-src:///toolkit/components/doh/DoHController.sys.mjs",
@@ -234,6 +236,76 @@ add_task(async function testFallbackIfCustomMatchesTRRMode() {
   });
 
   Services.prefs.clearUserPref("network.trr_ui.fallback_was_checked");
+  await resetPrefs();
+  await DoHTestUtils.loadRemoteSettingsConfig({
+    providers: "",
+    rolloutEnabled: false,
+    steeringEnabled: false,
+    steeringProviders: "",
+    autoDefaultEnabled: false,
+    autoDefaultProviders: "",
+    id: "global",
+  });
+});
+
+// Regression test for Bug 2043714: when network.trr.uri points at a URL that
+// isn't in the provider list and the dohProviderSelect setting hasn't already
+// flagged itself as custom (so getControlConfig hasn't classified it), the
+// resolver dropdown was returning the raw URI - which matches no menu option
+// - instead of selecting "custom".
+add_task(async function testProviderSelectFallsBackToCustom() {
+  await DoHTestUtils.loadRemoteSettingsConfig({
+    providers: "example-1, example-2",
+    rolloutEnabled: true,
+    steeringEnabled: false,
+    steeringProviders: "",
+    autoDefaultEnabled: false,
+    autoDefaultProviders: "",
+    id: "global",
+  });
+
+  Services.prefs.setIntPref(TRR_MODE_PREF, Ci.nsIDNSService.MODE_TRRFIRST);
+  Services.prefs.setStringPref(TRR_URI_PREF, FIRST_RESOLVER_VALUE);
+
+  await openPreferencesViaOpenPreferencesAPI("dnsOverHttps", {
+    leaveOpen: true,
+  });
+  let win = gBrowser.selectedBrowser.contentWindow;
+  let setting = await TestUtils.waitForCondition(() =>
+    win.Preferences.getSetting("dohProviderSelect")
+  );
+
+  is(
+    setting.value,
+    FIRST_RESOLVER_VALUE,
+    "Sanity check: a provider URI maps to itself in the dropdown"
+  );
+
+  gBrowser.removeCurrentTab();
+
+  // Reopen the dialog with a TRR URI that isn't in the provider list. The
+  // dropdown must select "custom" instead of returning the raw URI (which
+  // matches no menu option).
+  Services.prefs.setStringPref(
+    TRR_URI_PREF,
+    "https://unknown-provider.example/dns-query"
+  );
+
+  await openPreferencesViaOpenPreferencesAPI("dnsOverHttps", {
+    leaveOpen: true,
+  });
+  win = gBrowser.selectedBrowser.contentWindow;
+  setting = await TestUtils.waitForCondition(() =>
+    win.Preferences.getSetting("dohProviderSelect")
+  );
+
+  is(
+    setting.value,
+    "custom",
+    "Non-provider URI must select 'custom' rather than returning the raw URI"
+  );
+
+  gBrowser.removeCurrentTab();
   await resetPrefs();
   await DoHTestUtils.loadRemoteSettingsConfig({
     providers: "",

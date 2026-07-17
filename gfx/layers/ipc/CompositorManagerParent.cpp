@@ -104,7 +104,7 @@ CompositorManagerParent::CreateSameProcessWidgetCompositorBridge(
   TimeDuration vsyncRate =
       gfxPlatform::GetPlatform()->GetGlobalVsyncDispatcher()->GetVsyncRate();
 
-  RefPtr<CompositorBridgeParent> bridge = new CompositorBridgeParent(
+  RefPtr bridge = MakeRefPtr<CompositorBridgeParent>(
       sInstance, /* aNamespace */ 0, aScale, vsyncRate, aOptions,
       aUseExternalSurfaceSize, aSurfaceSize, aInnerWindowId);
 
@@ -226,8 +226,8 @@ CompositorManagerParent::AllocPCompositorBridgeParent(
     const CompositorBridgeOptions& aOpt, const uint32_t& aNamespace) {
   switch (aOpt.type()) {
     case CompositorBridgeOptions::TContentCompositorOptions: {
-      RefPtr<ContentCompositorBridgeParent> bridge =
-          new ContentCompositorBridgeParent(this, aNamespace);
+      RefPtr bridge =
+          MakeRefPtr<ContentCompositorBridgeParent>(this, aNamespace);
       return bridge.forget();
     }
     case CompositorBridgeOptions::TWidgetCompositorOptions: {
@@ -240,7 +240,7 @@ CompositorManagerParent::AllocPCompositorBridgeParent(
       }
 
       const WidgetCompositorOptions& opt = aOpt.get_WidgetCompositorOptions();
-      RefPtr<CompositorBridgeParent> bridge = new CompositorBridgeParent(
+      RefPtr bridge = MakeRefPtr<CompositorBridgeParent>(
           this, aNamespace, opt.scale(), opt.vsyncRate(), opt.options(),
           opt.useExternalSurfaceSize(), opt.surfaceSize(), opt.innerWindowId());
       return bridge.forget();

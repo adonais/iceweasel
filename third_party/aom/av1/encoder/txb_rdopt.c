@@ -384,9 +384,12 @@ int av1_optimize_txb(const struct AV1_COMP *cpi, MACROBLOCK *x, int plane,
                          ? 7
                          : 5;
 
+  const int(*trellis_rd_mult)[2] = cpi->sf.tx_sf.use_chroma_trellis_rd_mult
+                                       ? plane_rd_mult_chroma
+                                       : plane_rd_mult;
   const int64_t rdmult = ROUND_POWER_OF_TWO(
       (int64_t)x->rdmult * (8 - sharpness) *
-          (plane_rd_mult[is_inter][plane_type] << (2 * (xd->bd - 8))),
+          (trellis_rd_mult[is_inter][plane_type] << (2 * (xd->bd - 8))),
       rshift);
 
   uint8_t levels_buf[TX_PAD_2D];

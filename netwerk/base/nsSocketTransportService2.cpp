@@ -1704,12 +1704,12 @@ void nsSocketTransportService::ClosePrivateConnections() {
   MOZ_ASSERT(IsOnCurrentThread(), "Must be called on the socket thread");
 
   for (int32_t i = mActiveList.Length() - 1; i >= 0; --i) {
-    if (mActiveList[i].mHandler->mIsPrivate) {
+    if (mActiveList[i].mHandler->mOriginAttributes.IsPrivateBrowsing()) {
       DetachSocket(mActiveList, &mActiveList[i]);
     }
   }
   for (int32_t i = mIdleList.Length() - 1; i >= 0; --i) {
-    if (mIdleList[i].mHandler->mIsPrivate) {
+    if (mIdleList[i].mHandler->mOriginAttributes.IsPrivateBrowsing()) {
       DetachSocket(mIdleList, &mIdleList[i]);
     }
   }
@@ -1781,9 +1781,6 @@ PRStatus nsSocketTransportService::DiscoverMaxCount() {
 void nsSocketTransportService::AnalyzeConnection(nsTArray<SocketInfo>* data,
                                                  SocketContext* context,
                                                  bool aActive) {
-  if (context->mHandler->mIsPrivate) {
-    return;
-  }
   PRFileDesc* aFD = context->mFD;
 
   PRFileDesc* idLayer = PR_GetIdentitiesLayer(aFD, PR_NSPR_IO_LAYER);
@@ -1836,8 +1833,15 @@ void nsSocketTransportService::AnalyzeConnection(nsTArray<SocketInfo>* data,
 
   uint64_t sent = context->mHandler->ByteCountSent();
   uint64_t received = context->mHandler->ByteCountReceived();
-  SocketInfo info = {nsCString(host),     sent, received, port, aActive,
-                     nsCString(type_desc)};
+  nsCString originAttributesSuffix;
+  context->mHandler->mOriginAttributes.CreateSuffix(originAttributesSuffix);
+  SocketInfo info = {nsCString(host),
+                     sent,
+                     received,
+                     port,
+                     aActive,
+                     nsCString(type_desc),
+                     originAttributesSuffix};
 
   data->AppendElement(info);
 }

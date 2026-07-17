@@ -324,9 +324,8 @@ void EventListenerService::NotifyPendingChanges() {
   mPendingListenerChanges.swap(changes);
   mPendingListenerChangesSet.Clear();
 
-  for (nsCOMPtr<nsIListenerChangeListener> listener :
-       mChangeListeners.EndLimitedRange()) {
-    listener->ListenersChanged(changes);
+  for (auto const& listener : mChangeListeners.EndLimitedRange()) {
+    nsCOMPtr<nsIListenerChangeListener>{listener}->ListenersChanged(changes);
   }
 }
 

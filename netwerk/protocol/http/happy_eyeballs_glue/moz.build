@@ -6,6 +6,12 @@ EXPORTS.mozilla.net += [
     "HappyEyeballs.h",
 ]
 
+UNIFIED_SOURCES += [
+    "HappyEyeballs.cpp",
+]
+
+FINAL_LIBRARY = "xul"
+
 if CONFIG["COMPILE_ENVIRONMENT"]:
     CbindgenHeader(
         "happy_eyeballs_glue.h", inputs=["/netwerk/protocol/http/happy_eyeballs_glue"]

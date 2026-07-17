@@ -96,6 +96,8 @@ suites:
         tests:
             "browser_addManyIds.js": ""
             "browser_addManyNodes.js": ""
+            "browser_bounds.js": ""
+            "browser_displayContentsBounds.js": ""
             "browser_reflowPseudoelements.js": ""
             "browser_removeManySpellingErrors.js": ""
             "browser_implicitRoleARIAExpanded.js": ""

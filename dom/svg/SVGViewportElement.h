@@ -10,7 +10,6 @@
 #include "SVGAnimatedPreserveAspectRatio.h"
 #include "SVGAnimatedViewBox.h"
 #include "SVGGraphicsElement.h"
-#include "SVGPoint.h"
 #include "SVGPreserveAspectRatio.h"
 #include "nsIContentInlines.h"
 
@@ -31,7 +30,7 @@ class SVGViewportElement : public SVGGraphicsElement {
 
  protected:
   explicit SVGViewportElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   ~SVGViewportElement() = default;
 
  public:

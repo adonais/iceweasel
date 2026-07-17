@@ -245,13 +245,6 @@ def test_push_to_try_routing(
 
         push._is_hg_try.cache_clear()
 
-        is_hg_try = "ssh://hg.mozilla.org/try" in url
-        if push_to_vcs or not is_hg_try:
-            mock_vcs.try_commit.return_value.__enter__ = MagicMock(
-                return_value="abc123"
-            )
-            mock_vcs.try_commit.return_value.__exit__ = MagicMock(return_value=False)
-
         push.push_to_try(
             "fuzzy",
             "try: test",
@@ -262,18 +255,7 @@ def test_push_to_try_routing(
 
         if expect_direct_push:
             mock_lando.assert_not_called()
-            if is_hg_try:
-                # For hg remotes, push_to_try is called
-                mock_vcs.push_to_try.assert_called_once()
-            else:
-                # For non-hg remotes, try_commit and push are called
-                mock_vcs.try_commit.assert_called_once()
-                mock_vcs.push.assert_called_once_with(
-                    url,
-                    ref="abc123",
-                    dest_branch="feature-branch",
-                    force=True,
-                )
+            mock_vcs.push_to_try.assert_called_once()
         else:
             mock_lando.assert_called_once()
             mock_vcs.push_to_try.assert_not_called()

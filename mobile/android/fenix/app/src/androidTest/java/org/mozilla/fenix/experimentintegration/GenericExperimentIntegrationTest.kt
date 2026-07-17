@@ -9,7 +9,7 @@ import org.junit.After
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.HomeActivityTestRule
 import org.mozilla.fenix.helpers.TestHelper
 import org.mozilla.fenix.ui.robots.homeScreen
@@ -28,12 +28,12 @@ class GenericExperimentIntegrationTest {
 
     @Before
     fun setUp() {
-        TestHelper.appContext.settings().showSecretDebugMenuThisSession = true
+        TestHelper.appContext.components.settings.showSecretDebugMenuThisSession = true
     }
 
     @After
     fun tearDown() {
-        TestHelper.appContext.settings().showSecretDebugMenuThisSession = false
+        TestHelper.appContext.components.settings.showSecretDebugMenuThisSession = false
     }
 
     @Test

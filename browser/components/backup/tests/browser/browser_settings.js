@@ -175,19 +175,6 @@ add_task(async function test_disable_backup_encryption_confirm() {
       "Backup reason is set"
     );
 
-    let legacyEvents = TelemetryTestUtils.getEvents(
-      {
-        category: "browser.backup",
-        method: "password_removed",
-        object: "BackupService",
-      },
-      { process: "parent" }
-    );
-    Assert.equal(
-      legacyEvents.length,
-      1,
-      "Found the password_removed legacy event."
-    );
     let events = Glean.browserBackup.passwordRemoved.testGetValue();
     Assert.equal(events.length, 1, "Found the passwordRemoved Glean event.");
 
@@ -281,6 +268,17 @@ add_task(async function test_restore_from_backup() {
     };
     await restoreFromBackup.updateComplete;
 
+    let bs = BackupService.get();
+    let originalState = bs.state;
+    sandbox.stub(bs, "state").get(() => ({
+      ...originalState,
+      backupFileToRestore: mockBackupFilePath,
+      backupFileInfo: {
+        date: new Date(),
+        isEncrypted: true,
+      },
+    }));
+
     // Set password for file
     restoreFromBackup.passwordInput.value = "h-*@Vfge3_hGxdpwqr@w";
 
@@ -312,11 +310,6 @@ add_task(async function test_restore_from_backup() {
     restoreFromBackup.confirmButtonEl.click();
 
     await restorePromise.then(e => {
-      Assert.equal(
-        e.detail.backupFile,
-        mockBackupFile.path,
-        "Event should contain the file path"
-      );
       Assert.equal(
         e.detail.backupPassword,
         "h-*@Vfge3_hGxdpwqr@w",
@@ -431,19 +424,13 @@ add_task(async function test_last_backup_info_and_location() {
     registerCleanupFunction(async function () {
       try {
         await IOUtils.remove(TEST_NEW_BACKUP_PARENT_PATH, { recursive: true });
-      } catch (e) {
+      } catch (_e) {
         Assert.ok(false, "Had some trouble cleaning up the backup directory");
       }
     });
 
-    stateUpdated = BrowserTestUtils.waitForEvent(
-      bs,
-      "BackupService:StateUpdate",
-      false,
-      () => {
-        return bs.state.backupDirPath?.startsWith(TEST_NEW_BACKUP_PARENT_PATH);
-      }
-    );
+    sandbox.stub(bs, "deleteLastBackup").resolves();
+
     let filePickerShownPromise = new Promise(resolve => {
       MockFilePicker.showCallback = async () => {
         Assert.ok(true, "Filepicker shown");
@@ -453,7 +440,6 @@ add_task(async function test_last_backup_info_and_location() {
     });
     MockFilePicker.returnValue = MockFilePicker.returnOK;
 
-    // Wait for the location input to be rendered
     await BrowserTestUtils.waitForMutationCondition(
       settings.shadowRoot,
       { childList: true, subtree: true },

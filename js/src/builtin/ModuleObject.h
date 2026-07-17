@@ -309,13 +309,11 @@ class ModuleNamespaceObject : public ProxyObject {
   static const ProxyHandler proxyHandler;
 };
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 // https://tc39.es/proposal-source-phase-imports/#sec-properties-of-the-%abstractmodulesource%-intrinsic-object
 class AbstractModuleSourceObject : public NativeObject {
  public:
   static const JSClass class_;
 };
-#endif
 
 // Value types of [[Status]] in a Cyclic Module Record
 // https://tc39.es/ecma262/#table-cyclic-module-fields
@@ -405,10 +403,8 @@ class ModuleObject : public NativeObject {
 #ifdef DEBUG
     PreloadSlot,
 #endif
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     // Module Source object for source phase imports. Otherwise `undefined`.
     ModuleSourceSlot,
-#endif
     SlotCount
   };
 
@@ -423,10 +419,8 @@ class ModuleObject : public NativeObject {
 
   // Initialize the slots on this object that are dependent on the script.
   void initScriptSlots(HandleScript script);
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   void initModuleSourceSlot(HandleObject moduleSource);
   void initScriptSourceObject(ScriptSourceObject* sso);
-#endif
 
   void setInitialEnvironment(
       Handle<ModuleEnvironmentObject*> initialEnvironment);
@@ -448,10 +442,8 @@ class ModuleObject : public NativeObject {
   ModuleEnvironmentObject& initialEnvironment() const;
   ModuleEnvironmentObject* environment() const;
   ModuleNamespaceObject* namespace_();
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   JSObject* moduleSource() const;
   bool isSourcePhaseModule() const { return moduleSource() != nullptr; }
-#endif
   ModuleStatus status() const;
   mozilla::Maybe<uint32_t> maybeDfsAncestorIndex() const;
   uint32_t dfsAncestorIndex() const;
@@ -515,14 +507,13 @@ class ModuleObject : public NativeObject {
   static ModuleNamespaceObject* createNamespace(
       JSContext* cx, Handle<ModuleObject*> self,
       MutableHandle<UniquePtr<ExportNameVector>> exports);
+  void clearNamespaceOnFailure();
 
   static bool createEnvironment(JSContext* cx, Handle<ModuleObject*> self);
   static bool createSyntheticEnvironment(JSContext* cx,
                                          Handle<ModuleObject*> self,
                                          JS::HandleVector<Value> values);
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   static bool createWasmEnvironment(JSContext* cx, Handle<ModuleObject*> self);
-#endif
 
   void initAsyncSlots(JSContext* cx, bool hasTopLevelAwait,
                       Handle<ListObject*> asyncParentModules);
@@ -614,12 +605,8 @@ class GraphLoadingStateRecordObject : public NativeObject {
 JSObject* GetOrCreateModuleMetaObject(JSContext* cx, HandleObject module);
 
 JSObject* StartDynamicModuleImport(JSContext* cx, HandleScript script,
-                                   HandleValue specifier, HandleValue options);
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-JSObject* StartDynamicModuleImportSource(JSContext* cx, HandleScript script,
-                                         HandleValue specifier);
-#endif
+                                   HandleValue specifier, HandleValue options,
+                                   ImportPhase phase);
 
 }  // namespace js
 

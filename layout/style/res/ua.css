@@ -180,7 +180,6 @@
   cursor: text;
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("layout.css.always_underline_links") {
   :any-link {
     text-decoration: underline !important;
@@ -535,7 +534,6 @@ parsererror|sourcetext {
 }
 
 /* Avoid exposing these keyframe names when view transitions are disabled */
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("dom.viewTransitions.enabled") {
   /* Default cross-fade transition */
   @keyframes -ua-view-transition-fade-out {

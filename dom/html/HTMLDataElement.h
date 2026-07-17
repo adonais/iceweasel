@@ -12,8 +12,7 @@ namespace mozilla::dom {
 
 class HTMLDataElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLDataElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLDataElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   // HTMLDataElement WebIDL
   void GetValue(DOMString& aValue) { GetHTMLAttr(nsGkAtoms::value, aValue); }

@@ -16,8 +16,7 @@ class OwningElementOrText;
 
 class HTMLSlotElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLSlotElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLSlotElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   NS_IMPL_FROMNODE_HTML_WITH_TAG(HTMLSlotElement, slot)
 
   NS_DECL_ISUPPORTS_INHERITED

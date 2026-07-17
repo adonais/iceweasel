@@ -680,6 +680,35 @@ skip script test262/staging/top-level-await/tla-hang-entry.js
 # Missing localizations for Before Hijri era: <https://unicode-org.atlassian.net/browse/CLDR-19320>
 skip script test262/intl402/DateTimeFormat/prototype/formatToParts/era.js
 
+# Bug 2046165 (Source phase imports)
+skip script test262/language/module-code/ambiguous-export-bindings/namespace-unambiguous-if-import-source-and-export.js
+skip script test262/language/module-code/source-phase-import/reexport-source-binding-namespace-get.js
+skip script test262/language/module-code/source-phase-import/reexport-source-binding-named-import.js
+
+# Bug 2045859 (Error stack accessor proposal)
+skip script test262/staging/sm/Error/constructor-proto.js
+skip script test262/staging/sm/Error/prototype.js
+skip script test262/staging/sm/Error/prototype-properties.js
+skip script test262/built-ins/Error/prototype/stack/setter-non-writable-stack.js
+skip script test262/built-ins/Error/prototype/stack/setter-proxy-trap-throws.js
+skip script test262/built-ins/Error/prototype/stack/setter-existing-own-property.js
+skip script test262/built-ins/Error/prototype/stack/getter-error-as-prototype.js
+skip script test262/built-ins/Error/prototype/stack/getter-no-error-data.js
+skip script test262/built-ins/Error/prototype/stack/setter-non-string-value.js
+skip script test262/built-ins/Error/prototype/stack/setter-receiver-is-prototype.js
+skip script test262/built-ins/Error/prototype/stack/setter-proxy-wrapping-prototype.js
+skip script test262/built-ins/Error/prototype/stack/setter-cross-realm.js
+skip script test262/built-ins/Error/prototype/stack/setter-own-accessor.js
+skip script test262/built-ins/Error/prototype/stack/setter-via-assignment.js
+skip script test262/built-ins/Error/prototype/stack/setter-creates-own-property.js
+skip script test262/built-ins/Error/prototype/stack/setter-proxy-trap-rejects.js
+skip script test262/built-ins/Error/prototype/stack/setter-receiver-is-proxy.js
+skip script test262/built-ins/Error/prototype/stack/getter-receiver-is-proxy.js
+skip script test262/built-ins/Error/prototype/stack/getter-error-prototype.js
+skip script test262/built-ins/Error/prototype/stack/getter-cross-realm.js
+
+# Bug 2046890
+skip script test262/intl402/FallbackSymbol/per-realm.js
 
 ###########################################################
 # Tests disabled due to issues in test262 importer script #

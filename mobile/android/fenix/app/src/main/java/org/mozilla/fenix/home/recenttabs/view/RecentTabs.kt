@@ -76,7 +76,7 @@ private const val THUMBNAIL_SIZE = 108
 fun RecentTabs(
     recentTabs: List<RecentTab>,
     menuItems: List<RecentTabMenuItem>,
-    backgroundColor: Color = MaterialTheme.colorScheme.surfaceContainerLowest,
+    backgroundColor: Color = MaterialTheme.colorScheme.surfaceBright,
     onRecentTabClick: (String) -> Unit = {},
 ) {
     Column(

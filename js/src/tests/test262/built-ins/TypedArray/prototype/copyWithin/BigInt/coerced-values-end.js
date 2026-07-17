@@ -74,6 +74,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
     ),
     'float -2.5 value coerced to integer -2'
   );
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

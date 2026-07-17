@@ -4,13 +4,14 @@
 
 package org.mozilla.apilint
 
-import com.android.build.gradle.LibraryExtension
+import com.android.build.api.variant.LibraryAndroidComponentsExtension
 import org.gradle.api.Plugin
 import org.gradle.api.Project
 import org.gradle.api.tasks.Copy
+import org.gradle.api.tasks.TaskProvider
+import org.gradle.api.tasks.compile.JavaCompile
 
 class ApiLintPlugin : Plugin<Project> {
-    @Suppress("DEPRECATION")
     override fun apply(project: Project) {
         val extension = project.extensions.create("apiLint", ApiLintPluginExtension::class.java)
 
@@ -32,40 +33,52 @@ class ApiLintPlugin : Plugin<Project> {
                 }
             }
 
-            val libraryExtension = project.extensions.getByType(LibraryExtension::class.java)
-            libraryExtension.libraryVariants.configureEach { variant ->
-                val name = variant.name.replaceFirstChar { c -> c.titlecase() }
+            // The compile classpath is taken from the variant's javac task, but AGP creates that
+            // task after the onVariants callbacks run, so we defer wiring it until afterEvaluate.
+            val apiGenerateTasks = mutableMapOf<String, TaskProvider<ApiCompatLintTask>>()
 
-                val destDirProvider = variant.javaCompileProvider.flatMap { it.destinationDirectory }
-                val apiFileProvider = destDirProvider.flatMap { dir -> extension.apiOutputFileName.map { dir.file(it) } }
-                val jsonResultFileProvider = destDirProvider.flatMap { dir -> extension.jsonResultFileName.map { dir.file(it) } }
+            val androidComponents =
+                project.extensions.getByType(LibraryAndroidComponentsExtension::class.java)
+            androidComponents.onVariants(androidComponents.selector().all()) { variant ->
+                val variantName = variant.name
+                val name = variantName.replaceFirstChar { c -> c.titlecase() }
+
+                // The generated API files used to live in the variant's javac output directory.
+                // The new variant API does not expose that directory at configuration time, so we
+                // write them to a dedicated, variant-scoped directory instead.
+                val outputDir = project.layout.buildDirectory.dir("apilint/${variantName}")
+                val apiFileProvider = outputDir.flatMap { dir -> extension.apiOutputFileName.map { dir.file(it) } }
+                val jsonResultFileProvider =
+                    outputDir.flatMap { dir -> extension.jsonResultFileName.map { dir.file(it) } }
                 val currentApiFileProvider = project.layout.projectDirectory.file(extension.currentApiRelativeFilePath)
-                val apiMapFileProvider = destDirProvider.flatMap { dir ->
+                val apiMapFileProvider = outputDir.flatMap { dir ->
                     extension.apiOutputFileName.map { dir.file("${it}.map") }
                 }
+
+                // sources.java.all covers the static sources plus the AGP-generated BuildConfig/AIDL
+                // sources (replacing the legacy sourceSets/generateBuildConfig/aidlCompile accessors).
+                // Generated non-API types (BuildConfig, R) are filtered by skipClassesRegex/exclude below.
+                val javaSources = variant.sources.java ?: return@onVariants
+                val sourceDirs = javaSources.all
 
                 val apiGenerate = project.tasks.register("apiGenerate${name}", ApiCompatLintTask::class.java) { task ->
                     task.description = "Generates API file for build variant ${name}"
                     task.dependsOn(copyDocletJarResource)
-                    task.classpath = project.files(variant.javaCompileProvider.map { it.classpath })
 
-                    task.setSource(variant.sourceSets.map { it.javaDirectories })
+                    task.setSource(sourceDirs)
                     task.exclude("**/R.java")
                     task.include("**/**.java")
 
-                    task.sourcePath.from(
-                        variant.sourceSets.flatMap { it.javaDirectories },
-                        variant.generateBuildConfigProvider.flatMap { it.sourceOutputDir },
-                        variant.aidlCompileProvider.flatMap { it.sourceOutputDir }
-                    )
+                    task.sourcePath.from(sourceDirs)
 
                     task.rootDir.set(project.rootDir.absolutePath)
                     task.outputFile.set(apiFileProvider)
                     task.packageFilter.set(extension.packageFilter)
                     task.skipClassesRegex.set(extension.skipClassesRegex)
-                    task.javadocDestinationDir.set(project.layout.buildDirectory.dir("tmp/javadoc/${variant.baseName}"))
+                    task.javadocDestinationDir.set(project.layout.buildDirectory.dir("tmp/javadoc/${variantName}"))
                     task.docletPath.set(docletJarFile)
                 }
+                apiGenerateTasks[variantName] = apiGenerate
 
                 val apiLintSingle = project.tasks.register("apiLintSingle${name}", PythonExec::class.java) { task ->
                     task.description = "Runs API lint checks for variant ${name}"
@@ -188,6 +201,20 @@ class ApiLintPlugin : Plugin<Project> {
                     task.from(apiFileProvider)
                     task.into(currentApiFileProvider.map { it.asFile.parentFile })
                     task.rename { currentApiFileProvider.get().asFile.name }
+                }
+            }
+
+            // AGP creates the variant javac tasks after onVariants runs, so wire each
+            // apiGenerate task's classpath from the corresponding javac task here.
+            project.afterEvaluate {
+                apiGenerateTasks.forEach { (variantName, apiGenerate) ->
+                    val name = variantName.replaceFirstChar { c -> c.titlecase() }
+                    apiGenerate.configure { task ->
+                        task.classpath = project.files(
+                            project.tasks.named("compile${name}JavaWithJavac", JavaCompile::class.java)
+                                .map { it.classpath },
+                        )
+                    }
                 }
             }
         }

@@ -469,7 +469,7 @@ void VRManagerChild::FireDOMVRDisplayPresentChangeEvent(uint32_t aDisplayID) {
 
   if (!IsPresenting()) {
     sMostRecentFrameEnd = TimeStamp();
-    sAverageFrameInterval = 0;
+    sAverageFrameInterval = nullptr;
   }
 }
 

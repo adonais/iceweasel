@@ -2,6 +2,7 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "FrameMetrics.h"
 #include "js/Array.h"  // JS::GetArrayLength, JS::IsArrayObject
 #include "js/JSON.h"
 #include "js/Object.h"
@@ -218,11 +219,11 @@ void SessionStoreUtils::RestoreScrollPosition(
   if (nsCOMPtr<Document> doc = aWindow.GetExtantDoc()) {
     if (nsPresContext* presContext = doc->GetPresContext()) {
       if (presContext->IsRootContentDocumentCrossProcess()) {
-        // Use eMainThread so this takes precedence over session history
+        // Use MainThread so this takes precedence over session history
         // (ScrollFrameHelper::ScrollToRestoredPosition()).
         presContext->PresShell()->ScrollToVisual(
             CSSPoint::ToAppUnits(CSSPoint(pos_X, pos_Y)),
-            layers::FrameMetrics::eMainThread, ScrollMode::Instant);
+            layers::ScrollOffsetUpdateType::MainThread, ScrollMode::Instant);
       }
     }
   }

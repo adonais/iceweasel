@@ -38,6 +38,7 @@ using mozilla::dom::Animation;
 using mozilla::dom::AnimationPlayState;
 using mozilla::dom::CSSAnimation;
 using mozilla::dom::Element;
+using mozilla::dom::InactiveTimeline;
 using mozilla::dom::KeyframeEffect;
 using mozilla::dom::MutationObservers;
 using mozilla::dom::ScrollTimeline;
@@ -86,8 +87,10 @@ class MOZ_STACK_CLASS ServoCSSAnimationBuilder final {
         aElement, *mComputedStyle, aName, aTimingFunction, aKeyframes);
   }
   void SetKeyframes(KeyframeEffect& aEffect, nsTArray<Keyframe>&& aKeyframes,
-                    const dom::AnimationTimeline* aTimeline) {
-    aEffect.SetKeyframes(std::move(aKeyframes), mComputedStyle, aTimeline);
+                    const dom::AnimationTimeline* aTimeline,
+                    const dom::AnimationRange& aRange) {
+    aEffect.SetKeyframes(std::move(aKeyframes), mComputedStyle, aTimeline,
+                         &aRange);
   }
 
   // Currently all the animation building code in this file is based on
@@ -214,7 +217,7 @@ static void UpdateOldAnimationPropertiesWithNew(
     if (KeyframeEffect* oldKeyframeEffect = oldEffect->AsKeyframeEffect()) {
       if (~aOverriddenProperties & CSSAnimationProperties::Keyframes) {
         aBuilder.SetKeyframes(*oldKeyframeEffect, std::move(aNewKeyframes),
-                              aTimeline);
+                              aTimeline, aTimelineRange);
       }
 
       if (~aOverriddenProperties & CSSAnimationProperties::Composition) {
@@ -227,8 +230,10 @@ static void UpdateOldAnimationPropertiesWithNew(
   // Checking pointers should be enough. If both are scroll-timeline, we reuse
   // the scroll-timeline object if their scrollers and axes are the same.
   if (aOld.GetTimeline() != aTimeline) {
-    aOld.SetTimeline(aTimeline, aTimelineName);
-    animationChanged = true;
+    // See `UpdateNamedTimelineAnimation` as to why `SetTimeline` isn't used.
+    animationChanged =
+        animationChanged || aOld.SetTimelineNoUpdate(aTimeline, aTimelineName,
+                                                     Animation::FromJS::No);
   }
 
   if (aOld.GetTimelineRange() != aTimelineRange) {
@@ -301,13 +306,19 @@ static already_AddRefed<dom::AnimationTimeline> GetNamedProgressTimeline(
     }
 
     if (auto scopedTimeline = timelineManager->GetScopedTimeline(e, aName)) {
-      return already_AddRefed{scopedTimeline->take()};
+      auto* result = scopedTimeline->take();
+      if (!result) {
+        // https://drafts.csswg.org/scroll-animations-1/#timeline-scoping
+        return MakeAndAddRef<InactiveTimeline>(aDocument);
+      }
+      return already_AddRefed{result};
     }
   }
 
   // If we cannot find a matched scroll-timeline-name, this animation is not
   // associated with a timeline.
-  // https://drafts.csswg.org/css-animations-2/#valdef-animation-timeline-custom-ident
+  // TODO(dshin): This is actually not spec compliant.. See
+  // https://github.com/w3c/csswg-drafts/issues/13955
   return nullptr;
 }
 
@@ -318,10 +329,11 @@ static already_AddRefed<dom::AnimationTimeline> GetTimeline(
     case StyleAnimationTimeline::Tag::Timeline: {
       // Check scroll-timeline-name property or view-timeline-property.
       nsAtom* name = aStyleTimeline.AsTimeline().value.AsAtom();
-      return name != nsGkAtoms::_empty
-                 ? GetNamedProgressTimeline(aPresContext->Document(), aTarget,
-                                            name)
-                 : nullptr;
+      if (name == nsGkAtoms::_empty) {
+        // `animation-timeline: none`.
+        return nullptr;
+      }
+      return GetNamedProgressTimeline(aPresContext->Document(), aTarget, name);
     }
     case StyleAnimationTimeline::Tag::Scroll: {
       const auto& scroll = aStyleTimeline.AsScroll();
@@ -424,14 +436,14 @@ static already_AddRefed<CSSAnimation> BuildAnimation(
       OwningAnimationTarget(aTarget.mElement, aTarget.mPseudoRequest),
       std::move(timing), effectOptions);
 
-  aBuilder.SetKeyframes(*effect, std::move(keyframes), timeline);
+  aBuilder.SetKeyframes(*effect, std::move(keyframes), timeline, range);
 
   auto animation = MakeRefPtr<CSSAnimation>(
       aPresContext->Document()->GetScopeObject(), animationName);
   animation->SetOwningElement(
       OwningElementRef(*aTarget.mElement, aTarget.mPseudoRequest));
 
-  animation->SetTimelineNoUpdate(timeline, timelineName);
+  animation->SetTimelineNoUpdate(timeline, timelineName, Animation::FromJS::No);
   animation->SetEffectNoUpdate(effect);
   animation->SetTimelineRangeNoUpdate(std::move(range));
 
@@ -534,7 +546,11 @@ static void UpdateNamedTimelineAnimation(dom::Document* aDocument,
   if (oldTimeline == newTimeline) {
     return;
   }
-  aAnimation->SetTimeline(newTimeline, aTimelineName);
+  // No need to call `SetTimeline` and force compositor animation update -
+  // timeline changing shouldn't cause change in animation state or playback
+  // rate.
+  aAnimation->SetTimelineNoUpdate(newTimeline, aTimelineName,
+                                  Animation::FromJS::No);
 }
 
 #ifdef DEBUG

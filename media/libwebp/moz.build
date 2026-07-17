@@ -14,9 +14,7 @@ EXPORTS.webp += [
     'src/webp/types.h',
 ]
 
-# Note this does not enable threaded decoding, callers into libwebp still have
-# to ask for it. This is necessary for locks even without threaded decoding.
-DEFINES['WEBP_USE_THREAD'] = 1;
+include('/media/libwebp/libwebp-config.mozbuild')
 
 DIRS += [
     'sharpyuv',

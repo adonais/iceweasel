@@ -854,7 +854,17 @@ class AccessibleWalkerActor extends Actor {
 
     const shown = highlighter.show(
       { rawNode },
-      { ...options, ...bounds, name, role, audit, isXUL: this.isXUL }
+      {
+        ...options,
+        ...bounds,
+        name,
+        role:
+          role === "heading"
+            ? `${role} (level ${accessible.attributes.level})`
+            : role,
+        audit,
+        isXUL: this.isXUL,
+      }
     );
     this._highlightingAccessible = null;
 

@@ -758,17 +758,16 @@ bool JitcodeRegionEntry::WriteRun(CompactBufferWriter& writer,
 
     // Spew the bytecode in these ranges.
     if (curBytecodeOffset < nextBytecodeOffset) {
-      JitSpewStart(JitSpew_Profiling, "      OPS: ");
+      AutoJitSpewMessage msg(JitSpew_Profiling, "      OPS: ");
       uint32_t curBc = curBytecodeOffset;
       while (curBc < nextBytecodeOffset) {
         jsbytecode* pc = entry[i].tree->script()->offsetToPC(curBc);
 #ifdef JS_JITSPEW
         JSOp op = JSOp(*pc);
-        JitSpewCont(JitSpew_Profiling, "%s ", CodeName(op));
+        msg.append("%s ", CodeName(op));
 #endif
         curBc += GetBytecodeLength(pc);
       }
-      JitSpewFin(JitSpew_Profiling);
     }
     spewer.spewAndAdvance("      ");
 

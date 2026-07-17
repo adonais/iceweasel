@@ -226,6 +226,11 @@ void MIDIAccess::Notify(const MIDIPortList& aEvent) {
   }
   mAccessPromise->MaybeResolve(this);
   mAccessPromise = nullptr;
+  if (nsPIDOMWindowInner* window = GetOwnerWindow()) {
+    if (Document* doc = window->GetExtantDoc()) {
+      doc->SetUseCounter(eUseCounter_custom_MIDIAccessGranted);
+    }
+  }
 }
 
 JSObject* MIDIAccess::WrapObject(JSContext* aCx,

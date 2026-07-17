@@ -76,7 +76,7 @@ TEST(UrlClassifierProtocolParser, UpdateWait)
   minWaitDuration->set_nanos(1 * 1000000000);
 
   std::string s;
-  response.SerializeToString(&s);
+  (void)response.SerializeToString(&s);
 
   DumpBinary(nsCString(s.c_str(), s.length()));
 
@@ -114,7 +114,7 @@ TEST(UrlClassifierProtocolParser, SingleValueEncoding)
   minWaitDuration->set_nanos(1 * 1000000000);
 
   std::string s;
-  response.SerializeToString(&s);
+  (void)response.SerializeToString(&s);
 
   // Feed data to the protocol parser.
   ProtocolParser* p = new ProtocolParserProtobuf();

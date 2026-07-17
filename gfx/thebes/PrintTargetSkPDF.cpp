@@ -52,7 +52,7 @@ Maybe<SkEncodedInfo::Color> SurfaceFormatToSkEncodedColor(
 // Minimal SkCodec subclass used to decode jpeg data for skia.
 class JpegSkCodec final : public SkCodec {
  public:
-  static std::unique_ptr<SkCodec> Make(sk_sp<SkData> aData) {
+  static std::unique_ptr<SkCodec> Make(sk_sp<const SkData> aData) {
     RefPtr<SourceBuffer> buffer = MakeRefPtr<SourceBuffer>();
     buffer->AdoptData(
         const_cast<char*>(reinterpret_cast<const char*>(aData->bytes())),
@@ -74,10 +74,7 @@ class JpegSkCodec final : public SkCodec {
       return nullptr;
     }
     auto alpha = SkEncodedInfo::kOpaque_Alpha;  // JPEG is always opaque
-    auto info =
-        SkEncodedInfo::Make(size.width, size.height, *color, alpha,
-                            /* bitsPerComponent= */ 8, /* colorDepth= */ 8,
-                            nullptr, skhdr::Metadata{});
+    auto info = SkEncodedInfo::Make(size.width, size.height, *color, alpha, 8);
     return std::unique_ptr<JpegSkCodec>(
         new JpegSkCodec(std::move(info), std::move(aData), std::move(surface)));
   }
@@ -94,18 +91,18 @@ class JpegSkCodec final : public SkCodec {
   }
 
  private:
-  JpegSkCodec(SkEncodedInfo&& aInfo, sk_sp<SkData> aData,
+  JpegSkCodec(SkEncodedInfo&& aInfo, sk_sp<const SkData> aData,
               RefPtr<gfx::SourceSurface> aSurface)
       : SkCodec(std::move(aInfo), skcms_PixelFormat_RGB_888,
                 SkMemoryStream::Make(aData), kTopLeft_SkEncodedOrigin),
         mData(std::move(aData)),
         mSurface(std::move(aSurface)) {}
 
-  sk_sp<SkData> mData;
+  sk_sp<const SkData> mData;
   RefPtr<gfx::SourceSurface> mSurface;
 };
 
-static std::unique_ptr<SkCodec> DecodeJpeg(sk_sp<SkData> aData) {
+static std::unique_ptr<SkCodec> DecodeJpeg(sk_sp<const SkData> aData) {
   return JpegSkCodec::Make(std::move(aData));
 }
 

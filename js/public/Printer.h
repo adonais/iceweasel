@@ -406,7 +406,10 @@ class JS_PUBLIC_API LSprinter final : public GenericPrinter {
 
  public:
   explicit LSprinter(LifoAlloc* lifoAlloc);
-  ~LSprinter();
+
+  // This LSprinter might be allocated as part of the same LifoAlloc, so we
+  // should not expect the destructor to be called.
+  ~LSprinter() = default;
 
   // Copy the content of the chunks into another printer, such that we can
   // flush the content of this printer to a file.

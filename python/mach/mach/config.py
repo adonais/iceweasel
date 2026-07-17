@@ -247,7 +247,7 @@ class ConfigSettings(collections.abc.Mapping):
             if "choices" in meta:
                 choices = meta["choices"]
                 if callable(choices):
-                    choices = choices()
+                    choices = tuple(choices())
                     meta["choices"] = choices
                 if value not in choices:
                     raise ValueError(

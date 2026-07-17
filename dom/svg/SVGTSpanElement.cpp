@@ -19,7 +19,7 @@ JSObject* SVGTSpanElement::WrapNode(JSContext* aCx,
 // Implementation
 
 SVGTSpanElement::SVGTSpanElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGTSpanElementBase(std::move(aNodeInfo)) {}
 
 SVGElement::EnumAttributesInfo SVGTSpanElement::GetEnumInfo() {

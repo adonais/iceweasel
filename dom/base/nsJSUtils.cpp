@@ -156,7 +156,8 @@ void nsJSUtils::ResetTimeZone() { JS::ResetTimeZone(); }
 bool nsJSUtils::DumpEnabled() {
 #ifdef FUZZING
   static bool mozFuzzDebug = !!PR_GetEnv("MOZ_FUZZ_DEBUG");
-  return mozFuzzDebug;
+  // We also want to dump in automation so mochitests can run.
+  return mozFuzzDebug || xpc::IsInAutomation();
 #endif
 
 #if defined(DEBUG) || defined(MOZ_ENABLE_JS_DUMP)

@@ -14,20 +14,20 @@
 
 namespace mozilla {
 
-#define CLOG(msg, ...)                                                      \
-  MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug,                               \
-          ("MFMediaEngineChild=%p, Id=%" PRId64 ", " msg, this, this->Id(), \
-           ##__VA_ARGS__))
+#define CLOG(msg, ...)                                              \
+  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Debug,                   \
+              "MFMediaEngineChild={}, Id={}, " msg, fmt::ptr(this), \
+              this->Id(), ##__VA_ARGS__)
 
-#define WLOG(msg, ...)                                                        \
-  MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug,                                 \
-          ("MFMediaEngineWrapper=%p, Id=%" PRId64 ", " msg, this, this->Id(), \
-           ##__VA_ARGS__))
+#define WLOG(msg, ...)                                                \
+  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Debug,                     \
+              "MFMediaEngineWrapper={}, Id={}, " msg, fmt::ptr(this), \
+              this->Id(), ##__VA_ARGS__)
 
-#define WLOGV(msg, ...)                                                       \
-  MOZ_LOG(gMFMediaEngineLog, LogLevel::Verbose,                               \
-          ("MFMediaEngineWrapper=%p, Id=%" PRId64 ", " msg, this, this->Id(), \
-           ##__VA_ARGS__))
+#define WLOGV(msg, ...)                                               \
+  MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Verbose,                   \
+              "MFMediaEngineWrapper={}, Id={}, " msg, fmt::ptr(this), \
+              this->Id(), ##__VA_ARGS__)
 
 using media::TimeUnit;
 
@@ -54,7 +54,7 @@ RefPtr<GenericNonExclusivePromise> MFMediaEngineChild::Init(
                                                        __func__);
   }
 
-  CLOG("Init, hasAudio=%d, hasVideo=%d, encrypted=%d", aInfo.HasAudio(),
+  CLOG("Init, hasAudio={}, hasVideo={}, encrypted={}", aInfo.HasAudio(),
        aInfo.HasVideo(), aInfo.IsEncrypted());
 
   MOZ_ASSERT(mMediaEngineId == 0);
@@ -67,14 +67,12 @@ RefPtr<GenericNonExclusivePromise> MFMediaEngineChild::Init(
             RefPtr<RemoteMediaManagerChild> manager =
                 RemoteMediaManagerChild::GetSingleton(
                     RemoteMediaIn::UtilityProcess_MFMediaEngineCDM);
-            if (!manager || !manager->CanSend()) {
+            if (!manager || !manager->CanSend() ||
+                !manager->SendPMFMediaEngineConstructor(this)) {
               CLOG("Manager not exists or can't send");
               mInitPromiseHolder.RejectIfExists(NS_ERROR_FAILURE, __func__);
               return;
             }
-
-            mIPDLSelfRef = this;
-            (void)manager->SendPMFMediaEngineConstructor(this);
 
             MediaInfoIPDL mediaInfo(
                 info.HasAudio() ? Some(info.mAudio) : Nothing(),
@@ -226,8 +224,7 @@ mozilla::ipc::IPCResult MFMediaEngineChild::RecvUpdateStatisticData(
   const uint64_t newDroppedSinkFrames = GetUpdatedDroppedFrames(aData);
   mFrameStats->Accumulate({0, 0, newRenderedFrames - currentRenderedFrames, 0,
                            newDroppedSinkFrames - currentDroppedSinkFrames, 0});
-  CLOG("Update statictis data (rendered %" PRIu64 " -> %" PRIu64
-       ", dropped %" PRIu64 " -> %" PRIu64 ")",
+  CLOG("Update statictis data (rendered {} -> {}, dropped {} -> {})",
        currentRenderedFrames, mFrameStats->GetPresentedFrames(),
        currentDroppedSinkFrames, mFrameStats->GetDroppedSinkFrames());
   MOZ_ASSERT(mFrameStats->GetPresentedFrames() >= currentRenderedFrames);
@@ -291,13 +288,12 @@ void MFMediaEngineChild::OwnerDestroyed() {
                              }));
 }
 
-void MFMediaEngineChild::IPDLActorDestroyed() {
+void MFMediaEngineChild::ActorDestroy(ActorDestroyReason aWhy) {
   AssertOnManagerThread();
   if (!mShutdown && mOwner) {
     CLOG("Destroyed actor without shutdown, remote process has crashed!");
     mOwner->NotifyError(NS_ERROR_DOM_MEDIA_REMOTE_CRASHED_MF_CDM_ERR);
   }
-  mIPDLSelfRef = nullptr;
 }
 
 void MFMediaEngineChild::Shutdown() {
@@ -344,7 +340,7 @@ void MFMediaEngineWrapper::Pause() {
 void MFMediaEngineWrapper::Seek(const TimeUnit& aTargetTime) {
   auto currentTimeInSecond = aTargetTime.ToSeconds();
   mCurrentTimeInSecond = currentTimeInSecond;
-  WLOG("Seek to %f", currentTimeInSecond);
+  WLOG("Seek to {}", currentTimeInSecond);
   MOZ_ASSERT(IsInited());
   (void)ManagerThread()->Dispatch(NS_NewRunnableFunction(
       "MFMediaEngineWrapper::Seek", [engine = mEngine, currentTimeInSecond] {
@@ -360,7 +356,7 @@ void MFMediaEngineWrapper::Shutdown() {
 }
 
 void MFMediaEngineWrapper::SetPlaybackRate(double aPlaybackRate) {
-  WLOG("Set playback rate %f", aPlaybackRate);
+  WLOG("Set playback rate {}", aPlaybackRate);
   MOZ_ASSERT(IsInited());
   (void)ManagerThread()->Dispatch(
       NS_NewRunnableFunction("MFMediaEngineWrapper::SetPlaybackRate",
@@ -370,7 +366,7 @@ void MFMediaEngineWrapper::SetPlaybackRate(double aPlaybackRate) {
 }
 
 void MFMediaEngineWrapper::SetVolume(double aVolume) {
-  WLOG("Set volume %f", aVolume);
+  WLOG("Set volume {}", aVolume);
   MOZ_ASSERT(IsInited());
   (void)ManagerThread()->Dispatch(NS_NewRunnableFunction(
       "MFMediaEngineWrapper::SetVolume",
@@ -378,7 +374,7 @@ void MFMediaEngineWrapper::SetVolume(double aVolume) {
 }
 
 void MFMediaEngineWrapper::SetLooping(bool aLooping) {
-  WLOG("Set looping %d", aLooping);
+  WLOG("Set looping {}", aLooping);
   MOZ_ASSERT(IsInited());
   (void)ManagerThread()->Dispatch(NS_NewRunnableFunction(
       "MFMediaEngineWrapper::SetLooping",
@@ -390,7 +386,7 @@ void MFMediaEngineWrapper::SetPreservesPitch(bool aPreservesPitch) {
 }
 
 void MFMediaEngineWrapper::NotifyEndOfStream(TrackInfo::TrackType aType) {
-  WLOG("NotifyEndOfStream, type=%s", TrackTypeToStr(aType));
+  WLOG("NotifyEndOfStream, type={}", TrackTypeToStr(aType));
   MOZ_ASSERT(IsInited());
   (void)ManagerThread()->Dispatch(NS_NewRunnableFunction(
       "MFMediaEngineWrapper::NotifyEndOfStream",
@@ -406,7 +402,7 @@ bool MFMediaEngineWrapper::SetCDMProxy(CDMProxy* aProxy) {
   }
 
   const uint64_t proxyId = proxy->GetCDMProxyId();
-  WLOG("SetCDMProxy, CDM-Id=%" PRIu64, proxyId);
+  WLOG("SetCDMProxy, CDM-Id={}", proxyId);
   MOZ_ASSERT(IsInited());
   (void)ManagerThread()->Dispatch(NS_NewRunnableFunction(
       "MFMediaEngineWrapper::SetCDMProxy",
@@ -425,20 +421,20 @@ TimeUnit MFMediaEngineWrapper::GetCurrentPosition() {
 
 void MFMediaEngineWrapper::UpdateCurrentTime(double aCurrentTimeInSecond) {
   AssertOnManagerThread();
-  WLOGV("Update current time %f", aCurrentTimeInSecond);
+  WLOGV("Update current time {}", aCurrentTimeInSecond);
   mCurrentTimeInSecond = aCurrentTimeInSecond;
   NotifyEvent(ExternalEngineEvent::Timeupdate);
 }
 
 void MFMediaEngineWrapper::NotifyEvent(ExternalEngineEvent aEvent) {
   AssertOnManagerThread();
-  WLOGV("Received event %s", ExternalEngineEventToStr(aEvent));
+  WLOGV("Received event {}", ExternalEngineEventToStr(aEvent));
   mOwner->NotifyEvent(aEvent);
 }
 
 void MFMediaEngineWrapper::NotifyError(const MediaResult& aError) {
   AssertOnManagerThread();
-  WLOG("Received error: %s", aError.Description().get());
+  WLOG("Received error: {}", aError.Description().get());
   mOwner->NotifyError(aError);
 }
 
@@ -458,7 +454,7 @@ void MFMediaEngineWrapper::NotifyWaitingForKey() {
 
 void MFMediaEngineWrapper::NotifyResizing(uint32_t aWidth, uint32_t aHeight) {
   AssertOnManagerThread();
-  WLOG("Video resizing, new size [%u,%u]", aWidth, aHeight);
+  WLOG("Video resizing, new size [{},{}]", aWidth, aHeight);
   mOwner->NotifyResizing(aWidth, aHeight);
 }
 

@@ -22,6 +22,7 @@
 #include "nsISHistoryListener.h"
 #include "nsIURI.h"
 #include "nsIXULRuntime.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsNetUtil.h"
 #include "nsTHashMap.h"
 #include "SessionHistoryEntry.h"
@@ -37,6 +38,7 @@
 #include "mozilla/dom/Navigation.h"
 #include "mozilla/dom/RemoteWebProgressRequest.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "mozilla/glean/DocshellMetrics.h"
 #include "mozilla/LinkedList.h"
 #include "mozilla/MathAlgorithms.h"
 #include "mozilla/Preferences.h"
@@ -1415,6 +1417,10 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
     // the right focus events are fired.
     frameLoaderOwner->UpdateFocusAndMouseEnterStateAfterFrameLoaderChange();
 
+    glean::bfcache::page_restored
+        .EnumGet(glean::bfcache::PageRestoredLabel::eTrue)
+        .Add();
+
     return;
   }
 
@@ -1422,6 +1428,10 @@ static void FinishRestore(CanonicalBrowsingContext* aBrowsingContext,
 
   // Fall back to do a normal load.
   aBrowsingContext->LoadURI(aLoadState, false);
+
+  glean::bfcache::page_restored
+      .EnumGet(glean::bfcache::PageRestoredLabel::eFalse)
+      .Add();
 }
 
 MOZ_CAN_RUN_SCRIPT
@@ -1501,6 +1511,10 @@ void nsSHistory::LoadURIOrBFCache(const LoadEntryResult& aLoadEntry) {
     if (MaybeLoadBFCache(aLoadEntry)) {
       return;
     }
+
+    glean::bfcache::page_restored
+        .EnumGet(glean::bfcache::PageRestoredLabel::eFalse)
+        .Add();
   }
 
   RefPtr<BrowsingContext> bc = aLoadEntry.mBrowsingContext;
@@ -1515,8 +1529,7 @@ void nsSHistory::LoadURIOrBFCache(const LoadEntryResult& aLoadEntry) {
 // tricky part is that we need to check "beforeunload" for that window, then
 // "navigate", and after that continue with "beforeunload" for the remaining
 // tree.
-MOZ_CAN_RUN_SCRIPT
-static bool MaybeCheckUnloadingIsCanceled(
+bool nsSHistory::MaybeCheckUnloadingIsCanceled(
     const nsTArray<nsSHistory::LoadEntryResult>& aLoadResults,
     BrowsingContext* aTraversable,
     std::function<void(nsTArray<nsSHistory::LoadEntryResult>&,
@@ -1592,8 +1605,8 @@ static bool MaybeCheckUnloadingIsCanceled(
   // achieves by skipping top level navigable.
 
   // Step 4.3.4
-  // PermitUnloadTraversable only includes the process of the top level browsing
-  // context.
+  // CheckIfUnloadingIsCanceledForTraversable only includes the process of the
+  // top level browsing context.
 
   // If we're not going to run any beforeunload handlers, we still need to run
   // navigate event handlers for the traversable.
@@ -1601,17 +1614,37 @@ static bool MaybeCheckUnloadingIsCanceled(
       needsBeforeUnload
           ? nsIDocumentViewer::PermitUnloadAction::ePrompt
           : nsIDocumentViewer::PermitUnloadAction::eDontPromptAndUnload;
-  windowGlobalParent->PermitUnloadTraversable(
-      targetEntry->Info(), action,
-      [action, loadResults = CopyableTArray(std::move(aLoadResults)),
-       windowGlobalParent, aResolver = std::move(aResolver)](
+
+  RefPtr<nsDocShellLoadState> maybeInterceptedLoadState = found->mLoadState;
+
+  windowGlobalParent->CheckIfUnloadingIsCanceledForTraversable(
+      maybeInterceptedLoadState, action,
+      [action, loadResults = CopyableTArray(aLoadResults), windowGlobalParent,
+       aResolver = std::move(aResolver), maybeInterceptedLoadState,
+       traversableId = traversable->Id(),
+       contentParent = RefPtr{traversable->GetContentParent()}](
           nsIDocumentViewer::PermitUnloadResult aResult) mutable {
         if (aResult != nsIDocumentViewer::PermitUnloadResult::eContinue) {
+          loadResults.RemoveElementsBy(
+              [id = traversableId](const auto& result) {
+                return result.mBrowsingContext->Id() == id;
+              });
+
           aResolver(loadResults, aResult);
           return;
         }
 
-        // If the traversable didn't have beforeunloadun handlers, we won't run
+        // If we didn't intercept the navigation, the load state wasn't used so
+        // we can take it out of pending.
+        if (contentParent) {
+          RefPtr clearedPendingState = contentParent->TakePendingLoadStateForId(
+              maybeInterceptedLoadState->GetLoadIdentifier());
+          MOZ_DIAGNOSTIC_ASSERT(!clearedPendingState ||
+                                clearedPendingState ==
+                                    maybeInterceptedLoadState);
+        }
+
+        // If the traversable didn't have beforeunloadhandlers, we won't run
         // other navigable's unload handlers either. That will be handled by
         // regular navigation.
         if (action ==
@@ -1621,10 +1654,11 @@ static bool MaybeCheckUnloadingIsCanceled(
           return;
         }
 
-        // PermitUnloadTraversable includes everything except the process of the
-        // top level browsing context.
+        // CheckIfUnloadingIsCanceledForTraversable includes everything except
+        // the process of the top level browsing context.
         windowGlobalParent->PermitUnloadChildNavigables(
-            action, [loadResults = std::move(loadResults), aResolver](
+            action, [loadResults = std::move(loadResults),
+                     aResolver = std::move(aResolver)](
                         nsIDocumentViewer::PermitUnloadResult aResult) mutable {
               aResolver(loadResults, aResult);
             });
@@ -1679,7 +1713,9 @@ void nsSHistory::LoadURIs(const nsTArray<LoadEntryResult>& aLoadResults,
                     return aResolver(nsresult::NS_ERROR_DOM_ABORT_ERR);
                   }
 
-                  return aResolver(NS_OK);
+                  aResolver(NS_OK);
+
+                  return;
                 }
 
                 for (LoadEntryResult& loadEntry : aLoadResults) {
@@ -2287,7 +2323,7 @@ nsresult nsSHistory::GotoIndex(BrowsingContext* aSourceBrowsingContext,
 
 NS_IMETHODIMP_(bool)
 nsSHistory::HasUserInteractionAtIndex(int32_t aIndex) {
-  RefPtr<SessionHistoryEntry> entry = mEntries[aIndex];
+  RefPtr<SessionHistoryEntry> entry = mEntries.SafeElementAt(aIndex);
   if (!entry) {
     return false;
   }
@@ -2669,7 +2705,7 @@ void nsSHistory::InitiateLoad(BrowsingContext* aSourceBrowsingContext,
   loadResult->mBrowsingContext = aFrameBC;
 
   nsCOMPtr<nsIURI> newURI = aFrameEntry->GetURI();
-  RefPtr<nsDocShellLoadState> loadState = new nsDocShellLoadState(newURI);
+  RefPtr loadState = MakeRefPtr<nsDocShellLoadState>(newURI);
 
   loadState->SetSourceBrowsingContext(aSourceBrowsingContext);
 
@@ -2723,7 +2759,7 @@ NS_IMETHODIMP
 nsSHistory::CreateEntry(nsISHEntry** aEntry) {
   nsCOMPtr<nsISHEntry> entry;
   if (XRE_IsParentProcess()) {
-    entry = new SessionHistoryEntry();
+    entry = MakeRefPtr<SessionHistoryEntry>();
   }
   entry.forget(aEntry);
   return NS_OK;

@@ -17,6 +17,7 @@
 
 #include "mozilla/net/DNS.h"
 #include "mozilla/WeakPtr.h"
+#include "nsHttpResponseHead.h"
 #include "nsIAsyncInputStream.h"
 #include "nsIAsyncOutputStream.h"
 #include "nsIInterfaceRequestor.h"
@@ -32,7 +33,6 @@ class ConnectionEntry;
 class nsHttpHandler;
 class ASpdySession;
 class WebTransportSessionBase;
-class nsHttpResponseHead;
 
 enum class ConnectionState : uint32_t {
   HALF_OPEN = 0,
@@ -195,6 +195,9 @@ class HttpConnectionBase : public nsSupportsWeakReference {
                                       HttpConnectionBase** aHttpConnection,
                                       bool aIsExtendedCONNECT = false) = 0;
   virtual void SetInTunnel() {};
+  const RefPtr<ProxyConnectResponseHead>& GetProxyConnectResponseHead() const {
+    return mProxyConnectResponseHead;
+  }
 
   void SetOwner(ConnectionEntry* aEntry);
   ConnectionEntry* OwnerEntry() const;
@@ -239,7 +242,7 @@ class HttpConnectionBase : public nsSupportsWeakReference {
 
   bool mIsRacing{false};
 
-  // Tunnel retated functions:
+  // Tunnel related functions:
   enum HttpConnectionState {
     UNINITIALIZED,
     SETTING_UP_TUNNEL,
@@ -250,6 +253,9 @@ class HttpConnectionBase : public nsSupportsWeakReference {
   virtual void SetTunnelSetupDone() {}
   virtual nsresult SetupProxyConnectStream() { return NS_OK; }
   nsresult CheckTunnelIsNeeded(nsAHttpTransaction* aTransaction);
+  // Built once when the CONNECT tunnel is established and then shared by
+  // pointer with the transaction and channel. See bug 2045419.
+  RefPtr<ProxyConnectResponseHead> mProxyConnectResponseHead;
 };
 
 #define NS_DECL_HTTPCONNECTIONBASE                                             \

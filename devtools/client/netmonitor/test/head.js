@@ -177,10 +177,6 @@ const SETTINGS_MENU_ITEMS = {
 // All tests are asynchronous.
 waitForExplicitFinish();
 
-const gEnableLogging = Services.prefs.getBoolPref("devtools.debugger.log");
-// To enable logging for try runs, just set the pref to true.
-Services.prefs.setBoolPref("devtools.debugger.log", false);
-
 // Uncomment this pref to dump all devtools emitted events to the console.
 // Services.prefs.setBoolPref("devtools.dump.emit", true);
 
@@ -1253,51 +1249,6 @@ function waitForRequestData(store, fields, id, index = 0) {
   });
 }
 
-// Telemetry
-
-/**
- * Helper for verifying telemetry event.
- *
- * @param Object expectedEvent object representing expected event data.
- * @param Object query fields specifying category, method and object
- *                     of the target telemetry event.
- */
-function checkTelemetryEvent(expectedEvent, query) {
-  const events = queryTelemetryEvents(query);
-  is(events.length, 1, "There was only 1 event logged");
-
-  const [event] = events;
-  Assert.greater(
-    Number(event.session_id),
-    0,
-    "There is a valid session_id in the logged event"
-  );
-
-  const f = e => JSON.stringify(e, null, 2);
-  is(
-    f(event),
-    f({
-      ...expectedEvent,
-      session_id: event.session_id,
-    }),
-    "The event has the expected data"
-  );
-}
-
-function queryTelemetryEvents(query) {
-  const ALL_CHANNELS = Ci.nsITelemetry.DATASET_ALL_CHANNELS;
-  const snapshot = Services.telemetry.snapshotEvents(ALL_CHANNELS, true);
-  const category = query.category || "devtools.main";
-  const object = query.object || "netmonitor";
-
-  const filtersChangedEvents = snapshot.parent.filter(
-    event =>
-      event[1] === category && event[2] === query.method && event[3] === object
-  );
-
-  // Return the `extra` field (which is event[5]e).
-  return filtersChangedEvents.map(event => event[5]);
-}
 /**
  * Check that the provided requests match the requests displayed in the netmonitor.
  *

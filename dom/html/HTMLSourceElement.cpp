@@ -24,7 +24,7 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(Source)
 namespace mozilla::dom {
 
 HTMLSourceElement::HTMLSourceElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
 HTMLSourceElement::~HTMLSourceElement() = default;

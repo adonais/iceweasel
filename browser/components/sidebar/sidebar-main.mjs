@@ -97,7 +97,7 @@ export default class SidebarMain extends MozLitElement {
   connectedCallback() {
     super.connectedCallback();
     this._sidebarBox = document.getElementById("sidebar-box");
-    this._sidebarMain = document.getElementById("sidebar-main");
+    this._sidebarContainer = document.getElementById("sidebar-container");
     this._contextMenu = document.getElementById("sidebar-context-menu");
     this._toolsOverflowMenu = document.getElementById("sidebar-tools-overflow");
     this._toolsOverflowButtonGroup =
@@ -127,7 +127,7 @@ export default class SidebarMain extends MozLitElement {
 
     this._sidebarBox.addEventListener("sidebar-show", this);
     this._sidebarBox.addEventListener("sidebar-hide", this);
-    this._sidebarMain.addEventListener("contextmenu", this);
+    this._sidebarContainer.addEventListener("contextmenu", this);
     this._contextMenu.addEventListener("popuphidden", this);
     this._contextMenu.addEventListener("command", this);
     this._toolsOverflowMenu.addEventListener("popupshown", this);
@@ -146,7 +146,7 @@ export default class SidebarMain extends MozLitElement {
     super.disconnectedCallback();
     this._sidebarBox.removeEventListener("sidebar-show", this);
     this._sidebarBox.removeEventListener("sidebar-hide", this);
-    this._sidebarMain.removeEventListener("contextmenu", this);
+    this._sidebarContainer.removeEventListener("contextmenu", this);
     this._contextMenu.removeEventListener("popuphidden", this);
     this._contextMenu.removeEventListener("command", this);
     this._toolsOverflowMenu.removeEventListener("popupshown", this);
@@ -528,7 +528,7 @@ export default class SidebarMain extends MozLitElement {
               window.SidebarController._animationEnabled &&
               !window.gReduceMotion
             ) {
-              window.SidebarController._animateSidebarMain();
+              window.SidebarController._animateSidebarContainer();
             }
             window.SidebarController.hide({ dismissPanel: false });
             window.SidebarController._state.updateVisibility(false);

@@ -63,7 +63,7 @@ class BackgroundServicesTest {
         every { context.components } returns mockComponents
         every { nimbus.recordEvent(any()) } just Runs
 
-        observer = TelemetryAccountObserver(context)
+        observer = TelemetryAccountObserver(context, mockComponents.settings)
         registry = ObserverRegistry<AccountObserver>().apply { register(observer) }
     }
 

@@ -363,12 +363,69 @@ add_task(async function test_smartbar_telemetry_engagement_extra_keys() {
     );
     Assert.equal(extra.location, "fullpage", "engagement has correct location");
     Assert.equal(extra.model, expectedModel, "engagement has correct model");
+    Assert.equal(
+      extra.selected_result,
+      "ai_chat",
+      "engagement has correct selected_result"
+    );
 
     await BrowserTestUtils.closeWindow(win);
   } finally {
     sb.restore();
   }
 });
+
+add_task(
+  async function test_smartbar_telemetry_engagement_ai_search_fallback() {
+    await resetTelemetry();
+
+    const win = await openAIWindow();
+    const browser = win.gBrowser.selectedBrowser;
+    await stubLoadURL(browser);
+
+    await promiseSmartbarSuggestionsOpen(browser, () =>
+      typeInSmartbar(browser, "tell me a joke")
+    );
+    await waitForSmartbarAction(browser, "chat");
+
+    // Pick the AiChat search fallback row
+    await SpecialPowers.spawn(
+      browser,
+      [UrlbarUtils.RESULT_TYPE.SEARCH],
+      async searchResultType => {
+        const smartbar = content.document
+          .querySelector("ai-window")
+          .shadowRoot.querySelector("#ai-window-smartbar");
+        const fallbackRow = await ContentTaskUtils.waitForCondition(
+          () =>
+            [...smartbar.querySelectorAll(".urlbarView-row")].find(
+              row =>
+                row.result?.providerName == "UrlbarProviderAiChat" &&
+                row.result.type == searchResultType
+            ),
+          "Wait for the AiChat search fallback row to render"
+        );
+        EventUtils.synthesizeMouseAtCenter(fallbackRow, {}, content);
+      }
+    );
+
+    const events = Glean.urlbar.engagement.testGetValue() ?? [];
+    const smartbarEvent = events.find(e => e.extra.sap === "smartbar");
+    Assert.ok(smartbarEvent, "Should have a smartbar engagement event");
+    Assert.equal(
+      smartbarEvent.extra.selected_result,
+      "ai_search_fallback",
+      "engagement has correct selected_result"
+    );
+    Assert.equal(
+      smartbarEvent.extra.results,
+      "ai_chat,ai_search_fallback",
+      "smartbar lists the correct results"
+    );
+
+    await BrowserTestUtils.closeWindow(win);
+  }
+);
 
 add_task(async function test_smartbar_telemetry_abandonment_extra_keys() {
   await resetTelemetry();

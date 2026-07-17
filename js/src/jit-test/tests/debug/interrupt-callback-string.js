@@ -22,7 +22,7 @@ dbg.onNewGlobalObject = function() {
 };
 newGlobal();
 assertEq(fired, 1);
-setInterruptCallback(`newGlobal({newCompartment: true, invisibleToDebugger: false}); true`);
+setInterruptCallback(`true`);
 interruptIf(true);
 for (var i = 0; i < 10; i++) {}
 assertEq(fired, 1);

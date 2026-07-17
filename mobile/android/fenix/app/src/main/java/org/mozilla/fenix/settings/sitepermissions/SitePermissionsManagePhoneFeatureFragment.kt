@@ -30,7 +30,7 @@ import org.mozilla.fenix.databinding.FragmentManageSitePermissionsFeaturePhoneBi
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.pixelSizeFor
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.PhoneFeature
 import org.mozilla.fenix.settings.PhoneFeature.AUTOPLAY_AUDIBLE
@@ -59,7 +59,7 @@ enum class AutoplaySettingMetricsExtraKey {
 class SitePermissionsManagePhoneFeatureFragment : Fragment(), SystemInsetsPaddedFragment {
 
     private val args by navArgs<SitePermissionsManagePhoneFeatureFragmentArgs>()
-    private val settings by lazy { requireContext().settings() }
+    private val settings by lazy { requireComponents.settings }
     private lateinit var blockedByAndroidView: View
     private var _binding: FragmentManageSitePermissionsFeaturePhoneBinding? = null
     private val binding get() = _binding!!

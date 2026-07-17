@@ -50,7 +50,7 @@ if (!build_with_chromium && !build_with_mozilla) {
         ":audio_engine_tests",
         ":rtc_p2p_unittests",
         ":rtc_unittests",
-        ":video_engine_tests",
+        ":test_suites",
         ":voip_unittests",
         ":webrtc_nonparallel_tests",
         ":webrtc_perf_tests",
@@ -82,6 +82,7 @@ if (!build_with_chromium && !build_with_mozilla) {
         "video:video_loopback",
         "video/timing:video_timing_tests",
       ]
+      deps += [ "tools_webrtc:validate_test_registration" ]
       if (use_libfuzzer) {
         deps += [ "test/fuzzers" ]
       }
@@ -122,6 +123,20 @@ if (!build_with_chromium && !build_with_mozilla) {
     if (target_os == "android") {
       deps += [ "tools_webrtc:binary_version_check" ]
     }
+  }
+}
+
+if (rtc_include_tests) {
+  group("test_suites") {
+    testonly = true
+    deps = [
+      ":webrtc_nonparallel_tests",
+      "//call:call_tests",
+      "//call/adaptation:resource_adaptation_tests",
+      "//pc:peerconnection_unittests",
+      "//video:video_tests",
+      "//video/adaptation:video_adaptation_tests",
+    ]
   }
 }
 
@@ -652,7 +667,7 @@ if (!build_with_chromium) {
   }
 }
 
-if (use_libfuzzer || use_afl) {
+if (use_libfuzzer) {
   # This target is only here for gn to discover fuzzer build targets under
   # webrtc/test/fuzzers/.
   group("webrtc_fuzzers_dummy") {
@@ -770,32 +785,6 @@ if (rtc_include_tests && !build_with_chromium) {
     }
   }
 
-  # TODO(pbos): Rename test suite, this is no longer "just" for video targets.
-  rtc_test("video_engine_tests") {
-    testonly = true
-    deps = [
-      # TODO(eladalon): call_tests aren't actually video-specific, so we
-      # should move them to a more appropriate test suite.
-      "call:call_tests",
-      "call/adaptation:resource_adaptation_tests",
-      "test:test_common",
-      "test:video_test_common",
-      "video:video_tests",
-      "video/adaptation:video_adaptation_tests",
-    ]
-
-    data_deps = [ "resources:video_engine_tests_data" ]
-
-    if (is_android) {
-      use_default_launcher = false
-      deps += [ "//build/android/gtest_apk:native_test_instrumentation_test_runner_java" ]
-      shard_timeout = 900
-    }
-    if (is_ios) {
-      deps += [ "resources:video_engine_tests_bundle_data" ]
-    }
-  }
-
   rtc_test("webrtc_perf_tests") {
     testonly = true
     deps = [
@@ -819,9 +808,15 @@ if (rtc_include_tests && !build_with_chromium) {
     }
   }
 
-  rtc_test("webrtc_nonparallel_tests") {
+  rtc_test_suite("webrtc_nonparallel_tests") {
     testonly = true
-    deps = [ "rtc_base:rtc_base_nonparallel_tests" ]
+    tests = [
+      "rtc_base:cpu_time_unittest",
+      "rtc_base:file_rotating_stream_unittest",
+      "rtc_base:null_socket_server_unittest",
+      "rtc_base:physical_socket_server_unittest",
+      "rtc_base:socket_address_unittest",
+    ]
     if (is_android) {
       shard_timeout = 900
     }

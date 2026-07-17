@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
@@ -28,7 +27,6 @@ import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -47,6 +45,7 @@ import mozilla.components.compose.base.LinkText
 import mozilla.components.compose.base.LinkTextState
 import mozilla.components.compose.base.annotation.FlexibleWindowPreview
 import mozilla.components.compose.base.button.FilledButton
+import mozilla.components.compose.base.button.TextButton
 import org.mozilla.fenix.R
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.theme.PreviewThemeProvider
@@ -60,6 +59,9 @@ private val sheetMaxWidth = 450.dp
  * The IP Protection onboarding prompt.
  *
  * @param maxGib The total monthly allowance in GB for unpaid users.
+ * @param formattedPromoDate Locale-formatted end date for the promo copy shown when [maxGib] is 0.
+ * `null` means the promo cannot be rendered (e.g. Nimbus shipped a malformed date) and the sheet
+ * should fall back to the standard onboarding copy.
  * @param onDismiss The callback to invoke when the prompt is dismissed.
  * @param onDismissRequest The callback to invoke when the user clicks outside of the bottom sheet,
  * after sheet animates to Hidden. See [ModalBottomSheet].
@@ -67,15 +69,18 @@ private val sheetMaxWidth = 450.dp
  * an article about VPN on Firefox.
  * @param onGetStartedClicked The callback to invoke when user clicks on "Get started" to
  * start the VPN authentication or authorization process.
+ * @param onNotNowClicked The callback to invoke when user clicks on "Not now" to dismiss the prompt.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IPProtectionBottomSheet(
     maxGib: Int,
+    formattedPromoDate: String?,
     onDismiss: () -> Unit,
     onDismissRequest: () -> Unit,
     onLearnMoreClicked: () -> Unit,
     onGetStartedClicked: () -> Unit,
+    onNotNowClicked: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
@@ -85,11 +90,13 @@ fun IPProtectionBottomSheet(
 
     BottomSheet(
         maxGib = maxGib,
+        formattedPromoDate = formattedPromoDate,
         sheetState = sheetState,
         onDismiss = onDismiss,
         onDismissRequest = onDismissRequest,
         onLearnMoreClicked = onLearnMoreClicked,
         onGetStartedClicked = onGetStartedClicked,
+        onNotNowClicked = onNotNowClicked,
     )
 }
 
@@ -97,11 +104,13 @@ fun IPProtectionBottomSheet(
 @Composable
 private fun BottomSheet(
     maxGib: Int,
+    formattedPromoDate: String?,
     sheetState: SheetState,
     onDismiss: () -> Unit = {},
     onDismissRequest: () -> Unit = {},
     onLearnMoreClicked: () -> Unit = {},
     onGetStartedClicked: () -> Unit = {},
+    onNotNowClicked: () -> Unit = {},
 ) {
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -111,10 +120,12 @@ private fun BottomSheet(
     ) {
         BottomSheetContent(
             maxGib = maxGib,
+            formattedPromoDate = formattedPromoDate,
             sheetState = sheetState,
             onDismiss = onDismiss,
             onLearnMoreClicked = onLearnMoreClicked,
             onGetStartedClicked = onGetStartedClicked,
+            onNotNowClicked = onNotNowClicked,
         )
     }
 }
@@ -123,42 +134,63 @@ private fun BottomSheet(
 @Composable
 private fun BottomSheetContent(
     maxGib: Int,
+    formattedPromoDate: String?,
     sheetState: SheetState,
     onDismiss: () -> Unit,
     onLearnMoreClicked: () -> Unit,
     onGetStartedClicked: () -> Unit,
+    onNotNowClicked: () -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
     Column(
         modifier = Modifier
-            .verticalScroll(scrollState)
             .padding(bottom = 16.dp, start = 16.dp, end = 16.dp),
     ) {
-        PromoBannerCard()
+        Box(
+            modifier = Modifier.weight(1f, fill = false),
+        ) {
+            Column(
+                modifier = Modifier.verticalScroll(state = scrollState, reverseScrolling = true),
+            ) {
+                PromoBannerCard()
 
-        Spacer(Modifier.height(32.dp))
+                Spacer(Modifier.height(32.dp))
 
-        Text(
-            text = stringResource(
-                R.string.ip_protection_onboarding_card_headline,
-                stringResource(R.string.firefox),
-            ),
-            style = MaterialTheme.typography.bodyLarge,
-        )
+                Text(
+                    text = stringResource(
+                        R.string.ip_protection_onboarding_card_headline,
+                        stringResource(R.string.firefox),
+                    ),
+                    style = MaterialTheme.typography.bodyLarge,
+                )
 
-        Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(16.dp))
 
-        IPProtectionContent(
-            maxGib = maxGib,
-            onLearnMoreClicked = onLearnMoreClicked,
-        )
+                if (formattedPromoDate != null) {
+                    IPProtectionPromoContent(
+                        formattedDate = formattedPromoDate,
+                        onLearnMoreClicked = onLearnMoreClicked,
+                    )
+                } else if (maxGib > 0) {
+                    IPProtectionContent(
+                        maxGib = maxGib,
+                        onLearnMoreClicked = onLearnMoreClicked,
+                    )
+                } else {
+                    // We don't want to render incorrect content if we don't have
+                    // these two data sources, so we fallback to nothing which is better
+                    // than promoting an incorrect metered or unmetered feature.
+                }
+            }
+        }
 
         Spacer(Modifier.height(16.dp))
 
         IPProtectionButtons(
             onNotNowClicked = {
+                onNotNowClicked()
                 coroutineScope.launch {
                     sheetState.hide()
                 }.invokeOnCompletion {
@@ -175,6 +207,28 @@ private fun BottomSheetContent(
             },
         )
     }
+}
+
+@Composable
+private fun IPProtectionPromoContent(
+    formattedDate: String,
+    onLearnMoreClicked: () -> Unit,
+) {
+    val learnMoreText = stringResource(R.string.ip_protection_onboarding_body_link_promo)
+    LinkText(
+        text = stringResource(id = R.string.ip_protection_onboarding_body_promo, formattedDate, learnMoreText),
+        linkTextStates = listOf(
+            LinkTextState(
+                text = learnMoreText,
+                url = "",
+                onClick = { onLearnMoreClicked() },
+            ),
+        ),
+        style = FirefoxTheme.typography.body2.copy(
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+        ),
+        linkTextDecoration = TextDecoration.Underline,
+    )
 }
 
 @Composable
@@ -214,12 +268,10 @@ private fun IPProtectionButtons(
         horizontalArrangement = Arrangement.End,
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        TextButton(onClick = onNotNowClicked) {
-            Text(
-                text = stringResource(R.string.ip_protection_onboarding_not_now_button),
-                style = FirefoxTheme.typography.button,
-            )
-        }
+        TextButton(
+            text = stringResource(R.string.ip_protection_onboarding_not_now_button),
+            onClick = onNotNowClicked,
+        )
 
         Spacer(Modifier.width(8.dp))
         FilledButton(
@@ -239,7 +291,7 @@ private fun PromoBannerCard() {
             modifier = Modifier
                 .fillMaxWidth()
                 .height(sheetMaxHeight)
-                .clip(RoundedCornerShape(16.dp))
+                .clip(MaterialTheme.shapes.large)
                 .background(MaterialTheme.colorScheme.primaryContainer),
         ) {
             BetaBadge()
@@ -282,10 +334,12 @@ private fun IPProtectionBottomSheetPreview(
     FirefoxTheme(theme = theme) {
         IPProtectionBottomSheet(
             maxGib = 50,
+            formattedPromoDate = "Jun 9",
             onDismiss = {},
             onDismissRequest = {},
             onGetStartedClicked = {},
             onLearnMoreClicked = {},
+            onNotNowClicked = {},
         )
     }
 }

@@ -799,9 +799,20 @@ void gfxShapedText::SetupClusterBoundaries(uint32_t aOffset,
   }
 }
 
+void gfxShapedText::ClearGlyphs() {
+  auto* cg = GetCharacterGlyphs();
+  const auto* end = cg + GetLength();
+  while (cg < end) {
+    cg->ClearGlyph();
+    ++cg;
+  }
+  mDetailedGlyphs = nullptr;
+}
+
 gfxShapedText::DetailedGlyph* gfxShapedText::AllocateDetailedGlyphs(
     uint32_t aIndex, uint32_t aCount) {
-  NS_ASSERTION(aIndex < GetLength(), "Index out of range");
+  MOZ_ASSERT(aIndex < GetLength(), "Index out of range");
+  MOZ_ASSERT(aCount <= CompressedGlyph::GLYPH_COUNT_MASK);
 
   if (!mDetailedGlyphs) {
     mDetailedGlyphs = MakeUnique<DetailedGlyphStore>();
@@ -816,6 +827,13 @@ void gfxShapedText::SetDetailedGlyphs(uint32_t aIndex, uint32_t aGlyphCount,
 
   MOZ_ASSERT(aIndex > 0 || g.IsLigatureGroupStart(),
              "First character can't be a ligature continuation!");
+
+  // Clamp the (potentially font-controlled) glyph count to the 16-bit field
+  // in CompressedGlyph, so that it cannot overflow into the flag bits.
+  // Any additional items in aGlyphs will be discarded. No real-world use case
+  // should need >64K component glyphs to represent a single character.
+  aGlyphCount =
+      std::min<uint32_t>(aGlyphCount, CompressedGlyph::GLYPH_COUNT_MASK);
 
   if (aGlyphCount > 0) {
     DetailedGlyph* details = AllocateDetailedGlyphs(aIndex, aGlyphCount);
@@ -2466,13 +2484,10 @@ void gfxFont::Draw(const gfxTextRun* aTextRun, uint32_t aStart, uint32_t aEnd,
     // centered. So in this case, we need to adjust the position so that
     // the rotated horizontal text (which uses an alphabetic baseline) will
     // look OK when juxtaposed with upright glyphs (rendered on a centered
-    // vertical baseline). The adjustment here is somewhat ad hoc; we
-    // should eventually look for baseline tables[1] in the fonts and use
-    // those if available.
-    // [1] See http://www.microsoft.com/typography/otspec/base.htm
+    // vertical baseline).
     if (aTextRun->UseCenterBaseline()) {
-      const Metrics& metrics = GetMetrics(nsFontMetrics::eHorizontal);
-      float baseAdj = (metrics.emAscent - metrics.emDescent) / 2;
+      float baseAdj = (GetBaseline(kAlphabetic, nsFontMetrics::eHorizontal) -
+                       GetBaseline(kAlphabetic, nsFontMetrics::eVertical));
       baseline += baseAdj * aTextRun->GetAppUnitsPerDevUnit() * baselineDir;
     }
   } else if (textDrawer &&
@@ -3157,10 +3172,9 @@ gfxFont::RunMetrics gfxFont::Measure(const gfxTextRun* aTextRun,
     // based on the alphabetic baseline. So we compute a baseline offset
     // that will be applied to ascent/descent values and glyph rects
     // to effectively shift them relative to the baseline.
-    // XXX Eventually we should probably use the BASE table, if present.
-    // But it usually isn't, so we need an ad hoc adjustment for now.
-    baselineOffset =
-        appUnitsPerDevUnit * (fontMetrics.emAscent - fontMetrics.emDescent) / 2;
+    float baseAdj = (GetBaseline(kAlphabetic, nsFontMetrics::eHorizontal) -
+                     GetBaseline(kAlphabetic, nsFontMetrics::eVertical));
+    baselineOffset = appUnitsPerDevUnit * baseAdj;
   }
 
   RunMetrics metrics;
@@ -3972,10 +3986,14 @@ bool gfxFont::InitFakeSmallCapsRun(
           const auto globalTransform = StyleTextTransform::UPPERCASE;
           // No mask needed; we're doing case conversion, not password-hiding.
           const char16_t maskChar = 0;
+          bool useCapitalEsZet =
+              StaticPrefs::
+                  layout_css_text_transform_uppercase_eszett_enabled() &&
+              HasCharacter(0x1e9e);
           bool mergeNeeded = nsCaseTransformTextRunFactory::TransformString(
               origString, convertedString, Some(globalTransform), maskChar,
-              /* aCaseTransformsOnly = */ false, aLanguage, charsToMergeArray,
-              deletedCharsArray);
+              /* aCaseTransformsOnly = */ false, useCapitalEsZet, aLanguage,
+              charsToMergeArray, deletedCharsArray);
 
           // Check whether the font supports the uppercased characters needed;
           // if not, we're not going to be able to simulate small-caps.
@@ -4434,6 +4452,14 @@ void gfxFont::SanitizeMetrics(gfxFont::Metrics* aMetrics,
   }
 }
 
+static gfxFloat SynthesizeVerticalMetricFromHorizontalMetric(
+    const gfxFont::Metrics& aHMetrics, const gfxFont::Metrics& aVMetrics,
+    gfxFloat aHValue) {
+  gfxFloat hAbsolute = aHValue + aHMetrics.maxDescent;
+  gfxFloat vAbsolute = hAbsolute / aHMetrics.maxHeight * aVMetrics.maxHeight;
+  return vAbsolute - aVMetrics.maxDescent;
+}
+
 gfxFloat gfxFont::GetBaseline(const Baseline& aBaseline,
                               Orientation aOrientation) {
   std::atomic<gfxFloat>& baseline =
@@ -4442,19 +4468,42 @@ gfxFloat gfxFont::GetBaseline(const Baseline& aBaseline,
 
   gfxFloat value = baseline;
   if (std::isnan(value)) {
-    // Use harfbuzz to try to read the font's baseline metrics. For
-    // missing baselines, harfbuzz will synthesize fallbacks according
-    // to the CSS Inline Layout Module Level 3 specification.
-    hb_font_t* hbFont = gfxHarfBuzzShaper::CreateHBFont(this);
-    hb_direction_t hbDir = aOrientation == nsFontMetrics::eHorizontal
-                               ? HB_DIRECTION_LTR
-                               : HB_DIRECTION_TTB;
-    hb_position_t position;
-    hb_ot_layout_get_baseline_with_fallback(
-        hbFont, tag, hbDir, HB_OT_TAG_DEFAULT_SCRIPT,
-        HB_OT_TAG_DEFAULT_LANGUAGE, &position);
-    hb_font_destroy(hbFont);
-    value = position / 65536.0;
+    // Some fonts have vertical baseline metrics that are poorly behaved,
+    // so instead synthesize the baselines from the horizontal orientation.
+    const Metrics& horizMetrics = GetMetrics(nsFontMetrics::eHorizontal);
+    if (aOrientation == nsFontMetrics::eVertical &&
+        horizMetrics.maxHeight != 0) {
+      const Metrics& vertMetrics = GetMetrics(nsFontMetrics::eVertical);
+      gfxFloat horizBaseline =
+          GetBaseline(aBaseline, nsFontMetrics::eHorizontal);
+      value = SynthesizeVerticalMetricFromHorizontalMetric(
+          horizMetrics, vertMetrics, horizBaseline);
+    } else {
+      // Use harfbuzz to try to read the font's baseline metrics. For
+      // missing baselines, harfbuzz will synthesize fallbacks according
+      // to the CSS Inline Layout Module Level 3 specification.
+      hb_font_t* hbFont;
+      bool createdFont = false;
+      if (gfxHarfBuzzShaper* shaper = GetHarfBuzzShaper()) {
+        hbFont = shaper->GetHBFont();
+      } else {
+        NS_WARNING("failed to get shaper, font extents may be inaccurate");
+        hbFont = gfxHarfBuzzShaper::CreateHBFont(this);
+        createdFont = true;
+      }
+      hb_direction_t hbDir = aOrientation == nsFontMetrics::eHorizontal
+                                 ? HB_DIRECTION_LTR
+                                 : HB_DIRECTION_TTB;
+      hb_position_t position;
+      hb_ot_layout_get_baseline_with_fallback(
+          hbFont, tag, hbDir, HB_OT_TAG_DEFAULT_SCRIPT,
+          HB_OT_TAG_DEFAULT_LANGUAGE, &position);
+      if (createdFont) {
+        hb_font_destroy(hbFont);
+      }
+      value = position / 65536.0;
+    }
+
     [[maybe_unused]] gfxFloat oldValue = baseline.exchange(value);
     MOZ_ASSERT(std::isnan(oldValue) || oldValue == value,
                "computed baseline mismatch");
@@ -4481,6 +4530,7 @@ void gfxFont::CreateVerticalMetrics() {
 
   auto* metrics = new Metrics();
   ::memset(metrics, 0, sizeof(Metrics));
+  const Metrics& horizMetrics = GetHorizontalMetrics();
 
   // Some basic defaults, in case the font lacks any real metrics tables.
   // TODO: consider what rounding (if any) we should apply to these.
@@ -4598,7 +4648,6 @@ void gfxFont::CreateVerticalMetrics() {
   // horizontal metrics as well, to help consistency of CSS line-height.
   if (!metrics->aveCharWidth ||
       metrics->externalLeading == UNINITIALIZED_LEADING) {
-    const Metrics& horizMetrics = GetHorizontalMetrics();
     if (!metrics->aveCharWidth) {
       metrics->aveCharWidth = horizMetrics.maxAscent + horizMetrics.maxDescent;
     }
@@ -4644,12 +4693,26 @@ void gfxFont::CreateVerticalMetrics() {
 
   // Somewhat arbitrary values for now, subject to future refinement...
   metrics->spaceWidth = metrics->aveCharWidth;
-  metrics->xHeight = metrics->emHeight / 2;
-  metrics->capHeight = metrics->maxAscent;
 
-  metrics->maxHeight = metrics->maxAscent + metrics->maxDescent;
-  metrics->internalLeading =
-      std::max(0.0, metrics->maxHeight - metrics->emHeight);
+  // Synthesize the internal leading of the vertical font from the horizontal
+  // metrics, and distribute evenly to both the vertical ascent and descent.
+  if (horizMetrics.emHeight != 0) {
+    metrics->internalLeading = horizMetrics.internalLeading /
+                               horizMetrics.emHeight * metrics->emHeight;
+    metrics->maxAscent += metrics->internalLeading / 2;
+    metrics->maxDescent += metrics->internalLeading / 2;
+    metrics->maxHeight = metrics->maxAscent + metrics->maxDescent;
+  } else {
+    metrics->maxHeight = metrics->maxAscent + metrics->maxDescent;
+    metrics->internalLeading =
+        std::max(0.0, metrics->maxHeight - metrics->emHeight);
+  }
+
+  // Synthesize the x-height and cap-height from the horizontal metrics.
+  metrics->xHeight = SynthesizeVerticalMetricFromHorizontalMetric(
+      horizMetrics, *metrics, horizMetrics.xHeight);
+  metrics->capHeight = SynthesizeVerticalMetricFromHorizontalMetric(
+      horizMetrics, *metrics, horizMetrics.capHeight);
 
   if (metrics->zeroWidth < 0.0) {
     metrics->zeroWidth = metrics->aveCharWidth;

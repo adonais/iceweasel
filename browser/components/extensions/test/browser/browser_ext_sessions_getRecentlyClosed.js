@@ -172,7 +172,7 @@ add_task(
           );
           browser.test.assertFalse(
             "url" in win.tabs[1],
-            "The second tab with empty.xpi has no url field due to empty history."
+            "The second tab with HTTP 204 has no url field due to empty history."
           );
           browser.test.assertEq(
             "https://example.com/",
@@ -192,7 +192,7 @@ add_task(
 
     // Test with a window with empty history.
     let xpi =
-      "https://example.com/browser/browser/components/extensions/test/browser/empty.xpi";
+      "https://example.com/browser/browser/components/extensions/test/browser/204.sjs";
     let newWin = await BrowserTestUtils.openNewBrowserWindow();
     await BrowserTestUtils.openNewForegroundTab({
       gBrowser: newWin.gBrowser,

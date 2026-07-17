@@ -599,9 +599,7 @@ template <XDRMode mode>
   MOZ_TRY(xdr->codeUint32(stencil.specifier.rawDataRef()));
   MOZ_TRY(xdr->codeUint32(stencil.firstUnsupportedAttributeKey.rawDataRef()));
   MOZ_TRY(XDRVectorContent(xdr, stencil.attributes));
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   MOZ_TRY(xdr->codeUint8(reinterpret_cast<uint8_t*>(&stencil.phase)));
-#endif
 
   return Ok();
 }

@@ -24,8 +24,10 @@ class IPPFxaActivateAuthProviderSingleton extends IPPFxaBaseAuthProvider {
   }
 
   async updateEntitlement() {
-    const { entitlement } = await this.getEntitlement();
-    this._setEntitlement(entitlement ?? null);
+    const { entitlement, error } = await this.getEntitlement();
+    if (!error) {
+      this._setEntitlement(entitlement ?? null);
+    }
     lazy.IPProtectionService.updateState();
   }
 

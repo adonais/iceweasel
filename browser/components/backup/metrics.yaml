@@ -27,7 +27,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_ENABLED
 
   archive_enabled:
     type: boolean
@@ -43,7 +42,6 @@ browser.backup:
     notification_emails:
       - drubino@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_ARCHIVE_ENABLED
 
   restore_enabled:
     type: boolean
@@ -59,7 +57,6 @@ browser.backup:
     notification_emails:
       - drubino@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_RESTORE_ENABLED
 
   scheduler_enabled:
     type: boolean
@@ -75,7 +72,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_SCHEDULER_ENABLED
 
   scheduler_toggle_source:
     type: string
@@ -113,7 +109,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_PSWD_ENCRYPTED
 
   location_on_device:
     type: quantity
@@ -129,7 +124,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_LOCATION_ON_DEVICE
 
   prof_d_disk_space:
     type: quantity
@@ -147,7 +141,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_PROF_D_DISK_SPACE
 
   total_backup_size:
     type: memory_distribution
@@ -165,7 +158,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_TOTAL_BACKUP_SIZE
 
   compressed_archive_size:
     type: memory_distribution
@@ -182,7 +174,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_COMPRESSED_ARCHIVE_SIZE
 
   total_backup_time:
     type: timing_distribution
@@ -199,7 +190,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_TOTAL_BACKUP_TIME_MS
 
   places_size:
     type: quantity
@@ -216,7 +206,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_PLACES_SIZE
 
   places_time:
     type: timing_distribution
@@ -233,7 +222,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_PLACES_TIME_MS
 
   favicons_size:
     type: quantity
@@ -248,7 +236,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_FAVICONS_SIZE
 
   favicons_time:
     type: timing_distribution
@@ -265,7 +252,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_FAVICONS_TIME_MS
 
   credentials_data_size:
     type: quantity
@@ -282,7 +268,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_CREDENTIALS_DATA_SIZE
 
   security_data_size:
     type: quantity
@@ -299,7 +284,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_SECURITY_DATA_SIZE
 
   preferences_size:
     type: quantity
@@ -316,7 +300,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_PREFERENCES_SIZE
 
   misc_data_size:
     type: quantity
@@ -336,7 +319,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_MISC_DATA_SIZE
 
   cookies_size:
     type: quantity
@@ -353,7 +335,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_COOKIES_SIZE
 
   form_history_size:
     type: quantity
@@ -370,7 +351,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_FORM_HISTORY_SIZE
 
   session_store_backups_directory_size:
     type: quantity
@@ -386,7 +366,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_SESSION_STORE_BACKUPS_DIRECTORY_SIZE
 
   session_store_size:
     type: quantity
@@ -402,7 +381,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_SESSION_STORE_SIZE
 
   extensions_json_size:
     type: quantity
@@ -424,7 +402,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_EXTENSIONS_JSON_SIZE
 
   extension_store_permissions_data_size:
     type: quantity
@@ -441,7 +418,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_EXTENSION_STORE_PERMISSIONS_DATA_SIZE
 
   storage_sync_size:
     type: quantity
@@ -458,7 +434,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_STORAGE_SYNC_SIZE
 
   browser_extension_data_size:
     type: quantity
@@ -475,7 +450,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_BROWSER_EXTENSION_DATA_SIZE
 
   extensions_xpi_directory_size:
     type: quantity
@@ -492,7 +466,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_EXTENSIONS_XPI_DIRECTORY_SIZE
 
   extensions_storage_size:
     type: quantity
@@ -509,7 +482,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BROWSER_BACKUP_EXTENSIONS_STORAGE_SIZE
 
   toggle_on:
     type: event
@@ -528,7 +500,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BrowserBackup_ToggleOn_Backupservice
     extra_keys:
       encrypted:
         type: boolean
@@ -556,7 +527,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BrowserBackup_ToggleOff_Backupservice
 
   created:
     type: event
@@ -575,7 +545,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BrowserBackup_Created_Backupservice
     extra_keys:
       encrypted:
         type: boolean
@@ -608,7 +577,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BrowserBackup_ChangeLocation_Backupservice
 
   password_changed:
     type: event
@@ -625,7 +593,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BrowserBackup_PasswordChanged_Backupservice
 
   password_added:
     type: event
@@ -642,7 +609,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BrowserBackup_PasswordAdded_Backupservice
 
   password_removed:
     type: event
@@ -659,7 +625,6 @@ browser.backup:
     notification_emails:
       - mconley@mozilla.com
     expires: never
-    telemetry_mirror: BrowserBackup_PasswordRemoved_Backupservice
 
   error:
     type: event
@@ -686,7 +651,6 @@ browser.backup:
         description: >
           The string representation of the step that backup creation was in
           when the error occurred.
-    telemetry_mirror: BrowserBackup_Error_Backupservice
 
   backup_start:
     type: event
@@ -818,6 +782,11 @@ browser.backup:
       os_version:
         type: string
         description: The OS version in which the backup was created.
+      os_build_number:
+        type: string
+        description: >
+          The OS build number from the machine that created the backup. On
+          Windows, build numbers >= 22000 indicate Windows 11.
       telemetry_enabled:
         type: boolean
         description: Whether telemetry was enabled when the backup was created.
@@ -843,6 +812,20 @@ browser.backup:
       replace:
         type: boolean
         description: Indicates if the restore will replace the current running profile.
+      backup_version:
+        type: string
+        description: The application version that created the backup file.
+      backup_os_name:
+        type: string
+        description: The OS name from the machine that created the backup.
+      backup_os_version:
+        type: string
+        description: The OS version from the machine that created the backup.
+      backup_os_build_number:
+        type: string
+        description: >
+          The OS build number from the machine that created the backup. On
+          Windows, build numbers >= 22000 indicate Windows 11.
 
   restore_failed:
     type: event
@@ -867,7 +850,37 @@ browser.backup:
         description: >
           The reason for the failure. Possible values include, but are not
           limited to, "UNAUTHORIZED" (bad password provided by user),
-          "CORRUPTED_ARCHIVE", and "FILE_SYSTEM_ERROR".
+          "CORRUPTED_ARCHIVE", "DECOMPRESSION_FAILED",
+          "PROFILE_CREATION_FAILED", "RESOURCE_RECOVERY_FAILED",
+          and "FILE_SYSTEM_ERROR".
+      error_detail:
+        type: string
+        description: >
+          Additional detail about the failure. For RESOURCE_RECOVERY_FAILED,
+          this contains the resource key that failed (e.g.
+          "PlacesBackupResource"). For other non-BackupError exceptions,
+          this contains the error message (truncated to 100 characters).
+          Empty string if not applicable.
+      restore_step:
+        type: string
+        description: >
+          The step that restore was in when the failure occurred. For
+          resource-specific failures, value is
+          "RECOVER_RESOURCE:{resourceKey}".
+      backup_version:
+        type: string
+        description: The application version that created the backup file.
+      backup_os_name:
+        type: string
+        description: The OS name from the machine that created the backup.
+      backup_os_version:
+        type: string
+        description: The OS version from the machine that created the backup.
+      backup_os_build_number:
+        type: string
+        description: >
+          The OS build number from the machine that created the backup. On
+          Windows, build numbers >= 22000 indicate Windows 11.
 
   restore_complete:
     type: event
@@ -889,6 +902,20 @@ browser.backup:
       restore_id:
         type: string
         description: The identifier for the potential profile restore event.
+      backup_version:
+        type: string
+        description: The application version that created the backup file.
+      backup_os_name:
+        type: string
+        description: The OS name from the machine that created the backup.
+      backup_os_version:
+        type: string
+        description: The OS version from the machine that created the backup.
+      backup_os_build_number:
+        type: string
+        description: >
+          The OS build number from the machine that created the backup. On
+          Windows, build numbers >= 22000 indicate Windows 11.
 
   backup_detection_complete:
     type: event
@@ -992,6 +1019,8 @@ browser.backup:
         backup_os_name:
           type: string
         backup_os_version:
+          type: string
+        backup_os_build_number:
           type: string
         backup_legacy_client_id:
           type: string

@@ -147,7 +147,7 @@ void StorageObserver::Notify(const char* aTopic,
 
   MOZ_ASSERT(sSelf);
 
-  for (auto sink : mSinks.ForwardRange()) {
+  for (auto const& sink : mSinks.ForwardRange()) {
     sink->Observe(aTopic, aOriginAttributesPattern, aOriginScope);
   }
 }

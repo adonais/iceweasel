@@ -11,6 +11,7 @@
 #include "nsIURI.h"
 #include "nsNetUtil.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsReadableUtils.h"
 #include "nsThreadUtils.h"
 #include "RestoreTabContentObserver.h"

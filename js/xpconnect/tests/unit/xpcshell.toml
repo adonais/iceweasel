@@ -233,9 +233,6 @@ skip-if = [
 ["test_getObjectPrincipal.js"]
 
 ["test_import_attributes.js"]
-prefs = [
-  "javascript.options.experimental.import_text=true",
-]
 
 ["test_import_attributes_worker.js"]
 skip-if = [

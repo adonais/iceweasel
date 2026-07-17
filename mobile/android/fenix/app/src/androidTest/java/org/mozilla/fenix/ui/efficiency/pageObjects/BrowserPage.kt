@@ -4,13 +4,22 @@
 
 package org.mozilla.fenix.ui.efficiency.pageObjects
 
+import android.util.Log
+import androidx.compose.ui.semantics.SemanticsProperties
+import androidx.compose.ui.semantics.getOrNull
+import androidx.compose.ui.test.ComposeTimeoutException
+import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.junit4.AndroidComposeTestRule
+import androidx.compose.ui.test.onAllNodesWithTag
 import androidx.test.uiautomator.By
 import androidx.test.uiautomator.Until
+import mozilla.components.compose.browser.toolbar.concept.BrowserToolbarTestTags.ADDRESSBAR_URL
 import org.junit.Assert.assertTrue
+import org.mozilla.fenix.helpers.Constants.TAG
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTime
 import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeLong
+import org.mozilla.fenix.helpers.TestAssetHelper.waitingTimeShort
 import org.mozilla.fenix.helpers.TestHelper.mDevice
 import org.mozilla.fenix.helpers.TestHelper.packageName
 import org.mozilla.fenix.helpers.ext.waitNotNull
@@ -74,10 +83,17 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
                 NavigationStep.PressBack,
             ),
         )
+
+        // Use UIAutomator selector to avoid Compose sync hanging when GeckoView is active.
+        NavigationRegistry.register(
+            from = pageName,
+            to = "TabDrawerPage",
+            steps = listOf(NavigationStep.Click(ToolbarSelectors.TAB_COUNTER_UIAUTOMATOR)),
+        )
     }
 
-    override fun navigateToPage(url: String): BrowserPage {
-        super.navigateToPage(url.ifBlank { "example.com" })
+    override fun navigateToPage(url: String, forceNavigation: Boolean): BrowserPage {
+        super.navigateToPage(url = url.ifBlank { "example.com" }, forceNavigation = forceNavigation)
         return this
     }
 
@@ -134,6 +150,28 @@ class BrowserPage(composeRule: AndroidComposeTestRule<HomeActivityIntentTestRule
 
     fun continueToHttpSite(): BrowserPage {
         return clickPageContent("Continue to HTTP Site")
+    }
+
+    fun verifyUrl(url: String): BrowserPage {
+        Log.i(TAG, "verifyUrl: Trying to verify $url")
+
+        val expectedText = url.replace("http://", "")
+        val textMatcher = hasText(expectedText, substring = true, ignoreCase = true)
+        try {
+            composeRule.waitUntil(waitingTimeShort) {
+                composeRule.onAllNodesWithTag(ADDRESSBAR_URL, useUnmergedTree = true).fetchSemanticsNodes()
+                    .any { textMatcher.matches(it) }
+            }
+        } catch (_: ComposeTimeoutException) {
+            Log.i(TAG, "verifyUrl [$url] failed because: ")
+            composeRule.onAllNodesWithTag(ADDRESSBAR_URL, useUnmergedTree = true).fetchSemanticsNodes()
+                .forEachIndexed { index, node ->
+                    val text = node.config.getOrNull(SemanticsProperties.Text)?.joinToString("")
+                    Log.i(TAG, "verifyUrl: Node[$index] with tag '$ADDRESSBAR_URL' has text: '$text'")
+                }
+        }
+
+        return this
     }
 
     private companion object {

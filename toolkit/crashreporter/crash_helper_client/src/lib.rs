@@ -5,7 +5,8 @@
 use anyhow::{bail, Result};
 use crash_helper_common::{
     messages::{self},
-    BreakpadString, GeckoChildId, IPCClientChannel, IPCConnector, ProcessHandle, RawIPCConnector,
+    ApplicationInfo, BreakpadString, GeckoChildId, IPCClientChannel, IPCConnector, ProcessHandle,
+    RawIPCConnector,
 };
 #[cfg(any(target_os = "android", target_os = "linux"))]
 use minidump_writer::minidump_writer::{AuxvType, DirectAuxvDumpInfo};
@@ -16,6 +17,7 @@ use std::os::windows::io::{BorrowedHandle, OwnedHandle, RawHandle};
 use std::{
     ffi::{c_char, CString, OsString},
     hint::spin_loop,
+    path::PathBuf,
     ptr::null_mut,
     sync::{
         atomic::{AtomicBool, Ordering},
@@ -428,6 +430,27 @@ pub unsafe extern "C" fn unregister_child_auxv_info(
 ) -> bool {
     let client = client.as_mut().unwrap();
     client.unregister_auxv_info(id).is_ok()
+}
+
+/// Return the installation time of the folder/file specified in `path` or the
+/// current running executable if `path` is null. Note that this will not be an
+/// exact value, but rather a somewhat unique value for each installation and
+/// for each different user of said installation. We use it to approximate user
+/// counts without resorting to identifiable information, as such it is not
+/// meant to provide an accurate result. A return value of 0 indicates an error.
+///
+/// # Safety
+///
+/// The `path` argument must point to a nul-terminated C string or be null.
+#[no_mangle]
+pub unsafe extern "C" fn get_install_time(path: *const BreakpadChar) -> u64 {
+    let path = if path.is_null() {
+        None
+    } else {
+        let path = <OsString as BreakpadString>::from_ptr(path);
+        Some(PathBuf::from(path))
+    };
+    ApplicationInfo::get_install_time(path).unwrap_or(0)
 }
 
 /******************************************************************************

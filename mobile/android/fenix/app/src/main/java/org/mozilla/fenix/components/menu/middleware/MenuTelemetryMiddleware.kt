@@ -37,6 +37,12 @@ class MenuTelemetryMiddleware(
         next(action)
 
         when (action) {
+            MenuAction.Navigate.Wallpaper -> Events.browserMenuAction.record(
+                Events.BrowserMenuActionExtra(
+                    item = "change_wallpaper",
+                ),
+            )
+
             MenuAction.AddBookmark -> Events.browserMenuAction.record(
                 Events.BrowserMenuActionExtra(
                     item = "add_bookmark",

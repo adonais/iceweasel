@@ -203,7 +203,7 @@ class MOZ_STACK_CLASS AutoClonedRangeArray {
   /**
    * For compatiblity with the other browsers, we should shrink ranges to
    * start from an atomic content and/or end after one instead of start
-   * from end of a preceding text node and end by start of a follwing text
+   * from end of a preceding text node and end by start of a following text
    * node.  Returns true if this modifies a range.
    */
   enum class IfSelectingOnlyOneAtomicContent {

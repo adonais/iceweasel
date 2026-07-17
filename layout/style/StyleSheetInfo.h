@@ -6,7 +6,6 @@
 #define mozilla_StyleSheetInfo_h
 
 #include "mozilla/CORSMode.h"
-#include "mozilla/css/SheetParsingMode.h"
 #include "mozilla/dom/SRIMetadata.h"
 #include "nsIReferrerInfo.h"
 
@@ -16,6 +15,7 @@ class nsIURI;
 namespace mozilla {
 class StyleSheet;
 struct StyleStylesheetContents;
+enum class StyleOrigin : uint8_t;
 struct URLExtraData;
 
 /**
@@ -25,7 +25,7 @@ struct StyleSheetInfo final {
   using ReferrerPolicy = dom::ReferrerPolicy;
 
   StyleSheetInfo(CORSMode aCORSMode, const dom::SRIMetadata& aIntegrity,
-                 css::SheetParsingMode aParsingMode);
+                 StyleOrigin);
 
   // FIXME(emilio): aCopy should be const.
   StyleSheetInfo(StyleSheetInfo& aCopy, StyleSheet* aPrimarySheet);

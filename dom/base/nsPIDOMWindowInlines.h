@@ -5,6 +5,9 @@
 #ifndef dom_base_nsPIDOMWindowInlines_h_
 #define dom_base_nsPIDOMWindowInlines_h_
 
+#include "nsGlobalWindowInner.h"
+#include "nsGlobalWindowOuter.h"
+
 inline bool nsPIDOMWindowOuter::IsLoading() const {
   auto* win = GetCurrentInnerWindow();
 
@@ -81,6 +84,38 @@ inline mozilla::dom::Element* nsPIDOMWindowOuter::GetFocusedElement() const {
 
 inline bool nsPIDOMWindowOuter::UnknownFocusMethodShouldShowOutline() const {
   return mInnerWindow && mInnerWindow->UnknownFocusMethodShouldShowOutline();
+}
+
+inline nsIGlobalObject* nsGlobalWindowInner::GetRelevantGlobal() const {
+  return const_cast<nsGlobalWindowInner*>(this);
+}
+
+inline nsGlobalWindowOuter* nsGlobalWindowInner::GetInProcessTopInternal() {
+  nsGlobalWindowOuter* outer = GetOuterWindowInternal();
+  nsCOMPtr<nsPIDOMWindowOuter> top = outer ? outer->GetInProcessTop() : nullptr;
+  if (top) {
+    return nsGlobalWindowOuter::Cast(top);
+  }
+  return nullptr;
+}
+
+inline nsGlobalWindowOuter*
+nsGlobalWindowInner::GetInProcessScriptableTopInternal() {
+  nsPIDOMWindowOuter* top = GetInProcessScriptableTop();
+  return nsGlobalWindowOuter::Cast(top);
+}
+
+inline nsIScriptContext* nsGlobalWindowInner::GetContextInternal() {
+  if (mOuterWindow) {
+    return GetOuterWindowInternal()->mContext;
+  }
+
+  return nullptr;
+}
+
+inline nsGlobalWindowOuter* nsGlobalWindowInner::GetOuterWindowInternal()
+    const {
+  return nsGlobalWindowOuter::Cast(GetOuterWindow());
 }
 
 #endif

@@ -11,6 +11,7 @@ XPIDL_SOURCES += [
     "nsIDebug2.idl",
     "nsIException.idl",
     "nsIInterfaceRequestor.idl",
+    "nsIKeyedUUIDMapper.idl",
     "nsIMemoryInfoDumper.idl",
     "nsIMemoryReporter.idl",
     "nsISecurityConsoleMessage.idl",
@@ -176,6 +177,7 @@ UNIFIED_SOURCES += [
     "GkRustUtils.cpp",
     "HoldDropJSObjects.cpp",
     "JSObjectHolder.cpp",
+    "KeyedUUIDMapper.cpp",
     "LogCommandLineHandler.cpp",
     "Logging.cpp",
     "LogModulePrefWatcher.cpp",
@@ -321,3 +323,6 @@ with Files("*CycleCollector*"):
 
 with Files("PHCManager.*"):
     BUG_COMPONENT = ("Core", "Memory Allocator")
+
+with Files("*KeyedUUIDMapper*"):
+    BUG_COMPONENT = ("WebExtensions", "General")

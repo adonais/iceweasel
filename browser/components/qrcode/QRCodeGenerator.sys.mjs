@@ -19,21 +19,32 @@ ChromeUtils.defineLazyGetter(lazy, "logConsole", function () {
   });
 });
 
+import { XPCOMUtils } from "resource://gre/modules/XPCOMUtils.sys.mjs";
+
 ChromeUtils.defineESModuleGetters(lazy, {
   QRCodeWorker: "moz-src:///browser/components/qrcode/QRCodeWorker.sys.mjs",
 });
 
+XPCOMUtils.defineLazyPreferenceGetter(
+  lazy,
+  "embedLogo",
+  "browser.shareqrcode.embed_logo",
+  true
+);
+
 export const QRCodeGenerator = {
   /**
-   * Generate a QR code for the given URL with Firefox logo overlay
+   * Generate a QR code for the given URL, optionally with a Firefox logo
+   * overlay. The logo is embedded only when the
+   * browser.shareqrcode.embed_logo pref is true.
    *
    * @param {string} url - The URL to encode
-   * @returns {Promise<string>} - Data URI of the QR code PNG with logo
+   * @returns {Promise<string>} - Data URI of the QR code PNG
    */
   async generateQRCode(url) {
     const worker = new lazy.QRCodeWorker();
     try {
-      const dataURI = await worker.generateFullQRCode(url);
+      const dataURI = await worker.generateFullQRCode(url, lazy.embedLogo);
       lazy.logConsole.debug("QRCode worker generated full QR code");
       return dataURI;
     } finally {

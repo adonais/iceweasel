@@ -424,89 +424,6 @@ static inline void sr_2d_ver_round_and_store(__m256i res_a, __m256i res_b,
     s[6] = s[7];                                                              \
   }
 
-#define CONVOLVE_SR_HORIZONTAL_FILTER_12TAP                                    \
-  const __m256i v_zero = _mm256_setzero_si256();                               \
-  __m256i s[12];                                                               \
-  if (w <= 4) {                                                                \
-    for (i = 0; i < im_h; i += 2) {                                            \
-      const __m256i data = _mm256_permute2x128_si256(                          \
-          _mm256_castsi128_si256(                                              \
-              _mm_loadu_si128((__m128i *)(&src_ptr[i * src_stride + j]))),     \
-          _mm256_castsi128_si256(_mm_loadu_si128(                              \
-              (__m128i *)(&src_ptr[i * src_stride + src_stride + j]))),        \
-          0x20);                                                               \
-      const __m256i s_16lo = _mm256_unpacklo_epi8(data, v_zero);               \
-      const __m256i s_16hi = _mm256_unpackhi_epi8(data, v_zero);               \
-      const __m256i s_lolo = _mm256_unpacklo_epi16(s_16lo, s_16lo);            \
-      const __m256i s_lohi = _mm256_unpackhi_epi16(s_16lo, s_16lo);            \
-                                                                               \
-      const __m256i s_hilo = _mm256_unpacklo_epi16(s_16hi, s_16hi);            \
-      const __m256i s_hihi = _mm256_unpackhi_epi16(s_16hi, s_16hi);            \
-                                                                               \
-      s[0] = _mm256_alignr_epi8(s_lohi, s_lolo, 2);                            \
-      s[1] = _mm256_alignr_epi8(s_lohi, s_lolo, 10);                           \
-      s[2] = _mm256_alignr_epi8(s_hilo, s_lohi, 2);                            \
-      s[3] = _mm256_alignr_epi8(s_hilo, s_lohi, 10);                           \
-      s[4] = _mm256_alignr_epi8(s_hihi, s_hilo, 2);                            \
-      s[5] = _mm256_alignr_epi8(s_hihi, s_hilo, 10);                           \
-                                                                               \
-      const __m256i res_lo = convolve_12taps(s, coeffs_h);                     \
-                                                                               \
-      __m256i res_32b_lo = _mm256_sra_epi32(                                   \
-          _mm256_add_epi32(res_lo, round_const_h12), round_shift_h12);         \
-      __m256i res_16b_lo = _mm256_packs_epi32(res_32b_lo, res_32b_lo);         \
-      const __m128i res_0 = _mm256_extracti128_si256(res_16b_lo, 0);           \
-      const __m128i res_1 = _mm256_extracti128_si256(res_16b_lo, 1);           \
-      if (w > 2) {                                                             \
-        _mm_storel_epi64((__m128i *)&im_block[i * im_stride], res_0);          \
-        _mm_storel_epi64((__m128i *)&im_block[i * im_stride + im_stride],      \
-                         res_1);                                               \
-      } else {                                                                 \
-        uint32_t horiz_2;                                                      \
-        horiz_2 = (uint32_t)_mm_cvtsi128_si32(res_0);                          \
-        im_block[i * im_stride] = (uint16_t)horiz_2;                           \
-        im_block[i * im_stride + 1] = (uint16_t)(horiz_2 >> 16);               \
-        horiz_2 = (uint32_t)_mm_cvtsi128_si32(res_1);                          \
-        im_block[i * im_stride + im_stride] = (uint16_t)horiz_2;               \
-        im_block[i * im_stride + im_stride + 1] = (uint16_t)(horiz_2 >> 16);   \
-      }                                                                        \
-    }                                                                          \
-  } else {                                                                     \
-    for (i = 0; i < im_h; i++) {                                               \
-      const __m256i data = _mm256_permute2x128_si256(                          \
-          _mm256_castsi128_si256(                                              \
-              _mm_loadu_si128((__m128i *)(&src_ptr[i * src_stride + j]))),     \
-          _mm256_castsi128_si256(                                              \
-              _mm_loadu_si128((__m128i *)(&src_ptr[i * src_stride + j + 4]))), \
-          0x20);                                                               \
-      const __m256i s_16lo = _mm256_unpacklo_epi8(data, v_zero);               \
-      const __m256i s_16hi = _mm256_unpackhi_epi8(data, v_zero);               \
-                                                                               \
-      const __m256i s_lolo = _mm256_unpacklo_epi16(s_16lo, s_16lo);            \
-      const __m256i s_lohi = _mm256_unpackhi_epi16(s_16lo, s_16lo);            \
-                                                                               \
-      const __m256i s_hilo = _mm256_unpacklo_epi16(s_16hi, s_16hi);            \
-      const __m256i s_hihi = _mm256_unpackhi_epi16(s_16hi, s_16hi);            \
-                                                                               \
-      s[0] = _mm256_alignr_epi8(s_lohi, s_lolo, 2);                            \
-      s[1] = _mm256_alignr_epi8(s_lohi, s_lolo, 10);                           \
-      s[2] = _mm256_alignr_epi8(s_hilo, s_lohi, 2);                            \
-      s[3] = _mm256_alignr_epi8(s_hilo, s_lohi, 10);                           \
-      s[4] = _mm256_alignr_epi8(s_hihi, s_hilo, 2);                            \
-      s[5] = _mm256_alignr_epi8(s_hihi, s_hilo, 10);                           \
-                                                                               \
-      const __m256i res_lo = convolve_12taps(s, coeffs_h);                     \
-                                                                               \
-      __m256i res_32b_lo = _mm256_sra_epi32(                                   \
-          _mm256_add_epi32(res_lo, round_const_h12), round_shift_h12);         \
-                                                                               \
-      __m256i res_16b_lo = _mm256_packs_epi32(res_32b_lo, res_32b_lo);         \
-      _mm_store_si128((__m128i *)&im_block[i * im_stride],                     \
-                      _mm256_extracti128_si256(                                \
-                          _mm256_permute4x64_epi64(res_16b_lo, 0x88), 0));     \
-    }                                                                          \
-  }
-
 #define CONVOLVE_SR_VERTICAL_FILTER_12TAP                                      \
   __m256i src_0 = _mm256_loadu_si256((__m256i *)(im_block + 0 * im_stride));   \
   __m256i src_1 = _mm256_loadu_si256((__m256i *)(im_block + 1 * im_stride));   \
@@ -585,132 +502,106 @@ static inline void sr_2d_ver_round_and_store(__m256i res_a, __m256i res_b,
     s[10] = s[11];                                                             \
   }
 
-#define DIST_WTD_CONVOLVE_HORIZONTAL_FILTER_8TAP                        \
-  do {                                                                  \
-    for (i = 0; i < im_h; i += 2) {                                     \
-      __m256i data =                                                    \
-          _mm256_castsi128_si256(_mm_loadu_si128((__m128i *)src_h));    \
-      if (i + 1 < im_h)                                                 \
-        data = _mm256_inserti128_si256(                                 \
-            data, _mm_loadu_si128((__m128i *)(src_h + src_stride)), 1); \
-      src_h += (src_stride << 1);                                       \
-      __m256i res = convolve_lowbd_x(data, coeffs_x, filt);             \
-                                                                        \
-      res = _mm256_sra_epi16(_mm256_add_epi16(res, round_const_h),      \
-                             round_shift_h);                            \
-                                                                        \
-      _mm256_store_si256((__m256i *)&im_block[i * im_stride], res);     \
-    }                                                                   \
+#define JNT_CONVOLVE_PROCESS_OUTPUT(res_unsigned, j_off)                       \
+  do {                                                                         \
+    if (do_average) {                                                          \
+      const __m256i data_ref_0 =                                               \
+          load_line2_avx2(&dst[i * dst_stride + (j_off)],                      \
+                          &dst[i * dst_stride + (j_off) + dst_stride]);        \
+      const __m256i comp_avg_res =                                             \
+          comp_avg(&data_ref_0, &(res_unsigned), &wt, use_dist_wtd_comp_avg);  \
+      const __m256i res_signed = _mm256_sub_epi16(comp_avg_res, offset_const); \
+      const __m256i round_result =                                             \
+          _mm256_srai_epi16(_mm256_add_epi16(res_signed, rounding_const), 4);  \
+      const __m256i res_8 = _mm256_packus_epi16(round_result, round_result);   \
+      const __m128i res_0 = _mm256_castsi256_si128(res_8);                     \
+      const __m128i res_1 = _mm256_extracti128_si256(res_8, 1);                \
+      if (w - (j_off) > 4) {                                                   \
+        _mm_storel_epi64((__m128i *)(&dst0[i * dst_stride0 + (j_off)]),        \
+                         res_0);                                               \
+        _mm_storel_epi64(                                                      \
+            (__m128i *)(&dst0[i * dst_stride0 + (j_off) + dst_stride0]),       \
+            res_1);                                                            \
+      } else {                                                                 \
+        *(int *)(&dst0[i * dst_stride0 + (j_off)]) = _mm_cvtsi128_si32(res_0); \
+        *(int *)(&dst0[i * dst_stride0 + (j_off) + dst_stride0]) =             \
+            _mm_cvtsi128_si32(res_1);                                          \
+      }                                                                        \
+    } else {                                                                   \
+      const __m128i res_0 = _mm256_castsi256_si128(res_unsigned);              \
+      _mm_store_si128((__m128i *)(&dst[i * dst_stride + (j_off)]), res_0);     \
+      const __m128i res_1 = _mm256_extracti128_si256(res_unsigned, 1);         \
+      _mm_store_si128(                                                         \
+          (__m128i *)(&dst[i * dst_stride + (j_off) + dst_stride]), res_1);    \
+    }                                                                          \
   } while (0)
 
-#define DIST_WTD_CONVOLVE_VERTICAL_FILTER_8TAP                                 \
-  do {                                                                         \
-    __m256i s[8];                                                              \
-    __m256i s0 = _mm256_loadu_si256((__m256i *)(im_block + 0 * im_stride));    \
-    __m256i s1 = _mm256_loadu_si256((__m256i *)(im_block + 1 * im_stride));    \
-    __m256i s2 = _mm256_loadu_si256((__m256i *)(im_block + 2 * im_stride));    \
-    __m256i s3 = _mm256_loadu_si256((__m256i *)(im_block + 3 * im_stride));    \
-    __m256i s4 = _mm256_loadu_si256((__m256i *)(im_block + 4 * im_stride));    \
-    __m256i s5 = _mm256_loadu_si256((__m256i *)(im_block + 5 * im_stride));    \
-                                                                               \
-    s[0] = _mm256_unpacklo_epi16(s0, s1);                                      \
-    s[1] = _mm256_unpacklo_epi16(s2, s3);                                      \
-    s[2] = _mm256_unpacklo_epi16(s4, s5);                                      \
-                                                                               \
-    s[4] = _mm256_unpackhi_epi16(s0, s1);                                      \
-    s[5] = _mm256_unpackhi_epi16(s2, s3);                                      \
-    s[6] = _mm256_unpackhi_epi16(s4, s5);                                      \
-                                                                               \
-    for (i = 0; i < h; i += 2) {                                               \
-      const int16_t *data = &im_block[i * im_stride];                          \
-                                                                               \
-      const __m256i s6 =                                                       \
-          _mm256_loadu_si256((__m256i *)(data + 6 * im_stride));               \
-      const __m256i s7 =                                                       \
-          _mm256_loadu_si256((__m256i *)(data + 7 * im_stride));               \
-                                                                               \
-      s[3] = _mm256_unpacklo_epi16(s6, s7);                                    \
-      s[7] = _mm256_unpackhi_epi16(s6, s7);                                    \
-                                                                               \
-      const __m256i res_a = convolve(s, coeffs_y);                             \
-      const __m256i res_a_round = _mm256_sra_epi32(                            \
-          _mm256_add_epi32(res_a, round_const_v), round_shift_v);              \
-                                                                               \
-      if (w - j > 4) {                                                         \
-        const __m256i res_b = convolve(s + 4, coeffs_y);                       \
-        const __m256i res_b_round = _mm256_sra_epi32(                          \
-            _mm256_add_epi32(res_b, round_const_v), round_shift_v);            \
-        const __m256i res_16b = _mm256_packs_epi32(res_a_round, res_b_round);  \
-        const __m256i res_unsigned = _mm256_add_epi16(res_16b, offset_const);  \
-                                                                               \
-        if (do_average) {                                                      \
-          const __m256i data_ref_0 =                                           \
-              load_line2_avx2(&dst[i * dst_stride + j],                        \
-                              &dst[i * dst_stride + j + dst_stride]);          \
-          const __m256i comp_avg_res = comp_avg(&data_ref_0, &res_unsigned,    \
-                                                &wt, use_dist_wtd_comp_avg);   \
-                                                                               \
-          const __m256i round_result = convolve_rounding(                      \
-              &comp_avg_res, &offset_const, &rounding_const, rounding_shift);  \
-                                                                               \
-          const __m256i res_8 =                                                \
-              _mm256_packus_epi16(round_result, round_result);                 \
-          const __m128i res_0 = _mm256_castsi256_si128(res_8);                 \
-          const __m128i res_1 = _mm256_extracti128_si256(res_8, 1);            \
-                                                                               \
-          _mm_storel_epi64((__m128i *)(&dst0[i * dst_stride0 + j]), res_0);    \
-          _mm_storel_epi64(                                                    \
-              (__m128i *)((&dst0[i * dst_stride0 + j + dst_stride0])), res_1); \
-        } else {                                                               \
-          const __m128i res_0 = _mm256_castsi256_si128(res_unsigned);          \
-          _mm_store_si128((__m128i *)(&dst[i * dst_stride + j]), res_0);       \
-                                                                               \
-          const __m128i res_1 = _mm256_extracti128_si256(res_unsigned, 1);     \
-          _mm_store_si128((__m128i *)(&dst[i * dst_stride + j + dst_stride]),  \
-                          res_1);                                              \
-        }                                                                      \
-      } else {                                                                 \
-        const __m256i res_16b = _mm256_packs_epi32(res_a_round, res_a_round);  \
-        const __m256i res_unsigned = _mm256_add_epi16(res_16b, offset_const);  \
-                                                                               \
-        if (do_average) {                                                      \
-          const __m256i data_ref_0 =                                           \
-              load_line2_avx2(&dst[i * dst_stride + j],                        \
-                              &dst[i * dst_stride + j + dst_stride]);          \
-                                                                               \
-          const __m256i comp_avg_res = comp_avg(&data_ref_0, &res_unsigned,    \
-                                                &wt, use_dist_wtd_comp_avg);   \
-                                                                               \
-          const __m256i round_result = convolve_rounding(                      \
-              &comp_avg_res, &offset_const, &rounding_const, rounding_shift);  \
-                                                                               \
-          const __m256i res_8 =                                                \
-              _mm256_packus_epi16(round_result, round_result);                 \
-          const __m128i res_0 = _mm256_castsi256_si128(res_8);                 \
-          const __m128i res_1 = _mm256_extracti128_si256(res_8, 1);            \
-                                                                               \
-          *(int *)(&dst0[i * dst_stride0 + j]) = _mm_cvtsi128_si32(res_0);     \
-          *(int *)(&dst0[i * dst_stride0 + j + dst_stride0]) =                 \
-              _mm_cvtsi128_si32(res_1);                                        \
-                                                                               \
-        } else {                                                               \
-          const __m128i res_0 = _mm256_castsi256_si128(res_unsigned);          \
-          _mm_store_si128((__m128i *)(&dst[i * dst_stride + j]), res_0);       \
-                                                                               \
-          const __m128i res_1 = _mm256_extracti128_si256(res_unsigned, 1);     \
-          _mm_store_si128((__m128i *)(&dst[i * dst_stride + j + dst_stride]),  \
-                          res_1);                                              \
-        }                                                                      \
-      }                                                                        \
-                                                                               \
-      s[0] = s[1];                                                             \
-      s[1] = s[2];                                                             \
-      s[2] = s[3];                                                             \
-                                                                               \
-      s[4] = s[5];                                                             \
-      s[5] = s[6];                                                             \
-      s[6] = s[7];                                                             \
-    }                                                                          \
+#define JNT_CONVOLVE_HORIZONTAL_FILTER(src_h_start, convolve_fn, coeffs) \
+  do {                                                                   \
+    const uint8_t *src_h = (src_h_start);                                \
+    for (i = 0; i < im_h; i += 2) {                                      \
+      const __m256i data = load_line2_avx2(src_h, src_h + src_stride);   \
+      src_h += (src_stride << 1);                                        \
+      __m256i res = convolve_fn(data, coeffs, filt);                     \
+      res = _mm256_srai_epi16(_mm256_add_epi16(res, round_const_h), 2);  \
+      _mm256_store_si256((__m256i *)&im_block[i * im_stride], res);      \
+    }                                                                    \
+  } while (0)
+
+#define JNT_CONVOLVE_VERTICAL_FILTER_8TAP                                     \
+  do {                                                                        \
+    __m256i s[8];                                                             \
+    __m256i s0 = _mm256_loadu_si256((__m256i *)(im_block + 0 * im_stride));   \
+    __m256i s1 = _mm256_loadu_si256((__m256i *)(im_block + 1 * im_stride));   \
+    __m256i s2 = _mm256_loadu_si256((__m256i *)(im_block + 2 * im_stride));   \
+    __m256i s3 = _mm256_loadu_si256((__m256i *)(im_block + 3 * im_stride));   \
+    __m256i s4 = _mm256_loadu_si256((__m256i *)(im_block + 4 * im_stride));   \
+    __m256i s5 = _mm256_loadu_si256((__m256i *)(im_block + 5 * im_stride));   \
+                                                                              \
+    s[0] = _mm256_unpacklo_epi16(s0, s1);                                     \
+    s[1] = _mm256_unpacklo_epi16(s2, s3);                                     \
+    s[2] = _mm256_unpacklo_epi16(s4, s5);                                     \
+                                                                              \
+    s[4] = _mm256_unpackhi_epi16(s0, s1);                                     \
+    s[5] = _mm256_unpackhi_epi16(s2, s3);                                     \
+    s[6] = _mm256_unpackhi_epi16(s4, s5);                                     \
+                                                                              \
+    for (i = 0; i < h; i += 2) {                                              \
+      const int16_t *data = &im_block[i * im_stride];                         \
+                                                                              \
+      const __m256i s6 =                                                      \
+          _mm256_loadu_si256((__m256i *)(data + 6 * im_stride));              \
+      const __m256i s7 =                                                      \
+          _mm256_loadu_si256((__m256i *)(data + 7 * im_stride));              \
+                                                                              \
+      s[3] = _mm256_unpacklo_epi16(s6, s7);                                   \
+      s[7] = _mm256_unpackhi_epi16(s6, s7);                                   \
+                                                                              \
+      const __m256i res_a = convolve(s, coeffs_y);                            \
+      const __m256i res_a_round =                                             \
+          _mm256_srai_epi32(_mm256_add_epi32(res_a, round_const_v), 7);       \
+                                                                              \
+      if (w - j > 4) {                                                        \
+        const __m256i res_b = convolve(s + 4, coeffs_y);                      \
+        const __m256i res_b_round =                                           \
+            _mm256_srai_epi32(_mm256_add_epi32(res_b, round_const_v), 7);     \
+        const __m256i res_16b = _mm256_packs_epi32(res_a_round, res_b_round); \
+        const __m256i res_unsigned = _mm256_add_epi16(res_16b, offset_const); \
+        JNT_CONVOLVE_PROCESS_OUTPUT(res_unsigned, j);                         \
+      } else {                                                                \
+        const __m256i res_16b = _mm256_packs_epi32(res_a_round, res_a_round); \
+        const __m256i res_unsigned = _mm256_add_epi16(res_16b, offset_const); \
+        JNT_CONVOLVE_PROCESS_OUTPUT(res_unsigned, j);                         \
+      }                                                                       \
+                                                                              \
+      s[0] = s[1];                                                            \
+      s[1] = s[2];                                                            \
+      s[2] = s[3];                                                            \
+                                                                              \
+      s[4] = s[5];                                                            \
+      s[5] = s[6];                                                            \
+      s[6] = s[7];                                                            \
+    }                                                                         \
   } while (0)
 
 static inline void prepare_coeffs_2t_ssse3(

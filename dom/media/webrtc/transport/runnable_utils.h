@@ -212,7 +212,7 @@ class DispatchedRelease : public detail::runnable_args_base<detail::NoResult> {
 };
 
 template <typename T>
-DispatchedRelease<T>* WrapRelease(already_AddRefed<T>&& ref) {
+DispatchedRelease<T>* WrapRelease(already_AddRefed<T> ref) {
   return new DispatchedRelease<T>(ref);
 }
 

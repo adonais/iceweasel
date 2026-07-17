@@ -4,6 +4,7 @@
 
 #include "vm/ProxyObject.h"
 
+#include "gc/GC.h"
 #include "gc/GCProbes.h"
 #include "gc/Marking.h"
 #include "gc/Zone.h"
@@ -12,6 +13,7 @@
 #include "vm/Realm.h"
 
 #include "gc/ObjectKind-inl.h"
+#include "gc/StableCellHasher-inl.h"  // gc::MaybeGetUniqueId, gc::GetUniqueIdInfallible
 #include "vm/JSContext-inl.h"
 
 using namespace js;
@@ -184,6 +186,109 @@ void ProxyObject::nuke() {
   // compartments to be kept alive. Note that these are slots cannot hold
   // cross compartment pointers, so this cannot cause the target compartment
   // to leak.
+}
+
+// Use this method with extreme caution. It trades the guts of two proxies.
+/* static */
+void ProxyObject::swap(JSContext* cx, Handle<ProxyObject*> a,
+                       Handle<ProxyObject*> b,
+                       AutoEnterOOMUnsafeRegion& oomUnsafe) {
+  // Only proxies with SwappableProxyReservedSlots and the same AllocKind may be
+  // swapped.
+  MOZ_RELEASE_ASSERT(JSCLASS_RESERVED_SLOTS(a->getClass()) ==
+                     js::SwappableProxyReservedSlots);
+  MOZ_RELEASE_ASSERT(JSCLASS_RESERVED_SLOTS(b->getClass()) ==
+                     js::SwappableProxyReservedSlots);
+  MOZ_RELEASE_ASSERT(a->allocKind() == b->allocKind());
+
+  MOZ_RELEASE_ASSERT(a->compartment() == b->compartment());
+
+  // You must have entered the objects' compartment before calling this.
+  MOZ_RELEASE_ASSERT(cx->compartment() == a->compartment());
+
+  // Only certain types of objects are allowed to be swapped. This allows the
+  // JITs to better optimize objects that can never swap and rules out most
+  // builtin objects that have special behaviour.
+  MOZ_RELEASE_ASSERT(js::ObjectMayBeSwapped(a));
+  MOZ_RELEASE_ASSERT(js::ObjectMayBeSwapped(b));
+
+  // Don't allow a GC which may observe intermediate state or run before we
+  // execute all necessary barriers.
+  gc::AutoSuppressGC nogc(cx);
+
+  if (a->isTenured() || b->isTenured()) {
+    if (a->zone()->wasGCStarted()) {
+      cx->runtime()->gc.storeBuffer().setMayHavePointersToDeadCells();
+    }
+  }
+
+  unsigned r = NotifyGCPreSwap(a, b);
+
+  bool aIsUsedAsPrototype = a->isUsedAsPrototype();
+  bool bIsUsedAsPrototype = b->isUsedAsPrototype();
+
+  // Verify that swapping does not result in an object becoming its own proto.
+  if (aIsUsedAsPrototype && b->hasStaticPrototype()) {
+    MOZ_RELEASE_ASSERT(b->staticPrototype() != a);
+  }
+  if (bIsUsedAsPrototype && a->hasStaticPrototype()) {
+    MOZ_RELEASE_ASSERT(a->staticPrototype() != b);
+  }
+
+#ifdef DEBUG
+  // Record any associated unique IDs.
+  //
+  // Note that unique IDs are NOT swapped but remain associated with the
+  // original address.
+  uint64_t aid = 0;
+  uint64_t bid = 0;
+  (void)gc::MaybeGetUniqueId(a, &aid);
+  (void)gc::MaybeGetUniqueId(b, &bid);
+#endif
+
+  // Swap shape.
+  Shape* shapeA = a->shape();
+  a->setShapeForProxySwap(b->shape());
+  b->setShapeForProxySwap(shapeA);
+
+  // Swap handler.
+  const BaseProxyHandler* handlerA = a->handler();
+  a->setHandler(b->handler());
+  b->setHandler(handlerA);
+
+  // Swap expando objects.
+  JSObject* expandoA = a->expando();
+  a->setExpando(b->expando());
+  b->setExpando(expandoA);
+
+  // Swap private slot.
+  Value privateA = GetProxyPrivate(a);
+  SetProxyPrivate(a, GetProxyPrivate(b));
+  SetProxyPrivate(b, privateA);
+
+  // Swap reserved slots.
+  for (size_t i = 0; i < SwappableProxyReservedSlots; i++) {
+    Value slotA = GetProxyReservedSlot(a, i);
+    SetProxyReservedSlot(a, i, GetProxyReservedSlot(b, i));
+    SetProxyReservedSlot(b, i, slotA);
+  }
+
+  MOZ_ASSERT_IF(aid, gc::GetUniqueIdInfallible(a) == aid);
+  MOZ_ASSERT_IF(bid, gc::GetUniqueIdInfallible(b) == bid);
+
+  // Preserve the IsUsedAsPrototype flag on the objects.
+  if (aIsUsedAsPrototype) {
+    if (!JSObject::setIsUsedAsPrototype(cx, a)) {
+      oomUnsafe.crash("setIsUsedAsPrototype");
+    }
+  }
+  if (bIsUsedAsPrototype) {
+    if (!JSObject::setIsUsedAsPrototype(cx, b)) {
+      oomUnsafe.crash("setIsUsedAsPrototype");
+    }
+  }
+
+  NotifyGCPostSwap(a, b, r);
 }
 
 JS_PUBLIC_API void js::detail::SetValueInProxy(Value* slot,

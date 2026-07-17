@@ -14,7 +14,7 @@
   <script type="application/javascript"
           src="../role.js"></script>
   <script type="application/javascript"
-          src="../promisified-events.js"></script>
+          src="../events.js"></script>
 
   <script type="application/javascript">
     function testRelated(aRelAttr, aHostRelation, aDependentRelation,
@@ -97,8 +97,6 @@
       testRelation(aLabelID, RELATION_LABEL_FOR, aElmID);
       testRelation(aElmID, RELATION_LABELLED_BY, aLabelID);
     }
-
-    // gA11yEventDumpToConsole = true; // debug
 
     async function doTest() {
       // Relation updates on ARIA attribute changes.

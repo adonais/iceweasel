@@ -68,12 +68,12 @@ class DOMSVGNumber final : public nsWrapperCache {
 
  public:
   /**
-   * Create an unowned copy. The caller is responsible for the first AddRef().
+   * Create an unowned copy.
    */
-  DOMSVGNumber* Clone() {
-    DOMSVGNumber* clone = new DOMSVGNumber(mParent);
+  already_AddRefed<DOMSVGNumber> Clone() {
+    RefPtr clone = new DOMSVGNumber(mParent);
     clone->mValue = ToSVGNumber();
-    return clone;
+    return clone.forget();
   }
 
   bool IsInList() const { return !!mList; }

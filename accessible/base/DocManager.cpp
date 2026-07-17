@@ -115,6 +115,25 @@ void DocManager::NotifyOfDocumentShutdown(DocAccessible* aDocument,
 
   RemoveFromXPCDocumentCache(aDocument);
   mDocAccessibleCache.Remove(aDOMDocument);
+
+  if (aDocument->IsPrintDoc()) {
+    // A print doc is shutting down. If it is the last print doc, the
+    // accessibility service is no longer needed for PDF output, so remove the
+    // ePdfOutput consumer. If ePdfOutput is the only remaining consumer, this
+    // will shut down the accessibility service completely.
+    bool anyPrintDocsRemain = false;
+    for (const auto& entry : mDocAccessibleCache) {
+      DocAccessible* doc = entry.GetWeak();
+      if (doc->IsPrintDoc()) {
+        anyPrintDocsRemain = true;
+        break;
+      }
+    }
+    if (!anyPrintDocsRemain) {
+      MaybeShutdownAccService(nsAccessibilityService::ePdfOutput,
+                              /* aAsync */ true);
+    }
+  }
 }
 
 void DocManager::RemoveFromRemoteXPCDocumentCache(DocAccessibleParent* aDoc) {
@@ -176,8 +195,19 @@ bool DocManager::IsProcessingRefreshDriverNotification() const {
 #endif
 
 #ifdef MOZ_ENABLE_SKIA_PDF
+/* static */
 void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
   if (!StaticPrefs::accessibility_tagged_pdf_output_enabled()) {
+    return;
+  }
+  // Bring up the accessibility service if it isn't already running. Use the
+  // ePdfOutput consumer flag so that, if there is no other consumer, the
+  // service stays in PDF-only mode and doesn't create accessibles for
+  // unrelated documents. PDF output uses doc-specific cache domains rather
+  // than gCacheDomains, so there's no need to pass a specific domain set.
+  nsAccessibilityService* serv =
+      GetOrCreateAccService(nsAccessibilityService::ePdfOutput);
+  if (!serv) {
     return;
   }
   if (GetExistingDocAccessible(aDoc)) {
@@ -187,7 +217,7 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
   // Normally, we don't create DocAccessibles for static documents. Print
   // documents are static clones, so we force creation here.
   DocAccessible* topDocAcc =
-      CreateDocOrRootAccessible(aDoc, /* aAllowStatic */ true);
+      serv->CreateDocOrRootAccessible(aDoc, /* aAllowStatic */ true);
   if (!topDocAcc) {
     return;
   }
@@ -203,7 +233,7 @@ void DocManager::NotifyOfPrintDocument(dom::Document* aDoc) {
       [](const dom::Document* aDescDoc) { return true; });
   for (dom::Document* descDoc : descendants) {
     if (DocAccessible* descDocAcc =
-            CreateDocOrRootAccessible(descDoc, /* aAllowStatic */ true)) {
+            serv->CreateDocOrRootAccessible(descDoc, /* aAllowStatic */ true)) {
       descDocAcc->DoInitialUpdate();
     }
   }
@@ -476,6 +506,16 @@ void DocManager::RemoveListeners(Document* aDocument) {
 
 DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
                                                      bool aAllowStatic) {
+  // In PDF-only mode, the service exists purely to build the accessibility
+  // tree for a document being printed. Only the print path
+  // (NotifyOfPrintDocument) passes aAllowStatic=true; everything else
+  // (DOM load notifications, GetDocAccessible, etc.) defaults to false.
+  // Suppress those other cases here so unrelated documents loaded while a
+  // tagged PDF is being generated don't get DocAccessibles.
+  if (!aAllowStatic && nsAccessibilityService::IsOnlyForPdfOutput()) {
+    return nullptr;
+  }
+
   // Ignore hidden documents, resource documents, static clone
   // (printing) documents and documents without a docshell.
   if (!nsCoreUtils::IsDocumentVisibleConsideringInProcessAncestors(aDocument) ||
@@ -532,9 +572,16 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
     // XXXaaronl: ideally we would traverse the presshell chain. Since there's
     // no easy way to do that, we cheat and use the document hierarchy.
     parentDocAcc = GetDocAccessible(aDocument->GetInProcessParentDocument());
-    // We should always get parentDocAcc except sometimes for background
-    // extension pages, where the parent has an invisible DocShell but the child
-    // does not. See bug 1888649.
+    // We should always get parentDocAcc except:
+    // 1. Sometimes for background extension pages, where the parent has an
+    // invisible DocShell but the child does not. See bug 1888649. In this case,
+    // we should return null.
+    // 2. When this is a printing document and the accessibility service is in
+    // PDF output only mode. In this case, we should still return the document,
+    // just without a parent.
+    const bool shouldAllowNoParent =
+        aAllowStatic && XRE_IsParentProcess() &&
+        nsAccessibilityService::IsOnlyForPdfOutput();
     NS_ASSERTION(
         parentDocAcc ||
             (BasePrincipal::Cast(aDocument->GetPrincipal())->AddonPolicy() &&
@@ -542,9 +589,12 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
              aDocument->GetInProcessParentDocument()->GetDocShell() &&
              aDocument->GetInProcessParentDocument()
                  ->GetDocShell()
-                 ->IsInvisible()),
+                 ->IsInvisible()) ||
+            shouldAllowNoParent,
         "Can't create an accessible for the document!");
-    if (!parentDocAcc) return nullptr;
+    if (!parentDocAcc && !shouldAllowNoParent) {
+      return nullptr;
+    }
   }
 
   // We only create root accessibles for the true root, otherwise create a
@@ -575,7 +625,7 @@ DocAccessible* DocManager::CreateDocOrRootAccessible(Document* aDocument,
     docAcc->FireDelayedEvent(nsIAccessibleEvent::EVENT_REORDER,
                              ApplicationAcc());
 
-  } else {
+  } else if (parentDocAcc) {
     parentDocAcc->BindChildDocument(docAcc);
   }
 

@@ -9,8 +9,10 @@
 // source files.
 
 #include "IndexedDatabaseManager.h"
+#include "mozilla/Maybe.h"
 #include "mozilla/dom/BindingDeclarations.h"
 #include "mozilla/dom/IDBCursorBinding.h"
+#include "mozilla/dom/indexedDB/PBackgroundIDBSharedTypes.h"
 #include "nsID.h"
 #include "nsString.h"
 
@@ -42,13 +44,20 @@ class MOZ_STACK_CLASS LoggingString final : public nsAutoCString {
   explicit LoggingString(IDBObjectStore* aObjectStore);
   explicit LoggingString(IDBIndex* aIndex);
   explicit LoggingString(IDBKeyRange* aKeyRange);
+  explicit LoggingString(const Maybe<indexedDB::SerializedKeyRange>& aKeyRange);
   explicit LoggingString(const Key& aKey);
   explicit LoggingString(const IDBCursorDirection aDirection);
   explicit LoggingString(const Optional<uint64_t>& aVersion);
+  explicit LoggingString(uint32_t aLimit);
   explicit LoggingString(const Optional<uint32_t>& aLimit);
 
   LoggingString(IDBObjectStore* aObjectStore, const Key& aKey);
   LoggingString(Event* aEvent, const char16_t* aDefault);
+
+ private:
+  void AssignUndefined();
+  void AssignKeyRange(bool aIsOnly, const Key& aLower, const Key& aUpper,
+                      bool aLowerOpen, bool aUpperOpen);
 };
 
 // Both the aDetailedFmt and the aConciseFmt need to match the variable argument

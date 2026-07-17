@@ -9,6 +9,7 @@ import mozilla.components.browser.state.search.SearchEngine
 import mozilla.components.browser.state.state.content.DownloadState
 import mozilla.components.concept.storage.BookmarkNode
 import mozilla.components.concept.sync.TabData
+import mozilla.components.feature.protection.dashboard.TrackersBlockedCategory
 import mozilla.components.feature.tab.collections.TabCollection
 import mozilla.components.feature.top.sites.TopSite
 import mozilla.components.lib.crash.Crash.NativeCodeCrash
@@ -63,6 +64,11 @@ sealed class AppAction : Action {
      * Updates whether the first frame of the homescreen has been [drawn].
      */
     data class UpdateFirstFrameDrawn(val drawn: Boolean) : AppAction()
+
+    /**
+     * Updates whether the fox peek animation should play on the next homepage view.
+     */
+    data class UpdateShowFoxPeekAnimation(val ready: Boolean) : AppAction()
     data class AddNonFatalCrash(val crash: NativeCodeCrash) : AppAction()
     data class RemoveNonFatalCrash(val crash: NativeCodeCrash) : AppAction()
     object RemoveAllNonFatalCrashes : AppAction()
@@ -816,11 +822,33 @@ sealed class AppAction : Action {
     }
 
     /**
-     * Updates the total count of trackers blocked for the privacy report.
-     *
-     * @property count The new count of trackers blocked.
+     * [AppAction]s related to the the trackers blocked state.
      */
-    data class UpdateTrackersBlockedCount(val count: Int) : AppAction()
+    sealed class BlockedTrackersAction : AppAction() {
+        /**
+         * Updates the total count of trackers blocked for the privacy report.
+         *
+         * @property count The new count of trackers blocked.
+         */
+        data class UpdateTrackersBlockedCount(val count: Int) : BlockedTrackersAction()
+
+        /**
+         * Updates the details about what trackers have been blocked this week.
+         *
+         * @property blockedTrackerCategories The list of trackers blocked this week as a tracker category split.
+         */
+        data class UpdateTrackersBlockedThisWeek(
+            val blockedTrackerCategories: List<TrackersBlockedCategory>,
+        ) : BlockedTrackersAction()
+
+        /**
+         * Updates the earliest date for which we have information about blocked trackers.
+         *
+         * @property date The earliest date for which we have information about blocked trackers as a Unix time stamp.
+         * May be `null` if this information is not available.
+         */
+        data class UpdateEarliestTrackingDate(val date: Long?) : BlockedTrackersAction()
+    }
 
     /**
      * [AppAction]s related to the sports widget.
@@ -921,5 +949,24 @@ sealed class AppAction : Action {
          * @property isOneWeekToWorldCupOverride Whether it's one week to the World Cup.
          */
         data class OneWeekToWorldCupOverrideUpdated(val isOneWeekToWorldCupOverride: Boolean) : SportsWidgetAction()
+    }
+
+    /**
+     * [SnackbarAction]s related to the IP Protection feature.
+     */
+    sealed class IPProtectionSnackbarAction : SnackbarAction() {
+        /**
+         * Dispatched when IP Protection feature experienced a connection error.
+         *
+         * @property title The title to display in the snackbar.
+         */
+        data class ConnectionError(val title: String) : IPProtectionSnackbarAction()
+
+        /**
+         * Dispatched when IP Protection feature experienced a connection error.
+         *
+         * @property title The title to display in the snackbar.
+         */
+        data class DataLimitReached(val title: String) : IPProtectionSnackbarAction()
     }
 }

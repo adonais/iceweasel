@@ -34,7 +34,7 @@ testWithBigIntTypedArrayConstructors(function(BTA1, makeCtorArg) {
     assert.sameValue(targetTypedArray[0], testValue,
                      "Setting BigInt TypedArray with BigInt TypedArray should succeed.")
   });
-});
+}, null, null, ["immutable"]);
 
 
 reportCompare(0, 0);

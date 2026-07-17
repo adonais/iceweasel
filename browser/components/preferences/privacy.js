@@ -44,7 +44,7 @@ const CONTENT_BLOCKING_PREFS = [
 ];
 
 const PREF_PASSWORD_GENERATION_AVAILABLE = "signon.generation.available";
-const { BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN } = Ci.nsICookieService;
+const { BEHAVIOR_PARTITION_FOREIGN } = Ci.nsICookieService;
 
 const PASSWORD_MANAGER_PREF_ID = "services.passwordSavingEnabled";
 
@@ -132,7 +132,7 @@ function initTCPStandardSection() {
   let updateTCPSectionVisibilityState = () => {
     document.getElementById("etpStandardTCPBox").hidden =
       cookieBehaviorPref.value !=
-      Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+      Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN;
   };
 
   cookieBehaviorPref.on("change", updateTCPSectionVisibilityState);
@@ -862,7 +862,7 @@ var gPrivacyPane = {
       "contentBlockingFingerprintersOption"
     );
     let trackingAndIsolateOption = document.querySelector(
-      "#blockCookiesMenu menuitem[value='trackers-plus-isolate']"
+      "#blockCookiesMenu menuitem[value='isolate']"
     );
     cryptoMinersOption.hidden = !Services.prefs.getBoolPref(
       "browser.contentblocking.cryptomining.preferences.ui.enabled"
@@ -959,7 +959,7 @@ var gPrivacyPane = {
           case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
             rulesArray.push("cookieBehavior4");
             break;
-          case BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
+          case BEHAVIOR_PARTITION_FOREIGN:
             rulesArray.push(
               gIsFirstPartyIsolated ? "cookieBehavior4" : "cookieBehavior5"
             );
@@ -984,7 +984,7 @@ var gPrivacyPane = {
           case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
             rulesArray.push("cookieBehaviorPBM4");
             break;
-          case BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
+          case BEHAVIOR_PARTITION_FOREIGN:
             rulesArray.push(
               gIsFirstPartyIsolated
                 ? "cookieBehaviorPBM4"
@@ -1271,8 +1271,8 @@ var gPrivacyPane = {
       case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
         blockCookiesMenu.value = "trackers";
         break;
-      case BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
-        blockCookiesMenu.value = "trackers-plus-isolate";
+      case BEHAVIOR_PARTITION_FOREIGN:
+        blockCookiesMenu.value = "isolate";
         break;
     }
   },
@@ -1460,7 +1460,7 @@ var gPrivacyPane = {
    *     2   means disable all cookies
    *     3   means reject third party cookies unless at least one is already set for the eTLD
    *     4   means reject all trackers
-   *     5   means reject all trackers and partition third-party cookies
+   *     5   means partition third-party cookies
    *         see netwerk/cookie/src/CookieService.cpp for details
    */
 
@@ -1501,8 +1501,8 @@ var gPrivacyPane = {
         return "unvisited";
       case Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER:
         return "trackers";
-      case BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
-        return "trackers-plus-isolate";
+      case BEHAVIOR_PARTITION_FOREIGN:
+        return "isolate";
       default:
         return undefined;
     }
@@ -1519,9 +1519,8 @@ var gPrivacyPane = {
         return Ci.nsICookieService.BEHAVIOR_REJECT;
       case "all-third-parties":
         return Ci.nsICookieService.BEHAVIOR_REJECT_FOREIGN;
-      case "trackers-plus-isolate":
-        return Ci.nsICookieService
-          .BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+      case "isolate":
+        return Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN;
       default:
         return undefined;
     }

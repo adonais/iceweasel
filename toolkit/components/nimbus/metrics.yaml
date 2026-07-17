@@ -788,7 +788,7 @@ nimbus_events:
       - technical
     notification_emails:
       - tlong@mozilla.com
-      - nimbus-team@mozilla.com
+      - project-nimbus@mozilla.com
     expires: never
     send_in_pings:
       - background-update
@@ -819,7 +819,7 @@ nimbus_events:
       - technical
     notification_emails:
       - tlong@mozilla.com
-      - nimbus-team@mozilla.com
+      - project-nimbus@mozilla.com
     expires: never
     send_in_pings:
       - background-update
@@ -893,7 +893,7 @@ nimbus_events:
       - technical
     notification_emails:
       - tlong@mozilla.com
-      - nimbus-team@mozilla.com
+      - project-nimbus@mozilla.com
     expires: never
     send_in_pings:
       - background-update
@@ -919,7 +919,7 @@ nimbus_events:
       - technical
     notification_emails:
       - tlong@mozilla.com
-      - nimbus-team@mozilla.com
+      - project-nimbus@mozilla.com
     expires: never
     send_in_pings:
       - background-update
@@ -950,7 +950,7 @@ nimbus_events:
       - technical
     notification_emails:
       - tlong@mozilla.com
-      - nimbus-team@mozilla.com
+      - project-nimbus@mozilla.com
     expires: never
     send_in_pings:
       - background-update
@@ -1082,8 +1082,7 @@ nimbus_events:
     extra_keys:
       migration_id:
         type: string
-        description: >
-          The name of the migration that ran.
+        description: The name of the migration that ran.
 
       success:
         type: boolean
@@ -1100,16 +1099,23 @@ nimbus_events:
           - one of the reasons documented in
             `nimbus_events.remote_settings_sync_error`.
 
-      enrollments:
-        type: string
+      duration:
+        description: How long the migration took (in milliseconds).
+        type: quantity
+
+      is_first_startup:
         description: >
-          An optional string that includes any enrollments triggered by this relation
+          Dis this migration occur during first startup (FirstStartup.sys.mjs)?
+        type: boolean
     bugs:
+
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1937169
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1985079
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043752
     data_reviews:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1937169
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1985079
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2043752
     data_sensitivity:
       - technical
     notification_emails:

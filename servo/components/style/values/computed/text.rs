@@ -5,6 +5,7 @@
 //! Computed types for text properties.
 
 use crate::derives::*;
+use crate::typed_om::{KeywordValue, ToTyped, TypedValue};
 use crate::values::computed::length::{Length, LengthPercentage};
 use crate::values::generics::text::{
     GenericHyphenateLimitChars, GenericInitialLetter, GenericTextDecorationInset,
@@ -16,7 +17,7 @@ use crate::values::specified::text::{TextEmphasisFillMode, TextEmphasisShapeKeyw
 use crate::values::{CSSFloat, CSSInteger};
 use crate::Zero;
 use std::fmt::{self, Write};
-use style_traits::{CssString, CssWriter, KeywordValue, ToCss, ToTyped, TypedValue};
+use style_traits::{CssString, CssWriter, ToCss};
 use thin_vec::ThinVec;
 
 pub use crate::values::specified::text::{
@@ -99,11 +100,10 @@ impl ToCss for LetterSpacing {
 }
 
 impl ToTyped for LetterSpacing {
-    // XXX The specification does not currently define how this property should
-    // be reified into Typed OM. The current behavior follows existing WPT
-    // coverage (letter-spacing.html). We may file a spec issue once more data
-    // is collected to update the Property-specific Rules section to align with
-    // observed test expectations.
+    // Note: The specification does not currently define how letter spacing
+    // should be reified into Typed OM. The current behavior follows existing
+    // WPT coverage (letter-spacing.html). Syncing spec with UA/WPT behavior
+    // tracked in https://github.com/w3c/csswg-drafts/issues/13907
     fn to_typed(&self, dest: &mut ThinVec<TypedValue>) -> Result<(), ()> {
         if !self.0.has_percentage() && self.0.is_zero() {
             dest.push(TypedValue::Keyword(KeywordValue(CssString::from("normal"))));

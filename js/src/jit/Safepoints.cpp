@@ -231,8 +231,7 @@ void SafepointWriter::writeValueSlots(LSafepoint* safepoint) {
 #endif
 
 #if defined(JS_JITSPEW) && defined(JS_NUNBOX32)
-static void DumpNunboxPart(const LAllocation& a) {
-  Fprinter& out = JitSpewPrinter();
+static void DumpNunboxPart(GenericPrinter& out, const LAllocation& a) {
   if (a.isStackSlot()) {
     out.printf("stack %d", a.toStackSlot()->slot());
   } else if (a.isArgument()) {
@@ -381,13 +380,11 @@ void SafepointWriter::writeNunboxParts(LSafepoint* safepoint) {
 
 #  ifdef JS_JITSPEW
     if (JitSpewEnabled(JitSpew_Safepoints)) {
-      JitSpewHeader(JitSpew_Safepoints);
-      Fprinter& out = JitSpewPrinter();
-      out.printf("    nunbox (type in ");
-      DumpNunboxPart(typeEntry.alloc());
-      out.printf(", payload in ");
-      DumpNunboxPart(payloadEntry.alloc());
-      out.printf(")\n");
+      AutoJitSpewMessage msg(JitSpew_Safepoints, "    nunbox (type in ");
+      DumpNunboxPart(msg.printer(), typeEntry.alloc());
+      msg.append(", payload in ");
+      DumpNunboxPart(msg.printer(), payloadEntry.alloc());
+      msg.append(")");
     }
 #  endif
 

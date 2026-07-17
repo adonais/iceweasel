@@ -45,6 +45,7 @@ enum class TextInputProcessorID {
   MicrosoftPinyinNewExperienceInputStyle,
   MicrosoftWubi,
   Sogou,
+  WeChat,
 
   // TIP for Korean.
   MicrosoftIMEForKorean,

@@ -205,7 +205,7 @@ export let ContentBlockingPrefs = {
         break;
       case "cookieBehavior5":
         this.CATEGORY_PREFS[type]["network.cookie.cookieBehavior"] =
-          Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+          Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN;
         break;
       case "cookieBehaviorPBM0":
         this.CATEGORY_PREFS[type]["network.cookie.cookieBehavior.pbmode"] =
@@ -229,7 +229,7 @@ export let ContentBlockingPrefs = {
         break;
       case "cookieBehaviorPBM5":
         this.CATEGORY_PREFS[type]["network.cookie.cookieBehavior.pbmode"] =
-          Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN;
+          Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN;
         break;
       case "3pcd":
         this.CATEGORY_PREFS[type][

@@ -4,6 +4,7 @@
 
 package org.mozilla.fenix.addons
 
+import android.content.Intent
 import android.os.Bundle
 import android.view.Gravity
 import android.view.View
@@ -32,6 +33,8 @@ import mozilla.components.feature.downloads.NegativeActionCallback
 import mozilla.components.feature.downloads.PositiveActionCallback
 import mozilla.components.feature.downloads.manager.FetchDownloadManager
 import mozilla.components.feature.prompts.PromptFeature
+import mozilla.components.feature.prompts.file.AndroidPhotoPicker
+import mozilla.components.support.base.feature.ActivityResultHandler
 import mozilla.components.support.base.feature.UserInteractionHandler
 import mozilla.components.support.base.feature.ViewBoundFeatureWrapper
 import mozilla.components.support.utils.DefaultDownloadFileUtils
@@ -54,7 +57,11 @@ import mozilla.components.feature.downloads.R as downloadsR
  * Provides shared functionality to our fragments for add-on settings and
  * browser/page action popups.
  */
-abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, UserInteractionHandler {
+abstract class AddonPopupBaseFragment :
+    Fragment(),
+    EngineSession.Observer,
+    UserInteractionHandler,
+    ActivityResultHandler {
     private val promptsFeature = ViewBoundFeatureWrapper<PromptFeature>()
     private val downloadsFeature = ViewBoundFeatureWrapper<DownloadsFeature>()
 
@@ -63,13 +70,27 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
     private var canGoBack: Boolean = false
     private var downloadDialog: AlertDialog? = null
 
+    // Registers a photo picker activity launcher in single-select mode.
+    private val singleMediaPicker =
+        AndroidPhotoPicker.singleMediaPicker(
+            { this@AddonPopupBaseFragment },
+            { promptsFeature.get() },
+        )
+
+    // Registers a photo picker activity launcher in multi-select mode.
+    private val multipleMediaPicker =
+        AndroidPhotoPicker.multipleMediaPicker(
+            { this@AddonPopupBaseFragment },
+            { promptsFeature.get() },
+        )
+
     @Suppress("DEPRECATION", "LongMethod")
     // https://github.com/mozilla-mobile/fenix/issues/19920
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         session?.let {
             promptsFeature.set(
                 feature = PromptFeature(
-                    fragment = this,
+                    activity = requireActivity(),
                     store = requireComponents.core.store,
                     customTabId = it.id,
                     fragmentManager = parentFragmentManager,
@@ -77,7 +98,14 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
                     onNeedToRequestPermissions = { permissions ->
                         requestPermissions(permissions, REQUEST_CODE_PROMPT_PERMISSIONS)
                     },
+                    isEmailMaskFeatureEnabled = { requireComponents.settings.isEmailMaskFeatureEnabled },
+                    isSuggestEmailMaskEnabled = { requireComponents.settings.isEmailMaskSuggestionEnabled },
                     tabsUseCases = requireComponents.useCases.tabsUseCases,
+                    androidPhotoPicker = AndroidPhotoPicker(
+                        requireContext(),
+                        singleMediaPicker,
+                        multipleMediaPicker,
+                    ),
                 ),
                 owner = this,
                 view = view,
@@ -85,7 +113,10 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
             val downloadFileUtils: DownloadFileUtils = DefaultDownloadFileUtils(
                 context = requireContext(),
                 downloadLocation = {
-                    DownloadLocationManager(requireContext()).defaultLocation
+                    DownloadLocationManager(
+                        requireComponents.settings,
+                        requireContext().contentResolver,
+                    ).defaultLocation
                 },
             )
             val downloadFeature = DownloadsFeature(
@@ -207,7 +238,10 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
                 0,
                 Status.INITIATED,
                 userAgent,
-                directoryPath = DownloadLocationManager(requireContext()).defaultLocation,
+                directoryPath = DownloadLocationManager(
+                    requireComponents.settings,
+                    requireContext().contentResolver,
+                ).defaultLocation,
                 private = isPrivate,
                 skipConfirmation = skipConfirmation,
                 openInApp = openInApp,
@@ -358,6 +392,15 @@ abstract class AddonPopupBaseFragment : Fragment(), EngineSession.Observer, User
         ) != null
 
         return downloadDialog == null && !isRenameFragmentShowing
+    }
+
+    /**
+     * Forwards activity results to the [ActivityResultHandler] features.
+     */
+    override fun onActivityResult(requestCode: Int, data: Intent?, resultCode: Int): Boolean {
+        return listOf(
+            promptsFeature,
+        ).any { it.onActivityResult(requestCode, data, resultCode) }
     }
 
     private fun showFirstPartyDownloadDialog(

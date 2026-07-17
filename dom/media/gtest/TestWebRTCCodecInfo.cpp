@@ -4,7 +4,10 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include "EncoderConfig.h"
 #include "MediaMIMETypes.h"
+#include "PlatformDecoderModule.h"
+#include "VideoUtils.h"
 #include "gtest/gtest.h"
 #include "mozilla/Attributes.h"
 #include "mozilla/Preferences.h"
@@ -13,6 +16,38 @@
 
 using namespace mozilla;
 using mozilla::WebrtcCodecInfo;
+
+// Build a minimal EncoderConfig matching aMime for support checks
+static EncoderConfig MakeWebrtcEncoderConfig(
+    const MediaExtendedMIMEType& aMime) {
+  CodecType codec = CodecType::Unknown;
+  const nsCString& m = aMime.Type().AsString();
+  if (m.EqualsLiteral("video/h264")) {
+    codec = CodecType::H264;
+  } else if (m.EqualsLiteral("video/vp8")) {
+    codec = CodecType::VP8;
+  } else if (m.EqualsLiteral("video/vp9")) {
+    codec = CodecType::VP9;
+  } else if (m.EqualsLiteral("video/av1")) {
+    codec = CodecType::AV1;
+  }
+  EncoderConfig::CodecSpecific specific(void_t{});
+  if (codec == CodecType::H264) {
+    // We want to match WebRTC's default-signaled H264 profile-level-id
+    // 0x42e01f (Constrained Baseline level 3.1). H264_PROFILE cannot
+    // represent Constrained Baseline, so we choose H264_PROFILE_BASE
+    // as the closest approximation. See: Bug 2040726
+    specific = AsVariant(H264Specific(H264_PROFILE::H264_PROFILE_BASE,
+                                      H264_LEVEL::H264_LEVEL_3_1,
+                                      H264BitStreamFormat::ANNEXB));
+  }
+  return EncoderConfig(
+      codec, gfx::IntSize(640, 480), Usage::Realtime,
+      EncoderConfig::SampleFormat(dom::ImageBitmapFormat::YUV420P),
+      /* fps */ 30u, /* kf interval*/ 0, /* bitrate */ 0, /* br min */ 0,
+      /* br max */ 0, BitrateMode::Variable, HardwarePreference::None,
+      ScalabilityMode::None, specific);
+}
 
 constexpr const char* kVideoTypes[] = {
     "video/av1",
@@ -67,38 +102,49 @@ class WebRTCCodecInfoTest : public testing::Test {
     }
   }
 
+  static media::EncodeSupportSet QueryEncode(
+      const MediaExtendedMIMEType& aMime) {
+    return SupportsVideoEncodeForWebrtc(MakeWebrtcEncoderConfig(aMime));
+  }
+  static media::DecodeSupportSet QueryDecode(
+      const MediaExtendedMIMEType& aMime) {
+    UniquePtr<TrackInfo> info =
+        CreateTrackInfoWithMIMEType(aMime.Type().AsString());
+    if (!info) {
+      return {};
+    }
+    SupportDecoderParams params(*info);
+    return SupportsVideoDecodeForWebrtc(aMime, params);
+  }
+
   // Returns false if the MIME string is unparseable or unsupported.
   static bool SupportsSWEncode(const WebrtcCodecInfo& aInfo,
                                const char* aMime) {
     Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(aMime);
     return mime && aInfo.CheckEncodeType(*mime) &&
            (!mime->Type().HasVideoMajorType() ||
-            SupportsVideoMimeEncodeForWebrtc(*mime).contains(
-                media::EncodeSupport::SoftwareEncode));
+            QueryEncode(*mime).contains(media::EncodeSupport::SoftwareEncode));
   }
   static bool SupportsSWDecode(const WebrtcCodecInfo& aInfo,
                                const char* aMime) {
     Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(aMime);
     return mime && aInfo.CheckDecodeType(*mime) &&
            (!mime->Type().HasVideoMajorType() ||
-            SupportsVideoMimeDecodeForWebrtc(*mime).contains(
-                media::DecodeSupport::SoftwareDecode));
+            QueryDecode(*mime).contains(media::DecodeSupport::SoftwareDecode));
   }
   static bool SupportsHWEncode(const WebrtcCodecInfo& aInfo,
                                const char* aMime) {
     Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(aMime);
     return mime && aInfo.CheckEncodeType(*mime) &&
            mime->Type().HasVideoMajorType() &&
-           SupportsVideoMimeEncodeForWebrtc(*mime).contains(
-               media::EncodeSupport::HardwareEncode);
+           QueryEncode(*mime).contains(media::EncodeSupport::HardwareEncode);
   }
   static bool SupportsHWDecode(const WebrtcCodecInfo& aInfo,
                                const char* aMime) {
     Maybe<MediaExtendedMIMEType> mime = MakeMediaExtendedMIMEType(aMime);
     return mime && aInfo.CheckDecodeType(*mime) &&
            mime->Type().HasVideoMajorType() &&
-           SupportsVideoMimeDecodeForWebrtc(*mime).contains(
-               media::DecodeSupport::HardwareDecode);
+           QueryDecode(*mime).contains(media::DecodeSupport::HardwareDecode);
   }
 
   // Helper function used to verify audio encode/decode is still working for use

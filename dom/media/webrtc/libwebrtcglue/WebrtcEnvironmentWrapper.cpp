@@ -29,8 +29,8 @@ WebrtcEnvironmentWrapper::WebrtcEnvironmentWrapper(
       mTaskQueueFactory(std::move(aTaskQueueFactory)),
       mTrials(std::move(aTrials)),
       mClock(aTimestampMaker),
-      mEnv(webrtc::CreateEnvironment(mEventLog.get(),
-                                     mClock.GetRealTimeClockRaw(),
-                                     mTaskQueueFactory.get(), mTrials.get())) {}
+      mEnv(webrtc::CreateEnvironment(
+          mEventLog.get(), mClock.GetRealTimeClockOnlyUseForRelativeTime(),
+          mTaskQueueFactory.get(), mTrials.get())) {}
 
 }  // namespace mozilla

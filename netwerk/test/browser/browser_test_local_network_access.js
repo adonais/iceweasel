@@ -53,10 +53,10 @@ function clickDoorhangerButton(buttonIndex, browser, notificationID) {
 
   if (buttonIndex === PROMPT_ALLOW_BUTTON) {
     ok(true, "Triggering main action (allow)");
-    notification.button.doCommand();
+    notification.button.click();
   } else {
     ok(true, "Triggering secondary action (deny)");
-    notification.secondaryButton.doCommand();
+    notification.secondaryButton.click();
   }
 }
 

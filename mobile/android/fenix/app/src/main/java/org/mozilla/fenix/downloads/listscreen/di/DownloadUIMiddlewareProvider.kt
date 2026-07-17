@@ -23,7 +23,6 @@ import org.mozilla.fenix.downloads.listscreen.middleware.DownloadsServiceCommuni
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIAction
 import org.mozilla.fenix.downloads.listscreen.store.DownloadUIState
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.utils.Settings.DeleteDownloadBehavior
 import org.mozilla.fenix.utils.getUndoDelay
 
@@ -40,8 +39,8 @@ internal object DownloadUIMiddlewareProvider {
         provideUIMapperMiddleware(applicationContext, coroutineScope),
         provideShareMiddleware(applicationContext),
         provideTelemetryMiddleware(),
-        provideDeleteMiddleware(applicationContext.getUndoDelay(), applicationContext.components) {
-            applicationContext.settings().deleteDownloadBehavior
+        provideDeleteMiddleware(applicationContext.components.settings.getUndoDelay(), applicationContext.components) {
+            applicationContext.components.settings.deleteDownloadBehavior
         },
         provideDownloadsServiceCommunicationMiddleware(applicationContext),
         provideDownloadNavigationMiddleware(navController),

@@ -48,15 +48,15 @@ let wasmGlobalInterfaces = [
   { name: "Memory", insecureContext: true },
   { name: "Module", insecureContext: true },
   { name: "RuntimeError", insecureContext: true },
-  { name: "SuspendError", insecureContext: true, nightly: true },
-  { name: "Suspending", insecureContext: true, nightly: true },
+  { name: "SuspendError", insecureContext: true },
+  { name: "Suspending", insecureContext: true },
   { name: "Table", insecureContext: true },
   { name: "Tag", insecureContext: true },
   { name: "compile", insecureContext: true },
   { name: "compileStreaming", insecureContext: true },
   { name: "instantiate", insecureContext: true },
   { name: "instantiateStreaming", insecureContext: true },
-  { name: "promising", insecureContext: true, nightly: true },
+  { name: "promising", insecureContext: true },
   { name: "validate", insecureContext: true },
 ];
 // IMPORTANT: Do not change this list without review from
@@ -416,6 +416,8 @@ let interfaceNamesInGlobalScope = [
   { name: "IDBObjectStore", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "IDBOpenDBRequest", insecureContext: true },
+  // IMPORTANT: Do not change this list without review from a DOM peer!
+  { name: "IDBRecord", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!
   { name: "IDBRequest", insecureContext: true },
   // IMPORTANT: Do not change this list without review from a DOM peer!

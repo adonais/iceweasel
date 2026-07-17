@@ -84,7 +84,6 @@ Windows SDK) from the Taskcluster toolchain index into `~/.mozbuild/` and
 selects `clang-cl` and `lld-link` automatically. No manual SDK installation
 is needed.
 
-
 ## Pushing to try
 
 From a regular checkout (from <https://github.com/mozilla-firefox/firefox>),

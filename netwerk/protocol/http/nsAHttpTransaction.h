@@ -34,6 +34,8 @@ class nsAHttpSegmentReader;
 class nsAHttpSegmentWriter;
 class nsHttpTransaction;
 class nsHttpRequestHead;
+class nsHttpResponseHead;
+class ProxyConnectResponseHead;
 class nsHttpConnectionInfo;
 class NullHttpTransaction;
 
@@ -235,7 +237,13 @@ class nsAHttpTransaction : public nsSupportsWeakReference {
     return 0;
   }
 
-  virtual void OnProxyConnectComplete(int32_t aResponseCode) {}
+  virtual void OnProxyConnectComplete(ProxyConnectResponseHead* aResponseHead) {
+  }
+
+  // TLS handshake saw the server's CertificateRequest / the user's selection.
+  // No-op by default; HE overrides to pause around the cert dialog.
+  virtual void OnClientAuthCertificateRequested() {}
+  virtual void OnClientAuthCertificateSelected() {}
 
   virtual nsresult FetchHTTPSRR() { return NS_ERROR_NOT_IMPLEMENTED; }
   virtual nsresult OnHTTPSRRAvailable(nsIDNSHTTPSSVCRecord* aHTTPSSVCRecord,

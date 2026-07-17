@@ -7,6 +7,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   ExtensionDNR: "resource://gre/modules/ExtensionDNR.sys.mjs",
+  ExtensionDocumentId: "resource://gre/modules/ExtensionDocumentId.sys.mjs",
   ExtensionParent: "resource://gre/modules/ExtensionParent.sys.mjs",
   ExtensionUtils: "resource://gre/modules/ExtensionUtils.sys.mjs",
   SecurityInfo: "resource://gre/modules/SecurityInfo.sys.mjs",
@@ -338,6 +339,8 @@ const OPTIONAL_PROPERTIES = [
   "urlClassification",
   "requestSize",
   "responseSize",
+  "documentId",
+  "parentDocumentId",
 ];
 
 function serializeRequestData(eventName) {
@@ -427,6 +430,7 @@ var ChannelEventSink = {
       HttpObserverManager.onChannelReplaced(oldChannel, newChannel);
     } catch (e) {
       // we don't wanna throw: it would abort the redirection
+      Cu.reportError(e);
     }
   },
 
@@ -779,6 +783,12 @@ HttpObserverManager = {
       tabId: this.getBrowserData(channel).tabId,
       frameId: channel.frameId,
       parentFrameId: channel.parentFrameId,
+      documentId: lazy.ExtensionDocumentId.getDocumentId(
+        channel.documentInnerWindowId
+      ),
+      parentDocumentId: lazy.ExtensionDocumentId.getDocumentId(
+        channel.parentDocumentInnerWindowId
+      ),
 
       frameAncestors: channel.frameAncestors || undefined,
 

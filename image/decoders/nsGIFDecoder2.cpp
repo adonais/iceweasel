@@ -310,7 +310,7 @@ void nsGIFDecoder2::EndImageFrame() {
   // Reset graphic control extension parameters that we shouldn't reuse
   // between frames.
   mGIFStruct.delay_time = 0;
-  mGIFStruct.is_transparent = 0;
+  mGIFStruct.is_transparent = false;
   mGIFStruct.tpixel = 0;
   mGIFStruct.disposal_method = 0;
 

@@ -650,8 +650,10 @@ transfer_uri_certs_to_collection(nssList *certList, PK11URI *uri,
          * CKA_ID from the URI
          */
         if (id && (id->len != certs[i]->id.size ||
-                   memcmp(id->data, certs[i]->id.data, certs[i]->id.size)))
+                   memcmp(id->data, certs[i]->id.data, certs[i]->id.size))) {
+            CERT_DestroyCertificate(STAN_GetCERTCertificateOrRelease(certs[i]));
             continue;
+        }
         tokens = nssPKIObject_GetTokens(&certs[i]->object, NULL);
         if (tokens) {
             for (tp = tokens; *tp; tp++) {
@@ -785,6 +787,7 @@ find_certs_from_uri(const char *uriString, void *wincx)
 
             rv = pk11_AuthenticateUnfriendly(slotinfo, PR_TRUE, wincx);
             if (rv != SECSuccess) {
+                (void)nssToken_Destroy(*tok);
                 continue;
             }
             instances = nssToken_FindObjectsByTemplate(*tok, NULL,
@@ -797,10 +800,12 @@ find_certs_from_uri(const char *uriString, void *wincx)
         (void)nssToken_Destroy(*tok);
     }
     nss_ZFreeIf(tokens);
-    nssList_Destroy(certList);
     certs = nssPKIObjectCollection_GetCertificates(collection, NULL, 0, NULL);
 
 loser:
+    if (certList) {
+        nssList_Destroy(certList);
+    }
     if (collection) {
         nssPKIObjectCollection_Destroy(collection);
     }
@@ -2274,10 +2279,19 @@ PK11_TraverseCertsForNicknameInSlot(SECItem *nickname, PK11SlotInfo *slot,
     NSSCertificate **certs;
     nssList *nameList = NULL;
     nssTokenSearchType tokenOnly = nssTokenSearchType_TokenOnly;
+    if (!nickname || !nickname->data || nickname->len == 0) {
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
+    }
     token = PK11Slot_GetNSSToken(slot);
     if (!token || !nssToken_IsPresent(token)) {
         (void)nssToken_Destroy(token);
         return SECSuccess;
+    }
+    if (!nickname || !nickname->data || nickname->len == 0) {
+        (void)nssToken_Destroy(token);
+        PORT_SetError(SEC_ERROR_INVALID_ARGS);
+        return SECFailure;
     }
     if (nickname->data[nickname->len - 1] != '\0') {
         nick = nssUTF8_Create(NULL, nssStringType_UTF8String,

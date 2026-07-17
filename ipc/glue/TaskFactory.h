@@ -46,8 +46,7 @@ class TaskFactory : public RevocableStore {
   template <typename TaskParamType, typename... Args>
   inline already_AddRefed<TaskParamType> NewTask(Args&&... args) {
     typedef TaskWrapper<TaskParamType> TaskWrapper;
-    RefPtr<TaskWrapper> task =
-        new TaskWrapper(this, std::forward<Args>(args)...);
+    RefPtr task = MakeRefPtr<TaskWrapper>(this, std::forward<Args>(args)...);
     return task.forget();
   }
 
@@ -58,7 +57,7 @@ class TaskFactory : public RevocableStore {
     typedef RunnableMethod<Method, ArgTuple> RunnableMethod;
     typedef TaskWrapper<RunnableMethod> TaskWrapper;
 
-    RefPtr<TaskWrapper> task = new TaskWrapper(
+    RefPtr task = MakeRefPtr<TaskWrapper>(
         this, object_, method, base::MakeTuple(std::forward<Args>(args)...));
 
     return task.forget();

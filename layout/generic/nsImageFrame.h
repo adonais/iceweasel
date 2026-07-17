@@ -83,7 +83,10 @@ class nsImageFrame : public nsAtomicContainerFrame, public nsIReflowCallback {
               nsReflowStatus&) override;
   bool IsLeafDynamic() const override;
 
-  nsIContent* GetContentForEvent(const mozilla::WidgetEvent*) const final;
+  nsIContent* GetExplicitEventTargetContent(
+      const mozilla::WidgetEvent* = nullptr) const final;
+  using nsIFrame::GetExplicitEventTargetContent;
+
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult HandleEvent(nsPresContext*, mozilla::WidgetGUIEvent*,
                        nsEventStatus*) override;

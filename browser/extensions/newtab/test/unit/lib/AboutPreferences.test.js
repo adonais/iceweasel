@@ -154,6 +154,7 @@ describe("AboutPreferences Feed", () => {
     describe("when browser.settings-redesign.enabled is true", () => {
       let registerGroups;
       let getSettingGroup;
+      let insertFTLIfNeeded;
 
       beforeEach(() => {
         sandbox.stub(Services.prefs, "getBoolPref").returns(true);
@@ -164,16 +165,24 @@ describe("AboutPreferences Feed", () => {
           .onFirstCall()
           .throws(new Error("Not yet registered"));
         getSettingGroup.withArgs("homepage").onSecondCall().returns(true);
+        insertFTLIfNeeded = sandbox.stub();
         // SettingGroupManager lives on the preferences window object.
         globals.set("SettingGroupManager", {
           registerGroups,
           get: getSettingGroup,
         });
+        globals.set("MozXULElement", { insertFTLIfNeeded });
         // Stub the setup methods so we can focus on the routing logic in observe().
         sandbox.stub(instance, "_registerPreferences");
         sandbox.stub(instance, "_setupHomepageGroup").returns({});
         sandbox.stub(instance, "_setupCustomHomepageGroup").returns({});
         sandbox.stub(instance, "_setupHomeGroup").returns({});
+      });
+
+      it("should register newtab.ftl with the preferences document", () => {
+        instance.observe(window);
+
+        assert.calledWith(insertFTLIfNeeded, "browser/newtab/newtab.ftl");
       });
 
       it("should call SettingGroupManager.registerGroups with homepage, customHomepage, and home", async () => {
@@ -299,6 +308,184 @@ describe("AboutPreferences Feed", () => {
           c => c.pref === "browser.newtabpage.activity-stream.showWeather"
         )
       );
+    });
+
+    const findSetting = id => addSetting.args.find(([s]) => s.id === id)[0];
+
+    it("shows a widget toggle when the widget is enabled via trainhopConfig even if its system pref is off", () => {
+      sandbox.stub(Services.prefs, "getBoolPref").returns(false);
+      instance.store.getState = () => ({
+        Prefs: {
+          values: { trainhopConfig: { widgets: { listsEnabled: true } } },
+        },
+      });
+
+      instance._setupHomeGroup({ Preferences });
+
+      assert.isTrue(
+        findSetting("lists").visible({ listsEnabled: { value: false } })
+      );
+    });
+
+    it("shows a widget toggle when its system pref is on (read live from deps)", () => {
+      sandbox.stub(Services.prefs, "getBoolPref").returns(false);
+      instance.store.getState = () => ({ Prefs: { values: {} } });
+
+      instance._setupHomeGroup({ Preferences });
+
+      assert.isTrue(
+        findSetting("lists").visible({ listsEnabled: { value: true } })
+      );
+    });
+
+    it("hides a widget toggle when neither the system pref nor trainhopConfig enable it", () => {
+      sandbox.stub(Services.prefs, "getBoolPref").returns(false);
+      instance.store.getState = () => ({ Prefs: { values: {} } });
+
+      instance._setupHomeGroup({ Preferences });
+
+      assert.isFalse(
+        findSetting("lists").visible({ listsEnabled: { value: false } })
+      );
+    });
+
+    it("shows a widget toggle when revealed via widgetsSettings even if its system pref is off", () => {
+      sandbox.stub(Services.prefs, "getBoolPref").returns(false);
+      instance.store.getState = () => ({
+        Prefs: {
+          values: {
+            trainhopConfig: { widgetsSettings: { listsVisible: true } },
+          },
+        },
+      });
+
+      instance._setupHomeGroup({ Preferences });
+
+      assert.isTrue(
+        findSetting("lists").visible({ listsEnabled: { value: false } })
+      );
+    });
+
+    it("shows the widgets group when the container is enabled via trainhopConfig even if the system pref is off", () => {
+      sandbox.stub(Services.prefs, "getBoolPref").returns(false);
+      instance.store.getState = () => ({
+        Prefs: { values: { trainhopConfig: { widgets: { enabled: true } } } },
+      });
+
+      instance._setupHomeGroup({ Preferences });
+
+      assert.isTrue(
+        findSetting("widgets").visible({ widgetsEnabled: { value: false } })
+      );
+    });
+
+    it("shows the widgets group when the container system pref is on (read live from deps)", () => {
+      sandbox.stub(Services.prefs, "getBoolPref").returns(false);
+      instance.store.getState = () => ({ Prefs: { values: {} } });
+
+      instance._setupHomeGroup({ Preferences });
+
+      assert.isTrue(
+        findSetting("widgets").visible({ widgetsEnabled: { value: true } })
+      );
+    });
+
+    it("hides the widgets group when neither the system pref nor trainhopConfig enable the container", () => {
+      sandbox.stub(Services.prefs, "getBoolPref").returns(false);
+      instance.store.getState = () => ({ Prefs: { values: {} } });
+
+      instance._setupHomeGroup({ Preferences });
+
+      assert.isFalse(
+        findSetting("widgets").visible({ widgetsEnabled: { value: false } })
+      );
+    });
+
+    it("shows the widgets group when revealed via widgetsSettings even if the system pref is off", () => {
+      sandbox.stub(Services.prefs, "getBoolPref").returns(false);
+      instance.store.getState = () => ({
+        Prefs: {
+          values: { trainhopConfig: { widgetsSettings: { enabled: true } } },
+        },
+      });
+
+      instance._setupHomeGroup({ Preferences });
+
+      assert.isTrue(
+        findSetting("widgets").visible({ widgetsEnabled: { value: false } })
+      );
+    });
+
+    it("nests the weather toggle inside the widgets group when Nova and the widgets system pref are enabled", () => {
+      sandbox
+        .stub(Services.prefs, "getBoolPref")
+        .withArgs("browser.newtabpage.activity-stream.nova.enabled", false)
+        .returns(true);
+      instance.store.getState = () => ({
+        Prefs: { values: { "widgets.system.enabled": true } },
+      });
+
+      const group = instance._setupHomeGroup({ Preferences });
+
+      assert.isUndefined(group.items.find(i => i.id === "weather"));
+      const widgets = group.items.find(i => i.id === "widgets");
+      assert.isTrue(widgets.items.some(i => i.id === "weather"));
+    });
+
+    it("nests the weather toggle inside the widgets group when the container is enabled via trainhopConfig", () => {
+      sandbox
+        .stub(Services.prefs, "getBoolPref")
+        .withArgs("browser.newtabpage.activity-stream.nova.enabled", false)
+        .returns(true);
+      instance.store.getState = () => ({
+        Prefs: { values: { trainhopConfig: { widgets: { enabled: true } } } },
+      });
+
+      const group = instance._setupHomeGroup({ Preferences });
+
+      assert.isUndefined(group.items.find(i => i.id === "weather"));
+      const widgets = group.items.find(i => i.id === "widgets");
+      const nestedWeather = widgets.items.find(i => i.id === "weather");
+      assert.isDefined(nestedWeather);
+      // Nested under Widgets, Weather is a checkbox like its siblings.
+      assert.notProperty(nestedWeather, "control");
+    });
+
+    it("keeps the weather toggle standalone when Nova is enabled but the widgets system pref is off", () => {
+      sandbox
+        .stub(Services.prefs, "getBoolPref")
+        .withArgs("browser.newtabpage.activity-stream.nova.enabled", false)
+        .returns(true);
+      instance.store.getState = () => ({
+        Prefs: {
+          values: {
+            "widgets.system.enabled": false,
+            "widgets.system.weather.enabled": true,
+          },
+        },
+      });
+
+      const group = instance._setupHomeGroup({ Preferences });
+
+      assert.isTrue(group.items.some(i => i.id === "weather"));
+      const widgets = group.items.find(i => i.id === "widgets");
+      assert.isFalse(widgets.items.some(i => i.id === "weather"));
+    });
+
+    it("keeps the weather toggle as a standalone row when Nova is disabled", () => {
+      sandbox
+        .stub(Services.prefs, "getBoolPref")
+        .withArgs("browser.newtabpage.activity-stream.nova.enabled", false)
+        .returns(false);
+
+      const group = instance._setupHomeGroup({ Preferences });
+
+      const standaloneWeather = group.items.find(i => i.id === "weather");
+      assert.isDefined(standaloneWeather);
+      // Standalone, Weather is a top-level toggle like the other rows.
+      assert.equal(standaloneWeather.control, "moz-toggle");
+      const widgets = group.items.find(i => i.id === "widgets");
+      assert.isFalse(widgets.items.some(i => i.id === "weather"));
     });
   });
 

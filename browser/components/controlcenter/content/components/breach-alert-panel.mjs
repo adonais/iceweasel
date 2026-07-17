@@ -81,6 +81,7 @@ export default class BreachAlert extends MozLitElement {
         <div class="card">
           <div class="main">
             <img
+              class="fox-icon-legacy"
               src="chrome://browser/content/controlcenter/assets/fox-concern.svg"
               alt=""
             />
@@ -93,6 +94,11 @@ export default class BreachAlert extends MozLitElement {
                 data-l10n-id="trustpanel-breachalerts-anonymous-breached-description"
               ></p>
             </div>
+            <img
+              class="shield-icon"
+              src="chrome://browser/content/controlcenter/assets/breach-alert-shield-warning.svg"
+              alt=""
+            />
           </div>
           <moz-button-group>
             <moz-button

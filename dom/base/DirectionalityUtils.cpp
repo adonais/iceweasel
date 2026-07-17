@@ -25,6 +25,7 @@
 #include "mozilla/dom/DirectionalityUtils.h"
 
 #include "mozilla/Maybe.h"
+#include "mozilla/StaticPrefs_dom.h"
 #include "mozilla/dom/CharacterDataBuffer.h"
 #include "mozilla/dom/Document.h"
 #include "mozilla/dom/Element.h"
@@ -577,6 +578,10 @@ void SlotAssignedNodeAdded(HTMLSlotElement* aSlot, nsIContent& aAssignedNode) {
     DownwardPropagateDirAutoFlags(&aAssignedNode);
   }
   SlotStateChanged(aSlot);
+
+  if (StaticPrefs::dom_headingoffset_enabled()) {
+    aAssignedNode.UpdateHeadingElementsOffsetChange();
+  }
 }
 
 void SlotAssignedNodeRemoved(HTMLSlotElement* aSlot,

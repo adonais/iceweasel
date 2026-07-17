@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 #include "gtest/gtest.h"
 
+#include <string>
 #include <windows.h>
 #include "common.h"
 #include "nsCOMPtr.h"
@@ -95,8 +96,9 @@ TEST_F(DefaultAgentTest, SendDefaultAgentPing) {
                                        NotificationShown::NotShown,
                                        NotificationAction::NoAction};
   uint32_t daysSinceAppLaunch = 12;
+  std::string isTaskbarPinned = "NotPinned";
   HRESULT result = SendDefaultAgentPing(browserInfo, pdfInfo, activities,
-                                        daysSinceAppLaunch);
+                                        daysSinceAppLaunch, isTaskbarPinned);
   ASSERT_EQ(S_OK, result);
 }
 
@@ -111,8 +113,9 @@ TEST_F(DefaultAgentTest, SendPing) {
   auto notificationAction = u"no-action"_ns;
   uint32_t daysSinceLaunch = 12;
 
-  nsresult result = defaultAgent->SendPing(currentBrowser, previousBrowser,
-                                           pdfHandler, notificationShown,
-                                           notificationAction, daysSinceLaunch);
+  auto isTaskbarPinned = u"NotPinned"_ns;
+  nsresult result = defaultAgent->SendPing(
+      currentBrowser, previousBrowser, pdfHandler, notificationShown,
+      notificationAction, daysSinceLaunch, isTaskbarPinned);
   ASSERT_EQ(result, NS_OK);
 }

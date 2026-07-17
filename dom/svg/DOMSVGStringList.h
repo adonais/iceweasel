@@ -46,7 +46,7 @@ class DOMSVGStringList final : public nsISupports, public nsWrapperCache {
   friend class AutoChangeStringListNotifier;
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SCRIPT_HOLDER_CLASS(DOMSVGStringList)
 
   dom::SVGElement* GetParentObject() const { return mElement; }

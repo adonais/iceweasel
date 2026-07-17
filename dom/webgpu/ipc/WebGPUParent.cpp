@@ -1057,19 +1057,25 @@ static void ReadbackPresentCallback(uint8_t* userdata,
       uint8_t* src = mapped.ptr;
       uint8_t* dst = mappedData.data;
 
-      const uint32_t dst_stride = mappedData.stride;
+      const size_t dst_stride = static_cast<size_t>(mappedData.stride);
       // `mappedData.stride` is computed via
       // `ImageDataSerializer::ComputeRGBStride` and returns 0 if it overflows
       MOZ_RELEASE_ASSERT(dst_stride != 0);
 
-      // note that this might still copy some padding bytes
-      const uint32_t min_stride = std::min(data->mBufferStride, dst_stride);
+      const size_t src_stride = static_cast<size_t>(data->mBufferStride);
+      const size_t bytesPerRow =
+          static_cast<size_t>(data->mDesc.size().width) * 4;
+      MOZ_RELEASE_ASSERT(src_stride >= bytesPerRow);
+      MOZ_RELEASE_ASSERT(dst_stride >= bytesPerRow);
 
       // The height is in bounds for both buffers since we just requested a new
       // destination buffer with the same height of the source.
       for (auto row = 0; row < size.height; ++row) {
-        memcpy(dst, src, min_stride);
-        src += data->mBufferStride;
+        memcpy(dst, src, bytesPerRow);
+        if (bytesPerRow < dst_stride) {
+          memset(dst + bytesPerRow, 0, dst_stride - bytesPerRow);
+        }
+        src += src_stride;
         dst += dst_stride;
       }
       req->mRemoteTextureOwner->PushTexture(req->mTextureId, req->mOwnerId,
@@ -1155,13 +1161,17 @@ static void ReadbackSnapshotCallback(uint8_t* userdata,
   uint8_t* dst = req->mDestShmem.get<uint8_t>();
 
   const size_t src_stride = static_cast<size_t>(data->mBufferStride);
-  // note that this might still copy some padding bytes
-  const size_t min_stride = std::min(src_stride, req->mDestStride);
+  const size_t bytesPerRow = static_cast<size_t>(data->mDesc.size().width) * 4;
+  MOZ_RELEASE_ASSERT(src_stride >= bytesPerRow);
+  MOZ_RELEASE_ASSERT(req->mDestStride >= bytesPerRow);
 
   // The height is in bounds for both buffers since we previously created a new
   // destination buffer with the same height of the source.
   for (auto row = 0; row < data->mDesc.size().height; ++row) {
-    memcpy(dst, src, min_stride);
+    memcpy(dst, src, bytesPerRow);
+    if (bytesPerRow < req->mDestStride) {
+      memset(dst + bytesPerRow, 0, req->mDestStride - bytesPerRow);
+    }
     src += src_stride;
     dst += req->mDestStride;
   }
@@ -1765,6 +1775,21 @@ void WebGPUParent::DisableSharedTextureForSwapChain(
   data->mUseSharedTextureInSwapChain = false;
 }
 
+static bool SwapChainFormatMatches(
+    gfx::SurfaceFormat aSurfaceFormat,
+    const ffi::WGPUTextureFormat& aTextureFormat) {
+  switch (aSurfaceFormat) {
+    case gfx::SurfaceFormat::B8G8R8A8:
+      return aTextureFormat.tag == ffi::WGPUTextureFormat_Bgra8Unorm ||
+             aTextureFormat.tag == ffi::WGPUTextureFormat_Bgra8UnormSrgb;
+    case gfx::SurfaceFormat::R8G8B8A8:
+      return aTextureFormat.tag == ffi::WGPUTextureFormat_Rgba8Unorm ||
+             aTextureFormat.tag == ffi::WGPUTextureFormat_Rgba8UnormSrgb;
+    default:
+      return false;
+  }
+}
+
 bool WebGPUParent::EnsureSharedTextureForSwapChain(
     ffi::WGPUSwapChainId aSwapChainId, ffi::WGPUDeviceId aDeviceId,
     ffi::WGPUTextureId aTextureId, uint32_t aWidth, uint32_t aHeight,
@@ -1781,6 +1806,11 @@ bool WebGPUParent::EnsureSharedTextureForSwapChain(
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return false;
   }
+
+  MOZ_RELEASE_ASSERT(aWidth == static_cast<uint32_t>(data->mDesc.size().width));
+  MOZ_RELEASE_ASSERT(aHeight ==
+                     static_cast<uint32_t>(data->mDesc.size().height));
+  MOZ_RELEASE_ASSERT(SwapChainFormatMatches(data->mDesc.format(), aFormat));
 
   // Recycled SharedTexture if it exists.
   if (!data->mRecycledSharedTextures.empty()) {
@@ -1818,6 +1848,11 @@ void WebGPUParent::EnsureSharedTextureForReadBackPresent(
     MOZ_ASSERT_UNREACHABLE("unexpected to be called");
     return;
   }
+
+  MOZ_RELEASE_ASSERT(aWidth == static_cast<uint32_t>(data->mDesc.size().width));
+  MOZ_RELEASE_ASSERT(aHeight ==
+                     static_cast<uint32_t>(data->mDesc.size().height));
+  MOZ_RELEASE_ASSERT(SwapChainFormatMatches(data->mDesc.format(), aFormat));
 
   UniquePtr<SharedTexture> texture =
       SharedTextureReadBackPresent::Create(aWidth, aHeight, aFormat, aUsage);

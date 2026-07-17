@@ -631,9 +631,37 @@ const POLICIES_TESTS = [
       },
     },
     lockedPrefs: {
-      "browser.newtabpage.activity-stream.feeds.system.topstories": false,
       "browser.newtabpage.activity-stream.feeds.section.topstories": false,
       "browser.newtabpage.activity-stream.showSponsored": false,
+    },
+  },
+
+  // POLICY: FirefoxHome (Weather sets both the legacy and Nova prefs)
+  {
+    policies: {
+      FirefoxHome: {
+        Weather: false,
+        Locked: true,
+      },
+    },
+    lockedPrefs: {
+      "browser.newtabpage.activity-stream.showWeather": false,
+      "browser.newtabpage.activity-stream.widgets.weather.enabled": false,
+    },
+  },
+
+  // POLICY: FirefoxHome (locking both sponsored settings locks the parent
+  // "Support Firefox" toggle to their combined value)
+  {
+    policies: {
+      FirefoxHome: {
+        SponsoredTopSites: false,
+        SponsoredStories: false,
+        Locked: true,
+      },
+    },
+    lockedPrefs: {
+      "browser.newtabpage.activity-stream.showSponsoredCheckboxes": false,
     },
   },
 
@@ -1046,6 +1074,33 @@ const POLICIES_TESTS = [
     policies: {
       Cookies: {
         Behavior: "reject-tracker-and-partition-foreign",
+        BehaviorPrivateBrowsing: "accept",
+        Locked: true,
+      },
+    },
+    lockedPrefs: {
+      "network.cookie.cookieBehavior": 5,
+      "network.cookie.cookieBehavior.pbmode": 0,
+    },
+  },
+
+  {
+    policies: {
+      Cookies: {
+        Behavior: "reject-tracker",
+        BehaviorPrivateBrowsing: "partition-foreign",
+        Locked: true,
+      },
+    },
+    lockedPrefs: {
+      "network.cookie.cookieBehavior": 4,
+      "network.cookie.cookieBehavior.pbmode": 5,
+    },
+  },
+  {
+    policies: {
+      Cookies: {
+        Behavior: "partition-foreign",
         BehaviorPrivateBrowsing: "accept",
         Locked: true,
       },

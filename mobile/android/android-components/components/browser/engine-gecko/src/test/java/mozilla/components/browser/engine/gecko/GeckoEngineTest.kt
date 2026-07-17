@@ -2915,6 +2915,99 @@ class GeckoEngineTest {
     }
 
     @Test
+    fun `GIVEN a site with an email tracker WHEN it is blocked THEN engine reports it under EMAIL`() {
+        val runtime = mock<GeckoRuntime>()
+        val engine = GeckoEngine(context, runtime = runtime)
+        val mockSession = mock<GeckoEngineSession>()
+        val mockGeckoSetting = mock<GeckoRuntimeSettings>()
+        val mockGeckoContentBlockingSetting = mock<ContentBlocking.Settings>()
+        var trackersLog: List<TrackerLog>? = null
+
+        val mockContentBlockingController = mock<ContentBlockingController>()
+        val logEntriesResult = GeckoResult<List<ContentBlockingController.LogEntry>>()
+
+        whenever(runtime.settings).thenReturn(mockGeckoSetting)
+        whenever(mockGeckoSetting.contentBlocking).thenReturn(mockGeckoContentBlockingSetting)
+        whenever(runtime.contentBlockingController).thenReturn(mockContentBlockingController)
+        whenever(mockContentBlockingController.getLog(any())).thenReturn(logEntriesResult)
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.recommended()
+
+        engine.getTrackersLog(mockSession, onSuccess = { trackersLog = it })
+        logEntriesResult.complete(createEmailTrackerLogEntryList())
+
+        shadowOf(getMainLooper()).idle()
+
+        assertEquals(1, trackersLog!!.size)
+        val trackerLog = trackersLog.first()
+        assertEquals("www.email-tracker.com", trackerLog.url)
+        assertTrue(trackerLog.blockedCategories.contains(TrackingCategory.EMAIL))
+        assertFalse(trackerLog.cookiesHasBeenBlocked)
+        assertFalse(trackerLog.unBlockedBySmartBlock)
+    }
+
+    @Test
+    fun `GIVEN a site with a bounce tracker WHEN it is purged THEN engine reports it under SCRIPTS_AND_SUB_RESOURCES`() {
+        val runtime = mock<GeckoRuntime>()
+        val engine = GeckoEngine(context, runtime = runtime)
+        val mockSession = mock<GeckoEngineSession>()
+        val mockGeckoSetting = mock<GeckoRuntimeSettings>()
+        val mockGeckoContentBlockingSetting = mock<ContentBlocking.Settings>()
+        var trackersLog: List<TrackerLog>? = null
+
+        val mockContentBlockingController = mock<ContentBlockingController>()
+        val logEntriesResult = GeckoResult<List<ContentBlockingController.LogEntry>>()
+
+        whenever(runtime.settings).thenReturn(mockGeckoSetting)
+        whenever(mockGeckoSetting.contentBlocking).thenReturn(mockGeckoContentBlockingSetting)
+        whenever(runtime.contentBlockingController).thenReturn(mockContentBlockingController)
+        whenever(mockContentBlockingController.getLog(any())).thenReturn(logEntriesResult)
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.recommended()
+
+        engine.getTrackersLog(mockSession, onSuccess = { trackersLog = it })
+        logEntriesResult.complete(createPurgedBounceTrackerLogEntryList())
+
+        shadowOf(getMainLooper()).idle()
+
+        assertEquals(1, trackersLog!!.size)
+        val trackerLog = trackersLog.first()
+        assertEquals("www.bounce-tracker.com", trackerLog.url)
+        assertTrue(trackerLog.blockedCategories.contains(TrackingCategory.SCRIPTS_AND_SUB_RESOURCES))
+        assertFalse(trackerLog.cookiesHasBeenBlocked)
+        assertFalse(trackerLog.unBlockedBySmartBlock)
+    }
+
+    @Test
+    fun `GIVEN a site with replaced fingerprinting content WHEN it is shimmed THEN engine reports it under FINGERPRINTING`() {
+        val runtime = mock<GeckoRuntime>()
+        val engine = GeckoEngine(context, runtime = runtime)
+        val mockSession = mock<GeckoEngineSession>()
+        val mockGeckoSetting = mock<GeckoRuntimeSettings>()
+        val mockGeckoContentBlockingSetting = mock<ContentBlocking.Settings>()
+        var trackersLog: List<TrackerLog>? = null
+
+        val mockContentBlockingController = mock<ContentBlockingController>()
+        val logEntriesResult = GeckoResult<List<ContentBlockingController.LogEntry>>()
+
+        whenever(runtime.settings).thenReturn(mockGeckoSetting)
+        whenever(mockGeckoSetting.contentBlocking).thenReturn(mockGeckoContentBlockingSetting)
+        whenever(runtime.contentBlockingController).thenReturn(mockContentBlockingController)
+        whenever(mockContentBlockingController.getLog(any())).thenReturn(logEntriesResult)
+        engine.settings.trackingProtectionPolicy = TrackingProtectionPolicy.recommended()
+
+        engine.getTrackersLog(mockSession, onSuccess = { trackersLog = it })
+        logEntriesResult.complete(createReplacedFingerprintingLogEntryList())
+
+        shadowOf(getMainLooper()).idle()
+
+        assertEquals(1, trackersLog!!.size)
+        val trackerLog = trackersLog.first()
+        assertEquals("www.fingerprinting-shim.com", trackerLog.url)
+        assertTrue(trackerLog.blockedCategories.contains(TrackingCategory.FINGERPRINTING))
+        assertFalse(trackerLog.cookiesHasBeenBlocked)
+        assertFalse(trackerLog.unBlockedBySmartBlock)
+    }
+
+    @Test
     fun `GIVEN a request to fetch tracking events WHEN successful THEN invoke the success callback`() {
         val runtime: GeckoRuntime = mock()
         val controller: ContentBlockingController = mock()
@@ -3162,6 +3255,54 @@ class GeckoEngineTest {
         var onErrorCalled = false
 
         engine.getEarliestTrackingProtectionDate(
+            onSuccess = { onSuccessCalled = true },
+            onError = { onErrorCalled = true },
+        )
+        result.completeExceptionally(Exception())
+        shadowOf(getMainLooper()).idle()
+
+        assertFalse(onSuccessCalled)
+        assertTrue(onErrorCalled)
+    }
+
+    @Test
+    fun `GIVEN a request to clear tracking protection data WHEN successful THEN invoke the success callback`() {
+        val runtime: GeckoRuntime = mock()
+        val controller: ContentBlockingController = mock()
+        whenever(runtime.contentBlockingController).thenReturn(controller)
+        val engine = GeckoEngine(context, runtime = runtime)
+
+        val result = GeckoResult<Void>()
+        whenever(controller.clearTrackingDb()).thenReturn(result)
+
+        var onSuccessCalled = false
+        var onErrorCalled = false
+
+        engine.clearTrackingProtectionData(
+            onSuccess = { onSuccessCalled = true },
+            onError = { onErrorCalled = true },
+        )
+        result.complete(null)
+        shadowOf(getMainLooper()).idle()
+
+        assertTrue(onSuccessCalled)
+        assertFalse(onErrorCalled)
+    }
+
+    @Test
+    fun `GIVEN a request to clear tracking protection data WHEN an error is encountered THEN call the error callback`() {
+        val runtime: GeckoRuntime = mock()
+        val controller: ContentBlockingController = mock()
+        whenever(runtime.contentBlockingController).thenReturn(controller)
+        val engine = GeckoEngine(context, runtime = runtime)
+
+        val result = GeckoResult<Void>()
+        whenever(controller.clearTrackingDb()).thenReturn(result)
+
+        var onSuccessCalled = false
+        var onErrorCalled = false
+
+        engine.clearTrackingProtectionData(
             onSuccess = { onSuccessCalled = true },
             onError = { onErrorCalled = true },
         )
@@ -3508,6 +3649,42 @@ class GeckoEngineTest {
         verify(extension).setActionDelegate(any())
         // Make sure we called `registerTabHandler()` on the installed extension.
         verify(extension).tabDelegate = any()
+    }
+
+    @Test
+    fun `web extension delegate handles add-on onReady event`() {
+        val runtime: GeckoRuntime = mock()
+        val webExtensionController: WebExtensionController = mock()
+        whenever(runtime.webExtensionController).thenReturn(webExtensionController)
+
+        val extension = mockNativeWebExtension("test", "uri")
+        val webExtensionsDelegate: WebExtensionDelegate = mock()
+        val engine = GeckoEngine(context, runtime = runtime)
+        engine.registerWebExtensionDelegate(webExtensionsDelegate)
+
+        val geckoDelegateCaptor = argumentCaptor<WebExtensionController.AddonManagerDelegate>()
+        verify(webExtensionController).setAddonManagerDelegate(geckoDelegateCaptor.capture())
+
+        assertEquals(Unit, geckoDelegateCaptor.value.onReady(extension))
+        val extensionCaptor = argumentCaptor<WebExtension>()
+
+        // Note: the "reacts to WebExtensionDelegate onReady" test in
+        // WebExtensionSupportTest.kt provides further verification of onReady
+        // doing anything meaningful.
+        verify(webExtensionsDelegate).onReady(extensionCaptor.capture())
+        val capturedExtension =
+            extensionCaptor.value as mozilla.components.browser.engine.gecko.webextension.GeckoWebExtension
+        assertEquals(extension, capturedExtension.nativeExtension)
+
+        // registerTabHandler must be called again on the extension at onReady,
+        // to make sure that changes to optionsPageUrl are propagated, and applied
+        // when the onOpenOptionsPage delegate is called.
+        // This is a regression test for bug 2046177.
+        verify(extension).tabDelegate = any()
+
+        // Although there are no known dependencies on setActionDelegate at the
+        // time of writing, we also update the action delegate for consistency.
+        verify(extension).setActionDelegate(any())
     }
 
     @Test
@@ -5001,6 +5178,88 @@ class GeckoEngineTest {
         assertTrue("AddressStructureAccessor should be called,", getAddressStructureCalled)
     }
 
+    @Test
+    fun `GIVEN BLOCKED_EMAILTRACKING_CONTENT WHEN getBlockedCategory is called THEN it returns EMAIL`() {
+        val blockingData = createBlockingData(Event.BLOCKED_EMAILTRACKING_CONTENT)
+
+        assertEquals(TrackingCategory.EMAIL, blockingData.getBlockedCategory())
+    }
+
+    @Test
+    fun `GIVEN BLOCKED_FINGERPRINTING_CONTENT WHEN getBlockedCategory is called THEN it returns FINGERPRINTING`() {
+        val blockingData = createBlockingData(Event.BLOCKED_FINGERPRINTING_CONTENT)
+
+        assertEquals(TrackingCategory.FINGERPRINTING, blockingData.getBlockedCategory())
+    }
+
+    @Test
+    fun `GIVEN BLOCKED_SUSPICIOUS_FINGERPRINTING WHEN getBlockedCategory is called THEN it returns FINGERPRINTING`() {
+        val blockingData = createBlockingData(Event.BLOCKED_SUSPICIOUS_FINGERPRINTING)
+
+        assertEquals(TrackingCategory.FINGERPRINTING, blockingData.getBlockedCategory())
+    }
+
+    @Test
+    fun `GIVEN BLOCKED_CRYPTOMINING_CONTENT WHEN getBlockedCategory is called THEN it returns CRYPTOMINING`() {
+        val blockingData = createBlockingData(Event.BLOCKED_CRYPTOMINING_CONTENT)
+
+        assertEquals(TrackingCategory.CRYPTOMINING, blockingData.getBlockedCategory())
+    }
+
+    @Test
+    fun `GIVEN BLOCKED_SOCIALTRACKING_CONTENT WHEN getBlockedCategory is called THEN it returns MOZILLA_SOCIAL`() {
+        val blockingData = createBlockingData(Event.BLOCKED_SOCIALTRACKING_CONTENT)
+
+        assertEquals(TrackingCategory.MOZILLA_SOCIAL, blockingData.getBlockedCategory())
+    }
+
+    @Test
+    fun `GIVEN COOKIES_BLOCKED_SOCIALTRACKER WHEN getBlockedCategory is called THEN it returns MOZILLA_SOCIAL`() {
+        val blockingData = createBlockingData(Event.COOKIES_BLOCKED_SOCIALTRACKER)
+
+        assertEquals(TrackingCategory.MOZILLA_SOCIAL, blockingData.getBlockedCategory())
+    }
+
+    @Test
+    fun `GIVEN BLOCKED_TRACKING_CONTENT WHEN getBlockedCategory is called THEN it returns SCRIPTS_AND_SUB_RESOURCES`() {
+        val blockingData = createBlockingData(Event.BLOCKED_TRACKING_CONTENT)
+
+        assertEquals(TrackingCategory.SCRIPTS_AND_SUB_RESOURCES, blockingData.getBlockedCategory())
+    }
+
+    @Test
+    fun `GIVEN an unmapped event WHEN getBlockedCategory is called THEN it returns NONE`() {
+        val blockingData = createBlockingData(Event.LOADED_LEVEL_1_TRACKING_CONTENT)
+
+        assertEquals(TrackingCategory.NONE, blockingData.getBlockedCategory())
+    }
+
+    @Test
+    fun `GIVEN COOKIES_PARTITIONED_TRACKER WHEN hasBlockedCookies is called THEN it returns true`() {
+        val blockingData = createBlockingData(Event.COOKIES_PARTITIONED_TRACKER)
+
+        assertTrue(blockingData.hasBlockedCookies())
+    }
+
+    @Test
+    fun `GIVEN COOKIES_LOADED WHEN hasBlockedCookies is called THEN it returns false`() {
+        val blockingData = createBlockingData(Event.COOKIES_LOADED)
+
+        assertFalse(blockingData.hasBlockedCookies())
+    }
+
+    @Test
+    fun `GIVEN LOADED_LEVEL_1_TRACKING_CONTENT WHEN getLoadedCategory is called THEN it returns SCRIPTS_AND_SUB_RESOURCES`() {
+        val blockingData = createBlockingData(Event.LOADED_LEVEL_1_TRACKING_CONTENT)
+
+        with(GeckoEngine(context, runtime = runtime)) {
+            assertEquals(
+                TrackingCategory.SCRIPTS_AND_SUB_RESOURCES,
+                blockingData.getLoadedCategory(),
+            )
+        }
+    }
+
     private fun createSocialTrackersLogEntryList(): List<ContentBlockingController.LogEntry> {
         val blockedLogEntry = object : ContentBlockingController.LogEntry() {}
 
@@ -5028,6 +5287,39 @@ class GeckoEngineTest {
         val blockedCrossSiteCookie = createBlockingData(Event.COOKIES_PARTITIONED_TRACKER)
 
         ReflectionUtils.setField(blockedLogEntry, "blockingData", listOf(blockedCrossSiteCookie))
+
+        return listOf(blockedLogEntry)
+    }
+
+    private fun createEmailTrackerLogEntryList(): List<ContentBlockingController.LogEntry> {
+        val blockedLogEntry = object : ContentBlockingController.LogEntry() {}
+
+        ReflectionUtils.setField(blockedLogEntry, "origin", "www.email-tracker.com")
+        val blockedEmailTracking = createBlockingData(Event.BLOCKED_EMAILTRACKING_CONTENT)
+
+        ReflectionUtils.setField(blockedLogEntry, "blockingData", listOf(blockedEmailTracking))
+
+        return listOf(blockedLogEntry)
+    }
+
+    private fun createPurgedBounceTrackerLogEntryList(): List<ContentBlockingController.LogEntry> {
+        val blockedLogEntry = object : ContentBlockingController.LogEntry() {}
+
+        ReflectionUtils.setField(blockedLogEntry, "origin", "www.bounce-tracker.com")
+        val purgedBounceTracker = createBlockingData(Event.PURGED_BOUNCETRACKER)
+
+        ReflectionUtils.setField(blockedLogEntry, "blockingData", listOf(purgedBounceTracker))
+
+        return listOf(blockedLogEntry)
+    }
+
+    private fun createReplacedFingerprintingLogEntryList(): List<ContentBlockingController.LogEntry> {
+        val blockedLogEntry = object : ContentBlockingController.LogEntry() {}
+
+        ReflectionUtils.setField(blockedLogEntry, "origin", "www.fingerprinting-shim.com")
+        val replacedFingerprinting = createBlockingData(Event.REPLACED_FINGERPRINTING_CONTENT)
+
+        ReflectionUtils.setField(blockedLogEntry, "blockingData", listOf(replacedFingerprinting))
 
         return listOf(blockedLogEntry)
     }

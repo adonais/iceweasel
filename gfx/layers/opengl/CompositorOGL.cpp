@@ -99,7 +99,6 @@ class AsyncReadbackBufferOGL final : public AsyncReadbackBuffer {
 
   void Bind() const {
     mGL->fBindBuffer(LOCAL_GL_PIXEL_PACK_BUFFER, mBufferHandle);
-    mGL->fPixelStorei(LOCAL_GL_PACK_ALIGNMENT, 1);
   }
 
  protected:
@@ -153,7 +152,7 @@ bool AsyncReadbackBufferOGL::MapAndCopyInto(DataSourceSurface* aSurface,
     return false;
   }
 
-  int32_t srcStride = mSize.width * 4;  // Bind() sets an alignment of 1
+  int32_t srcStride = mSize.width * 4;
   DataSourceSurface::ScopedMap map(aSurface, DataSourceSurface::WRITE);
   uint8_t* destData = map.GetData();
   int32_t destStride = map.GetStride();
@@ -190,7 +189,7 @@ CompositorOGL::CompositorOGL(widget::CompositorWidget* aWidget,
       mTriangleVBO(0),
       mPreviousFrameDoneSync(nullptr),
       mThisFrameDoneSync(nullptr),
-      mHasBGRA(0),
+      mHasBGRA(false),
       mUseExternalSurfaceSize(aUseExternalSurfaceSize),
       mFrameInProgress(false),
       mDestroyed(false),
@@ -670,8 +669,9 @@ bool CompositorOGL::ReadbackRenderTarget(CompositingRenderTarget* aSource,
   ScopedPackState scopedPackState(mGLContext);
   static_cast<AsyncReadbackBufferOGL*>(aDest)->Bind();
 
+  mGLContext->fPixelStorei(LOCAL_GL_PACK_ALIGNMENT, 1);
   mGLContext->fReadPixels(0, 0, size.width, size.height, LOCAL_GL_RGBA,
-                          LOCAL_GL_UNSIGNED_BYTE, 0);
+                          LOCAL_GL_UNSIGNED_BYTE, nullptr);
 
   if (previousTarget != aSource) {
     SetRenderTarget(previousTarget);

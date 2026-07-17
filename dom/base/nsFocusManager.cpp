@@ -2637,12 +2637,9 @@ bool nsFocusManager::BlurImpl(BrowsingContext* aBrowsingContextToClear,
       SendFocusOrBlurEvent(eBlur, presShell, doc, doc, false);
     }
     if (!GetFocusedBrowsingContext()) {
-      nsCOMPtr<nsPIDOMWindowInner> innerWindow =
-          window->GetCurrentInnerWindow();
-      // MOZ_KnownLive due to bug 1506441
-      SendFocusOrBlurEvent(
-          eBlur, presShell, doc,
-          MOZ_KnownLive(nsGlobalWindowInner::Cast(innerWindow)), false);
+      RefPtr innerWindow =
+          nsGlobalWindowInner::Cast(window->GetCurrentInnerWindow());
+      SendFocusOrBlurEvent(eBlur, presShell, doc, innerWindow, false);
     }
 
     // check if a different window was focused
@@ -2837,12 +2834,9 @@ void nsFocusManager::Focus(
     }
     if (GetFocusedBrowsingContext() == aWindow->GetBrowsingContext() &&
         !mFocusedElement && !focusInOtherContentProcess) {
-      nsCOMPtr<nsPIDOMWindowInner> innerWindow =
-          aWindow->GetCurrentInnerWindow();
-      // MOZ_KnownLive due to bug 1506441
-      SendFocusOrBlurEvent(
-          eFocus, presShell, doc,
-          MOZ_KnownLive(nsGlobalWindowInner::Cast(innerWindow)), aWindowRaised);
+      RefPtr innerWindow =
+          nsGlobalWindowInner::Cast(aWindow->GetCurrentInnerWindow());
+      SendFocusOrBlurEvent(eFocus, presShell, doc, innerWindow, aWindowRaised);
     }
   }
 
@@ -3057,8 +3051,8 @@ void nsFocusManager::SendFocusOrBlurEvent(EventMessage aEventMessage,
                                           EventTarget* aTarget,
                                           bool aWindowRaised, bool aIsRefocus,
                                           EventTarget* aRelatedTarget) {
-  NS_ASSERTION(aEventMessage == eFocus || aEventMessage == eBlur,
-               "Wrong event type for SendFocusOrBlurEvent");
+  MOZ_ASSERT(aEventMessage == eFocus || aEventMessage == eBlur,
+             "Wrong event type for SendFocusOrBlurEvent");
 
   nsCOMPtr<Document> eventTargetDoc = GetDocumentHelper(aTarget);
   nsCOMPtr<Document> relatedTargetDoc = GetDocumentHelper(aRelatedTarget);
@@ -4223,10 +4217,10 @@ nsIContent* nsFocusManager::GetNextTabbableContentInScope(
       aStartContent->IsInNativeAnonymousSubtree()
           ? aStartContent->FindFirstNonChromeOnlyAccessContent()
           : nullptr;
-  while (1) {
+  while (true) {
     // Iterate tab index to find corresponding contents in scope
 
-    while (1) {
+    while (true) {
       // Iterate remaining contents in scope to find next content to focus
 
       // Get next content

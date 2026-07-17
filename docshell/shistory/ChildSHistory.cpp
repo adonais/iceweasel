@@ -188,9 +188,8 @@ void ChildSHistory::AsyncGo(int32_t aOffset, bool aRequireUserInteraction,
           ("ChildSHistory::AsyncGo(%d), current index = %d", aOffset,
            index.value()));
 
-  RefPtr<PendingAsyncHistoryNavigation> asyncNav =
-      new PendingAsyncHistoryNavigation(this, aOffset, aRequireUserInteraction,
-                                        aUserActivation);
+  RefPtr asyncNav = MakeRefPtr<PendingAsyncHistoryNavigation>(
+      this, aOffset, aRequireUserInteraction, aUserActivation);
   mPendingNavigations.insertBack(asyncNav);
   NS_DispatchToCurrentThread(asyncNav.forget());
 }
@@ -204,10 +203,9 @@ void ChildSHistory::AsyncGo(const nsID& aKey, BrowsingContext* aNavigable,
               "ChildSHistory::AsyncGo({}), current index = {}",
               aKey.ToString().get(), index.value());
 
-  RefPtr<PendingAsyncHistoryNavigation> asyncNav =
-      new PendingAsyncHistoryNavigation(
-          this, aKey, aNavigable, aRequireUserInteraction, aUserActivation,
-          aCheckForCancelation, std::move(aResolver));
+  RefPtr asyncNav = MakeRefPtr<PendingAsyncHistoryNavigation>(
+      this, aKey, aNavigable, aRequireUserInteraction, aUserActivation,
+      aCheckForCancelation, std::move(aResolver));
   mPendingNavigations.insertBack(asyncNav);
   NS_DispatchToCurrentThread(asyncNav.forget());
 }

@@ -215,11 +215,13 @@ add_task(async function test_updateComponentState() {
  * Tests that IPProtectionService ready state event updates the state.
  */
 add_task(async function test_IPProtectionPanel_signedIn() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(IPPFxaAuthProvider, "isReady").get(() => true);
-  sandbox
-    .stub(IPPFxaAuthProvider, "getEntitlement")
-    .resolves({ entitlement: createTestEntitlement() });
+  IPPDummyAuthProvider.simulateSignIn(true);
+  IPPDummyAuthProvider.setEntitlement(createTestEntitlement(), {
+    silent: true,
+  });
+  IPPDummyAuthProvider.setGetEntitlementResponse({
+    entitlement: createTestEntitlement(),
+  });
 
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
@@ -247,16 +249,13 @@ add_task(async function test_IPProtectionPanel_signedIn() {
     false,
     "unauthenticated should be false in the fake elements state"
   );
-
-  sandbox.restore();
 });
 
 /**
  * Tests that IPProtectionService unauthenticated state event updates the state.
  */
 add_task(async function test_IPProtectionPanel_signedOut() {
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(IPPFxaAuthProvider, "isReady").get(() => false);
+  IPPDummyAuthProvider.simulateSignIn(false);
 
   let ipProtectionPanel = new IPProtectionPanel();
   let fakeElement = new FakeIPProtectionPanelElement();
@@ -285,8 +284,6 @@ add_task(async function test_IPProtectionPanel_signedOut() {
     true,
     "unauthenticated should be true in the fake elements state"
   );
-
-  sandbox.restore();
 });
 
 /**
@@ -299,13 +296,14 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
   ipProtectionPanel.panel = new FakeIPProtectionPanelView();
   fakeElement.isConnected = true;
 
-  let sandbox = sinon.createSandbox();
-  sandbox.stub(IPPFxaAuthProvider, "isReady").get(() => true);
-  sandbox.stub(IPPFxaAuthProvider, "aboutToStart").resolves(null);
-  sandbox
-    .stub(IPPFxaAuthProvider, "getEntitlement")
-    .resolves({ entitlement: createTestEntitlement() });
-  sandbox.stub(IPPFxaAuthProvider, "fetchProxyPass").resolves({
+  IPPDummyAuthProvider.simulateSignIn(true);
+  IPPDummyAuthProvider.setEntitlement(createTestEntitlement(), {
+    silent: true,
+  });
+  IPPDummyAuthProvider.setGetEntitlementResponse({
+    entitlement: createTestEntitlement(),
+  });
+  IPPDummyAuthProvider.setProxyPass({
     status: 200,
     error: undefined,
     pass: new ProxyPass(createProxyPassToken()),
@@ -367,7 +365,6 @@ add_task(async function test_IPProtectionPanel_started_stopped() {
     false,
     "isProtectionEnabled should be false in the fake elements state"
   );
-  sandbox.restore();
 });
 
 /**
@@ -419,8 +416,7 @@ add_task(async function test_IPProtectionPanel_locationsList() {
  * `!usage.remaining` would incorrectly bail out when remaining is exactly 0.
  */
 add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
-  let sandbox = sinon.createSandbox();
-  setupStubs(sandbox);
+  setupStubs();
 
   Services.prefs.setBoolPref("browser.ipProtection.bandwidth.enabled", true);
 
@@ -460,7 +456,6 @@ add_task(async function test_IPProtectionPanel_usage_zero_remaining() {
   ipProtectionPanel.uninit();
   Services.prefs.clearUserPref("browser.ipProtection.bandwidthThreshold");
   Services.prefs.clearUserPref("browser.ipProtection.bandwidth.enabled");
-  sandbox.restore();
 });
 
 /**

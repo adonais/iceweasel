@@ -25,10 +25,10 @@ class TrustedHTMLOrString;
 class DOMParser final : public nsISupports, public nsWrapperCache {
   typedef mozilla::dom::GlobalObject GlobalObject;
 
-  virtual ~DOMParser();
+  ~DOMParser();
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(DOMParser)
 
   // WebIDL API
@@ -72,8 +72,8 @@ class DOMParser final : public nsISupports, public nsWrapperCache {
 
   nsIGlobalObject* GetParentObject() const { return mGlobal; }
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override {
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override {
     return mozilla::dom::DOMParser_Binding::Wrap(aCx, this, aGivenProto);
   }
 

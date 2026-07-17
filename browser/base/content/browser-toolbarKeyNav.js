@@ -109,6 +109,10 @@ ToolbarKeyboardNavigator = {
   },
 
   init() {
+    if (!gToolbarKeyNavEnabled || this._initialized) {
+      return;
+    }
+    this._initialized = true;
     for (let id of this.kToolbars) {
       let toolbar = document.getElementById(id);
       // When enabled, no toolbar buttons should themselves be tabbable.
@@ -123,6 +127,10 @@ ToolbarKeyboardNavigator = {
   },
 
   uninit() {
+    if (!this._initialized) {
+      return;
+    }
+    this._initialized = false;
     for (let id of this.kToolbars) {
       let toolbar = document.getElementById(id);
       for (let stop of toolbar.getElementsByTagName("toolbartabstop")) {

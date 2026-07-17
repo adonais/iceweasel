@@ -196,10 +196,8 @@ StorageAccessAPIHelper::AllowAccessForHelper(
         eAllowAutoGrant, __func__);
   }
 
-  MOZ_ASSERT(
-      *aBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
-      *aBehavior ==
-          nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN);
+  MOZ_ASSERT(*aBehavior == nsICookieService::BEHAVIOR_REJECT_TRACKER ||
+             *aBehavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN);
 
   // No need to continue when we are already in the allow list.
   if (parentWindowContext->GetIsOnContentBlockingAllowList()) {
@@ -247,8 +245,7 @@ StorageAccessAPIHelper::AllowAccessForHelper(
       return StorageAccessPermissionGrantPromise::CreateAndReject(false,
                                                                   __func__);
     }
-    if (*aBehavior ==
-            nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN &&
+    if (*aBehavior == nsICookieService::BEHAVIOR_PARTITION_FOREIGN &&
         !isParentThirdParty) {
       LOG(("Our window isn't a third-party window"));
       return StorageAccessPermissionGrantPromise::CreateAndReject(false,
@@ -1151,7 +1148,7 @@ Maybe<bool> StorageAccessAPIHelper::CheckBrowserSettingsDecidesStorageAccessAPI(
         return Some(true);
       }
       return Nothing();
-    case nsICookieService::BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN:
+    case nsICookieService::BEHAVIOR_PARTITION_FOREIGN:
       if (aIsOnThirdPartySkipList) {
         return Some(true);
       }

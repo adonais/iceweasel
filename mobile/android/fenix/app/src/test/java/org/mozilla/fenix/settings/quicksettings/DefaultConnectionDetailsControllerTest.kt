@@ -39,7 +39,7 @@ class DefaultConnectionDetailsControllerTest {
         val navController: NavController = mockk(relaxed = true)
         val controller = DefaultConnectionDetailsController(
             fragment = fragment,
-            context = context,
+            components = context.components,
             scope = this,
             cookieBannersStorage = mockk(),
             navController = { navController },

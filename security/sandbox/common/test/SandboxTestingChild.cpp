@@ -22,7 +22,7 @@ StaticRefPtr<SandboxTestingChild> SandboxTestingChild::sInstance;
 bool SandboxTestingChild::IsTestThread() { return mThread->IsOnThread(); }
 
 void SandboxTestingChild::PostToTestThread(
-    already_AddRefed<nsIRunnable>&& runnable) {
+    already_AddRefed<nsIRunnable> runnable) {
   mThread->Dispatch(std::move(runnable));
 }
 

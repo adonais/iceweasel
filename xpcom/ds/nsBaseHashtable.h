@@ -233,6 +233,14 @@ class nsBaseHashtableET : public KeyClass {
     return mozilla::detail::PtrGetWeak(GetData());
   }
 
+  // The destructor is intentionally public even though entries are only ever
+  // constructed and destroyed by friends. A private destructor would make
+  // std::is_trivially_destructible_v<nsBaseHashtableET> false (the trait checks
+  // destructor accessibility from an unrelated context), which would force
+  // nsTHashtable to install a non-null clearEntry op and walk every slot on
+  // table destruction/clear even when KeyClass and DataType are trivial.
+  ~nsBaseHashtableET() = default;
+
  private:
   DataType mData;
   friend class nsTHashtable<nsBaseHashtableET<KeyClass, DataType>>;
@@ -248,7 +256,6 @@ class nsBaseHashtableET : public KeyClass {
   template <typename... Args>
   explicit nsBaseHashtableET(KeyTypePointer aKey, Args&&... aArgs);
   nsBaseHashtableET(nsBaseHashtableET<KeyClass, DataType>&& aToMove) = default;
-  ~nsBaseHashtableET() = default;
 };
 
 /**
@@ -295,6 +302,19 @@ class nsBaseHashtable
  public:
   typedef typename KeyClass::KeyType KeyType;
   typedef nsBaseHashtableET<KeyClass, DataType> EntryType;
+
+  // If both the key and the stored data are trivially destructible, the entry
+  // must be too, so that nsTHashtable installs a null clearEntry op (see
+  // nsTHashtable::sOps) and skips the per-slot clear walk on Clear() and
+  // destruction. A private entry destructor silently breaks this, because
+  // std::is_trivially_destructible checks destructor accessibility from an
+  // unrelated context; guard the invariant here so any regression fails to
+  // compile rather than quietly pessimizing every such hashtable.
+  static_assert(!(std::is_trivially_destructible_v<KeyClass> &&
+                  std::is_trivially_destructible_v<DataType>) ||
+                    std::is_trivially_destructible_v<EntryType>,
+                "trivially-destructible key and data must yield a "
+                "trivially-destructible entry");
 
   using nsTHashtable<EntryType>::Contains;
   using nsTHashtable<EntryType>::GetGeneration;
@@ -974,6 +994,15 @@ class nsBaseHashtable
    * reset the hashtable, removing all entries
    */
   void Clear() { nsTHashtable<EntryType>::Clear(); }
+
+  /**
+   * Remove all entries but keep the entry storage allocated, retaining the
+   * current capacity. Prefer this over Clear() when the table is about to be
+   * re-populated and repeated free/realloc of the storage would be wasteful.
+   */
+  void ClearAndRetainStorage() {
+    nsTHashtable<EntryType>::ClearAndRetainStorage();
+  }
 
   /**
    * Measure the size of the table's entry storage. The size of things pointed

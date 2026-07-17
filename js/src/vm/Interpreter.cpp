@@ -29,6 +29,7 @@
 #include "jit/BaselineJIT.h"
 #include "jit/Jit.h"
 #include "jit/JitRuntime.h"
+#include "jit/JitZone.h"
 #include "js/EnvironmentChain.h"      // JS::SupportUnscopables
 #include "js/experimental/JitInfo.h"  // JSJitInfo
 #include "js/friend/ErrorMessages.h"  // js::GetErrorMessage, JSMSG_*
@@ -65,6 +66,7 @@
 #endif
 #include "builtin/Boolean-inl.h"
 #include "debugger/DebugAPI-inl.h"
+#include "gc/WeakMap-inl.h"
 #include "vm/ArgumentsObject-inl.h"
 #ifdef ENABLE_EXPLICIT_RESOURCE_MANAGEMENT
 #  include "vm/DisposableRecord-inl.h"
@@ -347,32 +349,40 @@ InterpreterFrame* RunState::pushInterpreterFrame(JSContext* cx) {
 
 static MOZ_ALWAYS_INLINE bool MaybeEnterInterpreterTrampoline(JSContext* cx,
                                                               RunState& state) {
+  AutoCheckRecursionLimit recursion(cx);
+  if (!recursion.check(cx)) {
+    return false;
+  }
+
 #ifdef NIGHTLY_BUILD
   if (jit::JitOptions.emitInterpreterEntryTrampoline &&
       cx->runtime()->hasJitRuntime()) {
-    js::jit::JitRuntime* jitRuntime = cx->runtime()->jitRuntime();
     JSScript* script = state.script();
-
-    uint8_t* codeRaw = nullptr;
-    auto p = jitRuntime->getInterpreterEntryMap()->lookup(script);
-    if (p) {
-      codeRaw = p->value().raw();
-    } else {
-      js::jit::JitCode* code =
-          jitRuntime->generateEntryTrampolineForScript(cx, script);
-      if (!code) {
-        ReportOutOfMemory(cx);
-        return false;
-      }
-
-      js::jit::EntryTrampoline entry(cx, code);
-      if (!jitRuntime->getInterpreterEntryMap()->put(script, entry)) {
-        ReportOutOfMemory(cx);
-        return false;
-      }
-      codeRaw = code->raw();
+    Zone* zone = script->zone();
+    jit::JitZone* jitZone = zone->getOrCreateJitZone(cx);
+    if (!jitZone) {
+      return false;
     }
 
+    jit::EntryTrampolineMap* map =
+        jitZone->getOrCreateInterpreterEntryMap(zone);
+    if (!map) {
+      ReportOutOfMemory(cx);
+      return false;
+    }
+
+    jit::JitRuntime* jitRuntime = cx->runtime()->jitRuntime();
+    auto ptr = map->lookupForAdd(script);
+    if (!ptr) {
+      jit::JitCode* code =
+          jitRuntime->generateEntryTrampolineForScript(cx, script);
+      if (!code || !map->relookupOrAdd(ptr, script, code)) {
+        ReportOutOfMemory(cx);
+        return false;
+      }
+    }
+
+    uint8_t* codeRaw = ptr->value()->raw();
     MOZ_ASSERT(codeRaw, "Should have a valid trampoline here.");
     // The C++ entry thunk is located at the vmInterpreterEntryOffset offset.
     codeRaw += jitRuntime->vmInterpreterEntryOffset();
@@ -4268,6 +4278,7 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       // AbstractGeneratorObject::resume takes care of setting the frame's
       // debuggee flag.
       MOZ_ASSERT_IF(REGS.fp()->script()->isDebuggee(), REGS.fp()->isDebuggee());
+      INIT_COVERAGE();
       COUNT_COVERAGE();
     }
     END_CASE(AfterYield)
@@ -4373,6 +4384,8 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
     END_CASE(ImportMeta)
 
     CASE(DynamicImport) {
+      ImportPhase phase = ImportPhase(GET_UINT8(REGS.pc));
+
       ReservedRooted<Value> options(&rootValue0, REGS.sp[-1]);
       REGS.sp--;
 
@@ -4380,25 +4393,12 @@ bool MOZ_NEVER_INLINE JS_HAZ_JSNATIVE_CALLER js::Interpret(JSContext* cx,
       POP_COPY_TO(specifier);
 
       JSObject* promise =
-          StartDynamicModuleImport(cx, script, specifier, options);
+          StartDynamicModuleImport(cx, script, specifier, options, phase);
       if (!promise) goto error;
 
       PUSH_OBJECT(*promise);
     }
     END_CASE(DynamicImport)
-
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-    CASE(DynamicImportSource) {
-      ReservedRooted<Value> specifier(&rootValue0);
-      POP_COPY_TO(specifier);
-
-      JSObject* promise = StartDynamicModuleImportSource(cx, script, specifier);
-      if (!promise) goto error;
-
-      PUSH_OBJECT(*promise);
-    }
-    END_CASE(DynamicImportSource)
-#endif
 
     CASE(EnvCallee) {
       uint16_t numHops = GET_ENVCOORD_HOPS(REGS.pc);

@@ -10,7 +10,7 @@
 #include "mozilla/dom/SVGGraphicsElement.h"
 
 nsresult NS_NewSVGForeignObjectElement(
-    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+    nsIContent** aResult, already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
 namespace mozilla {
 class SVGForeignObjectFrame;
@@ -23,9 +23,9 @@ class SVGForeignObjectElement final : public SVGGraphicsElement {
  protected:
   friend nsresult(::NS_NewSVGForeignObjectElement(
       nsIContent** aResult,
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo));
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo));
   explicit SVGForeignObjectElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
   JSObject* WrapNode(JSContext* cx, JS::Handle<JSObject*> aGivenProto) override;
 
  public:

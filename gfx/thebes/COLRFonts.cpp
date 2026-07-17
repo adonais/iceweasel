@@ -157,8 +157,8 @@ struct PaintState {
   uint16_t mCoordCount;
   nsTArray<uint32_t>* mVisited;
 
-  const char* COLRv1BaseAddr() const {
-    return reinterpret_cast<const char*>(mHeader.v1);
+  const uint8_t* COLRv1BaseAddr() const {
+    return reinterpret_cast<const uint8_t*>(mHeader.v1);
   }
 
   DeviceColor GetColor(uint16_t aPaletteIndex, float aAlpha) const;
@@ -404,6 +404,10 @@ static int32_t ApplyVariation(const PaintState& aState, int32_t aValue,
   uint32_t deltaSetSize = (regionIndexCount + wordDeltaCount) << longWords;
   const uint8_t* deltaData =
       reinterpret_cast<const uint8_t*>(deltaSets) + deltaSetSize * innerIndex;
+  if (deltaData < reinterpret_cast<const uint8_t*>(deltaSets) ||
+      deltaData > aState.COLRv1BaseAddr() + aState.mCOLRLength - deltaSetSize) {
+    return aValue;
+  }
   uint16_t deltaSize = longWords ? 4 : 2;
   int32_t result = aValue;
   for (uint16_t i = 0; i < regionIndexCount; ++i, deltaData += deltaSize) {
@@ -642,7 +646,7 @@ struct ColorLineT {
       return;
     }
     const auto* stop = colorStops();
-    if (reinterpret_cast<const char*>(stop) + count * sizeof(T) >
+    if (reinterpret_cast<const uint8_t*>(stop) + count * sizeof(T) >
         aState.COLRv1BaseAddr() + aState.mCOLRLength) {
       return;
     }
@@ -1959,9 +1963,9 @@ static bool DispatchPaint(const PaintState& aState, uint32_t aDepth,
     return false;
   }
 
-  const char* paint = aState.COLRv1BaseAddr() + aOffset;
+  const uint8_t* paint = aState.COLRv1BaseAddr() + aOffset;
   // All paint table formats start with an 8-bit 'format' field.
-  uint8_t format = uint8_t(*paint);
+  uint8_t format = *paint;
 
 #define DO_CASE(T)                                                            \
   case T::kFormat:                                                            \
@@ -2006,9 +2010,9 @@ static UniquePtr<Pattern> DispatchMakePattern(const PaintState& aState,
     return nullptr;
   }
 
-  const char* paint = aState.COLRv1BaseAddr() + aOffset;
+  const uint8_t* paint = aState.COLRv1BaseAddr() + aOffset;
   // All paint table formats start with an 8-bit 'format' field.
-  uint8_t format = uint8_t(*paint);
+  uint8_t format = *paint;
 
 #define DO_CASE(T)                                                       \
   case T::kFormat:                                                       \
@@ -2036,9 +2040,9 @@ static Matrix DispatchGetMatrix(const PaintState& aState, uint32_t aOffset) {
     return Matrix();
   }
 
-  const char* paint = aState.COLRv1BaseAddr() + aOffset;
+  const uint8_t* paint = aState.COLRv1BaseAddr() + aOffset;
   // All paint table formats start with an 8-bit 'format' field.
-  uint8_t format = uint8_t(*paint);
+  uint8_t format = *paint;
 
 #define DO_CASE(T)                                                             \
   case T::kFormat:                                                             \
@@ -2076,9 +2080,9 @@ static Rect DispatchGetBounds(const PaintState& aState, uint32_t aDepth,
     return Rect();
   }
 
-  const char* paint = aState.COLRv1BaseAddr() + aOffset;
+  const uint8_t* paint = aState.COLRv1BaseAddr() + aOffset;
   // All paint table formats start with an 8-bit 'format' field.
-  uint8_t format = uint8_t(*paint);
+  uint8_t format = *paint;
 
 #define DO_CASE(T)                                                   \
   case T::kFormat:                                                   \
@@ -2324,19 +2328,23 @@ bool ItemVariationStore::Validate(const COLRv1Header* aHeader,
 
 bool ItemVariationData::Validate(const COLRv1Header* aHeader,
                                  uint64_t aLength) const {
-  if (reinterpret_cast<const char*>(regionIndexes() +
-                                    uint16_t(regionIndexCount)) >
-      reinterpret_cast<const char*>(aHeader) + aLength) {
+  const char* limit = reinterpret_cast<const char*>(aHeader) + aLength;
+  uint16_t riCount = this->regionIndexCount;
+  if (reinterpret_cast<const char*>(regionIndexes() + riCount) > limit) {
     return false;
   }
-  uint16_t wordDeltaCount = this->wordDeltaCount;
-  bool longWords = wordDeltaCount & LONG_WORDS;
-  wordDeltaCount &= WORD_DELTA_COUNT_MASK;
-  uint32_t deltaSetSize =
-      (uint16_t(regionIndexCount) + uint16_t(wordDeltaCount)) << longWords;
-  if (reinterpret_cast<const char*>(deltaSets()) +
-          uint64_t(uint16_t(itemCount)) * deltaSetSize >
-      reinterpret_cast<const char*>(aHeader) + aLength) {
+  uint16_t wdCount = this->wordDeltaCount;
+  bool longWords = wdCount & LONG_WORDS;
+  wdCount &= WORD_DELTA_COUNT_MASK;
+  size_t deltaSetSize = (size_t(riCount) + size_t(wdCount)) << longWords;
+  uint16_t itemCount = this->itemCount;
+  if (itemCount &&
+      deltaSetSize > std::numeric_limits<size_t>::max() / itemCount) {
+    return false;
+  }
+  const char* start = reinterpret_cast<const char*>(deltaSets());
+  const char* end = start + size_t(itemCount) * deltaSetSize;
+  if (end < start || end > limit) {
     return false;
   }
   return true;

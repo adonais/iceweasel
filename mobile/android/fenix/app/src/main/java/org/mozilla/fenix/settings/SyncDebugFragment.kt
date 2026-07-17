@@ -17,7 +17,6 @@ import mozilla.components.concept.sync.FxAEntryPoint
 import org.mozilla.fenix.R
 import org.mozilla.fenix.e2e.SystemInsetsPaddedFragment
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import kotlin.system.exitProcess
 
@@ -192,7 +191,7 @@ class SyncDebugFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragment
     }
 
     private fun updateMenu() {
-        val settings = requireContext().settings()
+        val settings = requireComponents.settings
         requirePreference<EditTextPreference>(R.string.pref_key_override_fxa_server).let {
             it.summary = settings.overrideFxAServer.ifEmpty { null }
         }

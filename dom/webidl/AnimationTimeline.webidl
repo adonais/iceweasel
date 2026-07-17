@@ -4,6 +4,7 @@
  *
  * The origin of this IDL file is
  * https://drafts.csswg.org/web-animations/#animationtimeline
+ * https://drafts.csswg.org/web-animations-2/#the-animationtimeline-interface
  *
  * Copyright © 2015 W3C® (MIT, ERCIM, Keio), All Rights Reserved. W3C
  * liability, trademark and document use rules apply.
@@ -11,6 +12,8 @@
 
 [Exposed=Window]
 interface AnimationTimeline {
-  [BinaryName="currentTimeAsDouble"]
-  readonly attribute double? currentTime;
+  readonly attribute CSSNumberish? currentTime;
+
+  [GetterThrows, Pref="layout.css.scroll-driven-animations.enabled"]
+  readonly attribute CSSNumberish? duration;
 };

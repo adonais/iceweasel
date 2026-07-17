@@ -72,8 +72,9 @@ class TabsUseCases(
          * has no effect if the session doesn't exist.
          *
          * @param tabId The ID of the session to remove.
+         * @param excludedTabIds A list of tab IDs that should be ignored when selecting a fallback tab.
          */
-        operator fun invoke(tabId: String)
+        operator fun invoke(tabId: String, excludedTabIds: Set<String> = emptySet())
 
         /**
          * Removes the session with the provided ID. This method
@@ -86,8 +87,13 @@ class TabsUseCases(
          * This is a temporary workaround to prevent additional API breakage for
          * subtypes other than [DefaultRemoveTabUseCase]. The default implementation
          * should be removed together with invoke(Session).
+         * @param excludedTabIds A list of tab IDs that should be ignored when selecting a fallback tab.
          */
-        operator fun invoke(tabId: String, selectParentIfExists: Boolean) = invoke(tabId)
+        operator fun invoke(
+            tabId: String,
+            selectParentIfExists: Boolean,
+            excludedTabIds: Set<String> = emptySet(),
+        ) = invoke(tabId, excludedTabIds)
     }
 
     /**
@@ -102,9 +108,10 @@ class TabsUseCases(
          * has no effect if the tab doesn't exist.
          *
          * @param tabId The ID of the tab to remove.
+         * @param excludedTabIds A list of tab IDs that should be ignored when selecting a fallback tab.
          */
-        override operator fun invoke(tabId: String) {
-            store.dispatch(TabListAction.RemoveTabAction(tabId))
+        override operator fun invoke(tabId: String, excludedTabIds: Set<String>) {
+            store.dispatch(TabListAction.RemoveTabAction(tabId, excludedTabIds = excludedTabIds))
         }
 
         /**
@@ -114,9 +121,12 @@ class TabsUseCases(
          * @param tabId The ID of the session to remove.
          * @param selectParentIfExists Whether or not to select the parent tab
          * of the removed tab if a parent exists.
+         * @param excludedTabIds A list of tab IDs that should be ignored when selecting a fallback tab.
          */
-        override operator fun invoke(tabId: String, selectParentIfExists: Boolean) {
-            store.dispatch(TabListAction.RemoveTabAction(tabId, selectParentIfExists))
+        override operator fun invoke(tabId: String, selectParentIfExists: Boolean, excludedTabIds: Set<String>) {
+            store.dispatch(
+                TabListAction.RemoveTabAction(tabId, selectParentIfExists, excludedTabIds),
+            )
         }
     }
 
@@ -240,9 +250,11 @@ class TabsUseCases(
     ) {
         /**
          * Removes a specified list of tabs.
+         * @param ids The IDs of the tabs to remove.
+         * @param excludedTabIds A set of tab IDs that should be ignored when selecting a fallback tab.
          */
-        operator fun invoke(ids: List<String>) {
-            store.dispatch(TabListAction.RemoveTabsAction(ids))
+        operator fun invoke(ids: List<String>, excludedTabIds: Set<String> = emptySet()) {
+            store.dispatch(TabListAction.RemoveTabsAction(ids, excludedTabIds))
         }
     }
 

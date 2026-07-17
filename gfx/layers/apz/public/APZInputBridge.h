@@ -205,6 +205,9 @@ struct APZEventResult {
    * input block, otherwise InputBlockState::NO_BLOCK_ID.
    */
   uint64_t mInputBlockId;
+
+  // Whether APZ found a horizontal scroll target.
+  bool mTargetCanScrollHorizontally = false;
 };
 
 /**

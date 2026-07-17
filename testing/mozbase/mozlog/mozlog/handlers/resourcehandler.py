@@ -84,6 +84,9 @@ class ResourceHandler(LogHandler):
     def lsan_summary(self, data):
         self.resources.lsan_summary(data)
 
+    def tsan_error(self, data):
+        self.resources.tsan_error(data)
+
     def mozleak_object(self, data):
         self.resources.mozleak_object(data)
 

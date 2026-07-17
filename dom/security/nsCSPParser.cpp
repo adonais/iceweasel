@@ -394,7 +394,7 @@ nsCSPHostSrc* nsCSPParser::host() {
   if (CSP_IsQuotelessKeyword(mCurValue)) {
     nsString keyword = mCurValue;
     ToLowerCase(keyword);
-    AutoTArray<nsString, 2> params = {mCurToken, keyword};
+    AutoTArray<nsString, 2> params = {mCurToken, std::move(keyword)};
     logWarningErrorToConsole(nsIScriptError::warningFlag,
                              "hostNameMightBeKeyword", params);
   }
@@ -817,7 +817,7 @@ void nsCSPParser::reportGroup(nsCSPDirective* aDir) {
     if (isGroupDelim(*mCurChar) ||
         nsContentUtils::IsHTMLWhitespace(*mCurChar)) {
       nsString badChar(mozilla::Span(mCurChar, 1));
-      AutoTArray<nsString, 2> params = {mCurToken, badChar};
+      AutoTArray<nsString, 2> params = {mCurToken, std::move(badChar)};
       logWarningErrorToConsole(nsIScriptError::warningFlag,
                                "ignoringInvalidGroupSyntax", params);
       delete aDir;
@@ -1276,7 +1276,7 @@ void nsCSPParser::MaybeWarnAboutIgnoredSources(
           !aSrcs[i]->isKeyword(CSP_WASM_UNSAFE_EVAL) &&
           !aSrcs[i]->isKeyword(CSP_UNSAFE_HASHES) && !aSrcs[i]->isNonce() &&
           !aSrcs[i]->isHash()) {
-        AutoTArray<nsString, 2> params = {srcStr, mCurDir[0]};
+        AutoTArray<nsString, 2> params = {std::move(srcStr), mCurDir[0]};
         logWarningErrorToConsole(nsIScriptError::warningFlag,
                                  "ignoringScriptSrcForStrictDynamic", params);
       }

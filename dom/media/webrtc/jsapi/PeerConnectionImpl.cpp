@@ -106,6 +106,7 @@
 #include "nsIProxiedChannel.h"
 #include "nsIScriptGlobalObject.h"
 #include "nsNetUtil.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPrintfCString.h"
 #include "nsURLHelper.h"
 #include "nsXULAppAPI.h"
@@ -290,7 +291,7 @@ NS_INTERFACE_MAP_END
 
 already_AddRefed<PeerConnectionImpl> PeerConnectionImpl::Constructor(
     const dom::GlobalObject& aGlobal) {
-  RefPtr<PeerConnectionImpl> pc = new PeerConnectionImpl(&aGlobal);
+  RefPtr pc = MakeRefPtr<PeerConnectionImpl>(&aGlobal);
 
   CSFLogDebug(LOGTAG, "Created PeerConnection: %p", pc.get());
 
@@ -365,7 +366,7 @@ PeerConnectionImpl::PeerConnectionImpl(const GlobalObject* aGlobal)
       mPrivateWindow(false),
       mActiveOnWindow(false),
       mTimestampMaker(dom::RTCStatsTimestampMaker::Create(mWindow)),
-      mIdGenerator(new RTCStatsIdGenerator()),
+      mIdGenerator(MakeRefPtr<RTCStatsIdGenerator>()),
       listenPort(0),
       connectPort(0),
       connectStr(nullptr) {
@@ -579,7 +580,7 @@ nsresult PeerConnectionImpl::Initialize(PeerConnectionObserver& aObserver,
       &PeerConnectionImpl::OnDtlsStateChange);
   mRtcpStateChangeListener = mTransportHandler->GetRtcpStateChange().Connect(
       GetMainThreadSerialEventTarget(), this,
-      &PeerConnectionImpl::OnDtlsStateChange);
+      &PeerConnectionImpl::OnRtcpStateChange);
 
   return NS_OK;
 }
@@ -1159,7 +1160,7 @@ already_AddRefed<dom::Promise> PeerConnectionImpl::Chain(
     dom::ChainedOperation& aOperation, ErrorResult& aError) {
   MOZ_RELEASE_ASSERT(!mChainingOperation);
   mChainingOperation = true;
-  RefPtr<Operation> operation = new JSOperation(this, aOperation, aError);
+  RefPtr operation = MakeRefPtr<JSOperation>(this, aOperation, aError);
   if (aError.Failed()) {
     return nullptr;
   }
@@ -1438,7 +1439,7 @@ static void DeferredCreateOffer(const std::string& aPcHandle,
 // copy c'tor.
 static std::unique_ptr<dom::PCErrorData> buildJSErrorData(
     const JsepSession::Result& aResult, const std::string& aMessage) {
-  std::unique_ptr<dom::PCErrorData> result(new dom::PCErrorData);
+  auto result = std::make_unique<dom::PCErrorData>();
   result->mName = *aResult.mError;
   result->mMessage = NS_ConvertASCIItoUTF16(aMessage.c_str());
   // Populate RTCError-specific fields when the error has an errorDetail.
@@ -1610,7 +1611,7 @@ PeerConnectionImpl::SetLocalDescription(int32_t aAction, const char* aSDP) {
       return NS_ERROR_FAILURE;
   }
   MOZ_ASSERT(!mUncommittedJsepSession);
-  mUncommittedJsepSession.reset(mJsepSession->Clone());
+  mUncommittedJsepSession = mJsepSession->Clone();
   JsepSession::Result result =
       mUncommittedJsepSession->SetLocalDescription(sdpType, mLocalRequestedSDP);
   JSErrorResult rv;
@@ -1709,7 +1710,7 @@ PeerConnectionImpl::SetRemoteDescription(int32_t action, const char* aSDP) {
   }
 
   MOZ_ASSERT(!mUncommittedJsepSession);
-  mUncommittedJsepSession.reset(mJsepSession->Clone());
+  mUncommittedJsepSession = mJsepSession->Clone();
   JsepSession::Result result = mUncommittedJsepSession->SetRemoteDescription(
       sdpType, mRemoteRequestedSDP);
   JSErrorResult jrv;
@@ -1756,12 +1757,12 @@ already_AddRefed<dom::Promise> PeerConnectionImpl::GetStats(
           GetMainThreadSerialEventTarget(), __func__,
           [promise,
            window = mWindow](UniquePtr<dom::RTCStatsReportInternal>&& aReport) {
-            RefPtr<RTCStatsReport> report(new RTCStatsReport(window));
+            RefPtr report = MakeRefPtr<RTCStatsReport>(window);
             report->Incorporate(*aReport);
             promise->MaybeResolve(std::move(report));
           },
           [promise, window = mWindow](nsresult aError) {
-            RefPtr<RTCStatsReport> report(new RTCStatsReport(window));
+            RefPtr report = MakeRefPtr<RTCStatsReport>(window);
             promise->MaybeResolve(std::move(report));
           });
 
@@ -1865,7 +1866,7 @@ PeerConnectionImpl::SetPeerIdentity(const nsAString& aPeerIdentity) {
       return NS_ERROR_FAILURE;
     }
   } else {
-    mPeerIdentity = new PeerIdentity(aPeerIdentity);
+    mPeerIdentity = MakeRefPtr<PeerIdentity>(aPeerIdentity);
     Document* doc = mWindow->GetExtantDoc();
     if (!doc) {
       CSFLogInfo(LOGTAG, "Can't update principal on streams; document gone");
@@ -1901,8 +1902,9 @@ nsresult PeerConnectionImpl::OnAlpnNegotiated(const std::string& aAlpn,
   return NS_OK;
 }
 
-void PeerConnectionImpl::OnDtlsStateChange(const std::string& aTransportId,
-                                           TransportLayer::State aState) {
+void PeerConnectionImpl::OnDtlsStateChange(
+    const std::string& aTransportId, TransportLayer::State aState,
+    const nsTArray<nsTArray<uint8_t>>& aRemoteCerts) {
   MOZ_ASSERT(NS_IsMainThread(), "Wrong thread");
   RefPtr<PeerConnectionImpl> kungFuDeathGrip(this);
   if (IsClosed()) {
@@ -1916,7 +1918,12 @@ void PeerConnectionImpl::OnDtlsStateChange(const std::string& aTransportId,
     return;
   }
 
-  dtlsTransport->UpdateState(aState);
+  nsTArray<nsTArray<uint8_t>> certsCopy;
+  certsCopy.SetCapacity(aRemoteCerts.Length());
+  for (const auto& cert : aRemoteCerts) {
+    certsCopy.AppendElement(cert.Clone());
+  }
+  dtlsTransport->UpdateState(aState, std::move(certsCopy));
   // Whenever the state of an RTCDtlsTransport changes or when the [[IsClosed]]
   // slot turns true, the user agent MUST update the connection state by
   // queueing a task that runs the following steps:
@@ -1937,6 +1944,11 @@ void PeerConnectionImpl::OnDtlsStateChange(const std::string& aTransportId,
           mPCObserver->OnStateChange(PCObserverStateType::ConnectionState, jrv);
         }
       }));
+}
+
+void PeerConnectionImpl::OnRtcpStateChange(const std::string& aTransportId,
+                                           TransportLayer::State aState) {
+  OnDtlsStateChange(aTransportId, aState, {});
 }
 
 RTCPeerConnectionState PeerConnectionImpl::GetNewConnectionState() const {
@@ -2597,7 +2609,7 @@ nsresult PeerConnectionImpl::SetConfiguration(
   (void)mJsepSession->SetBundlePolicy(bundlePolicy);
 
   if (!aConfiguration.mPeerIdentity.IsEmpty()) {
-    mPeerIdentity = new PeerIdentity(aConfiguration.mPeerIdentity);
+    mPeerIdentity = MakeRefPtr<PeerIdentity>(aConfiguration.mPeerIdentity);
     mRequestedPrivacy = Some(PrincipalPrivacy::Private);
   }
 
@@ -2876,7 +2888,7 @@ DOMMediaStream* PeerConnectionImpl::GetReceiveStream(
 
 DOMMediaStream* PeerConnectionImpl::CreateReceiveStream(
     const std::string& aId) {
-  mReceiveStreams.AppendElement(new DOMMediaStream(mWindow));
+  mReceiveStreams.AppendElement(MakeRefPtr<DOMMediaStream>(mWindow));
   mReceiveStreams.LastElement()->AssignId(NS_ConvertASCIItoUTF16(aId.c_str()));
   return mReceiveStreams.LastElement();
 }
@@ -2927,7 +2939,7 @@ void PeerConnectionImpl::DoSetDescriptionSuccessPostProcessing(
           // flight (that will race against the [[SendEncodings]]
           // modification caused by sRD(offer)), or when addTrack has been
           // called while sRD(offer) was in progress.
-          mUncommittedJsepSession.reset(mJsepSession->Clone());
+          mUncommittedJsepSession = mJsepSession->Clone();
           JsepSession::Result result;
           if (aRemote) {
             mUncommittedJsepSession->SetRemoteDescription(
@@ -3727,8 +3739,7 @@ RefPtr<dom::RTCStatsPromise> PeerConnectionImpl::GetDataChannelStats(
         ->Then(GetMainThreadSerialEventTarget(), __func__,
                [](DataChannelConnection::StatsPromise::ResolveOrRejectValue&&
                       aResult) {
-                 UniquePtr<dom::RTCStatsCollection> report(
-                     new dom::RTCStatsCollection);
+                 auto report = MakeUnique<dom::RTCStatsCollection>();
                  if (aResult.IsResolve()) {
                    if (!report->mDataChannelStats.AppendElements(
                            aResult.ResolveValue(), fallible)) {
@@ -3970,8 +3981,7 @@ RefPtr<dom::RTCStatsReportPromise> PeerConnectionImpl::GetStats(
 
   // This is what we're going to return; all the stuff in |promises| will be
   // accumulated here.
-  UniquePtr<dom::RTCStatsReportInternal> report(
-      new dom::RTCStatsReportInternal);
+  auto report = MakeUnique<dom::RTCStatsReportInternal>();
   report->mPcid = NS_ConvertASCIItoUTF16(mName.c_str());
   if (mWindow && mWindow->GetBrowsingContext()) {
     report->mBrowserId = mWindow->GetBrowsingContext()->BrowserId();
@@ -4280,7 +4290,7 @@ void PeerConnectionImpl::UpdateRTCDtlsTransports() {
           Nullable<uint16_t> maxChannels;
 
           if (!oldSctp) {
-            mSctpTransport = new RTCSctpTransport(
+            mSctpTransport = MakeRefPtr<RTCSctpTransport>(
                 GetParentObject(), *dtlsTransport, maxMessageSize, maxChannels);
           } else {
             // Restore the SCTP transport we had before this function was called
@@ -4708,7 +4718,7 @@ already_AddRefed<dom::RTCRtpTransceiver> PeerConnectionImpl::CreateTransceiver(
     });
   }
 
-  RefPtr<RTCRtpTransceiver> transceiver = new RTCRtpTransceiver(
+  RefPtr transceiver = MakeRefPtr<RTCRtpTransceiver>(
       mWindow, PrivacyRequested(), this, mTransportHandler, mJsepSession.get(),
       aId, aIsVideo, mSTSThread.get(), aSendTrack, mCall.get(), mIdGenerator);
 
@@ -4808,8 +4818,8 @@ std::unique_ptr<NrSocketProxyConfig> PeerConnectionImpl::GetProxyConfig()
   net::LoadInfoArgs loadInfoArgs;
   MOZ_ALWAYS_SUCCEEDS(
       mozilla::ipc::LoadInfoToLoadInfoArgs(loadInfo, &loadInfoArgs));
-  return std::unique_ptr<NrSocketProxyConfig>(new NrSocketProxyConfig(
-      net::WebrtcProxyConfig(id, alpn, loadInfoArgs, mForceProxy)));
+  return std::make_unique<NrSocketProxyConfig>(
+      net::WebrtcProxyConfig(id, alpn, loadInfoArgs, mForceProxy));
 }
 
 MOZ_RUNINIT std::map<uint64_t, PeerConnectionAutoTimer>

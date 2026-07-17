@@ -34,10 +34,11 @@ test -v VCS_PATH
 
 # builds write to the source dir (and its parent), so move the source trees to
 # our workspace from the (cached) checkout dir
-cp -a "${VCS_PATH}/nspr" "${VCS_PATH}/nss" .
+cp -a "${VCS_PATH}/nss" .
+[ -d nspr ] || git clone https://github.com/mozilla/nspr nspr
 
 pushd nspr
-hg revert --all
+git checkout -- .
 if [[ -f ../nss/nspr.patch && "$ALLOW_NSPR_PATCH" == "1" ]]; then
   cat ../nss/nspr.patch | patch -p1
 fi

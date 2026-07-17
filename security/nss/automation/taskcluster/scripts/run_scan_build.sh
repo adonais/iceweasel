@@ -2,7 +2,8 @@
 
 source $(dirname "$0")/tools.sh
 
-cp -a "${VCS_PATH}/nss" "${VCS_PATH}/nspr" .
+cp -a "${VCS_PATH}/nss" .
+[ -d nspr ] || git clone https://github.com/mozilla/nspr nspr
 cd nspr
 if [[ -f ../nss/nspr.patch && "$ALLOW_NSPR_PATCH" == "1" ]]; then
   cat ../nss/nspr.patch | patch -p1

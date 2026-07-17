@@ -30,7 +30,6 @@ import org.mozilla.fenix.compose.snackbar.Snackbar
 import org.mozilla.fenix.compose.snackbar.SnackbarState
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.requireComponents
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.settings.wallpaper.getWallpapersForOnboarding
 import org.mozilla.fenix.theme.FirefoxTheme
 import org.mozilla.fenix.wallpapers.Wallpaper
@@ -80,7 +79,7 @@ class WallpaperOnboardingDialogFragment : BottomSheetDialogFragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-        requireContext().settings().showWallpaperOnboarding = false
+        requireComponents.settings.showWallpaperOnboarding = false
         Wallpapers.onboardingOpened.record(NoExtras())
     }
 

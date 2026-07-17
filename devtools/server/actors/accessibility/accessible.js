@@ -481,6 +481,7 @@ class AccessibleActor extends Actor {
     return {
       actor: this.actorID,
       role: this.role,
+      level: this.role === "heading" ? this.attributes.level : undefined,
       name: this.name,
       useChildTargetToFetchChildren: this.useChildTargetToFetchChildren,
       childCount: this.childCount,

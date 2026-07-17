@@ -452,7 +452,7 @@ class nsDocShell final : public nsDocLoader,
       bool* aSkippedUnknownProtocolNavigation = nullptr);
 
   // Notify consumers of a search being loaded through the observer service:
-  static void MaybeNotifyKeywordSearchLoading(const nsString& aProvider,
+  static void MaybeNotifyKeywordSearchLoading(const nsString& aProviderId,
                                               const nsString& aKeyword);
 
   nsDocShell* GetInProcessChildAt(int32_t aIndex);
@@ -925,7 +925,7 @@ class nsDocShell final : public nsDocLoader,
   // TODO: Convert this to MOZ_CAN_RUN_SCRIPT (bug 1415230)
   MOZ_CAN_RUN_SCRIPT_BOUNDARY void FirePageHideShowNonRecursive(bool aShow);
 
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable);
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable);
 
   // Determine if this type of load should update history.
   static bool ShouldUpdateGlobalHistory(uint32_t aLoadType);
@@ -963,12 +963,13 @@ class nsDocShell final : public nsDocLoader,
   // indicate that we should cancel the navigation.
   MOZ_CAN_RUN_SCRIPT
   nsIDocumentViewer::PermitUnloadResult MaybeFireTraversableTraverseHistory(
-      const mozilla::dom::SessionHistoryInfo& aInfo,
+      nsDocShellLoadState* aLoadState,
       mozilla::Maybe<mozilla::dom::UserNavigationInvolvement> aUserInvolvement);
 
   nsresult LoadHistoryEntry(
       const mozilla::dom::LoadingSessionHistoryInfo& aEntry, uint32_t aLoadType,
-      bool aUserActivation, bool aNotifiedBeforeUnloadListeners);
+      bool aUserActivation, bool aNotifiedBeforeUnloadListeners,
+      bool aIsResumingInterceptedNavigation);
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   nsresult LoadHistoryEntry(nsDocShellLoadState* aLoadState, uint32_t aLoadType,
                             bool aLoadingCurrentEntry);

@@ -219,6 +219,12 @@ class AttrArray {
     SetTaggedBloom(0x1ULL);
   }
 
+  // For the HTML parser to call only after ensuring capacity.
+  // Moves out of the arguments and returns a pointer to the
+  // value once it is in place.
+  const nsAttrValue* AddNewAttributeAssumeAvailableSlot(RefPtr<nsAtom>& aName,
+                                                        nsAttrValue& aValue);
+
  private:
   // Tries to create an attribute, growing the buffer if needed, with the given
   // name and value.

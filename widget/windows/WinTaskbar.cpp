@@ -22,6 +22,7 @@
 #include "TaskbarWindowPreview.h"
 #include "nsWidgetsCID.h"
 #include "nsPIDOMWindow.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsAppDirectoryServiceDefs.h"
 #include "mozilla/Preferences.h"
 #include "nsAppRunner.h"
@@ -356,8 +357,7 @@ WinTaskbar::GetTaskbarWindowPreview(nsIDocShell* shell,
 
   nsCOMPtr<nsITaskbarWindowPreview> preview = window->GetTaskbarPreview();
   if (!preview) {
-    RefPtr<DefaultController> defaultController =
-        new DefaultController(toplevelHWND);
+    auto defaultController = MakeRefPtr<DefaultController>(toplevelHWND);
 
     TaskbarWindowPreview* previewRaw = new TaskbarWindowPreview(
         mTaskbar, defaultController, toplevelHWND, shell);

@@ -456,9 +456,10 @@ ssl3_ClientSendAppProtoXtn(const sslSocket *ss, TLSExtensionData *xtnData,
 {
     SECStatus rv;
 
+    PR_ASSERT(!ss->opt.nextProtoNego.len == !ss->opt.nextProtoNego.data);
+
     /* Renegotiations do not send this extension. */
     if (!ss->opt.enableALPN || !ss->opt.nextProtoNego.len || ss->firstHsDone) {
-        PR_ASSERT(!ss->opt.nextProtoNego.data);
         return SECSuccess;
     }
     PRBool addGrease = ss->opt.enableGrease && ss->vrange.max >= SSL_LIBRARY_VERSION_TLS_1_3;

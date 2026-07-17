@@ -1,42 +1,37 @@
-From: Andreas Pehrson <apehrson@mozilla.com>
-Date: Mon, 6 May 2024 07:28:00 +0000
-Subject: Bug 1892329 - Invert _captureThread check in
- VideoCaptureModuleV4L2::StartCapture. r=webrtc-reviewers,mjf
+From: Nico Grunbaum <na-g@nostrum.com>
+Date: Thu, 23 May 2024 17:28:00 +0000
+Subject: Bug 1897459 - P2 - for BSD reference null socket server
+ instead;r=mjf,webrtc-reviewers
 
-Differential Revision: https://phabricator.services.mozilla.com/D208186
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/6ed6737b8214bf664642eb17cbf66a8c8450e569
+Differential Revision: https://phabricator.services.mozilla.com/D211095
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/0993ae41fb7db1624dedc5cf2278cd5a505f18f5
 ---
- .../video_capture/linux/video_capture_v4l2.cc | 19 +++++++++++--------
- 1 file changed, 11 insertions(+), 8 deletions(-)
+ rtc_base/internal/default_socket_server.cc | 9 +++++++++
+ 1 file changed, 9 insertions(+)
 
-diff --git a/modules/video_capture/linux/video_capture_v4l2.cc b/modules/video_capture/linux/video_capture_v4l2.cc
-index 93a675d8a4..fdb0db8d84 100644
---- a/modules/video_capture/linux/video_capture_v4l2.cc
-+++ b/modules/video_capture/linux/video_capture_v4l2.cc
-@@ -307,15 +307,18 @@ int32_t VideoCaptureModuleV4L2::StartCapture(
-   }
+diff --git a/rtc_base/internal/default_socket_server.cc b/rtc_base/internal/default_socket_server.cc
+index d49c2bba32..521f21f538 100644
+--- a/rtc_base/internal/default_socket_server.cc
++++ b/rtc_base/internal/default_socket_server.cc
+@@ -13,12 +13,21 @@
+ #include <memory>
  
-   // start capture thread;
--  if (_captureThread.empty()) {
--    quit_ = false;
--    _captureThread = PlatformThread::SpawnJoinable(
--        [self = scoped_refptr(this)] {
--          while (self->CaptureProcess()) {
--          }
--        },
--        "CaptureThread", ThreadAttributes().SetPriority(ThreadPriority::kHigh));
-+  if (!_captureThread.empty()) {
-+    return 0;
-   }
+ #include "rtc_base/socket_server.h"
 +
-+  quit_ = false;
-+
-+  _captureThread = PlatformThread::SpawnJoinable(
-+      [self = scoped_refptr(this)] {
-+        while (self->CaptureProcess()) {
-+        }
-+      },
-+      "CaptureThread", ThreadAttributes().SetPriority(ThreadPriority::kHigh));
-   return 0;
++#if defined(WEBRTC_BSD)
++#include "rtc_base/null_socket_server.h"
++#else
+ #include "rtc_base/physical_socket_server.h"
++#endif
+ 
+ namespace webrtc {
+ 
+ std::unique_ptr<SocketServer> CreateDefaultSocketServer() {
++#if defined(WEBRTC_BSD)
++  return std::unique_ptr<SocketServer>(new NullSocketServer);
++#else
+   return std::unique_ptr<SocketServer>(new PhysicalSocketServer);
++#endif
  }
  
+ }  // namespace webrtc

@@ -15,7 +15,7 @@ NS_IMPL_NS_NEW_HTML_ELEMENT(Map)
 namespace mozilla::dom {
 
 HTMLMapElement::HTMLMapElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
 NS_IMPL_CYCLE_COLLECTION_INHERITED(HTMLMapElement, nsGenericHTMLElement, mAreas)

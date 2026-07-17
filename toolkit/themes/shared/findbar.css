@@ -61,8 +61,14 @@ xul|findbar {
 
 .findbar-textbox {
   appearance: none;
-  background-color: var(--input-bgcolor, var(--toolbar-field-background-color));
-  color: var(--input-color, var(--toolbar-field-text-color));
+  background-color: var(--input-text-background-color);
+  color: var(--input-text-color);
+
+  :root[lwtheme] & {
+    background-color: var(--toolbar-field-background-color);
+    color: var(--toolbar-field-text-color);
+  }
+
   border: 1px solid var(--input-border-color);
   border-radius: var(--border-radius-small);
   outline: none;

@@ -18,6 +18,7 @@
 #include "nsIURIMutator.h"
 
 #include "mozilla/BasePrincipal.h"
+#include "mozilla/dom/ParentProcessChannelHandle.h"
 #include "mozilla/ErrorNames.h"
 #include "mozilla/IntegerPrintfMacros.h"
 #include "mozilla/Preferences.h"
@@ -697,6 +698,26 @@ NS_IMETHODIMP
 nsJARChannel::SetLoadInfo(nsILoadInfo* aLoadInfo) {
   MOZ_RELEASE_ASSERT(aLoadInfo, "loadinfo can't be null");
   mLoadInfo = aLoadInfo;
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsJARChannel::GetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle** aValue) {
+  NS_IF_ADDREF(*aValue = mParentProcessChannelHandle);
+  return NS_OK;
+}
+
+NS_IMETHODIMP
+nsJARChannel::SetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle* aValue) {
+  if (XRE_IsParentProcess()) {
+    MOZ_ASSERT_UNREACHABLE(
+        "SetParentProcessChannelHandle in the parent process would leak");
+    return NS_ERROR_NOT_AVAILABLE;
+  }
+
+  mParentProcessChannelHandle = aValue;
   return NS_OK;
 }
 

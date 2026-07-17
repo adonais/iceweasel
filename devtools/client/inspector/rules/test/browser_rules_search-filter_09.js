@@ -63,10 +63,8 @@ add_task(async function () {
   const propEditor = ruleEditor.rule.textProps[2].editor;
 
   info("Entering a value and bluring the field to expect a rule change");
-  onRuleViewChanged = view.once("ruleview-changed");
   editor.input.value = "100%";
   view.debounce.flush();
-  await onRuleViewChanged;
 
   onRuleViewChanged = view.once("ruleview-changed");
   editor.input.blur();

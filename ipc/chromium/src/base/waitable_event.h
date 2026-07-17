@@ -14,8 +14,6 @@
 #if defined(XP_UNIX)
 #  include <list>
 #  include <utility>
-#  include "base/condition_variable.h"
-#  include "base/lock.h"
 #  include "nsISupportsImpl.h"
 #endif
 
@@ -134,11 +132,13 @@ class WaitableEvent {
    public:
     NS_INLINE_DECL_THREADSAFE_REFCOUNTING(WaitableEventKernel)
     WaitableEventKernel(bool manual_reset, bool initially_signaled)
-        : manual_reset_(manual_reset), signaled_(initially_signaled) {}
+        : lock_("WaitableEventKernel"),
+          manual_reset_(manual_reset),
+          signaled_(initially_signaled) {}
 
     bool Dequeue(Waiter* waiter, void* tag);
 
-    Lock lock_;
+    mozilla::Mutex lock_;
     const bool manual_reset_;
     bool signaled_;
     std::list<Waiter*> waiters_;

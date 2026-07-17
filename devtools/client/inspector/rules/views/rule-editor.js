@@ -462,24 +462,6 @@ class RuleEditor extends EventEmitter {
    * @param {Array<object>} containerQueryData.conditions
    */
   #createAncestorContainerQuerySelector(selectorContainer, containerQueryData) {
-    // @backward-compat { version 151 } Before, we were receiving single
-    // containerName and containerQuery. Firefox 150 added the possibility to have
-    // multiple conditions in a container query, so we need to transform the "old"
-    // data to match the shape of the new one.
-    // This step can be removed once 151 hits release
-    if (!containerQueryData.conditions) {
-      containerQueryData.conditions = [
-        {
-          containerName: containerQueryData.containerName,
-          containerQuery: containerQueryData.containerQuery,
-          // in this case we only have one condition, so it's guaranteed to have a container,
-          // otherwise we wouldn't get this rule
-          hasContainer: true,
-          matched: true,
-        },
-      ];
-    }
-
     const containerQueryEl = createChild(selectorContainer, "span", {
       class: "container-query",
     });
@@ -597,7 +579,7 @@ class RuleEditor extends EventEmitter {
 
     const { inspector } = this.ruleView;
     if (Tools.styleEditor.isToolSupported(inspector.toolbox)) {
-      inspector.toolbox.viewSourceInStyleEditorByResource(
+      inspector.toolbox.viewStyleSourceByResource(
         this.rule.sheet,
         this.rule.ruleLine,
         this.rule.ruleColumn
@@ -981,13 +963,11 @@ class RuleEditor extends EventEmitter {
 
     let selectorContainerTitle;
     if (
-      typeof this.rule.selector.selectorsSpecificity?.[selectorIndex] !==
-      "undefined"
+      typeof this.rule.selectorsSpecificity?.[selectorIndex] !== "undefined"
     ) {
       // The specificity that we get from the platform is a single number that we
       // need to format into the common `(x,y,z)` specificity string.
-      const specificity =
-        this.rule.selector.selectorsSpecificity?.[selectorIndex];
+      const specificity = this.rule.selectorsSpecificity?.[selectorIndex];
       const a = Math.floor(specificity / (1024 * 1024));
       const b = Math.floor((specificity % (1024 * 1024)) / 1024);
       const c = specificity % 1024;

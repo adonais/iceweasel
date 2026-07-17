@@ -991,9 +991,9 @@ template <CoderMode mode>
 CoderResult CodeScriptedCaller(Coder<mode>& coder,
                                CoderArg<mode, ScriptedCaller> item) {
   WASM_VERIFY_SERIALIZATION_FOR_SIZE(wasm::ScriptedCaller, 16);
-  MOZ_TRY((CodeUniqueChars(coder, &item->filename)));
-  MOZ_TRY((CodePod(coder, &item->filenameIsURL)));
+  MOZ_TRY((CodeUniqueChars(coder, &item->source)));
   MOZ_TRY((CodePod(coder, &item->line)));
+  MOZ_TRY((CodePod(coder, &item->kind)));
   return Ok();
 }
 

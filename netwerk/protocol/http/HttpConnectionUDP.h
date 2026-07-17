@@ -96,7 +96,8 @@ class HttpConnectionUDP final : public HttpConnectionBase,
   void ResetTransaction(nsHttpTransaction* aHttpTransaction);
 
   void HandleTunnelResponse(nsHttpTransaction* aHttpTransaction,
-                            uint16_t responseStatus, bool* reset);
+                            const nsHttpResponseHead& responseHead,
+                            bool* reset);
 
   nsresult CreateTunnelStream(nsAHttpTransaction* httpTransaction,
                               HttpConnectionBase** aHttpConnection,

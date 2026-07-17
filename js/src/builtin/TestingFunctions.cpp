@@ -587,11 +587,7 @@ static bool GetBuildConfiguration(JSContext* cx, unsigned argc, Value* vp) {
     return false;
   }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   value = BooleanValue(true);
-#else
-  value = BooleanValue(false);
-#endif
   if (!JS_SetProperty(cx, info, "source-phase-imports", value)) {
     return false;
   }
@@ -3460,10 +3456,11 @@ class HasChildTracer final : public JS::CallbackTracer {
   RootedValue child_;
   bool found_;
 
-  void onChild(JS::GCCellPtr thing, const char* name) override {
+  bool onChild(JS::GCCellPtr thing, const char* name) override {
     if (thing.asCell() == child_.toGCThing()) {
       found_ = true;
     }
+    return true;
   }
 
  public:
@@ -3962,7 +3959,8 @@ static bool GetObjectFuseState(JSContext* cx, unsigned argc, Value* vp) {
   // definition order.
   Rooted<PropertyInfoWithKeyVector> propsVec(cx, PropertyInfoWithKeyVector(cx));
   for (ShapePropertyIter<CanGC> iter(cx, obj->shape()); !iter.done(); iter++) {
-    if (iter->hasSlot() && !propsVec.append(*iter)) {
+    if (iter->hasSlot() && ObjectFuse::tracksPropertyKey(iter->key()) &&
+        !propsVec.append(*iter)) {
       return false;
     }
   }
@@ -5042,6 +5040,34 @@ static bool ResolvePromise(JSContext* cx, unsigned argc, Value* vp) {
   }
   return result;
 }
+
+#ifdef NIGHTLY_BUILD
+static bool SafeResolvePromise(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  if (!args.requireAtLeast(cx, "safeResolvePromise", 2)) {
+    return false;
+  }
+  if (!args[0].isObject() ||
+      !UncheckedUnwrap(&args[0].toObject())->is<PromiseObject>()) {
+    JS_ReportErrorASCII(
+        cx, "first argument must be a maybe-wrapped Promise object");
+    return false;
+  }
+
+  RootedObject promise(cx, &args[0].toObject());
+  RootedValue resolution(cx, args[1]);
+
+  if (IsPromiseForAsyncFunctionOrGenerator(UncheckedUnwrap(promise))) {
+    JS_ReportErrorASCII(
+        cx,
+        "async function/generator's promise shouldn't be manually resolved");
+    return false;
+  }
+
+  args.rval().setUndefined();
+  return JS::SafeResolve(cx, promise, resolution);
+}
+#endif  // NIGHTLY_BUILD
 
 static bool RejectPromise(JSContext* cx, unsigned argc, Value* vp) {
   CallArgs args = CallArgsFromVp(argc, vp);
@@ -6527,6 +6553,37 @@ static bool DetachArrayBuffer(JSContext* cx, unsigned argc, Value* vp) {
   }
 
   args.rval().setUndefined();
+  return true;
+}
+
+static bool StealArrayBufferContents(JSContext* cx, unsigned argc, Value* vp) {
+  CallArgs args = CallArgsFromVp(argc, vp);
+  Rooted<JSObject*> callee(cx, &args.callee());
+
+  if (!args.get(0).isObject() ||
+      !JS::IsArrayBufferObject(&args[0].toObject())) {
+    js::ReportUsageErrorASCII(cx, callee, "Argument must be an ArrayBuffer");
+    return false;
+  }
+
+  Rooted<JSObject*> obj(cx, &args[0].toObject());
+  size_t length = JS::GetArrayBufferByteLength(obj);
+
+  // Note: JS::StealArrayBufferContents will either return the stolen data or
+  // throw an exception.
+  void* contents = JS::StealArrayBufferContents(cx, obj);
+  if (!contents) {
+    return false;
+  }
+
+  UniquePtr<void, JS::FreePolicy> ptr(contents);
+  JSObject* newBuffer =
+      JS::NewArrayBufferWithContents(cx, length, std::move(ptr));
+  if (!newBuffer) {
+    return false;
+  }
+
+  args.rval().setObject(*newBuffer);
   return true;
 }
 
@@ -9308,9 +9365,9 @@ static bool GetAllPrefNames(JSContext* cx, unsigned argc, Value* vp) {
     return values.append(StringValue(s));
   };
 
-#define ADD_NAME(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF) \
-  if (!addPref(NAME)) {                                         \
-    return false;                                               \
+#define ADD_NAME(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF, FUZZING_SAFE) \
+  if (!addPref(NAME)) {                                                       \
+    return false;                                                             \
   }
   FOR_EACH_JS_PREF(ADD_NAME)
 #undef ADD_NAME
@@ -9351,7 +9408,8 @@ static bool GetPrefValue(JSContext* cx, unsigned argc, Value* vp) {
   };
 
   // Search for a matching pref and return its value.
-#define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF) \
+#define CHECK_PREF(NAME, CPP_NAME, TYPE, SETTER, IS_STARTUP_PREF, \
+                   FUZZING_SAFE)                                  \
   if (StringEqualsLiteral(name, NAME)) {                          \
     setReturnValue(JS::Prefs::CPP_NAME());                        \
     return true;                                                  \
@@ -9871,6 +9929,7 @@ static bool ResetFallbackStubStates(JSContext* cx, unsigned argc, Value* vp) {
     stub->discardStubs(zone, &icScript->icEntry(i));
     stub->state().reset();
   }
+  script->jitScript()->notePurgedStubs();
 
   args.rval().setUndefined();
   return true;
@@ -10558,6 +10617,13 @@ static const JSFunctionSpecWithHelp TestingFunctions[] = {
 JS_FN_HELP("resolvePromise", ResolvePromise, 2, 0,
 "resolvePromise(promise, resolution)",
 "  Resolve a Promise by calling the JSAPI function JS::ResolvePromise."),
+#ifdef NIGHTLY_BUILD
+JS_FN_HELP("safeResolvePromise", SafeResolvePromise, 2, 0,
+"safeResolvePromise(promise, resolution)",
+"  Resolve a Promise by calling the JSAPI function JS::SafeResolve, which\n"
+"  implements the SafePromiseResolve abstract operation from the\n"
+"  thenable-curtailment proposal."),
+#endif  // NIGHTLY_BUILD
 JS_FN_HELP("rejectPromise", RejectPromise, 2, 0,
 "rejectPromise(promise, reason)",
 "  Reject a Promise by calling the JSAPI function JS::RejectPromise."),
@@ -11036,6 +11102,12 @@ JS_FOR_WASM_FEATURES(WASM_FEATURE)
 "ensureNonInline(view or buffer)",
 "  Ensure that the memory for the given ArrayBuffer or ArrayBufferView\n"
 "  is not inline."),
+
+    JS_FN_HELP("stealArrayBufferContents", StealArrayBufferContents, 1, 0,
+"stealArrayBufferContents(buffer)",
+"  Steal the contents of the given ArrayBuffer using JS::StealArrayBufferContents\n"
+"  and return a new ArrayBuffer wrapping the stolen contents. The original buffer\n"
+"  is detached."),
 
     JS_FN_HELP("pinArrayBufferOrViewLength", PinArrayBufferOrViewLength, 1, 0,
 "pinArrayBufferOrViewLength(view or buffer[, pin])",

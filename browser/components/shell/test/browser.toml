@@ -117,6 +117,18 @@ run-if = [
 ]
 tags = "os_integration"
 
+["browser_setDefaultProtocolHandler.js"]
+run-if = [
+  "os == 'win'",
+]
+tags = "os_integration"
+
 ["browser_setDesktopBackgroundPreview.js"]
-support-files = ["large.png"]
+support-files = ["large.png", "canvas.html"]
+tags = "os_integration"
+
+["browser_windowsSetDefaultAppCmdHandler.js"]
+run-if = [
+  "os == 'win'",
+]
 tags = "os_integration"

@@ -3,35 +3,6 @@
 
 "use strict";
 
-add_task(async function test_aboutpreferences_partnerCNRepack() {
-  let defaultBranch = Services.prefs.getDefaultBranch(null);
-  defaultBranch.setCharPref("distribution.id", "MozillaOnline");
-
-  await SpecialPowers.pushPrefEnv({
-    set: [
-      ["browser.preferences.moreFromMozilla", true],
-      ["browser.preferences.moreFromMozilla.template", "simple"],
-    ],
-  });
-  await openPreferencesViaOpenPreferencesAPI("paneMoreFromMozilla", {
-    leaveOpen: true,
-  });
-
-  let doc = gBrowser.contentDocument;
-  let tab = gBrowser.selectedTab;
-
-  let productCards = doc.querySelectorAll("vbox.simple");
-  Assert.ok(productCards, "Simple template loaded");
-
-  const expectedUrl = "https://www.firefox.com.cn/browsers/mobile/";
-
-  let link = doc.getElementById("simple-fxMobile");
-  Assert.ok(link.getAttribute("href").startsWith(expectedUrl));
-
-  defaultBranch.setCharPref("distribution.id", "");
-  BrowserTestUtils.removeTab(tab);
-});
-
 add_task(async function test_send_to_device_email_link_for_supported_locale() {
   // Email is supported for Brazilian Portuguese
   const supportedLocale = "pt-BR";

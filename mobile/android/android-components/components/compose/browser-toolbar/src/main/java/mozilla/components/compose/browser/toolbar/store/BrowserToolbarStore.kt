@@ -62,6 +62,7 @@ private fun reduce(state: BrowserToolbarState, action: BrowserToolbarAction): Br
             editState = state.editState.copy(
                 query = BrowserToolbarQuery(""),
                 queryWasPrefilled = false,
+                suggestion = null,
             ),
         )
 

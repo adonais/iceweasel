@@ -41,7 +41,7 @@ this.DynamicFPIHelper = {
 
       await SpecialPowers.flushPrefEnv();
       await setCookieBehaviorPref(
-        BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+        BEHAVIOR_PARTITION_FOREIGN,
         runInPrivateWindow
       );
       await SpecialPowers.pushPrefEnv({
@@ -86,7 +86,7 @@ this.DynamicFPIHelper = {
       );
       is(
         browser.cookieJarSettings.cookieBehavior,
-        Ci.nsICookieService.BEHAVIOR_REJECT_TRACKER_AND_PARTITION_FOREIGN,
+        Ci.nsICookieService.BEHAVIOR_PARTITION_FOREIGN,
         "The cookieJarSettings has the correct cookieBehavior"
       );
       is(

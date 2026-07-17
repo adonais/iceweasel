@@ -1013,7 +1013,7 @@ class MOZ_STACK_CLASS OrderedHashTableImpl {
   void trace(JSTracer* trc) {
     Data* data = maybeData();
     if (data) {
-      TraceBufferEdge(trc, obj, &data, "OrderedHashTable data");
+      TraceBufferEdge(trc, &data, "OrderedHashTable data");
       if (data != maybeData()) {
         setData(data);
       }

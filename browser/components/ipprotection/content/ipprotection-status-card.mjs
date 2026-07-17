@@ -111,6 +111,7 @@ export default class IPProtectionStatusCard extends MozLitElement {
       <moz-button
         class="toolbarbutton"
         slot="location-action"
+        ?disabled=${this.isActivating}
         closemenu="none"
         @click=${this.handleLocationButtonClick}
       >

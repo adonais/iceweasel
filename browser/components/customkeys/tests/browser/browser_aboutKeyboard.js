@@ -3,6 +3,9 @@
 
 "use strict";
 
+const { CustomKeys } = ChromeUtils.importESModule(
+  "moz-src:///browser/components/customkeys/CustomKeys.sys.mjs"
+);
 const { PromptTestUtils } = ChromeUtils.importESModule(
   "resource://testing-common/PromptTestUtils.sys.mjs"
 );
@@ -70,13 +73,22 @@ addAboutKbTask(async function testInit(tab) {
       0,
       "No shortcuts are customized"
     );
-    // Only "Duplicate Tab" has an unassigned shortcut.
     const unassigned = content.document.querySelectorAll(".key:not(.assigned)");
-    is(unassigned.length, 1, "One key is unassigned");
+    is(unassigned.length, 3, "Three keys are unassigned");
     is(
       unassigned[0].dataset.id,
       "key_duplicateTab",
       "key_duplicateTab is unassigned"
+    );
+    is(
+      unassigned[1].dataset.id,
+      "key_addTabSplitView",
+      "key_addTabSplitView is unassigned"
+    );
+    is(
+      unassigned[2].dataset.id,
+      "key_separateTabSplitView",
+      "key_separateTabSplitView is unassigned"
     );
     is(
       content.document.querySelectorAll(".editing").length,

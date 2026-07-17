@@ -14,6 +14,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
   pprint: "chrome://remote/content/shared/Format.sys.mjs",
   RootMessageHandler:
     "chrome://remote/content/shared/messagehandler/RootMessageHandler.sys.mjs",
+  SessionDataCategory:
+    "chrome://remote/content/shared/messagehandler/sessiondata/SessionData.sys.mjs",
 });
 
 ChromeUtils.defineLazyGetter(lazy, "logger", () =>
@@ -226,7 +228,7 @@ class EmulationModule extends RootBiDiModule {
       destination: { type: lazy.RootMessageHandler.type },
       params: {
         async: true,
-        category: "geolocation-override",
+        category: lazy.SessionDataCategory.GeolocationOverride,
         contextIds,
         resetValue: null,
         supportsGlobalConfiguration: false,
@@ -294,7 +296,7 @@ class EmulationModule extends RootBiDiModule {
       destination: { type: lazy.RootMessageHandler.type },
       params: {
         async: true,
-        category: "locale-override",
+        category: lazy.SessionDataCategory.LocaleOverride,
         contextIds,
         resetValue: "",
         supportsGlobalConfiguration: false,
@@ -362,7 +364,7 @@ class EmulationModule extends RootBiDiModule {
       destination: { type: lazy.RootMessageHandler.type },
       params: {
         async: false,
-        category: "network-conditions",
+        category: lazy.SessionDataCategory.NetworkConditions,
         contextIds,
         resetValue: null,
         supportsGlobalConfiguration: true,
@@ -454,7 +456,7 @@ class EmulationModule extends RootBiDiModule {
       destination: { type: lazy.RootMessageHandler.type },
       params: {
         async: false,
-        category: "screen-orientation-override",
+        category: lazy.SessionDataCategory.ScreenOrientationOverride,
         contextIds,
         resetValue: null,
         supportsGlobalConfiguration: false,
@@ -526,7 +528,7 @@ class EmulationModule extends RootBiDiModule {
       destination: { type: lazy.RootMessageHandler.type },
       params: {
         async: false,
-        category: "screen-settings-override",
+        category: lazy.SessionDataCategory.ScreenSettingsOverride,
         contextIds,
         resetValue: null,
         supportsGlobalConfiguration: false,
@@ -595,7 +597,7 @@ class EmulationModule extends RootBiDiModule {
       destination: { type: lazy.RootMessageHandler.type },
       params: {
         async: true,
-        category: "timezone-override",
+        category: lazy.SessionDataCategory.TimezoneOverride,
         contextIds,
         resetValue: "",
         supportsGlobalConfiguration: false,
@@ -652,7 +654,7 @@ class EmulationModule extends RootBiDiModule {
       destination: { type: lazy.RootMessageHandler.type },
       params: {
         async: false,
-        category: "user-agent-override",
+        category: lazy.SessionDataCategory.UserAgentOverride,
         contextIds,
         resetValue: "",
         supportsGlobalConfiguration: true,

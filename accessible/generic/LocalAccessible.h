@@ -768,6 +768,8 @@ class LocalAccessible : public nsISupports, public Accessible {
 
   virtual void DOMNodeClass(nsString& aClass) const override;
 
+  virtual int32_t HeadingLevel() const override;
+
   virtual void LiveRegionAttributes(nsAString* aLive, nsAString* aRelevant,
                                     Maybe<bool>* aAtomic,
                                     nsAString* aBusy) const override;

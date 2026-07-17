@@ -29,13 +29,13 @@ class DOMImplementation final : public nsISupports, public nsWrapperCache {
   DOMImplementation(Document* aOwner, nsIGlobalObject* aScriptObject,
                     nsIURI* aDocumentURI, nsIURI* aBaseURI);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(DOMImplementation)
 
   Document* GetParentObject() const { return mOwner; }
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
   bool HasFeature() { return true; }
 

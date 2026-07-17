@@ -18,6 +18,12 @@ from webdriver.bidi.error import InvalidArgumentException, NoSuchFrameException
 from webdriver.bidi.modules.script import ContextTarget
 
 
+def escape_xpath_string_quotes(text):
+    if not "'" in text:
+        return f"'{text}'"
+    return "concat('" + """', "'", '""".join(text.split("'")) + "')"
+
+
 class Client:
     def __init__(self, request, session, event_loop):
         self.request = request
@@ -805,7 +811,8 @@ class Client:
             )
 
         async def await_text(self, text, **kwargs):
-            xpath = f"//*[text()[contains(.,'{text}')]]"
+            escaped_text = escape_xpath_string_quotes(text)
+            xpath = f"//*[text()[contains(.,{escaped_text})]]"
             return await self.await_xpath(self, xpath, **kwargs)
 
         async def await_xpath(
@@ -1181,7 +1188,8 @@ class Client:
 
     def find_text(self, text, is_displayed=None, **kwargs):
         try:
-            e = self.find_xpath(f"//*[text()[contains(.,'{text}')]]", **kwargs)
+            escaped_text = escape_xpath_string_quotes(text)
+            e = self.find_xpath(f"//*[text()[contains(.,{escaped_text})]]", **kwargs)
             return self._do_is_displayed_check(e, is_displayed)
         except webdriver.error.NoSuchElementException:
             return None
@@ -1579,11 +1587,13 @@ class Client:
         coords = self.get_element_screen_position(img)
         coords = [coords[0] + 50, coords[1] + 100]
         await self.apz_move(coords=coords)
-        for _ in range(5):
+        for _ in range(20):
             try:
                 old_x = float(get_zoom_x())
                 break
-            except TypeError:
+            except TypeError as e:
+                if _ == 20:
+                    raise e
                 await self.stall(0.5)
 
         for i in range(20):
@@ -1662,7 +1672,7 @@ class Client:
                 string,
             )
 
-    def do_paste(self):
+    def send_key(self, key, options={}):
         with self.using_context("chrome"):
             self.execute_script(
                 """
@@ -1683,9 +1693,15 @@ class Client:
                 if (!win.EventUtils) {
                     win.EventUtils = _getEventUtils(win);
                 }
-                win.EventUtils.synthesizeKey("v", { accelKey: true }, win);
-            """
+                const [key, options] = arguments;
+                win.EventUtils.synthesizeKey(key, options, win);
+            """,
+                key,
+                options,
             )
+
+    def do_paste(self):
+        self.send_key("v", {"accelKey": True})
 
     def make_base64_xpi(self, files):
         buf = BytesIO()

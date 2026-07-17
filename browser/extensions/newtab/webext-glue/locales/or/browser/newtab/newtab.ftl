@@ -9,6 +9,13 @@ newtab-page-title = ନୂତନ ଟ୍ୟାବ
 newtab-settings-button =
     .title = ଆପଣଙ୍କର ନୂତନ ଟ୍ୟାବ ପୃଷ୍ଠାକୁ ଇଚ୍ଛାରୂପଣ କରନ୍ତୁ
 
+## Firefox Home content
+
+home-prefs-recent-activity-header-srd =
+    .label = ସାମ୍ପ୍ରତିକ ଗତିବିଧି
+home-prefs-recent-activity-select =
+    .aria-label = ସାମ୍ପ୍ରତିକ ଗତିବିଧି
+
 ## Search box component.
 
 # "Search" is a verb/action

@@ -436,10 +436,10 @@ bool MediaSource::IsTypeSupported(const GlobalObject& aOwner,
   bool supported = !rv.Failed();
   RecordTypeForTelemetry(aType, window);
   diagnostics.StoreFormatDiagnostics(doc, aType, supported, __func__);
-  MOZ_LOG(GetMediaSourceAPILog(), mozilla::LogLevel::Debug,
-          ("MediaSource::%s: IsTypeSupported(aType=%s) %s", __func__,
-           NS_ConvertUTF16toUTF8(aType).get(),
-           supported ? "OK" : "[not supported]"));
+  MOZ_LOG_FMT(GetMediaSourceAPILog(), mozilla::LogLevel::Debug,
+              "MediaSource::{}: IsTypeSupported(aType={}) {}", __func__,
+              NS_ConvertUTF16toUTF8(aType).get(),
+              supported ? "OK" : "[not supported]");
   return supported;
 }
 

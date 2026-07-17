@@ -276,7 +276,7 @@ gfxSVGGlyphsDocument::gfxSVGGlyphsDocument(const uint8_t* aBuffer,
                      size_t(aBuffer[aBufLen - 4]);
     AutoTArray<uint8_t, 4096> outBuf;
     if (outBuf.SetLength(origLen, mozilla::fallible)) {
-      z_stream s = {0};
+      z_stream s = {nullptr};
       s.next_in = const_cast<Byte*>(aBuffer);
       s.avail_in = aBufLen;
       s.next_out = outBuf.Elements();

@@ -471,9 +471,13 @@ with the necessary access permissions to do this for you.
 NOTE: When a new test data file is added to the `aom-test-data` bucket, its
 "Public access" is initially "Not public". We need to change its
 "Public access" to "Public" by using the following
-[`gsutil`](https://cloud.google.com/storage/docs/gsutil_install) command:
+[`gcloud storage`](https://docs.cloud.google.com/sdk/docs/install-sdk)
+command:
 ~~~
-    $ gsutil acl ch -g all:R gs://aom-test-data/test-data-file-name
+    $ gcloud storage objects add-iam-policy-binding \
+         gs://aom-test-data/test-data-file-name \
+         --member="allUsers" \
+         --role="roles/storage.objectViewer"
 ~~~
 This command grants the `AllUsers` group READ access to the file named
 "test-data-file-name" in the `aom-test-data` bucket.

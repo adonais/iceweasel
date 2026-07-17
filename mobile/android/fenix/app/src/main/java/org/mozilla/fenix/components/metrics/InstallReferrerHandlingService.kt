@@ -15,7 +15,6 @@ import kotlinx.coroutines.launch
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.distributions.DistributionIdManager
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.nimbus.FxNimbus
 import java.net.URLDecoder
 
@@ -33,7 +32,6 @@ private const val ADJUST_REFTAG_PREFIX = "adjust_reftag="
  * @param context The application context.
  * @param scope Coroutine scope used to launch background work.
  */
-@Suppress("MaxLineLength")
 class InstallReferrerHandlingService(
     private val context: Context,
     private val scope: CoroutineScope = CoroutineScope(Dispatchers.IO),
@@ -71,10 +69,14 @@ class InstallReferrerHandlingService(
 
                             if (!installReferrerResponse.isNullOrBlank()) {
                                 response = installReferrerResponse
-                                context.settings().isUserMetaAttributed = isMetaAttribution(installReferrerResponse)
-                                context.settings().isUserTikTokAttributed = isTikTokAttribution(installReferrerResponse)
-                                context.settings().isUserRedditAttributed = isRedditAttribution(installReferrerResponse)
-                                context.settings().isUserXTwitterAttributed = isXTwitterAttribution(installReferrerResponse)
+                                context.components.settings.isUserMetaAttributed =
+                                    isMetaAttribution(installReferrerResponse)
+                                context.components.settings.isUserTikTokAttributed =
+                                    isTikTokAttribution(installReferrerResponse)
+                                context.components.settings.isUserRedditAttributed =
+                                    isRedditAttribution(installReferrerResponse)
+                                context.components.settings.isUserXTwitterAttributed =
+                                    isXTwitterAttribution(installReferrerResponse)
                                 distributionIdManager.updateDistributionIdFromUtmParams(
                                     UTMParams.parseUTMParameters(installReferrerResponse),
                                 )
@@ -84,7 +86,7 @@ class InstallReferrerHandlingService(
                             }
 
                             scope.launch {
-                                context.settings().shouldShowMarketingOnboarding =
+                                context.components.settings.shouldShowMarketingOnboarding =
                                     shouldShowMarketingOnboarding(
                                         installReferrerResponse,
                                         distributionIdManager,
@@ -101,7 +103,7 @@ class InstallReferrerHandlingService(
                         InstallReferrerClient.InstallReferrerResponse.SERVICE_UNAVAILABLE,
                         InstallReferrerClient.InstallReferrerResponse.SERVICE_DISCONNECTED,
                             -> {
-                            context.settings().shouldShowMarketingOnboarding = false
+                            context.components.settings.shouldShowMarketingOnboarding = false
                             safeEndConnection(client)
                             return
                         }
@@ -109,7 +111,7 @@ class InstallReferrerHandlingService(
                 }
 
                 override fun onInstallReferrerServiceDisconnected() {
-                    context.settings().shouldShowMarketingOnboarding = false
+                    context.components.settings.shouldShowMarketingOnboarding = false
                     safeEndConnection(client)
                 }
             },
@@ -154,17 +156,19 @@ class InstallReferrerHandlingService(
         private const val REDDIT_UTM_SOURCE = "reddit"
         private const val X_TWITTER_UTM_SOURCE = "x"
 
-        @VisibleForTesting
-        internal fun isTikTokAttribution(installReferrerResponse: String?): Boolean {
-            if (installReferrerResponse.isNullOrBlank()) return false
-
-            val decoded = try {
+        private fun decodeInstallReferrer(installReferrerResponse: String): String =
+            try {
                 URLDecoder.decode(installReferrerResponse, "UTF-8")
             } catch (e: IllegalArgumentException) {
-                Logger.error("isTikTokAttribution() - bad installReferrerResponse", e)
+                Logger.error("decodeInstallReferrer() - bad installReferrerResponse", e)
 
                 installReferrerResponse
             }
+
+        @VisibleForTesting
+        internal fun isTikTokAttribution(installReferrerResponse: String?): Boolean {
+            if (installReferrerResponse.isNullOrBlank()) return false
+            val decoded = decodeInstallReferrer(installReferrerResponse)
 
             val clickId = UTMParams.parseInstallReferrer(decoded)[ADJUST_EXTERNAL_CLICK_ID]
                 ?: return false
@@ -172,18 +176,10 @@ class InstallReferrerHandlingService(
             return TIKTOK_EXTERNAL_CLICK_ID_PREFIXES.any { clickId.startsWith(it, ignoreCase = true) }
         }
 
-        @Suppress("ReturnCount", "TooManyReturns")
         @VisibleForTesting
         internal fun isRedditAttribution(installReferrerResponse: String?): Boolean {
             if (installReferrerResponse.isNullOrBlank()) return false
-
-            val decoded = try {
-                URLDecoder.decode(installReferrerResponse, "UTF-8")
-            } catch (e: IllegalArgumentException) {
-                Logger.error("isRedditAttribution() - bad installReferrerResponse", e)
-
-                installReferrerResponse
-            }
+            val decoded = decodeInstallReferrer(installReferrerResponse)
 
             if (UTMParams.parseUTMParameters(decoded).source.equals(REDDIT_UTM_SOURCE, ignoreCase = true)) {
                 return true
@@ -198,14 +194,7 @@ class InstallReferrerHandlingService(
         @VisibleForTesting
         internal fun isXTwitterAttribution(installReferrerResponse: String?): Boolean {
             if (installReferrerResponse.isNullOrBlank()) return false
-
-            val decoded = try {
-                URLDecoder.decode(installReferrerResponse, "UTF-8")
-            } catch (e: IllegalArgumentException) {
-                Logger.error("isXTwitterAttribution() - bad installReferrerResponse", e)
-
-                installReferrerResponse
-            }
+            val decoded = decodeInstallReferrer(installReferrerResponse)
 
             return UTMParams.parseUTMParameters(decoded).source.equals(X_TWITTER_UTM_SOURCE, ignoreCase = true)
         }

@@ -16,7 +16,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.sizeIn
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -594,8 +593,8 @@ object CFRDefaults {
      * The shape of the CFR
      */
     @Composable
-    fun cfrShape(cornerRadius: Dp = 12.dp): Shape {
-        return RoundedCornerShape(cornerRadius)
+    fun cfrShape(): Shape {
+        return MaterialTheme.shapes.medium
     }
 
     /**

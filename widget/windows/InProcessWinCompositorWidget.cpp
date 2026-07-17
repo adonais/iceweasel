@@ -94,7 +94,7 @@ InProcessWinCompositorWidget::StartRemoteDrawing() {
   uint32_t flags = TransparencyModeIs(TransparencyMode::Opaque)
                        ? 0
                        : gfxWindowsSurface::FLAG_IS_TRANSPARENT;
-  RefPtr<gfxASurface> surf = new gfxWindowsSurface(dc, flags);
+  auto surf = MakeRefPtr<gfxWindowsSurface>(dc, flags);
   IntSize size = surf->GetSize();
   if (size.width <= 0 || size.height <= 0) {
     if (dc) {

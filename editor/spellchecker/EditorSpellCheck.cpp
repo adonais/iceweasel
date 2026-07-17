@@ -241,7 +241,7 @@ static nsresult StoreCurrentDictionaries(
   rv = docUri->GetSpec(docUriSpec);
   NS_ENSURE_SUCCESS(rv, rv);
 
-  RefPtr<nsVariant> prefValue = new nsVariant();
+  RefPtr prefValue = MakeRefPtr<nsVariant>();
 
   nsCString asString = DictionariesToString(aDictionaries);
   prefValue->SetAsAString(NS_ConvertUTF8toUTF16(asString));
@@ -363,8 +363,7 @@ EditorSpellCheck::InitSpellChecker(nsIEditor* aEditor,
   nsresult rv;
 
   // We can spell check with any editor type
-  RefPtr<TextServicesDocument> textServicesDocument =
-      new TextServicesDocument();
+  RefPtr textServicesDocument = MakeRefPtr<TextServicesDocument>();
   textServicesDocument->SetFilterType(mTxtSrvFilterType);
 
   // EditorBase::AddEditActionListener() needs to access mSpellChecker and
@@ -427,7 +426,7 @@ EditorSpellCheck::InitSpellChecker(nsIEditor* aEditor,
     // However, if it does fail, we still need to call the callback since we
     // discard the failure.  Do it asynchronously so that the caller is always
     // guaranteed async behavior.
-    RefPtr<CallbackCaller> caller = new CallbackCaller(aCallback);
+    RefPtr caller = MakeRefPtr<CallbackCaller>(aCallback);
     rv = doc->Dispatch(caller.forget());
     NS_ENSURE_SUCCESS(rv, rv);
   }
@@ -597,19 +596,17 @@ EditorSpellCheck::SetCurrentDictionaries(
         // the language might jump back to en-US although the user explicitly
         // chose otherwise.
         StoreCurrentDictionaries(mEditor, aDictionaries);
-#ifdef DEBUG_DICT
-        printf("***** Writing content preferences for |%s|\n",
-               DictionariesToString(aDictionaries).get());
-#endif
+        MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+                ("%s, Writing content preferences for \"%s\"", __FUNCTION__,
+                 DictionariesToString(aDictionaries).get()));
       } else {
         // If user sets a dictionary matching the language defined by
         // document, we consider content pref has been canceled, and we clear
         // it.
         ClearCurrentDictionaries(mEditor);
-#ifdef DEBUG_DICT
-        printf("***** Clearing content preferences for |%s|\n",
-               DictionariesToString(aDictionaries).get());
-#endif
+        MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+                ("%s, Clearing content preferences for \"%s\"", __FUNCTION__,
+                 DictionariesToString(aDictionaries).get()));
       }
 
       // Also store it in as a preference, so we can use it as a fallback.
@@ -622,10 +619,9 @@ EditorSpellCheck::SetCurrentDictionaries(
       if (XRE_IsParentProcess()) {
         nsCString asString = DictionariesToString(aDictionaries);
         Preferences::SetCString("spellchecker.dictionary", asString);
-#ifdef DEBUG_DICT
-        printf("***** Possibly storing spellchecker.dictionary |%s|\n",
-               asString.get());
-#endif
+        MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+                ("%s, Possibly storing spellchecker.dictionary \"%s\"",
+                 __FUNCTION__, asString.get()));
       }
     } else {
       MOZ_ASSERT(flags & nsIEditor::eEditorMailMask);
@@ -744,8 +740,8 @@ EditorSpellCheck::UpdateCurrentDictionary(
     return NS_ERROR_FAILURE;
   }
 
-  RefPtr<DictionaryFetcher> fetcher =
-      new DictionaryFetcher(this, aCallback, mDictionaryFetcherGroup);
+  RefPtr fetcher =
+      MakeRefPtr<DictionaryFetcher>(this, aCallback, mDictionaryFetcherGroup);
   fetcher->mRootContentLang = [&] {
     if (rootEditableElement->IsInNativeAnonymousSubtree()) {
       if (auto* host =
@@ -794,9 +790,8 @@ bool EditorSpellCheck::BuildDictionaryList(const nsACString& aDictName,
       if (aOutList.IndexOf(dictStr) == nsTArray<nsCString>::NoIndex) {
         aOutList.AppendElement(dictStr);
       }
-#ifdef DEBUG_DICT
-      printf("***** Trying |%s|.\n", dictStr.get());
-#endif
+      MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+              ("%s, \"%s\" is matched", __FUNCTION__, dictStr.get()));
       // We always break here. We tried to set the dictionary to an existing
       // dictionary from the list. This must work, if it doesn't, there is
       // no point trying another one.
@@ -857,9 +852,9 @@ nsresult EditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher) {
   if (aFetcher->mRootContentLang) {
     aFetcher->mRootContentLang->ToUTF8String(contentLangs);
   }
-#ifdef DEBUG_DICT
-  printf("***** mPreferredLangs (element) |%s|\n", contentLangs.get());
-#endif
+  MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+          ("%s, mPreferredLangs (element) \"%s\"", __FUNCTION__,
+           contentLangs.get()));
   if (!contentLangs.IsEmpty()) {
     mPreferredLangs.AppendElement(contentLangs);
   } else {
@@ -867,10 +862,9 @@ nsresult EditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher) {
     if (aFetcher->mRootDocContentLang) {
       aFetcher->mRootDocContentLang->ToUTF8String(contentLangs);
     }
-#ifdef DEBUG_DICT
-    printf("***** mPreferredLangs (content-language) |%s|\n",
-           contentLangs.get());
-#endif
+    MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+            ("%s, mPreferredLangs (content-language) \"%s\"", __FUNCTION__,
+             contentLangs.get()));
     StringToDictionaries(contentLangs, mPreferredLangs);
   }
 
@@ -900,10 +894,10 @@ nsresult EditorSpellCheck::DictionaryFetched(DictionaryFetcher* aFetcher) {
           ->Then(
               GetMainThreadSerialEventTarget(), __func__,
               [self, fetcher]() {
-#ifdef DEBUG_DICT
-                printf("***** Assigned from content preferences |%s|\n",
-                       DictionariesToString(fetcher->mDictionaries).get());
-#endif
+                MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+                        ("DictionaryFetched, Assigned from content "
+                         "preferences \"%s\"",
+                         DictionariesToString(fetcher->mDictionaries).get()));
                 // We take an early exit here, so let's not forget to clear
                 // the word list.
                 self->DeleteSuggestedWordList();
@@ -973,9 +967,9 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
     // RFC 5646 explicitly states that matches should be case-insensitive.
     if (BuildDictionaryList(dictName, dictList, DICT_COMPARE_CASE_INSENSITIVE,
                             tryDictList)) {
-#ifdef DEBUG_DICT
-      printf("***** Trying from element/doc |%s| \n", dictName.get());
-#endif
+      MOZ_LOG(
+          sEditorSpellChecker, LogLevel::Debug,
+          ("%s, Trying \"%s\" from element/doc", __FUNCTION__, dictName.get()));
       continue;
     }
 
@@ -994,12 +988,10 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
         if (nsStyleUtil::DashMatchCompare(NS_ConvertUTF8toUTF16(dictionary),
                                           NS_ConvertUTF8toUTF16(langCode),
                                           nsTDefaultStringComparator)) {
-#ifdef DEBUG_DICT
-          printf(
-              "***** Trying preference value |%s| since it matches language "
-              "code\n",
-              dictionary.get());
-#endif
+          MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+                  ("%s, Trying preference value \"%s\" since it matches "
+                   "language code",
+                   __FUNCTION__, dictionary.get()));
           if (BuildDictionaryList(dictionary, dictList,
                                   DICT_COMPARE_CASE_INSENSITIVE, tryDictList)) {
             didAppend = true;
@@ -1045,10 +1037,9 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
       }
 
       // Use any dictionary with the required language.
-#ifdef DEBUG_DICT
-      printf("***** Trying to find match for language code |%s|\n",
-             langCode.get());
-#endif
+      MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+              ("%s, Trying to find match for language code \"%s\"",
+               __FUNCTION__, langCode.get()));
       BuildDictionaryList(langCode, dictList, DICT_COMPARE_DASHMATCH,
                           tryDictList);
     }
@@ -1083,9 +1074,9 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
         // As next fallback, try the current locale.
         nsAutoCString appLocaleStr;
         LocaleService::GetInstance()->GetAppLocaleAsBCP47(appLocaleStr);
-#ifdef DEBUG_DICT
-        printf("***** Trying locale |%s|\n", appLocaleStr.get());
-#endif
+        MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+                ("SetFallbackDictionary, Trying application locale \"%s\"",
+                 appLocaleStr.get()));
         self->BuildDictionaryList(appLocaleStr, dictList,
                                   DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
 
@@ -1095,10 +1086,9 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
         nsTArray<nsCString> currentDictionaries;
         self->GetCurrentDictionaries(currentDictionaries);
         if (!currentDictionaries.IsEmpty() && tryDictList.IsEmpty()) {
-#ifdef DEBUG_DICT
-          printf("***** Retrieved current dict |%s|\n",
-                 DictionariesToString(currentDictionaries).get());
-#endif
+          MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+                  ("SetFallbackDictionary, Retrieved current dictionary \"%s\"",
+                   DictionariesToString(currentDictionaries).get()));
           self->EndUpdateDictionary();
           if (fetcher->mCallback) {
             fetcher->mCallback->EditorSpellCheckDone();
@@ -1121,9 +1111,10 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
           int32_t underScore = lang.FindChar('_');
           if (underScore != -1) {
             lang.Replace(underScore, 1, '-');
-#ifdef DEBUG_DICT
-            printf("***** Trying LANG from environment |%s|\n", lang.get());
-#endif
+            MOZ_LOG(
+                sEditorSpellChecker, LogLevel::Debug,
+                ("SetFallbackDictionary, Trying LANG form environment \"%s\"",
+                 lang.get()));
             self->BuildDictionaryList(
                 lang, dictList, DICT_COMPARE_CASE_INSENSITIVE, tryDictList);
           }
@@ -1134,9 +1125,9 @@ void EditorSpellCheck::SetFallbackDictionary(DictionaryFetcher* aFetcher) {
         if (!dictList.IsEmpty()) {
           self->BuildDictionaryList(dictList[0], dictList, DICT_NORMAL_COMPARE,
                                     tryDictList);
-#ifdef DEBUG_DICT
-          printf("***** Trying first of list |%s|\n", dictList[0].get());
-#endif
+          MOZ_LOG(sEditorSpellChecker, LogLevel::Debug,
+                  ("SetFallbackDictionary, Trying first of list \"%s\"",
+                   dictList[0].get()));
         }
 
         // Priority 3:

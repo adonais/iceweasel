@@ -283,6 +283,84 @@ add_task(async function test_selectContextualSearchResult_already_installed() {
   );
 });
 
+add_task(async function test_host_match_installed_engine_immediate_search() {
+  await SearchTestUtils.updateRemoteSettingsConfig([CONFIG[0]]);
+  let ext = await SearchTestUtils.installSearchExtension({
+    name: "HostMatchEngine",
+    search_url: "https://example.net/search",
+  });
+  await AddonTestUtils.waitForSearchProviderStartup(ext);
+
+  const query = "testquery";
+  let engine = SearchService.getEngineByName("HostMatchEngine");
+  const [expectedUrl] = UrlbarUtils.getSearchQueryUrl(engine, query);
+
+  await loadUri("https://example.net/");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: query,
+  });
+
+  Assert.ok(
+    await hasActions(1),
+    "Contextual search action is shown for host-matched installed engine"
+  );
+
+  let onLoad = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    expectedUrl
+  );
+  let btn = window.document.querySelector(".urlbarView-action-btn");
+  EventUtils.synthesizeMouseAtCenter(btn, {}, window);
+  await onLoad;
+
+  Assert.equal(
+    gBrowser.selectedBrowser.currentURI.spec,
+    expectedUrl,
+    "Clicking contextual search for host-matched installed engine navigates immediately"
+  );
+  Assert.ok(!gURLBar.searchMode, "Search mode was not entered");
+
+  await loadUri("https://example.net/");
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: query,
+  });
+
+  Assert.ok(
+    await hasActions(1),
+    "Contextual search action is shown for host-matched installed engine"
+  );
+
+  EventUtils.synthesizeKey("KEY_Tab");
+  await UrlbarTestUtils.assertSearchMode(window, {
+    engineName: "HostMatchEngine",
+    entry: "keywordoffer",
+    isPreview: true,
+  });
+
+  onLoad = BrowserTestUtils.browserLoaded(
+    gBrowser.selectedBrowser,
+    false,
+    expectedUrl
+  );
+  EventUtils.synthesizeKey("KEY_Enter");
+  await onLoad;
+
+  Assert.equal(
+    gBrowser.selectedBrowser.currentURI.spec,
+    expectedUrl,
+    "A single Enter after tabbing into the action navigates immediately"
+  );
+  Assert.ok(
+    !gURLBar.searchMode,
+    "Search mode was not entered after tab + Enter"
+  );
+
+  await SearchTestUtils.updateRemoteSettingsConfig(CONFIG);
+});
+
 add_task(async function test_tab_to_search_engine() {
   let newConfig = [CONFIG[0]].concat([
     {

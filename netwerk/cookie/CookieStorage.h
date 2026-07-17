@@ -74,6 +74,9 @@ class CookieStorage : public nsIObserver, public nsSupportsWeakReference {
   uint32_t CountCookiesFromHost(const nsACString& aBaseDomain,
                                 uint32_t aPrivateBrowsingId);
 
+  bool HasCookiesForSite(const nsACString& aBaseDomain,
+                         const OriginAttributesPattern& aPattern);
+
   uint32_t CountCookieBytesNotMatchingCookie(const Cookie& cookie,
                                              const nsACString& baseDomain);
 

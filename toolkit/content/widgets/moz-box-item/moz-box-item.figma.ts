@@ -5,12 +5,14 @@ figma.connect(
   "https://www.figma.com/design/PqfaOcMGbX5liEXTTUzeYX/Nova-Components--Experimental-?node-id=479-6030",
   {
     props: {
-      label: figma.string("Label"),
-      iconSrc: figma.boolean("Show icon", {
-        true: "chrome://example.svg",
-      }),
-      description: figma.boolean("Show description", {
-        true: figma.string("Description"),
+      labelProps: figma.nestedProps("Label", {
+        label: figma.string("Label"),
+        iconSrc: figma.boolean("Show icon", {
+          true: "chrome://example.svg",
+        }),
+        description: figma.boolean("Show description", {
+          true: figma.string("Description"),
+        }),
       }),
       layout: figma.enum("Type", {
         "Large icon": "large-icon",
@@ -49,9 +51,9 @@ figma.connect(
     },
     example: props =>
       html`<moz-box-item
-        label=${props.label}
-        description=${props.description}
-        iconsrc=${props.iconSrc}
+        label=${props.labelProps.label}
+        description=${props.labelProps.description}
+        iconsrc=${props.labelProps.iconSrc}
         layout=${props.layout}
       >
         ${props.startActions}${props.endActions}

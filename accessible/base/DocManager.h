@@ -112,7 +112,7 @@ class DocManager : public nsIWebProgressListener,
 #endif
 
 #ifdef MOZ_ENABLE_SKIA_PDF
-  void NotifyOfPrintDocument(dom::Document* aDoc);
+  static void NotifyOfPrintDocument(dom::Document* aDoc);
 #endif
 
  protected:

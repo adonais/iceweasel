@@ -343,6 +343,7 @@ list(APPEND AOM_AV1_ENCODER_INTRIN_SSE2
             "${AOM_ROOT}/av1/encoder/x86/av1_quantize_sse2.c"
             "${AOM_ROOT}/av1/encoder/x86/encodetxb_sse2.c"
             "${AOM_ROOT}/av1/encoder/x86/error_intrin_sse2.c"
+            "${AOM_ROOT}/av1/encoder/x86/model_rd_sse2.c"
             "${AOM_ROOT}/av1/encoder/x86/reconinter_enc_sse2.c"
             "${AOM_ROOT}/av1/encoder/x86/temporal_filter_sse2.c"
             "${AOM_ROOT}/av1/encoder/x86/wedge_utils_sse2.c")
@@ -482,7 +483,9 @@ list(APPEND AOM_AV1_COMMON_INTRIN_RVV
             "${AOM_ROOT}/av1/common/riscv/compound_convolve_rvv.c"
             "${AOM_ROOT}/av1/common/riscv/convolve_rvv.c"
             "${AOM_ROOT}/av1/common/riscv/highbd_compound_convolve_rvv.c"
-            "${AOM_ROOT}/av1/common/riscv/highbd_convolve_rvv.c")
+            "${AOM_ROOT}/av1/common/riscv/highbd_convolve_rvv.c"
+            "${AOM_ROOT}/av1/common/riscv/highbd_wiener_convolve_rvv.c"
+            "${AOM_ROOT}/av1/common/riscv/wiener_convolve_rvv.c")
 
 if(CONFIG_THREE_PASS)
   list(APPEND AOM_AV1_ENCODER_SOURCES "${AOM_ROOT}/av1/encoder/thirdpass.c"

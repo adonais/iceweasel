@@ -18,10 +18,12 @@ class ServiceWorkerRegisterJob final : public ServiceWorkerUpdateJob {
       nsIPrincipal* aPrincipal, const nsACString& aScope,
       const WorkerType& aType, const nsACString& aScriptSpec,
       ServiceWorkerUpdateViaCache aUpdateViaCache,
-      const ServiceWorkerLifetimeExtension& aLifetimeExtension);
+      const ServiceWorkerLifetimeExtension& aLifetimeExtension,
+      uint16_t aIPAddressSpace = 0);
 
  private:
   WorkerType mType;
+  uint16_t mIPAddressSpace;
 
   // Implement the Register algorithm steps and then call the parent class
   // Update() to complete the job execution.

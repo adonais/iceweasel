@@ -40,7 +40,7 @@ class RTC_EXPORT BitrateAdjuster {
   ABSL_DEPRECATE_AND_INLINE()
   BitrateAdjuster(float min_adjusted_bitrate_pct,
                   float max_adjusted_bitrate_pct)
-      : BitrateAdjuster(Clock::GetRealTimeClockRaw(),
+      : BitrateAdjuster(Clock::GetRealTimeClockOnlyUseForRelativeTime(),
                         min_adjusted_bitrate_pct,
                         max_adjusted_bitrate_pct) {}
   virtual ~BitrateAdjuster() = default;

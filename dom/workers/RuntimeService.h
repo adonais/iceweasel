@@ -111,6 +111,9 @@ class RuntimeService final : public nsIObserver {
   void PropagateStorageAccessPermissionGranted(
       const nsPIDOMWindowInner& aWindow);
 
+  void UpdateTimezoneOverrideForWorkers(const nsPIDOMWindowInner& aWindow,
+                                        const nsAString& aTimezone);
+
   NavigatorProperties GetNavigatorProperties() const {
     MutexAutoLock lock(mMutex);
     return mNavigatorProperties;
@@ -175,6 +178,9 @@ class RuntimeService final : public nsIObserver {
 
   void UpdateWorkersPlaybackState(const nsPIDOMWindowInner& aWindow,
                                   bool aIsPlayingAudio);
+
+  void UpdateWorkersLanguageOverride(const nsPIDOMWindowInner& aWindow,
+                                     const nsCString& aLanguageOverride);
 
  private:
   RuntimeService();

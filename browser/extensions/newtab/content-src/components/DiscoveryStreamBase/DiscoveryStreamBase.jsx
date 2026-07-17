@@ -8,6 +8,7 @@ import { connect } from "react-redux";
 import { ReportContent } from "../DiscoveryStreamComponents/ReportContent/ReportContent";
 import { Highlights } from "content-src/components/DiscoveryStreamComponents/Highlights/Highlights";
 import { HorizontalRule } from "content-src/components/DiscoveryStreamComponents/HorizontalRule/HorizontalRule";
+// eslint-disable-next-line no-shadow
 import { Navigation } from "content-src/components/DiscoveryStreamComponents/Navigation/Navigation";
 import { PrivacyLink } from "content-src/components/DiscoveryStreamComponents/PrivacyLink/PrivacyLink";
 import React from "react";

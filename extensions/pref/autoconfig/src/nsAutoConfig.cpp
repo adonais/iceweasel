@@ -414,7 +414,7 @@ nsresult nsAutoConfig::getEmailAddr(nsACString& emailAddr) {
                                   prefValue);
     if (NS_FAILED(rv) || prefValue.IsEmpty())
       return PromptForEMailAddress(emailAddr);
-    emailAddr = prefValue;
+    emailAddr = std::move(prefValue);
   } else {
     // look for 4.x pref in case we just migrated.
     rv = mPrefBranch->GetCharPref("mail.identity.useremail", prefValue);

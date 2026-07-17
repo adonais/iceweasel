@@ -730,8 +730,7 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvLoadURI(
       const MaybeDiscarded<BrowsingContext>& aContext,
-      nsDocShellLoadState* aLoadState, bool aSetNavigating,
-      LoadURIResolver&& aResolve);
+      nsDocShellLoadState* aLoadState, bool aSetNavigating);
 
   mozilla::ipc::IPCResult RecvInternalLoad(nsDocShellLoadState* aLoadState);
 
@@ -778,9 +777,11 @@ class ContentChild final : public PContentChild,
                                         ErrorResult& aRv) override;
   mozilla::ipc::IProtocol* AsNativeActor() override { return this; }
 
+  MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvHistoryCommitIndexAndLength(
       const MaybeDiscarded<BrowsingContext>& aContext, const uint32_t& aIndex,
-      const uint32_t& aLength, const nsID& aChangeID);
+      const uint32_t& aLength, const nsID& aChangeID,
+      nsTArray<NavigationEntriesTruncation>&& aTruncations);
 
   mozilla::ipc::IPCResult RecvConsumeHistoryActivation(
       const MaybeDiscarded<BrowsingContext>& aTop);
@@ -794,13 +795,14 @@ class ContentChild final : public PContentChild,
 
   mozilla::ipc::IPCResult RecvDispatchBeforeUnloadToSubtree(
       const MaybeDiscarded<BrowsingContext>& aStartingAt,
-      const mozilla::Maybe<SessionHistoryInfo>& aInfo,
+      const mozilla::Maybe<mozilla::NotNull<RefPtr<nsDocShellLoadState>>>&
+          aLoadState,
       DispatchBeforeUnloadToSubtreeResolver&& aResolver);
 
   MOZ_CAN_RUN_SCRIPT_BOUNDARY
   mozilla::ipc::IPCResult RecvDispatchNavigateToTraversable(
       const MaybeDiscarded<BrowsingContext>& aTraversable,
-      const mozilla::Maybe<SessionHistoryInfo>& aInfo,
+      const mozilla::NotNull<RefPtr<nsDocShellLoadState>>& aLoadState,
       DispatchNavigateToTraversableResolver&& aResolver);
 
   mozilla::ipc::IPCResult RecvInitNextGenLocalStorageEnabled(
@@ -809,7 +811,8 @@ class ContentChild final : public PContentChild,
  public:
   static void DispatchBeforeUnloadToSubtree(
       BrowsingContext* aStartingAt,
-      const mozilla::Maybe<SessionHistoryInfo>& aInfo,
+      const mozilla::Maybe<mozilla::NotNull<RefPtr<nsDocShellLoadState>>>&
+          aLoadState,
       const DispatchBeforeUnloadToSubtreeResolver& aResolver);
 
   hal::ProcessPriority GetProcessPriority() const { return mProcessPriority; }
@@ -922,6 +925,9 @@ class ContentChild final : public PContentChild,
 inline nsISupports* ToSupports(mozilla::dom::ContentChild* aContentChild) {
   return static_cast<nsIDOMProcessChild*>(aContentChild);
 }
+
+// Threadsafe getter for the current process's RemoteType.
+nsCString CurrentRemoteType();
 
 }  // namespace dom
 }  // namespace mozilla

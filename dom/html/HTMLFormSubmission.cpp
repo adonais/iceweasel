@@ -86,6 +86,7 @@ class FSURLEncoded : public EncodingFormSubmission {
       : EncodingFormSubmission(aActionURL, aTarget, aEncoding, aSubmitter),
         mMethod(aMethod),
         mDocument(aDocument),
+        mSubmitter(aSubmitter),
         mWarnedFileControl(false) {}
 
   virtual nsresult AddNameValuePair(const nsAString& aName,
@@ -100,6 +101,8 @@ class FSURLEncoded : public EncodingFormSubmission {
   virtual nsresult GetEncodedSubmission(nsIURI* aURI,
                                         nsIInputStream** aPostDataStream,
                                         nsCOMPtr<nsIURI>& aOutURI) override;
+
+  Element* GetSubmitterElement() const override { return mSubmitter; }
 
  protected:
   /**
@@ -124,6 +127,9 @@ class FSURLEncoded : public EncodingFormSubmission {
 
   /** The document whose URI to use when reporting errors */
   nsCOMPtr<Document> mDocument;
+
+  /** Submitter element. */
+  RefPtr<Element> mSubmitter;
 
   /** Whether or not we have warned about a file control not being submitted */
   bool mWarnedFileControl;
@@ -693,6 +699,10 @@ HTMLFormSubmission::HTMLFormSubmission(
       mEncoding(aEncoding),
       mInitiatedFromUserInput(UserActivation::IsHandlingUserInput()) {
   MOZ_COUNT_CTOR(HTMLFormSubmission);
+}
+
+Element* HTMLFormSubmission::GetSubmitterElement() const {
+  return mFormData ? mFormData->GetSubmitterElement() : nullptr;
 }
 
 EncodingFormSubmission::EncodingFormSubmission(

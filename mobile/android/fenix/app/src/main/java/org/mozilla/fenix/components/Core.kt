@@ -125,7 +125,6 @@ import org.mozilla.fenix.components.search.SearchMigration
 import org.mozilla.fenix.downloads.DownloadService
 import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isLargeWindow
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.gecko.GeckoProvider
 import org.mozilla.fenix.historymetadata.DefaultHistoryMetadataService
 import org.mozilla.fenix.historymetadata.HistoryMetadataMiddleware
@@ -172,33 +171,34 @@ class Core(
     val engine: Engine by lazyMonitored {
         val defaultSettings = DefaultSettings(
             requestInterceptor = requestInterceptor,
-            remoteDebuggingEnabled = context.settings().isRemoteDebuggingEnabled,
+            remoteDebuggingEnabled = context.components.settings.isRemoteDebuggingEnabled,
             testingModeEnabled = false,
             trackingProtectionPolicy = trackingProtectionPolicyFactory.createTrackingProtectionPolicy(),
             historyTrackingDelegate = HistoryDelegate(lazyHistoryStorage),
             preferredColorScheme = getPreferredColorScheme(),
-            automaticFontSizeAdjustment = context.settings().shouldUseAutoSize,
-            fontInflationEnabled = context.settings().shouldUseAutoSize,
+            automaticFontSizeAdjustment = context.components.settings.shouldUseAutoSize,
+            fontInflationEnabled = context.components.settings.shouldUseAutoSize,
             suspendMediaWhenInactive = false,
-            forceUserScalableContent = context.settings().forceEnableZoom,
-            loginAutofillEnabled = context.settings().shouldAutofillLogins,
-            enterpriseRootsEnabled = context.settings().allowThirdPartyRootCerts,
+            forceUserScalableContent = context.components.settings.forceEnableZoom,
+            loginAutofillEnabled = context.components.settings.shouldAutofillLogins,
+            enterpriseRootsEnabled = context.components.settings.allowThirdPartyRootCerts,
             clearColor = ContextCompat.getColor(
                 context,
                 R.color.fx_mobile_surface,
             ),
-            httpsOnlyMode = context.settings().getHttpsOnlyMode(),
-            dohSettingsMode = context.settings().getDohSettingsMode(),
-            dohProviderUrl = context.settings().dohProviderUrl,
-            dohDefaultProviderUrl = context.settings().dohDefaultProviderUrl,
-            dohExceptionsList = context.settings().dohExceptionsList.toList(),
-            globalPrivacyControlEnabled = context.settings().shouldEnableGlobalPrivacyControl,
+            httpsOnlyMode = context.components.settings.getHttpsOnlyMode(),
+            dohSettingsMode = context.components.settings.getDohSettingsMode(),
+            dohProviderUrl = context.components.settings.dohProviderUrl,
+            dohDefaultProviderUrl = context.components.settings.dohDefaultProviderUrl,
+            dohExceptionsList = context.components.settings.dohExceptionsList.toList(),
+            globalPrivacyControlEnabled = context.components.settings.shouldEnableGlobalPrivacyControl,
             fdlibmMathEnabled = FxNimbus.features.fingerprintingProtection.value().fdlibmMath,
-            cookieBannerHandlingMode = context.settings().getCookieBannerHandling(),
-            cookieBannerHandlingModePrivateBrowsing = context.settings().getCookieBannerHandlingPrivateMode(),
-            cookieBannerHandlingDetectOnlyMode = context.settings().shouldEnableCookieBannerDetectOnly,
-            cookieBannerHandlingGlobalRules = context.settings().shouldEnableCookieBannerGlobalRules,
-            cookieBannerHandlingGlobalRulesSubFrames = context.settings().shouldEnableCookieBannerGlobalRulesSubFrame,
+            cookieBannerHandlingMode = context.components.settings.getCookieBannerHandling(),
+            cookieBannerHandlingModePrivateBrowsing = context.components.settings.getCookieBannerHandlingPrivateMode(),
+            cookieBannerHandlingDetectOnlyMode = context.components.settings.shouldEnableCookieBannerDetectOnly,
+            cookieBannerHandlingGlobalRules = context.components.settings.shouldEnableCookieBannerGlobalRules,
+            cookieBannerHandlingGlobalRulesSubFrames =
+                context.components.settings.shouldEnableCookieBannerGlobalRulesSubFrame,
             emailTrackerBlockingPrivateBrowsing = true,
             userCharacteristicPingCurrentVersion = FxNimbus.features.userCharacteristics.value().currentVersion,
             getDesktopMode = {
@@ -212,14 +212,14 @@ class Core(
             postQuantumKeyExchangeEnabled = FxNimbus.features.pqcrypto.value().postQuantumKeyExchangeEnabled,
             dohAutoselectEnabled = FxNimbus.features.doh.value().autoselectEnabled,
             bannedPorts = FxNimbus.features.networkingBannedPorts.value().bannedPortList,
-            lnaBlockingEnabled = context.settings().isLnaBlockingEnabled,
-            lnaFeatureEnabled = context.settings().isLnaFeatureEnabled,
-            lnaTrackerBlockingEnabled = context.settings().isLnaTrackerBlockingEnabled,
+            lnaBlockingEnabled = context.components.settings.isLnaBlockingEnabled,
+            lnaFeatureEnabled = context.components.settings.isLnaFeatureEnabled,
+            lnaTrackerBlockingEnabled = context.components.settings.isLnaTrackerBlockingEnabled,
             crliteChannel = FxNimbus.features.pki.value().crliteChannel,
             downloadDelegate = EngineDownloadDelegate(
                 context = context,
                 downloadLocation = {
-                    DownloadLocationManager(context).defaultLocation
+                    DownloadLocationManager(context.components.settings, context.contentResolver).defaultLocation
                 },
             ),
             useContentBlockingDatabase = true,
@@ -368,19 +368,22 @@ class Core(
                     applicationContext = context,
                     downloadServiceClass = DownloadService::class.java,
                     deleteFileFromStorage = {
-                        context.settings().deleteDownloadBehavior == DeleteDownloadBehavior.DELETE_FROM_DEVICE
+                        context.components.settings.deleteDownloadBehavior == DeleteDownloadBehavior.DELETE_FROM_DEVICE
                     },
                     downloadFileUtils = DefaultDownloadFileUtils(
                         context = context.applicationContext,
                         downloadLocation = {
-                            DownloadLocationManager(context.applicationContext).defaultLocation
+                            DownloadLocationManager(
+                                context.components.settings,
+                                context.contentResolver,
+                            ).defaultLocation
                         },
                     ),
                 ),
                 ReaderViewMiddleware(),
-                TelemetryMiddleware(context, context.settings(), metrics, crashReporter),
+                TelemetryMiddleware(context, context.components.settings, metrics, crashReporter),
                 ThumbnailsMiddleware(thumbnailStorage),
-                UndoMiddleware(context.getUndoDelay()),
+                UndoMiddleware(context.components.settings.getUndoDelay()),
                 RegionMiddleware(context, locationService),
                 SearchMiddleware(
                     context = context,
@@ -418,7 +421,7 @@ class Core(
                 ),
                 StartupMiddleware(
                     applicationContext = context,
-                    repository = DefaultHomepageAsANewTabPreferenceRepository(context.settings()),
+                    repository = DefaultHomepageAsANewTabPreferenceRepository(context.components.settings),
                 ),
                 AboutHomeMiddleware(
                     homepageTitle = context.getString(R.string.tab_tray_homepage_tab),
@@ -525,7 +528,7 @@ class Core(
             context = context,
             httpClient = client,
             manifestProvider = merinoManifestProvider,
-            useMerinoManifest = context.settings().enableMerinoManifest,
+            useMerinoManifest = context.components.settings.enableMerinoManifest,
         )
     }
 
@@ -562,7 +565,7 @@ class Core(
                 templateMessage = templateMessage,
                 appName = context.getString(R.string.firefox),
                 downloadLink = downloadLink,
-                storage = DefaultSentFromStorage(context.settings()),
+                storage = DefaultSentFromStorage(context.components.settings),
             )
         }
     }
@@ -632,7 +635,7 @@ class Core(
                 locale = LocaleManager.getSelectedLocale(context).toLanguageTag(),
             ),
             marsSponsoredContentsParams = MarsSpocsRequestConfig(
-                contextId = context.settings().contileContextId,
+                contextId = context.components.settings.contileContextId,
                 userAgent = engine.settings.userAgentString,
                 placements = listOf(
                     MarsSpocsPlacement(
@@ -650,7 +653,7 @@ class Core(
             context = context,
             client = client,
             requestConfig = MarsTopSitesRequestConfig(
-                contextId = context.settings().contileContextId,
+                contextId = context.components.settings.contileContextId,
                 userAgent = engine.settings.userAgentString,
                 placements = listOf(
                     Placement(
@@ -684,7 +687,7 @@ class Core(
     val contileTopSitesUpdater by lazyMonitored {
         ContileTopSitesUpdater(
             context = context,
-            provider = if (context.settings().enableMozillaAdsClient) {
+            provider = if (context.components.settings.enableMozillaAdsClient) {
                 macTopSitesProvider
             } else {
                 marsTopSitesProvider
@@ -697,7 +700,7 @@ class Core(
         DefaultTopSitesStorage(
             pinnedSitesStorage = pinnedSiteStorage,
             historyStorage = historyStorage,
-            topSitesProvider = if (context.settings().enableMozillaAdsClient) {
+            topSitesProvider = if (context.components.settings.enableMozillaAdsClient) {
                 macTopSitesProvider
             } else {
                 marsTopSitesProvider
@@ -754,7 +757,7 @@ class Core(
     // Temporary. See https://github.com/mozilla-mobile/fenix/issues/19155
     private val lazySecurePrefs = lazyMonitored { getSecureAbove22Preferences() }
     val trackingProtectionPolicyFactory =
-        TrackingProtectionPolicyFactory(context.settings(), context.resources)
+        TrackingProtectionPolicyFactory(context.components.settings, context.resources)
 
     /**
      * Sets Preferred Color scheme based on Dark/Light Theme Settings or Current Configuration
@@ -764,8 +767,8 @@ class Core(
             (context.resources.configuration.uiMode and Configuration.UI_MODE_NIGHT_MASK) ==
                 Configuration.UI_MODE_NIGHT_YES
         return when {
-            context.settings().shouldUseDarkTheme -> PreferredColorScheme.Dark
-            context.settings().shouldUseLightTheme -> PreferredColorScheme.Light
+            context.components.settings.shouldUseDarkTheme -> PreferredColorScheme.Dark
+            context.components.settings.shouldUseLightTheme -> PreferredColorScheme.Light
             inDark -> PreferredColorScheme.Dark
             else -> PreferredColorScheme.Light
         }
@@ -775,7 +778,7 @@ class Core(
      * Gets a [SearchEngineSelectorConfig] for the app and device.
      */
     private fun getSearchEngineSelectorConfig(): SearchEngineSelectorConfig? {
-        if (!context.settings().useRemoteSearchConfiguration) {
+        if (!context.components.settings.useRemoteSearchConfiguration) {
             return null
         }
 

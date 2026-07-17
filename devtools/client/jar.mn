@@ -162,6 +162,8 @@ devtools.jar:
     skin/images/rules-view-light-mode-simulation.svg (themes/images/rules-view-light-mode-simulation.svg)
     skin/images/rules-view-dark-mode-simulation.svg (themes/images/rules-view-dark-mode-simulation.svg)
     skin/images/rules-view-print-simulation.svg (themes/images/rules-view-print-simulation.svg)
+    skin/images/back.svg (themes/images/back.svg)
+    skin/images/forward.svg (themes/images/forward.svg)
     skin/markup.css (themes/markup.css)
 
     # shared
@@ -173,7 +175,10 @@ devtools.jar:
     content/shared/widgets/filter-widget.css (shared/widgets/filter-widget.css)
     content/shared/widgets/linear-widget.css (shared/widgets/linear-widget.css)
     content/shared/widgets/spectrum.css (shared/widgets/spectrum.css)
+    content/shared/components/DebuggerImage.css (shared/components/DebuggerImage.css)
+    content/shared/components/CloseButton.css (shared/components/CloseButton.css)
     content/shared/components/FileSearchBar.css (shared/components/FileSearchBar.css)
+    content/shared/components/SearchInput.css (shared/components/SearchInput.css)
     content/shared/components/SmartTrace.css (shared/components/SmartTrace.css)
     content/shared/components/Tree.css (shared/components/Tree.css)
     content/shared/components/object-inspector/components/ObjectInspector.css (shared/components/object-inspector/components/ObjectInspector.css)
@@ -210,7 +215,7 @@ devtools.jar:
     content/shared/components/images/sourcemap.svg (shared/components/images/sourcemap.svg)
 
     # Inspector
-    content/inspector/markup/markup.xhtml (inspector/markup/markup.xhtml)
+    content/inspector/markup/markup.html (inspector/markup/markup.html)
     content/inspector/components/InspectorTabPanel.css (inspector/components/InspectorTabPanel.css)
     content/styleeditor/index.xhtml (styleeditor/index.xhtml)
     content/styleeditor/index.js (styleeditor/index.js)
@@ -293,11 +298,9 @@ devtools.jar:
     content/debugger/src/components/QuickOpenModal.css (debugger/src/components/QuickOpenModal.css)
     content/debugger/src/components/ShortcutsModal.css (debugger/src/components/ShortcutsModal.css)
     content/debugger/src/components/WelcomeBox.css (debugger/src/components/WelcomeBox.css)
-    content/debugger/src/components/shared/DebuggerImage.css (debugger/src/components/shared/DebuggerImage.css)
     content/debugger/src/components/shared/Accordion.css (debugger/src/components/shared/Accordion.css)
     content/debugger/src/components/shared/Badge.css (debugger/src/components/shared/Badge.css)
     content/debugger/src/components/shared/BracketArrow.css (debugger/src/components/shared/BracketArrow.css)
-    content/debugger/src/components/shared/Button/styles/CloseButton.css (debugger/src/components/shared/Button/styles/CloseButton.css)
     content/debugger/src/components/shared/Button/styles/CommandBarButton.css (debugger/src/components/shared/Button/styles/CommandBarButton.css)
     content/debugger/src/components/shared/Button/styles/PaneToggleButton.css (debugger/src/components/shared/Button/styles/PaneToggleButton.css)
     content/debugger/src/components/shared/Dropdown.css (debugger/src/components/shared/Dropdown.css)
@@ -306,7 +309,6 @@ devtools.jar:
     content/debugger/src/components/shared/Popover.css (debugger/src/components/shared/Popover.css)
     content/debugger/src/components/shared/PreviewFunction.css (debugger/src/components/shared/PreviewFunction.css)
     content/debugger/src/components/shared/ResultList.css (debugger/src/components/shared/ResultList.css)
-    content/debugger/src/components/shared/SearchInput.css (debugger/src/components/shared/SearchInput.css)
     content/debugger/src/components/shared/SourceIcon.css (debugger/src/components/shared/SourceIcon.css)
     content/debugger/src/components/Editor/Breakpoints.css (debugger/src/components/Editor/Breakpoints.css)
     content/debugger/src/components/Editor/ConditionalPanel.css (debugger/src/components/Editor/ConditionalPanel.css)

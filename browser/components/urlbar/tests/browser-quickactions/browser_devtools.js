@@ -11,6 +11,7 @@ requestLongerTimeout(2);
 
 ChromeUtils.defineESModuleGetters(this, {
   DevToolsShim: "chrome://devtools-startup/content/DevToolsShim.sys.mjs",
+  PromiseTestUtils: "resource://testing-common/PromiseTestUtils.sys.mjs",
 });
 
 add_setup(async function setup() {
@@ -152,6 +153,8 @@ add_task(async function test_inspector() {
       "Wait for opening inspector for current selected tab"
     );
     const toolbox = DevToolsShim.getToolboxForTab(gBrowser.selectedTab);
+    info("Wait for the toolbox to be initialized");
+    await toolbox.isOpen;
     await BrowserTestUtils.waitForCondition(
       () => toolbox.getPanel("inspector"),
       "Wait until the inspector is ready"
@@ -176,4 +179,51 @@ add_task(async function test_inspector() {
   }
 
   BrowserTestUtils.removeTab(tab);
+});
+
+add_task(async function test_colorpicker() {
+  // Non-DevTools-user, to confirm the quickaction is available to everyone.
+  await SpecialPowers.pushPrefEnv({
+    set: [["devtools.selfxss.count", 0]],
+  });
+
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    "https://example.com"
+  );
+
+  const onPickerCommandHandled = TestUtils.topicObserved(
+    "color-picker-command-handled"
+  );
+
+  await UrlbarTestUtils.promiseAutocompleteResultPopup({
+    window,
+    value: "color picker",
+  });
+  await assertActionButtonStatus(
+    "colorpicker",
+    true,
+    "The colorpicker action button is enabled"
+  );
+
+  info("Trigger the colorpicker action");
+  EventUtils.synthesizeKey("KEY_Tab", {}, window);
+  EventUtils.synthesizeKey("KEY_Enter", {}, window);
+
+  const [subject] = await onPickerCommandHandled;
+  const targetFront = subject.wrappedJSObject;
+  Assert.ok(targetFront, "Color picker was triggered");
+  Assert.ok(
+    !DevToolsShim.hasToolboxForTab(gBrowser.selectedTab),
+    "No toolbox was opened for the tab"
+  );
+
+  // The eyedropper's screenshot capture may still be in-flight when we tear
+  // down the tab, surfacing as a rejected request in the protocol Front.
+  PromiseTestUtils.expectUncaughtRejection(/front '.*' is already destroyed/);
+
+  BrowserTestUtils.removeTab(tab);
+  await BrowserTestUtils.waitForCondition(() => targetFront.isDestroyed());
+
+  await SpecialPowers.popPrefEnv();
 });

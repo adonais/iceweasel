@@ -7,6 +7,8 @@
  * Bucket for the IP Protection server list.
  */
 
+import { AppConstants } from "resource://gre/modules/AppConstants.sys.mjs";
+
 const lazy = {};
 
 ChromeUtils.defineLazyGetter(lazy, "logConsole", () =>
@@ -389,6 +391,7 @@ export class RemoteSettingsServerlist extends IPProtectionServerlistBase {
  */
 export class PrefServerList extends IPProtectionServerlistBase {
   #observer = null;
+  #previousList = null;
 
   constructor() {
     super();
@@ -401,19 +404,24 @@ export class PrefServerList extends IPProtectionServerlistBase {
   }
 
   async initOnStartupCompleted() {
-    Services.prefs.addObserver(
-      IPProtectionServerlist.PREF_NAME,
-      this.#observer
-    );
+    Services.prefs.addObserver(PrefServerList.PREF_NAME, this.#observer);
+    // If the pref changed between startup and registering the observer we have
+    // not handled it yet. If the value hasn't actually changed, this is a no-op.
+    this.maybeFetchList();
   }
 
   uninit() {
-    Services.prefs.removeObserver(
-      IPProtectionServerlist.PREF_NAME,
-      this.#observer
-    );
+    Services.prefs.removeObserver(PrefServerList.PREF_NAME, this.#observer);
   }
-  maybeFetchList(_forceUpdate = false) {
+
+  maybeFetchList(forceUpdate = false) {
+    const newList = Services.prefs.getStringPref(PrefServerList.PREF_NAME, "");
+
+    // If the list hasn't changed, we don't need to fetch it again.
+    if (!forceUpdate && newList === this.#previousList) {
+      return Promise.resolve();
+    }
+    this.#previousList = newList;
     this.__list = IPProtectionServerlistBase.dataToList(
       PrefServerList.prefValue
     );
@@ -451,6 +459,9 @@ export class PrefServerList extends IPProtectionServerlistBase {
  * @returns {IPProtectionServerlistBase} - The appropriate serverlist implementation.
  */
 export function IPProtectionServerlistFactory() {
+  if (AppConstants.MOZ_ENTERPRISE) {
+    return new PrefServerList();
+  }
   return PrefServerList.hasPrefValue
     ? new PrefServerList()
     : new RemoteSettingsServerlist();

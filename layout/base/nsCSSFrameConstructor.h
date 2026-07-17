@@ -877,7 +877,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     // Also, the return value is always non-null, thanks to infallible 'new'.
     FrameConstructionItem* AppendItem(
         nsCSSFrameConstructor* aFCtor, const FrameConstructionData* aFCData,
-        nsIContent* aContent, already_AddRefed<ComputedStyle>&& aComputedStyle,
+        nsIContent* aContent, already_AddRefed<ComputedStyle> aComputedStyle,
         bool aSuppressWhiteSpaceOptimizations) {
       FrameConstructionItem* item = new (aFCtor)
           FrameConstructionItem(aFCData, aContent, std::move(aComputedStyle),
@@ -891,7 +891,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     // Arguments are the same as AppendItem().
     FrameConstructionItem* PrependItem(
         nsCSSFrameConstructor* aFCtor, const FrameConstructionData* aFCData,
-        nsIContent* aContent, already_AddRefed<ComputedStyle>&& aComputedStyle,
+        nsIContent* aContent, already_AddRefed<ComputedStyle> aComputedStyle,
         bool aSuppressWhiteSpaceOptimizations) {
       FrameConstructionItem* item = new (aFCtor)
           FrameConstructionItem(aFCData, aContent, std::move(aComputedStyle),
@@ -1110,7 +1110,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
       : public mozilla::LinkedListElement<FrameConstructionItem> {
     FrameConstructionItem(const FrameConstructionData* aFCData,
                           nsIContent* aContent,
-                          already_AddRefed<ComputedStyle>&& aComputedStyle,
+                          already_AddRefed<ComputedStyle> aComputedStyle,
                           bool aSuppressWhiteSpaceOptimizations)
         : mFCData(aFCData),
           mContent(aContent),
@@ -1225,7 +1225,7 @@ class nsCSSFrameConstructor final : public nsFrameManager {
     explicit AutoFrameConstructionItem(nsCSSFrameConstructor* aFCtor,
                                        Args&&... args)
         : mFCtor(aFCtor),
-          mItem(new(aFCtor)
+          mItem(new (aFCtor)
                     FrameConstructionItem(std::forward<Args>(args)...)) {
       MOZ_ASSERT(mFCtor);
     }

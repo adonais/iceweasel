@@ -10,7 +10,7 @@
     android:viewportHeight="50"
     tools:ignore="VectorRaster">
     <path
-        android:fillColor="@color/fx_mobile_layer_color_2"
+        android:fillColor="?attr/colorSurfaceContainerLowest"
         android:pathData="M5,0.5L297,0.5A4.5,4.5 0,0 1,301.5 5L301.5,44.61A4.5,4.5 0,0 1,297 49.11L5,49.11A4.5,4.5 0,0 1,0.5 44.61L0.5,5A4.5,4.5 0,0 1,5 0.5z" />
     <path
         android:fillColor="@android:color/transparent"
@@ -18,7 +18,7 @@
         android:strokeWidth="1"
         android:strokeColor="?attr/colorOutlineVariant" />
     <path
-        android:fillColor="@color/fx_mobile_layer_color_2"
+        android:fillColor="?attr/colorSurfaceContainerLowest"
         android:pathData="M7,1.5L295,1.5A5.5,5.5 0,0 1,300.5 7L300.5,42.61A5.5,5.5 0,0 1,295 48.11L7,48.11A5.5,5.5 0,0 1,1.5 42.61L1.5,7A5.5,5.5 0,0 1,7 1.5z" />
     <path
         android:fillColor="@android:color/transparent"
@@ -28,7 +28,7 @@
     <group>
         <clip-path android:pathData="M20.81,9L197.97,9A15.81,15.81 0,0 1,213.78 24.81L213.78,24.81A15.81,15.81 0,0 1,197.97 40.61L20.81,40.61A15.81,15.81 0,0 1,5 24.81L5,24.81A15.81,15.81 0,0 1,20.81 9z" />
         <path
-            android:fillColor="@color/fx_mobile_layer_color_3"
+            android:fillColor="?attr/colorSurfaceContainerHighest"
             android:pathData="M20.81,9L197.97,9A15.81,15.81 0,0 1,213.78 24.81L213.78,24.81A15.81,15.81 0,0 1,197.97 40.61L20.81,40.61A15.81,15.81 0,0 1,5 24.81L5,24.81A15.81,15.81 0,0 1,20.81 9z" />
     </group>
     <group>

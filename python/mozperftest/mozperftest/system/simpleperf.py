@@ -12,10 +12,14 @@ from pathlib import Path
 from urllib.parse import unquote
 
 from mozbuild.nodeutil import find_node_executable
-from mozdevice import ADBDevice
 
 from mozperftest.layers import Layer
-from mozperftest.utils import ON_TRY, archive_files, extract_tgz_and_find_files
+from mozperftest.utils import (
+    ON_TRY,
+    archive_files,
+    extract_tgz_and_find_files,
+    get_adb_device_or_emu,
+)
 
 """The default Simpleperf options will collect a 30s system-wide profile that uses DWARF based
    call graph so that we can collect Java stacks.  This requires root access.
@@ -77,7 +81,7 @@ class SimpleperfSymbolicationError(SimpleperfError):
 
 class SimpleperfController:
     def __init__(self):
-        self.device = ADBDevice()
+        self.device = get_adb_device_or_emu()
         self.profiler_process = None
 
     def start(self, simpleperf_opts):
@@ -159,7 +163,7 @@ class SimpleperfProfiler(Layer):
 
     def __init__(self, env, mach_cmd):
         super().__init__(env, mach_cmd)
-        self.device = ADBDevice()
+        self.device = get_adb_device_or_emu()
 
     @staticmethod
     def is_enabled():

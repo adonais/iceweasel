@@ -175,7 +175,7 @@ nsUnknownDecoder::OnDataAvailable(nsIRequest* request, nsIInputStream* aStream,
     // Determine how much of the stream should be read to fill up the
     // sniffer buffer...
     //
-    if (mBufferLen + aCount >= MAX_BUFFER_SIZE) {
+    if (aCount >= MAX_BUFFER_SIZE - mBufferLen) {
       count = MAX_BUFFER_SIZE - mBufferLen;
     } else {
       count = aCount;
@@ -815,9 +815,7 @@ nsresult nsUnknownDecoder::ConvertEncodedData(nsIRequest* request,
 // nsIThreadRetargetableStreamListener methods
 //
 NS_IMETHODIMP
-nsUnknownDecoder::CheckListenerChain() {
-  return NS_ERROR_NO_INTERFACE;
-}
+nsUnknownDecoder::CheckListenerChain() { return NS_ERROR_NO_INTERFACE; }
 
 NS_IMETHODIMP
 nsUnknownDecoder::OnDataFinished(nsresult aStatus) {

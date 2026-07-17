@@ -84,11 +84,16 @@ void SerialPort::UpdateWorkerRef() {
   }
 
   bool needsRef = false;
-  if (!mHasShutdown && mForgottenState == ForgottenState::NotForgotten) {
+  if (!mHasShutdown && mState != State::Forgetting &&
+      mState != State::Forgotten) {
     EventListenerManager* elm = GetExistingListenerManager();
     bool hasListeners = elm && (elm->HasListenersFor(u"connect"_ns) ||
                                 elm->HasListenersFor(u"disconnect"_ns));
-    needsRef = mIsOpen || hasListeners;
+    // The port effectively holds OS resources while opened, and while closing
+    // is in progress. Both states require the worker to remain alive so that
+    // close IPC callbacks can complete.
+    bool isActive = (mState == State::Opened) || (mState == State::Closing);
+    needsRef = isActive || hasListeners;
   }
 
   if (needsRef && !mWorkerRef) {
@@ -129,8 +134,8 @@ void SerialPort::Shutdown() {
            NS_ConvertUTF16toUTF8(mInfo.id()).get()));
   mHasShutdown = true;
 
-  if (mIsOpen) {
-    mIsOpen = false;
+  if (mState == State::Opened || mState == State::Closing) {
+    mState = State::Closed;
     // Don't have to wait for this
     RefPtr<Promise> ignoredPromise = CloseStreams(StreamCloseMode::Forced);
   }
@@ -192,20 +197,24 @@ already_AddRefed<Promise> SerialPort::Open(const SerialOptions& aOptions,
 
   // Step 2: If this.[[state]] is not "closed", reject promise with an
   // InvalidStateError DOMException and return promise.
-  if (mForgottenState != ForgottenState::NotForgotten) {
-    promise->MaybeRejectWithInvalidStateError("Port has been forgotten");
-    return promise.forget();
+  switch (mState) {
+    case State::Closed:
+      break;
+    case State::Opening:
+      promise->MaybeRejectWithInvalidStateError("Port is being opened");
+      return promise.forget();
+    case State::Opened:
+      promise->MaybeRejectWithInvalidStateError("Port is already open");
+      return promise.forget();
+    case State::Closing:
+      promise->MaybeRejectWithInvalidStateError("Port is being closed");
+      return promise.forget();
+    case State::Forgetting:
+    case State::Forgotten:
+      promise->MaybeRejectWithInvalidStateError("Port has been forgotten");
+      return promise.forget();
   }
-
-  if (mIsOpen) {
-    promise->MaybeRejectWithInvalidStateError("Port is already open");
-    return promise.forget();
-  }
-
-  if (mOpenPromise) {
-    promise->MaybeRejectWithInvalidStateError("Port is being opened");
-    return promise.forget();
-  }
+  MOZ_ASSERT(mState == State::Closed);
 
   // Step 3: If options["baudRate"] is 0, reject promise with a
   // TypeError and return promise.
@@ -249,6 +258,7 @@ already_AddRefed<Promise> SerialPort::Open(const SerialOptions& aOptions,
   }
 
   // Step 8: Set this.[[state]] to "opening".
+  mState = State::Opening;
   mOpenPromise = promise;
 
   IPCSerialOptions options{aOptions.mBaudRate,   aOptions.mDataBits,
@@ -271,16 +281,26 @@ already_AddRefed<Promise> SerialPort::Open(const SerialOptions& aOptions,
           MOZ_LOG(gWebSerialLog, LogLevel::Info,
                   ("SerialPort[%p] opened successfully for port '%s'",
                    self.get(), NS_ConvertUTF16toUTF8(self->mInfo.id()).get()));
-          // Step 9.3: Set this.[[state]] to "opened".
-          self->mIsOpen = true;
-          self->UpdateWorkerRef();
-          self->NotifySharingStateChanged(true);
-          // Step 9.4: Set this.[[bufferSize]].
-          self->mBufferSize = bufferSize;
-          self->mPipeCapacity = std::max(bufferSize, kMinSerialPortPumpSize);
-          // Streams are created lazily by GetReadable()/GetWritable().
-          // Step 9.5: Resolve promise with undefined.
-          self->mOpenPromise->MaybeResolveWithUndefined();
+          if (self->mState == State::Opening) {
+            // Step 9.3: Set this.[[state]] to "opened".
+            self->mState = State::Opened;
+            self->UpdateWorkerRef();
+            self->NotifySharingStateChanged(true);
+            // Step 9.4: Set this.[[bufferSize]].
+            self->mBufferSize = bufferSize;
+            self->mPipeCapacity = std::max(bufferSize, kMinSerialPortPumpSize);
+            // Streams are created lazily by GetReadable()/GetWritable().
+            // Step 9.5: Resolve promise with undefined.
+            if (self->mOpenPromise) {
+              self->mOpenPromise->MaybeResolveWithUndefined();
+            }
+          } else if (self->mOpenPromise) {
+            // Forget()/MarkForgotten() moved us out of Opening while the IPC
+            // was in flight. The promise is rejected rather than resolved
+            // because the port is no longer usable.
+            self->mOpenPromise->MaybeRejectWithAbortError(
+                "Port was forgotten while opening");
+          }
           self->mOpenPromise = nullptr;
         } else {
           // Step 9.2: Reject promise with a NetworkError.
@@ -288,9 +308,14 @@ already_AddRefed<Promise> SerialPort::Open(const SerialOptions& aOptions,
                   ("SerialPort[%p] failed to open port '%s': error 0x%08x",
                    self.get(), NS_ConvertUTF16toUTF8(self->mInfo.id()).get(),
                    static_cast<uint32_t>(aResult)));
-          self->mOpenPromise->MaybeRejectWithNetworkError(
-              "Failed to open port");
-          self->mOpenPromise = nullptr;
+          if (self->mState == State::Opening) {
+            self->mState = State::Closed;
+          }
+          if (self->mOpenPromise) {
+            self->mOpenPromise->MaybeRejectWithNetworkError(
+                "Failed to open port");
+            self->mOpenPromise = nullptr;
+          }
         }
       },
       [self](mozilla::ipc::ResponseRejectReason aReason) {
@@ -302,9 +327,14 @@ already_AddRefed<Promise> SerialPort::Open(const SerialOptions& aOptions,
                  "(reason: %d)",
                  self.get(), NS_ConvertUTF16toUTF8(self->mInfo.id()).get(),
                  static_cast<int>(aReason)));
-        self->mOpenPromise->MaybeRejectWithNetworkError(
-            "Failed to open port: IPC communication error");
-        self->mOpenPromise = nullptr;
+        if (self->mState == State::Opening) {
+          self->mState = State::Closed;
+        }
+        if (self->mOpenPromise) {
+          self->mOpenPromise->MaybeRejectWithNetworkError(
+              "Failed to open port: IPC communication error");
+          self->mOpenPromise = nullptr;
+        }
       });
 
   // Step 10: Return promise.
@@ -328,12 +358,12 @@ already_AddRefed<Promise> SerialPort::SetSignals(
           ("SerialPort[%p]::SetSignals called for port '%s'", this,
            NS_ConvertUTF16toUTF8(mInfo.id()).get()));
 
-  if (mForgottenState != ForgottenState::NotForgotten) {
+  if (mState == State::Forgetting || mState == State::Forgotten) {
     promise->MaybeRejectWithInvalidStateError("Port has been forgotten");
     return promise.forget();
   }
 
-  if (!mIsOpen) {
+  if (mState != State::Opened) {
     promise->MaybeRejectWithInvalidStateError("Port is not open");
     return promise.forget();
   }
@@ -406,12 +436,12 @@ already_AddRefed<Promise> SerialPort::GetSignals(ErrorResult& aRv) {
           ("SerialPort[%p]::GetSignals called for port '%s'", this,
            NS_ConvertUTF16toUTF8(mInfo.id()).get()));
 
-  if (mForgottenState != ForgottenState::NotForgotten) {
+  if (mState == State::Forgetting || mState == State::Forgotten) {
     promise->MaybeRejectWithInvalidStateError("Port has been forgotten");
     return promise.forget();
   }
 
-  if (!mIsOpen) {
+  if (mState != State::Opened) {
     promise->MaybeRejectWithInvalidStateError("Port is not open");
     return promise.forget();
   }
@@ -477,20 +507,22 @@ already_AddRefed<Promise> SerialPort::Close(ErrorResult& aRv) {
 
   // Step 2: If this.[[state]] is not "opened", reject promise with an
   // InvalidStateError DOMException and return promise.
-  if (mForgottenState != ForgottenState::NotForgotten) {
-    promise->MaybeRejectWithInvalidStateError("Port has been forgotten");
-    return promise.forget();
+  switch (mState) {
+    case State::Opened:
+      break;
+    case State::Closing:
+      promise->MaybeRejectWithInvalidStateError("Port is being closed");
+      return promise.forget();
+    case State::Forgetting:
+    case State::Forgotten:
+      promise->MaybeRejectWithInvalidStateError("Port has been forgotten");
+      return promise.forget();
+    case State::Closed:
+    case State::Opening:
+      promise->MaybeRejectWithInvalidStateError("Port is not open");
+      return promise.forget();
   }
-
-  if (!mIsOpen) {
-    promise->MaybeRejectWithInvalidStateError("Port is not open");
-    return promise.forget();
-  }
-
-  if (mClosePromise) {
-    promise->MaybeRejectWithInvalidStateError("Port is being closed");
-    return promise.forget();
-  }
+  MOZ_ASSERT(mState == State::Opened);
 
   // Steps 3-8: Cancel the readable stream (step 3), abort the writable
   // stream (step 4), and let combinedPromise be the result of getting a
@@ -506,6 +538,7 @@ already_AddRefed<Promise> SerialPort::Close(ErrorResult& aRv) {
   }
 
   // Step 9: Set this.[[state]] to "closing".
+  mState = State::Closing;
   mClosePromise = promise;
 
   // Step 10: Upon fulfillment of combinedPromise, run the following steps
@@ -521,7 +554,10 @@ already_AddRefed<Promise> SerialPort::Close(ErrorResult& aRv) {
         if (aSelf->mHasShutdown) {
           return;
         }
-        aSelf->mIsOpen = false;
+        // Forget()/MarkForgotten() may have transitioned to a terminal state.
+        if (aSelf->mState == State::Closing) {
+          aSelf->mState = State::Closed;
+        }
         aSelf->UpdateWorkerRef();
         aSelf->NotifySharingStateChanged(false);
         if (RefPtr<Promise> closePromise = aSelf->mClosePromise.forget()) {
@@ -550,15 +586,17 @@ already_AddRefed<Promise> SerialPort::Forget(ErrorResult& aRv) {
           ("SerialPort[%p]::Forget called for port '%s'", this,
            NS_ConvertUTF16toUTF8(mInfo.id()).get()));
 
-  mForgottenState = ForgottenState::Forgetting;
+  // Step 2.1: Set this.[[state]] to "forgetting".
+  const bool wasActive =
+      (mState == State::Opened) || (mState == State::Closing);
+  mState = State::Forgetting;
 
   if (mSerial) {
     RefPtr<Serial> serial = mSerial;
     serial->ForgetPort(mInfo.id());
   }
 
-  if (mIsOpen) {
-    mIsOpen = false;
+  if (wasActive) {
     // Don't have to wait for this
     RefPtr<Promise> ignoredPromise = CloseStreams(StreamCloseMode::Graceful);
   }
@@ -571,7 +609,8 @@ already_AddRefed<Promise> SerialPort::Forget(ErrorResult& aRv) {
     nsISerialEventTarget* actorTarget = child->GetActorEventTarget();
 
     if (!actorTarget) {
-      mForgottenState = ForgottenState::Forgotten;
+      // Step 2.3: Set this.[[state]] to "forgotten".
+      mState = State::Forgotten;
       promise->MaybeResolveWithUndefined();
       return promise.forget();
     }
@@ -582,15 +621,16 @@ already_AddRefed<Promise> SerialPort::Forget(ErrorResult& aRv) {
         ->Then(
             GetCurrentSerialEventTarget(), __func__,
             [promise, self](nsresult aResult) {
-              self->mForgottenState = ForgottenState::Forgotten;
+              // Step 2.3: Set this.[[state]] to "forgotten".
+              self->mState = State::Forgotten;
               promise->MaybeResolveWithUndefined();
             },
             [promise, self](mozilla::ipc::ResponseRejectReason aReason) {
-              self->mForgottenState = ForgottenState::Forgotten;
+              self->mState = State::Forgotten;
               promise->MaybeResolveWithUndefined();
             });
   } else {
-    mForgottenState = ForgottenState::Forgotten;
+    mState = State::Forgotten;
     promise->MaybeResolveWithUndefined();
   }
 
@@ -598,7 +638,7 @@ already_AddRefed<Promise> SerialPort::Forget(ErrorResult& aRv) {
 }
 
 void SerialPort::MarkForgotten() {
-  if (mForgottenState != ForgottenState::NotForgotten) {
+  if (mState == State::Forgetting || mState == State::Forgotten) {
     return;
   }
 
@@ -606,10 +646,11 @@ void SerialPort::MarkForgotten() {
           ("SerialPort[%p]::MarkForgotten for port '%s'", this,
            NS_ConvertUTF16toUTF8(mInfo.id()).get()));
 
-  mForgottenState = ForgottenState::Forgotten;
+  const bool wasActive =
+      (mState == State::Opened) || (mState == State::Closing);
+  mState = State::Forgotten;
 
-  if (mIsOpen) {
-    mIsOpen = false;
+  if (wasActive) {
     // Don't have to wait for this
     RefPtr<Promise> ignoredPromise = CloseStreams(StreamCloseMode::Graceful);
   }
@@ -635,7 +676,7 @@ void SerialPort::GetInfo(SerialPortInfo& aRetVal, ErrorResult& aRv) {
 }
 
 ReadableStream* SerialPort::GetReadable() {
-  if (!mIsOpen) {
+  if (mState != State::Opened) {
     return nullptr;
   }
   // Per spec, readable becomes null after reader.cancel(). Detect the
@@ -650,7 +691,7 @@ ReadableStream* SerialPort::GetReadable() {
 }
 
 WritableStream* SerialPort::GetWritable() {
-  if (!mIsOpen) {
+  if (mState != State::Opened) {
     return nullptr;
   }
   // Per spec, writable becomes null after writer.close() or writer.abort().
@@ -721,7 +762,9 @@ void SerialPort::NotifyDisconnected() {
   MOZ_LOG(gWebSerialLog, LogLevel::Info,
           ("SerialPort[%p] disconnected for port '%s'", this,
            NS_ConvertUTF16toUTF8(mInfo.id()).get()));
-  mIsOpen = false;
+  if (mState == State::Opened || mState == State::Closing) {
+    mState = State::Closed;
+  }
   mPhysicallyPresent = false;
   // Don't have to wait for this
   RefPtr<Promise> ignoredPromise = CloseStreams(StreamCloseMode::Graceful);
@@ -747,7 +790,7 @@ class SerialByteReadableStream final : public ReadableStream {
 };
 
 ReadableStream* SerialPort::CreateReadableStream() {
-  MOZ_ASSERT(mIsOpen);
+  MOZ_ASSERT(mState == State::Opened);
   MOZ_ASSERT(!mReadable);
 
   // Create a DataPipe pair locally. The child keeps the receiver (for the
@@ -801,7 +844,7 @@ ReadableStream* SerialPort::CreateReadableStream() {
 }
 
 WritableStream* SerialPort::CreateWritableStream() {
-  MOZ_ASSERT(mIsOpen);
+  MOZ_ASSERT(mState == State::Opened);
   MOZ_ASSERT(!mWritable);
 
   // Create a DataPipe pair locally. The child keeps the sender (for the
@@ -891,8 +934,11 @@ void SerialPort::SettleClosePromise(nsresult aResult) {
   if (mHasShutdown) {
     return;
   }
-  // Set this.[[state]] to "closed".
-  mIsOpen = false;
+  // Set this.[[state]] to "closed", unless Forget()/MarkForgotten() raced
+  // ahead and moved us into a terminal state.
+  if (mState == State::Closing) {
+    mState = State::Closed;
+  }
   UpdateWorkerRef();
   NotifySharingStateChanged(false);
   if (RefPtr<Promise> closePromise = mClosePromise.forget()) {

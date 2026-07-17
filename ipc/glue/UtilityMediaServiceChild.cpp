@@ -226,9 +226,7 @@ void UtilityMediaServiceChild::GetKeySystemCapabilities(
           info->mCapabilities = config.GetDebugInfo();
           info->mClearlead =
               DoesKeySystemSupportClearLead(info->mKeySystemName);
-          if (capabilities.isHardwareDecryption()) {
-            info->mIsHardwareDecryption = true;
-          }
+          info->mIsHardwareDecryption = capabilities.isHardwareDecryption();
         }
         promise->MaybeResolve(cdmInfo);
       },

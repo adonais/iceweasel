@@ -4,7 +4,6 @@
 
 package org.mozilla.fenix.wallpapers
 
-import android.content.Context
 import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
@@ -15,7 +14,6 @@ import kotlinx.coroutines.withContext
 import mozilla.components.concept.fetch.Client
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.utils.Settings
 import java.io.File
 import java.util.Date
@@ -23,14 +21,16 @@ import java.util.Date
 /**
  * Contains use cases related to the wallpaper feature.
  *
- * @param context Used for various file and configuration checks.
+ * @param settings Used for retrieving and updating wallpaper-related settings like the currently selected wallpaper.
+ * @param filesDir Used for loading wallpaper images from disk.
  * @param appStore Will receive dispatches of metadata updates like the currently selected wallpaper.
  * @param client Handles downloading wallpapers and their metadata.
  * @param storageRootDirectory The top level app-local storage directory.
  * @param currentLocale The locale currently being used on the device.
  */
 class WallpapersUseCases(
-    context: Context,
+    settings: Settings,
+    filesDir: File,
     appStore: AppStore,
     client: Client,
     storageRootDirectory: File,
@@ -40,7 +40,7 @@ class WallpapersUseCases(
     private val fileManager = WallpaperFileManager(storageRootDirectory)
 
     val fetchCurrentWallpaperUseCase: FetchCurrentWallpaperUseCase by lazy {
-        DefaultFetchCurrentWallpaperUseCase(context.settings(), appStore)
+        DefaultFetchCurrentWallpaperUseCase(settings, appStore)
     }
 
     // Use case for initializing wallpaper feature. Should usually be called early
@@ -49,7 +49,7 @@ class WallpapersUseCases(
         val metadataFetcher = WallpaperMetadataFetcher(client)
         val migrationHelper = LegacyWallpaperMigration(
             storageRootDirectory = storageRootDirectory,
-            settings = context.settings(),
+            settings = settings,
             selectWallpaper::invoke,
         )
         DefaultInitializeWallpaperUseCase(
@@ -58,7 +58,7 @@ class WallpapersUseCases(
             fileManager = fileManager,
             metadataFetcher = metadataFetcher,
             migrationHelper = migrationHelper,
-            settings = context.settings(),
+            settings = settings,
             currentLocale = currentLocale,
         )
     }
@@ -66,7 +66,7 @@ class WallpapersUseCases(
     // Use case for loading specific wallpaper bitmaps.
     val loadBitmap: LoadBitmapUseCase by lazy {
         DefaultLoadBitmapUseCase(
-            getFilesDir = { context.filesDir },
+            getFilesDir = { filesDir },
         )
     }
 
@@ -76,7 +76,7 @@ class WallpapersUseCases(
 
     // Use case for selecting a new wallpaper.
     val selectWallpaper: SelectWallpaperUseCase by lazy {
-        DefaultSelectWallpaperUseCase(context.settings(), appStore, fileManager, downloader)
+        DefaultSelectWallpaperUseCase(settings, appStore, fileManager, downloader)
     }
 
     /**

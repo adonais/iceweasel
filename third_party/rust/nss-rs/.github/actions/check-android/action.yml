@@ -43,14 +43,14 @@ runs:
         WD: ${{ inputs.working-directory }}
       run: cd "$WD" && sdkmanager --install "ndk;$NDK_VERSION"
 
-    - uses: mozilla/actions/rust@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+    - uses: mozilla/actions/rust@2e46408d5c495e59a21e5e125e82008fad0d9408 # v1.1.7
       with:
         version: stable
         targets: ${{ inputs.target }}
-        tools: cargo-ndk@^4
+        tools: cargo-ndk@^4, cargo-hack
         token: ${{ inputs.github-token }}
 
-    - uses: mozilla/actions/nss@25cb84d060946c0ad6d2c3f79da479b16d180d71 # v1.1.0
+    - uses: mozilla/actions/nss@2e46408d5c495e59a21e5e125e82008fad0d9408 # v1.1.7
       if: ${{ inputs.minimum-nss-version != '' }}
       with:
         minimum-version: ${{ inputs.minimum-nss-version }}
@@ -62,7 +62,7 @@ runs:
         TARGET: ${{ startsWith(inputs.target, 'arm') && 'arm64-v8a' || inputs.target }}
         API_LEVEL: ${{ inputs.api-level }}
         WD: ${{ inputs.working-directory }}
-      run: cd "$WD" && cargo ndk --platform "$API_LEVEL" --target "$TARGET" test --no-run
+      run: cd "$WD" && cargo hack --feature-powerset --exclude-features gecko,blapi ndk --platform "$API_LEVEL" --target "$TARGET" test --no-run
 
     # FIXME: Enable emulator testing for aarch64 once Google ships Android
     # emulator binaries for ARM64 Linux hosts.
@@ -89,7 +89,7 @@ runs:
           adb push "$test" "$TMP/"
           adb shell chmod +x "$TMP/$(basename "$test")"
           # See https://unix.stackexchange.com/a/451140/409256
-          adb shell "CARGO_TERM_COLOR=always RUST_BACKTRACE=1 LD_LIBRARY_PATH=$TMP/lib NSS_DB_PATH=$TMP/db API_LEVEL=$API_LEVEL $TMP/$(basename "$test") || echo _FAIL_" 2>&1 | tee output
+          adb shell "CARGO_TERM_COLOR=always RUST_BACKTRACE=1 LD_LIBRARY_PATH=$TMP/lib TEST_FIXTURE_DB=$TMP/db API_LEVEL=$API_LEVEL $TMP/$(basename "$test") || echo _FAIL_" 2>&1 | tee output
           grep _FAIL_ output > /dev/null && any_failures=1
         done
         exit $any_failures

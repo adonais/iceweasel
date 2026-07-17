@@ -28,6 +28,62 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Nýir flipar
+
+## Firefox Home content
+
+home-prefs-firefox-logo-header =
+    .label = { -brand-short-name }-táknmerki
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } röð
+           *[other] { $num } raðir
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Forritsauki ({ $extension })
+home-restore-defaults-srd =
+    .label = Endurheimta sjálfgefin gildi
+    .accesskey = r
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (sjálfgefið)
+home-mode-choice-custom-srd =
+    .label = Sérsniðin vefslóð…
+home-mode-choice-blank-srd =
+    .label = Tóm síða
+home-prefs-shortcuts-header-srd =
+    .label = Flýtileiðir
+home-prefs-shortcuts-select =
+    .aria-label = Flýtileiðir
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Kostaðar flýtileiðir
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Kostaðar sögur
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Heimsóttar síður
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Bókamerki
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Síðasta niðurhal
+home-prefs-recent-activity-header-srd =
+    .label = Nýleg virkni
+home-prefs-recent-activity-select =
+    .aria-label = Nýleg virkni
+home-prefs-weather-header-srd =
+    .label = Veður
+home-prefs-support-firefox-header-srd =
+    .label = Styddu við { -brand-product-name }
+home-prefs-mission-message-learn-more-link-srd = Finndu út hvernig
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -140,6 +196,8 @@ newtab-menu-report = Tilkynna
 # Context menu option to personalize New Tab recommended stories by blocking a section of stories,
 # e.g. "Sports". "Block" is a verb here.
 newtab-menu-section-block = Loka á
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Kanna nánar
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Hætta að fylgjast með viðfangsefni
@@ -670,8 +728,6 @@ newtab-widget-lists-button-add-item = Bæta við atriði
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Bæta við atriði
     .aria-label = Bæta við atriði
-newtab-widget-lists-input-add-an-item =
-    .placeholder = Bæta við atriði
 newtab-widget-lists-input-error = Settu inn texta til að bæta við atriði.
 newtab-widget-lists-input-menu-open-link = Opna tengil
 newtab-widget-lists-input-menu-move-up = Færa upp
@@ -689,9 +745,6 @@ newtab-widget-lists-name-placeholder-default =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = Nýr listi
     .aria-label = Breyta heiti á lista
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Nýr listi
 
 ## Strings introduced by the Nova redesign of the Timer widget
 

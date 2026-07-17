@@ -34,7 +34,7 @@
 namespace mozilla::dom {
 
 XULButtonElement::XULButtonElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsXULElement(std::move(aNodeInfo)),
       mIsAlwaysMenu(IsAnyOfXULElements(nsGkAtoms::menu, nsGkAtoms::menulist,
                                        nsGkAtoms::menuitem)),

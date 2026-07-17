@@ -9,6 +9,7 @@
 #include "nsDocShell.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIWebBrowserChrome.h"
+#include "nsPIDOMWindowInlines.h"
 
 namespace mozilla::dom {
 

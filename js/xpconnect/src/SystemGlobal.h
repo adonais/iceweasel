@@ -82,7 +82,7 @@ class SystemGlobal final : public nsIGlobalObject,
   nsISerialEventTarget* SerialEventTarget() const final {
     return mozilla::GetMainThreadSerialEventTarget();
   }
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const final {
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable) const final {
     return mozilla::SchedulerGroup::Dispatch(std::move(aRunnable));
   }
 

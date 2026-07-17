@@ -6,6 +6,7 @@
 
 #include <functional>
 #include <memory>
+#include <tuple>
 #include "secerr.h"
 #include "ssl.h"
 #include "sslerr.h"
@@ -47,7 +48,7 @@ class ReconfigTest : public TlsConnectTestBase,
     }
     EXPECT_NE(nullptr, fd.get());
     if (fd.get()) {
-      dummy_fd.release();
+      std::ignore = dummy_fd.release();
     }
 
     SSLVersionRange vrange = {version_, version_};
@@ -218,7 +219,7 @@ TEST_P(ReconfigPskTest, ReconfigWithExternalPsk) {
     model.reset(DTLS_ImportFD(nullptr, dummy.get()));
   }
   ASSERT_NE(nullptr, model.get());
-  dummy.release();
+  std::ignore = dummy.release();
 
   SSLVersionRange vrange = {SSL_LIBRARY_VERSION_TLS_1_3,
                             SSL_LIBRARY_VERSION_TLS_1_3};

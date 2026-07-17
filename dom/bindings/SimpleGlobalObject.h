@@ -70,7 +70,7 @@ class SimpleGlobalObject final : public nsIGlobalObject, public nsWrapperCache {
   nsISerialEventTarget* SerialEventTarget() const final {
     return NS_GetCurrentThread();
   }
-  nsresult Dispatch(already_AddRefed<nsIRunnable>&& aRunnable) const final {
+  nsresult Dispatch(already_AddRefed<nsIRunnable> aRunnable) const final {
     return NS_DispatchToCurrentThread(std::move(aRunnable));
   }
 

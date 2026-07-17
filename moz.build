@@ -55,6 +55,12 @@ with Files("*gradle*"):
 with Files(".mcp.json"):
     BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
 
+with Files(".agents/**"):
+    BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
+
+with Files(".claude/**"):
+    BUG_COMPONENT = ("Developer Infrastructure", "AI for Development")
+
 with Files("*.json"):
     BUG_COMPONENT = ("Firefox Build System", "General")
 

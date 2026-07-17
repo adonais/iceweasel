@@ -56,16 +56,15 @@ class SdpParser {
     void SetSdp(UniquePtr<mozilla::Sdp>&& aSdp) { mSdp = std::move(aSdp); }
 
     void AddParseError(const size_t line, const std::string& message) {
-      MOZ_LOG(SdpLog, LogLevel::Error,
-              ("%s: parser error %s, at line %zu", mParserName.c_str(),
-               message.c_str(), line));
+      MOZ_LOG_FMT(SdpLog, LogLevel::Error, "{}: parser error {}, at line {}",
+                  mParserName.c_str(), message.c_str(), line);
       mErrors.push_back(std::make_pair(line, message));
     }
 
     void AddParseWarning(const size_t line, const std::string& message) {
-      MOZ_LOG(SdpLog, LogLevel::Warning,
-              ("%s: parser warning %s, at line %zu", mParserName.c_str(),
-               message.c_str(), line));
+      MOZ_LOG_FMT(SdpLog, LogLevel::Warning,
+                  "{}: parser warning {}, at line {}", mParserName.c_str(),
+                  message.c_str(), line);
       mWarnings.push_back(std::make_pair(line, message));
     }
 

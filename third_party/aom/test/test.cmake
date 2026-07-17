@@ -232,6 +232,7 @@ if(NOT BUILD_SHARED_LIBS)
               "${AOM_ROOT}/test/masked_variance_test.cc"
               "${AOM_ROOT}/test/metadata_test.cc"
               "${AOM_ROOT}/test/minmax_test.cc"
+              "${AOM_ROOT}/test/model_rd_test.cc"
               "${AOM_ROOT}/test/motion_vector_test.cc"
               "${AOM_ROOT}/test/mv_cost_test.cc"
               "${AOM_ROOT}/test/obmc_sad_test.cc"

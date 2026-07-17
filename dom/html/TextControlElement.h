@@ -27,7 +27,7 @@ class TextEditor;
  */
 class TextControlElement : public nsGenericHTMLFormControlElementWithState {
  public:
-  TextControlElement(already_AddRefed<dom::NodeInfo>&& aNodeInfo,
+  TextControlElement(already_AddRefed<dom::NodeInfo> aNodeInfo,
                      dom::FromParser aFromParser, FormControlType aType)
       : nsGenericHTMLFormControlElementWithState(std::move(aNodeInfo),
                                                  aFromParser, aType) {};
@@ -62,6 +62,18 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
    * Tell the control that value has been deliberately changed (or not).
    */
   virtual void SetValueChanged(bool) = 0;
+
+  /**
+   * Called when this is a single line text control or a <textarea> and will get
+   * focus (before dispatching eFocus to the DOM).
+   */
+  MOZ_CAN_RUN_SCRIPT void WillFocus(const WidgetEvent&);
+
+  /**
+   * Called when this is a single line text control or a <textarea> and will
+   * blur (before dispatching eBlur to the DOM).
+   */
+  MOZ_CAN_RUN_SCRIPT void WillBlur(const WidgetEvent&);
 
   /**
    * Find out whether this control is a textarea.
@@ -228,7 +240,6 @@ class TextControlElement : public nsGenericHTMLFormControlElementWithState {
   void ScrollSelectionIntoViewAsync(ScrollAncestors = ScrollAncestors::No);
 
  protected:
-  MOZ_CAN_RUN_SCRIPT void OnFocus(const WidgetEvent&);
   MOZ_CAN_RUN_SCRIPT void SelectAll();
   MOZ_CAN_RUN_SCRIPT void ShowSelection();
   bool NeedToInitializeEditorForEvent(EventChainPreVisitor&) const;

@@ -13,5 +13,6 @@ CompiledModules(
     "prettyPrint.js",
     "removeSources.js",
     "select.js",
+    "stylesheets.js",
     "symbols.js",
 )

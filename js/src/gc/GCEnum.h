@@ -136,6 +136,7 @@ enum class GCAbortReason {
   _(WasmGlobalCell)                        \
   _(WasmResolveResponseClosure)            \
   _(WasmModule)                            \
+  _(WasmComponent)                         \
   _(WasmTableTable)                        \
   _(WasmExceptionData)                     \
   _(WasmTagType)                           \
@@ -164,6 +165,10 @@ enum class MemoryUse : uint8_t {
   JS_FOR_EACH_MEMORY_USE(DEFINE_MEMORY_USE)
 #undef DEFINE_MEMORY_USE
 };
+
+// We sometimes use pointers to hold special values. The GC treats these as
+// nullptr.
+static constexpr uintptr_t MaxTaggedPointer = 0x5;
 
 } /* namespace js */
 

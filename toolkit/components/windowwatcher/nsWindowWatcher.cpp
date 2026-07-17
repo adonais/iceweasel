@@ -1912,15 +1912,10 @@ uint32_t nsWindowWatcher::CalculateChromeFlagsForContent(
     return nsIWebBrowserChrome::CHROME_ALL;
   }
 
-  int32_t unused;
-  if (IsWindowOpenLocationModified(aModifiers, &unused)) {
-    // If modifier keys are held when `window.open` is called, open a new
-    // foreground/background tab in the current window, or open a new tab in a
-    // new window, depending on the modifiers combination.
-    return nsIWebBrowserChrome::CHROME_ALL;
-  }
-
-  // Open a minimal popup.
+  // The site explicitly requested a popup via features; respect that even
+  // when modifier keys are held on the originating click. Matches the
+  // behavior of other browsers and avoids breaking sites like Gmail that
+  // open a Compose popout via Shift+click.
   *aIsPopupRequested = true;
   return nsIWebBrowserChrome::CHROME_MINIMAL_POPUP;
 }

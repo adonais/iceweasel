@@ -1,5 +1,9 @@
 "use strict";
 
+const { FormAutofill } = ChromeUtils.importESModule(
+  "resource://autofill/FormAutofill.sys.mjs"
+);
+
 Services.scriptloader.loadSubScript(
   "chrome://mochitests/content/browser/browser/extensions/formautofill/test/browser/creditCard/browser_telemetry_utils.js",
   this

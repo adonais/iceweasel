@@ -13,7 +13,8 @@ namespace mozilla {
 #  undef LOG
 #endif
 
-#define LOG(type, msg) MOZ_LOG(gMediaTrackGraphLog, type, msg)
+#define LOG(type, ...) \
+  MOZ_LOG_FMT(gMediaTrackGraphLog, type, MOZ_LOG_EXPAND_ARGS __VA_ARGS__)
 
 void DirectMediaTrackListener::MirrorAndDisableSegment(AudioSegment& aFrom,
                                                        AudioSegment& aTo) {
@@ -65,9 +66,10 @@ void DirectMediaTrackListener::IncreaseDisabled(DisabledTrackMode aMode) {
   }
 
   LOG(LogLevel::Debug,
-      ("DirectMediaTrackListener %p increased disabled "
-       "mode %s. Current counts are: freeze=%d, black=%d",
-       this, aMode == DisabledTrackMode::SILENCE_FREEZE ? "freeze" : "black",
+      ("DirectMediaTrackListener {} increased disabled "
+       "mode {}. Current counts are: freeze={}, black={}",
+       fmt::ptr(this),
+       aMode == DisabledTrackMode::SILENCE_FREEZE ? "freeze" : "black",
        int32_t(mDisabledFreezeCount), int32_t(mDisabledBlackCount)));
 }
 
@@ -83,9 +85,10 @@ void DirectMediaTrackListener::DecreaseDisabled(DisabledTrackMode aMode) {
   }
 
   LOG(LogLevel::Debug,
-      ("DirectMediaTrackListener %p decreased disabled "
-       "mode %s. Current counts are: freeze=%d, black=%d",
-       this, aMode == DisabledTrackMode::SILENCE_FREEZE ? "freeze" : "black",
+      ("DirectMediaTrackListener {} decreased disabled "
+       "mode {}. Current counts are: freeze={}, black={}",
+       fmt::ptr(this),
+       aMode == DisabledTrackMode::SILENCE_FREEZE ? "freeze" : "black",
        int32_t(mDisabledFreezeCount), int32_t(mDisabledBlackCount)));
 }
 

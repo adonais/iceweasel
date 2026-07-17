@@ -29,6 +29,7 @@ UNIFIED_SOURCES += [
     "TestLocalNetworkAccess.cpp",
     "TestMIMEInputStream.cpp",
     "TestMozURL.cpp",
+    "TestNoVarySearchUtils.cpp",
     "TestPACMan.cpp",
     "TestParseHeaders.cpp",
     "TestPollableEvent.cpp",
@@ -46,6 +47,15 @@ UNIFIED_SOURCES += [
     "TestUrlPatternGlue.cpp",
     "TestUseAsDictionary.cpp",
     "TestWebTransportFlowControl.cpp",
+]
+
+# Not in UNIFIED_SOURCES: adding a file to the unified list reshuffles which
+# files share a translation unit, and TestHttpAtom relies on nsHttp atom string
+# literals being pooled within a single TU (a cross-TU pointer-identity
+# assumption). Keeping this file out of the unified build avoids perturbing
+# that grouping.
+SOURCES += [
+    "TestCacheCrypto.cpp",
 ]
 
 if CONFIG["OS_TARGET"] == "WINNT":

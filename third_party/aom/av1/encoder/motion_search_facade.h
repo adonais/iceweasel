@@ -98,18 +98,16 @@ static inline SEARCH_METHODS av1_get_faster_search_method(
   // Note on search method's accuracy:
   //  1. NSTEP
   //  2. DIAMOND
-  //  3. BIGDIA \approx SQUARE
-  //  4. HEX.
-  //  5. FAST_HEX \approx FAST_DIAMOND
+  //  3. BIGDIA
+  //  4. HEX
+  //  5. FAST_DIAMOND
   switch (search_method) {
     case NSTEP: return DIAMOND;
     case NSTEP_8PT: return DIAMOND;
     case DIAMOND: return BIGDIA;
     case CLAMPED_DIAMOND: return BIGDIA;
     case BIGDIA: return HEX;
-    case SQUARE: return HEX;
-    case HEX: return FAST_HEX;
-    case FAST_HEX: return FAST_HEX;
+    case HEX: return FAST_DIAMOND;
     case FAST_DIAMOND: return VFAST_DIAMOND;
     case FAST_BIGDIA: return FAST_BIGDIA;
     case VFAST_DIAMOND: return VFAST_DIAMOND;

@@ -81,6 +81,8 @@ class DeadObjectProxy : public NurseryAllocableProxyHandler {
     return priv.toInt32() & DeadObjectProxyIsBackgroundFinalized;
   }
 
+  bool mayBeSwapped() const override { return true; }
+
   static const DeadObjectProxy singleton;
   static const char family;
 

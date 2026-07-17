@@ -62,7 +62,6 @@ As noted above, the context for the patch should be provided by the author, howe
 * Minimize the number of passes required for review and addressing review comments. Where possible provide your review comments in a single pass rather than multiple iterations. This helps to reduce the number of cycles needed to get something through review and any associated context switching for both the reviewer and the patch author. In a case where you don't have time for a full review, mention that your review is currently incomplete and set expectations for when it will be so the author can plan accordingly.
 * When reviewing code on behalf of additional review groups added to a patch, your review should primarily focus on the areas that the review-group is responsible for or interfaces that your group is using. However, if you do spot a non-trivial issue that falls outside this during review, then it would be reasonable to flag it. .
 
-
 ### Turnaround time for reviews
 
 * Aim for a response within 1 business day. This need not be a full review, but could be a comment setting expectations about when you’ll be able to review the patch, pointing to other folks who might be able to review it sooner or would be more appropriate to review the patch.
@@ -126,7 +125,7 @@ This section covers some frontend-specific aspects of patches that reviewers are
 
 * Use existing components/classes to implement feature designs (see JS/DOM section).
 * Keep in mind all CSS needs to work in RTL languages. Use logical properties (`margin-inline-start` and friends) rather than physical ones (`margin-left`).
-  * See  [Firefox RTL (right-to-left) guidelines](/code-quality/coding-style/rtl_guidelines.rst) for more detailed information.
+  * See [Firefox RTL (right-to-left) guidelines](/code-quality/coding-style/rtl_guidelines.rst) for more detailed information.
 * See the [Accessibility](#accessibility) section on use of colours, HCM, etc.
 * See detailed [CSS authoring guidelines](/code-quality/coding-style/css_guidelines.rst).
 * See the [Firefox SVG Guidelines](/code-quality/coding-style/svg_guidelines.rst).
@@ -201,7 +200,7 @@ This section covers some frontend-specific aspects of patches that reviewers are
 
 Patches should only be commandeered by agreement with the original patch author or if the author cannot be expected to respond in a timely fashion (on vacation or sick leave or no longer active in the project).
 
-If you do need to commandeer a patch you can use the following to maintain the original author. Use `hg commit --amend --user "Other Person <person@mozilla.com>"` or `git commit --amend --author="Other Person <person@mozilla.com>"` when amending the original commit.
+If you do need to commandeer a patch you can preserve the original author with `git commit --amend --author="Other Person <person@mozilla.com>"` when amending the original commit.
 
 ## Community Participation Guidelines
 
@@ -217,7 +216,7 @@ A nit is a minor defect. This could be a typo or a small issue. These are usuall
 
 ### How do I file a bug for new lint rules?
 
-[If you have an idea for an eslint (JS) or stylelint (CSS)  rule you can file a bug here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer%20Infrastructure&component=Lint%20and%20Formatting) if a more specific component isn’t a better fit.
+[If you have an idea for an eslint (JS) or stylelint (CSS) rule you can file a bug here](https://bugzilla.mozilla.org/enter_bug.cgi?product=Developer%20Infrastructure&component=Lint%20and%20Formatting) if a more specific component isn’t a better fit.
 
 ## Further Reading
 

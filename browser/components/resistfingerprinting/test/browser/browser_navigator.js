@@ -16,6 +16,9 @@ let expectedResults;
 
 const osVersion = Services.sysinfo.get("version");
 
+// If this test fails in the future, know that in Bug 2043401 we began
+// intentionall stripping the minor version from the Android version
+
 const DEFAULT_APPVERSION = {
   linux: "5.0 (X11)",
   win: "5.0 (Windows)",

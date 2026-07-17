@@ -1496,6 +1496,43 @@ void TestJSONTimeOutput() {
   printf("TestJSONTimeOutput done\n");
 }
 
+void TestStreamPayloadHelperTimeDuration() {
+  printf("TestStreamPayloadHelperTimeDuration...\n");
+
+  using MS = mozilla::MarkerSchema;
+  using mozilla::TimeDuration;
+  using mozilla::detail::StreamPayloadHelper;
+
+#define TEST(fmt, td, out)                                      \
+  do {                                                          \
+    mozilla::baseprofiler::SpliceableJSONWriter writer(         \
+        mozilla::MakeUnique<StringWriteFunc>(),                 \
+        FailureLatchInfallibleSource::Singleton());             \
+    writer.Start();                                             \
+    StreamPayloadHelper<TimeDuration, MS::Format::fmt>::Stream( \
+        writer, mozilla::MakeStringSpan("v"), (td));            \
+    writer.End();                                               \
+    CheckJSON(writer, "{\"v\":" out "}", __LINE__);             \
+  } while (false)
+
+  // Milliseconds / Duration / Seconds all serialize as milliseconds.
+  TEST(Milliseconds, TimeDuration::FromMilliseconds(5000), "5000");
+  TEST(Duration, TimeDuration::FromMilliseconds(5000), "5000");
+  TEST(Seconds, TimeDuration::FromMilliseconds(500), "500");
+
+  // Microseconds: value in μs.
+  TEST(Microseconds, TimeDuration::FromMicroseconds(5), "5");
+  TEST(Microseconds, TimeDuration::FromMilliseconds(2), "2000");
+
+  // Nanoseconds: value in ns.
+  TEST(Nanoseconds, TimeDuration::FromMicroseconds(5), "5000");
+  TEST(Nanoseconds, TimeDuration::FromMilliseconds(1), "1000000");
+
+#undef TEST
+
+  printf("TestStreamPayloadHelperTimeDuration done\n");
+}
+
 template <uint8_t byte, uint8_t... tail>
 constexpr bool TestConstexprULEB128Reader(ULEB128Reader<uint64_t>& aReader) {
   if (aReader.IsComplete()) {
@@ -3855,6 +3892,7 @@ void TestProfilerDependencies() {
   TestPowerOfTwo();
   TestLEB128();
   TestJSONTimeOutput();
+  TestStreamPayloadHelperTimeDuration();
   TestChunk();
   TestChunkManagerSingle();
   TestChunkManagerWithLocalLimit();

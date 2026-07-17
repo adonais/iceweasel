@@ -19,6 +19,7 @@
 #include "nsIAsyncShutdown.h"
 #include "nsIObserver.h"
 #include "nsISerialEventTarget.h"
+#include "nsISupportsImpl.h"
 #include "nsITransportSecurityInfo.h"
 #include "nsTArray.h"
 #include "nsTHashMap.h"
@@ -94,17 +95,23 @@ class SSLTokensCache : public nsIMemoryReporter,
   static void LoadForTest(const nsACString& aPath);
   static uint32_t CountForTest();
   static void PutForTest(const nsACString& aKey);
+  static uint32_t CacheSizeForTest();
 #endif
 
  private:
+  class TokenCacheRecord;  // defined below
+
   SSLTokensCache();
   virtual ~SSLTokensCache();
 
   nsresult RemoveLocked(const nsACString& aKey, uint64_t aId)
       MOZ_REQUIRES(sLock);
   nsresult RemoveAllLocked(const nsACString& aKey) MOZ_REQUIRES(sLock);
-  nsresult GetLocked(const nsACString& aKey, nsTArray<uint8_t>& aToken,
-                     SessionCacheInfo& aResult, uint64_t* aTokenId)
+  // Extracts the first valid (non-expired) record for aKey, updating
+  // mCacheSize and mExpirationArray.  Sets *aTokenId if non-null.
+  // Returns the owned record on hit, nullptr on miss.
+  UniquePtr<TokenCacheRecord> GetRecordLocked(const nsACString& aKey,
+                                              uint64_t* aTokenId)
       MOZ_REQUIRES(sLock);
 
   void EvictIfNecessary() MOZ_REQUIRES(sLock);
@@ -183,14 +190,16 @@ class SSLTokensCache : public nsIMemoryReporter,
     ~TokenCacheRecord();
 
     uint32_t Size() const;
-    void Reset();
 
     nsCString mKey;
     PRTime mExpirationTime = 0;
-    nsTArray<uint8_t> mToken;
-    SessionCacheInfo mSessionCacheInfo;
-    // An unique id to identify the record. Mostly used when we want to remove a
-    // record from TokenCacheEntry.
+    // Compressed (token || serialized SessionCacheInfo). Storing them together
+    // lets the compressor find redundancies across the NSS token and the cert
+    // chain fields (both carry the same cert DER).
+    nsTArray<uint8_t> mCompressedPayload;
+    // Cached separately to allow ShouldPersistKey() filtering without
+    // decompressing the payload.
+    uint8_t mOverridableError = 0;
     uint64_t mId = 0;
   };
 

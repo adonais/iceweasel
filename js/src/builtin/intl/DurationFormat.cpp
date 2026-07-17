@@ -1525,6 +1525,7 @@ static bool FormatNumericUnits(JSContext* cx,
 
   // Return early when no units are displayed.
   if (!hoursFormatted && !minutesFormatted && !secondsFormatted) {
+    result.setUndefined();
     return true;
   }
 

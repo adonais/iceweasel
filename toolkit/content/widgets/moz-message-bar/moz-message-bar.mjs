@@ -214,9 +214,9 @@ export default class MozMessageBar extends MozLitElement {
         href="chrome://global/content/elements/moz-message-bar.css"
       />
       <div class="container">
+        ${this.iconTemplate()}
         <div class="content">
           <div class="text-container">
-            ${this.iconTemplate()}
             <div class="text-content">
               ${this.headingTemplate()}
               <div>

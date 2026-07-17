@@ -19,10 +19,10 @@ Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/58f47eacaf10d12e2
  10 files changed, 24 insertions(+), 24 deletions(-)
 
 diff --git a/BUILD.gn b/BUILD.gn
-index f1d13160d2..d446991124 100644
+index cb1f8b3de5..dd9d9e0b04 100644
 --- a/BUILD.gn
 +++ b/BUILD.gn
-@@ -420,12 +420,12 @@ config("common_config") {
+@@ -435,12 +435,12 @@ config("common_config") {
      }
    }
  
@@ -37,7 +37,7 @@ index f1d13160d2..d446991124 100644
      defines += [ "WEBRTC_ARCH_ARM" ]
      if (arm_version >= 7) {
        defines += [ "WEBRTC_ARCH_ARM_V7" ]
-@@ -435,7 +435,7 @@ config("common_config") {
+@@ -450,7 +450,7 @@ config("common_config") {
      }
    }
  
@@ -47,7 +47,7 @@ index f1d13160d2..d446991124 100644
      if (mips_float_abi == "hard") {
        defines += [ "MIPS_FPU_LE" ]
 diff --git a/common_audio/BUILD.gn b/common_audio/BUILD.gn
-index 1b55f07e0a..df23b36999 100644
+index e77bf2a07f..4c0eadf51f 100644
 --- a/common_audio/BUILD.gn
 +++ b/common_audio/BUILD.gn
 @@ -66,7 +66,7 @@ rtc_library("common_audio") {
@@ -68,7 +68,7 @@ index 1b55f07e0a..df23b36999 100644
      sources += [ "signal_processing/complex_bit_reverse_arm.S" ]
  
      if (arm_version >= 7) {
-@@ -153,7 +153,7 @@ rtc_library("common_audio_c") {
+@@ -151,7 +151,7 @@ rtc_library("common_audio_c") {
      "vad/webrtc_vad.c",
    ]
  
@@ -77,7 +77,7 @@ index 1b55f07e0a..df23b36999 100644
      sources += [
        "signal_processing/complex_bit_reverse_mips.c",
        "signal_processing/complex_fft_mips.c",
-@@ -171,7 +171,7 @@ rtc_library("common_audio_c") {
+@@ -169,7 +169,7 @@ rtc_library("common_audio_c") {
      sources += [ "signal_processing/complex_fft.c" ]
    }
  
@@ -86,7 +86,7 @@ index 1b55f07e0a..df23b36999 100644
      sources += [
        "signal_processing/complex_bit_reverse.c",
        "signal_processing/filter_ar_fast_q12.c",
-@@ -229,7 +229,7 @@ rtc_library("fir_filter_factory") {
+@@ -227,7 +227,7 @@ rtc_library("fir_filter_factory") {
      "../rtc_base:cpu_info",
      "../rtc_base/system:arch",
    ]
@@ -95,7 +95,7 @@ index 1b55f07e0a..df23b36999 100644
      deps += [ ":common_audio_sse2" ]
      deps += [ ":common_audio_avx2" ]
    }
-@@ -238,7 +238,7 @@ rtc_library("fir_filter_factory") {
+@@ -236,7 +236,7 @@ rtc_library("fir_filter_factory") {
    }
  }
  
@@ -104,7 +104,7 @@ index 1b55f07e0a..df23b36999 100644
    rtc_library("common_audio_sse2") {
      sources = [
        "fir_filter_sse.cc",
-@@ -287,7 +287,7 @@ if (rtc_build_with_neon) {
+@@ -285,7 +285,7 @@ if (rtc_build_with_neon) {
        "resampler/sinc_resampler_neon.cc",
      ]
  
@@ -113,7 +113,7 @@ index 1b55f07e0a..df23b36999 100644
        # Enable compilation for the NEON instruction set.
        suppressed_configs += [ "//build/config/compiler:compiler_arm_fpu" ]
        cflags = [ "-mfpu=neon" ]
-@@ -310,7 +310,7 @@ if (rtc_build_with_neon) {
+@@ -308,7 +308,7 @@ if (rtc_build_with_neon) {
        "signal_processing/min_max_operations_neon.c",
      ]
  
@@ -241,7 +241,7 @@ index 6324ed2bb7..55b7da56a5 100644
      cflags = [ "-mfpu=neon" ]
    }
 diff --git a/modules/desktop_capture/BUILD.gn b/modules/desktop_capture/BUILD.gn
-index d2926f8468..33f33bb918 100644
+index a5d4544dd8..1db919f987 100644
 --- a/modules/desktop_capture/BUILD.gn
 +++ b/modules/desktop_capture/BUILD.gn
 @@ -10,7 +10,7 @@ import("//build/config/linux/gtk/gtk.gni")
@@ -254,7 +254,7 @@ index d2926f8468..33f33bb918 100644
  config("x11_config") {
    if (rtc_use_x11_extensions) {
 diff --git a/webrtc.gni b/webrtc.gni
-index dfbbaa0e10..5af751e5ef 100644
+index 11073facef..37eb06b356 100644
 --- a/webrtc.gni
 +++ b/webrtc.gni
 @@ -155,7 +155,7 @@ declare_args() {

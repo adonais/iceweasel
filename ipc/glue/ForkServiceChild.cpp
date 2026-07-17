@@ -258,8 +258,6 @@ StaticRefPtr<ForkServerLauncher> ForkServerLauncher::sSingleton;
 
 ForkServerLauncher::ForkServerLauncher() = default;
 
-ForkServerLauncher::~ForkServerLauncher() = default;
-
 already_AddRefed<ForkServerLauncher> ForkServerLauncher::Create() {
   if (sSingleton == nullptr) {
     sSingleton = new ForkServerLauncher();

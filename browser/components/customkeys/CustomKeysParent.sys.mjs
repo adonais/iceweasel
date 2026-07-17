@@ -66,6 +66,16 @@ export class CustomKeysParent extends JSWindowActorParent {
     const fileCat = topWin.document.getElementById("file-menu").label;
     let cat = keys[fileCat];
     add(cat, "key_duplicateTab", "customkeys-file-duplicate-tab");
+    const isMac = AppConstants.platform === "macosx";
+    if (!isMac) {
+      add(
+        cat,
+        "focusURLBar2",
+        topWin.document.getElementById("menu_openLocation").label
+      );
+    }
+    add(cat, "key_search", "customkeys-file-focus-search");
+    add(cat, "key_search2", "customkeys-file-focus-search");
     const historyCat = topWin.document.getElementById("history-menu").label;
     cat = keys[historyCat];
     add(
@@ -81,13 +91,29 @@ export class CustomKeysParent extends JSWindowActorParent {
     add(cat, "toggleSidebarKb", "customkeys-sidebar-toggle");
     const viewCat = topWin.document.getElementById("view-menu").label;
     cat = keys[viewCat];
+    add(cat, "viewBookmarksToolbarKb", "customkeys-view-bookmarks-toolbar");
     add(
       cat,
       "key_togglePictureInPicture",
       "customkeys-view-picture-in-picture"
     );
-    const toolsCat = topWin.document.getElementById("browserToolsMenu").label;
+    add(cat, "key_addTabSplitView", "customkeys-view-add-split-view");
+    add(cat, "key_separateTabSplitView", "customkeys-view-separate-split-view");
+    const editCat = topWin.document.getElementById("edit-menu").label;
+    cat = keys[editCat];
+    add(
+      cat,
+      "key_findAgain2",
+      topWin.document.getElementById("menu_findAgain").label
+    );
+    add(cat, "key_findPrevious", "customkeys-edit-find-previous");
+    add(cat, "key_findPrevious2", "customkeys-edit-find-previous");
+    const toolsCat = topWin.document.getElementById("tools-menu").label;
     cat = keys[toolsCat];
+    add(cat, "key_screenshot", "customkeys-tools-screenshot");
+    const browserToolsCat =
+      topWin.document.getElementById("browserToolsMenu").label;
+    cat = keys[browserToolsCat];
     add(cat, "key_toggleToolboxF12", "customkeys-dev-tools");
     add(cat, "key_inspector", "customkeys-dev-inspector");
     add(cat, "key_webconsole", "customkeys-dev-webconsole");
@@ -115,6 +141,18 @@ export class CustomKeysParent extends JSWindowActorParent {
     add(cat, "key_reload_skip_cache", "customkeys-nav-reload-skip-cache");
     add(cat, "key_reload_skip_cache2", "customkeys-nav-reload-skip-cache");
     add(cat, "key_stop", "customkeys-nav-stop");
+    if (AppConstants.platform !== "win") {
+      add(cat, "goBackKb2", "customkeys-nav-back");
+      add(cat, "goForwardKb2", "customkeys-nav-forward");
+    }
+    if (isMac) {
+      add(cat, "key_stop_mac", "customkeys-nav-stop");
+    }
+    for (let i = 1; i <= 8; i++) {
+      add(cat, `key_selectTab${i}`, `customkeys-nav-select-tab-${i}`);
+    }
+    add(cat, "key_selectLastTab", "customkeys-nav-select-last-tab");
+    add(cat, "key_toggleMute", "customkeys-nav-toggle-mute");
 
     return keys;
   }

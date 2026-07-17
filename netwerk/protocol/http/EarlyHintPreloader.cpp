@@ -144,9 +144,7 @@ Maybe<PreloadHashKey> EarlyHintPreloader::GenerateHashKey(
         aURI, aCorsMode, JS::loader::ScriptKind::eClassic));
   }
   if (aAs == ASDestination::DESTINATION_STYLE) {
-    return Some(PreloadHashKey::CreateAsStyle(
-        aURI, aPrincipal, aCorsMode,
-        css::SheetParsingMode::eAuthorSheetFeatures));
+    return Some(PreloadHashKey::CreateAsStyle(aURI, aPrincipal, aCorsMode));
   }
   if (aAs == ASDestination::DESTINATION_FETCH && aCorsMode != CORS_NONE) {
     return Some(PreloadHashKey::CreateAsFetch(aURI, aCorsMode));

@@ -18,6 +18,7 @@
 #include "mozilla/PresShell.h"                // for PresShell
 #include "mozilla/dom/CharacterDataBuffer.h"  // for CharacterDataBuffer
 #include "mozilla/dom/Document.h"             // for dom::Document
+#include "mozilla/dom/EditContext.h"          // for dom::EditContext
 #include "mozilla/dom/HTMLBRElement.h"        // for dom HTMLBRElement
 #include "mozilla/dom/Selection.h"            // for dom::Selection
 #include "mozilla/dom/Text.h"                 // for dom::Text
@@ -121,6 +122,14 @@ bool AutoClonedRangeArray::IsEditableRange(const dom::AbstractRange& aRange,
 
   // HTMLEditor does not support modifying outside `<body>` element for now.
   nsINode* commonAncestor = aRange.GetClosestCommonInclusiveAncestor();
+  if (aEditingHost.HasFlag(ELEMENT_HAS_EDIT_CONTEXT)) {
+    EditContext* editContext =
+        nsGenericHTMLElement::FromNode(aEditingHost)->GetEditContext();
+    MOZ_ASSERT(editContext);
+    if (commonAncestor == &editContext->TextNode()) {
+      return true;
+    }
+  }
   return commonAncestor && commonAncestor->IsContent() &&
          commonAncestor->IsInclusiveDescendantOf(&aEditingHost);
 }

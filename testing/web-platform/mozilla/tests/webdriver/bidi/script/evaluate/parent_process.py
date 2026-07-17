@@ -1,3 +1,5 @@
+from copy import deepcopy
+
 import pytest
 from webdriver.bidi.error import UnsupportedOperationException
 from webdriver.bidi.modules.script import ContextTarget
@@ -5,46 +7,52 @@ from webdriver.bidi.modules.script import ContextTarget
 pytestmark = pytest.mark.asyncio
 
 
-@pytest.mark.parametrize("url", ["about:memory", "about:networking"])
-async def test_evaluate_parent_process_context(bidi_session, new_tab, url):
-    # Bug 1579790: might make it impossible to navigate to those pages without
-    # allow_system_access, we will nee to find an alternative way to open those
-    # pages.
-    await bidi_session.browsing_context.navigate(
-        context=new_tab["context"], url=url, wait="complete"
-    )
+async def test_evaluate_parent_process_context(configuration, geckodriver):
+    """Note: This uses geckodriver instead of the browser/new_session fixture
+    because the browser fixture doesn't support Android yet (bug 2040886).
+    """
+    url = "about:about"
 
-    with pytest.raises(UnsupportedOperationException):
-        await bidi_session.script.evaluate(
-            expression="1 + 1",
-            target=ContextTarget(new_tab["context"]),
-            await_promise=False,
+    # Bug 2038624 will make it impossible to navigate to those pages without
+    # allow_system_access, we will need to find an alternative way to open
+    # those pages.
+    config = deepcopy(configuration)
+    config["capabilities"]["moz:firefoxOptions"]["args"].append(url)
+    config["capabilities"]["moz:firefoxOptions"]["androidIntentArguments"] = [
+        "-d",
+        url,
+    ]
+    config["capabilities"]["webSocketUrl"] = True
+
+    driver = geckodriver(config=config)
+    try:
+        driver.new_session()
+
+        bidi_session = driver.session.bidi_session
+        await bidi_session.start()
+
+        contexts = await bidi_session.browsing_context.get_tree(max_depth=0)
+        page_context = next(
+            (context for context in contexts if context["url"] == url), None
         )
+        assert page_context is not None, f"No context found with URL {url}"
+
+        with pytest.raises(UnsupportedOperationException):
+            await bidi_session.script.evaluate(
+                expression="1 + 1",
+                target=ContextTarget(page_context["context"]),
+                await_promise=False,
+            )
+    finally:
+        await driver.stop()
 
 
 @pytest.mark.allow_system_access
-@pytest.mark.parametrize("url", ["about:memory", "about:networking"])
 async def test_evaluate_parent_process_context_with_system_access(
-    bidi_session, new_tab, url
+    bidi_session, new_tab
 ):
     await bidi_session.browsing_context.navigate(
-        context=new_tab["context"], url=url, wait="complete"
-    )
-
-    result = await bidi_session.script.evaluate(
-        expression="1 + 1",
-        target=ContextTarget(new_tab["context"]),
-        await_promise=False,
-    )
-
-    assert result == {"type": "number", "value": 2}
-
-
-async def test_evaluate_content_process_context(bidi_session, new_tab):
-    # about:certificate runs in the content process and should not block
-    # script evaluation.
-    await bidi_session.browsing_context.navigate(
-        context=new_tab["context"], url="about:certificate", wait="complete"
+        context=new_tab["context"], url="about:about", wait="complete"
     )
 
     result = await bidi_session.script.evaluate(

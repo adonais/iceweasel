@@ -219,16 +219,24 @@ sealed class TabListAction : BrowserAction() {
      * @property tabId the ID of the tab to remove.
      * @property selectParentIfExists whether or not a parent tab should be
      * selected if one exists, defaults to true.
+     * @property excludedTabIds a list of tab IDs that should be ignored when selecting a fallback tab.
      */
-    data class RemoveTabAction(val tabId: String, val selectParentIfExists: Boolean = true) :
-        TabListAction()
+    data class RemoveTabAction(
+        val tabId: String,
+        val selectParentIfExists: Boolean = true,
+        val excludedTabIds: Set<String> = emptySet(),
+    ) : TabListAction()
 
     /**
      * Removes the [TabSessionState]s with the given [tabId]s from the list of sessions.
      *
      * @property tabIds the IDs of the tabs to remove.
+     * @property excludedTabIds a list of tab IDs that should be ignored when selecting a fallback tab.
      */
-    data class RemoveTabsAction(val tabIds: List<String>) : TabListAction()
+    data class RemoveTabsAction(
+        val tabIds: List<String>,
+        val excludedTabIds: Set<String> = emptySet(),
+    ) : TabListAction()
 
     /**
      * Restores state from a (partial) previous state.
@@ -1332,6 +1340,26 @@ sealed class WebExtensionAction : BrowserAction() {
     ) : WebExtensionAction()
 
     /**
+     * Passes url and title necessary for opening options page via [WebExtensionState].
+     * And keeps track of the last instance used to display an extension options page.
+     * optionsPageInstanceId keeps repeated requests distinguishable when the observer
+     * misses the cleared state.
+     */
+    data class UpdateOptionsPageSessionAction(
+        val extensionId: String,
+        val optionsPageInstanceId: String,
+        val optionsPageUrl: String,
+        val extensionTranslatedName: String,
+    ) : WebExtensionAction()
+
+    /**
+     * Clears the state of an options page session.
+     */
+    data class ClearOptionsPageSession(
+        val extensionId: String,
+    ) : WebExtensionAction()
+
+    /**
      * Updates a tab-specific browser action that belongs to the given [sessionId] and [extensionId] on the
      * [TabSessionState.extensionState].
      */
@@ -2025,4 +2053,19 @@ sealed class DefaultDesktopModeAction : BrowserAction() {
      * Updates the global default for desktop browsing mode.
      */
     data class DesktopModeUpdated(val newValue: Boolean) : DefaultDesktopModeAction()
+}
+
+/**
+ * [BrowserAction] implementations related to requesting system-level permissions.
+ */
+sealed class SystemPermissionRequestAction : BrowserAction() {
+    /**
+     * Indicates that a system permission request is currently in progress.
+     */
+    object SystemPermissionStateRequestInProgress : SystemPermissionRequestAction()
+
+    /**
+     * Indicates that there is no system permission request currently in progress.
+     */
+    object SystemPermissionStateRequestNotInProgress : SystemPermissionRequestAction()
 }

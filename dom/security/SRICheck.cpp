@@ -136,7 +136,8 @@ nsresult SRICheck::IntegrityMetadata(const nsAString& aMetadataList,
     } else if (*outMetadata < metadata) {
       SRILOG(("SRICheck::IntegrityMetadata, alg '%s' is weaker than '%s'",
               alg1.get(), alg2.get()));
-      *outMetadata = metadata;  // replace strongest metadata with current
+      *outMetadata =
+          std::move(metadata);  // replace strongest metadata with current
     }
   }
 

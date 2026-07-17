@@ -623,7 +623,7 @@ bool InitScriptCoverage(JSContext* cx, JSScript* script) {
   // Create Zone::scriptLCovMap if necessary.
   JS::Zone* zone = script->zone();
   if (!zone->scriptLCovMap) {
-    zone->scriptLCovMap = cx->make_unique<ScriptLCovMap>();
+    zone->scriptLCovMap = cx->make_unique<JS::WeakCache<ScriptLCovMap>>(zone);
   }
   if (!zone->scriptLCovMap) {
     return false;
@@ -632,8 +632,8 @@ bool InitScriptCoverage(JSContext* cx, JSScript* script) {
   MOZ_ASSERT(script->hasBytecode());
 
   // Save source in map for when we collect coverage.
-  if (!zone->scriptLCovMap->putNew(script,
-                                   std::make_tuple(source, scriptName))) {
+  if (!zone->scriptLCovMap->get().putNew(script,
+                                         std::make_tuple(source, scriptName))) {
     ReportOutOfMemory(cx);
     return false;
   }
@@ -641,30 +641,28 @@ bool InitScriptCoverage(JSContext* cx, JSScript* script) {
   return true;
 }
 
-bool CollectScriptCoverage(JSScript* script, bool finalizing) {
+bool CollectScriptCoverage(JSScript* script) {
   MOZ_ASSERT(IsLCovEnabled());
 
-  ScriptLCovMap* map = script->zone()->scriptLCovMap.get();
-  if (!map) {
+  auto* wc = script->zone()->scriptLCovMap.get();
+  if (!wc) {
     return false;
   }
 
-  auto p = map->lookup(script);
+  auto p = wc->get().lookup(script);
   if (!p.found()) {
     return false;
   }
 
-  auto [source, scriptName] = p->value();
+  // Propagate the failure in case caller wants to terminate early.
+  return MaybeWriteScriptCoverage(script, p->value());
+}
 
+bool MaybeWriteScriptCoverage(JSScript* script, const ScriptLCovEntry& entry) {
+  auto [source, scriptName] = entry;
   if (script->hasBytecode()) {
     source->writeScript(script, scriptName);
   }
-
-  if (finalizing) {
-    map->remove(p);
-  }
-
-  // Propagate the failure in case caller wants to terminate early.
   return !source->hadOutOfMemory();
 }
 

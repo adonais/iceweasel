@@ -249,6 +249,9 @@ bool gfxGraphiteShaper::ShapeText(const char16_t* aText, uint32_t aOffset,
   nsresult rv =
       SetGlyphsFromSegment(aShapedText, aOffset, aLength, aText,
                            t_aText.to_opaque(), seg.to_opaque(), aRounding);
+  if (NS_FAILED(rv)) {
+    aShapedText->ClearGlyphs();
+  }
 
   sandbox_invoke(*mSandbox, gr_seg_destroy, seg);
 
@@ -394,6 +397,15 @@ nsresult gfxGraphiteShaper::SetGlyphsFromSegment(
           CopyAndVerifyOrFail(c.baseGlyph, val <= glyph_end, &failedVerify);
       if (failedVerify) {
         return NS_ERROR_ILLEGAL_VALUE;
+      }
+
+      // The glyphCount field in a CompressedGlyph record is 16 bits;
+      // check that we will not exceed this.
+      if (glyph_end - glyph_start > 0xFFFF) {
+        return NS_ERROR_ILLEGAL_VALUE;
+      }
+      if (!details.SetCapacity(glyph_end - glyph_start, fallible)) {
+        return NS_ERROR_OUT_OF_MEMORY;
       }
 
       for (uint32_t j = glyph_start; j < glyph_end; ++j) {

@@ -215,43 +215,6 @@ add_task(
   }
 );
 
-/**
- * Test MR template easy setup content - Browser is pinned and
- * set as default
- */
-add_task(async function test_aboutwelcome_mr_template_easy_setup_only_import() {
-  const sandbox = sinon.createSandbox();
-  await pushPrefs(
-    ["browser.shell.checkDefaultBrowser", true],
-    ["messaging-system-action.showEmbeddedImport", false]
-  );
-  sandbox.stub(ShellService, "doesAppNeedPin").returns(false);
-  sandbox.stub(ShellService, "doesAppNeedStartMenuPin").returns(false);
-  sandbox.stub(ShellService, "isDefaultBrowser").returns(true);
-
-  await clearHistoryAndBookmarks();
-
-  const { browser, cleanup } = await openMRAboutWelcome();
-
-  //should render easy setup - only import
-  await test_screen_content(
-    browser,
-    "doesn't render any combination of pin and default",
-    //Expected selectors:
-    ["main.AW_EASY_SETUP_ONLY_IMPORT"],
-    //Unexpected selectors:
-    [
-      "main.AW_EASY_SETUP_NEEDS_PIN",
-      "main.AW_EASY_SETUP_NEEDS_DEFAULT_AND_PIN",
-      "main.AW_EASY_SETUP_NEEDS_DEFAULT",
-    ]
-  );
-
-  await cleanup();
-  await popPrefs();
-  sandbox.restore();
-});
-
 add_task(
   async function test_splash_screen_removed_when_experiments_gate_disabled() {
     await SpecialPowers.pushPrefEnv({

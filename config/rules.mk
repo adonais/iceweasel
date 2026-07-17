@@ -1063,7 +1063,7 @@ $(foreach category,$(PP_TARGETS), \
   ) \
   $(foreach file,$($(category)), \
     $(eval $(call create_dependency,$(call pp_target_result,$(category),$(file)), \
-                                    $(file) $(GLOBAL_DEPS))) \
+                                    $(file) $(GLOBAL_DEPS) $($(category)_EXTRA_DEPS))) \
   ) \
   $(eval $(call pp_target_results,$(category)): PP_TARGET_FLAGS=$($(category)_FLAGS)) \
 )

@@ -1102,7 +1102,7 @@ DirectHandle<TrustedByteArray> BytecodePeepholeOptimization::OptimizeBytecode(
     RegExpBytecodeDisassemble(array->begin(), optimized_length,
                               pattern_cstring.get());
   }
-#endif // !COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
+#endif  // !COMPILING_IRREGEXP_FOR_EXTERNAL_EMBEDDER
 
   return array;
 }

@@ -14,6 +14,8 @@ struct already_AddRefed;
 template <class T>
 class nsCOMPtr;
 class nsISupports;
+template <class T>
+class RefPtr;
 
 namespace mozilla {
 
@@ -29,6 +31,12 @@ class CSSUnitValue final : public CSSNumericValue {
  public:
   CSSUnitValue(nsCOMPtr<nsISupports> aParent, double aValue,
                const nsACString& aUnit);
+
+  static RefPtr<CSSUnitValue> Create(nsCOMPtr<nsISupports> aParent,
+                                     double aValue, const nsACString& aUnit);
+
+  static RefPtr<CSSUnitValue> Create(nsCOMPtr<nsISupports> aParent,
+                                     double aValue);
 
   static RefPtr<CSSUnitValue> Create(nsCOMPtr<nsISupports> aParent,
                                      const StyleUnitValue& aUnitValue);

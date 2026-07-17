@@ -472,8 +472,8 @@ nsresult FetchIconInfo(const UniquePtr<ConnectionAdapter>& aConn,
     int64_t id = -1;
     nsCString data;
     PRTime expiration = 0;
-    bool isRich = 0;
-    bool rootIcon = 0;
+    bool isRich = false;
+    bool rootIcon = false;
     uint16_t width = 0;
     nsAutoCString spec;
   };

@@ -59,18 +59,7 @@ fi
 
 # Logic for macosx64
 if [[ $(uname -s) == "Darwin" ]]; then
-  # Modify the config with fetched sdk path
-  export MACOS_SYSROOT="$MOZ_FETCHES_DIR/MacOSX26.4.sdk"
-  # Bug 1990712 & 1989676
-  # HACK: Create a stub DarwinBasic.modulemap to satisfy Ninja’s dependency graph.
-  # This file does not exist in Command Line Tools SDKs. It seems only the full
-  # Xcode SDK includes DarwinBasic/DarwinFoundation modulemaps.
-  mkdir -p "$MACOS_SYSROOT/usr/include"
-  touch "$MACOS_SYSROOT/usr/include/DarwinFoundation.modulemap"
-
-  # Set the SDK path for build, which is technically a higher version
-  # than what is associated with the current OS version (10.15).
-  # This should work as long as MACOSX_DEPLOYMENT_TARGET is set correctly
+  export MACOS_SYSROOT="$MOZ_FETCHES_DIR/MacOSX26.5.sdk"
   CONFIG=$(echo $CONFIG mac_sdk_path='"'$MACOS_SYSROOT'"')
 
   # Ensure we don't use ARM64 profdata with this unique sub string
@@ -202,6 +191,15 @@ fi
 CONFIG=$(echo $CONFIG pgo_data_path='"'$PGO_FILE'"')
 
 # Set up then build chrome
+if [[ $(uname -s) == "Darwin" ]]; then
+  # Bug 2045375: build/config/mac/BUILD.gn's sdk_inputs action declares SDK
+  # files as outputs so RBE remote workers can access them. We don't use RBE,
+  # and GN rejects the action when mac_sdk_path is outside root_build_dir.
+  sed -i '' 's/if (use_system_xcode && current_toolchain == default_toolchain)/if (false)/' build/config/mac/BUILD.gn
+  grep -q 'use_system_xcode && current_toolchain == default_toolchain' build/config/mac/BUILD.gn && \
+    { echo "ERROR: sdk_inputs patch failed - upstream BUILD.gn may have changed"; exit 1; }
+fi
+
 gn gen out/Default --args="$CONFIG"
 autoninja -C out/Default $FINAL_BIN
 

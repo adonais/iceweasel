@@ -3,6 +3,7 @@
  * You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "LNAPermissionRequest.h"
+#include "mozilla/dom/ClientInfo.h"
 #include "nsGlobalWindowInner.h"
 #include "mozilla/dom/Document.h"
 #include "nsPIDOMWindow.h"
@@ -15,6 +16,9 @@
 #include "nsIOService.h"
 #include "mozilla/dom/CanonicalBrowsingContext.h"
 #include "mozilla/dom/FeaturePolicy.h"
+#include "mozilla/Components.h"
+#include "nsIConsoleService.h"
+#include "nsIPermissionManager.h"
 #include "xpcpublic.h"
 
 namespace mozilla::net {
@@ -45,6 +49,15 @@ LNAPermissionRequest::LNAPermissionRequest(PermissionPromptCallback&& aCallback,
   aLoadInfo->GetTriggeringPrincipal(getter_AddRefs(mPrincipal));
 
   aLoadInfo->GetBrowsingContext(getter_AddRefs(mBrowsingContext));
+  // For worker-initiated requests, the browsing context is null.
+  // Fall back to the associated browsing context which points to the
+  // worker's parent document's BC.
+  if (!mBrowsingContext) {
+    Maybe<dom::ClientInfo> clientInfo = aLoadInfo->GetClientInfo();
+    if (clientInfo.isSome() && clientInfo->Type() != dom::ClientType::Window) {
+      aLoadInfo->GetAssociatedBrowsingContext(getter_AddRefs(mBrowsingContext));
+    }
+  }
   if (mBrowsingContext && mBrowsingContext->Top()) {
     if (mBrowsingContext->Top()->Canonical()) {
       RefPtr<mozilla::dom::WindowGlobalParent> topWindowGlobal =
@@ -197,6 +210,44 @@ nsresult LNAPermissionRequest::RequestPermission() {
   }
 
   if (pr == PromptResult::Denied) {
+    return Cancel();
+  }
+
+  // For shared and service workers, do not show a permission prompt.
+  // Only grant access if the origin already has a persistent LNA permission.
+  Maybe<dom::ClientInfo> clientInfo = mLoadInfo->GetClientInfo();
+  if (clientInfo.isSome() &&
+      (clientInfo->Type() == dom::ClientType::Sharedworker ||
+       clientInfo->Type() == dom::ClientType::Serviceworker)) {
+    nsCOMPtr<nsIPermissionManager> permMgr =
+        mozilla::components::PermissionManager::Service();
+    if (!permMgr || !mPrincipal) {
+      NS_WARNING(
+          "LNA worker permission check failed: no permission manager or "
+          "principal");
+      return Cancel();
+    }
+    uint32_t permission = nsIPermissionManager::UNKNOWN_ACTION;
+    nsresult rv =
+        permMgr->TestPermissionFromPrincipal(mPrincipal, mType, &permission);
+    if (NS_SUCCEEDED(rv) && permission == nsIPermissionManager::ALLOW_ACTION) {
+      return Allow(JS::UndefinedHandleValue);
+    }
+    // Log the denial to the browser console so developers can diagnose why
+    // worker fetch requests are being blocked.
+    nsCOMPtr<nsIConsoleService> console =
+        do_GetService(NS_CONSOLESERVICE_CONTRACTID);
+    if (console && mPrincipal) {
+      nsAutoCString origin;
+      mPrincipal->GetOrigin(origin);
+      nsAutoString msg;
+      msg.AppendLiteral("Local Network Access blocked: worker from origin ");
+      msg.Append(NS_ConvertUTF8toUTF16(origin));
+      msg.AppendLiteral(" attempted ");
+      msg.Append(NS_ConvertUTF8toUTF16(mType));
+      msg.AppendLiteral(" access but no persistent permission was granted.");
+      console->LogStringMessage(msg.get());
+    }
     return Cancel();
   }
 

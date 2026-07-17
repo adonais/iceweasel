@@ -5225,7 +5225,6 @@ head_rev: 9a81a01d61b6342b237a6431865eef20ee487c20
 head_tag: ''
 hg_branch: default
 level: '3'
-message: ''
 moz_build_date: '20251105102839'
 next_version: null
 optimize_strategies: null

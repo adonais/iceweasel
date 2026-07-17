@@ -768,8 +768,8 @@ export class nsContextMenu {
 
     this.showAndFormatVisualSearchContextItem();
 
-    // Set as Desktop background depends on whether an image was clicked on,
-    // and only works if we have a shell service.
+    // Set as Desktop background depends on whether an image or canvas was
+    // clicked on, and only works if we have a shell service.
     var haveSetDesktopBackground = false;
 
     if (
@@ -783,12 +783,12 @@ export class nsContextMenu {
       }
     }
 
-    this.showItem(
-      "context-setDesktopBackground",
-      haveSetDesktopBackground && this.onLoadedImage
-    );
+    let canSetDesktopBackground =
+      haveSetDesktopBackground && (this.onLoadedImage || this.onCanvas);
 
-    if (haveSetDesktopBackground && this.onLoadedImage) {
+    this.showItem("context-setDesktopBackground", canSetDesktopBackground);
+
+    if (canSetDesktopBackground) {
       this.document.getElementById("context-setDesktopBackground").disabled =
         this.contentData.disableSetDesktopBackground;
     }

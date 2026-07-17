@@ -108,56 +108,16 @@ export const PREF_WIDGETS_SYSTEM_CLOCKS_ENABLED =
  * @property {string} trainhopEnabledKey - Key in trainhopConfig.widgets.* for the enabled override.
  * @property {string|null} trainhopSizeKey - Key in trainhopConfig.widgets.* for the size default suggestion.
  * @property {string|null} trainhopSidebarKey - Key in trainhopConfig.widgets.* for the hasSidebar override.
+ * @property {string} widgetsSettingsVisibleKey - Key in trainhopConfig.widgetsSettings.* that additively reveals this widget's toggle in the settings UIs (does not enable the widget).
+ * @property {string} widgetsSettingsEnabledKey - Key in trainhopConfig.widgetsSettings.* that overrides this widget's default enabled value (written to the pref default branch; an explicit user toggle still wins).
  */
 
 /** @type {WidgetRegistryEntry[]} */
 export const WIDGET_REGISTRY = [
   {
-    id: "lists",
-    telemetryName: "lists",
-    order: 0,
-    enabledPref: PREF_WIDGETS_LISTS_ENABLED,
-    sizePref: PREF_LISTS_SIZE,
-    defaultSize: "large",
-    validSizes: ["small", "medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_LISTS_ENABLED,
-    trainhopEnabledKey: "listsEnabled",
-    trainhopSizeKey: "listsSize",
-    trainhopSidebarKey: null,
-  },
-  {
-    id: "focusTimer",
-    telemetryName: "focus_timer",
-    order: 1,
-    enabledPref: PREF_WIDGETS_TIMER_ENABLED,
-    sizePref: PREF_FOCUS_TIMER_SIZE,
-    defaultSize: "large",
-    validSizes: ["small", "medium", "large"],
-    hasSidebar: false,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_TIMER_ENABLED,
-    trainhopEnabledKey: "timerEnabled",
-    trainhopSizeKey: "timerSize",
-    trainhopSidebarKey: null,
-  },
-  {
-    id: "weather",
-    telemetryName: "weather",
-    order: 2,
-    enabledPref: PREF_WIDGETS_WEATHER_ENABLED,
-    sizePref: PREF_WEATHER_SIZE,
-    defaultSize: "medium",
-    validSizes: ["mini", "small", "medium", "large"],
-    hasSidebar: true,
-    systemEnabledPref: PREF_WIDGETS_SYSTEM_WEATHER_ENABLED,
-    trainhopEnabledKey: "weatherEnabled",
-    trainhopSizeKey: "weatherSize",
-    trainhopSidebarKey: "weatherSidebar",
-  },
-  {
     id: "sportsWidget",
-    telemetryName: "sports_widget",
-    order: 3,
+    telemetryName: "sports",
+    order: 0,
     enabledPref: PREF_WIDGETS_SPORTS_WIDGET_ENABLED,
     sizePref: PREF_SPORTS_WIDGET_SIZE,
     defaultSize: "medium",
@@ -167,11 +127,13 @@ export const WIDGET_REGISTRY = [
     trainhopEnabledKey: "sportsWidgetEnabled",
     trainhopSizeKey: "sportsWidgetSize",
     trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "sportsWidgetVisible",
+    widgetsSettingsEnabledKey: "sportsWidgetEnabled",
   },
   {
     id: "clocks",
     telemetryName: "clocks",
-    order: 4,
+    order: 1,
     enabledPref: PREF_WIDGETS_CLOCKS_ENABLED,
     sizePref: PREF_CLOCKS_SIZE,
     defaultSize: "medium",
@@ -181,6 +143,56 @@ export const WIDGET_REGISTRY = [
     trainhopEnabledKey: "clocksEnabled",
     trainhopSizeKey: "clocksSize",
     trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "clocksVisible",
+    widgetsSettingsEnabledKey: "clocksEnabled",
+  },
+  {
+    id: "lists",
+    telemetryName: "lists",
+    order: 2,
+    enabledPref: PREF_WIDGETS_LISTS_ENABLED,
+    sizePref: PREF_LISTS_SIZE,
+    defaultSize: "medium",
+    validSizes: ["small", "medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_LISTS_ENABLED,
+    trainhopEnabledKey: "listsEnabled",
+    trainhopSizeKey: "listsSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "listsVisible",
+    widgetsSettingsEnabledKey: "listsEnabled",
+  },
+  {
+    id: "focusTimer",
+    telemetryName: "focus_timer",
+    order: 3,
+    enabledPref: PREF_WIDGETS_TIMER_ENABLED,
+    sizePref: PREF_FOCUS_TIMER_SIZE,
+    defaultSize: "medium",
+    validSizes: ["small", "medium", "large"],
+    hasSidebar: false,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_TIMER_ENABLED,
+    trainhopEnabledKey: "timerEnabled",
+    trainhopSizeKey: "timerSize",
+    trainhopSidebarKey: null,
+    widgetsSettingsVisibleKey: "focusTimerVisible",
+    widgetsSettingsEnabledKey: "focusTimerEnabled",
+  },
+  {
+    id: "weather",
+    telemetryName: "weather",
+    order: 4,
+    enabledPref: PREF_WIDGETS_WEATHER_ENABLED,
+    sizePref: PREF_WEATHER_SIZE,
+    defaultSize: "small",
+    validSizes: ["small", "medium", "large"],
+    hasSidebar: true,
+    systemEnabledPref: PREF_WIDGETS_SYSTEM_WEATHER_ENABLED,
+    trainhopEnabledKey: "weatherEnabled",
+    trainhopSizeKey: "weatherSize",
+    trainhopSidebarKey: "weatherSidebar",
+    widgetsSettingsVisibleKey: "weatherVisible",
+    widgetsSettingsEnabledKey: "weatherEnabled",
   },
 ];
 
@@ -224,8 +236,64 @@ export function resolveWidgetOrder(prefs) {
 }
 
 /**
- * Returns true if the widget is enabled, based on the trainhop/system gate
- * and the user-facing enabled pref.
+ * Returns true if the widget is available to the user, based on the
+ * system pref, the trainhopConfig.widgets addable key, or a
+ * widgetsSettings.*Visible override (revealing a toggle also makes the widget
+ * addable so the toggle is functional). Does not consider whether the user has
+ * turned the widget on, or whether the widgets container is enabled.
+ *
+ * @param {object} widget - a WIDGET_REGISTRY entry
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function isWidgetAddable(widget, prefs) {
+  return Boolean(
+    prefs.trainhopConfig?.widgets?.[widget.trainhopEnabledKey] ||
+    prefs.trainhopConfig?.widgetsSettings?.[widget.widgetsSettingsVisibleKey] ||
+    prefs[widget.systemEnabledPref]
+  );
+}
+
+/**
+ * Returns true if this widget's toggle should be shown in the settings UIs
+ * (about:preferences#home and the Customize menu). A widget is shown when it is
+ * addable (system pref, trainhopConfig.widgets, or widgetsSettings.*Visible) or
+ * when the legacy `widgetsConfig` Nimbus variable enables it. Showing a toggle
+ * does NOT enable the widget — enablement is the widget's own enabled pref,
+ * whose default can be overridden via widgetsSettings.*Enabled.
+ *
+ * @param {object} widget - a WIDGET_REGISTRY entry
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function isWidgetToggleVisible(widget, prefs) {
+  return Boolean(
+    isWidgetAddable(widget, prefs) ||
+    prefs.widgetsConfig?.[widget.trainhopEnabledKey]
+  );
+}
+
+/**
+ * Returns true if the Widgets container/section toggle should be shown.
+ * Additive across the system pref, the legacy `widgetsConfig` variable, the
+ * `trainhopConfig.widgets.enabled` addable key, and the new
+ * `trainhopConfig.widgetsSettings.enabled` override.
+ *
+ * @param {object} prefs - current pref values from the Redux store
+ * @returns {boolean}
+ */
+export function isWidgetsContainerVisible(prefs) {
+  return Boolean(
+    prefs["widgets.system.enabled"] ||
+    prefs.widgetsConfig?.enabled ||
+    prefs.trainhopConfig?.widgets?.enabled ||
+    prefs.trainhopConfig?.widgetsSettings?.enabled
+  );
+}
+
+/**
+ * Returns true if the widget is currently enabled: the widgets container is
+ * on, the widget is addable, and the user's enabled pref is set.
  *
  * @param {object} widget - a WIDGET_REGISTRY entry
  * @param {object} prefs - current pref values from the Redux store
@@ -233,12 +301,11 @@ export function resolveWidgetOrder(prefs) {
  * @returns {boolean}
  */
 export function isWidgetEnabled(widget, prefs, widgetsEnabled) {
-  if (!widgetsEnabled) {
-    return false;
-  }
-  const trainhop = prefs.trainhopConfig?.widgets?.[widget.trainhopEnabledKey];
-  const system = prefs[widget.systemEnabledPref];
-  return Boolean((trainhop || system) && prefs[widget.enabledPref]);
+  return Boolean(
+    widgetsEnabled &&
+    isWidgetAddable(widget, prefs) &&
+    prefs[widget.enabledPref]
+  );
 }
 
 /**

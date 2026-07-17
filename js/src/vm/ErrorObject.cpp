@@ -110,13 +110,11 @@ static const JSFunctionSpec error_static_methods[] = {
     JS_FS_END,
 };
 
-#ifdef NIGHTLY_BUILD
 static const JSPropertySpec error_static_properties[] = {
     JS_INT32_PS("stackTraceLimit", int32_t(MAX_REPORTED_STACK_DEPTH),
                 JSPROP_ENUMERATE),
     JS_PS_END,
 };
-#endif
 
 // Error.prototype and NativeError.prototype have own .message and .name
 // properties.
@@ -175,13 +173,8 @@ IMPLEMENT_NATIVE_ERROR_PROPERTIES(SuspendError)
 
 const ClassSpec ErrorObject::classSpecs[JSEXN_ERROR_LIMIT] = {
     {ErrorObject::createConstructor, ErrorObject::createProto,
-     error_static_methods,
-#ifdef NIGHTLY_BUILD
-     error_static_properties,
-#else
-     nullptr,
-#endif
-     error_methods, error_properties},
+     error_static_methods, error_static_properties, error_methods,
+     error_properties},
 
     IMPLEMENT_NATIVE_ERROR_SPEC(InternalError),
     IMPLEMENT_NATIVE_ERROR_SPEC(AggregateError),
@@ -332,13 +325,24 @@ static ErrorObject* CreateErrorObject(JSContext* cx, const CallArgs& args,
     columnNumber = JS::ColumnNumberOneOrigin(tmp.oneOriginValue());
   }
 
+  mozilla::Maybe<uint32_t> limit = GetStackTraceLimit(cx);
   RootedObject stack(cx);
-  if (!CaptureStack(cx, &stack)) {
+  if (!CaptureStack(cx, &stack, limit.valueOr(0))) {
     return nullptr;
   }
 
-  return ErrorObject::create(cx, exnType, stack, fileName, sourceId, lineNumber,
-                             columnNumber, nullptr, message, cause, proto);
+  Rooted<ErrorObject*> errObject(
+      cx,
+      ErrorObject::create(cx, exnType, stack, fileName, sourceId, lineNumber,
+                          columnNumber, nullptr, message, cause, proto));
+  if (!errObject) {
+    return nullptr;
+  }
+  if (limit.isNothing() && !DefineDataProperty(cx, errObject, cx->names().stack,
+                                               JS::UndefinedHandleValue)) {
+    return nullptr;
+  }
+  return errObject;
 }
 
 static bool Error(JSContext* cx, unsigned argc, Value* vp) {
@@ -1023,34 +1027,33 @@ static bool exn_isError(JSContext* cx, unsigned argc, Value* vp) {
 // Infinity means that all frames get collected. This variable only affects
 // the current context; it has to be set explicitly for each context that
 // needs a different value.
-static uint32_t GetStackTraceLimit(JSContext* cx) {
-#ifdef NIGHTLY_BUILD
+//
+// Undocumented, but setting it to `undefined` will cause the `stack`
+// property to also be `undefined`. In this case, we return Nothing.
+mozilla::Maybe<uint32_t> js::GetStackTraceLimit(JSContext* cx) {
   if (!JS::Prefs::experimental_error_stack_trace_limit()) {
-    return MAX_REPORTED_STACK_DEPTH;
+    return mozilla::Some(uint32_t(MAX_REPORTED_STACK_DEPTH));
   }
   JSObject* errorCtor = cx->global()->maybeGetConstructor(JSProto_Error);
   if (!errorCtor) {
-    return MAX_REPORTED_STACK_DEPTH;
+    return mozilla::Some(uint32_t(MAX_REPORTED_STACK_DEPTH));
   }
   Value limitVal;
   if (!GetPropertyPure(cx, errorCtor, NameToId(cx->names().stackTraceLimit),
                        &limitVal)) {
-    return MAX_REPORTED_STACK_DEPTH;
+    return mozilla::Some(uint32_t(MAX_REPORTED_STACK_DEPTH));
   }
   if (limitVal.isUndefined()) {
-    return MAX_REPORTED_STACK_DEPTH;
+    return mozilla::Nothing();
   }
   if (!limitVal.isNumber()) {
-    return 0;
+    return mozilla::Some(uint32_t(0));
   }
   double d = limitVal.toNumber();
   if (std::isnan(d) || d < 0) {
-    return 0;
+    return mozilla::Some(uint32_t(0));
   }
-  return uint32_t(std::min(d, double(MAX_REPORTED_STACK_DEPTH)));
-#else
-  return MAX_REPORTED_STACK_DEPTH;
-#endif
+  return mozilla::Some(uint32_t(std::min(d, double(MAX_REPORTED_STACK_DEPTH))));
 }
 
 // The below is the "documentation" from https://v8.dev/docs/stack-trace-api
@@ -1107,29 +1110,32 @@ static bool exn_captureStackTrace(JSContext* cx, unsigned argc, Value* vp) {
     }
   }
 
-  RootedObject stack(cx);
-  const uint32_t limit = GetStackTraceLimit(cx);
-  if (limit > 0) {
-    if (!CaptureCurrentStack(cx, &stack, JS::StackCapture(JS::MaxFrames(limit)),
-                             caller)) {
+  mozilla::Maybe<uint32_t> limit = GetStackTraceLimit(cx);
+  RootedValue stackVal(cx, UndefinedValue());
+  if (limit.isSome()) {
+    RootedObject stack(cx);
+    if (*limit > 0) {
+      if (!CaptureCurrentStack(
+              cx, &stack, JS::StackCapture(JS::MaxFrames(*limit)), caller)) {
+        return false;
+      }
+    }
+
+    RootedString stackString(cx);
+
+    // Do frame filtering based on the current realm, to filter out any
+    // chrome frames which could exist on the stack.
+    JSPrincipals* principals = cx->realm()->principals();
+    if (!BuildStackString(cx, principals, stack, &stackString)) {
       return false;
     }
-  }
-
-  RootedString stackString(cx);
-
-  // Do frame filtering based on the current realm, to filter out any
-  // chrome frames which could exist on the stack.
-  JSPrincipals* principals = cx->realm()->principals();
-  if (!BuildStackString(cx, principals, stack, &stackString)) {
-    return false;
+    stackVal.setString(stackString);
   }
 
   // V8 installs a non-enumerable, configurable getter-setter on the object.
   // JSC installs a non-enumerable, configurable, writable value on the
   // object. We are following JSC here, not V8.
-  RootedValue string(cx, StringValue(stackString));
-  if (!DefineDataProperty(cx, obj, cx->names().stack, string, 0)) {
+  if (!DefineDataProperty(cx, obj, cx->names().stack, stackVal, 0)) {
     return false;
   }
 
@@ -1287,8 +1293,8 @@ struct SuppressErrorsGuard {
   ~SuppressErrorsGuard() { JS::SetWarningReporter(cx, prevReporter); }
 };
 
-bool js::CaptureStack(JSContext* cx, MutableHandleObject stack) {
-  const uint32_t limit = GetStackTraceLimit(cx);
+bool js::CaptureStack(JSContext* cx, MutableHandleObject stack,
+                      uint32_t limit) {
   if (limit == 0) {
     return true;
   }
@@ -1299,7 +1305,7 @@ JSString* js::ComputeStackString(JSContext* cx) {
   SuppressErrorsGuard seg(cx);
 
   RootedObject stack(cx);
-  if (!CaptureStack(cx, &stack)) {
+  if (!CaptureStack(cx, &stack, MAX_REPORTED_STACK_DEPTH)) {
     return nullptr;
   }
 
@@ -1413,8 +1419,9 @@ bool js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
   // Error reports don't provide a |cause|, so we default to |Nothing| here.
   auto cause = JS::NothingHandleValue;
 
+  mozilla::Maybe<uint32_t> limit = GetStackTraceLimit(cx);
   RootedObject stack(cx);
-  if (!CaptureStack(cx, &stack)) {
+  if (!CaptureStack(cx, &stack, limit.valueOr(0))) {
     return false;
   }
 
@@ -1423,11 +1430,18 @@ bool js::ErrorToException(JSContext* cx, JSErrorReport* reportp,
     return false;
   }
 
-  ErrorObject* errObject =
+  Rooted<ErrorObject*> errObject(
+      cx,
       ErrorObject::create(cx, exnType, stack, fileName, sourceId, lineNumber,
-                          columnNumber, std::move(report), messageStr, cause);
+                          columnNumber, std::move(report), messageStr, cause));
   if (!errObject) {
     return false;
+  }
+  if (limit.isNothing()) {
+    if (!DefineDataProperty(cx, errObject, cx->names().stack,
+                            JS::UndefinedHandleValue)) {
+      return false;
+    }
   }
 
   // Throw it.
@@ -1886,9 +1900,21 @@ JSObject* js::CopyErrorObject(JSContext* cx, Handle<ErrorObject*> err) {
   JSExnType errorType = err->type();
 
   // Create the Error object.
-  return ErrorObject::create(cx, errorType, stack, fileName, sourceId,
-                             lineNumber, columnNumber, std::move(copyReport),
-                             message, cause);
+  Rooted<ErrorObject*> copy(
+      cx,
+      ErrorObject::create(cx, errorType, stack, fileName, sourceId, lineNumber,
+                          columnNumber, std::move(copyReport), message, cause));
+  if (!copy) {
+    return nullptr;
+  }
+
+  // Preserve the Wasm trap flag so that a copied trap remains uncatchable by
+  // Wasm exception handling (catch_all).
+  if (err->mightBeWasmTrap() && err->fromWasmTrap()) {
+    copy->setFromWasmTrap();
+  }
+
+  return copy;
 }
 
 JS_PUBLIC_API bool JS::CreateError(JSContext* cx, JSExnType type,

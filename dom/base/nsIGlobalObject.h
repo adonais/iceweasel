@@ -142,7 +142,7 @@ class nsIGlobalObject : public nsISupports {
   bool HasJSGlobal() const { return GetGlobalJSObjectPreserveColor(); }
 
   virtual nsISerialEventTarget* SerialEventTarget() const = 0;
-  virtual nsresult Dispatch(already_AddRefed<nsIRunnable>&&) const = 0;
+  virtual nsresult Dispatch(already_AddRefed<nsIRunnable>) const = 0;
 
   // This method is not meant to be overridden.
   nsIPrincipal* PrincipalOrNull() const;

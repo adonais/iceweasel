@@ -61,7 +61,7 @@ clobber-%:
 PACKAGER_NO_LIBS = 1
 
 ifeq (cocoa,$(MOZ_WIDGET_TOOLKIT))
-STAGEDIST = $(ABS_DIST)/l10n-stage/$(MOZ_PKG_DIR)/$(_APPNAME)/Contents/Resources
+STAGEDIST = $(ABS_DIST)/l10n-stage/$(MOZ_PKG_DIR)/$(MOZ_PKG_RESPATH)
 else
 STAGEDIST = $(ABS_DIST)/l10n-stage/$(MOZ_PKG_DIR)
 endif
@@ -118,7 +118,7 @@ merge-%: IS_LANGUAGE_REPACK=1
 merge-%: AB_CD=$*
 merge-%:
 	$(RM) -rf $(REAL_LOCALE_MERGEDIR)
-	$(PYTHON3) -m moz.l10n.bin.build --config $(srcdir)/l10n.toml --base $(L10NBASEDIR) --target $(BASE_MERGE) --locales $(AB_CD)
+	$(PYTHON3) -m moz.l10n.bin.build --config $(srcdir)/l10n.toml --base $(L10NBASEDIR) --target $(BASE_MERGE) --locales $(AB_CD) --coverage
 # Hunspell dictionaries are interesting, as we don't ship the en-US
 # dictionary in repacks. Thus we can't use the merge logic from
 # compare-locales above, which would add en-US.dic and en-US.aff to

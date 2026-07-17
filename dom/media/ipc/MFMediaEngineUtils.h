@@ -29,11 +29,12 @@ using MFMediaEngineEvent = MF_MEDIA_ENGINE_EVENT;
 // https://docs.microsoft.com/en-us/windows/win32/api/mfmediaengine/ne-mfmediaengine-mf_media_engine_err
 using MFMediaEngineError = MF_MEDIA_ENGINE_ERR;
 
-#define LOG_AND_WARNING(msg, ...)                                \
-  do {                                                           \
-    NS_WARNING(nsPrintfCString(msg, rv).get());                  \
-    MOZ_LOG(gMFMediaEngineLog, LogLevel::Debug,                  \
-            ("%s:%d, " msg, __FILE__, __LINE__, ##__VA_ARGS__)); \
+#define LOG_AND_WARNING(msg, ...)                                          \
+  do {                                                                     \
+    nsPrintfCString _logStr(msg, ##__VA_ARGS__);                           \
+    NS_WARNING(_logStr.get());                                             \
+    MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Debug, "{}:{}, {}", __FILE__, \
+                __LINE__, _logStr.get());                                  \
   } while (false)
 
 #ifndef LOG_IF_FAILED
@@ -89,8 +90,8 @@ using MFMediaEngineError = MF_MEDIA_ENGINE_ERR;
         if (FAILED(rv)) {                                                    \
           LOG_AND_WARNING(#class " failed to shutdown, rv=%lx", rv);         \
         } else {                                                             \
-          MOZ_LOG(gMFMediaEngineLog, LogLevel::Verbose,                      \
-                  ((#class " shutdowned successfully")));                    \
+          MOZ_LOG_FMT(gMFMediaEngineLog, LogLevel::Verbose,                  \
+                      #class " shutdowned successfully");                    \
         }                                                                    \
         pShutdown->Release();                                                \
       } else {                                                               \

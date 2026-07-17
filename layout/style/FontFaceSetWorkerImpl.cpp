@@ -9,6 +9,7 @@
 #include "mozilla/dom/WorkerPrivate.h"
 #include "mozilla/dom/WorkerRef.h"
 #include "mozilla/dom/WorkerRunnable.h"
+#include "mozilla/dom/WorkerScope.h"
 #include "nsContentPolicyUtils.h"
 #include "nsFontFaceLoader.h"
 #include "nsIWebNavigation.h"
@@ -44,6 +45,7 @@ bool FontFaceSetWorkerImpl::Initialize(WorkerPrivate* aWorkerPrivate) {
   {
     RecursiveMutexAutoLock lock(mMutex);
     mWorkerRef = new ThreadSafeWorkerRef(workerRef);
+    mClientInfo = aWorkerPrivate->GlobalScope()->GetClientInfo();
   }
 
   class InitRunnable final : public WorkerMainThreadRunnable {
@@ -246,6 +248,10 @@ nsresult FontFaceSetWorkerImpl::StartLoad(gfxUserFontEntry* aUserFontEntry,
     return NS_ERROR_FAILURE;
   }
 
+  if (NS_WARN_IF(!mClientInfo)) {
+    return NS_ERROR_CONTENT_BLOCKED;
+  }
+
   nsresult rv;
 
   nsCOMPtr<nsIStreamLoader> streamLoader;
@@ -257,7 +263,7 @@ nsresult FontFaceSetWorkerImpl::StartLoad(gfxUserFontEntry* aUserFontEntry,
   rv = FontLoaderUtils::BuildChannel(
       getter_AddRefs(channel), src.mURI->get(), CORS_ANONYMOUS,
       dom::ReferrerPolicy::_empty /* not used */, aUserFontEntry, &src,
-      mWorkerRef->Private(), loadGroup, nullptr);
+      mWorkerRef->Private(), *mClientInfo, loadGroup, nullptr);
   NS_ENSURE_SUCCESS(rv, rv);
 
   auto fontLoader =

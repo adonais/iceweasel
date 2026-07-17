@@ -19,7 +19,7 @@ namespace dom {
 
 class ProcessingInstruction : public CharacterData {
  public:
-  ProcessingInstruction(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+  ProcessingInstruction(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                         const nsAString& aData);
 
   virtual already_AddRefed<CharacterData> CloneDataNode(

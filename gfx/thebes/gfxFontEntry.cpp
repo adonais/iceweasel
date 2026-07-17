@@ -111,8 +111,6 @@ gfxFontEntry::~gfxFontEntry() {
   MOZ_ASSERT(!mGrFaceInitialized);
 }
 
-// Only used during initialization, before any other thread has a chance to see
-// the entry, so locking not required.
 void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
                                   const fontlist::Family* aFamily) {
   mShmemFace = aFace;
@@ -123,7 +121,12 @@ void gfxFontEntry::InitializeFrom(fontlist::Face* aFace,
   mFixedPitch = aFace->mFixedPitch;
   mIsBadUnderlineFont = aFamily->IsBadUnderlineFamily();
   auto* list = gfxPlatformFontList::PlatformFontList()->SharedFontList();
+  // This method is only used during initialization, before any other thread
+  // has a chance to see the entry, so although mFamilyName is "guarded" by
+  // mLock, locking is not required here.
+  MOZ_PUSH_IGNORE_THREAD_SAFETY
   mFamilyName = aFamily->DisplayName().AsString(list);
+  MOZ_POP_THREAD_SAFETY
   mHasCmapTable = TrySetShmemCharacterMap();
 }
 
@@ -1561,7 +1564,7 @@ void gfxFontFamily::CheckForSimpleFamily() {
     return;  // family with variation fonts is not considered "simple"
   }
 
-  gfxFontEntry* faces[4] = {0};
+  gfxFontEntry* faces[4] = {nullptr};
   for (uint8_t i = 0; i < count; ++i) {
     gfxFontEntry* fe = mAvailableFonts[i];
     if (fe->Stretch() != firstStretch || fe->IsOblique()) {

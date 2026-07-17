@@ -21,31 +21,41 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
 
-private class ColorParameterProvider : PreviewParameterProvider<Pair<AcornColors, ColorScheme>> {
-    override val values: Sequence<Pair<AcornColors, ColorScheme>>
+private data class ColorGridParameters(
+    val colors: AcornColors,
+    val colorScheme: ColorScheme,
+    val gradients: AcornGradientScheme,
+)
+
+private class ColorParameterProvider : PreviewParameterProvider<ColorGridParameters> {
+    override val values: Sequence<ColorGridParameters>
         get() = sequenceOf(
-            lightColorPalette to acornLightColorScheme(),
-            darkColorPalette to acornDarkColorScheme(),
-            privateColorPalette to acornPrivateColorScheme(),
+            ColorGridParameters(lightColorPalette, acornLightColorScheme(), lightAcornGradientScheme),
+            ColorGridParameters(darkColorPalette, acornDarkColorScheme(), darkAcornGradientScheme),
+            ColorGridParameters(privateColorPalette, acornPrivateColorScheme(), privateAcornGradientScheme),
         )
 }
 
 @Suppress("LongMethod", "MagicNumber")
-@Preview(widthDp = CONTAINER_STACK_WIDTH * 4 + CONTAINER_GUTTER * 3 + 16, heightDp = 1200)
+@Preview(widthDp = CONTAINER_STACK_WIDTH * 4 + CONTAINER_GUTTER * 3 + 16, heightDp = 1600)
 @Composable
 private fun AcornColorGrid(
-    @PreviewParameter(ColorParameterProvider::class) colors: Pair<AcornColors, ColorScheme>,
+    @PreviewParameter(ColorParameterProvider::class)
+    parameters: ColorGridParameters,
 ) {
-    val colorScheme = colors.second
+    val colorScheme = parameters.colorScheme
+    val gradients = parameters.gradients
     AcornTheme(
-        colors = colors.first,
+        colors = parameters.colors,
         colorScheme = colorScheme,
+        gradients = gradients,
     ) {
         CompositionLocalProvider(LocalTextStyle provides MaterialTheme.typography.labelSmall) {
             Column(
@@ -332,6 +342,58 @@ private fun AcornColorGrid(
                         modifier = Modifier.colorGridItemShort(color = colorScheme.surfaceDimVariant),
                         color = colorScheme.onSurface,
                     )
+
+                    Text(
+                        text = "autofillText",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.autofillText),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = "selectedText",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.selectedText),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = "iconPrivate",
+                        modifier = Modifier.colorGridItemShort(color = colorScheme.iconPrivate),
+                        color = colorScheme.onPrimary,
+                    )
+                }
+
+                Text(
+                    text = "Gradients",
+                    style = MaterialTheme.typography.displayMedium,
+                    color = colorScheme.onSurface,
+                )
+
+                Column(
+                    modifier = Modifier.width(CONTAINER_STACK_WIDTH.dp),
+                ) {
+                    Text(
+                        text = gradients::cfr.name,
+                        modifier = Modifier.gradientGridItemShort(brush = gradients.cfr.brush),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = gradients::accent.name,
+                        modifier = Modifier.gradientGridItemShort(brush = gradients.accent.brush),
+                        color = colorScheme.onPrimary,
+                    )
+
+                    Text(
+                        text = gradients::accentSubtle.name,
+                        modifier = Modifier.gradientGridItemShort(brush = gradients.accentSubtle.brush),
+                        color = colorScheme.onSurface,
+                    )
+
+                    Text(
+                        text = gradients::tabOutline.name,
+                        modifier = Modifier.gradientGridItemShort(brush = gradients.tabOutline.brush),
+                        color = colorScheme.onPrimary,
+                    )
                 }
             }
         }
@@ -397,7 +459,17 @@ fun ContainerColorStack(
 }
 
 private fun Modifier.colorGridItemShort(color: Color) = this.then(
-    other = Modifier.background(color = color)
+    other = Modifier
+        .background(color = color)
+        .fillMaxWidth()
+        .height(50.dp)
+        .wrapContentHeight()
+        .padding(all = 12.dp),
+)
+
+private fun Modifier.gradientGridItemShort(brush: Brush) = this.then(
+    other = Modifier
+        .background(brush = brush)
         .fillMaxWidth()
         .height(50.dp)
         .wrapContentHeight()

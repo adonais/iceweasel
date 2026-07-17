@@ -88,6 +88,15 @@ class ExtensionAPIBase {
       const dom::Sequence<JS::Value>& aArgs, nsAString& aRetVal,
       ErrorResult& aRv);
 
+  virtual void CallWebExtMethodReturnsOptionalString(
+      JSContext* aCx, const nsAString& aApiMethod,
+      const dom::Sequence<JS::Value>& aArgs, nsAString& aRetVal,
+      ErrorResult& aRv);
+
+  virtual bool CallWebExtMethodReturnsBoolean(
+      JSContext* aCx, const nsAString& aApiMethod,
+      const dom::Sequence<JS::Value>& aArgs, ErrorResult& aRv);
+
   virtual already_AddRefed<ExtensionPort> CallWebExtMethodReturnsPort(
       JSContext* aCx, const nsAString& aApiMethod,
       const dom::Sequence<JS::Value>& aArgs, ErrorResult& aRv);
@@ -150,6 +159,11 @@ class ExtensionAPIBase {
                                      const RefPtr<dom::Function>& aCallback,
                                      JS::MutableHandle<JS::Value> aRetval,
                                      ErrorResult& aRv);
+
+  void CallWebExtMethodReturnsStringInternal(
+      JSContext* aCx, const nsAString& aApiMethod,
+      const dom::Sequence<JS::Value>& aArgs, const bool aRetOptional,
+      nsAString& aRetVal, ErrorResult& aRv);
 };
 
 class ExtensionAPINamespace : public ExtensionAPIBase {

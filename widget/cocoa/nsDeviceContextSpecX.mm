@@ -205,7 +205,7 @@ nsresult nsDeviceContextSpecX::DoEndDocument() {
 
     switch (destination) {
       case kPMDestinationPrinter: {
-        PMPrinter currentPrinter = NULL;
+        PMPrinter currentPrinter = nullptr;
         status = ::PMSessionGetCurrentPrinter(mPrintSession, &currentPrinter);
         if (status != noErr) {
           return NS_ERROR_FAILURE;

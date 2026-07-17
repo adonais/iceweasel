@@ -3,13 +3,6 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 :host {
-  /* in-content/common.css variables */
-  --blue-50: #0a84ff;
-  --grey-90-a10: rgba(12, 12, 13, 0.1);
-  --border-active-shadow: var(--blue-50);
-}
-
-:host {
   display: block;
   position: absolute;
   bottom: 24px;
@@ -89,7 +82,7 @@
 }
 
 .toolbarButton:-moz-focusring {
-  outline: 2px solid var(--border-active-shadow);
+  outline: 2px solid var(--focus-outline-color);
 }
 
 .toolbarCenter {

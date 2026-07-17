@@ -44,6 +44,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   sample.set(obj);
 
   assert(compareArray(sample, [42n, 43n, 44n, 45n, 46n]));
-}, null, ["passthrough"]);
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

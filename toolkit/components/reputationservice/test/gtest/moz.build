@@ -4,6 +4,7 @@
 
 LOCAL_INCLUDES += [
     "../..",
+    "/third_party/abseil-cpp",
 ]
 
 DEFINES["GOOGLE_PROTOBUF_NO_RTTI"] = True

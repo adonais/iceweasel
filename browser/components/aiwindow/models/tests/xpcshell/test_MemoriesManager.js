@@ -428,9 +428,6 @@ add_task(async function test_memoryClassifyMessage_happy_path() {
   const sb = sinon.createSandbox();
   try {
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: `{
@@ -485,9 +482,6 @@ add_task(async function test_memoryClassifyMessage_sad_path_empty_output() {
   const sb = sinon.createSandbox();
   try {
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: ``,
@@ -539,9 +533,6 @@ add_task(async function test_memoryClassifyMessage_sad_path_bad_schema() {
   const sb = sinon.createSandbox();
   try {
     const fakeEngine = {
-      loadPrompt() {
-        return "fake prompt";
-      },
       run() {
         return {
           finalOutput: `{

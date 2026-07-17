@@ -50,6 +50,12 @@ class ListObject : public NativeObject {
   [[nodiscard]] inline bool append(JSContext* cx, Value value);
 
   /**
+   * Add two elements to the end of the list atomically. Returns false on OOM.
+   * On failure, neither element is added.
+   */
+  [[nodiscard]] inline bool append(JSContext* cx, Value v1, Value v2);
+
+  /**
    * Remove and return the first element of the list.
    *
    * Precondition: This list is not empty.

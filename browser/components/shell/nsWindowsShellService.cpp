@@ -459,13 +459,21 @@ nsWindowsShellService::CanSetDefaultBrowserUserChoice(bool* aResult) {
 
 class __declspec(novtable) IOpenWithLauncher : public IUnknown {
  public:
+  // lpszPath selects what the picker offers to set as default. It accepts
+  // several shapes:
+  //   - a file path:     "C:\\path\\to\\file.pdf"
+  //   - a file type:     ".pdf"
+  //   - a protocol:      "http"
+  //   - a protocol URI:  "https://example.com", "mailto:foo@example.com"
+  // flags determines the messaging and actions available of the
+  // IOpenWithLauncher dialog.
   virtual HRESULT STDMETHODCALLTYPE Launch(HWND hWndParent, LPCWSTR lpszPath,
                                            int flags) = 0;
 };
 
 NS_IMETHODIMP
-nsWindowsShellService::LaunchOpenWithDefaultPickerForFileType(
-    const nsAString& aFileType) {
+nsWindowsShellService::LaunchSetDefaultAppPicker(const nsAString& aTarget,
+                                                 int32_t aFlags) {
   static constexpr GUID IID_IOpenWithLauncher = {
       0x6a283fe2,
       0xecfa,
@@ -500,10 +508,7 @@ nsWindowsShellService::LaunchOpenWithDefaultPickerForFileType(
   // Make sure the dialog is foregrounded.
   CoAllowSetForegroundWindow(pOWL, nullptr);
 
-  // The flag is a bit of a mystery; on Win11+ 0x84 gives ideal messaging, on
-  // Win10 we use 0x2004.
-  int flag = mozilla::IsWin11OrLater() ? 0x84 : 0x2004;
-  hr = pOWL->Launch(nullptr, aFileType.Data(), flag);
+  hr = pOWL->Launch(nullptr, PromiseFlatString(aTarget).get(), aFlags);
 
   return SUCCEEDED(hr) ? NS_OK : NS_ERROR_FAILURE;
 }

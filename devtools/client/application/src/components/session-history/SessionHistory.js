@@ -102,7 +102,10 @@ function SessionHistoryDiagram({ current, diagrams, entriesByKey }) {
                     id: "session-history-entry-info-button-title",
                     attrs: { title: true },
                   },
-                  button({ popovertarget: id }, `${url.pathname}${url.search}`)
+                  button(
+                    { popovertarget: id, style: { "--age": age } },
+                    `${url.pathname}${url.search}`
+                  )
                 ),
                 createElement(EntryInfo, { fields: entriesByKey[key], id })
               )

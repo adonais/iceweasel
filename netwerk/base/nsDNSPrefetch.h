@@ -50,6 +50,12 @@ class nsDNSPrefetch final : public nsIDNSListener {
   nsresult PrefetchLow(
       nsIDNSService::DNSFlags = nsIDNSService::RESOLVE_DEFAULT_FLAGS);
 
+  // High-priority prefetch that issues two per-family lookups (A and AAAA)
+  // instead of one AF_UNSPEC lookup, matching what Happy Eyeballs does so HE
+  // can reuse them. A family is skipped if its aSkip* flag is set.
+  nsresult PrefetchHighPerFamily(nsIDNSService::DNSFlags aFlags, bool aSkipIPv4,
+                                 bool aSkipIPv6);
+
   nsresult FetchHTTPSSVC(
       bool aRefreshDNS, bool aPrefetch,
       std::function<void(nsIDNSHTTPSSVCRecord*)>&& aCallback);
@@ -63,6 +69,9 @@ class nsDNSPrefetch final : public nsIDNSListener {
   mozilla::TimeStamp mStartTimestamp;
   mozilla::TimeStamp mEndTimestamp;
   nsWeakPtr mListener;
+  // Per-family prefetch fires OnLookupComplete twice; only the first
+  // completion drives the timing and listener callback.
+  bool mLookupCompleted{false};
 
   nsresult Prefetch(nsIDNSService::DNSFlags flags);
 };

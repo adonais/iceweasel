@@ -54,6 +54,55 @@ object TabDrawerSelectors {
         groups = listOf("tabDrawerUnauthenticatedSyncedTabs"),
     )
 
+    val PRIVATE_TABS_PAGE_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TAG,
+        value = TabsTrayTestTag.PRIVATE_TABS_PAGE_BUTTON,
+        description = "Private browsing tabs tray button",
+        groups = listOf("requiredForPage"),
+    )
+
+    val TAB_GROUPS_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TAG,
+        value = TabsTrayTestTag.TAB_GROUPS_PAGE_BUTTON,
+        description = "Tab groups button",
+        groups = listOf("requiredForPage"),
+    )
+
+    val THREE_DOT_BUTTON = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TAG,
+        value = TabsTrayTestTag.THREE_DOT_BUTTON,
+        description = "Three dot menu button",
+        groups = listOf("requiredForPage"),
+    )
+
+    val FAB = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TAG,
+        value = TabsTrayTestTag.FAB,
+        description = "Floating action button",
+        groups = listOf("requiredForPage"),
+    )
+
+    val PRIVATE_TABS_LIST = Selector(
+        strategy = SelectorStrategy.COMPOSE_BY_TAG,
+        value = TabsTrayTestTag.PRIVATE_TABS_LIST,
+        description = "Private tabs list",
+        groups = listOf("privateTabsList"),
+    )
+
+    val TAB_ITEM_CLOSE = Selector(
+        strategy = SelectorStrategy.COMPOSE_ON_ALL_NODES_BY_TAG_ON_FIRST,
+        value = TabsTrayTestTag.TAB_ITEM_CLOSE,
+        description = "Tab close button",
+        groups = listOf("tabItem"),
+    )
+
+    val TAB_ITEM_THUMBNAIL = Selector(
+        strategy = SelectorStrategy.COMPOSE_ON_ALL_NODES_BY_TAG_ON_FIRST,
+        value = TabsTrayTestTag.TAB_ITEM_THUMBNAIL,
+        description = "Tab thumbnail",
+        groups = listOf("tabItem"),
+    )
+
     val all = listOf(
         NORMAL_BROWSING_OPEN_TABS_BUTTON,
         SYNCED_TABS_BUTTON,
@@ -61,5 +110,12 @@ object TabDrawerSelectors {
         UNAUTHENTICATED_SYNCED_TABS_PAGE,
         UNAUTHENTICATED_SYNCED_TABS_PAGE_HEADER,
         UNAUTHENTICATED_SYNCED_TABS_PAGE_DESCRIPTION,
+        PRIVATE_TABS_PAGE_BUTTON,
+        TAB_GROUPS_BUTTON,
+        THREE_DOT_BUTTON,
+        FAB,
+        PRIVATE_TABS_LIST,
+        TAB_ITEM_CLOSE,
+        TAB_ITEM_THUMBNAIL,
     )
 }

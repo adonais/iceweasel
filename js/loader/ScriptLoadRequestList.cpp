@@ -2,6 +2,8 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
+#include <mozilla/FlowMarkers.h>
+
 #include "ScriptLoadRequestList.h"
 
 #include "ScriptLoadRequest.h"
@@ -35,6 +37,9 @@ bool ScriptLoadRequestList::Contains(ScriptLoadRequest* aElem) const {
 #endif  // DEBUG
 
 void ScriptLoadRequestList::AppendElement(ScriptLoadRequest* aElem) {
+  PROFILER_MARKER("ScriptLoadRequestList::AppendElement", JS,
+                  {mozilla::MarkerStack::Capture()}, FlowMarker,
+                  Flow::FromPointer(aElem));
   MOZ_ASSERT(!aElem->isInList());
   NS_ADDREF(aElem);
   insertBack(aElem);

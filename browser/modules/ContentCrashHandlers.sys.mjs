@@ -8,6 +8,7 @@ const lazy = {};
 
 ChromeUtils.defineESModuleGetters(lazy, {
   BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
+  CrashReports: "resource://gre/modules/CrashReports.sys.mjs",
   CrashSubmit: "resource://gre/modules/CrashSubmit.sys.mjs",
   E10SUtils: "resource://gre/modules/E10SUtils.sys.mjs",
   RemoteSettingsCrashPull:
@@ -30,6 +31,13 @@ const SILENCE_FOR_DAYS_IN_S = 7 * 86400;
 
 // Time after which we will begin scanning for unsubmitted crash reports
 const CHECK_FOR_UNSUBMITTED_CRASH_REPORTS_DELAY_MS = 60 * 10000; // 10 minutes
+
+// Time after which CrashFileCleaner runs its periodic cleanup pass.
+const CRASH_FILE_CLEANUP_DELAY_MS = (23 + 5 * 60) * 1000; // A little past 5mn
+const CLEANUP_INTERVAL_DAYS = 7;
+const INSTALL_TIME_MAX_AGE_MS = 90 * DAY; // ~3 months
+const REPORT_MAX_AGE_MS = 180 * DAY; // ~6 months
+const MAX_PENDING_REPORTS = 30;
 
 // This is SIGUSR1 and indicates a user-invoked crash
 const EXIT_CODE_CONTENT_CRASHED = 245;
@@ -1267,6 +1275,122 @@ export var UnsubmittedCrashHandler = {
       lazy.CrashSubmit.submit(reportID, submittedFrom, params).catch(
         this.log.error.bind(this.log)
       );
+    }
+  },
+};
+
+ChromeUtils.defineLazyGetter(lazy, "cleanerPrefs", () =>
+  Services.prefs.getBranch("browser.crashReports.cleanupCheck.")
+);
+ChromeUtils.defineLazyGetter(lazy, "cleanerLog", () =>
+  console.createInstance({
+    prefix: "CrashFileCleaner",
+    maxLogLevel: lazy.cleanerPrefs.getStringPref("loglevel", "Error"),
+  })
+);
+/**
+ * `CrashFileCleaner` prunes stale crash-related files from the user's
+ * profile on a recurring schedule.
+ */
+export var CrashFileCleaner = {
+  get enabled() {
+    return lazy.cleanerPrefs.getBoolPref("enabled");
+  },
+
+  _checkTimeout: null,
+
+  init() {
+    if (this.initialized) {
+      return;
+    }
+
+    this.initialized = true;
+
+    if (!this.enabled) {
+      lazy.cleanerLog.debug("not enabled");
+    }
+  },
+
+  uninit() {
+    if (!this.initialized) {
+      return;
+    }
+
+    this.initialized = false;
+
+    if (this._checkTimeout) {
+      lazy.clearTimeout(this._checkTimeout);
+      this._checkTimeout = null;
+    }
+  },
+
+  scheduleCleanup() {
+    this._checkTimeout = lazy.setTimeout(() => {
+      Services.tm.idleDispatchToMainThread(() => {
+        this.runCleanup();
+      });
+    }, CRASH_FILE_CLEANUP_DELAY_MS);
+  },
+
+  _ranRecently() {
+    if (!lazy.cleanerPrefs.prefHasUserValue("lastDate")) {
+      return false;
+    }
+    const lastDate = Date.parse(lazy.cleanerPrefs.getCharPref("lastDate"));
+    if (isNaN(lastDate)) {
+      return false;
+    }
+    return Date.now() - lastDate < CLEANUP_INTERVAL_DAYS * DAY;
+  },
+
+  async pruneInstallTimeMarkers() {
+    await lazy.CrashReports.pruneInstallTimeFiles(INSTALL_TIME_MAX_AGE_MS);
+  },
+
+  async pruneOldReports() {
+    const cutoff = Date.now() - REPORT_MAX_AGE_MS;
+    for (const report of lazy.CrashReports.getReports()) {
+      if (report.date < cutoff) {
+        if (report.pending) {
+          lazy.CrashReports.deletePendingReport(report.id);
+        } else {
+          lazy.CrashReports.deleteSubmittedReport(report.id);
+        }
+      }
+    }
+  },
+
+  /**
+   * Ensure there isn't too many pending reports, removing the oldest first.
+   */
+  async enforcePendingCap() {
+    const pending = lazy.CrashReports.getReports().filter(r => r.pending);
+    if (pending.length <= MAX_PENDING_REPORTS) {
+      return;
+    }
+    for (const report of pending.slice(MAX_PENDING_REPORTS)) {
+      await lazy.CrashReports.deletePendingReport(report.id);
+    }
+  },
+
+  async runCleanup() {
+    if (!this.enabled) {
+      return;
+    }
+    if (this._ranRecently()) {
+      lazy.cleanerLog.debug("cleanup ran recently, skipping");
+      return;
+    }
+
+    lazy.cleanerLog.debug("running cleanup");
+
+    try {
+      await this.pruneInstallTimeMarkers();
+      await this.pruneOldReports();
+      await this.enforcePendingCap();
+      lazy.cleanerPrefs.setCharPref("lastDate", new Date().toISOString());
+    } catch (e) {
+      lazy.cleanerLog.error(e);
     }
   },
 };

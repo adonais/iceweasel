@@ -9,6 +9,7 @@
 #include "mozilla/EffectCompositor.h"
 #include "mozilla/ProfilerLabels.h"
 #include "mozilla/StaticPrefs_gfx.h"
+#include "mozilla/StaticPrefs_layout.h"
 #include "mozilla/SVGGeometryFrame.h"
 #include "mozilla/SVGImageFrame.h"
 #include "mozilla/UniquePtr.h"
@@ -683,6 +684,11 @@ struct DIGroup {
     //   Contains(paintBounds);?
     wr::OpacityType opacity = wr::OpacityType::HasAlphaChannel;
 
+    auto format = wr::SurfaceFormatToImageFormat(dt->GetFormat());
+    if (NS_WARN_IF(!format)) {
+      return;
+    }
+
     bool hasItems = recorder->Finish();
     GP("%d Finish\n", hasItems);
     if (!validFonts) {
@@ -702,7 +708,7 @@ struct DIGroup {
       wr::BlobImageKey key =
           wr::BlobImageKey{aWrManager->WrBridge()->GetNextImageKey()};
       GP("No previous key making new one %d\n", key._0.mHandle);
-      wr::ImageDescriptor descriptor(dtSize, 0, dt->GetFormat(), opacity);
+      wr::ImageDescriptor descriptor(dtSize, 0, *format, opacity);
       MOZ_RELEASE_ASSERT(bytes.length() > sizeof(size_t));
       if (!aResources.AddBlobImage(
               key, descriptor, bytes,
@@ -716,7 +722,7 @@ struct DIGroup {
           aWrManager->WrBridge()->MatchesNamespace(mKey.ref()),
           "Stale blob key for group!");
 
-      wr::ImageDescriptor descriptor(dtSize, 0, dt->GetFormat(), opacity);
+      wr::ImageDescriptor descriptor(dtSize, 0, *format, opacity);
 
       // Convert mInvalidRect to image space by subtracting the corner of the
       // image bounds
@@ -2667,8 +2673,12 @@ WebRenderCommandBuilder::GenerateFallbackData(
                          recorder->mOutputStream.mLength);
     wr::BlobImageKey key =
         wr::BlobImageKey{mManager->WrBridge()->GetNextImageKey()};
-    wr::ImageDescriptor descriptor(visibleSize.ToUnknownSize(), 0,
-                                   dt->GetFormat(), opacity);
+    auto imageFormat = wr::SurfaceFormatToImageFormat(dt->GetFormat());
+    if (NS_WARN_IF(!imageFormat)) {
+      return nullptr;
+    }
+    wr::ImageDescriptor descriptor(visibleSize.ToUnknownSize(), 0, *imageFormat,
+                                   opacity);
     if (!aResources.AddBlobImage(
             key, descriptor, bytes,
             ViewAs<ImagePixel>(visibleRect,
@@ -2740,9 +2750,18 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
   bool sameScale = gfx::FuzzyEqual(scale.xScale, oldScale.xScale, 1e-6f) &&
                    gfx::FuzzyEqual(scale.yScale, oldScale.yScale, 1e-6f);
 
-  LayerIntRect itemRect =
-      LayerIntRect::FromUnknownRect(bounds.ScaleToOutsidePixels(
-          scale.xScale, scale.yScale, appUnitsPerDevPixel));
+  // The blob is rasterized into an integer-sized draw target whose origin is
+  // itemRect.TopLeft(). With pixel alignment disabled the placement rect is
+  // sent unrounded and snapped to the nearest device pixel by WebRender, so
+  // rasterize the blob on the nearest-pixel grid too (rather than rounding
+  // out); otherwise the mask alpha lands ~1px off the placement it's mapped
+  // onto.
+  LayerIntRect itemRect = LayerIntRect::FromUnknownRect(
+      StaticPrefs::layout_disable_pixel_alignment()
+          ? bounds.ScaleToNearestPixels(scale.xScale, scale.yScale,
+                                        appUnitsPerDevPixel)
+          : bounds.ScaleToOutsidePixels(scale.xScale, scale.yScale,
+                                        appUnitsPerDevPixel));
 
   LayerIntRect visibleRect =
       LayerIntRect::FromUnknownRect(
@@ -2755,7 +2774,21 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
   }
 
   LayoutDeviceToLayerScale2D layerScale(scale.xScale, scale.yScale);
-  LayoutDeviceRect imageRect = LayerRect(visibleRect) / layerScale;
+
+  // Rect the mask image is placed and sampled over. The blob itself must stay
+  // integer-sized (itemRect/visibleRect, above), but the placement rect we
+  // hand to WebRender becomes the mask clip node's rect, which WebRender snaps
+  // to device pixels at frame time. With pixel alignment disabled, send the
+  // true (unrounded) rect -- the same one the masked content uses -- so the
+  // mask snaps in lockstep with its content instead of carrying our own stale
+  // device-pixel RoundOut.
+  LayoutDeviceRect imageRect;
+  if (StaticPrefs::layout_disable_pixel_alignment()) {
+    imageRect = LayoutDeviceRect::FromAppUnits(
+        bounds.Intersect(aMaskItem->GetBuildingRect()), appUnitsPerDevPixel);
+  } else {
+    imageRect = LayerRect(visibleRect) / layerScale;
+  }
 
   nsPoint maskOffset = aMaskItem->ToReferenceFrame() - bounds.TopLeft();
 
@@ -2850,7 +2883,11 @@ Maybe<wr::ImageMask> WebRenderCommandBuilder::BuildWrMaskImage(
                          recorder->mOutputStream.mLength);
     wr::BlobImageKey key =
         wr::BlobImageKey{mManager->WrBridge()->GetNextImageKey()};
-    wr::ImageDescriptor descriptor(size, 0, dt->GetFormat(),
+    auto imageFormat = wr::SurfaceFormatToImageFormat(dt->GetFormat());
+    if (NS_WARN_IF(!imageFormat)) {
+      return Nothing();
+    }
+    wr::ImageDescriptor descriptor(size, 0, *imageFormat,
                                    wr::OpacityType::HasAlphaChannel);
     if (!aResources.AddBlobImage(key, descriptor, bytes,
                                  ImageIntRect(0, 0, size.width, size.height))) {

@@ -83,3 +83,66 @@ add_task(async function test_content_script_propagation() {
   await extension.unload();
   setEnterpriseGuards({});
 });
+
+async function do_guard_blocks_content_scripts(manifest_version) {
+  const GUARDED_ID = `guarded-mv${manifest_version}@test`;
+  const UNGUARDED_ID = `unguarded-mv${manifest_version}@test`;
+
+  setEnterpriseGuards({
+    [GUARDED_ID]: {
+      runtime_blocked_hosts: ["http://guard.example.com/*"],
+      runtime_allowed_hosts: [],
+    },
+  });
+
+  function makeExtension(id, run_at, files) {
+    return ExtensionTestUtils.loadExtension({
+      manifest: {
+        manifest_version,
+        browser_specific_settings: { gecko: { id } },
+        content_scripts: [
+          {
+            matches: ["http://guard.example.com/*"],
+            js: ["cs.js"],
+            run_at,
+          },
+        ],
+      },
+      files,
+    });
+  }
+
+  let guarded = makeExtension(GUARDED_ID, "document_start", {
+    "cs.js"() {
+      browser.test.fail("guarded content script ran on " + location.host);
+    },
+  });
+
+  let unguarded = makeExtension(UNGUARDED_ID, "document_end", {
+    "cs.js"() {
+      browser.test.sendMessage("unguarded-ran");
+    },
+  });
+
+  await guarded.startup();
+  await unguarded.startup();
+
+  let page = await ExtensionTestUtils.loadContentPage(
+    "http://guard.example.com/ok"
+  );
+
+  await unguarded.awaitMessage("unguarded-ran");
+
+  await page.close();
+  await guarded.unload();
+  await unguarded.unload();
+  setEnterpriseGuards({});
+}
+
+add_task(async function test_guard_blocks_content_scripts_mv2() {
+  await do_guard_blocks_content_scripts(2);
+});
+
+add_task(async function test_guard_blocks_content_scripts_mv3() {
+  await do_guard_blocks_content_scripts(3);
+});

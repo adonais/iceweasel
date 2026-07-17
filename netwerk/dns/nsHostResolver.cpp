@@ -513,7 +513,9 @@ nsresult nsHostResolver::ResolveHost(const nsACString& aHost,
     }
 
     bool excludedFromTRR = false;
-    if (TRRService::Get() && TRRService::Get()->IsExcludedFromTRR(host)) {
+    if (TRRService::Get() &&
+        TRRService::Get()->IsExcludedFromTRR(
+            host, nsIDNSService::GetTRRModeFromFlags(flags))) {
       flags |= nsIDNSService::RESOLVE_DISABLE_TRR;
       flags |= nsIDNSService::RESOLVE_DISABLE_NATIVE_HTTPS_QUERY;
       excludedFromTRR = true;
@@ -1027,7 +1029,7 @@ nsresult nsHostResolver::NativeLookup(nsHostRecord* aRec) {
   mQueue.mLock.AssertCurrentThreadOwns();
 
   if (aRec->type == nsIDNSService::RESOLVE_TYPE_HTTPSSVC &&
-      TRRService::Get()->IsExcludedFromTRR(aRec->host)) {
+      TRRService::Get()->IsExcludedFromTRR(aRec->host, aRec->TRRMode())) {
     // If the host should be excluded from TRR
     // (meaning it's a local domain or in /etc/hosts)
     // then we probably shouldn't be using the HTTPS record for it either.
@@ -1092,7 +1094,7 @@ void nsHostResolver::ComputeEffectiveTRRMode(nsHostRecord* aRec) {
     return;
   }
 
-  if (TRRService::Get()->IsExcludedFromTRR(aRec->host)) {
+  if (TRRService::Get()->IsExcludedFromTRR(aRec->host, requestMode)) {
     aRec->RecordReason(TRRSkippedReason::TRR_EXCLUDED);
     aRec->mEffectiveTRRMode = nsIRequest::TRR_DISABLED_MODE;
     return;
@@ -1802,6 +1804,10 @@ void nsHostResolver::ResolveHostTask() {
                        ? glean::networking::DnsNativeCountLabel::eHttpsPrivate
                        : glean::networking::DnsNativeCountLabel::eHttpsRegular)
           .Add(1);
+      // Capture native success/duration; ResolveComplete records it as the
+      // HTTPS RR lookup time (keyed "native").
+      rec->mNativeSuccess = NS_SUCCEEDED(status);
+      rec->mNativeDuration = TimeStamp::Now() - startTime;
       CompleteLookupByType(rec, status, result, rec->mTRRSkippedReason, ttl,
                            rec->pb);
       return;

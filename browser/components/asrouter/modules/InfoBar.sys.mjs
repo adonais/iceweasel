@@ -198,7 +198,6 @@ class InfoBarNotification {
     this.notification = await notificationContainer.appendNotification(
       this.message.id,
       {
-        label: labelNode,
         image: content.icon || "chrome://branding/content/icon64.png",
         priority,
         eventCallback: this.infobarCallback,
@@ -208,6 +207,12 @@ class InfoBarNotification {
       true, // Disables clickjacking protections
       content.dismissable
     );
+
+    // Slot into light DOM so global-shared link rules reach inline anchors
+    const messageSlot = doc.createElement("span");
+    messageSlot.setAttribute("slot", "message");
+    messageSlot.appendChild(labelNode);
+    this.notification.appendChild(messageSlot);
     // If the infobar is universal, only record an impression for the first
     // instance.
     if (

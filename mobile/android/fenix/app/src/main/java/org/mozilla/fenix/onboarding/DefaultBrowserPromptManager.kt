@@ -7,8 +7,8 @@ package org.mozilla.fenix.onboarding
 import android.content.Context
 import androidx.annotation.VisibleForTesting
 import mozilla.components.support.utils.Browsers
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.ext.isDefaultBrowserPromptSupported
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.onboarding.view.OnboardingPageUiData
 
 /**
@@ -44,8 +44,8 @@ class DefaultDefaultBrowserPromptStorage(
     override val isDefaultBrowserPromptSupported = context.isDefaultBrowserPromptSupported()
 
     override var promptToSetAsDefaultBrowserDisplayedInOnboarding: Boolean
-        get() = context.settings().promptToSetAsDefaultBrowserDisplayedInOnboarding
-        set(value) { context.settings().promptToSetAsDefaultBrowserDisplayedInOnboarding = value }
+        get() = context.components.settings.promptToSetAsDefaultBrowserDisplayedInOnboarding
+        set(value) { context.components.settings.promptToSetAsDefaultBrowserDisplayedInOnboarding = value }
 }
 
 /**

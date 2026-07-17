@@ -28,13 +28,13 @@ using media::TimeUnit;
 
 extern LazyLogModule gMediaDecoderLog;
 
-#define LOG_DS(type, fmt, ...)    \
-  MOZ_LOG(gMediaDecoderLog, type, \
-          ("DecodedStream=%p " fmt, this, ##__VA_ARGS__))
+#define LOG_DS(type, format, ...)                                 \
+  MOZ_LOG_FMT(gMediaDecoderLog, type, "DecodedStream={} " format, \
+              fmt::ptr(this), ##__VA_ARGS__)
 
-#define LOG_DSD(type, fmt, ...)   \
-  MOZ_LOG(gMediaDecoderLog, type, \
-          ("DecodedStreamData=%p " fmt, this, ##__VA_ARGS__))
+#define LOG_DSD(type, format, ...)                                    \
+  MOZ_LOG_FMT(gMediaDecoderLog, type, "DecodedStreamData={} " format, \
+              fmt::ptr(this), ##__VA_ARGS__)
 
 #define PLAYBACK_PROFILER_MARKER(markerString) \
   PROFILER_MARKER_TEXT(FUNCTION_SIGNATURE, MEDIA_PLAYBACK, {}, markerString)
@@ -479,7 +479,7 @@ void DecodedStreamData::SetVolume(float aVolume) {
   if (!mAudioTrack || !mAudioOutputKey || !mAudioOutputTrack) {
     return;
   }
-  LOG_DSD(LogLevel::Debug, "Setting volume %f on output track", aVolume);
+  LOG_DSD(LogLevel::Debug, "Setting volume {} on output track", aVolume);
   mAudioOutputTrack->SetAudioOutputVolume(mAudioOutputKey, aVolume);
 }
 
@@ -536,8 +536,7 @@ nsresult DecodedStream::Start(const TimeUnit& aStartTime,
                                  aStartTime.ToMicroseconds());
     PLAYBACK_PROFILER_MARKER(markerString);
   }
-  LOG_DS(LogLevel::Debug,
-         "Start() mStartTime=%" PRId64 ", audioOutputConfig=%d",
+  LOG_DS(LogLevel::Debug, "Start() mStartTime={}, audioOutputConfig={}",
          aStartTime.ToMicroseconds(), mShouldConfigAudioOutput);
 
   mStartTime.emplace(aStartTime);
@@ -755,7 +754,7 @@ void DecodedStream::SetPlaying(bool aPlaying) {
     nsPrintfCString markerString("Playing=%s", aPlaying ? "true" : "false");
     PLAYBACK_PROFILER_MARKER(markerString);
   }
-  LOG_DS(LogLevel::Debug, "playing (%d) -> (%d)", mPlaying.Ref(), aPlaying);
+  LOG_DS(LogLevel::Debug, "playing ({}) -> ({})", mPlaying.Ref(), aPlaying);
   mPlaying = aPlaying;
 }
 
@@ -820,7 +819,8 @@ RefPtr<GenericPromise> DecodedStream::SetAudioDevice(
            "captured through WebAudio or no audio)");
     return GenericPromise::CreateAndResolve(true, __func__);
   }
-  LOG_DS(LogLevel::Debug, "SetAudioDevice() device=%p", aDevice.get());
+  LOG_DS(LogLevel::Debug, "SetAudioDevice() device={}",
+         fmt::ptr(aDevice.get()));
   mDevice = aDevice;
   return InvokeAsync(
       GetMainThreadSerialEventTarget(), __func__,
@@ -874,7 +874,7 @@ void DecodedStream::SendAudio(const PrincipalHandle& aPrincipalHandle) {
   // sync.
   RefPtr<AudioData> nextAudio = audio.IsEmpty() ? nullptr : audio[0];
   if (RefPtr<AudioData> silence = CreateSilenceDataIfGapExists(nextAudio)) {
-    LOG_DS(LogLevel::Verbose, "Detect a gap in audio, insert silence=%u",
+    LOG_DS(LogLevel::Verbose, "Detect a gap in audio, insert silence={}",
            silence->Frames());
     audio.InsertElementAt(0, silence);
   }
@@ -1149,8 +1149,8 @@ void DecodedStream::SendVideo(const PrincipalHandle& aPrincipalHandle) {
       // dropped.
       endSegment.ExtendLastFrameBy(1);
       LOG_DS(LogLevel::Debug,
-             "compensateEOS: start %s, duration %" PRId64
-             ", mPlaybackRate %lf, sample rate %" PRId32,
+             "compensateEOS: start {}, duration {}, mPlaybackRate {}, sample "
+             "rate {}",
              start.ToString().get(), endSegment.GetDuration(), mPlaybackRate,
              mData->mVideoTrack->mSampleRate);
       MOZ_ASSERT(endSegment.GetDuration() > 0);
@@ -1224,14 +1224,13 @@ void DecodedStream::NotifyOutput(int64_t aTime) {
                                  currentTime.ToMicroseconds());
     PLAYBACK_PROFILER_MARKER(markerString);
   }
-  LOG_DS(LogLevel::Verbose, "time is now %" PRId64,
-         currentTime.ToMicroseconds());
+  LOG_DS(LogLevel::Verbose, "time is now {}", currentTime.ToMicroseconds());
 
   // Remove audio samples that have been played by MTG from the queue.
   RefPtr<AudioData> a = mAudioQueue.PeekFront();
   for (; a && a->GetEndTime() <= currentTime;) {
-    LOG_DS(LogLevel::Debug, "Dropping audio [%" PRId64 ",%" PRId64 "]",
-           a->mTime.ToMicroseconds(), a->GetEndTime().ToMicroseconds());
+    LOG_DS(LogLevel::Debug, "Dropping audio [{},{}]", a->mTime.ToMicroseconds(),
+           a->GetEndTime().ToMicroseconds());
     RefPtr<AudioData> releaseMe = mAudioQueue.PopFront();
     a = mAudioQueue.PeekFront();
   }

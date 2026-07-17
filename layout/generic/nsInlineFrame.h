@@ -158,6 +158,12 @@ class nsInlineFrame : public nsContainerFrame {
   virtual void PushFrames(nsPresContext* aPresContext, nsIFrame* aFromChild,
                           nsIFrame* aPrevSibling, InlineReflowInput& aState);
 
+  // If this inline frame has abspos children, set
+  // NS_BLOCK_HAS_INLINE_ABSPOS_DESCENDANT on the block ancestor that will
+  // reflow them in nsBlockFrame::ReflowAbsoluteDescendantsInInlineFrame().
+  void MarkBlockAncestorHavingAbsoluteDescendants(
+      const ReflowInput& aReflowInput) const;
+
  private:
   explicit nsInlineFrame(ComputedStyle* aStyle, nsPresContext* aPresContext)
       : nsInlineFrame(aStyle, aPresContext, kClassID) {}

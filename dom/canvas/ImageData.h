@@ -38,7 +38,7 @@ class ImageData final : public nsISupports, public nsWrapperCache {
     HoldData();
   }
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_SKIPPABLE_SCRIPT_HOLDER_CLASS(ImageData)
 
   nsISupports* GetParentObject() const { return mOwner; }

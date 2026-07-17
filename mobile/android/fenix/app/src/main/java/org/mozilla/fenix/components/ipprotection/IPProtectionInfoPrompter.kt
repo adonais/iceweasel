@@ -13,22 +13,22 @@ import mozilla.components.feature.ipprotection.store.state.Authorized
 import mozilla.components.feature.ipprotection.store.state.EligibilityStatus
 import mozilla.components.feature.ipprotection.store.state.IPProtectionState
 import mozilla.components.lib.state.helpers.AbstractBinding
+import org.mozilla.fenix.GleanMetrics.Vpn
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.appstate.AppAction
 
 /**
  * Error messages displayed to the user when IP protection operations encounter errors.
  *
- * @property connectionError Message shown when the proxy encounters a connection error.
  * @property dataLimitReached Message shown when the user has reached their monthly data limit.
  */
 data class ErrorMessages(
-    val connectionError: String,
     val dataLimitReached: String,
 )
 
 /**
- * Monitors [IPProtectionStore] state changes and displays informational snackbars to the user via [AppStore].
+ * Monitors [IPProtectionStore] state changes and displays informational sticky snackbars to the user via [AppStore].
+ * This differs from the [IPProtectionSnackbarMiddleware] which is similar, but handles one-shot snackbar messages.
  *
  * @param store The IP protection store to observe for state changes.
  * @param appStore The app store used to dispatch snackbar actions.
@@ -50,18 +50,9 @@ class IPProtectionInfoPrompter(
     }
 
     private fun processStateForSnackbar(state: IPProtectionState) {
-        if (state.eligibilityStatus == EligibilityStatus.Eligible) {
-            when (state.proxyStatus) {
-                Authorized.DataLimitReached -> {
-                    appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessages.dataLimitReached))
-                }
-                Authorized.ConnectionError -> {
-                    appStore.dispatch(AppAction.SnackbarAction.ShowSnackbar(errorMessages.connectionError))
-                }
-                else -> {
-                    // no-op
-                }
-            }
+        if (state.eligibilityStatus == EligibilityStatus.Eligible && state.proxyStatus == Authorized.DataLimitReached) {
+            Vpn.bandwidthLimitError.record()
+            appStore.dispatch(AppAction.IPProtectionSnackbarAction.DataLimitReached(errorMessages.dataLimitReached))
         }
     }
 }

@@ -136,13 +136,12 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
   // Propagate OOM errors.
   BufferOffset allocLiteralLoadEntry(size_t numInst, unsigned numPoolEntries,
 				     uint8_t* inst, uint8_t* data,
-				     const LiteralDoc& doc = LiteralDoc(),
-				     ARMBuffer::PoolEntry* pe = nullptr)
+				     const LiteralDoc& doc = LiteralDoc())
   {
     MOZ_ASSERT(inst);
     MOZ_ASSERT(numInst == 1);	/* If not, then fix disassembly */
     BufferOffset offset = armbuffer_.allocEntry(numInst, numPoolEntries, inst,
-                                                data, pe);
+                                                data);
     propagateOOM(offset.assigned());
 #ifdef JS_DISASM_ARM64
     Instruction* instruction = armbuffer_.getInstOrNull(offset);
@@ -319,7 +318,7 @@ class MozBaseAssembler : public js::jit::AssemblerShared {
  public:
   // Static interface used by IonAssemblerBufferWithConstantPools.
   static void InsertIndexIntoTag(uint8_t* load, uint32_t index);
-  static bool PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr);
+  static void PatchConstantPoolLoad(void* loadAddr, void* constPoolAddr);
   static void PatchShortRangeBranchToVeneer(ARMBuffer*, unsigned rangeIdx, BufferOffset deadline,
                                             BufferOffset veneer);
   static uint32_t PlaceConstantPoolBarrier(int offset);

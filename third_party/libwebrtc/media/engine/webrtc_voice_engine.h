@@ -223,7 +223,7 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
   RTCError SetRtpSendParameters(uint32_t ssrc,
                                 const RtpParameters& parameters,
                                 SetParametersCallback callback) override;
-  void SetSend(bool send) override;
+  bool SetSend(bool send) override;
   bool SetAudioSend(uint32_t ssrc,
                     bool enable,
                     const AudioOptions* options,
@@ -250,7 +250,7 @@ class WebRtcVoiceSendChannel final : public MediaChannelUtil,
                              const NetworkRoute& network_route) override;
   void OnReadyToSend(bool ready) override;
   bool GetStats(VoiceMediaSendInfo* info) override;
-  absl::AnyInvocable<std::optional<VoiceMediaSendInfo>()> GetStatsCallback()
+  absl::AnyInvocable<std::optional<VoiceMediaSendInfo>()> GetStatsTask()
       override;
   bool SetOptions(const AudioOptions& options) override;
 
@@ -354,10 +354,11 @@ class WebRtcVoiceReceiveChannel final
   RtpParameters GetRtpReceiverParameters(uint32_t ssrc) const override;
   RtpParameters GetDefaultRtpReceiveParameters() const override;
 
-  void SetPlayout(bool playout) override;
+  void SetReceive(bool receive) override;
   bool AddRecvStream(const StreamParams& sp) override;
   bool RemoveRecvStream(uint32_t ssrc) override;
   void ResetUnsignaledRecvStream() override;
+  absl::AnyInvocable<void() &&> GetResetUnsignaledRecvStreamTask() override;
   std::optional<uint32_t> GetUnsignaledSsrc() const override;
 
   void OnDemuxerCriteriaUpdatePending() override;
@@ -381,8 +382,8 @@ class WebRtcVoiceReceiveChannel final
   void OnPacketReceived(RtpPacketReceived packet) override;
   bool GetStats(VoiceMediaReceiveInfo* info,
                 bool get_and_clear_legacy_stats) override;
-  absl::AnyInvocable<std::optional<VoiceMediaReceiveInfo>()> GetStatsCallback(
-      bool get_and_clear_legacy_stats) override;
+  absl::AnyInvocable<std::optional<VoiceMediaReceiveInfo>()> GetStatsTask(
+      bool reset_legacy) override;
 
   // Set the audio sink for an existing stream.
   void SetRawAudioSink(uint32_t ssrc,

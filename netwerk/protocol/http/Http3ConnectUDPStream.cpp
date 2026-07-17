@@ -337,4 +337,9 @@ bool Http3ConnectUDPStream::IsTRRServiceChannel() {
   return mIsTRRServiceChannel;
 }
 
+void Http3ConnectUDPStream::SetOriginAttributes(
+    const mozilla::OriginAttributes& aOriginAttributes) {
+  mOriginAttributes = aOriginAttributes;
+}
+
 }  // namespace mozilla::net

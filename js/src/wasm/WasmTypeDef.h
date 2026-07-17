@@ -241,6 +241,11 @@ class FuncType {
     return false;
   }
 
+  bool isValidComponentDestructor() const {
+    return args().length() == 1 && results().length() == 0 &&
+           args()[0].valType() == ValType::i32();
+  }
+
   size_t sizeOfExcludingThis(mozilla::MallocSizeOf mallocSizeOf) const;
   WASM_DECLARE_FRIEND_SERIALIZE(FuncType);
 };

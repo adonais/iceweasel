@@ -1054,9 +1054,9 @@ void ArgumentsObject::trace(JSTracer* trc, JSObject* obj) {
   ArgumentsData* buffer = argsobj.data();
   ArgumentsData* copiedBuffer = buffer;
   if (buffer) {
-    TraceBufferEdge(trc, obj, &buffer, "ArgumentsData");
+    TraceBufferEdge(trc, &buffer, "ArgumentsData");
     if (buffer->rareData) {
-      TraceBufferEdge(trc, obj, &buffer->rareData, "RareArgumentsData");
+      TraceBufferEdge(trc, &buffer->rareData, "RareArgumentsData");
     }
     if (buffer != copiedBuffer) {
       argsobj.setFixedSlot(DATA_SLOT, PrivateValue(buffer));

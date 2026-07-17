@@ -639,7 +639,11 @@ export const SearchService = new (class SearchService {
     let searchProvider =
       extension.manifest.chrome_settings_overrides.search_provider;
     let engine = this.getEngineByName(searchProvider.name);
-    if (!engine || !engine.isConfigEngine || engine.hidden) {
+    if (
+      !engine ||
+      !(engine instanceof lazy.ConfigSearchEngine) ||
+      engine.hidden
+    ) {
       // We should only default to config engines.
       // If the engine is a hidden config engine, then we don't
       // switch to it, nor do we try to install it.
@@ -955,6 +959,10 @@ export const SearchService = new (class SearchService {
    *   The engine to move.
    * @param {number} newIndex
    *   The engine's new index in the set of visible engines.
+   * @param {?Set<string>} [skipEngines]
+   *   A set of engine names to exclude when calculating the move. This is used
+   *   for engines removed by enterprise policy, which are hidden from the UI
+   *   but still present in the full engine list.
    * @param {boolean} [skipHidden]
    *   If set, this skips moving hidden engines. This is for the case of the old
    *   preferences UI which hides engines from the user's view, and so we need
@@ -967,13 +975,16 @@ export const SearchService = new (class SearchService {
    * @throws {Error}
    *   If the engine is hidden or can't be found.
    */
-  async moveEngine(engine, newIndex, skipHidden = false) {
+  async moveEngine(engine, newIndex, skipEngines = null, skipHidden = false) {
     await this.init();
     if (newIndex >= this.#sortedEngines.length || newIndex < 0) {
       throw new RangeError("newIndex out of bounds");
     }
     if (!(engine instanceof lazy.SearchEngine)) {
       throw new TypeError("engine is not a SearchEngine instance");
+    }
+    if (skipEngines && skipEngines.has(engine.name)) {
+      throw new Error("Unable to move a skipped engine");
     }
     if (skipHidden && engine.hidden) {
       throw new Error("Unable to move a hidden engine");
@@ -984,19 +995,30 @@ export const SearchService = new (class SearchService {
       throw new Error("Unable to find engine to move");
     }
 
-    if (skipHidden) {
-      // These callers only take into account non-hidden engines when calculating
-      // newIndex, but we need to move it in the array of all engines, so we
-      // need to adjust newIndex accordingly. To do this, we count the number
-      // of hidden engines in the list before the engine that we're taking the
-      // place of. We do this by first finding newIndexEngine (the engine that
-      // we were supposed to replace) and then iterating through the complete
-      // engine list until we reach it, increasing newIndex for each hidden
-      // engine we find on our way there.
+    if (skipHidden || skipEngines?.size) {
+      // These callers only take into account non-excluded engines when
+      // calculating newIndex, but we need to move it in the array of all
+      // engines, so we need to adjust newIndex accordingly. To do this, we
+      // count the number of excluded engines in the list before the engine
+      // that we're taking the place of. We do this by first finding
+      // newIndexEngine (the engine that we were supposed to replace) and then
+      // iterating through the complete engine list until we reach it,
+      // increasing newIndex for each excluded engine we find on our way there.
       //
       // This could be further simplified by having our caller pass in
       // newIndexEngine directly instead of newIndex.
-      var newIndexEngine = this.#sortedVisibleEngines[newIndex];
+      //
+      // The exclusion predicate must match exactly what the caller uses to
+      // build its displayed list. skipHidden excludes all hidden engines;
+      // skipEngines excludes only the named engines (which may be a subset of
+      // hidden engines). The two flags are independent so that a
+      // user-hidden engine is never incorrectly counted as excluded when only
+      // skipEngines is in use.
+      let isExcluded = e =>
+        (skipHidden && e.hidden) || (skipEngines?.has(e.name) ?? false);
+
+      let filteredEngines = this.#sortedEngines.filter(e => !isExcluded(e));
+      var newIndexEngine = filteredEngines[newIndex];
       if (!newIndexEngine) {
         throw new Error("Unable to find engine to replace");
       }
@@ -1005,7 +1027,7 @@ export const SearchService = new (class SearchService {
         if (newIndexEngine == this.#sortedEngines[i]) {
           break;
         }
-        if (this.#sortedEngines[i].hidden) {
+        if (isExcluded(this.#sortedEngines[i])) {
           newIndex++;
         }
       }
@@ -1035,7 +1057,7 @@ export const SearchService = new (class SearchService {
     this.#ensureInitialized();
     for (let e of this._engines.values()) {
       // Unhide all default engines
-      if (e.hidden && e.isAppProvided) {
+      if (e.hidden && e instanceof lazy.AppProvidedConfigEngine) {
         e.hidden = false;
       }
     }
@@ -1452,7 +1474,7 @@ export const SearchService = new (class SearchService {
       engine &&
       this._settings.getVerifiedMetaDataAttribute(
         attributeName,
-        engine.isConfigEngine
+        engine instanceof lazy.ConfigSearchEngine
       )
     ) {
       if (privateMode) {
@@ -2117,7 +2139,7 @@ export const SearchService = new (class SearchService {
     // overridden by an OpenSearch engine, and we need to re-apply the override.
     for (let engine of this._engines.values()) {
       if (
-        engine.isConfigEngine &&
+        engine instanceof lazy.ConfigSearchEngine &&
         engine.getAttr("overriddenByOpenSearch") &&
         engine.id == savedDefaultEngineId
       ) {
@@ -2755,7 +2777,7 @@ export const SearchService = new (class SearchService {
     // override the application provided engine.
     let existingEngine = this.#getEngineByName(engine.name);
     if (
-      existingEngine?.isConfigEngine &&
+      existingEngine instanceof lazy.ConfigSearchEngine &&
       (await lazy.defaultOverrideAllowlist.canEngineOverride(
         engine,
         existingEngine?.id
@@ -3348,7 +3370,7 @@ export const SearchService = new (class SearchService {
       throw new Error("Unable to find the new engine in the engine store");
     }
 
-    if (!newCurrentEngine.isConfigEngine) {
+    if (!(newCurrentEngine instanceof lazy.ConfigSearchEngine)) {
       // If a non config engine is being set as the current engine,
       // ensure its loadPath has a verification hash.
       if (!newCurrentEngine._loadPath) {
@@ -3498,7 +3520,8 @@ export const SearchService = new (class SearchService {
     let isOverridden = !!engine.overriddenById;
 
     let engineInfo = {
-      providerId: engine.isConfigEngine ? engine.id : "other",
+      providerId:
+        engine instanceof lazy.ConfigSearchEngine ? engine.id : "other",
       partnerCode: isOverridden ? "" : engine.partnerCode,
       overriddenByThirdParty: isOverridden,
       telemetryId: engine.telemetryId,
@@ -3509,13 +3532,13 @@ export const SearchService = new (class SearchService {
     };
 
     // For privacy, we only collect the submission URL for config engines...
-    let sendSubmissionURL = engine.isConfigEngine;
+    let sendSubmissionURL = engine instanceof lazy.ConfigSearchEngine;
 
     if (!sendSubmissionURL) {
       // ... or engines that are the same domain as a config engine.
       let engineHost = engine.searchUrlDomain;
       for (let innerEngine of this._engines.values()) {
-        if (!innerEngine.isConfigEngine) {
+        if (!(innerEngine instanceof lazy.ConfigSearchEngine)) {
           continue;
         }
 

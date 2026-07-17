@@ -387,16 +387,16 @@ wheels = [
 
 [[package]]
 name = "compare-locales"
-version = "9.0.4"
+version = "9.0.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fluent-syntax" },
     { name = "six" },
     { name = "toml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/e0/56/b0307642caae7fe5276b529852ba3c5436d4f61b97319874d0a5393365a9/compare_locales-9.0.4.tar.gz", hash = "sha256:73d0d384aefa0bc96f5fd8521c08c8bb89b16a37316701323a77960accabd551", size = 58373, upload-time = "2024-07-01T08:30:45.545Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/99/d6/1437ec990438908eb8766cc4cb68a4e8e0a0fa3cec9a73861e7b383de706/compare_locales-9.0.5.tar.gz", hash = "sha256:82f2177552666d0f7af1ccc2940a8d562f345ce3a2e64f1b67853d457ea8ae33", size = 59092, upload-time = "2026-05-30T06:21:42.865Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/39/51/7e5b671298d1486e2041898e050d8a7c2aa2df1dea8c61b7be578994e69a/compare_locales-9.0.4-py3-none-any.whl", hash = "sha256:933d2b6e20f460d3ac2d3176295684505a42085b25e6c31944fcafbaf52f1cc0", size = 75469, upload-time = "2024-07-01T08:30:43.72Z" },
+    { url = "https://files.pythonhosted.org/packages/ce/22/299da0a35e0acca9164db72cb811a7dd8827b86e9cb890cbee8807799268/compare_locales-9.0.5-py3-none-any.whl", hash = "sha256:40eaa40fe9290996f5972fa83bc4f9f1e580a6e2ea06087e636e77378d8ed168", size = 76275, upload-time = "2026-05-30T06:21:41.519Z" },
 ]
 
 [[package]]
@@ -612,7 +612,7 @@ wheels = [
 
 [[package]]
 name = "glean-parser"
-version = "19.0.0"
+version = "19.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
@@ -622,9 +622,9 @@ dependencies = [
     { name = "platformdirs" },
     { name = "pyyaml" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/6e/4b/b2831aa63b30c7c1bbabd24130ea898e8203bbfb0c3afbbadfdc490124da/glean_parser-19.0.0.tar.gz", hash = "sha256:bb2e0a4ab6be7e0daa704e4d4e9e34a2020f845a71dfc6c45366a917cbcbf4b3", size = 127770, upload-time = "2026-02-27T14:31:04.867Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/52/d9/589b508051295d59b0fd5cba48776b3903685356a523d9898901bc41e663/glean_parser-19.1.0.tar.gz", hash = "sha256:498399ea5da2f022ffb1ae71a958d1810e61c4f280401fe20ae00888902890ea", size = 129791, upload-time = "2026-05-12T09:39:51.416Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/aa/70/42c4400f30dd2df7ecb0e51e67688e313903cbec7030dead901b5f97506f/glean_parser-19.0.0-py3-none-any.whl", hash = "sha256:82d7dcaca116dc02487ca184c634daf3e9c9c15670ab072c695bd460bf611022", size = 115558, upload-time = "2026-02-26T16:20:55.374Z" },
+    { url = "https://files.pythonhosted.org/packages/75/0b/21d9cea980336c3573c6e2216f89802f5098e037d07fdb9c868fcf0aa8e9/glean_parser-19.1.0-py3-none-any.whl", hash = "sha256:981e53fbfe17f837445640970fb0a99381d56381c790cebea6eaa27c30e9f209", size = 119538, upload-time = "2026-05-12T09:39:49.822Z" },
 ]
 
 [[package]]
@@ -830,7 +830,7 @@ wheels = [
 
 [[package]]
 name = "moz-l10n"
-version = "0.9.0"
+version = "0.11.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "fluent-syntax" },
@@ -839,9 +839,9 @@ dependencies = [
     { name = "polib" },
     { name = "tomli", marker = "python_full_version < '3.11'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/0f/2a/7167dfbf28e66e0cd6663508613aafa1eeed1b5b14fedf767e4ccde8b369/moz_l10n-0.9.0.tar.gz", hash = "sha256:cb435e0bb4f1cf85c8417c21f7cc90f8e4404e869a7fa1f5b828a42ee3ae37db", size = 84525, upload-time = "2025-07-21T09:19:17.768Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/c7/09/829fbd5d7eca3b755dcafd99dea275fb0d1abe3f60e5acf82580ad9cefba/moz_l10n-0.11.3.tar.gz", hash = "sha256:f6e65ee6249b104161dcaf43f8a6b65da6c93d88206fcbdce4986993a03bd77a", size = 109136, upload-time = "2026-06-03T17:33:53.591Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/2b/95/301d7a6757cd66711d5fa29ee36cba2af65656027695f102e4324a84a134/moz_l10n-0.9.0-py3-none-any.whl", hash = "sha256:664474d284b1484c471d53544e0213458fe4e4ad3d12b4b7a3fdf57057a5e9ab", size = 115982, upload-time = "2025-07-21T09:19:16.148Z" },
+    { url = "https://files.pythonhosted.org/packages/15/8a/255016660281d3bd7ba9e388e4c8b35f0d797dbf957ac32998f7c1d7fb0e/moz_l10n-0.11.3-py3-none-any.whl", hash = "sha256:30b2d81aac683fe1c6c8ce17131c177fb10f8bed38f426872da3f52ffa4c1bdf", size = 135160, upload-time = "2026-06-03T17:33:54.768Z" },
 ]
 
 [[package]]
@@ -939,7 +939,7 @@ requires-dist = [
     { name = "esprima", specifier = "==4.0.1" },
     { name = "fluent-migrate", specifier = "~=0.13" },
     { name = "fluent-syntax", specifier = "==0.19.0" },
-    { name = "glean-parser", specifier = "==19.0.0" },
+    { name = "glean-parser", specifier = "==19.1.0" },
     { name = "importlib-metadata", specifier = "~=8.0" },
     { name = "jinja2", specifier = "==3.1.6" },
     { name = "json-e", specifier = "~=4.5" },
@@ -947,9 +947,9 @@ requires-dist = [
     { name = "looseversion", specifier = "~=1.0" },
     { name = "mako", specifier = "~=1.3" },
     { name = "markdown-it-py", specifier = "==3.0.0" },
-    { name = "moz-l10n", specifier = "~=0.9.0" },
+    { name = "moz-l10n", specifier = "~=0.11.3" },
     { name = "mozilla-repo-urls", specifier = "==0.1.1" },
-    { name = "mozilla-version", specifier = "~=4.1" },
+    { name = "mozilla-version", specifier = "~=5.1" },
     { name = "multidict", specifier = "~=6.7" },
     { name = "packaging", specifier = "~=25.0" },
     { name = "pathspec", specifier = "~=0.9" },
@@ -985,14 +985,14 @@ requires-dist = [
 
 [[package]]
 name = "mozilla-version"
-version = "4.1.0"
+version = "5.1.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "attrs" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/c2/91/a67deea35ec3a0c80bfa0142e72fc779d96544814067e99f39d78d90b754/mozilla_version-4.1.0.tar.gz", hash = "sha256:f32f6f5607c345bb4db0aba0077511b196cba80af70c83cfe606a913a478f7e8", size = 62685, upload-time = "2025-05-02T12:48:19.615Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/36/7c/c23a10f59db273ed3f0dc078a1b1263e9f9126c4e36af86021e5bfaf9e24/mozilla_version-5.1.0.tar.gz", hash = "sha256:b09d56f0d7e66fa2ff3df5ad1299df456afd8a63e6c2b9521a94b4616a6cb1e8", size = 99616, upload-time = "2026-06-17T09:58:57.812Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/83/d9/671361f42a55d8369d29bbb07ada1e884cc079c1e265ab5a826e2091cadb/mozilla_version-4.1.0-py3-none-any.whl", hash = "sha256:816b0cd03456105f49ad8661e47934e66118f84ddae38c4193082f297396a7ed", size = 132224, upload-time = "2025-05-02T12:48:17.819Z" },
+    { url = "https://files.pythonhosted.org/packages/e9/aa/cdf061be6b68f245c9405c17b899802b1ccc40eb77200579608936c14b33/mozilla_version-5.1.0-py3-none-any.whl", hash = "sha256:2e8de52712c3fbefac7f42f69319a664c6ba01d6e97bf07d5353a65ed34de94b", size = 44415, upload-time = "2026-06-17T09:58:56.595Z" },
 ]
 
 [[package]]

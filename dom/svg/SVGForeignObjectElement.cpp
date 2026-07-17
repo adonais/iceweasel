@@ -34,7 +34,7 @@ SVGElement::LengthInfo SVGForeignObjectElement::sLengthInfo[4] = {
 // Implementation
 
 SVGForeignObjectElement::SVGForeignObjectElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGGraphicsElement(std::move(aNodeInfo)) {}
 
 namespace SVGT = SVGGeometryProperty::Tags;

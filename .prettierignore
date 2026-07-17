@@ -86,7 +86,9 @@ toolkit/content/buildconfig.html
 toolkit/content/license.html
 toolkit/mozapps/downloads/content/unknownContentType.xhtml
 toolkit/mozapps/update/content/updateElevation.xhtml
+toolkit/profile/content/createProfileWizard.xhtml
 toolkit/profile/content/profileDowngrade.xhtml
+toolkit/profile/content/profileSelection.xhtml
 
 # Ignore non-UTF8/non-us-ascii files.
 browser/components/places/tests/browser/keyword_form.html

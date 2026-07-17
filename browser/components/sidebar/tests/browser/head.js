@@ -263,6 +263,37 @@ async function populateHistory() {
   return { URLs, dates };
 }
 
+async function showBookmarksSidebar() {
+  if (SidebarController.currentID !== "viewBookmarksSidebar") {
+    await SidebarTestUtils.showPanel(window, "viewBookmarksSidebar");
+  }
+  const { contentDocument, contentWindow } = SidebarController.browser;
+  const component = contentDocument.querySelector("sidebar-bookmarks");
+  await component.updateComplete;
+  return { component, contentWindow };
+}
+
+async function expandToolbarFolder(tabList) {
+  await BrowserTestUtils.waitForMutationCondition(
+    tabList.shadowRoot,
+    { childList: true, subtree: true },
+    () => tabList.folderEls[0]
+  );
+  const toolbarFolder = [...tabList.folderEls].find(
+    ({ guid }) => guid === PlacesUtils.bookmarks.toolbarGuid
+  );
+  Assert.ok(toolbarFolder, "Toolbar folder is rendered.");
+  if (!toolbarFolder.open) {
+    toolbarFolder.querySelector("summary").click();
+    await BrowserTestUtils.waitForMutationCondition(
+      toolbarFolder,
+      { attributes: true },
+      () => toolbarFolder.open
+    );
+  }
+  return toolbarFolder.querySelector("sidebar-bookmark-list");
+}
+
 /**
  * Synthesize a key press and wait for an element to be focused.
  *

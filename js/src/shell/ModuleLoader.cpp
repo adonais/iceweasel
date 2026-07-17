@@ -203,7 +203,6 @@ bool ModuleLoader::LoadRejected(JSContext* cx, HandleValue hostDefined,
   return true;
 }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
 // See https://github.com/tc39/test262/blob/main/INTERPRETING.md#modules
 JSObject* ModuleLoader::getOrCreateTest262ModuleSourceModule(JSContext* cx) {
   RootedString key(cx, JS_NewStringCopyZ(cx, "<module source>"));
@@ -241,7 +240,6 @@ JSObject* ModuleLoader::getOrCreateTest262ModuleSourceModule(JSContext* cx) {
   }
   return module;
 }
-#endif
 
 bool ModuleLoader::loadImportedModule(JSContext* cx,
                                       JS::Handle<JSScript*> referrer,
@@ -253,7 +251,6 @@ bool ModuleLoader::loadImportedModule(JSContext* cx,
     return dynamicImport(cx, referrer, moduleRequest, payload);
   }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   if (JS::Prefs::experimental_source_phase_imports_test262_module_source()) {
     js::ImportPhase phase = moduleRequest->as<ModuleRequestObject>().phase();
     JSAtom* specifier = moduleRequest->as<ModuleRequestObject>().specifier();
@@ -267,7 +264,6 @@ bool ModuleLoader::loadImportedModule(JSContext* cx,
                                              payload, module, false);
     }
   }
-#endif
 
   Rooted<JSLinearString*> path(cx, resolve(cx, moduleRequest, referrer));
   if (!path) {
@@ -422,22 +418,22 @@ bool ModuleLoader::doDynamicImport(JSContext* cx, JS::HandleScript referrer,
                                    JS::HandleValue payload) {
   // Exceptions during dynamic import are handled by calling
   // FinishLoadingImportedModule with a pending exception on the context.
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-  if (JS::Prefs::experimental_source_phase_imports_test262_module_source()) {
-    js::ImportPhase phase = moduleRequest->as<ModuleRequestObject>().phase();
-    JSAtom* specifier = moduleRequest->as<ModuleRequestObject>().specifier();
-    if (phase == ImportPhase::Source &&
-        StringEquals(specifier, u"<module source>")) {
-      RootedObject module(cx, getOrCreateTest262ModuleSourceModule(cx));
-      if (!module) {
-        return JS::FinishLoadingImportedModuleFailedWithPendingException(
-            cx, payload);
+  js::ImportPhase phase = moduleRequest->as<ModuleRequestObject>().phase();
+  if (JS::Prefs::experimental_source_phase_imports() &&
+      phase == ImportPhase::Source) {
+    if (JS::Prefs::experimental_source_phase_imports_test262_module_source()) {
+      JSAtom* specifier = moduleRequest->as<ModuleRequestObject>().specifier();
+      if (StringEquals(specifier, u"<module source>")) {
+        RootedObject module(cx, getOrCreateTest262ModuleSourceModule(cx));
+        if (!module) {
+          return JS::FinishLoadingImportedModuleFailedWithPendingException(
+              cx, payload);
+        }
+        return JS::FinishLoadingImportedModule(cx, nullptr, moduleRequest,
+                                               payload, module, false);
       }
-      return JS::FinishLoadingImportedModule(cx, nullptr, moduleRequest,
-                                             payload, module, false);
     }
   }
-#endif
 
   Rooted<JSLinearString*> path(cx, resolve(cx, moduleRequest, referrer));
   if (!path) {
@@ -451,11 +447,13 @@ bool ModuleLoader::doDynamicImport(JSContext* cx, JS::HandleScript referrer,
                                                                      payload);
   }
 
-  RootedValue hostDefined(cx, ObjectValue(*module));
-  if (!JS::LoadRequestedModules(cx, module, hostDefined, LoadResolved,
-                                LoadRejected)) {
-    return JS::FinishLoadingImportedModuleFailedWithPendingException(cx,
-                                                                     payload);
+  if (phase != ImportPhase::Source) {
+    RootedValue hostDefined(cx, ObjectValue(*module));
+    if (!JS::LoadRequestedModules(cx, module, hostDefined, LoadResolved,
+                                  LoadRejected)) {
+      return JS::FinishLoadingImportedModuleFailedWithPendingException(cx,
+                                                                       payload);
+    }
   }
 
   if (JS_IsExceptionPending(cx)) {
@@ -588,7 +586,6 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
   }
 
   if (module) {
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
     // TODO: Until we support evaluation phase imports of wasm modules, we need
     // to guard against first importing a wasm module as source, and then
     // subsequently as evaluation phase. The module will be retrieved from the
@@ -601,7 +598,6 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
                                 JSMSG_WASM_ESM_EVAL_NOT_SUPPORTED);
       return nullptr;
     }
-#endif
     return module;
   }
 
@@ -634,9 +630,9 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
     return module;
   }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
   // Normally the mime type determines whether a module is wasm or not, but
   // this doesn't exist in the shell. Instead, we'll use the file extension.
+#ifdef NIGHTLY_BUILD
   if (JS::Prefs::experimental_wasm_esm_integration() &&
       StringEndsWith(path, u".wasm")) {
     js::ImportPhase phase = moduleRequestArg->as<ModuleRequestObject>().phase();
@@ -694,7 +690,6 @@ JSObject* ModuleLoader::loadAndParse(JSContext* cx, HandleString pathArg,
     return module;
   }
 #endif
-
   JS::CompileOptions options(cx);
   options.setFileAndLine(filename.get(), 1);
 

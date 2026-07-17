@@ -189,6 +189,15 @@ mozilla::ipc::IPCResult APZCTreeManagerParent::RecvSetLongTapEnabled(
   return IPC_OK();
 }
 
+mozilla::ipc::IPCResult APZCTreeManagerParent::RecvNotifyApzAwareListenerAdded(
+    const ScrollableLayerGuid& aGuid) {
+  if (!IsGuidValid(aGuid)) {
+    return IPC_FAIL_NO_REASON(this);
+  }
+  mTreeManager->NotifyApzAwareListenerAdded(aGuid);
+  return IPC_OK();
+}
+
 bool APZCTreeManagerParent::IsGuidValid(const ScrollableLayerGuid& aGuid) {
   if (aGuid.mLayersId != mLayersId) {
     NS_ERROR("Unexpected layers id");

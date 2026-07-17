@@ -196,7 +196,7 @@ struct FuncData {
 // Wrap aio_write. We have not seen it before, so just assert/report it.
 typedef ssize_t (*aio_write_t)(struct aiocb* aAioCbp);
 ssize_t wrap_aio_write(struct aiocb* aAioCbp);
-FuncData aio_write_data = {0, (void*)wrap_aio_write, (void*)aio_write};
+FuncData aio_write_data = {nullptr, (void*)wrap_aio_write, (void*)aio_write};
 ssize_t wrap_aio_write(struct aiocb* aAioCbp) {
   MacIOAutoObservation timer(mozilla::IOInterposeObserver::OpWrite,
                              aAioCbp->aio_fildes);

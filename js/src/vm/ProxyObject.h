@@ -44,6 +44,10 @@ class ProxyObject : public JSObject {
                           HandleValue priv, TaggedProto proto_,
                           const JSClass* clasp);
 
+  static void swap(JSContext* cx, JS::Handle<ProxyObject*> a,
+                   JS::Handle<ProxyObject*> b,
+                   AutoEnterOOMUnsafeRegion& oomUnsafe);
+
   void init(const BaseProxyHandler* handler, HandleValue priv, JSContext* cx);
 
   const Value& private_() const { return GetProxyPrivate(this); }

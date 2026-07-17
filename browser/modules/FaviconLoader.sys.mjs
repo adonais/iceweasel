@@ -152,11 +152,23 @@ class FaviconLoad {
         Ci.nsILoadInfo.SEC_ALLOW_CROSS_ORIGIN_INHERITS_SEC_CONTEXT;
     }
 
+    let loadingNode = iconInfo.node;
+    let loadingPrincipal = loadingNode.nodePrincipal;
+
+    if (loadingPrincipal.originNoSuffix === "resource://pdf.js") {
+      // PDF.js uses a resource:// principal.
+      loadingPrincipal = Services.scriptSecurityManager.createContentPrincipal(
+        iconInfo.pageUri,
+        loadingPrincipal.originAttributes
+      );
+      loadingNode = null;
+    }
+
     this.channel = Services.io.newChannelFromURI(
       iconInfo.iconUri,
-      iconInfo.node,
-      iconInfo.node.nodePrincipal,
-      iconInfo.node.nodePrincipal,
+      loadingNode,
+      loadingPrincipal,
+      loadingPrincipal,
       securityFlags |
         Ci.nsILoadInfo.SEC_ALLOW_CHROME |
         Ci.nsILoadInfo.SEC_DISALLOW_SCRIPT,

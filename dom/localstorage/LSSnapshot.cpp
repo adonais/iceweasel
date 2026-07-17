@@ -828,7 +828,7 @@ nsresult LSSnapshot::EnsureAllKeys() {
 
   nsTHashMap<nsStringHashKey, nsString> newValues;
 
-  for (auto key : keys) {
+  for (const auto& key : keys) {
     newValues.InsertOrUpdate(key, VoidString());
   }
 

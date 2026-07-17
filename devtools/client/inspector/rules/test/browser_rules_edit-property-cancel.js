@@ -106,9 +106,9 @@ add_task(async function testCancelOnBlur() {
   // triggered via a click in the content page. But our various helpers to
   // simulate events don't seem to trigger the expected blur from DevTools.
   info("Move the focus back to the content page");
-  const onRuleviewChanged = view.once("ruleview-changed");
+  const onModifications = view.once("property-value-updated");
   Services.focus.setFocus(gBrowser.selectedBrowser, Services.focus.FLAG_BYKEY);
-  await onRuleviewChanged;
+  await onModifications;
   await wait(1000);
 
   await SpecialPowers.spawn(gBrowser.selectedBrowser, [], async function () {

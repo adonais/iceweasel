@@ -49,7 +49,7 @@ class SourceSurfaceRawData : public DataSourceSurface {
   MOZ_DECLARE_REFCOUNTED_VIRTUAL_TYPENAME(DataSourceSurfaceRawData, override)
 
   SourceSurfaceRawData()
-      : mRawData(0),
+      : mRawData(nullptr),
         mStride(0),
         mFormat(SurfaceFormat::UNKNOWN),
         mDeallocator(nullptr),

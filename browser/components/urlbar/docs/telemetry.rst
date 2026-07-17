@@ -86,8 +86,8 @@ FX_URLBAR_ZERO_PREFIX_DWELL_TIME_MS
     Firefox 138
       Removed completely. (See bug 1938938)
 
-PLACES_FRECENCY_RECALC_CHUNK_TIME_MS
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+places.frecency_recalc_chunk_time
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
   This records the time necessary to recalculate frecency of a chunk of pages,
   as defined in the :searchfox:`PlacesFrecencyRecalculator <toolkit/components/places/PlacesFrecencyRecalculator.sys.mjs>` module.
@@ -651,7 +651,7 @@ places.*
   - ``pages_need_frecency_recalculation``
     Number of pages in need of a frecency recalculation. This number should
     remain small compared to the total number of pages in the database (see the
-    `PLACES_PAGES_COUNT` histogram). It can be used to valuate the frequency
+    ``places.pages_count`` Glean metric). It can be used to valuate the frequency
     and size of recalculations, for performance reasons.
 
 Search Engagement Telemetry

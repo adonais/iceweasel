@@ -11,15 +11,12 @@ from typing import Optional
 
 from taskgraph.transforms.base import TransformSequence
 from taskgraph.util.dependencies import get_primary_dependency
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import Schema
 from taskgraph.util.treeherder import inherit_treeherder_from_dep
 
 from gecko_taskgraph.transforms.beetmover import craft_release_properties
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import (
-    copy_attributes_from_dependent_job,
-    release_level,
-)
+from gecko_taskgraph.util.attributes import copy_attributes_from_dependent_job
 from gecko_taskgraph.util.scriptworker import (
     generate_beetmover_artifact_map,
     generate_beetmover_upstream_artifacts,
@@ -43,7 +40,7 @@ class BeetmoverDescriptionSchema(Schema, kw_only=True):
     # below transforms for defaults of various values.
     treeherder: TaskDescriptionSchema.__annotations__["treeherder"] = None
     description: str
-    worker_type: optionally_keyed_by("release-level", str, use_msgspec=True)  # type: ignore  # noqa: F821
+    worker_type: str
     run_on_projects: TaskDescriptionSchema.__annotations__["run_on_projects"]  # noqa: F821
     # locale is passed only for l10n beetmoving
     locale: Optional[str] = None
@@ -62,23 +59,6 @@ def remove_name(config, jobs):
 
 
 transforms.add_validate(BeetmoverDescriptionSchema)
-
-
-@transforms.add
-def resolve_keys(config, jobs):
-    for job in jobs:
-        for field in ("worker-type", "attributes.artifact_map"):
-            resolve_keyed_by(
-                job,
-                field,
-                item_name=job["label"],
-                **{
-                    "release-level": release_level(config.params),
-                    "release-type": config.params["release_type"],
-                    "project": config.params["project"],
-                },
-            )
-        yield job
 
 
 @transforms.add

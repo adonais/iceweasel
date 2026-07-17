@@ -43,6 +43,21 @@ const MultiStageUtils = {
   handleUserAction(action) {
     return window.AWSendToParent("SPECIAL_ACTION", action);
   },
+  handleImpressionAction(action, messageId, screenId) {
+    return Promise.resolve(
+      window.AWSendImpressionAction?.({
+        action,
+        message_id: messageId,
+        screen_id: screenId,
+      })
+    ).then(fired => {
+      // Record action telemetry only when the parent actually ran the action;
+      // it may be rejected by the allowlist or suppressed by `once`.
+      if (fired) {
+        this.sendActionTelemetry(messageId, action.type, "IMPRESSION_ACTION");
+      }
+    });
+  },
   sendImpressionTelemetry(messageId, context = {}) {
     window.AWSendEventTelemetry?.({
       event: "IMPRESSION",
@@ -242,6 +257,13 @@ const MultiStageAboutWelcome = props => {
             screen_id: screen.id,
             screen_initials: screenInitials
           });
+
+          // Impression actions should be fired before recording the
+          // impression, so the check that ensures that actions run only once
+          // has an accurate count of how many impressions have actually occured
+          if (screen.content?.impression_action) {
+            _lib_multistage_utils_mjs__WEBPACK_IMPORTED_MODULE_2__.MultiStageUtils.handleImpressionAction(screen.content.impression_action, messageId, screen.id);
+          }
           window.AWAddScreenImpression?.(screen);
         }
       });
@@ -1562,13 +1584,13 @@ class ProtonScreen extends (react__WEBPACK_IMPORTED_MODULE_0___default().PureCom
       className: className,
       style: pictureStyle
     }, darkModeReducedMotionImageURL ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("source", {
-      srcSet: darkModeReducedMotionImageURL,
+      srcset: darkModeReducedMotionImageURL,
       media: "(prefers-color-scheme: dark) and (prefers-reduced-motion: reduce)"
     }) : null, darkModeImageURL ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("source", {
-      srcSet: darkModeImageURL,
+      srcset: darkModeImageURL,
       media: "(prefers-color-scheme: dark)"
     }) : null, reducedMotionImageURL ? /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("source", {
-      srcSet: reducedMotionImageURL,
+      srcset: reducedMotionImageURL,
       media: "(prefers-reduced-motion: reduce)"
     }) : null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
       text: alt
@@ -3348,7 +3370,7 @@ const SingleSelect = ({
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("div", null, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("fieldset", {
     className: `tiles-single-select-section ${category}`
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement(_MSLocalized__WEBPACK_IMPORTED_MODULE_1__.Localized, {
-    text: content.subtitle
+    text: content.tiles?.subtitle || content.subtitle
   }, /*#__PURE__*/react__WEBPACK_IMPORTED_MODULE_0___default().createElement("legend", {
     className: "sr-only"
   })), content.tiles.data.map(({
@@ -4258,7 +4280,6 @@ const EmbeddedBrowserInner = ({
     }
     const browserEl = document.createXULElement("browser");
     const remoteType = window.AWPredictRemoteType({
-      browserEl,
       url
     });
     const attributes = [["disableglobalhistory", "true"], ["type", "content"], ["remote", "true"], ["maychangeremoteness", "true"], ["nodefaultsrc", "true"], ["remoteType", remoteType]];

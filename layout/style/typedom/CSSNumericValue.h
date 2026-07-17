@@ -7,6 +7,7 @@
 
 #include "js/TypeDecls.h"
 #include "mozilla/dom/CSSMathSumBindingFwd.h"
+#include "mozilla/dom/CSSMathValueBindingFwd.h"
 #include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "mozilla/dom/CSSStyleValue.h"
 #include "mozilla/dom/CSSUnitValueBindingFwd.h"
@@ -23,7 +24,6 @@ namespace mozilla {
 struct CSSPropertyId;
 class ErrorResult;
 struct StyleNumericValue;
-struct StyleNumericValueResult;
 
 namespace dom {
 
@@ -34,15 +34,21 @@ class Sequence;
 class CSSNumericValue : public CSSStyleValue {
  public:
   enum class NumericValueType {
-    Uninitialized,  // TODO: Remove once the implementation is complete.
     UnitValue,
-    MathSum,
+    MathValue,
   };
-
-  explicit CSSNumericValue(nsCOMPtr<nsISupports> aParent);
 
   CSSNumericValue(nsCOMPtr<nsISupports> aParent,
                   NumericValueType aNumericValueType);
+
+  // https://drafts.css-houdini.org/css-typed-om-1/#rectify-a-numberish-value
+  static RefPtr<CSSNumericValue> Create(nsCOMPtr<nsISupports> aParent,
+                                        const CSSNumberish& aNumberish);
+
+  // https://drafts.css-houdini.org/css-typed-om-1/#rectify-a-numberish-value
+  static RefPtr<CSSNumericValue> Create(
+      nsCOMPtr<nsISupports> aParent,
+      const OwningCSSNumberish& aOwningNumberish);
 
   static RefPtr<CSSNumericValue> Create(nsCOMPtr<nsISupports> aParent,
                                         const StyleNumericValue& aNumericValue);
@@ -73,10 +79,12 @@ class CSSNumericValue : public CSSStyleValue {
   bool Equals(const Sequence<OwningCSSNumberish>& aValue);
 
   // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-to
-  already_AddRefed<CSSUnitValue> To(const nsACString& aUnit, ErrorResult& aRv);
+  already_AddRefed<CSSUnitValue> To(const nsACString& aUnit,
+                                    ErrorResult& aRv) const;
 
+  // https://drafts.css-houdini.org/css-typed-om-1/#dom-cssnumericvalue-tosum
   already_AddRefed<CSSMathSum> ToSum(const Sequence<nsCString>& aUnits,
-                                     ErrorResult& aRv);
+                                     ErrorResult& aRv) const;
 
   void Type(CSSNumericType& aRetVal);
 
@@ -97,20 +105,47 @@ class CSSNumericValue : public CSSStyleValue {
   // Defined in CSSUnitValue.cpp
   CSSUnitValue& GetAsCSSUnitValue();
 
-  bool IsCSSMathSum() const;
+  bool IsCSSMathValue() const;
 
-  // Defined in CSSMathSum.cpp
-  const CSSMathSum& GetAsCSSMathSum() const;
+  // Defined in CSSMathValue.cpp
+  const CSSMathValue& GetAsCSSMathValue() const;
 
-  // Defined in CSSMathSum.cpp
-  CSSMathSum& GetAsCSSMathSum();
+  // Defined in CSSMathValue.cpp
+  CSSMathValue& GetAsCSSMathValue();
 
   void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
                              nsACString& aDest) const;
 
-  // TODO: This can be changed to return StyleNumericValue directly once the
-  // Unitialized type is removed.
-  StyleNumericValueResult ToStyleNumericValue() const;
+  struct Nested {};
+  struct ParenLess {};
+
+  class SerializationContext {
+   public:
+    constexpr SerializationContext() = default;
+
+    constexpr explicit SerializationContext(Nested) : mKind(Kind::Nested) {}
+
+    constexpr SerializationContext(Nested, ParenLess)
+        : mKind(Kind::NestedParenLess) {}
+
+    bool IsNested() const { return mKind != Kind::Root; }
+    bool IsParenLess() const { return mKind == Kind::NestedParenLess; }
+
+   private:
+    enum class Kind : uint8_t {
+      Root,
+      Nested,
+      NestedParenLess,
+    };
+
+    Kind mKind = Kind::Root;
+  };
+
+  void ToCssTextWithProperty(const CSSPropertyId& aPropertyId,
+                             const SerializationContext& aContext,
+                             nsACString& aDest) const;
+
+  StyleNumericValue ToStyleNumericValue() const;
 
  protected:
   virtual ~CSSNumericValue() = default;

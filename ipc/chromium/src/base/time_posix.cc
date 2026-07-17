@@ -66,8 +66,8 @@ Time Time::FromExploded(bool is_local, const Exploded& exploded) {
   timestruct.tm_yday = 0;                     // mktime/timegm ignore this
   timestruct.tm_isdst = -1;                   // attempt to figure it out
 #ifndef XP_SOLARIS
-  timestruct.tm_gmtoff = 0;   // not a POSIX field, so mktime/timegm ignore
-  timestruct.tm_zone = NULL;  // not a POSIX field, so mktime/timegm ignore
+  timestruct.tm_gmtoff = 0;      // not a POSIX field, so mktime/timegm ignore
+  timestruct.tm_zone = nullptr;  // not a POSIX field, so mktime/timegm ignore
 #endif
 
   time_t seconds;

@@ -23,7 +23,7 @@ namespace mozilla {
  * does not ever block on this thread, or else you will deadlock.
  *
  * Typical usage:
- *   RefPtr<SyncRunnable> sr = new SyncRunnable(new myrunnable...());
+ *   RefPtr sr = MakeRefPtr<SyncRunnable>(new myrunnable...());
  *   sr->DispatchToThread(t);
  *
  * We also provide convenience wrappers:

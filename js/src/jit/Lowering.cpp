@@ -4118,15 +4118,6 @@ void LIRGenerator::visitDynamicImport(MDynamicImport* ins) {
   assignSafepoint(lir, ins);
 }
 
-#ifdef ENABLE_SOURCE_PHASE_IMPORTS
-void LIRGenerator::visitDynamicImportSource(MDynamicImportSource* ins) {
-  LDynamicImportSource* lir =
-      new (alloc()) LDynamicImportSource(useBoxAtStart(ins->specifier()));
-  defineReturn(lir, ins);
-  assignSafepoint(lir, ins);
-}
-#endif
-
 void LIRGenerator::visitLambda(MLambda* ins) {
   MOZ_ASSERT(ins->environmentChain()->type() == MIRType::Object);
 
@@ -5706,15 +5697,6 @@ void LIRGenerator::visitBindNameCache(MBindNameCache* ins) {
   assignSafepoint(lir, ins);
 }
 
-void LIRGenerator::visitCallBindVar(MCallBindVar* ins) {
-  MOZ_ASSERT(ins->environmentChain()->type() == MIRType::Object);
-  MOZ_ASSERT(ins->type() == MIRType::Object);
-
-  LCallBindVar* lir =
-      new (alloc()) LCallBindVar(useRegister(ins->environmentChain()));
-  define(lir, ins);
-}
-
 void LIRGenerator::visitGuardObjectIdentity(MGuardObjectIdentity* ins) {
   LGuardObjectIdentity* guard = new (alloc()) LGuardObjectIdentity(
       useRegister(ins->object()), useRegister(ins->expected()));
@@ -6122,16 +6104,6 @@ void LIRGenerator::visitGuardIsNotArrayBufferMaybeShared(
 
   auto* lir = new (alloc())
       LGuardIsNotArrayBufferMaybeShared(useRegister(ins->object()), temp());
-  assignSnapshot(lir, ins->bailoutKind());
-  add(lir, ins);
-  redefine(ins, ins->object());
-}
-
-void LIRGenerator::visitGuardIsTypedArray(MGuardIsTypedArray* ins) {
-  MOZ_ASSERT(ins->object()->type() == MIRType::Object);
-
-  auto* lir =
-      new (alloc()) LGuardIsTypedArray(useRegister(ins->object()), temp());
   assignSnapshot(lir, ins->bailoutKind());
   add(lir, ins);
   redefine(ins, ins->object());
@@ -6826,30 +6798,6 @@ void LIRGenerator::visitWasmLoadInstance(MWasmLoadInstance* ins) {
     auto* lir =
         new (alloc()) LWasmLoadInstance(useRegisterAtStart(ins->instance()));
     define(lir, ins);
-  }
-}
-
-void LIRGenerator::visitWasmStoreInstance(MWasmStoreInstance* ins) {
-  MDefinition* value = ins->value();
-  if (value->type() == MIRType::Int64) {
-#ifdef JS_PUNBOX64
-    LAllocation instance = useRegisterAtStart(ins->instance());
-    LInt64Allocation valueAlloc = useInt64RegisterAtStart(value);
-#else
-    LAllocation instance = useRegister(ins->instance());
-    LInt64Allocation valueAlloc = useInt64Register(value);
-#endif
-    add(new (alloc()) LWasmStoreSlotI64(valueAlloc, instance, ins->offset(),
-                                        mozilla::Nothing()),
-        ins);
-  } else {
-    MOZ_ASSERT(value->type() != MIRType::WasmAnyRef);
-    LAllocation instance = useRegisterAtStart(ins->instance());
-    LAllocation valueAlloc = useRegisterAtStart(value);
-    add(new (alloc())
-            LWasmStoreSlot(valueAlloc, instance, ins->offset(), value->type(),
-                           MNarrowingOp::None, mozilla::Nothing()),
-        ins);
   }
 }
 
@@ -7677,14 +7625,6 @@ void LIRGenerator::visitAsyncResolve(MAsyncResolve* ins) {
   assignSafepoint(lir, ins);
 }
 
-void LIRGenerator::visitAsyncReject(MAsyncReject* ins) {
-  auto* lir = new (alloc())
-      LAsyncReject(useRegisterAtStart(ins->generator()),
-                   useBoxAtStart(ins->reason()), useBoxAtStart(ins->stack()));
-  defineReturn(lir, ins);
-  assignSafepoint(lir, ins);
-}
-
 void LIRGenerator::visitAsyncAwait(MAsyncAwait* ins) {
   MOZ_ASSERT(ins->generator()->type() == MIRType::Object);
   auto* lir = new (alloc()) LAsyncAwait(useBoxAtStart(ins->value()),
@@ -8341,20 +8281,23 @@ void LIRGenerator::visitLocalTimeToUTC(MLocalTimeToUTC* ins) {
 }
 
 void LIRGenerator::visitYearFromTime(MYearFromTime* ins) {
-  auto* lir = new (alloc()) LYearFromTime(useRegisterAtStart(ins->utcTime()),
-                                          tempFixed(CallTempReg0));
+  auto* lir = new (alloc())
+      LYearFromTime(useRegisterAtStart(ins->utcTime()), tempFixed(CallTempReg0),
+                    tempFixed(CallTempReg1));
   defineReturn(lir, ins);
 }
 
 void LIRGenerator::visitMonthFromTime(MMonthFromTime* ins) {
-  auto* lir = new (alloc()) LMonthFromTime(useRegisterAtStart(ins->utcTime()),
-                                           tempFixed(CallTempReg0));
+  auto* lir = new (alloc())
+      LMonthFromTime(useRegisterAtStart(ins->utcTime()),
+                     tempFixed(CallTempReg0), tempFixed(CallTempReg1));
   defineReturn(lir, ins);
 }
 
 void LIRGenerator::visitDateFromTime(MDateFromTime* ins) {
-  auto* lir = new (alloc()) LDateFromTime(useRegisterAtStart(ins->utcTime()),
-                                          tempFixed(CallTempReg0));
+  auto* lir = new (alloc())
+      LDateFromTime(useRegisterAtStart(ins->utcTime()), tempFixed(CallTempReg0),
+                    tempFixed(CallTempReg1));
   defineReturn(lir, ins);
 }
 
@@ -8460,28 +8403,27 @@ void LIRGenerator::visitWasmFloatConstant(MWasmFloatConstant* ins) {
 #ifdef JS_JITSPEW
 static void SpewResumePoint(MBasicBlock* block, MInstruction* ins,
                             MResumePoint* resumePoint) {
-  Fprinter& out = JitSpewPrinter();
-  out.printf("Current resume point %p details:\n", (void*)resumePoint);
-  out.printf("    frame count: %u\n", resumePoint->frameCount());
+  JitSpew(JitSpew_IonSnapshots,
+          "Current resume point %p details:", (void*)resumePoint);
+  JitSpew(JitSpew_IonSnapshots, "    frame count: %u",
+          resumePoint->frameCount());
 
   if (ins) {
-    out.printf("    taken after: ");
-    ins->printName(out);
+    AutoJitSpewMessage msg(JitSpew_IonSnapshots, "    taken after: ");
+    ins->printName(msg.printer());
   } else {
-    out.printf("    taken at block %u entry", block->id());
+    JitSpew(JitSpew_IonSnapshots, "    taken at block %u entry", block->id());
   }
-  out.printf("\n");
 
-  out.printf("    pc: %p (script: %p, offset: %d)\n", (void*)resumePoint->pc(),
-             (void*)resumePoint->block()->info().script(),
-             int(resumePoint->block()->info().script()->pcToOffset(
-                 resumePoint->pc())));
+  JitSpew(JitSpew_IonSnapshots, "    pc: %p (script: %p, offset: %d)",
+          (void*)resumePoint->pc(),
+          (void*)resumePoint->block()->info().script(),
+          int(resumePoint->block()->info().script()->pcToOffset(
+              resumePoint->pc())));
 
   for (size_t i = 0, e = resumePoint->numOperands(); i < e; i++) {
-    MDefinition* in = resumePoint->getOperand(i);
-    out.printf("    slot%u: ", (unsigned)i);
-    in->printName(out);
-    out.printf("\n");
+    AutoJitSpewMessage msg(JitSpew_IonSnapshots, "    slot%u: ", (unsigned)i);
+    resumePoint->getOperand(i)->printName(msg.printer());
   }
 }
 #endif
@@ -8993,23 +8935,13 @@ void LIRGenerator::visitWasmAddSubI128HI64(MWasmAddSubI128HI64* ins) {
 void LIRGenerator::visitWasmMulI64WideHI64(MWasmMulI64WideHI64* ins) {
 #if defined(JS_CODEGEN_X64)
   // X86_64 only
-  // What this tells the register allocator is:
-  //   - lhs must be in RAX, and RAX will be trashed after it is read
-  //   - rhs must be in some register
-  //   - the result will be in RAX
-  //   - RDX will be trashed
-  // Hence the RA must produce an allocation in which:
-  //   - lhs is in RAX
-  //   - rhs is in a reg which is neither RAX nor RDX
-  //   - the result is in RAX
-  //   - both RDX and RAX are trashed.  RAX both because it holds the
-  //     result, and because we specify `useFixed` and not `useFixedAtStart`.
-  //     RDX is trashed because we said it is a temp.
-  // This is loosely based on the scheme for x86-shared DivI.
+  // The intention here is to get LHS into RAX, the RHS into RDX, and provide
+  // two more temporary registers, and a register for the output.  5 registers
+  // in total, and they must all be different.
   LWasmMulI64WideHI64* lir = new (alloc())
-      LWasmMulI64WideHI64(useFixed(ins->lhs(), rax), useRegister(ins->rhs()),
-                          tempFixed(rdx), ins->isSigned());
-  defineFixed(lir, ins, LAllocation(AnyRegister(rax)));
+      LWasmMulI64WideHI64(useFixed(ins->lhs(), rax), useFixed(ins->rhs(), rdx),
+                          temp(), temp(), ins->isSigned());
+  define(lir, ins);
 #elif defined(JS_64BIT)
   // All other 64-bit targets
   LWasmMulI64WideHI64* lir = new (alloc()) LWasmMulI64WideHI64(

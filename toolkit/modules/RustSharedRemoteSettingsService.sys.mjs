@@ -160,7 +160,7 @@ class _SharedRemoteSettingsService {
     //
     // * In contrast, `RemoteSettingsService::update_config` returns the error
     //   when it parses a cannot-be-a-base `config.server.url`.
-    return !Utils.shouldSkipRemoteActivityDueToTests || url != Utils.SERVER_URL
+    return !Utils.shouldSkipRemoteActivity || url != Utils.SERVER_URL
       ? new RemoteSettingsServer.Custom({ url })
       : null;
   }

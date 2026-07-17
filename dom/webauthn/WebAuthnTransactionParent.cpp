@@ -12,6 +12,7 @@
 #include "mozilla/StaticPrefs_security.h"
 #include "mozilla/dom/PWindowGlobalParent.h"
 #include "mozilla/dom/WindowGlobalParent.h"
+#include "nsComponentManagerUtils.h"
 #include "nsIWebAuthnRelatedOriginFetcher.h"
 #include "nsThreadUtils.h"
 
@@ -190,7 +191,7 @@ void WebAuthnTransactionParent::CompleteTransaction() {
 }
 
 void WebAuthnTransactionParent::DisconnectTransaction() {
-  mTransactionId.reset();
+  Maybe<uint64_t> transactionId = std::move(mTransactionId);
   mRegisterPromiseRequest.DisconnectIfExists();
   mSignPromiseRequest.DisconnectIfExists();
   if (mRelatedOriginCheckHandler) {
@@ -207,8 +208,8 @@ void WebAuthnTransactionParent::DisconnectTransaction() {
     mPendingSignInfo.reset();
     resolver(NS_ERROR_DOM_ABORT_ERR);
   }
-  if (mWebAuthnService) {
-    mWebAuthnService->Reset();
+  if (mWebAuthnService && transactionId.isSome()) {
+    mWebAuthnService->Cancel(transactionId.ref());
   }
 }
 

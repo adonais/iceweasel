@@ -172,6 +172,9 @@ private-browsing-description2 =
     there. We’ve made this change to keep your private browsing private.
     <label data-l10n-name="private-browsing-learn-more">Learn how to manage extension settings</label>
 
+aboutaddons-sidebar =
+    .heading = Add-ons
+
 addon-category-discover = Recommendations
 addon-category-discover-title =
     .title = Recommendations
@@ -199,6 +202,7 @@ addon-category-recent-updates-title =
 addon-category-sitepermission = Site Permissions
 addon-category-sitepermission-title =
     .title = Site Permissions
+
 # String displayed in about:addons in the Site Permissions section
 # Variables:
 #  $host (string) - DNS host name for which the webextension enables permissions
@@ -519,6 +523,10 @@ addon-permissions-empty2 = This extension doesn’t require any permissions.
 addon-permissions-required-label = Required:
 addon-permissions-optional-label = Optional:
 addon-permissions-learnmore = Learn more about permissions
+# Shown above the permissions list when one or more permissions for this
+# extension are controlled by an enterprise policy and cannot be changed by
+# the user.
+addon-permissions-managed-by-policy = Some permissions are managed by your organization.
 
 recommended-extensions-heading = Recommended Extensions
 recommended-themes-heading = Recommended Themes

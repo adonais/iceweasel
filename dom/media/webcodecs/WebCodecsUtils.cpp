@@ -29,7 +29,7 @@ extern mozilla::LazyLogModule gWebCodecsLog;
 #  undef LOG_INTERNAL
 #endif  // LOG_INTERNAL
 #define LOG_INTERNAL(level, msg, ...) \
-  MOZ_LOG(gWebCodecsLog, LogLevel::level, (msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::level, msg, ##__VA_ARGS__)
 #ifdef LOG
 #  undef LOG
 #endif  // LOG
@@ -607,7 +607,7 @@ nsCString ConfigToString(const VideoDecoderConfig& aConfig) {
 }
 
 bool IsSupportedVideoCodec(const nsAString& aCodec) {
-  LOG("IsSupportedVideoCodec: %s", NS_ConvertUTF16toUTF8(aCodec).get());
+  LOG("IsSupportedVideoCodec: {}", NS_ConvertUTF16toUTF8(aCodec).get());
   // The only codec string accepted for vp8 is "vp8"
   if (!IsVP9CodecString(aCodec) && !IsH264CodecString(aCodec) &&
       !IsAV1CodecString(aCodec) && !aCodec.EqualsLiteral("vp8")) {
@@ -651,7 +651,7 @@ nsCString ConvertCodecName(const nsCString& aContainer,
 }
 
 bool IsSupportedAudioCodec(const nsAString& aCodec) {
-  LOG("IsSupportedAudioCodec: %s", NS_ConvertUTF16toUTF8(aCodec).get());
+  LOG("IsSupportedAudioCodec: {}", NS_ConvertUTF16toUTF8(aCodec).get());
   return aCodec.EqualsLiteral("flac") || aCodec.EqualsLiteral("mp3") ||
          IsAACCodecString(aCodec) || aCodec.EqualsLiteral("vorbis") ||
          aCodec.EqualsLiteral("opus") || aCodec.EqualsLiteral("ulaw") ||

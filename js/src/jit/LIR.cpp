@@ -138,7 +138,7 @@ const LInstruction* LBlock::firstInstructionWithId() const {
       return *i;
     }
   }
-  return 0;
+  return nullptr;
 }
 
 LMoveGroup* LBlock::getEntryMoveGroup(TempAllocator& alloc) {
@@ -587,12 +587,11 @@ void LInstruction::assignSnapshot(LSnapshot* snapshot) {
 
 #ifdef JS_JITSPEW
   if (JitSpewEnabled(JitSpew_IonSnapshots)) {
-    JitSpewHeader(JitSpew_IonSnapshots);
-    Fprinter& out = JitSpewPrinter();
-    out.printf("Assigning snapshot %p to instruction %p (", (void*)snapshot,
-               (void*)this);
-    printName(out);
-    out.printf(")\n");
+    AutoJitSpewMessage msg(JitSpew_IonSnapshots,
+                           "Assigning snapshot %p to instruction %p (",
+                           (void*)snapshot, (void*)this);
+    printName(msg.printer());
+    msg.append(")");
   }
 #endif
 }

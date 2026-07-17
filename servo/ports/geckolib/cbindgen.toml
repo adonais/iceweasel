@@ -38,6 +38,7 @@ after_includes = """
 #pragma push_macro("TRANSPARENT")
 #undef TRANSPARENT
 """
+usize_is_size_t = true
 
 [parse]
 parse_deps = true
@@ -103,6 +104,7 @@ include = [
   "AnimationRangeStart",
   "AnimationIterationCount",
   "AnimationDirection",
+  "BackgroundClip",
   "AnimationFillMode",
   "AnimationPlayState",
   "AnimationComposition",
@@ -219,6 +221,8 @@ include = [
   "BorderImageRepeatKeyword",
   "BorderSpacing",
   "BorderRadius",
+  "CornerShape",
+  "CornerShapeRect",
   "ColorScheme",
   "ColumnCount",
   "CssRuleRef",
@@ -358,6 +362,7 @@ include = [
   "QueryFontMetricsFlags",
   "AllowAnchorPosResolutionInCalcPercentage",
   "ListStyleType",
+  "LinkParameters",
 ]
 item_types = [
   "enums",
@@ -654,6 +659,8 @@ renaming_overrides_prefixing = true
 
   bool MaybeTransparent() const;
 
+  bool DependsOnCurrentColor() const;
+
   /**
    * Compute the final color, taking into account the foreground color.
    **/
@@ -694,6 +701,47 @@ renaming_overrides_prefixing = true
    * if required.
    */
   nscolor ToColor() const;
+"""
+
+"ColorFunction" = """
+  bool DependsOnCurrentColor() const;
+"""
+
+"GenericColorMix" = """
+  bool DependsOnCurrentColor() const;
+"""
+
+"OwnedArray" = """
+  static_assert(N > 0);
+
+  StyleOwnedArray() = delete;
+
+  inline StyleOwnedArray& operator=(const StyleOwnedArray&);
+  inline StyleOwnedArray& operator=(StyleOwnedArray&&) = delete;
+
+  inline StyleOwnedArray(const StyleOwnedArray&);
+  inline StyleOwnedArray(StyleOwnedArray&&) = delete;
+  template <typename... Args>
+    requires (sizeof...(Args) == N)
+  inline explicit StyleOwnedArray(Args&&... aArgs);
+
+  inline ~StyleOwnedArray();
+
+  Span<const T> AsSpan() const {
+    return {ptr, N};
+  }
+
+  static constexpr size_t Length() {
+    return N;
+  }
+
+  bool operator==(const StyleOwnedArray& other) const {
+    return AsSpan() == other.AsSpan();
+  }
+
+  bool operator!=(const StyleOwnedArray& other) const {
+    return !(*this == other);
+  }
 """
 
 "OwnedSlice" = """
@@ -1277,6 +1325,13 @@ renaming_overrides_prefixing = true
   {}
   inline bool IsEmpty() const;
   inline Span<const mozilla::StyleAtom> AsSpan() const;
+"""
+
+"NumericType" = """
+  static_assert(static_cast<size_t>(StyleNumericBaseType::Percent) + 1 ==
+                StyleNUMERIC_BASE_TYPE_COUNT);
+
+  inline StyleNumericType();
 """
 
 "PropertyTypedValueList" = """

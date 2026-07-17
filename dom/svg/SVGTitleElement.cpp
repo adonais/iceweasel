@@ -26,7 +26,7 @@ NS_IMPL_ISUPPORTS_INHERITED(SVGTitleElement, SVGTitleElementBase,
 // Implementation
 
 SVGTitleElement::SVGTitleElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGTitleElementBase(std::move(aNodeInfo)) {
   AddMutationObserver(this);
   SetEnabledCallbacks(kCharacterDataChanged | kContentAppended |

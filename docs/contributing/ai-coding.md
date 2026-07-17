@@ -12,7 +12,7 @@ For contributors who choose to use these tools, we trust them to do so with care
 
 AI-assisted contributions must meet the same standards of correctness, security, and maintainability as any other patch.
 
-### When using AI tools:
+### When using AI tools
 
 * **Maintain quality and scope.** You are responsible for the technical excellence of your work, regardless of the tools you used. Keep patches small and focused so they're easy to review and clearly justified.
 * **Understand what you submit.** You're expected to understand and be able to explain every change you make. The role of the [reviewer](./Code_Review_FAQ.rst) is to double-check the work of a human, not the output of a tool.

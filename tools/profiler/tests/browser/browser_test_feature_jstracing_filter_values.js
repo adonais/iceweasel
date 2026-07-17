@@ -5,10 +5,7 @@ const { ValueSummaryReader } = ChromeUtils.importESModule(
 );
 
 add_task(async function test_profile_feature_jstracing_filter_values() {
-  Assert.ok(
-    !Services.profiler.IsActive(),
-    "The profiler is not currently active"
-  );
+  await ProfilerTestUtils.assertProfilerInactive();
 
   await BrowserTestUtils.withNewTab(
     "https://example.com/",

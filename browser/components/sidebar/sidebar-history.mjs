@@ -142,7 +142,7 @@ export class SidebarHistory extends SidebarPage {
       const list = row.getRootNode().host;
       if (!list.isTabItemSelected(row)) {
         this.treeView.resetSelection();
-        this.treeView.selectRowInList(row, list);
+        this.treeView.selectRowInList(list, row.guid);
         list.dispatchEvent(
           new CustomEvent("set-anchor", {
             bubbles: true,
@@ -263,7 +263,7 @@ export class SidebarHistory extends SidebarPage {
   #deleteMultipleFromHistory() {
     const pageGuids = this.treeView
       .getSelectedTabItems()
-      .map(item => item.guid);
+      .map(item => item.pageGuid);
     return lazy.PlacesUtils.history.remove(pageGuids);
   }
 
@@ -282,7 +282,7 @@ export class SidebarHistory extends SidebarPage {
     navigateToLink(e, e.originalTarget.url, { forceNewTab: false });
     Glean.sidebar.link.history.add(1);
     this.treeView.resetSelection();
-    this.treeView.selectRowInList(e.originalTarget, e.currentTarget);
+    this.treeView.selectRowInList(e.currentTarget, e.originalTarget.guid);
   }
 
   onPrimaryAction(e) {
@@ -389,7 +389,7 @@ export class SidebarHistory extends SidebarPage {
       data-l10n-args=${JSON.stringify({
         date: isDateSite ? items[0][1][0].time : items[0].time,
       })}
-      @keydown=${e => this.treeView.handleCardKeydown(e)}
+      @keydown=${this.keydownHandler}
       tabindex=${ifDefined(tabIndex)}
     >
       ${isDateSite
@@ -423,7 +423,7 @@ export class SidebarHistory extends SidebarPage {
       type="accordion"
       ?expanded=${!isDateSite}
       heading=${domain}
-      @keydown=${e => this.treeView.handleCardKeydown(e)}
+      @keydown=${this.keydownHandler}
       tabindex=${ifDefined(tabIndex)}
       data-l10n-id=${domain ? nothing : "sidebar-history-site-localhost"}
       data-l10n-attrs=${domain ? nothing : "heading"}

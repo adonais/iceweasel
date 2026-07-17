@@ -20,10 +20,10 @@ class nsINode;
 namespace mozilla::dom {
 
 class TreeWalker final : public nsISupports, public nsTraversal {
-  virtual ~TreeWalker();
+  ~TreeWalker();
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
 
   TreeWalker(nsINode* aRoot, uint32_t aWhatToShow, NodeFilter* aFilter);
 

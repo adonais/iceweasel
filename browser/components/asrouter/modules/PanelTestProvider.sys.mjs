@@ -2066,10 +2066,6 @@ const MESSAGES = () => [
     content: {
       promoEnabled: true,
       promoType: "VPN",
-      infoEnabled: true,
-      infoBody: "fluent:about-private-browsing-info-description-private-window",
-      infoLinkText: "fluent:about-private-browsing-learn-more-link",
-      infoTitleEnabled: false,
       promoLinkType: "button",
       promoLinkText: "fluent:about-private-browsing-prominent-cta",
       promoSectionStyle: "below-search",
@@ -2095,12 +2091,6 @@ const MESSAGES = () => [
     template: "pb_newtab",
     groups: ["pbNewtab"],
     content: {
-      infoBody: "fluent:about-private-browsing-info-description-simplified",
-      infoEnabled: true,
-      infoIcon: "chrome://global/skin/icons/indicator-private-browsing.svg",
-      infoLinkText: "fluent:about-private-browsing-learn-more-link",
-      infoTitle: "",
-      infoTitleEnabled: false,
       promoEnabled: true,
       promoType: "PIN",
       promoHeader: "Private browsing freedom in one click",
@@ -2399,6 +2389,13 @@ const MESSAGES = () => [
               panel_position: {
                 anchor_attachment: "bottomcenter",
                 callout_attachment: "topright",
+              },
+            },
+            {
+              selector: "#PanelUI-menu-button",
+              panel_position: {
+                anchor_attachment: "leftcenter",
+                callout_attachment: "rightcenter",
               },
             },
           ],

@@ -16,7 +16,7 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.settings.registerOnSharedPreferenceChangeListener
 
 /**
@@ -70,7 +70,7 @@ class DefaultOnboardingPreferencesRepository(
     private val lifecycleOwner: LifecycleOwner,
     private val coroutineScope: CoroutineScope = CoroutineScope(Dispatchers.Main),
 ) : OnboardingPreferencesRepository {
-    private val settings = context.settings()
+    private val settings = context.components.settings
     private val _onboardingPreferenceUpdates =
         MutableSharedFlow<OnboardingPreferencesRepository.OnboardingPreferenceUpdate>()
 

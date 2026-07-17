@@ -10,16 +10,15 @@ import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
 export var Preferences = {
   init() {
     let panes = [
-      ["paneGeneral"],
-      ["paneGeneral", browsingGroup],
-      ["paneGeneral", connectionDialog],
+      ["paneSync"],
       ["paneSearch"],
       ["panePrivacy"],
       ["panePrivacy", cacheGroup],
       ["panePrivacy", clearRecentHistoryDialog],
-      ["panePrivacy", certManager],
-      ["panePrivacy", deviceManager],
-      ["paneSync"],
+      ["paneConnectionSecurity", connectionDialog],
+      ["paneConnectionSecurity", certManager],
+      ["paneConnectionSecurity", deviceManager],
+      ["paneTabsBrowsing", tabsGroup],
     ];
 
     for (let [primary, customFn] of panes) {
@@ -104,13 +103,13 @@ function paintPromise(browserWindow) {
   });
 }
 
-async function browsingGroup(aBrowser) {
+async function tabsGroup(aBrowser) {
   await aBrowser.documentGlobal.SpecialPowers.spawn(
     aBrowser,
     [],
     async function () {
       content.document
-        .querySelector('setting-group[groupid="browsing"]')
+        .querySelector('setting-group[groupid="tabs"]')
         .scrollIntoView();
     }
   );
@@ -122,7 +121,7 @@ async function cacheGroup(aBrowser) {
     [],
     async function () {
       content.document
-        .querySelector('setting-group[groupid="cookiesAndSiteData"]')
+        .querySelector('setting-group[groupid="cookiesAndSiteData2"]')
         .scrollIntoView();
     }
   );
@@ -143,7 +142,7 @@ async function clearRecentHistoryDialog(aBrowser) {
     aBrowser,
     [],
     async function () {
-      content.document.getElementById("clearHistoryButton").click();
+      content.document.getElementById("clearSiteDataButton").click();
     }
   );
 }

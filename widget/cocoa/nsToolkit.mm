@@ -99,7 +99,7 @@ nsresult nsToolkit::RegisterForSleepWakeNotifications() {
   NS_ASSERTION(!mSleepWakeNotificationRLS, "Already registered for sleep/wake");
 
   gRootPort = ::IORegisterForSystemPower(
-      0, &notifyPortRef, ToolkitSleepWakeCallback, &mPowerNotifier);
+      nullptr, &notifyPortRef, ToolkitSleepWakeCallback, &mPowerNotifier);
   if (gRootPort == MACH_PORT_NULL) {
     NS_ERROR("IORegisterForSystemPower failed");
     return NS_ERROR_FAILURE;

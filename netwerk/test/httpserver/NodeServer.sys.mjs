@@ -629,6 +629,10 @@ class NodeHTTPSServerCode extends BaseNodeHTTPServerCode {
     const options = {
       key: global.tlsKey || fs.readFileSync(__dirname + "/http2-cert.key"),
       cert: global.tlsCert || fs.readFileSync(__dirname + "/http2-cert.pem"),
+      // Optionally request a client cert; rejectUnauthorized is off so the
+      // handshake completes regardless (tests assert via the dialog mock).
+      requestCert: !!global.requestClientCert,
+      rejectUnauthorized: false,
       maxHeaderSize: 128 * 1024,
     };
     const https = require("https");
@@ -645,6 +649,13 @@ class NodeHTTPSServerCode extends BaseNodeHTTPServerCode {
 export class NodeHTTPSServer extends BaseNodeServer {
   _protocol = "https";
   _version = "http/1.1";
+  _requestClientCert = false;
+
+  /// Make the TLS server request a client cert. Call before `start()`.
+  setRequestClientCert(value) {
+    this._requestClientCert = !!value;
+  }
+
   /// Starts the server
   /// @port - default 0
   ///    when provided, will attempt to listen on that port.
@@ -661,6 +672,9 @@ export class NodeHTTPSServer extends BaseNodeServer {
     await this.execute(NodeHTTPSServerCode);
     await this.execute(ADB);
     await this._pushGeneratedTLSMaterial();
+    await this.execute(
+      `global.requestClientCert = ${this._requestClientCert};`
+    );
     this._port = await this.execute(`NodeHTTPSServerCode.startServer(${port})`);
     await this.execute(`global.path_handlers = {};`);
   }
@@ -1113,7 +1127,7 @@ class HTTP2ProxyCode {
           global.socketCounts[socket.remotePort] =
             (global.socketCounts[socket.remotePort] || 0) + 1;
           try {
-            stream.respond({ ":status": 200 });
+            stream.respond({ ":status": 200, "Proxy-agent": "Node.js-Proxy" });
           } catch (e) {
             if (
               e.code !== "ERR_HTTP2_INVALID_STREAM" &&

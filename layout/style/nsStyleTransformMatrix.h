@@ -129,11 +129,13 @@ float ProcessTranslatePart(
 
 void ProcessInterpolateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                               const mozilla::StyleTransformOperation& aOp,
-                              TransformReferenceBox& aBounds);
+                              TransformReferenceBox& aBounds,
+                              mozilla::StyleZoom aEffectiveZoom);
 
 void ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
                              const mozilla::StyleTransformOperation& aOp,
-                             TransformReferenceBox& aBounds);
+                             TransformReferenceBox& aBounds,
+                             mozilla::StyleZoom aEffectiveZoom);
 
 /**
  * Given a StyleTransform containing transform functions, returns a matrix
@@ -145,7 +147,8 @@ void ProcessAccumulateMatrix(mozilla::gfx::Matrix4x4& aMatrix,
  */
 mozilla::gfx::Matrix4x4 ReadTransforms(const mozilla::StyleTransform& aList,
                                        TransformReferenceBox& aBounds,
-                                       float aAppUnitsPerMatrixUnit);
+                                       float aAppUnitsPerMatrixUnit,
+                                       mozilla::StyleZoom aEffectiveZoom);
 
 // Generate the gfx::Matrix for CSS Transform Module Level 2.
 // https://drafts.csswg.org/css-transforms-2/#ctm
@@ -153,7 +156,7 @@ mozilla::gfx::Matrix4x4 ReadTransforms(
     const mozilla::StyleTranslate&, const mozilla::StyleRotate&,
     const mozilla::StyleScale&, const mozilla::ResolvedMotionPathData* aMotion,
     const mozilla::StyleTransform&, TransformReferenceBox& aRefBox,
-    float aAppUnitsPerMatrixUnit);
+    float aAppUnitsPerMatrixUnit, mozilla::StyleZoom aEffectiveZoom);
 
 /**
  * Given the x and y values, compute the 2d position with respect to the given

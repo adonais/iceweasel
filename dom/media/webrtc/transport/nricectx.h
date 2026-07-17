@@ -189,6 +189,7 @@ class NrIceCtx {
 
   std::vector<RefPtr<NrIceMediaStream>> GetStreams() const {
     std::vector<RefPtr<NrIceMediaStream>> result;
+    result.reserve(streams_.size());
     for (auto& idAndStream : streams_) {
       result.push_back(idAndStream.second);
     }

@@ -199,7 +199,7 @@ async function pickNodeInContentPage(
   // element containing the tab we're looking at, at the position where should be the
   // content element.
   // We need to do this to mimick what's actually done in node-picker.js
-  await EventUtils.synthesizeMouse(
+  EventUtils.synthesizeMouse(
     document.querySelector(browserElementSelector),
     x + 5,
     y + 5,

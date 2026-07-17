@@ -74,6 +74,7 @@ def register(graph_config):
         target_tasks,  # trigger target task method registration
     )
     from gecko_taskgraph.parameters import register_parameters
+    from gecko_taskgraph import task_context  # noqa - trigger custom task-context registration
     from gecko_taskgraph.util import (
         dependencies,  # noqa - trigger group_by registration
     )

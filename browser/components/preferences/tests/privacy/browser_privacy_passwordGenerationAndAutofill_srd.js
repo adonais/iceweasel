@@ -1,3 +1,5 @@
+requestLongerTimeout(2);
+
 add_task(async function initialStateNew() {
   // check pref permutations to verify the UI opens in the correct state
   const prefTests = [

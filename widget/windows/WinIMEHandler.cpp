@@ -22,6 +22,7 @@
 #ifdef ACCESSIBILITY
 #  include "nsAccessibilityService.h"
 #endif  // #ifdef ACCESSIBILITY
+#include "nsComponentManagerUtils.h"
 #include "nsIWindowsRegKey.h"
 #include "nsWindow.h"
 #include "nsWindowDefs.h"

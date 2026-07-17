@@ -744,7 +744,7 @@ class ClientWebGLContext final : public nsICanvasRenderingContextInternal,
 
   // ----------------------------- Lifetime and DOM ---------------------------
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(ClientWebGLContext)
 
   JSObject* WrapObject(JSContext* cx,

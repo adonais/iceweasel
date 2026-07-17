@@ -144,6 +144,10 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 [[nodiscard]] bool StartsCodeSection(const uint8_t* begin, const uint8_t* end,
                                      BytecodeRange* codeSection);
 
+#ifdef ENABLE_WASM_COMPONENTS
+[[nodiscard]] bool IsComponent(Decoder& d);
+#endif
+
 // Calling DecodeModuleEnvironment decodes all sections up to the code section
 // and performs full validation of all those sections. The client must then
 // decode the code section itself, reusing ValidateFunctionBody if necessary,
@@ -159,6 +163,12 @@ using ValidatingOpIter = OpIter<ValidatingPolicy>;
 
 [[nodiscard]] bool DecodeModuleTail(Decoder& d, CodeMetadata* codeMeta,
                                     ModuleMetadata* meta);
+
+#ifdef ENABLE_WASM_COMPONENTS
+[[nodiscard]] bool DecodeComponent(
+    Decoder& d, MutableComponent c, const CompileArgs& args,
+    JS::OptimizedEncodingListener* listener = nullptr);
+#endif
 
 // Validate an entire module, returning true if the module was validated
 // successfully. If Validate returns false:

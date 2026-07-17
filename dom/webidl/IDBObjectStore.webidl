@@ -41,11 +41,13 @@ interface IDBObjectStore {
     // to pull it out into a sepatate operation with a BinaryName mapping to the
     // same underlying implementation.
     [NewObject, Throws, Alias="mozGetAll"]
-    IDBRequest getAll(optional any query,
+    IDBRequest getAll(optional any queryOrOptions,
                       optional [EnforceRange] unsigned long count);
     [NewObject, Throws]
-    IDBRequest getAllKeys(optional any query,
+    IDBRequest getAllKeys(optional any queryOrOptions,
                           optional [EnforceRange] unsigned long count);
+    [NewObject, Throws]
+    IDBRequest getAllRecords(optional IDBGetAllOptions options = {});
 
     [NewObject, Throws]
     IDBRequest count(optional any key);

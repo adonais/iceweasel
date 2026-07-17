@@ -74,13 +74,14 @@ struct TimingParams {
       const TimingParams& aSource,
       const dom::OptionalEffectTiming& aEffectTiming, ErrorResult& aRv);
 
-  // Range-checks and validates an UnrestrictedDoubleOrString or
-  // OwningUnrestrictedDoubleOrString object and converts to a
-  // StickyTimeDuration value or Nothing() if aDuration is "auto".
-  // Caller must check aRv.Failed().
-  template <class DoubleOrString>
-  static Maybe<StickyTimeDuration> ParseDuration(DoubleOrString& aDuration,
-                                                 ErrorResult& aRv) {
+  // Range-checks and validates an UnrestrictedDoubleOrCSSNumericValueOrString
+  // or its owning variant and converts to a StickyTimeDuration value, or
+  // Nothing() if aDuration a CSSNumericValue or is "auto". Caller must check
+  // aRv.Failed().
+  // https://drafts.csswg.org/web-animations-2/#dom-effecttiming-duration
+  template <class DoubleOrCSSNumericValueOrString>
+  static Maybe<StickyTimeDuration> CheckedDuration(
+      DoubleOrCSSNumericValueOrString& aDuration, ErrorResult& aRv) {
     Maybe<StickyTimeDuration> result;
     if (aDuration.IsUnrestrictedDouble()) {
       double durationInMs = aDuration.GetAsUnrestrictedDouble();
@@ -90,6 +91,10 @@ struct TimingParams {
         nsPrintfCString err("Duration (%g) must be nonnegative", durationInMs);
         aRv.ThrowTypeError(err);
       }
+    } else if (aDuration.IsCSSNumericValue()) {
+      // See the "NOTE" at the end of:
+      // https://drafts.csswg.org/web-animations-2/#the-effecttiming-dictionaries
+      aRv.ThrowTypeError("Duration is not settable as a CSSNumericValue.");
     } else if (!aDuration.GetAsString().EqualsLiteral("auto")) {
       aRv.ThrowTypeError<dom::MSG_INVALID_DURATION_ERROR>(
           NS_ConvertUTF16toUTF8(aDuration.GetAsString()));

@@ -689,37 +689,6 @@ class MWasmLoadInstance : public MUnaryInstruction, public NoTypePolicy::Data {
   AliasSet getAliasSet() const override { return aliases_; }
 };
 
-class MWasmStoreInstance : public MBinaryInstruction,
-                           public NoTypePolicy::Data {
-  uint32_t offset_;
-  AliasSet aliases_;
-
-  explicit MWasmStoreInstance(MDefinition* instance, MDefinition* value,
-                              uint32_t offset, MIRType type, AliasSet aliases)
-      : MBinaryInstruction(classOpcode, instance, value),
-        offset_(offset),
-        aliases_(aliases) {
-    // Different instance data have different alias classes and only those
-    // classes are allowed.
-    MOZ_ASSERT(aliases_.flags() ==
-                   AliasSet::Store(AliasSet::WasmPendingException).flags() ||
-               aliases.flags() == AliasSet::Store(AliasSet::Any).flags());
-
-    // The only types supported at the moment.
-    MOZ_ASSERT(type == MIRType::Pointer || type == MIRType::Int32 ||
-               type == MIRType::Int64 || type == MIRType::WasmAnyRef);
-  }
-
- public:
-  INSTRUCTION_HEADER(WasmStoreInstance)
-  TRIVIAL_NEW_WRAPPERS
-  NAMED_OPERANDS((0, instance), (1, value))
-
-  uint32_t offset() const { return offset_; }
-
-  AliasSet getAliasSet() const override { return aliases_; }
-};
-
 class MWasmHeapReg : public MNullaryInstruction {
   AliasSet aliases_;
 

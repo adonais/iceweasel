@@ -40,14 +40,15 @@ async def prepare_order(client):
 
     # clicking on pepperoni just doesn't work sometimes and returns you to the same page
     for _ in range(3):
-        await click_until_works(PEPPERONI_CSS)
-        _, carryout = client.await_first_element_of(
+        pepperoni, carryout = client.await_first_element_of(
             [
                 client.css(PEPPERONI_CSS),
                 client.css(CARRYOUT_CSS),
             ],
             is_displayed=True,
         )
+        if pepperoni:
+            await click_until_works(PEPPERONI_CSS)
         if carryout:
             break
         await client.stall(1)
@@ -57,7 +58,8 @@ async def prepare_order(client):
     await client.stall(1)
     await click_until_works(SUBMIT_CSS)
     await click_until_works(
-        "button", "!elem.disabled && elem.innerText == 'SELECT STORE'"
+        "button",
+        "!elem.disabled && (elem.innerText == 'SELECT STORE' || elem.innerText == 'ORDER AHEAD')",
     )
     await click_until_works(ADD_TO_CART_CSS)
     await click_until_works(
@@ -68,16 +70,8 @@ async def prepare_order(client):
 
 
 @pytest.mark.asyncio
-@pytest.mark.with_interventions
-async def test_enabled(client):
+@pytest.mark.without_interventions
+async def test_regression(client):
     await prepare_order(client)
     assert client.await_css(GOOD_CSS, is_displayed=True)
     assert not client.find_text(BAD_TEXT, is_displayed=True)
-
-
-@pytest.mark.asyncio
-@pytest.mark.without_interventions
-async def test_disabled(client):
-    await prepare_order(client)
-    assert client.await_text(BAD_TEXT, is_displayed=True)
-    assert not client.find_css(GOOD_CSS, is_displayed=True)

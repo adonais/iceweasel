@@ -247,15 +247,20 @@ export class ContextMenuChild extends JSWindowActorChild {
 
         if (!disable) {
           try {
-            Services.scriptSecurityManager.checkLoadURIWithPrincipal(
-              target.ownerDocument.nodePrincipal,
-              target.currentURI
-            );
-            let canvas = this.document.createElement("canvas");
-            canvas.width = target.naturalWidth;
-            canvas.height = target.naturalHeight;
-            let ctx = canvas.getContext("2d");
-            ctx.drawImage(target, 0, 0);
+            let canvas;
+            if (this.contentWindow.HTMLCanvasElement.isInstance(target)) {
+              canvas = target;
+            } else {
+              Services.scriptSecurityManager.checkLoadURIWithPrincipal(
+                target.ownerDocument.nodePrincipal,
+                target.currentURI
+              );
+              canvas = this.document.createElement("canvas");
+              canvas.width = target.naturalWidth;
+              canvas.height = target.naturalHeight;
+              let ctx = canvas.getContext("2d");
+              ctx.drawImage(target, 0, 0);
+            }
             let dataURL = canvas.toDataURL();
             let url = target.ownerDocument.location;
             let imageName = url.pathname.substr(
@@ -518,6 +523,10 @@ export class ContextMenuChild extends JSWindowActorChild {
   }
 
   _disableSetDesktopBackground(aTarget) {
+    if (this.contentWindow.HTMLCanvasElement.isInstance(aTarget)) {
+      return false;
+    }
+
     // Disable the Set as Desktop Background menu item if we're still trying
     // to load the image or the load failed.
     if (!(aTarget instanceof Ci.nsIImageLoadingContent)) {
@@ -592,37 +601,42 @@ export class ContextMenuChild extends JSWindowActorChild {
     // Media related cache info parent needs for saving
     let contentType = null;
     let contentDisposition = null;
-    if (
-      aEvent.composedTarget.nodeType == aEvent.composedTarget.ELEMENT_NODE &&
-      aEvent.composedTarget instanceof Ci.nsIImageLoadingContent &&
-      aEvent.composedTarget.currentURI
-    ) {
-      disableSetDesktopBackground = this._disableSetDesktopBackground(
-        aEvent.composedTarget
-      );
-
-      try {
-        let imageCache = Cc["@mozilla.org/image/tools;1"]
-          .getService(Ci.imgITools)
-          .getImgCacheForDocument(doc);
-        // The image cache's notion of where this image is located is
-        // the currentURI of the image loading content.
-        let props = imageCache.findEntryProperties(
-          aEvent.composedTarget.currentURI,
-          doc
-        );
-
+    let composedTarget = aEvent.composedTarget;
+    if (composedTarget.nodeType == composedTarget.ELEMENT_NODE) {
+      let isImage =
+        composedTarget instanceof Ci.nsIImageLoadingContent &&
+        composedTarget.currentURI;
+      if (
+        isImage ||
+        this.contentWindow.HTMLCanvasElement.isInstance(composedTarget)
+      ) {
+        disableSetDesktopBackground =
+          this._disableSetDesktopBackground(composedTarget);
+      }
+      if (isImage) {
         try {
-          contentType = props.get("type", Ci.nsISupportsCString).data;
-        } catch (e) {}
+          let imageCache = Cc["@mozilla.org/image/tools;1"]
+            .getService(Ci.imgITools)
+            .getImgCacheForDocument(doc);
+          // The image cache's notion of where this image is located is
+          // the currentURI of the image loading content.
+          let props = imageCache.findEntryProperties(
+            aEvent.composedTarget.currentURI,
+            doc
+          );
 
-        try {
-          contentDisposition = props.get(
-            "content-disposition",
-            Ci.nsISupportsCString
-          ).data;
+          try {
+            contentType = props.get("type", Ci.nsISupportsCString).data;
+          } catch (e) {}
+
+          try {
+            contentDisposition = props.get(
+              "content-disposition",
+              Ci.nsISupportsCString
+            ).data;
+          } catch (e) {}
         } catch (e) {}
-      } catch (e) {}
+      }
     }
 
     let selectionInfo = lazy.SelectionUtils.getSelectionDetails(

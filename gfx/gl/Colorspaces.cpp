@@ -26,9 +26,11 @@ float TfFromLinear(const TransferFunctionDesc& desc, const float linear) {
                          : (desc.a * powf(l, 1.0f / desc.g) - (desc.a - 1));
       break;
     case TransferFunctionDescType::HLG:
-      // Rec2100 Hybrid-Log Gamma is defined as display-referred with a range up
-      // to 12.
-      ret = l > 1.0f ? sqrtf(l)
+      // Rec2100 Hybrid-Log Gamma is defined as display-referred with nominal
+      // display white being 1.0 which is encoded as 0.5, and maximum white
+      // as 12.0 which is encoded as 1.0, the spec suggests that displays are
+      // typically set to 1.0=80 cd/m^2 which means 12.0=960 cd/m^2.
+      ret = l < 1.0f ? 0.5f * sqrtf(l)
                      : (0.17883277f * logf(l - 0.28466892f) + 0.55991073f);
       break;
     case TransferFunctionDescType::PQ: {
@@ -61,9 +63,11 @@ float LinearFromTf(const TransferFunctionDesc& desc, const float tf) {
                                   : powf((t + (desc.a - 1)) / desc.a, desc.g);
       break;
     case TransferFunctionDescType::HLG:
-      // Rec2100 Hybrid-Log Gamma is defined as display-referred with a range up
-      // to 12.
-      ret = t < 0.5f ? (t * t)
+      // Rec2100 Hybrid-Log Gamma is defined as display-referred with nominal
+      // display white being 1.0 which is encoded as 0.5, and maximum white
+      // as 12.0 which is encoded as 1.0, the spec suggests that displays are
+      // typically set to 1.0=80 cd/m^2 which means 12.0=960 cd/m^2.
+      ret = t < 0.5f ? 4.0f * (t * t)
                      : (expf((t - 0.55991073f) / 0.17883277f) + 0.28466892f);
       break;
     case TransferFunctionDescType::PQ: {

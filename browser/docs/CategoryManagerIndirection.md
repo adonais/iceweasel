@@ -10,7 +10,7 @@ There are 2 parts to this:
 1. Consumers registering with the category manager
 2. Publishers/actors invoking consumers via the category manager.
 
-## Consumer registration with the category manager.
+## Consumer registration with the category manager
 
 The category manager is used for various purposes within Firefox; it is more or
 less an arbitrary double string-keyed data store.

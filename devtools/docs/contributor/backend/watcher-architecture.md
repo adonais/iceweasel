@@ -25,19 +25,19 @@ As well as a `target-destroyed-form` when any debuggable context gets destroyed.
 
 The debugging contexts are called Targets in DevTools jargon and can be:
 
- * "frame"
+* "frame"
 
    Any document instance running anywhere in the browser.
    Each very specific document instance will be notified to the client via a dedicated [WindowGlobalTargetActor](https://searchfox.org/firefox-main/source/devtools/server/actors/targets/window-global.js) instance.
    This means that if you reload the page, you will have as many target actors as you reload.
    Also, if there is \<iframe\>s, you will get one frame targets for each iframe.
 
- * "worker", "service_worker", "shared_worker"
+* "worker", "service_worker", "shared_worker"
 
    Any worker instance running anywhere in the browser.
    Each worker instance will ne notified to the client via a dedicated [WorkerTargetActor](https://searchfox.org/firefox-main/source/devtools/server/actors/targets/worker.js) instance.
 
- * "process"
+* "process"
 
    Any process running in the browser.
    This is only used for debugging Firefox and not when debugging web pages.
@@ -54,24 +54,25 @@ Once you started watching for some target types, you can use `WatcherActor.watch
 This method will only resolve after having been notified of all the existing resources.
 Resources aren't returned by the watchResources method. Instead they are notified to the client via `resources-available-array` RDP events emitted, either on the Watcher Actor or one of the many Target Actors.
 Some resources may also support:
- * a `resources-updated-array` RDP event, when any resource gets updated (like stylesheets or network events),
- * a `resources-destroyed-array` RDP event, when any resource gets destroyed (like stylesheets).
+
+* a `resources-updated-array` RDP event, when any resource gets updated (like stylesheets or network events),
+* a `resources-destroyed-array` RDP event, when any resource gets destroyed (like stylesheets).
 
 The resources can be:
 
- * "console-message"
+* "console-message"
 
    Any `console.log()`, `console.error()`, ... method call, in any of the debuggable context, will be notified to the client via such "console-message" resource.
 
- * "source"
+* "source"
 
    Any JavaScript or Wasm source in any of the debuggable context will be notified to the client via such "source" resource.
 
- * "stylesheet"
+* "stylesheet"
 
    Any StyleSheet, defined by any "frame" debuggable context will be notified to the client via such "stylesheet" resource.
 
- * Many other things.
+* Many other things.
 
    You can find the list of all resources in [devtools/server/resources/](https://searchfox.org/firefox-main/source/devtools/server/actors/resources) folder.
 
@@ -82,30 +83,30 @@ Each resource has a dedicated `ResourceWatcher` class in [devtools/server/actors
 
 Depending on the resource type, they may be observed either in:
 
- * parent process (regardless of where targets run)
- * main thread of the target's process
- * worker thread (if we have a worker target)
+* parent process (regardless of where targets run)
+* main thread of the target's process
+* worker thread (if we have a worker target)
 
 This behavior is also defined in [devtools/server/actors/resources/index.js](https://searchfox.org/firefox-main/source/devtools/server/actors/resources/index.js) via:
 
- * `ParentProcessResources`
+* `ParentProcessResources`
 
    The ResourceWatcher will be instantiated in the parent process.
 
- * `FrameTargetResources`
+* `FrameTargetResources`
 
    The ResourceWatcher will be instantiated for "frame" targets, in the main thread of where the frame runs.
 
- * `ProcessTargetResources`
+* `ProcessTargetResources`
 
    The ResourceWatcher will be instantiated for "process" targets, in the main thread of it.
 
- * `WorkerTargetResources`
+* `WorkerTargetResources`
 
    The ResourceWatcher will be instantiated for "worker" targets, in the worker thread.
 
-
 Each resource should then implement the following interface:
+
 ```
 class MyResourceWatcher {
   /**
@@ -180,7 +181,6 @@ class MyResourceWatcher {
   }
 ```
 
-
 ## How the Watcher Actor handles processes/threads and instantiates the targets actors?
 
 The Watcher Actor is running in the parent process and needs to reach all content processes and threads
@@ -190,28 +190,28 @@ It registers one JS Process Actor called "DevToolsProcess".
 For each `watchTargets` and `watchResources` method call, a new query will be sent through the JS Process Actor to all the processes.
 The JS Process Actor API consists of two distinct modules:
 
- * One running in the parent process. [DevToolsProcessParent.sys.mjs](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/DevToolsProcessParent.sys.mjs)
+* One running in the parent process. [DevToolsProcessParent.sys.mjs](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/DevToolsProcessParent.sys.mjs)
 
    This module is simple. It will mostly forward the queries to the content process when the watcher actor calls some of its methods.
    It will also receive messages from the content process, and uses the [ParentProcessWatcherRegistry](https://searchfox.org/firefox-main/source/devtools/server/actors/watcher/ParentProcessWatcherRegistry.sys.mjs) in order to retrieve the related Watcher Actor instance and notify it about the incoming message.
 
- * One running in the content process. [DevToolsProcessChild.sys.mjs](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/DevToolsProcessChild.sys.mjs)
+* One running in the content process. [DevToolsProcessChild.sys.mjs](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/DevToolsProcessChild.sys.mjs)
 
    This module contains some more logic.
    When receiving requests to watch for new targets and resources types, this will delegate these requests to many Target Watcher classes.
    These classes are specific to each target type:
-    * [WindowGlobal](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/target-watchers/window-global.sys.mjs),
-    * [Process](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/target-watchers/process.sys.mjs),
-    * [Worker](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/target-watchers/worker.sys.mjs),
-    * [ServiceWorker](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/target-watchers/service_worker.sys.mjs),
+  * [WindowGlobal](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/target-watchers/window-global.sys.mjs),
+  * [Process](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/target-watchers/process.sys.mjs),
+  * [Worker](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/target-watchers/worker.sys.mjs),
+  * [ServiceWorker](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/target-watchers/service_worker.sys.mjs),
 
-   These classes will:
-    * Instantiate a new Target Actor each time a new matching debuggable contexts gets created.
-    * Destroy the related Target Actor when the contexts gets destroyed.
-    * Dispatch SessionData updates to the target actor. (this includes the watched resources, which are a SessionData attribute)
-    * For workers, this class will also reach the distinct worker thread in order to do all these 3 first bullet points, but from the worker thread.
+    These classes will:
+  * Instantiate a new Target Actor each time a new matching debuggable contexts gets created.
+  * Destroy the related Target Actor when the contexts gets destroyed.
+  * Dispatch SessionData updates to the target actor. (this includes the watched resources, which are a SessionData attribute)
+  * For workers, this class will also reach the distinct worker thread in order to do all these 3 first bullet points, but from the worker thread.
 
-   Similarly to the parent process codebase, the [ContentProcessWatcherRegistry](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/ContentProcessWatcherRegistry.sys.mjs) maintains an list of objects which represents each active watcher actor. This helps store state in the content process which will be specific to each watcher.
+    Similarly to the parent process codebase, the [ContentProcessWatcherRegistry](https://searchfox.org/firefox-main/source/devtools/server/connectors/js-process-actor/ContentProcessWatcherRegistry.sys.mjs) maintains an list of objects which represents each active watcher actor. This helps store state in the content process which will be specific to each watcher.
 
 ## Session Data
 

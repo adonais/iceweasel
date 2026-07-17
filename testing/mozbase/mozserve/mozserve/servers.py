@@ -96,23 +96,26 @@ class Http3Server:
                 )
             self._http3ServerProc["http3Server"] = process
 
-            # Check to make sure the server starts properly by waiting for it to
-            # tell us it's started
-            msg = process.stdout.readline()
-            self._log.info("mozserve | http3 server msg: %s" % msg)
             name = "http3server"
-            t1 = Thread(
-                target=self.read_streams,
-                args=(name, process, process.stdout),
-                daemon=True,
-            )
-            t1.start()
+            # Start the stderr reader before reading stdout so that any stderr
+            # output that happens before the server is ready does not fill the
+            # pipe buffer and deadlock the process before it can print to stdout.
             t2 = Thread(
                 target=self.read_streams,
                 args=(name, process, process.stderr),
                 daemon=True,
             )
             t2.start()
+            # Check to make sure the server starts properly by waiting for it to
+            # tell us it's started
+            msg = process.stdout.readline()
+            self._log.info("mozserve | http3 server msg: %s" % msg)
+            t1 = Thread(
+                target=self.read_streams,
+                args=(name, process, process.stdout),
+                daemon=True,
+            )
+            t1.start()
             if "server listening" in msg:
                 searchObj = re.search(
                     r"HTTP3 server listening on ports ([0-9]+), ([0-9]+), ([0-9]+), ([0-9]+), ([0-9]+) and ([0-9]+)."

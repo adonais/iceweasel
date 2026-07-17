@@ -46,7 +46,6 @@ support-files = [
   "highlighter-test-actor.js",
   "leakhunt.js",
   "shared-head.js",
-  "telemetry-test-helpers.js",
   "test-mocked-module.js",
   "testactors.js",
   "!/devtools/client/debugger/test/mochitest/shared-head.js",

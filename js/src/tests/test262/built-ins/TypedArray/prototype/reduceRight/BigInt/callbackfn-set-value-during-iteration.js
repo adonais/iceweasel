@@ -46,6 +46,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.sameValue(sample[0], 2n, "changed values after iteration [0] == 2");
   assert.sameValue(sample[1], 1n, "changed values after iteration [1] == 1");
   assert.sameValue(sample[2], 7n, "changed values after iteration [2] == 7");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

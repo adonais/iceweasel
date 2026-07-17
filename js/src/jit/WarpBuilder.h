@@ -30,6 +30,7 @@ namespace jit {
   _(StrictEval)                          \
   _(SpreadEval)                          \
   _(StrictSpreadEval)                    \
+  _(BindVar)                             \
   /* Super */                            \
   _(SetPropSuper)                        \
   _(SetElemSuper)                        \

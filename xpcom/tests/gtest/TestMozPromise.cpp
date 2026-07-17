@@ -167,16 +167,16 @@ TEST(MozPromise, AsyncResolve)
   AutoTaskQueue atq;
   RefPtr<TaskQueue> queue = atq.Queue();
   RunOnTaskQueue(queue, [queue]() -> void {
-    RefPtr<TestPromise::Private> p = new TestPromise::Private(__func__);
+    RefPtr p = MakeRefPtr<TestPromise::Private>(__func__);
 
     // Kick off three racing tasks, and make sure we get the one that finishes
     // earliest.
-    RefPtr<DelayedResolveOrReject> a =
-        new DelayedResolveOrReject(queue, p, RRValue::MakeResolve(32), 10);
-    RefPtr<DelayedResolveOrReject> b =
-        new DelayedResolveOrReject(queue, p, RRValue::MakeResolve(42), 5);
-    RefPtr<DelayedResolveOrReject> c =
-        new DelayedResolveOrReject(queue, p, RRValue::MakeReject(32.0), 7);
+    RefPtr a = MakeRefPtr<DelayedResolveOrReject>(queue, p,
+                                                  RRValue::MakeResolve(32), 10);
+    RefPtr b = MakeRefPtr<DelayedResolveOrReject>(queue, p,
+                                                  RRValue::MakeResolve(42), 5);
+    RefPtr c = MakeRefPtr<DelayedResolveOrReject>(queue, p,
+                                                  RRValue::MakeReject(32.0), 7);
 
     nsCOMPtr<nsIRunnable> ref = a.get();
     (void)queue->Dispatch(ref.forget());
@@ -221,9 +221,8 @@ TEST(MozPromise, CompletionPromises)
         ->Then(
             queue, __func__,
             [queue](int aVal) -> RefPtr<TestPromise> {
-              RefPtr<TestPromise::Private> p =
-                  new TestPromise::Private(__func__);
-              nsCOMPtr<nsIRunnable> resolver = new DelayedResolveOrReject(
+              RefPtr p = MakeRefPtr<TestPromise::Private>(__func__);
+              RefPtr resolver = MakeRefPtr<DelayedResolveOrReject>(
                   queue, p, RRValue::MakeResolve(aVal - 8), 10);
               (void)queue->Dispatch(resolver.forget());
               return RefPtr<TestPromise>(p);
@@ -597,7 +596,7 @@ TEST(MozPromise, MessageLoopEventTarget)
 TEST(MozPromise, ChainTo)
 {
   RefPtr<TestPromise> promise1 = TestPromise::CreateAndResolve(42, __func__);
-  RefPtr<TestPromise::Private> promise2 = new TestPromise::Private(__func__);
+  RefPtr promise2 = MakeRefPtr<TestPromise::Private>(__func__);
   promise2->Then(
       GetCurrentSerialEventTarget(), __func__,
       [&](int aResolveValue) -> void { EXPECT_EQ(aResolveValue, 42); },
@@ -612,8 +611,7 @@ TEST(MozPromise, ChainTo)
 TEST(MozPromise, SynchronousTaskDispatch1)
 {
   bool value = false;
-  RefPtr<TestPromiseExcl::Private> promise =
-      new TestPromiseExcl::Private(__func__);
+  RefPtr promise = MakeRefPtr<TestPromiseExcl::Private>(__func__);
   promise->UseSynchronousTaskDispatch(__func__);
   promise->Resolve(42, __func__);
   EXPECT_EQ(value, false);
@@ -630,8 +628,7 @@ TEST(MozPromise, SynchronousTaskDispatch1)
 TEST(MozPromise, SynchronousTaskDispatch2)
 {
   bool value = false;
-  RefPtr<TestPromiseExcl::Private> promise =
-      new TestPromiseExcl::Private(__func__);
+  RefPtr promise = MakeRefPtr<TestPromiseExcl::Private>(__func__);
   promise->UseSynchronousTaskDispatch(__func__);
   promise->Then(
       GetCurrentSerialEventTarget(), __func__,
@@ -660,7 +657,7 @@ TEST(MozPromise, DirectTaskDispatch)
           value2 = true;
         }));
 
-    RefPtr<TestPromise::Private> promise = new TestPromise::Private(__func__);
+    RefPtr promise = MakeRefPtr<TestPromise::Private>(__func__);
     promise->UseDirectTaskDispatch(__func__);
     promise->Resolve(42, __func__);
     EXPECT_EQ(value1, false);
@@ -694,7 +691,7 @@ TEST(MozPromise, ChainedDirectTaskDispatch)
           value2 = true;
         }));
 
-    RefPtr<TestPromise::Private> promise1 = new TestPromise::Private(__func__);
+    RefPtr promise1 = MakeRefPtr<TestPromise::Private>(__func__);
     promise1->UseDirectTaskDispatch(__func__);
     promise1->Resolve(42, __func__);
     EXPECT_EQ(value1, false);
@@ -704,8 +701,7 @@ TEST(MozPromise, ChainedDirectTaskDispatch)
             [&](int aResolveValue) -> RefPtr<TestPromise> {
               EXPECT_EQ(aResolveValue, 42);
               EXPECT_EQ(value2, false);
-              RefPtr<TestPromise::Private> promise2 =
-                  new TestPromise::Private(__func__);
+              RefPtr promise2 = MakeRefPtr<TestPromise::Private>(__func__);
               promise2->UseDirectTaskDispatch(__func__);
               promise2->Resolve(43, __func__);
               return promise2;
@@ -741,10 +737,10 @@ TEST(MozPromise, ChainToDirectTaskDispatch)
           value2 = true;
         }));
 
-    RefPtr<TestPromise::Private> promise1 = new TestPromise::Private(__func__);
+    RefPtr promise1 = MakeRefPtr<TestPromise::Private>(__func__);
     promise1->UseDirectTaskDispatch(__func__);
 
-    RefPtr<TestPromise::Private> promise2 = new TestPromise::Private(__func__);
+    RefPtr promise2 = MakeRefPtr<TestPromise::Private>(__func__);
     promise2->Then(
         GetCurrentSerialEventTarget(), __func__,
         [&](int aResolveValue) -> void {

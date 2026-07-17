@@ -307,7 +307,13 @@ class HgRepository(Repository):
             args.extend(["-r", ref])
         self._run(*args)
 
-    def push_to_try(
+    def _resolve_try_branch(self):
+        return self.branch
+
+    def _push_to_git_try(self, *args, **kwargs):
+        raise ValueError("Unable to push to Git from a Mercurial repo")
+
+    def _push_to_hg_try(
         self,
         message: str,
         changed_files: dict[str, str] = {},
@@ -317,7 +323,7 @@ class HgRepository(Repository):
             self.stage_changes(changed_files)
 
         try:
-            cmd = (str(self._tool), "push-to-try", "-m", message)
+            cmd = (str(self._tool), "push-to-try", "--message", message)
             if allow_log_capture:
                 self._push_to_try_with_log_capture(
                     cmd,
@@ -340,7 +346,7 @@ class HgRepository(Repository):
             self.raise_for_missing_extension("push-to-try")
             raise
         finally:
-            self._run("revert", "-a")
+            self._run("revert", "--all")
 
     def get_commits(
         self,

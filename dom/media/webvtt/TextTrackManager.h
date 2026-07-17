@@ -39,7 +39,7 @@ class TextTrackManager final : public nsISupports {
   ~TextTrackManager();
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(TextTrackManager)
 
   explicit TextTrackManager(HTMLMediaElement* aMediaElement);

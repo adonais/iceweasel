@@ -9,6 +9,38 @@ newtab-page-title = नयाँ ट्याब
 newtab-settings-button =
     .title = तपाईंको नयाँ ट्याब पृष्ठ अनुकूलन गर्नुहोस्
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = नयाँ ट्याबहरु
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } पक्ति
+           *[other] { $num } पक्ति
+        }
+home-restore-defaults-srd =
+    .label = पूर्वानिर्धारित अवस्थामा ल्याउनुहोस्
+    .accesskey = R
+home-mode-choice-custom-srd =
+    .label = अनुकूल URLहरू
+home-mode-choice-blank-srd =
+    .label = खाली पृष्ठ
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = प्रायोजित गरिएको कथाहरू
+home-prefs-highlights-option-visited-pages-srd =
+    .label = भ्रमण गरिएका पृष्ठहरू
+home-prefs-highlights-options-bookmarks-srd =
+    .label = पुस्तकचिनोहरू
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = सबैभन्दा नयाँ डाउनलोड
+
 ## Search box component.
 
 # "Search" is a verb/action

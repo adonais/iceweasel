@@ -175,3 +175,11 @@ bool NodeInfo::CanSkip() {
   return mDocument && nsCCUncollectableMarker::InGeneration(
                           mDocument->GetMarkedCCGeneration());
 }
+
+const Maybe<const nsHTMLTag>& NodeInfo::NodeInfoInner::HTMLTag() const {
+  if (!mHTMLTag && mNodeType == nsINode::ELEMENT_NODE &&
+      mNamespaceID == kNameSpaceID_XHTML) {
+    mHTMLTag.emplace(nsHTMLTags::CaseSensitiveAtomTagToId(mName));
+  }
+  return mHTMLTag;
+}

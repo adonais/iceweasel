@@ -13,7 +13,13 @@ interface nsIURI;
 
 %{C++
 #include "nsCOMPtr.h"
+
+namespace mozilla::dom {
+class ParentProcessChannelHandle;
+}
 %}
+
+[ptr] native ParentProcessChannelHandle(mozilla::dom::ParentProcessChannelHandle);
 
 /**
  * The nsIChannel interface allows clients to construct "GET" requests for
@@ -378,6 +384,15 @@ interface nsIChannel : nsIRequest
     return result.forget();
   }
 %}
+
+    /**
+     * Associate a ParentProcessChannelHandle with this channel.
+     *
+     * This is used to associate this document channel which was loaded by
+     * DocumentLoadListener in the parent process with the final window global
+     * which the channel creates.
+     */
+    [noscript] attribute ParentProcessChannelHandle parentProcessChannelHandle;
 
 };
 

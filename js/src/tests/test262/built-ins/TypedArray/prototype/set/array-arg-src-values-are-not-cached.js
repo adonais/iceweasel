@@ -44,6 +44,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
   sample.set(obj);
 
   assert(compareArray(sample, [42, 43, 44, 45, 46]));
-}, null, ["passthrough"]);
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

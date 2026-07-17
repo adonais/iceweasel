@@ -42,7 +42,8 @@ static void TestBiPlanarMidGrayReadback(const IntSize& aYSize,
                                         ChromaSubsampling aSubsampling) {
   RefPtr<MacIOSurface> surface = MacIOSurface::CreateBiPlanarSurface(
       aYSize, aCbCrSize, aSubsampling, YUVColorSpace::BT709,
-      TransferFunction::BT709, ColorRange::FULL, ColorDepth::COLOR_10);
+      TransferFunction::BT709, ColorRange::FULL, ColorDepth::COLOR_10,
+      MacIOSurface::AllowAlpha::Yes);
   ASSERT_TRUE(surface);
 
   // Mid-gray in 10-bit full range: Y=Cb=Cr=512, stored in bits 15:6.

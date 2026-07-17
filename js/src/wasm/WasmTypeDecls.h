@@ -58,6 +58,9 @@ class Decoder;
 class GeneratedSourceMap;
 class Instance;
 class Module;
+#ifdef ENABLE_WASM_COMPONENTS
+class Component;
+#endif
 
 class Code;
 using SharedCode = RefPtr<const Code>;

@@ -66,7 +66,7 @@ On Desktop, we don't have a great story at the moment.
   It's often helpful to use an existing `metrics.yaml` file from another component as a template.
 * Open a PR to get [data review](https://wiki.mozilla.org/Data_Collection) for your metrics.
 * If you created a new `metrics.yaml` file, you may need to hook it up to `probe-scraper` so that it's available there.
-  See https://bugzilla.mozilla.org/show_bug.cgi?id=2019535 for discussion.
+  See <https://bugzilla.mozilla.org/show_bug.cgi?id=2019535> for discussion.
   This issue will probably go away when we move the application-services code into moz-central.
 
 ## Dashboards

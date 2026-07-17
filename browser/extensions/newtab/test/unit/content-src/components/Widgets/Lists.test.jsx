@@ -701,6 +701,81 @@ describe("<Lists>", () => {
     assert.equal(editableInput.prop("data-l10n-attrs"), "aria-label");
   });
 
+  it("cancels list-name edits without saving", () => {
+    const editList = wrapper.find("panel-item").at(0);
+    editList.props().onClick();
+    wrapper.update();
+
+    const editableInput = wrapper.find("input.edit-list");
+    editableInput.simulate("change", { target: { value: "Updated List" } });
+
+    const cancelButton = wrapper.find("moz-button.edit-list-clear");
+    assert.equal(
+      cancelButton.prop("data-l10n-id"),
+      "newtab-widget-lists-edit-clear"
+    );
+
+    cancelButton.props().onClick();
+    wrapper.update();
+
+    assert.equal(wrapper.find("input.edit-list").length, 0);
+    assert.equal(wrapper.find(".lists-title").text(), "test");
+    assert.ok(dispatch.notCalled);
+  });
+
+  it("cancels list-name edits via Escape without saving", () => {
+    const editList = wrapper.find("panel-item").at(0);
+    editList.props().onClick();
+    wrapper.update();
+
+    const editableInput = wrapper.find("input.edit-list");
+    editableInput.simulate("change", { target: { value: "Updated List" } });
+    editableInput.simulate("keyDown", { key: "Escape" });
+    wrapper.update();
+
+    assert.equal(wrapper.find("input.edit-list").length, 0);
+    assert.equal(wrapper.find(".lists-title").text(), "test");
+    assert.ok(dispatch.notCalled);
+  });
+
+  it("does not save edits when Escape restores focus and triggers blur", () => {
+    const editList = wrapper.find("panel-item").at(0);
+    editList.props().onClick();
+    wrapper.update();
+
+    const editableInput = wrapper.find("input.edit-list");
+    editableInput.simulate("change", { target: { value: "Updated List" } });
+    editableInput.simulate("keyDown", { key: "Escape" });
+    // In the real browser, restoring focus after Escape fires a blur on the
+    // input. relatedTarget is the previously focused element, which lives
+    // outside the edit wrapper, so the existing wrapper-contains check
+    // would not skip the save.
+    editableInput.simulate("blur", { relatedTarget: document.body });
+    wrapper.update();
+
+    assert.equal(wrapper.find("input.edit-list").length, 0);
+    assert.equal(wrapper.find(".lists-title").text(), "test");
+    assert.ok(dispatch.notCalled);
+  });
+
+  it("does not save when blur moves focus to the cancel button", () => {
+    const editList = wrapper.find("panel-item").at(0);
+    editList.props().onClick();
+    wrapper.update();
+
+    const editableInput = wrapper.find("input.edit-list");
+    editableInput.simulate("change", { target: { value: "Updated List" } });
+
+    const cancelButtonNode = wrapper
+      .find("moz-button.edit-list-clear")
+      .getDOMNode();
+    editableInput.simulate("blur", { relatedTarget: cancelButtonNode });
+    wrapper.update();
+
+    assert.equal(wrapper.find("input.edit-list").length, 1);
+    assert.ok(dispatch.notCalled);
+  });
+
   it("opens draft list editing without creating a list yet", () => {
     const createListBtn = wrapper.find("panel-item.create-list").at(0);
     createListBtn.props().onClick();
@@ -916,6 +991,8 @@ describe("<Lists>", () => {
     assert.equal(telemetryEvent.data.widget_source, "context_menu");
     assert.equal(telemetryEvent.data.enabled, false);
     assert.equal(telemetryEvent.data.widget_size, "medium");
+
+    assert.ok(handleUserInteraction.notCalled);
   });
 
   it("adds an explicit accessible name to the task editor", () => {

@@ -192,7 +192,7 @@ The search popover
               type: kInputTypes.BUTTON,
               callback: () =>
                 gTouchBarHelper.insertRestrictionInUrlbar(
-                  UrlbarTokenizer.RESTRICT.BOOKMARK
+                  UrlbarShared.RESTRICT_TOKENS.BOOKMARK
                 ),
             },
             History: {
@@ -200,7 +200,7 @@ The search popover
               type: kInputTypes.BUTTON,
               callback: () =>
                 gTouchBarHelper.insertRestrictionInUrlbar(
-                  UrlbarTokenizer.RESTRICT.HISTORY
+                  UrlbarShared.RESTRICT_TOKENS.HISTORY
                 ),
             },
             OpenTabs: {
@@ -208,7 +208,7 @@ The search popover
               type: kInputTypes.BUTTON,
               callback: () =>
                 gTouchBarHelper.insertRestrictionInUrlbar(
-                  UrlbarTokenizer.RESTRICT.OPENPAGE
+                  UrlbarShared.RESTRICT_TOKENS.OPENPAGE
                 ),
             },
             Tags: {
@@ -216,7 +216,7 @@ The search popover
               type: kInputTypes.BUTTON,
               callback: () =>
                 gTouchBarHelper.insertRestrictionInUrlbar(
-                  UrlbarTokenizer.RESTRICT.TAG
+                  UrlbarShared.RESTRICT_TOKENS.TAG
                 ),
             },
           },

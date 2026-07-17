@@ -43,6 +43,7 @@
 // test can count exactly how many request bursts reached the HTTP
 // layer.
 
+#include <atomic>
 #include <stdio.h>
 #include <string.h>
 #include <string>
@@ -71,7 +72,16 @@ const char* kHostZeroRttAcceptH1 = "0rtt-accept-h1.example.com";
 const char* kHostZeroRttAcceptH2 = "0rtt-accept-h2.example.com";
 const char* kHostZeroRttRejectH1 = "0rtt-reject-h1.example.com";
 const char* kHostZeroRttRejectH2 = "0rtt-reject-h2.example.com";
+// First connection negotiates H2 (warm-up gets a ticket); subsequent
+// connections negotiate H1.  The client resumes with the H2 ticket but
+// finds the server now offers only H1 → alpnChanged=1 in Finish0RTT,
+// which closes the H2 session and exercises the HE winner-selection bug.
+const char* kHostZeroRttAlpnSwitch = "0rtt-alpn-switch.example.com";
 const char* kCertWildcard = "default-ee";
+
+// Connection counter for kHostZeroRttAlpnSwitch: 0 means the next
+// connection gets H2 (warm-up), ≥1 means it gets H1 (race).
+static std::atomic<int> gAlpnSwitchCount{0};
 
 // Wire format for SSL_SetNextProtoNego: sequence of length-prefixed
 // protocol strings. Single-entry lists are immune to the NSS
@@ -94,6 +104,11 @@ MOZ_RUNINIT const ZeroRttAcceptHost sHosts[]{
      false},
     {kHostZeroRttRejectH2, kCertWildcard, kAlpnH2Only, sizeof(kAlpnH2Only),
      false},
+    // ALPN-switch host: H2 on connection 0 (warm-up), H1 thereafter.
+    // ALPN list is overridden in HandleHttpConnection based on
+    // gAlpnSwitchCount.
+    {kHostZeroRttAlpnSwitch, kCertWildcard, kAlpnH2Only, sizeof(kAlpnH2Only),
+     true},
     {nullptr, nullptr, nullptr, 0, false},
 };
 
@@ -360,6 +375,10 @@ void HandleH2Session(Connection& conn) {
     return;
   }
 
+  // Send a second session ticket so both race HCAs can each start 0-RTT
+  // (SSLTokensCache::Get consumes one ticket per call).
+  (void)SSL_SendSessionTicket(conn.mSocket, nullptr, 0);
+
   // Send our (empty) server SETTINGS frame immediately.
   static const uint8_t kServerSettings[] = {
       0x00, 0x00, 0x00,       // length = 0
@@ -490,6 +509,22 @@ void HandleHttpConnection(PRFileDesc* aSocket,
     alpnProtos = sniHost->mAlpnProtos;
     alpnProtosLen = sniHost->mAlpnProtosLen;
   }
+  // For the ALPN-switch host: connection 0 is H2 (warm-up); subsequent
+  // connections use H1.  Client's H2 ticket → alpnChanged=1 → Finish0RTT
+  // declares the winner before the socket closes.  Drop connection #1
+  // after the handshake to leave a dead connection in mActiveConns.
+  bool alpnSwitchDropAfterHandshake = false;
+  if (sniHost && strcmp(sniHost->mHostName, kHostZeroRttAlpnSwitch) == 0) {
+    int count = gAlpnSwitchCount.fetch_add(1);
+    if (count > 0) {
+      alpnProtos = kAlpnH1Only;
+      alpnProtosLen = sizeof(kAlpnH1Only);
+      // Drop only the first race connection (count==1). Subsequent
+      // connections (retries) are served normally so the restarted
+      // transaction can complete once the fix is applied.
+      alpnSwitchDropAfterHandshake = (count == 1);
+    }
+  }
   if (SSL_SetNextProtoNego(sslSocket, alpnProtos, alpnProtosLen) !=
       SECSuccess) {
     PrintPRError("SSL_SetNextProtoNego failed on connection");
@@ -522,10 +557,17 @@ void HandleHttpConnection(PRFileDesc* aSocket,
   SSL_ResetHandshake(sslSocket, /* asServer */ 1);
 
   // Drive the handshake so ALPN is actually selected before we look
-  // at it — SSL_ForceHandshake returns WOULD_BLOCK on a non-blocking
-  // socket but still progresses the state machine as far as the
-  // current input allows.
+  // at it.  SSL_ForceHandshake on the blocking socket returns only
+  // when the full TLS exchange is done — but we ignore the return
+  // value and handle the remaining handshake steps later.
   (void)SSL_ForceHandshake(sslSocket);
+
+  // Drop after TLS completes: Finish0RTT(alpnChanged=1) has already fired on
+  // the client, so the dead connection is already in mActiveConns.
+  if (alpnSwitchDropAfterHandshake) {
+    return;
+  }
+
   SSLNextProtoState state = SSL_NEXT_PROTO_NO_SUPPORT;
   uint8_t protoBuf[32] = {0};
   unsigned int protoLen = 0;

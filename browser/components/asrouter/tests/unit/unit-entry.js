@@ -140,9 +140,6 @@ const TEST_GLOBAL = {
     sendToDeviceEmailsSupported() {
       return true;
     },
-    isChinaRepack() {
-      return false;
-    },
   },
   UpdateUtils: { getUpdateChannel() {} },
   BasePromiseWorker: class {

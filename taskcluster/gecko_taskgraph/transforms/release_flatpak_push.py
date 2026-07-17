@@ -7,11 +7,11 @@ Transform the release-flatpak-push kind into an actual task description.
 
 from typing import Optional
 
+from mozilla_taskgraph.util.attributes import release_level
 from taskgraph.transforms.base import TransformSequence
-from taskgraph.util.schema import Schema, optionally_keyed_by, resolve_keyed_by
+from taskgraph.util.schema import Schema
 
 from gecko_taskgraph.transforms.task import TaskDescriptionSchema
-from gecko_taskgraph.util.attributes import release_level
 from gecko_taskgraph.util.scriptworker import add_scope_prefix
 
 
@@ -22,7 +22,7 @@ class PushFlatpakDescriptionSchema(Schema, kw_only=True):
     description: TaskDescriptionSchema.__annotations__["description"]  # noqa: F821
     treeherder: TaskDescriptionSchema.__annotations__["treeherder"]  # noqa: F821
     run_on_projects: TaskDescriptionSchema.__annotations__["run_on_projects"]  # noqa: F821
-    worker_type: optionally_keyed_by("release-level", str, use_msgspec=True)  # type: ignore  # noqa: F821
+    worker_type: str
     worker: object  # noqa: F821
     scopes: Optional[list[str]] = None
     shipping_phase: TaskDescriptionSchema.__annotations__["shipping_phase"]  # noqa: F821
@@ -47,19 +47,10 @@ def make_task_description(config, jobs):
             job["dependencies"]
         )
 
-        resolve_keyed_by(
-            job,
-            "worker.channel",
-            item_name=job["name"],
-            **{"release-type": config.params["release_type"]},
-        )
-        resolve_keyed_by(
-            job,
-            "worker-type",
-            item_name=job["name"],
-            **{"release-level": release_level(config.params)},
-        )
-        if release_level(config.params) == "production":
+        if (
+            release_level(config.graph_config["release-branches"], config.params)
+            == "production"
+        ):
             dep_job = config.kind_dependencies_tasks[
                 next(iter(job["dependencies"].values()))
             ]

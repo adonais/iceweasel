@@ -148,7 +148,7 @@ class TestNat {
         block_stun_(false),
         block_tcp_(false),
         block_tls_(false),
-        error_code_for_drop_(0),
+        error_code_for_drop_(false),
         delay_stun_resp_ms_(0),
         nat_delegate_(nullptr),
         network_delay_ms_(0) {}

@@ -24,6 +24,10 @@ namespace gc {
 class AutoSuppressGC;
 }  // namespace gc
 
+namespace wasm {
+class ContStack;
+}  // namespace wasm
+
 /**
  * DebugAPI::onNativeCall allows the debugger to call callbacks just before
  * some native functions are to be executed. It also allows the hooks
@@ -219,11 +223,10 @@ class DebugAPI {
   [[nodiscard]] static inline bool onResumeFrame(JSContext* cx,
                                                  AbstractFramePtr frame);
 
-  // Called when Wasm frame is suspended by JS PI.
-  static void onSuspendWasmFrame(JSContext* cx, wasm::DebugFrame* debugFrame);
-
-  // Called when Wasm frame is resumed by JS PI.
-  static void onResumeWasmFrame(JSContext* cx, const FrameIter& iter);
+  // Called when a suspended wasm continuation is destroyed (ContObject
+  // finalized). Terminates any Debugger.Frame objects whose frame pointers
+  // refer to frames on the stacks in the chain.
+  static void onLeaveWasmCont(JSContext* cx, wasm::ContStack* resumeBase);
 
   static inline NativeResumeMode onNativeCall(JSContext* cx,
                                               const CallArgs& args,

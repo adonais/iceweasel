@@ -204,8 +204,8 @@ impl NonTSPseudoClass {
                 match *self {
                     $(NonTSPseudoClass::$name => check_flag!($flags),)*
                     NonTSPseudoClass::MozLocaleDir(_) => check_flag!(PSEUDO_CLASS_ENABLED_IN_UA_SHEETS_AND_CHROME),
+                    NonTSPseudoClass::Heading(_) => check_flag!(PSEUDO_CLASS_ENABLED_IN_UA_SHEETS),
                     NonTSPseudoClass::CustomState(_) |
-                    NonTSPseudoClass::Heading(_) |
                     NonTSPseudoClass::Lang(_) |
                     NonTSPseudoClass::ActiveViewTransitionType(_) |
                     NonTSPseudoClass::Dir(_) => false,
@@ -225,7 +225,10 @@ impl NonTSPseudoClass {
             return static_prefs::pref!("dom.viewTransitions.enabled");
         }
         if matches!(*self, Self::Heading(..)) {
-            return static_prefs::pref!("layout.css.heading-selector.enabled");
+            return static_prefs::pref!("dom.headingoffset.enabled");
+        }
+        if matches!(*self, Self::PictureInPicture) {
+            return static_prefs::pref!("dom.media-pip.enabled");
         }
         if matches!(
             *self,

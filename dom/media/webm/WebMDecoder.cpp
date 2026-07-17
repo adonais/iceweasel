@@ -8,7 +8,7 @@
 
 #include "AOMDecoder.h"
 #include "MediaContainerType.h"
-#include "PDMFactory.h"
+#include "PDMFactorySupport.h"
 #include "PlatformDecoderModule.h"
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
@@ -96,12 +96,10 @@ bool WebMDecoder::IsSupportedType(const MediaContainerType& aContainerType) {
 
   // Verify that we have a PDM that supports the whitelisted types, include
   // color depth
-  RefPtr<PDMFactory> platform = new PDMFactory();
   for (const auto& track : tracks) {
-    if (!track ||
-        platform
-            ->Supports(SupportDecoderParams(*track), nullptr /* diagnostic */)
-            .isEmpty()) {
+    if (!track || PDMFactorySupport::IsSupported(SupportDecoderParams(*track),
+                                                 nullptr /* diagnostic */)
+                      .isEmpty()) {
       return false;
     }
   }

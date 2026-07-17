@@ -18,7 +18,7 @@ class HTMLUnknownElement final : public nsGenericHTMLElement {
   NS_DECL_ISUPPORTS_INHERITED
 
   explicit HTMLUnknownElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;

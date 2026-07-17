@@ -3,6 +3,7 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
 #include "ARIAMap.h"
+#include "CacheConstants.h"
 #include "CachedTableAccessible.h"
 #include "DocAccessibleParent.h"
 #ifdef MOZ_ENABLE_SKIA_PDF
@@ -71,6 +72,49 @@ DocAccessibleParent::~DocAccessibleParent() {
   MOZ_ASSERT(!ParentDoc());
 }
 
+uint64_t DocAccessibleParent::EffectiveCacheDomains() const {
+  if (dom::CanonicalBrowsingContext* bc = GetBrowsingContext()) {
+    if (bc->Top()->GetIsPrinting()) {
+      return kPdfCacheDomains;
+    }
+  }
+  return nsAccessibilityService::GetActiveCacheDomains();
+}
+
+bool DocAccessibleParent::RequestDomainsIfInactive(
+    uint64_t aRequiredCacheDomains) {
+  const uint64_t activeCacheDomains = EffectiveCacheDomains();
+  const bool isMissingRequiredCacheDomain =
+      (aRequiredCacheDomains & ~activeCacheDomains) != 0;
+  if (!isMissingRequiredCacheDomain) {
+    return false;
+  }
+  nsAccessibilityService* accService = GetAccService();
+  if (!accService) {
+    return true;
+  }
+  if (!accService->ShouldAllowNewCacheDomains()) {
+    // The fields aren't in the cache, but we've been told not to ask for
+    // more right now (e.g. we're inside a CacheDomainActivationBlocker).
+    return true;
+  }
+  aRequiredCacheDomains = GetCacheDomainSuperset(aRequiredCacheDomains);
+  const uint64_t cacheDomains = aRequiredCacheDomains | activeCacheDomains;
+#if defined(ANDROID)
+  // We might not be on the main Android thread, but we must be in order to
+  // send IPDL messages. Dispatch to the main thread to set cache domains.
+  NS_DispatchToMainThread(
+      NS_NewRunnableFunction("a11y::SetCacheDomains", [cacheDomains]() {
+        if (nsAccessibilityService* accService = GetAccService()) {
+          accService->SetCacheDomains(cacheDomains);
+        }
+      }));
+#else
+  accService->SetCacheDomains(cacheDomains);
+#endif
+  return true;
+}
+
 already_AddRefed<DocAccessibleParent> DocAccessibleParent::New() {
   RefPtr<DocAccessibleParent> dap(new DocAccessibleParent());
   // We need to do this with a non-zero reference count.  The easiest way is to
@@ -122,10 +166,6 @@ mozilla::ipc::IPCResult DocAccessibleParent::ProcessShowEvent(
 #endif
     }
 
-    if (parent->IsOuterDoc()) {
-      return IPC_FAIL(this, "Cannot attach non-doc to OuterDoc");
-    }
-
     lastParent = parent;
     lastParentID = accData.ParentID();
 
@@ -148,6 +188,16 @@ mozilla::ipc::IPCResult DocAccessibleParent::ProcessShowEvent(
       // This is the first Accessible, which is the root of the shown subtree.
       root = child;
       rootParent = parent;
+      if (!aComplete) {
+        // This is the first message for a show event split across multiple
+        // messages. Save the show target for subsequent messages and return.
+        mPendingShowChild = accData.ID();
+        mPendingShowParent = accData.ParentID();
+        mPendingShowIndex = accData.IndexInParent();
+        if (!rootParent->IsDoc() && !rootParent->RemoteParent()) {
+          return IPC_FAIL(this, "Attempt to split show with detached root");
+        }
+      }
     }
     // If this show event has been split across multiple messages and this is
     // not the last message, don't attach the shown root to the tree yet.
@@ -162,21 +212,11 @@ mozilla::ipc::IPCResult DocAccessibleParent::ProcessShowEvent(
 
   MOZ_ASSERT(CheckDocTree());
 
-  if (!aComplete && !mPendingShowChild) {
-    // This is the first message for a show event split across multiple
-    // messages. Save the show target for subsequent messages and return.
-    const auto& accData = aNewTree[0];
-    mPendingShowChild = accData.ID();
-    mPendingShowParent = accData.ParentID();
-    mPendingShowIndex = accData.IndexInParent();
-    return IPC_OK();
-  }
   if (!aComplete) {
     // This show event has been split into multiple messages, but this is
-    // neither the first nor the last message. There's nothing more to do here.
+    // not the last message. There's nothing more to do here.
     return IPC_OK();
   }
-  MOZ_ASSERT(aComplete);
   if (mPendingShowChild) {
     // This is the last message for a show event split across multiple
     // messages. Retrieve the saved show target, attach it to the tree and fire
@@ -243,6 +283,13 @@ RemoteAccessible* DocAccessibleParent::CreateAcc(
           "Attempt to move RemoteAccessible which still has a parent!");
       return nullptr;
     }
+    if (aAccData.ID() == mPendingShowChild) {
+      MOZ_ASSERT_UNREACHABLE(
+          "Attempt to move RemoteAccessible which has a pending parent");
+      return nullptr;
+    }
+    MOZ_RELEASE_ASSERT(newProxy->ChildCount() == 0 || newProxy->IsOuterDoc(),
+                       "Reused RemoteAccessible unexpectedly has children!");
     return newProxy;
   }
 
@@ -251,7 +298,9 @@ RemoteAccessible* DocAccessibleParent::CreateAcc(
     return nullptr;
   }
 
-  if (aAccData.GenericTypes() & eDocument) {
+  if (aAccData.GenericTypes() & eDocument || aAccData.Type() == eRootType ||
+      aAccData.Type() == eApplicationType ||
+      (aAccData.Type() == eImageType && aAccData.GenericTypes() & eHyperText)) {
     MOZ_ASSERT_UNREACHABLE("Invalid acc type");
     return nullptr;
   }
@@ -262,7 +311,9 @@ RemoteAccessible* DocAccessibleParent::CreateAcc(
   mAccessibles.PutEntry(aAccData.ID())->mProxy = newProxy;
 
   if (RefPtr<AccAttributes> fields = aAccData.CacheFields()) {
-    newProxy->ApplyCache(CacheUpdateType::Initial, fields);
+    if (!newProxy->ApplyCache(CacheUpdateType::Initial, fields)) {
+      return nullptr;
+    }
   }
 
   return newProxy;
@@ -271,11 +322,35 @@ RemoteAccessible* DocAccessibleParent::CreateAcc(
 bool DocAccessibleParent::AttachChild(RemoteAccessible* aParent,
                                       uint32_t aIndex,
                                       RemoteAccessible* aChild) {
+  if (!aParent || !aChild) {
+    MOZ_ASSERT_UNREACHABLE("Null parent or child");
+    return false;
+  }
+
+  if (aParent->IsOuterDoc()) {
+    MOZ_ASSERT_UNREACHABLE("Cannot attach non-doc to OuterDoc");
+    return false;
+  }
+
+  if (aIndex > aParent->ChildCount()) {
+    MOZ_ASSERT_UNREACHABLE("Invalid index for attached child");
+    return false;
+  }
+
   if (aChild->RemoteParent()) {
     MOZ_ASSERT_UNREACHABLE(
         "Attempt to attach child which already has a parent!");
     return false;
   }
+
+  if (!aParent->IsDoc() && !aParent->RemoteParent() &&
+      aParent->ID() != mPendingShowChild) {
+    MOZ_ASSERT_UNREACHABLE("Attempt to attach child to a detached parent!");
+    return false;
+  }
+
+  MOZ_RELEASE_ASSERT(!mPendingShowChild || aChild->ID() != mPendingShowParent,
+                     "Attempt to attach the pending show's parent as a child!");
 
   if (aParent == aChild) {
     MOZ_ASSERT_UNREACHABLE("Attempt to make an accessible its own child!");
@@ -362,6 +437,10 @@ mozilla::ipc::IPCResult DocAccessibleParent::ProcessHideEvent(
   ACQUIRE_ANDROID_LOCK
 
   MOZ_ASSERT(CheckDocTree());
+
+  if (mPendingShowChild) {
+    return IPC_FAIL(this, "Hide during split show");
+  }
 
   // We shouldn't actually need this because mAccessibles shouldn't have an
   // entry for the document itself, but it doesn't hurt to be explicit.
@@ -527,6 +606,10 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvCaretMoveEvent(
   if (!proxy) {
     NS_ERROR("unknown caret move event target!");
     return IPC_OK();
+  }
+
+  if (aOffset < -1) {
+    return IPC_FAIL(this, "Invalid caret offset");
   }
 
   mCaretId = aID;
@@ -760,7 +843,9 @@ mozilla::ipc::IPCResult DocAccessibleParent::RecvCache(
       continue;
     }
 
-    remote->ApplyCache(aUpdateType, entry.Fields());
+    if (!remote->ApplyCache(aUpdateType, entry.Fields())) {
+      return IPC_FAIL(this, "Invalid cache data");
+    }
   }
 
   if (nsCOMPtr<nsIObserverService> obsService =
@@ -1086,8 +1171,6 @@ void DocAccessibleParent::Destroy() {
     RemoteAccessible* acc = iter.Get()->mProxy;
     MOZ_ASSERT(acc != this);
     if (acc->IsTable()) {
-      // Prevents the invalidation code from trying to walk up the tree.
-      acc->SetParent(nullptr);
       CachedTableAccessible::Invalidate(acc);
     }
     ProxyDestroyed(acc);

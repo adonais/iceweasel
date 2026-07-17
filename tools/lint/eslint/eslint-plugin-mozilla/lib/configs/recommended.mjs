@@ -97,6 +97,7 @@ export default [
       "mozilla/prefer-formatValues": "error",
       "mozilla/reject-addtask-only": "error",
       "mozilla/reject-contenttask-spawn": "error",
+      "mozilla/reject-import-preferences-module": "error",
       "mozilla/reject-importGlobalProperties": ["error", "allownonwebidl"],
       "mozilla/reject-multiple-await": "error",
       "mozilla/reject-multiple-getters-calls": "error",

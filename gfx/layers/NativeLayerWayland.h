@@ -129,6 +129,7 @@ class NativeLayerRootWayland final : public NativeLayerRoot {
   void ClearLayersLocked(const widget::WaylandSurfaceLock& aProofOfLock);
 
   bool CommitToScreenLocked(widget::WaylandSurfaceLock& aLock);
+  void ConfigureScaleLocked(widget::WaylandSurfaceLock& aProofOfLock);
 
 #ifdef MOZ_LOGGING
   void LogStatsLocked(const widget::WaylandSurfaceLock& aProofOfLock);
@@ -241,7 +242,7 @@ class NativeLayerWayland : public NativeLayer {
   void ForceCommit();
 
   void PlaceAbove(NativeLayerWayland* aLowerLayer);
-
+  void SetCoordinatesScale(uint32_t aCoordinatesScale);
 #ifdef MOZ_LOGGING
   nsAutoCString GetDebugTag() const;
 #endif

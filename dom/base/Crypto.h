@@ -19,12 +19,12 @@ namespace dom {
 
 class Crypto final : public nsISupports, public nsWrapperCache {
  protected:
-  virtual ~Crypto();
+  ~Crypto();
 
  public:
   explicit Crypto(nsIGlobalObject* aParent);
 
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(Crypto)
 
   void GetRandomValues(JSContext* aCx, const ArrayBufferView& aArray,
@@ -36,8 +36,8 @@ class Crypto final : public nsISupports, public nsWrapperCache {
 
   nsIGlobalObject* GetParentObject() const { return mParent; }
 
-  virtual JSObject* WrapObject(JSContext* aCx,
-                               JS::Handle<JSObject*> aGivenProto) override;
+  JSObject* WrapObject(JSContext* aCx,
+                       JS::Handle<JSObject*> aGivenProto) override;
 
  private:
   nsCOMPtr<nsIGlobalObject> mParent;

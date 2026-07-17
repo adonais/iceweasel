@@ -328,10 +328,6 @@ class AndroidHardwareTest(
 
         cmd.extend([f"--tag={t}" for t in self.test_tags])
 
-        try_options, try_tests = self.try_args(self.test_suite)
-        if try_options:
-            cmd.extend(try_options)
-
         if user_paths:
             # reftest on android-hw uses a subset (reftest-qr) of tests,
             # but scheduling only knows about 'reftest'
@@ -352,7 +348,6 @@ class AndroidHardwareTest(
                 self.query_tests_args(
                     self.config["suite_definitions"][self.test_suite].get("tests"),
                     None,
-                    try_tests,
                 )
             )
 

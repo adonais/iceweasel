@@ -23,6 +23,29 @@ const lazy = XPCOMUtils.declareLazy({
     "moz-src:///toolkit/components/pageextractor/DOMExtractor.sys.mjs",
 });
 
+// NOTE: Copied from nsSandboxFlags.h.
+// Blocks window.open / target="_blank" popups.
+const SANDBOXED_AUXILIARY_NAVIGATION = 0x2;
+// Blocks the page from navigating its own top to an attacker-controlled URL.
+const SANDBOXED_TOPLEVEL_NAVIGATION = 0x4;
+// Blocks form submissions.
+const SANDBOXED_FORMS = 0x20;
+// Blocks the Pointer Lock API.
+const SANDBOXED_POINTER_LOCK = 0x40;
+// Blocks automatically triggered features such as autoplay, autofocus, and
+// auto-form-submission.
+const SANDBOXED_AUTOMATIC_FEATURES = 0x100;
+// Blocks modal dialogs (alert, confirm, prompt, print, etc).
+const SANDBOXED_MODALS = 0x800;
+// Blocks the Screen Orientation API from locking orientation.
+const SANDBOXED_ORIENTATION_LOCK = 0x2000;
+// Blocks the Presentation API.
+const SANDBOXED_PRESENTATION = 0x4000;
+// Blocks the Storage Access API.
+const SANDBOXED_STORAGE_ACCESS = 0x8000;
+// Blocks downloads initiated by the page.
+const SANDBOXED_DOWNLOADS = 0x10000;
+
 /**
  * Extract a variety of content from pages for use in a smart window.
  */
@@ -115,11 +138,13 @@ export class PageExtractorParent extends JSWindowActorParent {
    *
    * @template T - The value resolved in the callback.
    *
-   * @param {string} urlString
-   * @param {(actor: PageExtractorParent) => Promise<T>} callback
+   * @param {object} options
+   * @param {string} options.urlString
+   * @param {(actor: PageExtractorParent) => Promise<T>} options.callback
+   * @param {boolean} [options.anonymousFetch]
    * @returns {Promise<T>}
    */
-  static async getHeadlessExtractor(urlString, callback) {
+  static async getHeadlessExtractor({ urlString, callback, anonymousFetch }) {
     const url = URL.parse(urlString);
     if (!url) {
       throw new Error("A valid URL must be provided.");
@@ -127,9 +152,59 @@ export class PageExtractorParent extends JSWindowActorParent {
     if (!["http:", "https:"].includes(url.protocol)) {
       throw new Error("Only http: and https: URLs are supported.");
     }
+    if (anonymousFetch && url.protocol === "http:") {
+      // Only loopback (e.g. localhost) and local network URLs are allowed to use
+      // http since they do not perform external network requests.
+      const principal = Services.scriptSecurityManager.createContentPrincipal(
+        url.URI,
+        {}
+      );
+      if (!principal.isLoopbackHost && !principal.isLocalIpAddress) {
+        throw new Error(
+          "Only https: URLs are supported for anonymous fetches."
+        );
+      }
+    }
     // The hidden browser manager controls the lifetime of the hidden browser.
     return lazy.HiddenBrowserManager.withHiddenBrowser(
       async browser => {
+        if (anonymousFetch) {
+          // The goal of these settings is to fetch the page without sending
+          // any user data to the origin and without letting the visit affect
+          // the user's browsing profile (history, cache, trackers, etc).
+
+          // Keep the visit out of browsing history
+          // TODO (bug 2043254) - Move this into the HiddenBrowserManager so all hidden browsers don't affect global history.
+          browser.setAttribute("disableglobalhistory", "true");
+          // Suppress audio output from the loaded page.
+          browser.mute();
+          browser.addEventListener("DidChangeBrowserRemoteness", () =>
+            browser.mute()
+          );
+          const { browsingContext } = browser;
+          // Tracking Protection so third-party trackers on the page cannot profile the request or correlate it with the user.
+          browsingContext.useTrackingProtection = true;
+          browsingContext.defaultLoadFlags =
+            // Strip cookies, HTTP auth, and other credentials from the request
+            Ci.nsIRequest.LOAD_ANONYMOUS |
+            // Don't write the response into the user's memory cache
+            Ci.nsIRequest.INHIBIT_CACHING |
+            // Don't write the response into the user's persistent (disk) cache
+            Ci.nsIRequest.INHIBIT_PERSISTENT_CACHING;
+          // Restrict what the loaded page can do.
+          browsingContext.sandboxFlags |=
+            SANDBOXED_AUXILIARY_NAVIGATION |
+            SANDBOXED_TOPLEVEL_NAVIGATION |
+            SANDBOXED_FORMS |
+            SANDBOXED_POINTER_LOCK |
+            SANDBOXED_AUTOMATIC_FEATURES |
+            SANDBOXED_MODALS |
+            SANDBOXED_ORIENTATION_LOCK |
+            SANDBOXED_PRESENTATION |
+            SANDBOXED_STORAGE_ACCESS |
+            SANDBOXED_DOWNLOADS;
+        }
+
         const { host } = url;
 
         /** @type {PromiseWithResolvers<PageExtractorParent>} */
@@ -199,10 +274,25 @@ export class PageExtractorParent extends JSWindowActorParent {
 
         lazy.console.log("Loading a headless PageExtractor", url);
 
-        browser.loadURI(url.URI, {
+        /** @type {LoadURIOptions} */
+        const loadURIOptions = {
           triggeringPrincipal:
-            Services.scriptSecurityManager.getSystemPrincipal(),
-        });
+            Services.scriptSecurityManager.createNullPrincipal({}),
+        };
+        if (anonymousFetch) {
+          // Suppress the Referer header so the origin can't learn where the
+          // request came from (e.g. the SERP page that surfaced this URL).
+          const referrerInfo = Cc[
+            "@mozilla.org/referrer-info;1"
+          ].createInstance(Ci.nsIReferrerInfo);
+          referrerInfo.init(Ci.nsIReferrerInfo.NO_REFERRER, true, null);
+          loadURIOptions.referrerInfo = referrerInfo;
+          // Don't add an entry for this load to session history.
+          loadURIOptions.loadFlags =
+            Ci.nsIWebNavigation.LOAD_FLAGS_BYPASS_HISTORY;
+        }
+
+        browser.loadURI(url.URI, loadURIOptions);
 
         return callback(await actorResolver.promise);
       },

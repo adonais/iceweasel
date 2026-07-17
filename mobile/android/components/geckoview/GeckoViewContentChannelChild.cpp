@@ -171,7 +171,7 @@ nsresult GeckoViewContentChannelChild::OpenContentStream(
 mozilla::ipc::IPCResult GeckoViewContentChannelChild::RecvOnStartRequest(
     const nsresult& aChannelStatus, const nsACString& aContentType,
     const nsACString& aEntityID, mozilla::NotNull<nsIURI*> aURI) {
-  mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
+  mEventQ->RunOrEnqueue(MakeUnique<NeckoTargetChannelFunctionEvent>(
       this, [self = UnsafePtr<GeckoViewContentChannelChild>(this),
              aChannelStatus, aContentType = nsCString(aContentType),
              aEntityID = nsCString(aEntityID), aURI = RefPtr{aURI.get()}]() {
@@ -209,7 +209,7 @@ void GeckoViewContentChannelChild::DoOnStartRequest(
 mozilla::ipc::IPCResult GeckoViewContentChannelChild::RecvOnDataAvailable(
     const nsresult& aChannelStatus, const nsACString& aData,
     const uint64_t& aOffset) {
-  mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
+  mEventQ->RunOrEnqueue(MakeUnique<NeckoTargetChannelFunctionEvent>(
       this, [self = UnsafePtr<GeckoViewContentChannelChild>(this),
              aChannelStatus, aData = nsCString(aData), aOffset]() {
         self->DoOnDataAvailable(aChannelStatus, aData, aOffset);
@@ -240,7 +240,7 @@ void GeckoViewContentChannelChild::DoOnDataAvailable(
 
 mozilla::ipc::IPCResult GeckoViewContentChannelChild::RecvOnStopRequest(
     const nsresult& aChannelStatus) {
-  mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
+  mEventQ->RunOrEnqueue(MakeUnique<NeckoTargetChannelFunctionEvent>(
       this, [self = UnsafePtr<GeckoViewContentChannelChild>(this),
              aChannelStatus]() { self->DoOnStopRequest(aChannelStatus); }));
   return IPC_OK();
@@ -269,7 +269,7 @@ void GeckoViewContentChannelChild::DoOnStopRequest(
 
 mozilla::ipc::IPCResult GeckoViewContentChannelChild::RecvOnAsyncOpenFailed(
     const nsresult& aChannelStatus) {
-  mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
+  mEventQ->RunOrEnqueue(MakeUnique<NeckoTargetChannelFunctionEvent>(
       this, [self = UnsafePtr<GeckoViewContentChannelChild>(this),
              aChannelStatus]() { self->DoOnAsyncOpenFailed(aChannelStatus); }));
   return IPC_OK();
@@ -297,7 +297,7 @@ void GeckoViewContentChannelChild::DoOnAsyncOpenFailed(
 }
 
 mozilla::ipc::IPCResult GeckoViewContentChannelChild::RecvDeleteSelf() {
-  mEventQ->RunOrEnqueue(new NeckoTargetChannelFunctionEvent(
+  mEventQ->RunOrEnqueue(MakeUnique<NeckoTargetChannelFunctionEvent>(
       this, [self = UnsafePtr<GeckoViewContentChannelChild>(this)]() {
         self->DoDeleteSelf();
       }));

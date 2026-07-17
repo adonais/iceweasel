@@ -43,6 +43,7 @@ class TopSitesPagerComposableTest {
                         onSettingsClicked = {},
                         onSponsorPrivacyClicked = {},
                         onTopSitesItemBound = {},
+                        onAddShortcutClicked = {},
                         isPager = isPager,
                     )
                 }

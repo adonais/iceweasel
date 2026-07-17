@@ -28,7 +28,7 @@ class nsGeoPositionCoords final : public nsIDOMGeoPositionCoords {
                       double aVError, double aHeading, double aSpeed);
 
  private:
-  ~nsGeoPositionCoords();
+  ~nsGeoPositionCoords() = default;
   const double mLat, mLong, mAlt, mHError, mVError, mHeading, mSpeed;
 };
 
@@ -65,7 +65,7 @@ class GeolocationPosition final : public nsISupports, public nsWrapperCache {
   ~GeolocationPosition();
 
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(GeolocationPosition)
 
  public:

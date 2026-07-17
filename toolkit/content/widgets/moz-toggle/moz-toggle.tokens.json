@@ -98,5 +98,10 @@
   },
   "inset": {
     "value": "calc(-1 * {dimension.2})"
+  },
+  "opacity": {
+    "disabled": {
+      "value": "{button.opacity.disabled}"
+    }
   }
 }

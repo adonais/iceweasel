@@ -33,7 +33,6 @@
   }
 }
 
-/* stylelint-disable-next-line media-query-no-invalid */
 @media -moz-pref("browser.nova.enabled") {
   .footer-action-button {
     --button-padding: var(--space-medium);

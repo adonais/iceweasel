@@ -592,7 +592,8 @@ void js::RemapDeadWrapper(JSContext* cx, HandleObject wobj,
     // Now, because we need to maintain object identity, we do a brain
     // transplant on the old object so that it contains the contents of the
     // new one.
-    JSObject::swap(cx, wobj, tobj, oomUnsafe);
+    ProxyObject::swap(cx, wobj.as<ProxyObject>(), tobj.as<ProxyObject>(),
+                      oomUnsafe);
   }
 
   if (!wobj->is<WrapperObject>()) {

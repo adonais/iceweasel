@@ -22,7 +22,7 @@ class Promise;
 // https://html.spec.whatwg.org/#navigationtransition
 class NavigationTransition final : public nsISupports, public nsWrapperCache {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_WRAPPERCACHE_CLASS(NavigationTransition)
 
   NavigationTransition(nsIGlobalObject* aGlobalObject,

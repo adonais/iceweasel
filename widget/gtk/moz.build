@@ -69,7 +69,7 @@ EXPORTS.mozilla.widget += [
 ]
 
 UNIFIED_SOURCES += [
-    "AsyncGtkClipboardRequest.cpp",
+    "AsyncClipboardRequest.cpp",
     "CompositorWidgetChild.cpp",
     "CompositorWidgetParent.cpp",
     "DMABufDevice.cpp",
@@ -92,6 +92,7 @@ UNIFIED_SOURCES += [
     "nsClipboard.cpp",
     "nsColorPicker.cpp",
     "nsDragService.cpp",
+    "nsDragServiceGtk.cpp",
     "nsFilePicker.cpp",
     "nsGtkHtmlUtils.cpp",
     "nsGtkKeyUtils.cpp",
@@ -118,8 +119,10 @@ SOURCES += [
 if CONFIG["MOZ_WAYLAND"]:
     UNIFIED_SOURCES += [
         "MozContainerWayland.cpp",
-        "nsClipboardWayland.cpp",
+        "nsDragServiceWayland.cpp",
         "nsWaylandDisplay.cpp",
+        "RetrievalContextGtk.cpp",
+        "RetrievalContextWayland.cpp",
         "WaylandBuffer.cpp",
         "WaylandSurface.cpp",
         "WindowSurfaceCairo.cpp",
@@ -138,8 +141,8 @@ if CONFIG["MOZ_WAYLAND"]:
 
 if CONFIG["MOZ_X11"]:
     UNIFIED_SOURCES += [
-        "nsClipboardX11.cpp",
         "nsShmImage.cpp",
+        "RetrievalContextX11.cpp",
         "WindowSurfaceX11.cpp",
         "WindowSurfaceX11Image.cpp",
         "WindowSurfaceX11SHM.cpp",
@@ -214,5 +217,10 @@ if CONFIG["MOZ_ENABLE_DBUS"]:
         "DBusService.cpp",
     ]
     CXXFLAGS += CONFIG["MOZ_DBUS_CFLAGS"]
+
+if CONFIG["MOZ_WAYLAND"] and CONFIG["MOZ_ENABLE_DBUS"]:
+    UNIFIED_SOURCES += [
+        "FileTransferPortal.cpp",
+    ]
 
 COMPILE_FLAGS["WARNINGS_CXXFLAGS"] += ["-Werror=switch"]

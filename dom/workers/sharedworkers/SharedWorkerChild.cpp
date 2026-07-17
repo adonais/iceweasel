@@ -64,6 +64,20 @@ void SharedWorkerChild::SendThaw() {
   }
 }
 
+void SharedWorkerChild::SendSetLocaleOverride(
+    const nsACString& aLanguageOverride, const nsTArray<nsString>& aLanguages) {
+  if (mActive) {
+    PSharedWorkerChild::SendSetLocaleOverride(aLanguageOverride, aLanguages);
+  }
+}
+
+void SharedWorkerChild::SendUpdateTimezoneOverride(
+    const nsAString& aTimezoneOverride) {
+  if (mActive) {
+    PSharedWorkerChild::SendUpdateTimezoneOverride(nsString(aTimezoneOverride));
+  }
+}
+
 IPCResult SharedWorkerChild::RecvError(const ErrorValue& aValue) {
   if (!mParent) {
     return IPC_OK();

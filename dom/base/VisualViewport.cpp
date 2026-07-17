@@ -11,6 +11,7 @@
 #include "mozilla/ToString.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIDocShell.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsPresContext.h"
 #include "nsRefreshDriver.h"
 

@@ -404,7 +404,7 @@ class MozPromise : public MozPromiseBase {
           CopyableTArray<ResolveValueType>(), __func__);
     }
 
-    RefPtr<AllPromiseHolder> holder = new AllPromiseHolder(aPromises.Length());
+    RefPtr holder = MakeRefPtr<AllPromiseHolder>(aPromises.Length());
     RefPtr<AllPromiseType> promise = holder->Promise();
     for (size_t i = 0; i < aPromises.Length(); ++i) {
       aPromises[i]->Then(
@@ -427,8 +427,7 @@ class MozPromise : public MozPromiseBase {
           CopyableTArray<ResolveOrRejectValue>(), __func__);
     }
 
-    RefPtr<AllSettledPromiseHolder> holder =
-        new AllSettledPromiseHolder(aPromises.Length());
+    RefPtr holder = MakeRefPtr<AllSettledPromiseHolder>(aPromises.Length());
     RefPtr<AllSettledPromiseType> promise = holder->Promise();
     for (size_t i = 0; i < aPromises.Length(); ++i) {
       aPromises[i]->Then(aProcessingTarget, __func__,

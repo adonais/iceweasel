@@ -79,6 +79,11 @@ test(() => {
 });
 
 test(() => {
+  let s = new WebAssembly.Suspending(() => {});
+  assert_true(Object.getPrototypeOf(s) === WebAssembly.Suspending.prototype);
+});
+
+test(() => {
   let instance = wasmEvalText(`(module
   (type (func (result i32)))
   (func $test (type 0) (result i32)

@@ -15,6 +15,8 @@ from mozfile import which
 
 from mozversioncontrol.errors import MissingVCSInfo, MissingVCSTool
 
+HG_TRY_URL = "ssh://hg.mozilla.org/try"
+
 
 def get_tool_path(tool: Optional[Union[str, Path]] = None):
     """Obtain the path of `tool`."""
@@ -305,10 +307,42 @@ class Repository(abc.ABC):
         raise NotImplementedError
 
     @abc.abstractmethod
+    def _resolve_try_branch(self) -> str:
+        pass
+
+    def _push_to_git_try(self, message, changed_files, remote):
+        dest_branch = self._resolve_try_branch()
+        email = self.get_user_email()
+        if not email:
+            raise ValueError(
+                "user.email is not configured; run 'git config user.email <email>'"
+            )
+
+        user_prefix = f"{email.split('@', 1)[0]}/"
+        if not dest_branch.startswith(user_prefix):
+            dest_branch = f"{user_prefix}{dest_branch}"
+
+        global_prefix = "user/"
+        if not dest_branch.startswith(global_prefix):
+            dest_branch = f"{global_prefix}{dest_branch}"
+
+        with self.try_commit(message, changed_files) as head:
+            self.push(
+                remote,
+                ref=head,
+                dest_branch=dest_branch,
+                force=True,
+            )
+
+    @abc.abstractmethod
+    def _push_to_hg_try(self, message, changed_files, allow_log_capture):
+        pass
+
     def push_to_try(
         self,
         message: str,
         changed_files: dict[str, str] = {},
+        remote: str = HG_TRY_URL,
         allow_log_capture: bool = False,
     ):
         """Create a temporary commit, push it to try and clean it up
@@ -324,6 +358,10 @@ class Repository(abc.ABC):
         If `allow_log_capture` is set to `True`, then the push-to-try will be run using
         Popen instead of check_call so that the logs can be captured elsewhere.
         """
+        if HG_TRY_URL in remote:
+            self._push_to_hg_try(message, changed_files, allow_log_capture)
+        else:
+            self._push_to_git_try(message, changed_files, remote)
 
     @abc.abstractmethod
     def update(self, ref):

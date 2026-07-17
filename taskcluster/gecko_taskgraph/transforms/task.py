@@ -14,15 +14,15 @@ import hashlib
 import os
 import re
 import time
-import typing
 from pathlib import Path
-from typing import Literal, Union
-from typing import Optional as TOptional
+from typing import Literal, Optional, Union
 from urllib.parse import quote
 
 import msgspec
 import taskgraph
+from mozilla_taskgraph.util.attributes import release_level
 from mozilla_taskgraph.util.signed_artifacts import get_signed_artifacts
+from mozilla_taskgraph.worker_types import get_release_config
 from taskcluster.utils import fromNow
 from taskgraph import MAX_DEPENDENCIES
 from taskgraph.transforms.base import TransformSequence
@@ -45,11 +45,11 @@ from gecko_taskgraph.optimize.schema import (
 )
 from gecko_taskgraph.transforms.job.common import get_expiration
 from gecko_taskgraph.util import docker as dockerutil
-from gecko_taskgraph.util.attributes import TRUNK_PROJECTS, is_try, release_level
+from gecko_taskgraph.util.attributes import TRUNK_PROJECTS
 from gecko_taskgraph.util.chunking import TEST_VARIANTS
 from gecko_taskgraph.util.hash import hash_path
 from gecko_taskgraph.util.partners import get_partners_to_be_published
-from gecko_taskgraph.util.scriptworker import BALROG_ACTIONS, get_release_config
+from gecko_taskgraph.util.scriptworker import BALROG_ACTIONS
 from gecko_taskgraph.util.workertypes import get_worker_type, worker_type_implementation
 
 RUN_TASK_HG = Path(GECKO, "taskcluster", "scripts", "run-task")
@@ -76,15 +76,15 @@ def _compute_geckoview_version(app_version, moz_build_date):
 
 class TreeherderSchema(Schema, kw_only=True):
     # either a bare symbol, or "grp(sym)".
-    symbol: TOptional[str] = None
+    symbol: Optional[str] = None
     # the job kind
-    kind: TOptional[Literal["build", "test", "other"]] = None
+    kind: Optional[Literal["build", "test", "other"]] = None
     # tier for this task
-    tier: TOptional[int] = None
+    tier: Optional[int] = None
     # task platform, in the form platform/collection, used to set
     # treeherder.machine.platform and treeherder.collection or
     # treeherder.labels
-    platform: TOptional[str] = None
+    platform: Optional[str] = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -96,9 +96,9 @@ class TreeherderSchema(Schema, kw_only=True):
 
 class IndexSchema(Schema, kw_only=True):
     # the name of the product this build produces
-    product: TOptional[str] = None
+    product: Optional[str] = None
     # the names to use for this job in the TaskCluster index
-    job_name: TOptional[str] = None
+    job_name: Optional[str] = None
     # Type of gecko v2 index to use
     type: Literal[
         "generic",
@@ -126,66 +126,66 @@ class TaskDescriptionSchema(Schema, kw_only=True):
     # description of the task (for metadata)
     description: str
     # attributes for this task
-    attributes: TOptional[dict[str, object]] = None
+    attributes: Optional[dict[str, object]] = None
     # relative path (from config.path) to the file task was defined in
-    task_from: TOptional[str] = None
+    task_from: Optional[str] = None
     # dependencies of this task, keyed by name; these are passed through
     # verbatim and subject to the interpretation of the Task's get_dependencies
     # method.
-    dependencies: TOptional[dict[str, object]] = None
+    dependencies: Optional[dict[str, object]] = None
     # Soft dependencies of this task, as a list of tasks labels
-    soft_dependencies: TOptional[list[str]] = None
+    soft_dependencies: Optional[list[str]] = None
     # Dependencies that must be scheduled in order for this task to run.
-    if_dependencies: TOptional[list[str]] = None
-    requires: TOptional[Literal["all-completed", "all-resolved"]] = None
+    if_dependencies: Optional[list[str]] = None
+    requires: Optional[Literal["all-completed", "all-resolved"]] = None
     # expiration and deadline times, relative to task creation, with units
     # (e.g., "14 days").  Defaults are set based on the project.
-    expires_after: TOptional[str] = None
-    deadline_after: TOptional[str] = None
-    expiration_policy: TOptional[str] = None
+    expires_after: Optional[str] = None
+    deadline_after: Optional[str] = None
+    expiration_policy: Optional[str] = None
     # custom routes for this task; the default treeherder routes will be added
     # automatically
-    routes: TOptional[list[str]] = None
+    routes: Optional[list[str]] = None
     # custom scopes for this task; any scopes required for the worker will be
     # added automatically. The following parameters will be substituted in each
     # scope:
     #  {level} -- the scm level of this push
     #  {project} -- the project of this push
-    scopes: TOptional[list[str]] = None
+    scopes: Optional[list[str]] = None
     # Tags
-    tags: TOptional[dict[str, str]] = None
+    tags: Optional[dict[str, str]] = None
     # custom "task.extra" content
-    extra: TOptional[dict[str, object]] = None
+    extra: Optional[dict[str, object]] = None
     # treeherder-related information; see
     # https://firefox-ci-tc.services.mozilla.com/schemas/taskcluster-treeherder/v1/task-treeherder-config.json
     # If not specified, no treeherder extra information or routes will be
     # added to the task
-    treeherder: TOptional[TreeherderSchema] = None
+    treeherder: Optional[TreeherderSchema] = None
     # information for indexing this build so its artifacts can be discovered;
     # if omitted, the build will not be indexed.
-    index: TOptional[IndexSchema] = None
+    index: Optional[IndexSchema] = None
     # The `run_on_repo_type` attribute, defaulting to "hg".  This dictates
     # the types of repositories on which this task should be included in
     # the target task set. See the attributes documentation for details.
-    run_on_repo_type: TOptional[list[Literal["git", "hg"]]] = None
+    run_on_repo_type: Optional[list[Literal["git", "hg"]]] = None
     # The `run_on_projects` attribute, defaulting to "all".  This dictates the
     # projects on which this task should be included in the target task set.
     # See the attributes documentation for details.
-    run_on_projects: TOptional[  # type: ignore
+    run_on_projects: Optional[  # type: ignore
         optionally_keyed_by("build-platform", list[str], use_msgspec=True)
     ] = None
     # Like `run_on_projects`, `run-on-hg-branches` defaults to "all".
-    run_on_hg_branches: TOptional[  # type: ignore
+    run_on_hg_branches: Optional[  # type: ignore
         optionally_keyed_by("project", list[str], use_msgspec=True)
     ] = None
     # Specifies git branches for which this task should run.
-    run_on_git_branches: TOptional[list[str]] = None
+    run_on_git_branches: Optional[list[str]] = None
     # The `shipping_phase` attribute, defaulting to None. This specifies the
     # release promotion phase that this task belongs to.
-    shipping_phase: TOptional[Literal["build", "promote", "push", "ship"]] = None
+    shipping_phase: Optional[Literal["build", "promote", "push", "ship"]] = None
     # The `shipping_product` attribute, defaulting to None. This specifies the
     # release promotion product that this task belongs to.
-    shipping_product: TOptional[str] = None
+    shipping_product: Optional[str] = None
     # The `always-target` attribute will cause the task to be included in the
     # target_task_graph regardless of filtering. Tasks included in this manner
     # will be candidates for optimization even when `optimize_target_tasks` is
@@ -194,19 +194,19 @@ class TaskDescriptionSchema(Schema, kw_only=True):
     always_target: bool = False
     # Optimization to perform on this task during the optimization phase.
     # Optimizations are defined in taskcluster/gecko_taskgraph/optimize.py.
-    optimization: TOptional[OptimizationSchema] = None
+    optimization: Optional[OptimizationSchema] = None
     # the provisioner-id/worker-type for the task.  The following parameters will
     # be substituted in this string:
     #  {level} -- the scm level of this push
-    worker_type: TOptional[str] = None
+    worker_type: Optional[str] = None
     # Whether the job should use sccache compiler caching.
     use_sccache: bool = False
     # information specific to the worker implementation that will run this task
-    worker: TOptional[TaskWorkerSchema] = None
+    worker: Optional[TaskWorkerSchema] = None
     # Override the default priority for the project
-    priority: TOptional[str] = None
+    priority: Optional[str] = None
     # Override the default 5 retries
-    retries: TOptional[int] = None
+    retries: Optional[int] = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -300,7 +300,7 @@ def get_project_alias(config):
     return config.params["project"]
 
 
-def get_head_ref(config) -> tuple[str, typing.Optional[str]]:
+def get_head_ref(config) -> tuple[str, Optional[str]]:
     """
     Extract the head_ref without its prefix and determine its type.
 
@@ -427,9 +427,9 @@ def is_run_task(cmd: str) -> bool:
 class DockerImageDictSchema(Schema, forbid_unknown_fields=True, kw_only=True):
     # a raw Docker image path (repo/image:tag) is handled by the str branch of the union
     # an in-tree generated docker image (from `taskcluster/docker/<name>`)
-    in_tree: TOptional[str] = None
+    in_tree: Optional[str] = None
     # an indexed docker image
-    indexed: TOptional[str] = None
+    indexed: Optional[str] = None
 
     def __post_init__(self):
         if (self.in_tree is None) == (self.indexed is None):
@@ -446,7 +446,7 @@ class DockerCacheSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     # location in the task image where the cache will be mounted
     mount_point: str
     # Whether the cache is not used in untrusted environments (like the Try repo).
-    skip_untrusted: TOptional[bool] = None
+    skip_untrusted: Optional[bool] = None
 
 
 class DockerArtifactSchema(Schema, forbid_unknown_fields=False, kw_only=True):
@@ -456,7 +456,7 @@ class DockerArtifactSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     path: str
     # name of the produced artifact (root of the names for type=directory)
     name: str
-    expires_after: TOptional[str] = None
+    expires_after: Optional[str] = None
 
 
 class DockerWorkerSchema(Schema, forbid_unknown_fields=False, kw_only=True):
@@ -474,29 +474,29 @@ class DockerWorkerSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     loopback_audio: bool
     docker_in_docker: bool  # (aka 'dind')
     privileged: bool
-    kvm: TOptional[bool] = None
+    kvm: Optional[bool] = None
     # Paths to Docker volumes.
-    volumes: TOptional[list[str]] = None
+    volumes: Optional[list[str]] = None
     # Paths that are required to be volumes for performance reasons.
-    required_volumes: TOptional[list[str]] = None
+    required_volumes: Optional[list[str]] = None
     # caches to set up for the task
-    caches: TOptional[list[DockerCacheSchema]] = None
+    caches: Optional[list[DockerCacheSchema]] = None
     # artifacts to extract from the task image after completion
-    artifacts: TOptional[list[DockerArtifactSchema]] = None
+    artifacts: Optional[list[DockerArtifactSchema]] = None
     # environment variables
     env: dict[str, taskref_or_string_msgspec]
     # the command to run; if not given, docker-worker will default to the
     # command in the docker image
-    command: TOptional[list[taskref_or_string_msgspec]] = None
+    command: Optional[list[taskref_or_string_msgspec]] = None
     # the maximum time to run, in seconds
     max_run_time: int
     # the exit status code(s) that indicates the task should be retried
-    retry_exit_status: TOptional[list[int]] = None
+    retry_exit_status: Optional[list[int]] = None
     # the exit status code(s) that indicates the caches used by the task
     # should be purged
-    purge_caches_exit_status: TOptional[list[int]] = None
+    purge_caches_exit_status: Optional[list[int]] = None
     # Whether any artifacts are assigned to this worker
-    skip_artifacts: TOptional[bool] = None
+    skip_artifacts: Optional[bool] = None
 
 
 @payload_builder("docker-worker", schema=DockerWorkerSchema)
@@ -676,12 +676,10 @@ def build_docker_worker_payload(config, task, task_def):
         else:
             suffix = cache_version
 
-        skip_untrusted = is_try(config.params) or level == 1
-
         for cache in worker["caches"]:
             # Some caches aren't enabled in environments where we can't
             # guarantee certain behavior. Filter those out.
-            if cache.get("skip-untrusted") and skip_untrusted:
+            if cache.get("skip-untrusted") and level == 1:
                 continue
 
             name = "{trust_domain}-level-{level}-{name}-{suffix}".format(
@@ -704,7 +702,7 @@ def build_docker_worker_payload(config, task, task_def):
     if run_task and worker.get("volumes"):
         payload["env"]["TASKCLUSTER_VOLUMES"] = ";".join(sorted(worker["volumes"]))
 
-    if payload.get("cache") and skip_untrusted:
+    if payload.get("cache") and level == 1:
         payload["env"]["TASKCLUSTER_UNTRUSTED_CACHES"] = "1"
 
     if features:
@@ -722,30 +720,30 @@ class GenericArtifactSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     # filesystem path from which to read artifact
     path: str
     # if not specified, path is used for artifact name
-    name: TOptional[str] = None
-    expires_after: TOptional[str] = None
+    name: Optional[str] = None
+    expires_after: Optional[str] = None
 
 
 class GenericMountContentSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     # Artifact name that contains the content.
-    artifact: TOptional[str] = None
+    artifact: Optional[str] = None
     # Task ID that has the artifact that contains the content.
-    task_id: TOptional[taskref_or_string_msgspec] = None
+    task_id: Optional[taskref_or_string_msgspec] = None
     # URL that supplies the content in response to an unauthenticated GET request.
-    url: TOptional[str] = None
+    url: Optional[str] = None
 
 
 class GenericMountSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     # A unique name for the cache volume, implies writable cache directory.
-    cache_name: TOptional[str] = None
+    cache_name: Optional[str] = None
     # Optional content for pre-loading cache, or mandatory content for read-only file/dir.
-    content: TOptional[GenericMountContentSchema] = None
+    content: Optional[GenericMountContentSchema] = None
     # Filesystem location of the directory as a relative path to the task directory.
-    directory: TOptional[str] = None
+    directory: Optional[str] = None
     # Relative path within the task directory to mount the file (read only).
-    file: TOptional[str] = None
+    file: Optional[str] = None
     # Archive format of the content if mounting a directory.
-    format: TOptional[Literal["rar", "tar.bz2", "tar.gz", "zip", "tar.xz"]] = None
+    format: Optional[Literal["rar", "tar.bz2", "tar.gz", "zip", "tar.xz"]] = None
 
 
 class GenericWorkerSchema(Schema, forbid_unknown_fields=False, kw_only=True):
@@ -754,25 +752,25 @@ class GenericWorkerSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     # on Windows, each command is a string, on OS X and Linux, each command is a string array
     command: list[Union[taskref_or_string_msgspec, list[taskref_or_string_msgspec]]]
     # artifacts to extract from the task image after completion
-    artifacts: TOptional[list[GenericArtifactSchema]] = None
+    artifacts: Optional[list[GenericArtifactSchema]] = None
     # Directories and/or files to be mounted.
-    mounts: TOptional[list[GenericMountSchema]] = None
+    mounts: Optional[list[GenericMountSchema]] = None
     # environment variables
     env: dict[str, taskref_or_string_msgspec]
     # the maximum time to run, in seconds
     max_run_time: int
     # os user groups for test task workers
-    os_groups: TOptional[list[str]] = None
+    os_groups: Optional[list[str]] = None
     # feature for test task to run as administrator
-    run_as_administrator: TOptional[bool] = None
+    run_as_administrator: Optional[bool] = None
     # optional features
     chain_of_trust: bool
-    taskcluster_proxy: TOptional[bool] = None
-    hide_cmd_window: TOptional[bool] = None
+    taskcluster_proxy: Optional[bool] = None
+    hide_cmd_window: Optional[bool] = None
     # the exit status code(s) that indicates the task should be retried
-    retry_exit_status: TOptional[list[int]] = None
+    retry_exit_status: Optional[list[int]] = None
     # Whether any artifacts are assigned to this worker
-    skip_artifacts: TOptional[bool] = None
+    skip_artifacts: Optional[bool] = None
 
 
 @payload_builder("generic-worker", schema=GenericWorkerSchema)
@@ -905,7 +903,7 @@ class IscriptArtifactSchema(
     paths: list[str]
     # Signing formats to use on each of the paths
     formats: list[str]
-    single_file_globs: TOptional[list[str]] = None
+    single_file_globs: Optional[list[str]] = None
 
 
 class IscriptProvisioningProfileSchema(
@@ -918,11 +916,11 @@ class IscriptProvisioningProfileSchema(
 class IscriptHardenedSignConfigSchema(
     Schema, forbid_unknown_fields=False, kw_only=True
 ):
-    deep: TOptional[bool] = None
-    runtime: TOptional[bool] = None
-    force: TOptional[bool] = None
-    entitlements: TOptional[str] = None
-    requirements: TOptional[str] = None
+    deep: Optional[bool] = None
+    runtime: Optional[bool] = None
+    force: Optional[bool] = None
+    entitlements: Optional[str] = None
+    requirements: Optional[str] = None
     globs: list[str]
 
 
@@ -933,11 +931,12 @@ class IscriptSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     # list of artifact URLs for the artifacts that should be signed
     upstream_artifacts: list[IscriptArtifactSchema]
     # behavior for mac iscript
-    mac_behavior: TOptional[
+    mac_behavior: Optional[
         Literal[
             "apple_notarization",
             "apple_notarization_stacked",
             "mac_sign_and_pkg",
+            "mac_sign_pkg",
             "mac_sign_and_pkg_hardened",
             "mac_geckodriver",
             "mac_notarize_geckodriver",
@@ -945,12 +944,10 @@ class IscriptSchema(Schema, forbid_unknown_fields=False, kw_only=True):
             "mac_notarize_single_file",
         ]
     ] = None
-    entitlements_url: TOptional[str] = None
-    requirements_plist_url: TOptional[str] = None
-    provisioning_profile_config: TOptional[list[IscriptProvisioningProfileSchema]] = (
-        None
-    )
-    hardened_sign_config: TOptional[list[IscriptHardenedSignConfigSchema]] = None
+    entitlements_url: Optional[str] = None
+    requirements_plist_url: Optional[str] = None
+    provisioning_profile_config: Optional[list[IscriptProvisioningProfileSchema]] = None
+    hardened_sign_config: Optional[list[IscriptHardenedSignConfigSchema]] = None
 
 
 @payload_builder("iscript", schema=IscriptSchema)
@@ -1017,13 +1014,13 @@ class BeetmoverArtifactSchema(
 
 class BeetmoverSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     # the maximum time to run, in seconds
-    max_run_time: TOptional[int] = None
+    max_run_time: Optional[int] = None
     # locale key, if this is a locale beetmover job
-    locale: TOptional[str] = None
+    locale: Optional[str] = None
     release_properties: BeetmoverReleasePropertiesSchema
     # list of artifact URLs for the artifacts that should be beetmoved
     upstream_artifacts: list[BeetmoverArtifactSchema]
-    artifact_map: TOptional[object] = None
+    artifact_map: Optional[object] = None
 
 
 @payload_builder("beetmover", schema=BeetmoverSchema)
@@ -1054,7 +1051,7 @@ def build_beetmover_payload(config, task, task_def):
 
 class BeetmoverPushToReleaseSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     # the maximum time to run, in seconds
-    max_run_time: TOptional[int] = None
+    max_run_time: Optional[int] = None
     product: str
 
 
@@ -1073,7 +1070,7 @@ def build_beetmover_push_to_release_payload(config, task, task_def):
 
 
 class BeetmoverImportFromGcsSchema(Schema, forbid_unknown_fields=False, kw_only=True):
-    max_run_time: TOptional[int] = None
+    max_run_time: Optional[int] = None
     gcs_sources: list[str]
     product: str
 
@@ -1107,14 +1104,14 @@ class BeetmoverMavenArtifactSchema(
     task_id: taskref_or_string_msgspec
     task_type: str
     paths: list[str]
-    zip_extract: TOptional[bool] = None
+    zip_extract: Optional[bool] = None
 
 
 class BeetmoverMavenSchema(Schema, forbid_unknown_fields=False, kw_only=True):
-    max_run_time: TOptional[int] = None
+    max_run_time: Optional[int] = None
     release_properties: BeetmoverMavenReleasePropertiesSchema
     upstream_artifacts: list[BeetmoverMavenArtifactSchema]
-    artifact_map: TOptional[object] = None
+    artifact_map: Optional[object] = None
 
 
 @payload_builder("beetmover-maven", schema=BeetmoverMavenSchema)
@@ -1146,49 +1143,49 @@ class _UpstreamArtifactSchema(
 
 class BalrogSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     balrog_action: str
-    product: TOptional[str] = None
-    platforms: TOptional[list[str]] = None
-    release_eta: TOptional[str] = None
-    channel_names: TOptional[  # type: ignore
+    product: Optional[str] = None
+    platforms: Optional[list[str]] = None
+    release_eta: Optional[str] = None
+    channel_names: Optional[  # type: ignore
         optionally_keyed_by("release-type", list[str], use_msgspec=True)
     ] = None
-    require_mirrors: TOptional[bool] = None
-    publish_rules: TOptional[  # type: ignore
+    require_mirrors: Optional[bool] = None
+    publish_rules: Optional[  # type: ignore
         optionally_keyed_by(
             "release-type", "release-level", list[int], use_msgspec=True
         )
     ] = None
-    rules_to_update: TOptional[  # type: ignore
+    rules_to_update: Optional[  # type: ignore
         optionally_keyed_by(
             "release-type", "release-level", list[str], use_msgspec=True
         )
     ] = None
-    archive_domain: TOptional[  # type: ignore
+    archive_domain: Optional[  # type: ignore
         optionally_keyed_by("release-level", str, use_msgspec=True)
     ] = None
-    download_domain: TOptional[  # type: ignore
+    download_domain: Optional[  # type: ignore
         optionally_keyed_by("release-level", str, use_msgspec=True)
     ] = None
-    blob_suffix: TOptional[str] = None
-    complete_mar_filename_pattern: TOptional[str] = None
-    complete_mar_bouncer_product_pattern: TOptional[str] = None
-    update_line: TOptional[object] = None
-    suffixes: TOptional[list[str]] = None
-    background_rate: TOptional[  # type: ignore
+    blob_suffix: Optional[str] = None
+    complete_mar_filename_pattern: Optional[str] = None
+    complete_mar_bouncer_product_pattern: Optional[str] = None
+    update_line: Optional[object] = None
+    suffixes: Optional[list[str]] = None
+    background_rate: Optional[  # type: ignore
         optionally_keyed_by(
-            "release-type", "beta-number", TOptional[int], use_msgspec=True
+            "release-type", "beta-number", Optional[int], use_msgspec=True
         )
     ] = None
-    force_fallback_mapping_update: TOptional[  # type: ignore
+    force_fallback_mapping_update: Optional[  # type: ignore
         optionally_keyed_by("release-type", "beta-number", bool, use_msgspec=True)
     ] = None
-    pin_channels: TOptional[  # type: ignore
+    pin_channels: Optional[  # type: ignore
         optionally_keyed_by(
             "release-type", "release-level", list[str], use_msgspec=True
         )
     ] = None
     # list of artifact URLs for the artifacts that should be beetmoved
-    upstream_artifacts: TOptional[list[_UpstreamArtifactSchema]] = None
+    upstream_artifacts: Optional[list[_UpstreamArtifactSchema]] = None
 
     def __post_init__(self):
         super().__post_init__()
@@ -1237,7 +1234,9 @@ def build_balrog_payload(config, task, task_def):
                     task["description"],
                     **{
                         "release-type": config.params["release_type"],
-                        "release-level": release_level(config.params),
+                        "release-level": release_level(
+                            config.graph_config["release-branches"], config.params
+                        ),
                         "beta-number": beta_number,
                     },
                 )
@@ -1306,7 +1305,7 @@ class PushFlatpakSchema(Schema, forbid_unknown_fields=False, kw_only=True):
 
 class PushMsixSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     channel: str
-    publish_mode: TOptional[str] = None
+    publish_mode: Optional[str] = None
     upstream_artifacts: list[_UpstreamArtifactSchema]
 
 
@@ -1442,7 +1441,7 @@ def build_push_addons_payload(config, task, task_def):
 class L10nBumpPlatformConfigSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     platforms: list[str]
     path: str
-    format: TOptional[str] = None
+    format: Optional[str] = None
 
 
 class AndroidL10nTomlInfoSchema(Schema, forbid_unknown_fields=False, kw_only=True):
@@ -1458,9 +1457,9 @@ class TreescriptL10nBumpInfoSchema(Schema, forbid_unknown_fields=False, kw_only=
     name: str
     path: str
     version_path: str
-    l10n_repo_url: TOptional[str] = None
-    l10n_repo_target_branch: TOptional[str] = None
-    ignore_config: TOptional[object] = None
+    l10n_repo_url: Optional[str] = None
+    l10n_repo_target_branch: Optional[str] = None
+    ignore_config: Optional[object] = None
     platform_configs: list[L10nBumpPlatformConfigSchema]
 
 
@@ -1479,21 +1478,21 @@ class TreescriptAndroidL10nSyncInfoSchema(
 
 
 class TreescriptSchema(Schema, forbid_unknown_fields=False, kw_only=True):
-    tags: list[TOptional[Literal["buildN", "release"]]]
+    tags: list[Optional[Literal["buildN", "release"]]]
     bump: bool
-    bump_files: TOptional[list[str]] = None
-    repo_param_prefix: TOptional[str] = None
-    dontbuild: TOptional[bool] = None
-    ignore_closed_tree: TOptional[bool] = None
-    force_dry_run: TOptional[bool] = None
-    push: TOptional[bool] = None
-    source_repo: TOptional[str] = None
-    ssh_user: TOptional[str] = None
-    l10n_bump_info: TOptional[list[TreescriptL10nBumpInfoSchema]] = None
-    actions: TOptional[object] = None
-    merge_info: TOptional[object] = None
-    android_l10n_import_info: TOptional[TreescriptAndroidL10nImportInfoSchema] = None
-    android_l10n_sync_info: TOptional[TreescriptAndroidL10nSyncInfoSchema] = None
+    bump_files: Optional[list[str]] = None
+    repo_param_prefix: Optional[str] = None
+    dontbuild: Optional[bool] = None
+    ignore_closed_tree: Optional[bool] = None
+    force_dry_run: Optional[bool] = None
+    push: Optional[bool] = None
+    source_repo: Optional[str] = None
+    ssh_user: Optional[str] = None
+    l10n_bump_info: Optional[list[TreescriptL10nBumpInfoSchema]] = None
+    actions: Optional[object] = None
+    merge_info: Optional[object] = None
+    android_l10n_import_info: Optional[TreescriptAndroidL10nImportInfoSchema] = None
+    android_l10n_sync_info: Optional[TreescriptAndroidL10nSyncInfoSchema] = None
 
 
 @payload_builder("treescript", schema=TreescriptSchema)
@@ -1622,49 +1621,160 @@ def build_treescript_payload(config, task, task_def):
         task_def["payload"]["ssh_user"] = worker["ssh-user"]
 
 
-class LandoscriptL10nBumpInfoSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+# -- scriptworker-lando schemas --
+
+
+class TomlInfoSync(Schema):
+    toml_path: str
+
+
+class AndroidL10nSyncConfig(Schema):
+    from_branch: str
+    toml_info: list[TomlInfoSync]
+
+
+class TomlInfoImport(Schema):
+    toml_path: str
+    dest_path: str
+
+
+class AndroidL10nImportConfig(Schema):
+    from_repo_url: str
+    toml_info: list[TomlInfoImport]
+
+
+class PlatformConfig(Schema):
+    platforms: list[str]
+    path: str
+    format: Optional[str] = None
+
+
+class L10nBumpInfo(Schema):
     name: str
     path: str
-    l10n_repo_url: TOptional[str] = None
-    l10n_repo_target_branch: TOptional[str] = None
-    ignore_config: TOptional[object] = None
-    platform_configs: list[L10nBumpPlatformConfigSchema]
+    l10n_repo_url: str
+    l10n_repo_target_branch: str
+    platform_configs: list[PlatformConfig]
+    ignore_config: Optional[object] = None
 
 
-class LandoscriptAndroidL10nImportInfoSchema(
-    Schema, forbid_unknown_fields=False, kw_only=True
-):
-    from_repo_url: str
-    toml_info: list[AndroidL10nTomlInfoSchema]
+class TagConfig(Schema):
+    types: list[Literal["buildN", "release"]]
+    hg_repo_url: str
 
 
-class LandoscriptAndroidL10nSyncInfoSchema(
-    Schema, forbid_unknown_fields=False, kw_only=True
-):
+class VersionBumpConfig(Schema):
+    bump_files: list[str]
+
+
+class VersionFileStrict(Schema):
+    filename: str
+    version_bump: str
+    new_suffix: Optional[str] = None
+
+
+class VersionFile(Schema):
+    filename: str
+    version_bump: Optional[str] = None
+    new_suffix: Optional[str] = None
+
+
+# the remaining action types all end up using the "merge_day"
+# landoscript action. however, these are quite varied tasks,
+# and separating them out allows us to have stronger schemas.
+
+
+class EsrBumpConfig(Schema):
+    to_branch: str
+    fetch_version_from: str
+    version_files: list[VersionFileStrict]
+    to_revision: str = ""
+
+
+class MainBumpConfig(Schema):
+    to_branch: str
+    fetch_version_from: str
+    version_files: list[VersionFileStrict]
+    to_revision: str = ""
+    replacements: Optional[list[list[str]]] = None
+    regex_replacements: Optional[list[list[str]]] = None
+    end_tag: Optional[str] = None
+
+
+class EarlyToLateBetaConfig(Schema):
+    to_branch: str
+    # technically not used, but passing it keeps landoscript
+    # code cleaner, so we may as well require a real value
+    # for it.
+    fetch_version_from: str
+    to_revision: str = ""
+    replacements: Optional[list[list[str]]] = None
+
+
+class UpliftConfig(Schema):
+    fetch_version_from: str
+    version_files: list[VersionFile]
     from_branch: str
-    toml_info: list[AndroidL10nSyncTomlInfoSchema]
+    to_branch: str
+    from_revision: str = ""
+    to_revision: str = ""
+    replacements: Optional[list[list[str]]] = None
+    base_tag: Optional[str] = None
+    end_tag: Optional[str] = None
+    l10n_bump_info: Optional[list[L10nBumpInfo]] = None
 
 
-class LandoscriptSchema(Schema, forbid_unknown_fields=False, kw_only=True):
+class MergeDayConfig(Schema):
+    to_branch: str
+    fetch_version_from: Optional[str] = None
+    version_files: Optional[list[VersionFile]] = None
+    replacements: Optional[list[list[str]]] = None
+    regex_replacements: Optional[list[list[str]]] = None
+    from_branch: Optional[str] = None
+    from_revision: Optional[str] = None
+    to_revision: Optional[str] = None
+    merge_old_head: Optional[bool] = None
+    update_clobber_file: Optional[bool] = None
+    incr_major_version: Optional[bool] = None
+    base_tag: Optional[str] = None
+    end_tag: Optional[str] = None
+
+
+class LandoAction(Schema, forbid_unknown_fields=False, kw_only=True):
+    android_l10n_sync: Optional[AndroidL10nSyncConfig] = None
+    android_l10n_import: Optional[AndroidL10nImportConfig] = None
+    l10n_bump: Optional[list[L10nBumpInfo]] = None
+    tag: Optional[TagConfig] = None
+    version_bump: Optional[VersionBumpConfig] = None
+    esr_bump: Optional[EsrBumpConfig] = None
+    main_bump: Optional[MainBumpConfig] = None
+    early_to_late_beta: Optional[EarlyToLateBetaConfig] = None
+    uplift: Optional[UpliftConfig] = None
+    merge_day: Optional[MergeDayConfig] = None
+
+
+class ScriptworkerLandoSchema(Schema, forbid_unknown_fields=False, kw_only=True):
     lando_repo: str
-    hg_repo_url: TOptional[str] = None
-    ignore_closed_tree: TOptional[bool] = None
-    dontbuild: TOptional[bool] = None
-    tags: TOptional[list[TOptional[Literal["buildN", "release"]]]] = None
-    force_dry_run: TOptional[bool] = None
-    push: TOptional[bool] = None
-    android_l10n_import_info: TOptional[LandoscriptAndroidL10nImportInfoSchema] = None
-    android_l10n_sync_info: TOptional[LandoscriptAndroidL10nSyncInfoSchema] = None
-    l10n_bump_info: TOptional[list[LandoscriptL10nBumpInfoSchema]] = None
-    bump_files: TOptional[list[str]] = None
-    merge_info: TOptional[object] = None
+    actions: list[LandoAction]
+    ignore_closed_tree: Optional[bool] = None
+    dontbuild: Optional[bool] = None
+    force_dry_run: Optional[bool] = None
+    matrix_rooms: Optional[list[str]] = None
 
 
-@payload_builder("landoscript", schema=LandoscriptSchema)
-def build_landoscript_payload(config, task, task_def):
+# We override mozilla-taskgraph's payload builder with our own modified version
+del payload_builders["scriptworker-lando"]
+
+
+@payload_builder(
+    "scriptworker-lando",
+    schema=ScriptworkerLandoSchema,
+)
+def build_lando_payload(config, task, task_def):
     worker = task["worker"]
     release_config = get_release_config(config)
     task_def["payload"] = {"actions": [], "lando_repo": worker["lando-repo"]}
+    task_def["tags"]["worker-implementation"] = "scriptworker"
     actions = task_def["payload"]["actions"]
 
     if worker.get("ignore-closed-tree") is not None:
@@ -1676,113 +1786,135 @@ def build_landoscript_payload(config, task, task_def):
     if worker.get("force-dry-run"):
         task_def["payload"]["dry_run"] = True
 
-    if worker.get("android-l10n-import-info"):
-        android_l10n_import_info = {}
-        for k, v in worker["android-l10n-import-info"].items():
-            android_l10n_import_info[k.replace("-", "_")] = worker[
-                "android-l10n-import-info"
-            ][k]
-        android_l10n_import_info["toml_info"] = [
-            {
-                param_name.replace("-", "_"): param_value
-                for param_name, param_value in entry.items()
-            }
-            for entry in worker["android-l10n-import-info"]["toml-info"]
-        ]
-        task_def["payload"]["android_l10n_import_info"] = android_l10n_import_info
-        actions.append("android_l10n_import")
+    for action in worker["actions"]:
+        if info := action.get("android-l10n-import"):
+            android_l10n_import_info = dash_to_underscore(info)
+            android_l10n_import_info["toml_info"] = [
+                dash_to_underscore(ti) for ti in android_l10n_import_info["toml_info"]
+            ]
+            task_def["payload"]["android_l10n_import_info"] = android_l10n_import_info
+            actions.append("android_l10n_import")
 
-    if worker.get("android-l10n-sync-info"):
-        android_l10n_sync_info = {}
-        for k, v in worker["android-l10n-sync-info"].items():
-            android_l10n_sync_info[k.replace("-", "_")] = worker[
-                "android-l10n-sync-info"
-            ][k]
-        android_l10n_sync_info["toml_info"] = [
-            {
-                param_name.replace("-", "_"): param_value
-                for param_name, param_value in entry.items()
-            }
-            for entry in worker["android-l10n-sync-info"]["toml-info"]
-        ]
-        task_def["payload"]["android_l10n_sync_info"] = android_l10n_sync_info
-        actions.append("android_l10n_sync")
+        if info := action.get("android-l10n-sync"):
+            android_l10n_sync_info = dash_to_underscore(info)
+            android_l10n_sync_info["toml_info"] = [
+                dash_to_underscore(ti) for ti in android_l10n_sync_info["toml_info"]
+            ]
+            task_def["payload"]["android_l10n_sync_info"] = android_l10n_sync_info
+            actions.append("android_l10n_sync")
 
-    if worker.get("l10n-bump-info"):
-        l10n_bump_info = []
-        l10n_repo_urls = set()
-        for lbi in worker["l10n-bump-info"]:
-            new_lbi = {}
-            if "l10n-repo-url" in lbi:
-                l10n_repo_urls.add(lbi["l10n-repo-url"])
-            for k, v in lbi.items():
-                new_lbi[k.replace("-", "_")] = v
-            l10n_bump_info.append(new_lbi)
-
-        task_def["payload"]["l10n_bump_info"] = l10n_bump_info
-        if len(l10n_repo_urls) > 1:
-            raise Exception(
-                "Must use the same l10n-repo-url for all files in the same task!"
-            )
-        elif len(l10n_repo_urls) == 1:
+        if info := action.get("l10n-bump"):
+            task_def["payload"]["l10n_bump_info"] = process_l10n_bump_info(info)
             actions.append("l10n_bump")
 
-    if worker.get("tags"):
-        tag_names = []
-        product = task["shipping-product"].upper()
-        version = release_config["version"].replace(".", "_")
-        buildnum = release_config["build_number"]
-        if "buildN" in worker["tags"]:
-            tag_names.extend([
-                f"{product}_{version}_BUILD{buildnum}",
-            ])
-        if "release" in worker["tags"]:
-            tag_names.extend([f"{product}_{version}_RELEASE"])
-        tag_info = {
-            "tags": tag_names,
-            "hg_repo_url": worker["hg-repo-url"],
-            "revision": config.params[
-                "{}head_rev".format(worker.get("repo-param-prefix", ""))
-            ],
-        }
-        task_def["payload"]["tag_info"] = tag_info
-        actions.append("tag")
-
-    if worker.get("bump-files"):
-        bump_info = {}
-        bump_info["next_version"] = release_config["next_version"]
-        bump_info["files"] = worker["bump-files"]
-        task_def["payload"]["version_bump_info"] = bump_info
-        actions.append("version_bump")
-
-    if worker.get("merge-info"):
-        merge_info = {
-            merge_param_name.replace("-", "_"): merge_param_value
-            for merge_param_name, merge_param_value in worker["merge-info"].items()
-            if merge_param_name != "version-files"
-        }
-        merge_info["version_files"] = [
-            {
-                file_param_name.replace("-", "_"): file_param_value
-                for file_param_name, file_param_value in file_entry.items()
+        if info := action.get("tag"):
+            tag_types = info["types"]
+            tag_names = []
+            product = task["shipping-product"].upper()
+            version = release_config["version"].replace(".", "_")
+            buildnum = release_config["build_number"]
+            if "buildN" in tag_types:
+                tag_names.extend([
+                    f"{product}_{version}_BUILD{buildnum}",
+                ])
+            if "release" in tag_types:
+                tag_names.extend([f"{product}_{version}_RELEASE"])
+            tag_info = {
+                "tags": tag_names,
+                "hg_repo_url": info["hg-repo-url"],
+                "revision": config.params[
+                    "{}head_rev".format(worker.get("repo-param-prefix", ""))
+                ],
             }
-            for file_entry in worker["merge-info"]["version-files"]
-        ]
-        # hack alert: co-opt the l10n_bump_info into the merge_info section
-        # this should be cleaned up to avoid l10n_bump_info ever existing
-        # in the payload
-        if task_def["payload"].get("l10n_bump_info"):
-            actions.remove("l10n_bump")
-            merge_info["l10n_bump_info"] = task_def["payload"].pop("l10n_bump_info")
+            task_def["payload"]["tag_info"] = tag_info
+            actions.append("tag")
 
-        task_def["payload"]["merge_info"] = merge_info
-        actions.append("merge_day")
+        if info := action.get("version-bump"):
+            bump_info = {}
+            bump_info["next_version"] = release_config["next_version"]
+            bump_info["files"] = info["bump-files"]
+            task_def["payload"]["version_bump_info"] = bump_info
+            actions.append("version_bump")
+
+        if info := action.get("esr-bump"):
+            merge_info = dash_to_underscore(info)
+            merge_info["version_files"] = [
+                dash_to_underscore(vf) for vf in info["version-files"]
+            ]
+            task_def["payload"]["merge_info"] = merge_info
+            actions.append("merge_day")
+
+        if info := action.get("main-bump"):
+            merge_info = dash_to_underscore(info)
+
+            merge_info["version_files"] = [
+                dash_to_underscore(vf) for vf in info["version-files"]
+            ]
+            task_def["payload"]["merge_info"] = merge_info
+            actions.append("merge_day")
+
+        if info := action.get("early-to-late-beta"):
+            task_def["payload"]["merge_info"] = dash_to_underscore(info)
+            actions.append("merge_day")
+
+        if info := action.get("uplift"):
+            merge_info = dash_to_underscore(info)
+            merge_info["merge_old_head"] = True
+
+            merge_info["version_files"] = [
+                dash_to_underscore(vf) for vf in info["version-files"]
+            ]
+            if lbi := info.get("l10n-bump-info"):
+                merge_info["l10n_bump_info"] = process_l10n_bump_info(lbi)
+
+            task_def["payload"]["merge_info"] = merge_info
+            actions.append("merge_day")
+
+        if info := action.get("merge-day"):
+            merge_info = dash_to_underscore(info)
+            if version_files := info.get("version-files"):
+                merge_info["version_files"] = [
+                    dash_to_underscore(vf) for vf in version_files
+                ]
+            task_def["payload"]["merge_info"] = merge_info
+            actions.append("merge_day")
 
     scopes = set(task_def.get("scopes", []))
     scopes.add(f"project:releng:lando:repo:{worker['lando-repo']}")
     scopes.update([f"project:releng:lando:action:{action}" for action in actions])
+
+    for matrix_room in worker.get("matrix-rooms", []):
+        task_def.setdefault("routes", [])
+        task_def["routes"].append(f"notify.matrix-room.{matrix_room}.on-pending")
+        task_def["routes"].append(f"notify.matrix-room.{matrix_room}.on-resolved")
+        scopes.add("queue:route:notify.matrix-room.*")
+
     task_def["scopes"] = sorted(scopes)
 
+
+def process_l10n_bump_info(info):
+    l10n_bump_info = []
+    l10n_repo_urls = set()
+    for lbi in info:
+        l10n_repo_urls.add(lbi["l10n-repo-url"])
+        l10n_bump_info.append(dash_to_underscore(lbi))
+
+    if len(l10n_repo_urls) > 1:
+        raise Exception(
+            "Must use the same l10n-repo-url for all files in the same task!"
+        )
+
+    return l10n_bump_info
+
+
+def dash_to_underscore(obj):
+    new_obj = {}
+    for k, v in obj.items():
+        new_obj[k.replace("-", "_")] = v
+    return new_obj
+
+
+# -- transforms --
 
 transforms = TransformSequence()
 
@@ -2267,11 +2399,7 @@ def set_task_and_artifact_expiry(config, jobs):
     now = datetime.datetime.utcnow()
     # We don't want any configuration leading to anything with an expiry longer
     # than 28 days on try.
-    cap = (
-        "28 days"
-        if is_try(config.params) and int(config.params["level"]) == 1
-        else None
-    )
+    cap = "28 days" if config.params["level"] == "1" else None
     cap_from_now = fromNow(cap, now) if cap else None
     for job in jobs:
         expires = get_expiration(config, job.get("expiration-policy", "default"))

@@ -12,10 +12,7 @@
 #include "jstypes.h"
 
 #include "js/HeapAPI.h"  // JS::GCCellPtr
-
-namespace JS {
-class CallbackTracer;
-}  // namespace JS
+#include "js/TraceKind.h"
 
 /*
  * Trace hook used to trace gray roots incrementally.
@@ -52,12 +49,10 @@ extern JS_PUBLIC_API void JS_SetObjectsTenuredCallback(
  * Used by the cycle collector to trace through a shape and all
  * cycle-participating data it reaches, using bounded stack space.
  */
-extern JS_PUBLIC_API void JS_TraceShapeCycleCollectorChildren(
-    JS::CallbackTracer* trc, JS::GCCellPtr shape);
+extern JS_PUBLIC_API void JS_TraceShapeCycleCollectorChildren(JSTracer* trc,
+                                                              js::Shape* shape);
 
 namespace JS {
-
-class CallbackTracer;
 
 using DoCycleCollectionCallback = void (*)(JSContext* cx);
 

@@ -5,8 +5,9 @@
 // @nova-cleanup(move-directory): Move to components/CustomizeMenu/WidgetsManagementPanel/ after Nova ships
 
 import React, { useEffect, useRef } from "react";
-import { batch, useDispatch } from "react-redux";
+import { batch, useDispatch, useSelector } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
+import { WIDGET_REGISTRY, resolveWidgetSize } from "common/WidgetsRegistry.mjs";
 // eslint-disable-next-line no-shadow
 import { CSSTransition } from "react-transition-group";
 
@@ -21,10 +22,9 @@ function WidgetsManagementPanel({
   mayHaveListsWidget,
   mayHaveSportsWidget,
   mayHaveClocksWidget,
-  mayHaveWeatherForecast,
-  weatherDisplay,
   setPref,
 }) {
+  const prefs = useSelector(state => state.Prefs.values);
   const arrowButtonRef = useRef(null);
   const panelRef = useRef(null);
   const dispatch = useDispatch();
@@ -65,7 +65,7 @@ function WidgetsManagementPanel({
           widgetName = "focus_timer";
           break;
         case "WIDGET_SPORTS":
-          widgetName = "sports_widget";
+          widgetName = "sports";
           break;
         case "WIDGET_CLOCKS":
           widgetName = "clocks";
@@ -73,20 +73,10 @@ function WidgetsManagementPanel({
       }
 
       if (widgetName) {
-        const { widgetsMaximized, widgetsMayBeMaximized } = enabledWidgets;
-
-        let widgetSize;
-        if (widgetName === "weather") {
-          if (mayHaveWeatherForecast && weatherDisplay === "detailed") {
-            widgetSize =
-              widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
-          } else {
-            widgetSize = "mini";
-          }
-        } else {
-          widgetSize =
-            widgetsMayBeMaximized && !widgetsMaximized ? "small" : "medium";
-        }
+        const widget = WIDGET_REGISTRY.find(
+          w => w.telemetryName === widgetName
+        );
+        const widgetSize = resolveWidgetSize(widget, prefs);
 
         dispatch(
           ac.OnlyToMain({
@@ -145,7 +135,7 @@ function WidgetsManagementPanel({
                   <moz-toggle
                     id="weather-toggle"
                     pressed={weatherEnabled || null}
-                    onToggle={onToggleWidget}
+                    ontoggle={onToggleWidget}
                     data-preference="widgets.weather.enabled"
                     data-event-source="WEATHER"
                     data-l10n-id="newtab-custom-widget-weather-toggle"
@@ -157,7 +147,7 @@ function WidgetsManagementPanel({
                   <moz-toggle
                     id="timer-toggle"
                     pressed={timerEnabled || null}
-                    onToggle={onToggleWidget}
+                    ontoggle={onToggleWidget}
                     data-preference="widgets.focusTimer.enabled"
                     data-event-source="WIDGET_TIMER"
                     data-l10n-id="newtab-custom-widget-timer-toggle"
@@ -169,7 +159,7 @@ function WidgetsManagementPanel({
                   <moz-toggle
                     id="lists-toggle"
                     pressed={listsEnabled || null}
-                    onToggle={onToggleWidget}
+                    ontoggle={onToggleWidget}
                     data-preference="widgets.lists.enabled"
                     data-event-source="WIDGET_LISTS"
                     data-l10n-id="newtab-custom-widget-lists-toggle"
@@ -178,27 +168,22 @@ function WidgetsManagementPanel({
               )}
               {mayHaveSportsWidget && (
                 <div id="sports-widget-section" className="section">
-                  {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
                   <moz-toggle
                     id="sports-widget-toggle"
                     pressed={sportsWidgetEnabled || null}
                     ontoggle={onToggleWidget}
-                    onToggle={onToggleWidget}
                     data-preference="widgets.sportsWidget.enabled"
                     data-event-source="WIDGET_SPORTS"
-                    //  TODO: add in widget title fluent string when product gets back to us*
-                    label="Sports"
+                    data-l10n-id="newtab-custom-widget-sports-toggle2"
                   />
                 </div>
               )}
               {mayHaveClocksWidget && (
                 <div id="clocks-widget-section" className="section">
-                  {/** @backward-compat { version 150 } React 16 (cached page) uses ontoggle; React 19 uses onToggle. Remove onToggle once Firefox 150 reaches Release. */}
                   <moz-toggle
                     id="clocks-toggle"
                     pressed={clocksEnabled || null}
                     ontoggle={onToggleWidget}
-                    onToggle={onToggleWidget}
                     data-preference="widgets.clocks.enabled"
                     data-event-source="WIDGET_CLOCKS"
                     data-l10n-id="newtab-custom-widget-clock-toggle"

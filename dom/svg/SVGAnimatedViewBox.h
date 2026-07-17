@@ -8,6 +8,8 @@
 #include <memory>
 
 #include "SVGAttrTearoffTable.h"
+#include "mozilla/NotNull.h"
+#include "mozilla/RefPtr.h"
 #include "mozilla/SMILAttr.h"
 #include "mozilla/dom/SVGAnimatedRect.h"
 #include "mozilla/gfx/Point.h"
@@ -127,9 +129,9 @@ class SVGAnimatedViewBox {
   already_AddRefed<dom::SVGAnimatedRect> ToSVGAnimatedRect(
       SVGElement* aSVGElement);
 
-  already_AddRefed<dom::SVGRect> ToDOMBaseVal(SVGElement* aSVGElement);
+  MovingNotNull<RefPtr<dom::SVGRect>> ToDOMBaseVal(SVGElement* aSVGElement);
 
-  already_AddRefed<dom::SVGRect> ToDOMAnimVal(SVGElement* aSVGElement);
+  MovingNotNull<RefPtr<dom::SVGRect>> ToDOMAnimVal(SVGElement* aSVGElement);
 
   std::unique_ptr<SMILAttr> ToSMILAttr(SVGElement* aSVGElement);
 

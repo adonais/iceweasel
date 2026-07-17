@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.test.runTest
 import kotlinx.coroutines.yield
 import mozilla.components.support.test.robolectric.testContext
+import mozilla.telemetry.glean.Glean
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -112,7 +113,22 @@ class InstallReferrerWorkerTest {
         assertEquals("CONTENT", PlayStoreAttribution.content.testGetValue())
         assertEquals("TERM", PlayStoreAttribution.term.testGetValue())
 
+        assertEquals("SOURCE", Glean.testGetAttribution().source)
+        assertEquals("MEDIUM", Glean.testGetAttribution().medium)
+        assertEquals("CAMPAIGN", Glean.testGetAttribution().campaign)
+        assertEquals("CONTENT", Glean.testGetAttribution().content)
+        assertEquals("TERM", Glean.testGetAttribution().term)
+
         assertFalse(observed.isEmpty())
+    }
+
+    @Test
+    fun `WHEN recording install referrer with no UTM params THEN Glean attribution is not updated`() {
+        val settings = Settings(context)
+        val params = UTMParams.parseUTMParameters("")
+        params.recordInstallReferrer(settings)
+
+        assertNull(Glean.testGetAttribution().source)
     }
 
     @Test

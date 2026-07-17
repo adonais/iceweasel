@@ -158,7 +158,7 @@ navigate.isLoadEventExpected = function (current, options = {}) {
  *
  * @param {CanonicalBrowsingContext} browsingContext
  *     Browsing context to load the URL into.
- * @param {string} url
+ * @param {URL} url
  *     URL to navigate to.
  */
 navigate.navigateTo = function (browsingContext, url) {
@@ -170,7 +170,8 @@ navigate.navigateTo = function (browsingContext, url) {
     schemelessInput: Ci.nsILoadInfo.SchemelessInputTypeSchemeful,
     triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
   };
-  browsingContext.fixupAndLoadURIString(url, opts);
+
+  browsingContext.fixupAndLoadURIString(url.href, opts);
 };
 
 /**

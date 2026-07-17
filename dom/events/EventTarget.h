@@ -299,6 +299,7 @@ class EventTarget : public nsISupports, public nsWrapperCache {
    * chain creation. This is used to handle things that must be executed before
    * dispatching the event to DOM.
    */
+  MOZ_CAN_RUN_SCRIPT
   virtual nsresult PreHandleEvent(EventChainVisitor& aVisitor) { return NS_OK; }
 
   /**

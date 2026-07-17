@@ -84,6 +84,7 @@ support-files = [
   "sjs_method-test-server.sjs",
   "sjs_no-response-server.sjs",
   "sjs_set-cookie-same-site.sjs",
+  "sjs_auth-test-server.sjs",
   "sjs_simple-test-server.sjs",
   "sjs_simple-unsorted-cookies-test-server.sjs",
   "sjs_slow-script-server.sjs",
@@ -106,7 +107,6 @@ support-files = [
   "xhr_original.js",
   "!/devtools/client/debugger/test/mochitest/shared-head.js",
   "!/devtools/client/shared/test/shared-head.js",
-  "!/devtools/client/shared/test/telemetry-test-helpers.js",
   "!/devtools/client/webconsole/test/browser/shared-head.js",
 ]
 
@@ -115,6 +115,8 @@ support-files = [
 ["browser_net_accessibility-02.js"]
 
 ["browser_net_api-calls.js"]
+
+["browser_net_auth-request.js"]
 
 ["browser_net_autoscroll.js"]
 

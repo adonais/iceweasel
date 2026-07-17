@@ -1052,6 +1052,18 @@ nsJSChannel::SetLoadInfo(nsILoadInfo* aLoadInfo) {
 }
 
 NS_IMETHODIMP
+nsJSChannel::GetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle** aValue) {
+  return mStreamChannel->GetParentProcessChannelHandle(aValue);
+}
+
+NS_IMETHODIMP
+nsJSChannel::SetParentProcessChannelHandle(
+    mozilla::dom::ParentProcessChannelHandle* aValue) {
+  return mStreamChannel->SetParentProcessChannelHandle(aValue);
+}
+
+NS_IMETHODIMP
 nsJSChannel::GetNotificationCallbacks(nsIInterfaceRequestor** aCallbacks) {
   return mStreamChannel->GetNotificationCallbacks(aCallbacks);
 }

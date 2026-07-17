@@ -916,6 +916,19 @@ actually emit from tabs, this is always true. For other triggers, like
 declare const browserIsSelected: boolean;
 ```
 
+### `hasActiveAIWindow`
+
+Whether any currently open window is an active Smart Window. Unlike
+`isAIWindow`, which only reflects the window that fired the trigger, this checks
+every window, so a message can be suppressed while a Smart Window is open
+anywhere.
+
+#### Definition
+
+```ts
+declare const hasActiveAIWindow: boolean;
+```
+
 ### `isAIWindow`
 
 A context property included for all triggers that evaluates to `true` when the
@@ -944,17 +957,6 @@ isAIWindow
 isAIWindow == isAIWindow
 or equivalently
 (isAIWindow || !isAIWindow)
-```
-
-### `isChinaRepack`
-
-Does the user use [the partner repack distributed by Mozilla Online](https://github.com/mozilla-partners/mozillaonline),
-a wholly owned subsidiary of the Mozilla Corporation that operates in China.
-
-#### Definition
-
-```ts
-declare const isChinaRepack: boolean;
 ```
 
 ### `userId`
@@ -1417,4 +1419,14 @@ The number of days since the most recent crash, as recorded in the [dump files c
 
 ```ts
 declare const daysSinceLastCrash: Promise<number|null>;
+```
+
+### `isLaunchOnLogin`
+
+`true` if this Firefox launch was initiated by the OS on login. Detected via the `-os-autostart` command-line flag, which is only injected by the Windows launch-on-login paths. This attribute is always `false` on macOS and Linux. It also will not detect cases where a user has manually added Firefox to OS-level login items outside of Firefox's own launch-on-login setting.
+
+#### Definition
+
+```ts
+declare const isLaunchOnLogin: boolean;
 ```

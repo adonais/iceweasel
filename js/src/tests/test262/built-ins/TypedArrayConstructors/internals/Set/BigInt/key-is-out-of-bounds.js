@@ -32,6 +32,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
   assert.sameValue(sample.hasOwnProperty('-1'), false, 'sample.hasOwnProperty("-1") must return false');
   assert.sameValue(sample.hasOwnProperty('1'), false, 'sample.hasOwnProperty("1") must return false');
   assert.sameValue(sample.hasOwnProperty('2'), false, 'sample.hasOwnProperty("2") must return false');
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

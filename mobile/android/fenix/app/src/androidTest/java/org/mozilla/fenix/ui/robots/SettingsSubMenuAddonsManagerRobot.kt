@@ -518,11 +518,14 @@ class SettingsSubMenuAddonsManagerRobot(private val composeTestRule: ComposeTest
     }
 
     private fun allowPermissionToInstall() {
+        // PermissionsDialogFragment disables the "Add" button for ~1s after the dialog is shown.
+        Log.i(TAG, "allowPermissionToInstall: Waiting for the \"Add\" button to be enabled")
+        val allowButton = mDevice.wait(
+            Until.findObject(By.res("$packageName:id/allow_button").enabled(true)),
+            waitingTime,
+        )
         Log.i(TAG, "allowPermissionToInstall: Trying to click the \"Add\" button")
-        itemWithResIdContainingText(
-            "$packageName:id/allow_button",
-            getStringResource(addonsR.string.mozac_feature_addons_permissions_dialog_add),
-        ).click()
+        allowButton.click()
         Log.i(TAG, "allowPermissionToInstall: Clicked the \"Add\" button")
     }
 

@@ -4,7 +4,7 @@
 
 #include "WidevineUtils.h"
 
-#include <inttypes.h>
+#include <stdint.h>
 
 #include "GMPLog.h"
 #include "gmp-api/gmp-errors.h"
@@ -12,12 +12,12 @@
 namespace mozilla {
 
 WidevineBuffer::WidevineBuffer(size_t aSize) {
-  GMP_LOG_DEBUG("WidevineBuffer(size=%zu) created", aSize);
+  GMP_LOG_DEBUG("WidevineBuffer(size={}) created", aSize);
   mBuffer.SetLength(aSize);
 }
 
 WidevineBuffer::~WidevineBuffer() {
-  GMP_LOG_DEBUG("WidevineBuffer(size=%" PRIu32 ") destroyed", Size());
+  GMP_LOG_DEBUG("WidevineBuffer(size={}) destroyed", Size());
 }
 
 void WidevineBuffer::Destroy() { delete this; }

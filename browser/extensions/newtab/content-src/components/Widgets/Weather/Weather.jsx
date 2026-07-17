@@ -5,8 +5,10 @@
 import React, { useCallback, useEffect, useRef } from "react";
 import { useSelector, batch } from "react-redux";
 import { actionCreators as ac, actionTypes as at } from "common/Actions.mjs";
-import { useIntersectionObserver } from "../../../lib/utils";
+import { PREF_WEATHER_SIZE } from "common/WidgetsRegistry.mjs";
+import { useIntersectionObserver, useSizeSubmenu } from "../../../lib/utils";
 import { LocationSearch } from "content-src/components/Weather/LocationSearch";
+import { MoveSubmenu } from "../MoveSubmenu";
 
 const USER_ACTION_TYPES = {
   CHANGE_LOCATION: "change_location",
@@ -18,15 +20,12 @@ const USER_ACTION_TYPES = {
   PROVIDER_LINK_CLICK: "provider_link_click",
 };
 
-const PREF_WEATHER_SIZE = "widgets.weather.size";
-
-function Weather({ dispatch, size }) {
+function Weather({ dispatch, size, widgetEnabledMap }) {
   const prefs = useSelector(state => state.Prefs.values);
   const weatherData = useSelector(state => state.Weather);
   const impressionFired = useRef(false);
   const errorTelemetrySent = useRef(false);
   const errorRef = useRef(null);
-  const sizeSubmenuRef = useRef(null);
   const currentWeatherSize = prefs[PREF_WEATHER_SIZE] || "medium";
   const trainhopWidgetsEnabled = prefs.trainhopConfig?.widgets?.enabled;
   const widgetsSystemEnabled =
@@ -65,20 +64,7 @@ function Weather({ dispatch, size }) {
     [dispatch]
   );
 
-  useEffect(() => {
-    const el = sizeSubmenuRef.current;
-    if (!el) {
-      return undefined;
-    }
-    const listener = e => {
-      const item = e.composedPath().find(node => node.dataset?.size);
-      if (item) {
-        handleChangeSize(item.dataset.size);
-      }
-    };
-    el.addEventListener("click", listener);
-    return () => el.removeEventListener("click", listener);
-  }, [handleChangeSize]);
+  const sizeSubmenuRef = useSizeSubmenu(handleChangeSize);
 
   const handleIntersection = useCallback(() => {
     if (impressionFired.current) {
@@ -412,6 +398,7 @@ function Weather({ dispatch, size }) {
               </panel-list>
             </panel-item>
           )}
+          <MoveSubmenu widgetId="weather" widgetEnabledMap={widgetEnabledMap} />
           <panel-item
             data-l10n-id="newtab-widget-menu-hide"
             onClick={handleHideWeather}
@@ -430,7 +417,9 @@ function Weather({ dispatch, size }) {
       "weather-widget",
       "col-4",
       `${size}-widget`,
-      hasError && "weather-error-state",
+      // weather-error-state is suppressed during opt-in so the error UI does
+      // not overlap or push the opt-in layout out of its container.
+      hasError && !showOptInState && "weather-error-state",
       // weather-opt-in is suppressed while search is active so the opt-in
       // layout styles don't conflict with the search UI layout.
       showOptInState && !searchActive && "weather-opt-in",
@@ -468,7 +457,7 @@ function Weather({ dispatch, size }) {
         </div>
         {!searchActive && renderContextMenu()}
       </div>
-      {hasError && (
+      {hasError && !showOptInState && (
         <div className="weather-error" ref={errorRef}>
           <span className="icon icon-info-warning" />{" "}
           <p data-l10n-id="newtab-weather-error-not-available"></p>

@@ -15,12 +15,12 @@ namespace mozilla {
 class ScriptableContentIterator final : public nsIScriptableContentIterator {
  public:
   ScriptableContentIterator();
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
   NS_DECL_CYCLE_COLLECTION_CLASS(ScriptableContentIterator)
   NS_DECL_NSISCRIPTABLECONTENTITERATOR
 
  protected:
-  virtual ~ScriptableContentIterator() = default;
+  ~ScriptableContentIterator() = default;
   void EnsureContentIterator();
 
   IteratorType mIteratorType;

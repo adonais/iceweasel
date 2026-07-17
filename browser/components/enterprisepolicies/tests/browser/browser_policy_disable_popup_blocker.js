@@ -105,35 +105,6 @@ add_task(async function test_block() {
   restore_prefs();
 });
 
-add_task(async function test_block_locked() {
-  await setupPolicyEngineWithJson({
-    policies: {
-      PopupBlocking: {
-        Default: true,
-        Locked: true,
-      },
-    },
-  });
-
-  await test_popup_blocker_disabled({ disabled: false, locked: true });
-
-  restore_prefs();
-});
-
-add_task(async function test_locked() {
-  await setupPolicyEngineWithJson({
-    policies: {
-      PopupBlocking: {
-        Locked: true,
-      },
-    },
-  });
-
-  await test_popup_blocker_disabled({ disabled: false, locked: true });
-
-  restore_prefs();
-});
-
 add_task(async function test_disabled() {
   await setupPolicyEngineWithJson({
     policies: {
@@ -144,21 +115,6 @@ add_task(async function test_disabled() {
   });
 
   await test_popup_blocker_disabled({ disabled: true, locked: false });
-
-  restore_prefs();
-});
-
-add_task(async function test_disabled_locked() {
-  await setupPolicyEngineWithJson({
-    policies: {
-      PopupBlocking: {
-        Default: false,
-        Locked: true,
-      },
-    },
-  });
-
-  await test_popup_blocker_disabled({ disabled: true, locked: true });
 
   restore_prefs();
 });

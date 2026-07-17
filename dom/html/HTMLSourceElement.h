@@ -17,7 +17,7 @@ class MediaSource;
 class HTMLSourceElement final : public nsGenericHTMLElement {
  public:
   explicit HTMLSourceElement(
-      already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+      already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   // nsISupports
   NS_DECL_ISUPPORTS_INHERITED

@@ -26,7 +26,7 @@ nsresult nsPrintSettingsServiceAndroid::_CreatePrintSettings(
 
 already_AddRefed<nsIPrintSettings> CreatePlatformPrintSettings(
     const mozilla::PrintSettingsInitializer& aSettings) {
-  RefPtr<nsPrintSettings> settings = new nsPrintSettingsAndroid();
+  auto settings = mozilla::MakeRefPtr<nsPrintSettingsAndroid>();
   settings->InitWithInitializer(aSettings);
   return settings.forget();
 }

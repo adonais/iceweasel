@@ -16,17 +16,20 @@ import mozilla.components.service.fxa.store.SyncStore
 import mozilla.components.support.base.log.logger.Logger
 import org.mozilla.fenix.Config
 import org.mozilla.fenix.R
+import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.LogMiddleware
 import org.mozilla.fenix.utils.Settings
 
 /**
  * Provides access to IP Protection related components.
  */
+@Suppress("LongParameterList")
 class IPProtection(
     val engine: Engine,
     val browserStore: BrowserStore,
     val syncStore: SyncStore,
     val lazyFxaAccountManager: Lazy<FxaAccountManager>,
+    val lazyAppStore: Lazy<AppStore>,
     val settings: Settings,
     val context: Context,
 ) {
@@ -38,6 +41,11 @@ class IPProtection(
                     // tag has a max line-length; the rest of the default was unhelpful.
                     logger = Logger("IPPStore"),
                 ),
+                IPProtectionSnackbarMiddleware(
+                    lazyAppStore = lazyAppStore,
+                    messages = snackbarMessages,
+                ),
+                IPProtectionTelemetryMiddleware(),
             ),
         )
     }
@@ -65,6 +73,14 @@ class IPProtection(
             store = store,
             syncStore = syncStore,
             lazyAccountManager = lazyFxaAccountManager,
+        )
+    }
+
+    private val snackbarMessages by lazy {
+        IPProtectionSnackbarMessages(
+            connectionError = context.getString(
+                R.string.ip_protection_connection_error_snackbar,
+            ),
         )
     }
 }

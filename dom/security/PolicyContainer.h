@@ -8,6 +8,7 @@
 #include "nsCOMPtr.h"
 #include "nsIContentSecurityPolicy.h"
 #include "nsIIntegrityPolicy.h"
+#include "nsILoadInfo.h"
 #include "nsIPolicyContainer.h"
 
 namespace mozilla::ipc {
@@ -77,10 +78,19 @@ class PolicyContainer : public nsIPolicyContainer {
   static mozilla::dom::IntegrityPolicyWAICT* GetIntegrityPolicyWAICT(
       const nsIPolicyContainer* aPolicyContainer);
 
+  // == IP Address Space ==
+  // Stored per
+  // https://wicg.github.io/local-network-access/#integration-with-html to allow
+  // worker contexts (which have no browsing context) to perform Local Network
+  // Access checks against their parent document's address space.
+  nsILoadInfo::IPAddressSpace GetIPAddressSpace() const;
+  void SetIPAddressSpace(nsILoadInfo::IPAddressSpace aIPAddressSpace);
+
  private:
   nsCOMPtr<nsIContentSecurityPolicy> mCSP;
   nsCOMPtr<nsIIntegrityPolicy> mIntegrityPolicy;
   RefPtr<mozilla::dom::IntegrityPolicyWAICT> mIntegrityPolicyWAICT;
+  nsILoadInfo::IPAddressSpace mIPAddressSpace = nsILoadInfo::Unknown;
 
  protected:
   virtual ~PolicyContainer();

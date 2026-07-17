@@ -41,7 +41,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
     return 0;
   });
   assert.sameValue(loop, 4, "accessor descriptor");
-}, null, ["passthrough"]);
-
+});
 
 reportCompare(0, 0);

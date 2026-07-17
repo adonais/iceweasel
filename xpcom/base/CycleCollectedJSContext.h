@@ -432,9 +432,9 @@ class CycleCollectedJSContext : dom::PerThreadAtomCache, public JS::JobQueue {
   uint32_t RecursionDepth() const;
 
   // Run in stable state (call through nsContentUtils)
-  void RunInStableState(already_AddRefed<nsIRunnable>&& aRunnable);
+  void RunInStableState(already_AddRefed<nsIRunnable> aRunnable);
 
-  void AddPendingIDBTransaction(already_AddRefed<nsIRunnable>&& aTransaction);
+  void AddPendingIDBTransaction(already_AddRefed<nsIRunnable> aTransaction);
 
   // Get the CycleCollectedJSContext for a JSContext.
   // Returns null only if Initialize() has not completed on or during

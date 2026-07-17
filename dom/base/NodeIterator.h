@@ -20,7 +20,7 @@ namespace mozilla::dom {
 
 class NodeIterator final : public nsStubMutationObserver, public nsTraversal {
  public:
-  NS_DECL_CYCLE_COLLECTING_ISUPPORTS
+  NS_DECL_CYCLE_COLLECTING_ISUPPORTS_FINAL
 
   NodeIterator(nsINode* aRoot, uint32_t aWhatToShow, NodeFilter* aFilter);
 
@@ -46,7 +46,7 @@ class NodeIterator final : public nsStubMutationObserver, public nsTraversal {
                   JS::MutableHandle<JSObject*> aReflector);
 
  private:
-  virtual ~NodeIterator();
+  ~NodeIterator();
 
   struct NodePointer {
     NodePointer() : mNode(nullptr), mBeforeNode(false) {}

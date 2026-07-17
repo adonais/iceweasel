@@ -165,7 +165,7 @@ nsMacSharingService::OpenSharingPreferences() {
                   withAppBundleIdentifier:nil
                                   options:NSWorkspaceLaunchAsync
            additionalEventParamDescriptor:descriptor
-                        launchIdentifiers:NULL];
+                        launchIdentifiers:nullptr];
 
   [descriptor release];
 

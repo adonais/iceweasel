@@ -23,8 +23,6 @@ interface HTMLAreaElement : HTMLElement {
            [CEReactions, SetterThrows]
            attribute DOMString shape;
            [CEReactions, SetterThrows]
-           attribute DOMString target;
-           [CEReactions, SetterThrows]
            attribute DOMString download;
            [CEReactions, SetterThrows]
            attribute USVString ping;

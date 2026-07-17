@@ -146,7 +146,7 @@ private fun TabContent(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(TabContentCardShape)
+                .clip(tabContentCardShape)
                 .tabItemClickable(
                     clickHandler = clickHandler,
                     clickedItem = tab,
@@ -154,7 +154,7 @@ private fun TabContent(
                 .semantics {
                     selected = selectionState.isFocused
                 },
-            shape = TabContentCardShape,
+            shape = tabContentCardShape,
             border = tabItemConditionalBorder(selectionState),
             colors = CardDefaults.cardColors(
                 containerColor = tabGridItemContainerColor(selectionState),
@@ -176,7 +176,7 @@ private fun TabContent(
                             end = FirefoxTheme.layout.space.static50,
                             bottom = FirefoxTheme.layout.space.static50,
                         ),
-                    shape = ThumbnailShape,
+                    shape = thumbnailShape,
                 ) {
                     Thumbnail(
                         tab = tab,
@@ -321,7 +321,7 @@ private fun Thumbnail(
                 testTag = TabsTrayTestTag.TAB_ITEM_THUMBNAIL
             }
             .fillMaxSize(),
-        shape = ThumbnailShape,
+        shape = thumbnailShape,
     )
 }
 

@@ -1595,6 +1595,37 @@ export class _ASRouter {
     ];
   }
 
+  /**
+   * Whether a special message action is allowed to fire automatically from an
+   * "action_only" template message (no UI). MULTI_ACTION is allowed only when
+   * every nested action is itself allowlisted and the list is non-empty.
+   *
+   * @param {object} action - The special message action to validate.
+   * @returns {boolean}
+   */
+  _isAllowedActionOnlyMessageAction(action) {
+    const ALLOWED_ACTION_MESSAGE_ACTIONS = [
+      "CONFIRM_LAUNCH_ON_LOGIN",
+      // This pinning action is ONLY to be used in cases where an OS level
+      // prompt will ask a user's consent to pin.
+      "PIN_FIREFOX_TO_TASKBAR",
+    ];
+    if (!action) {
+      return false;
+    }
+    if (action.type === "MULTI_ACTION") {
+      const actions = action.data?.actions;
+      return (
+        Array.isArray(actions) &&
+        !!actions.length &&
+        actions.every(nested =>
+          ALLOWED_ACTION_MESSAGE_ACTIONS.includes(nested?.type)
+        )
+      );
+    }
+    return ALLOWED_ACTION_MESSAGE_ACTIONS.includes(action.type);
+  }
+
   routeCFRMessage(message, browser, trigger, force = false) {
     if (!message) {
       return { message: {} };
@@ -1603,35 +1634,51 @@ export class _ASRouter {
     switch (message.template) {
       case "cfr_doorhanger":
       case "milestone_message":
-        if (force) {
-          CFRPageActions.forceRecommendation(
-            browser,
-            message,
-            this.dispatchCFRAction
-          );
-        } else {
-          CFRPageActions.addRecommendation(
-            browser,
-            trigger.param && trigger.param.host,
-            message,
-            this.dispatchCFRAction
-          );
+        // @TODO Bug 2041980: Remove CFRPageActions entirely. For now these are
+        // just disabled outside of automated tests.
+        if (
+          Cu.isInAutomation ||
+          Services.env.exists("XPCSHELL_TEST_PROFILE_DIR") ||
+          Services.env.get("MOZ_AUTOMATION")
+        ) {
+          if (force) {
+            CFRPageActions.forceRecommendation(
+              browser,
+              message,
+              this.dispatchCFRAction
+            );
+          } else {
+            CFRPageActions.addRecommendation(
+              browser,
+              trigger.param && trigger.param.host,
+              message,
+              this.dispatchCFRAction
+            );
+          }
         }
         break;
       case "cfr_urlbar_chiclet":
-        if (force) {
-          CFRPageActions.forceRecommendation(
-            browser,
-            message,
-            this.dispatchCFRAction
-          );
-        } else {
-          CFRPageActions.addRecommendation(
-            browser,
-            null,
-            message,
-            this.dispatchCFRAction
-          );
+        // @TODO Bug 2041980: Remove CFRPageActions entirely. For now these are
+        // just disabled outside of automated tests.
+        if (
+          Cu.isInAutomation ||
+          Services.env.exists("XPCSHELL_TEST_PROFILE_DIR") ||
+          Services.env.get("MOZ_AUTOMATION")
+        ) {
+          if (force) {
+            CFRPageActions.forceRecommendation(
+              browser,
+              message,
+              this.dispatchCFRAction
+            );
+          } else {
+            CFRPageActions.addRecommendation(
+              browser,
+              null,
+              message,
+              this.dispatchCFRAction
+            );
+          }
         }
         break;
       case "toolbar_badge":
@@ -1642,6 +1689,29 @@ export class _ASRouter {
       case "update_action":
         lazy.MomentsPageHub.executeAction(message);
         break;
+      case "action_only": {
+        const { action } = message.content ?? {};
+        if (!this._isAllowedActionOnlyMessageAction(action)) {
+          break;
+        }
+        // Record the impression before the async action resolves so it's
+        // captured even if the action fails. We intentionally do not block the
+        // message. Whether it can run again is governed by its frequency caps.
+
+        // Send impression telemetry
+        this.dispatchCFRAction({
+          type: "ACTION_ONLY_TELEMETRY",
+          data: {
+            action: "action_only_user_event",
+            message_id: message.id,
+            event: "IMPRESSION",
+          },
+        });
+        // Add local impression record, used for enforcing frequency caps.
+        this.dispatchCFRAction({ type: "IMPRESSION", data: message });
+        lazy.SpecialMessageActions.handleAction(action, browser);
+        break;
+      }
       case "infobar":
         lazy.InfoBar.showInfoBarMessage(
           browser,
@@ -2423,15 +2493,6 @@ export class _ASRouter {
       template: "pb_newtab",
     });
     Glean.messagingSystem.messageRequestTime.stopAndAccumulate(timerId);
-
-    // Format urls if any are defined
-    ["infoLinkUrl"].forEach(key => {
-      if (message?.content?.[key]) {
-        message.content[key] = Services.urlFormatter.formatURL(
-          message.content[key]
-        );
-      }
-    });
 
     return { message };
   }

@@ -11,6 +11,8 @@
 
 [Exposed=Window]
 interface SVGAnimatedRect {
-  readonly attribute SVGRect? baseVal;
-  readonly attribute SVGRect? animVal;
+  [Constant]
+  readonly attribute SVGRect baseVal;
+  [Constant]
+  readonly attribute SVGRect animVal;
 };

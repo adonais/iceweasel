@@ -220,6 +220,12 @@ support-files = [
   "bug1718709_high_res.mp4",
   "whitenoise-he-aac-5s.mp4",
   "../../test/hevc_white_frame.mp4",
+  "bug2039853_hevc_init.mp4",
+  "bug2039853_hevc_chunk0.m4s",
+  "bug2039853_hevc_chunk1.m4s",
+  "bug2039853_hevc_chunk2.m4s",
+  "bug2039853_hevc_chunk3.m4s",
+  "bug2039853_hevc_chunk4.m4s",
 ]
 
 ["test_AVC3_mp4.html"]
@@ -279,6 +285,14 @@ skip-if = [
 ["test_MediaSource_hevc_mp4.html"]
 run-if = [
   "mda_gpu",
+]
+
+["test_MediaSource_hevc_spsless.html"]
+run-if = [
+  "mda_gpu",
+]
+skip-if = [
+  "os == 'mac' && os_version == '10.15'", # HEVC decode unsupported, Bug 1942396
 ]
 
 ["test_MediaSource_memory_reporting.html"]

@@ -35,7 +35,8 @@ static inline void GetAuthKey(const nsACString& scheme, const nsACString& host,
 //-----------------------------------------------------------------------------
 // nsHttpAuthCache <public>
 //-----------------------------------------------------------------------------
-NS_IMPL_ISUPPORTS(nsHttpAuthCache, nsIHttpAuthCache)
+NS_IMPL_ISUPPORTS(nsHttpAuthCache, nsIHttpAuthCache, nsIObserver,
+                  nsISupportsWeakReference)
 
 NS_IMETHODIMP
 nsHttpAuthCache::GetEntries(nsTArray<RefPtr<nsIHttpAuthEntry>>& aEntries) {
@@ -72,21 +73,24 @@ nsHttpAuthCache::ClearEntry(nsIHttpAuthEntry* aEntry) {
 
 nsHttpAuthCache::nsHttpAuthCache() : mDB(128) {
   LOG(("nsHttpAuthCache::nsHttpAuthCache %p", this));
+}
 
+// Observer registration must happen after construction: weak registration QIs
+// |this| for nsISupportsWeakReference, and the transient AddRef/Release would
+// destroy the object mid-construction (before its owning RefPtr exists).
+void nsHttpAuthCache::Init() {
   nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
   if (obsSvc) {
-    obsSvc->AddObserver(this, "clear-origin-attributes-data", true);
+    MOZ_ALWAYS_SUCCEEDS(
+        obsSvc->AddObserver(this, "clear-origin-attributes-data", true));
   }
 }
 
 nsHttpAuthCache::~nsHttpAuthCache() {
   LOG(("nsHttpAuthCache::~nsHttpAuthCache %p", this));
 
+  // Weak reference: auto-nulls on destruction, so no RemoveObserver needed.
   ClearAll();
-  nsCOMPtr<nsIObserverService> obsSvc = services::GetObserverService();
-  if (obsSvc) {
-    obsSvc->RemoveObserver(this, "clear-origin-attributes-data");
-  }
 }
 
 nsresult nsHttpAuthCache::GetAuthEntryForPath(const nsACString& scheme,

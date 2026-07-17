@@ -70,11 +70,11 @@ void ImageTrack::OnFrameCountSuccess(
 
 void ImageTrack::OnDecodeFramesSuccess(
     const image::DecodeFramesResult& aResult) {
-  MOZ_LOG(gWebCodecsLog, LogLevel::Debug,
-          ("ImageTrack %p OnDecodeFramesSuccess -- decoded %zu frames "
-           "(finished %d), already had %zu frames (finished %d)",
-           this, aResult.mFrames.Length(), aResult.mFinished,
-           mDecodedFrames.Length(), mDecodedFramesComplete));
+  MOZ_LOG_FMT(gWebCodecsLog, LogLevel::Debug,
+              "ImageTrack {} OnDecodeFramesSuccess -- decoded {} frames "
+              "(finished {}), already had {} frames (finished {})",
+              fmt::ptr(this), aResult.mFrames.Length(), aResult.mFinished,
+              mDecodedFrames.Length(), mDecodedFramesComplete);
 
   mDecodedFramesComplete = aResult.mFinished;
   mDecodedFrames.SetCapacity(mDecodedFrames.Length() +

@@ -350,7 +350,7 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
   }
 
   iterator BeginWriting(const fallible_t&) {
-    return EnsureMutable() ? base_string_type::mData : iterator(0);
+    return EnsureMutable() ? base_string_type::mData : iterator(nullptr);
   }
 
   iterator EndWriting() {
@@ -364,7 +364,7 @@ class nsTSubstring : public mozilla::detail::nsTStringRepr<T> {
   iterator EndWriting(const fallible_t&) {
     return EnsureMutable()
                ? (base_string_type::mData + base_string_type::mLength)
-               : iterator(0);
+               : iterator(nullptr);
   }
 
   /**

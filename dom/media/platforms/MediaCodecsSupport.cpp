@@ -23,8 +23,9 @@ namespace mozilla::media {
 static StaticAutoPtr<MCSInfo> sInstance;
 static StaticMutex sMutex;
 
-#define CODEC_SUPPORT_LOG(msg, ...) \
-  MOZ_LOG(sPDMLog, LogLevel::Debug, ("MediaCodecsSupport, " msg, ##__VA_ARGS__))
+#define CODEC_SUPPORT_LOG(msg, ...)                                 \
+  MOZ_LOG_FMT(sPDMLog, LogLevel::Debug, "MediaCodecsSupport, " msg, \
+              ##__VA_ARGS__)
 
 /* static */
 MediaCodecsSupported MCSInfo::GetSupportFromFactory(
@@ -166,7 +167,7 @@ void MCSInfo::GetMediaCodecsSupportedString(
       break;
     }
     if (!instance->mHashTableCodec->Get(it.codec, &supportInfo)) {
-      CODEC_SUPPORT_LOG("Can't find codec for MediaCodecsSupported enum: %d",
+      CODEC_SUPPORT_LOG("Can't find codec for MediaCodecsSupported enum: {}",
                         static_cast<int>(it.codec));
       continue;
     }
@@ -245,7 +246,7 @@ CodecDefinition MCSInfo::GetCodecDefinition(const MediaCodec& aCodec) {
   if (!instance) {
     CODEC_SUPPORT_LOG("Can't get codec definition without a MCSInfo instance!");
   } else if (!instance->mHashTableCodec->Get(aCodec, &info)) {
-    CODEC_SUPPORT_LOG("Could not find codec definition for codec enum: %d!",
+    CODEC_SUPPORT_LOG("Could not find codec definition for codec enum: {}!",
                       static_cast<int>(aCodec));
   }
   return info;
@@ -338,7 +339,7 @@ MediaCodec MCSInfo::GetMediaCodecFromMimeType(const nsACString& aMimeType) {
     return MediaCodec::MP3;
   }
 
-  CODEC_SUPPORT_LOG("No specific codec enum for MIME type string: %s",
+  CODEC_SUPPORT_LOG("No specific codec enum for MIME type string: {}",
                     nsCString(aMimeType).get());
   return MediaCodec::SENTINEL;
 }

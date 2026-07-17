@@ -13,7 +13,7 @@
 #define XSIMD_CONFIG_HPP
 
 #define XSIMD_VERSION_MAJOR 14
-#define XSIMD_VERSION_MINOR 1
+#define XSIMD_VERSION_MINOR 2
 #define XSIMD_VERSION_PATCH 0
 
 #if defined(__GNUC__) && defined(__BYTE_ORDER__)
@@ -25,6 +25,19 @@
 #define XSIMD_LITTLE_ENDIAN
 #elif defined(i386) || defined(i486) || defined(intel) || defined(x86) || defined(i86pc) || defined(__alpha) || defined(__osf__)
 #define XSIMD_LITTLE_ENDIAN
+#endif
+
+/**
+ * @ingroup xsimd_config_macro
+ *
+ * Normalized C++ version number, equivalent to __cplusplus but also works with
+ * MSVC which requires /Zc:__cplusplus to set it correctly (otherwise it's always
+ * 199711L). Use this instead of __cplusplus throughout the codebase.
+ */
+#if defined(_MSC_VER) && !defined(__clang__)
+#define XSIMD_CPP_VERSION _MSVC_LANG
+#else
+#define XSIMD_CPP_VERSION __cplusplus
 #endif
 
 /**
@@ -297,6 +310,17 @@
 /**
  * @ingroup xsimd_config_macro
  *
+ * Set to 1 if AVX512VL is available at compile-time, to 0 otherwise.
+ */
+#ifdef __AVX512VL__
+#define XSIMD_WITH_AVX512VL XSIMD_WITH_AVX512CD
+#else
+#define XSIMD_WITH_AVX512VL 0
+#endif
+
+/**
+ * @ingroup xsimd_config_macro
+ *
  * Set to 1 if AVX512DQ is available at compile-time, to 0 otherwise.
  */
 #ifdef __AVX512DQ__
@@ -521,6 +545,29 @@
 #define XSIMD_WITH_VSX 0
 #endif
 
+/**
+ * @ingroup xsimd_config_macro
+ *
+ * Set to 1 if the target is in the IBM Z architecture family, to 0 otherwise
+ */
+#if defined(__s390x__)
+#define XSIMD_TARGET_S390X 1
+#else
+#define XSIMD_TARGET_S390X 0
+#endif
+
+/**
++ * @ingroup xsimd_config_macro
++ *
++ * Set to 1 if s390x VXE is available at compile-time, to 0 otherwise.
++ * Float vectors have been introduced with VXE included with IBM z14.
++ */
+#if defined(__VEC__) && __VEC__ >= 10304 && __ARCH__ >= 12
+#define XSIMD_WITH_VXE 1
+#else
+#define XSIMD_WITH_VXE 0
+#endif
+
 // Workaround for MSVC compiler
 #ifdef _MSC_VER
 
@@ -579,7 +626,7 @@
 
 #endif
 
-#if !XSIMD_WITH_SSE2 && !XSIMD_WITH_SSE3 && !XSIMD_WITH_SSSE3 && !XSIMD_WITH_SSE4_1 && !XSIMD_WITH_SSE4_2 && !XSIMD_WITH_AVX && !XSIMD_WITH_AVX2 && !XSIMD_WITH_AVXVNNI && !XSIMD_WITH_FMA3_SSE && !XSIMD_WITH_FMA4 && !XSIMD_WITH_FMA3_AVX && !XSIMD_WITH_FMA3_AVX2 && !XSIMD_WITH_AVX512F && !XSIMD_WITH_AVX512CD && !XSIMD_WITH_AVX512DQ && !XSIMD_WITH_AVX512BW && !XSIMD_WITH_AVX512ER && !XSIMD_WITH_AVX512PF && !XSIMD_WITH_AVX512IFMA && !XSIMD_WITH_AVX512VBMI && !XSIMD_WITH_AVX512VBMI2 && !XSIMD_WITH_NEON && !XSIMD_WITH_NEON64 && !XSIMD_WITH_SVE && !XSIMD_WITH_RVV && !XSIMD_WITH_WASM && !XSIMD_WITH_VSX && !XSIMD_WITH_EMULATED
+#if !XSIMD_WITH_SSE2 && !XSIMD_WITH_SSE3 && !XSIMD_WITH_SSSE3 && !XSIMD_WITH_SSE4_1 && !XSIMD_WITH_SSE4_2 && !XSIMD_WITH_AVX && !XSIMD_WITH_AVX2 && !XSIMD_WITH_AVXVNNI && !XSIMD_WITH_FMA3_SSE && !XSIMD_WITH_FMA4 && !XSIMD_WITH_FMA3_AVX && !XSIMD_WITH_FMA3_AVX2 && !XSIMD_WITH_AVX512F && !XSIMD_WITH_AVX512CD && !XSIMD_WITH_AVX512VL && !XSIMD_WITH_AVX512DQ && !XSIMD_WITH_AVX512BW && !XSIMD_WITH_AVX512ER && !XSIMD_WITH_AVX512PF && !XSIMD_WITH_AVX512IFMA && !XSIMD_WITH_AVX512VBMI && !XSIMD_WITH_AVX512VBMI2 && !XSIMD_WITH_NEON && !XSIMD_WITH_NEON64 && !XSIMD_WITH_SVE && !XSIMD_WITH_RVV && !XSIMD_WITH_WASM && !XSIMD_WITH_VSX && !XSIMD_WITH_EMULATED && !XSIMD_WITH_VXE
 #define XSIMD_NO_SUPPORTED_ARCHITECTURE
 #endif
 

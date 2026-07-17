@@ -31,6 +31,123 @@ newtab-card-dismiss-button =
     .title = 閉じる
     .aria-label = 閉じる
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-title =
+    .label = ホームページ
+home-homepage-new-windows =
+    .label = 新規ウインドウ
+home-homepage-new-tabs =
+    .label = 新規タブ
+# This option leads to the "Custom Homepage" subpage
+home-homepage-custom-homepage-button =
+    .label = 特定のサイトを選択
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = ウェブサイトのアドレス
+home-custom-homepage-address =
+    .placeholder = アドレスを入力してください
+home-custom-homepage-address-button =
+    .label = アドレスを追加
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-results =
+    .label = ウェブサイトがまだ追加されていません。
+home-custom-homepage-delete-address-button =
+    .aria-label = アドレスを削除
+    .title = アドレスを削除します
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with-prompt =
+    .label = 置き換え:
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-current-pages-button =
+    .label = 現在開いているページ
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-bookmarks-button =
+    .label = ブックマーク...
+
+## Firefox Home content
+
+home-prefs-content-header =
+    .label = { -firefox-home-brand-name }
+home-prefs-search-header2 =
+    .label = 検索
+home-prefs-stories-header2 =
+    .label = ストーリー
+    .description = { -brand-product-name } ファミリーに選ばれた優良コンテンツ
+home-prefs-widgets-header =
+    .label = ウィジェット
+# Lists is a widget on New Tab, similar to a to-do widget
+home-prefs-lists-header =
+    .label = ToDo リスト
+# Timer is a widget on New Tab, similar to the Pomodoro timer.
+home-prefs-timer-header =
+    .label = タイマー
+# Sports is a widget on New Tab showing sports scores and schedules.
+home-prefs-sports-widget-header =
+    .label = スポーツ
+# Clock is a widget on New Tab that displays time zones around the world.
+home-prefs-clocks-header =
+    .label = 時計
+home-prefs-mission-message2 =
+    .message = スポンサーは、より良いウェブを構築するという私たちの使命を支援しています。
+home-prefs-manage-topics-link2 =
+    .label = トピックを管理
+home-prefs-choose-wallpaper-link2 =
+    .label = 壁紙を選択
+home-prefs-firefox-logo-header =
+    .label = { -brand-short-name } ロゴ
+# Informational message bar that appears in the Firefox Home section when the options are disabled.
+# The user must select Firefox Home as their homepage for either new tabs or new windows to enable
+# the features in settings.
+home-prefs-firefox-home-disabled-notice =
+    .message = これらの機能を使用するには、新規タブまたは新規ウインドウを { -firefox-home-brand-name } に設定してください。
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label = { $num } 行
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = 拡張機能 ({ $extension })
+home-restore-defaults-srd =
+    .label = デフォルトに戻す
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (デフォルト)
+home-mode-choice-custom-srd =
+    .label = カスタム URL...
+home-mode-choice-blank-srd =
+    .label = 空白ページ
+home-prefs-shortcuts-header-srd =
+    .label = ショートカット
+home-prefs-shortcuts-select =
+    .aria-label = ショートカット
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = 広告ショートカット
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = 広告記事
+home-prefs-highlights-option-visited-pages-srd =
+    .label = 訪れたページ
+home-prefs-highlights-options-bookmarks-srd =
+    .label = ブックマーク
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = 最近のダウンロード
+home-prefs-recent-activity-header-srd =
+    .label = 最近のアクティビティ
+home-prefs-recent-activity-select =
+    .aria-label = 最近のアクティビティ
+home-prefs-weather-header-srd =
+    .label = 天気予報
+home-prefs-support-firefox-header-srd =
+    .label = { -brand-product-name } を支援
+home-prefs-mission-message-learn-more-link-srd = 支援の詳細情報
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -151,6 +268,8 @@ newtab-menu-section-block = ブロック
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow-topic = フォローを解除
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = 詳細情報
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = トピックのフォローを解除
@@ -359,6 +478,10 @@ newtab-custom-widget-timer-toggle =
     .label = タイマー
 newtab-custom-widget-sports-toggle =
     .label = ワールドカップ
+newtab-custom-widget-clock-toggle =
+    .label = 時計
+newtab-custom-widget-sports-toggle2 =
+    .label = スポーツ
 newtab-custom-widget-section-title = ウィジェット
 newtab-custom-widget-section-toggle =
     .label = ウィジェット
@@ -744,8 +867,6 @@ newtab-widget-lists-button-add-item = アイテムを追加
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = アイテムを追加します
     .aria-label = アイテムを追加
-newtab-widget-lists-input-add-an-item =
-    .placeholder = アイテムを追加します
 newtab-widget-lists-input-error = 追加するアイテムにテキストを含めてください
 newtab-widget-lists-input-menu-open-link = リンクを開く
 newtab-widget-lists-input-menu-move-up = 上へ移動
@@ -754,6 +875,9 @@ newtab-widget-lists-input-menu-delete = 削除
 newtab-widget-lists-input-menu-edit = 編集
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = アイテムを編集
+newtab-widget-lists-edit-clear =
+    .aria-label = キャンセル
+    .title = キャンセル
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + 新規リストを作成
@@ -770,14 +894,18 @@ newtab-widget-lists-name-placeholder-checklist2 =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = 新規リスト
     .aria-label = リスト名を編集
-newtab-widget-lists-name-placeholder-checklist =
-    .placeholder = チェックリスト
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = 新規リスト
 newtab-widget-section-title = ウィジェット
 newtab-widget-menu-hide = ウィジェットを隠す
 newtab-widget-menu-change-size = サイズを変更
+# Parent label for a submenu in the widget menu that reorders the widget
+# among its siblings. "Left" and "Right" appear as items inside this submenu.
+newtab-widget-menu-move = 移動
+# Submenu item under "Move"; moves the widget one position to the left.
+# RTL locales should translate this as "Right".
+newtab-widget-menu-move-left = 左側
+# Submenu item under "Move"; moves the widget one position to the right.
+# RTL locales should translate this as "Left".
+newtab-widget-menu-move-right = 右側
 newtab-widget-size-small = 小
 newtab-widget-size-medium = 中
 newtab-widget-size-large = 大
@@ -794,10 +922,21 @@ newtab-widget-section-minimize =
 newtab-widget-section-menu-button =
     .title = ウィジェットメニューを開きます
     .aria-label = ウィジェットメニューを開く
+newtab-widget-add-widgets-button =
+    .title = ウィジェットを追加します
+    .aria-label = ウィジェットを追加
 newtab-widget-section-menu-manage = ウィジェットを管理
 newtab-widget-section-menu-hide-all = ウィジェットを隠す
 newtab-widget-section-menu-learn-more = 詳細情報
 newtab-widget-section-feedback = ご感想をお寄せください
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = ウィジェットの表示を増やす
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = ウィジェットの表示を減らす
 newtab-widget-lists-name-default = チェックリスト
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -828,6 +967,9 @@ newtab-daily-briefing-card-timestamp = { $minutes } 分前に更新
 newtab-widget-message-title = リストへの集中と組み込みタイマー
 # to-dos stands for "things to do".
 newtab-widget-message-copy = クイック通知から毎日の ToDo リストまで、時間内によく集中して休憩を取れるように、あなたの作業を支援します。
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = 注目、天気、その他のワンスポット
+newtab-widget-message-focus-forecasts-body = { -brand-product-name } ウィジェットを日常に活かしましょう。その日の天気や作業リスト、世界の時刻を確認できます。
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -878,34 +1020,119 @@ newtab-widget-timer-celebration-message-focus = 休憩しますか？
 # Message shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-message-break = 再開しますか？
 
-## Sports widget
+##
 
 newtab-sports-widget-menu-follow-teams = チームをフォロー
+newtab-sports-widget-menu-view-schedule = スケジュールを見る
 newtab-sports-widget-menu-view-upcoming = 最新情報を見る
 newtab-sports-widget-menu-view-results = 結果を見る
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-menu-key-dates = 重要な日
 newtab-sports-widget-menu-learn-more = 詳細情報
+# “Keep tabs on” is an informal expression meaning to stay updated on, stay informed on, or regularly follow something (in this case, World Cup matches and updates).
+newtab-sports-widget-keep-tabs = ワールドカップのタブを保持
 newtab-sports-widget-get-updates = 試合の最新情報などをリアルタイムでお届けします。
 newtab-sports-widget-view-schedule =
     .label = スケジュールを見る
 newtab-sports-widget-follow-teams =
     .label = チームをフォロー
+newtab-sports-widget-view-matches =
+    .label = 対戦相手を見る
+# Variables:
+#   $number (number) - Maximum number of teams a user can choose to follow in the team selection state
+newtab-sports-widget-follow-teams-title =
+    { $number ->
+       *[other] { $number } チームまでフォローできます
+    }
 newtab-sports-widget-choose-wallpaper =
     .label = 壁紙を選ぶ
 newtab-sports-widget-skip = スキップ
+newtab-sports-widget-search-country =
+    .placeholder = 参加国を検索
+    .aria-label = 参加国を検索
+newtab-sports-widget-cancel = キャンセル
+newtab-sports-widget-back-button =
+    .aria-label = 戻る
 newtab-sports-widget-done-button =
     .label = 完了
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (敗退)
+newtab-sports-widget-view-all =
+    .label = すべて表示
+newtab-sports-widget-show-less =
+    .label = 表示を減らす
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = フォローしたチームのみ
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = 観戦
+    .title = ライブ観戦
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = ライブ観戦
+    .title = ライブ観戦
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = 閉じる
+    .title = 閉じる
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = 無料
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = 無料トライアル
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = 無料および有料
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = 有料
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = 選択した試合のみ
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = ユーザーの地域で観戦可能
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = 他の地域
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = ストリームを開く
+    .title = 動画ストリームを開きます
 newtab-sports-widget-group-stage = グループステージ
+newtab-sports-widget-group-a = グループ A
+newtab-sports-widget-group-b = グループ B
+newtab-sports-widget-group-c = グループ C
+newtab-sports-widget-group-d = グループ D
+newtab-sports-widget-group-e = グループ E
+newtab-sports-widget-group-f = グループ F
+newtab-sports-widget-group-g = グループ G
+newtab-sports-widget-group-h = グループ H
+newtab-sports-widget-group-i = グループ I
+newtab-sports-widget-group-j = グループ J
+newtab-sports-widget-group-k = グループ K
+newtab-sports-widget-group-l = グループ L
+newtab-sports-widget-round-32 = ラウンド 32
+newtab-sports-widget-round-16 = ラウンド 16
+newtab-sports-widget-quarter-finals = 準々決勝
 # The "LIVE" string is meant to be uppercase in English, but other languages and locales may vary in how they handle this.
 newtab-sports-widget-live = ライブ
 newtab-custom-widget-live-refresh =
     .title = スコアを更新します
     .aria-label = スコアを更新
+# Milestone dates (e.g. group stage, semifinals, etc.). Refers to calendar dates.
+newtab-sports-widget-key-dates = 重要な日
 newtab-sports-widget-upcoming = 最新情報
+# Used for a match currently ongoing
+newtab-sports-widget-now = 試合中
 newtab-sports-widget-results = 結果
 newtab-sports-widget-semi-finals = 準決勝
 newtab-sports-widget-bronze-finals = 3 位決定戦
 # Final is the final match for 1st place.
 newtab-sports-widget-final = 決勝
+# Variables:
+#   $start (Date) - Start date of a tournament stage
+#   $end (Date) - End date of a tournament stage
+newtab-sports-widget-key-date-range = { DATETIME($start, month: "short", day: "numeric") } – { DATETIME($end, month: "short", day: "numeric") }
+# Variables:
+#   $date (Date) - Date of a single tournament event
+newtab-sports-widget-key-date = { DATETIME($date, month: "short", day: "numeric") }
 newtab-sports-widget-delayed = 遅延
 newtab-sports-widget-postponed = 延期
 newtab-sports-widget-suspended = 一時中断
@@ -918,6 +1145,103 @@ newtab-sports-widget-third-place = 3 位
 newtab-sports-widget-runner-up = 準優勝
 newtab-sports-widget-champions = 優勝
 newtab-sports-widget-world-cup-champions = 2026 ワールドカップ優勝者
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = フルタイム
+newtab-sports-widget-match-halftime = ハーフタイム
+newtab-sports-widget-match-extra-time = 延長
+newtab-sports-widget-match-penalties = ペナルティー
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = 前へ
+    .title = 前のページへ
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = 次へ
+    .title = 次のページへ
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = ライブ試合 { $index } / { $total }
+    .title = ライブ試合 { $index } / { $total }
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } 対 { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) 対 { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = ライブ: { $homeTeam }, { $homeScore } 対 { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } vs. { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } vs. { $awayTeam }, 遅延
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } vs. { $awayTeam }, 延期
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } vs. { $awayTeam }, 中断
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } vs. { $awayTeam }, 中止
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = ボスニア・ヘルツェゴヴィナ
+newtab-sports-widget-team-name-label-civ =
+    .label = アイボリーコースト
+newtab-sports-widget-team-name-label-cod =
+    .label = DR コンゴ
+newtab-sports-widget-team-name-label-eng =
+    .label = イングランド
+newtab-sports-widget-team-name-label-sco =
+    .label = スコットランド
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = 新しい壁紙でワールドカップをキックオフ
+newtab-sports-widget-message-wallpapers-body = トーナメント試合の日に備えてブラウザーにエネルギー注入
+newtab-sports-widget-message-wallpapers-cta = 壁紙を選ぶ
+newtab-sports-widget-message-add-widgets-cta =
+    .label = ウィジェットを追加
+newtab-sports-widget-message-day-in-play-title = { -brand-product-name } ウィジェットで試合の日に備えましょう
+newtab-sports-widget-message-day-in-play-body = ワールドカップをフォロー、作業に集中、世界中の時刻を確認できます
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = ウィジェットを探す
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -943,3 +1267,73 @@ newtab-activation-window-message-values-focus-message = { -brand-product-name } 
 
 ## Strings for the Clock widget
 
+# Context menu item: toggle the clock card off.
+newtab-clock-widget-menu-hide = 時計を隠す
+newtab-clock-widget-menu-learn-more = 詳細情報
+newtab-clock-widget-menu-edit = 時計を編集
+newtab-clock-widget-menu-switch-to-12h = 12 時間形式に切り替え
+newtab-clock-widget-menu-switch-to-24h = 24 時間形式に切り替え
+newtab-clock-widget-label-your-clocks = あなたの時計
+newtab-clock-widget-search-location-input =
+    .label = 場所
+    .placeholder = 都市を検索します
+    .aria-label = 都市を検索します
+# "Nickname (optional)" refers to a custom, user-defined label for a saved location
+# (e.g., "Home", "Office", or "School") to make it easier to recognize.
+# Not to be translated as a legal name, username, or alias used for identity verification.
+newtab-clock-widget-input-nickname =
+    .label = ラベル (任意)
+    .placeholder = ラベルを追加
+    .aria-label = ラベル (任意)
+# "Add new clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-button-add =
+    .title = 新規時計を追加します
+    .aria-label = 新規時計を追加
+newtab-clock-widget-button-add-clock = 追加
+newtab-clock-widget-button-cancel = キャンセル
+newtab-clock-widget-button-back =
+    .title = 戻る
+    .aria-label = 戻る
+newtab-clock-widget-button-edit-clock =
+    .title = 時計を編集します
+    .aria-label = 時計を編集
+newtab-clock-widget-button-save = 保存
+newtab-clock-widget-button-remove-clock =
+    .title = 時計を削除します
+    .aria-label = 時計を削除
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }、ラベル: { $nickname }
+newtab-clock-widget-add-clock-form =
+    .aria-label = 時計を追加
+newtab-clock-widget-edit-clock-form =
+    .aria-label = 時計を編集
+# "Search results" is the accessible label for the listbox dropdown that appears
+# below the location search field, listing matching cities as the user types.
+# It means "results of the search", not "search within the results".
+newtab-clock-widget-search-results =
+    .aria-label = 検索結果
+# Shown in place of the search results when the user's query does not match any
+# supported city — e.g. typing a misspelled name or a place not in the IANA
+# time zone list.
+newtab-clock-widget-search-no-results = 検索に一致するものがありません
+# "Open menu for clock" is an icon-only button in the widget toolbar — the
+# attributes are consumed as tooltip/screen-reader label only. The button
+# never renders visible text.
+newtab-clock-widget-menu-button =
+    .title = 時計のメニューを開きます
+    .aria-label = 時計のメニューを開く
+# $nickname (String) - The user-defined nickname for a saved clock location (e.g., "Home", "Office").
+newtab-clock-widget-label-nickname-with-value = ラベル: { $nickname }

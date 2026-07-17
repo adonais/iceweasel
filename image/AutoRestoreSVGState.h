@@ -39,6 +39,8 @@ class MOZ_STACK_CLASS AutoRestoreSVGState final {
     MOZ_ASSERT(aSVGDocumentWrapper->GetDocument());
 
     if (auto* pc = aSVGDocumentWrapper->GetDocument()->GetPresContext()) {
+      pc->SetLinkParametersOverride(aSVGContext.GetLinkParameters());
+
       pc->SetColorSchemeOverride([&] {
         if (auto scheme = aSVGContext.GetColorScheme()) {
           return *scheme == ColorScheme::Light

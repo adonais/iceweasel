@@ -30,7 +30,7 @@ import {
 import actions from "../../actions/index";
 import { connect } from "devtools/client/shared/vendor/react-redux";
 
-import { CloseButton } from "../shared/Button/index";
+import CloseButton from "devtools/client/shared/components/CloseButton";
 
 const localizationTerms = {
   subtree: L10N.getStr("domMutationTypes.subtree"),

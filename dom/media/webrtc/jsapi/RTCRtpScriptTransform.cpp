@@ -62,8 +62,8 @@ already_AddRefed<RTCRtpScriptTransform> RTCRtpScriptTransform::Constructor(
   }
 
   auto newTransform = MakeRefPtr<RTCRtpScriptTransform>(ownerWindow);
-  RefPtr<RTCTransformEventRunnable> runnable =
-      new RTCTransformEventRunnable(aWorker, &newTransform->GetProxy());
+  RefPtr runnable =
+      MakeRefPtr<RTCTransformEventRunnable>(aWorker, &newTransform->GetProxy());
 
   if (aTransfer.WasPassed()) {
     aWorker.PostEventWithOptions(aGlobal.Context(), aOptions, aTransfer.Value(),
@@ -82,7 +82,7 @@ already_AddRefed<RTCRtpScriptTransform> RTCRtpScriptTransform::Constructor(
 }
 
 RTCRtpScriptTransform::RTCRtpScriptTransform(nsPIDOMWindowInner* aWindow)
-    : mWindow(aWindow), mProxy(new FrameTransformerProxy) {}
+    : mWindow(aWindow), mProxy(MakeRefPtr<FrameTransformerProxy>()) {}
 
 RTCRtpScriptTransform::~RTCRtpScriptTransform() {
   mProxy->ReleaseScriptTransformer();

@@ -51,7 +51,7 @@ nsresult ReauthenticateUserMacOS(const nsAString& aPrompt,
   // our calling methods expect us to block and set aReauthenticated on return.
   dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
   dispatch_release(sema);
-  sema = NULL;
+  sema = nullptr;
 
   aReauthenticated = biometricSuccess;
   aIsBlankPassword = errorPasswordNotSet;

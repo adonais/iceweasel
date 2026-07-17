@@ -20,7 +20,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentSize
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -29,7 +28,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
@@ -47,7 +45,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.tooling.preview.PreviewParameter
 import androidx.compose.ui.tooling.preview.PreviewParameterProvider
 import androidx.compose.ui.unit.dp
-import mozilla.components.compose.base.theme.surfaceDimVariant
 import mozilla.components.feature.addons.Addon
 import mozilla.components.feature.addons.ui.displayName
 import mozilla.components.feature.addons.ui.summary
@@ -102,6 +99,7 @@ import mozilla.components.ui.icons.R as iconsR
  * @param onCustomizeReaderViewMenuClick Invoked when the user clicks on the Customize Reader View button.
  * @param onMozillaAccountButtonClick Invoked when the user clicks on Mozilla account button.
  * @param onSettingsButtonClick Invoked when the user clicks on the settings button.
+ * @param onWallpaperButtonClick Invoked when the user clicks on the change wallpaper button.
  * @param onBookmarkPageMenuClick Invoked when the user clicks on the bookmark page menu item.
  * @param onEditBookmarkButtonClick Invoked when the user clicks on the edit bookmark button.
  * @param onSwitchToDesktopSiteMenuClick Invoked when the user clicks on the switch to desktop site
@@ -158,6 +156,7 @@ fun MainMenu(
     onCustomizeReaderViewMenuClick: () -> Unit,
     onMozillaAccountButtonClick: () -> Unit,
     onSettingsButtonClick: () -> Unit,
+    onWallpaperButtonClick: () -> Unit,
     onBookmarkPageMenuClick: () -> Unit,
     onEditBookmarkButtonClick: () -> Unit,
     onSwitchToDesktopSiteMenuClick: () -> Unit,
@@ -330,6 +329,14 @@ fun MainMenu(
                 onClick = onMozillaAccountButtonClick,
             )
 
+            if (accessPoint == MenuAccessPoint.Home) {
+                MenuItem(
+                    label = stringResource(id = R.string.browser_menu_change_wallpaper),
+                    beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_wallpaper_24),
+                    onClick = onWallpaperButtonClick,
+                )
+            }
+
             MenuItem(
                 label = stringResource(id = R.string.browser_menu_settings),
                 beforeIconPainter = painterResource(id = iconsR.drawable.mozac_ic_settings_24),
@@ -389,15 +396,12 @@ private fun ToolsAndActionsMenuGroup(
         val labelId = R.string.browser_menu_desktop_site
         val badgeText: String
         val menuItemState: MenuItemState
-        val badgeBackgroundColor: Color
 
         if (isDesktopMode) {
             badgeText = stringResource(id = R.string.browser_feature_desktop_site_on)
-            badgeBackgroundColor = MaterialTheme.colorScheme.primaryContainer
             menuItemState = if (isPdf) MenuItemState.DISABLED else MenuItemState.ACTIVE
         } else {
             badgeText = stringResource(id = R.string.browser_feature_desktop_site_off)
-            badgeBackgroundColor = MaterialTheme.colorScheme.surfaceContainerHighest
             menuItemState = if (isPdf) MenuItemState.DISABLED else MenuItemState.ENABLED
         }
 
@@ -487,8 +491,8 @@ private fun MoreMenuButtonGroup(
         Row(
             modifier = Modifier
                 .background(
-                    color = MaterialTheme.colorScheme.surfaceContainerHighest,
-                    shape = RoundedCornerShape(16.dp),
+                    color = MaterialTheme.colorScheme.surfaceContainerHigh,
+                    shape = MaterialTheme.shapes.large,
                 )
                 .padding(2.dp),
             horizontalArrangement = Arrangement.SpaceBetween,
@@ -517,21 +521,15 @@ private fun LibraryMenuGroup(
     onPasswordsMenuClick: () -> Unit,
 ) {
     val spacerWidth = 2.dp
-    val innerRounding = 4.dp
-    val outerRounding = 28.dp
 
-    val leftShape = RoundedCornerShape(
-        topStart = outerRounding,
-        topEnd = innerRounding,
-        bottomStart = outerRounding,
-        bottomEnd = innerRounding,
+    val leftShape = MaterialTheme.shapes.extraLarge.copy(
+        topEnd = MaterialTheme.shapes.extraSmall.topEnd,
+        bottomEnd = MaterialTheme.shapes.extraSmall.bottomEnd,
     )
-    val middleShape = RoundedCornerShape(innerRounding)
-    val rightShape = RoundedCornerShape(
-        topStart = innerRounding,
-        topEnd = outerRounding,
-        bottomStart = innerRounding,
-        bottomEnd = outerRounding,
+    val middleShape = MaterialTheme.shapes.extraSmall
+    val rightShape = MaterialTheme.shapes.extraLarge.copy(
+        topStart = MaterialTheme.shapes.extraSmall.topStart,
+        bottomStart = MaterialTheme.shapes.extraSmall.bottomStart,
     )
 
     Row(
@@ -715,9 +713,9 @@ private fun MoreExtensionsMenuItem(
                 contentDescription = label
             }
             .wrapContentSize()
-            .clip(shape = RoundedCornerShape(4.dp))
+            .clip(shape = MaterialTheme.shapes.extraSmall)
             .background(
-                color = MaterialTheme.colorScheme.surfaceDimVariant,
+                color = MaterialTheme.colorScheme.surfaceBright,
             ),
     ) {
         MenuTextItem(
@@ -769,6 +767,7 @@ private fun MenuDialogPreview(
                 onCustomizeReaderViewMenuClick = {},
                 onMozillaAccountButtonClick = {},
                 onSettingsButtonClick = {},
+                onWallpaperButtonClick = {},
                 onBookmarkPageMenuClick = {},
                 onEditBookmarkButtonClick = {},
                 onSwitchToDesktopSiteMenuClick = {},
@@ -835,6 +834,7 @@ private fun MenuDialogPrivatePreview(
                 onCustomizeReaderViewMenuClick = {},
                 onMozillaAccountButtonClick = {},
                 onSettingsButtonClick = {},
+                onWallpaperButtonClick = {},
                 onBookmarkPageMenuClick = {},
                 onEditBookmarkButtonClick = {},
                 onSwitchToDesktopSiteMenuClick = {},

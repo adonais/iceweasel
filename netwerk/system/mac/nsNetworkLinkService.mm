@@ -539,7 +539,7 @@ bool nsNetworkLinkService::IPv6NetworkId(SHA1Sum* sha1) {
     bool hasNonLocalIPv6 = false;
     struct ifaddrs* ifa;
     for (ifa = ifap; ifa; ifa = ifa->ifa_next) {
-      if (ifa->ifa_addr == NULL) {
+      if (ifa->ifa_addr == nullptr) {
         continue;
       }
       if ((AF_INET6 == ifa->ifa_addr->sa_family) &&

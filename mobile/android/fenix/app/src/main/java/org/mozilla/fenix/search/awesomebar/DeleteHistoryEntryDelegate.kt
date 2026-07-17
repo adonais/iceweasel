@@ -52,6 +52,7 @@ class DeleteHistoryEntryDelegate(
         val historyStorage = components.core.historyStorage
         CoroutineScope(snackbarDispatcher).allowUndo(
             view = container,
+            settings = components.settings,
             message = container.context.getString(
                 R.string.search_suggestions_delete_history_item_snackbar,
                 when (item.isSearchTerm) {

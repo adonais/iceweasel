@@ -46,6 +46,10 @@ list(APPEND AOM_DSP_COMMON_SOURCES
             "${AOM_ROOT}/aom_dsp/txfm_common.h"
             "${AOM_ROOT}/aom_dsp/x86/convolve_common_intrin.h")
 
+if(CONFIG_HIGHWAY)
+  list(APPEND AOM_DSP_COMMON_SOURCES "${AOM_ROOT}/aom_dsp/convolve_hwy.h")
+endif()
+
 list(APPEND AOM_DSP_COMMON_ASM_SSE2
             "${AOM_ROOT}/aom_dsp/x86/intrapred_asm_sse2.asm")
 if(CONFIG_AV1_HIGHBITDEPTH)
@@ -96,6 +100,14 @@ list(APPEND AOM_DSP_COMMON_INTRIN_AVX2
             "${AOM_ROOT}/aom_dsp/x86/loopfilter_avx2.c"
             "${AOM_ROOT}/aom_dsp/x86/blend_a64_mask_avx2.c"
             "${AOM_ROOT}/aom_dsp/x86/bitdepth_conversion_avx2.h")
+
+if(CONFIG_HIGHWAY)
+  list(APPEND AOM_DSP_COMMON_INTRIN_AVX2
+              "${AOM_ROOT}/aom_dsp/x86/convolve_vert_hwy_avx2.cc")
+  list(APPEND AOM_DSP_COMMON_INTRIN_AVX512
+              "${AOM_ROOT}/aom_dsp/x86/convolve_hwy_avx512.cc"
+              "${AOM_ROOT}/aom_dsp/x86/convolve_vert_hwy_avx512.cc")
+endif()
 
 list(APPEND AOM_DSP_COMMON_INTRIN_NEON
             "${AOM_ROOT}/aom_dsp/arm/aom_convolve_copy_neon.c"
@@ -491,6 +503,12 @@ function(setup_aom_dsp_targets)
     add_intrinsics_object_library("-march=skylake-avx512" "avx512"
                                   "aom_dsp_encoder"
                                   "AOM_DSP_ENCODER_INTRIN_AVX512")
+  endif()
+
+  if(HAVE_AVX512 AND CONFIG_HIGHWAY)
+    add_intrinsics_object_library("-march=skylake-avx512" "avx512"
+                                  "aom_dsp_common"
+                                  "AOM_DSP_COMMON_INTRIN_AVX512")
   endif()
 
   if(HAVE_NEON)

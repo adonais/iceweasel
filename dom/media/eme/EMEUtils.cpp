@@ -191,7 +191,7 @@ void MFCDMCapabilitiesIPDLToKeySystemConfig(
   }
   aKeySystemConfig.mPersistentState = aCDMConfig.persistentState();
   aKeySystemConfig.mDistinctiveIdentifier = aCDMConfig.distinctiveID();
-  EME_LOG("New Capabilities=%s",
+  EME_LOG("New Capabilities={}",
           NS_ConvertUTF16toUTF8(aKeySystemConfig.GetDebugInfo()).get());
 }
 #endif
@@ -242,7 +242,7 @@ void DeprecationWarningLog(const dom::Document* aDocument,
   if (!aDocument || !aMsgName) {
     return;
   }
-  EME_LOG("DeprecationWarning Logging deprecation warning '%s' to WebConsole.",
+  EME_LOG("DeprecationWarning Logging deprecation warning '{}' to WebConsole.",
           aMsgName);
   nsTHashMap<nsCharPtrHashKey, bool> warnings;
   warnings.InsertOrUpdate(aMsgName, true);

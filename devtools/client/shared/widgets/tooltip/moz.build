@@ -5,6 +5,7 @@
 DevToolsModules(
     "AttrTooltipHelper.js",
     "css-compatibility-tooltip-helper.js",
+    "css-explainers-tooltip-helper.js",
     "css-query-container-tooltip-helper.js",
     "css-selector-warnings-tooltip-helper.js",
     "EventTooltipHelper.js",

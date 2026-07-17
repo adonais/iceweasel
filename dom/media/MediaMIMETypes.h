@@ -151,6 +151,10 @@ class MediaExtendedMIMEType {
   // MIME "type/subtype".
   const MediaMIMEType& Type() const { return mMIMEType; }
 
+  // Returns the MIME subtype (e.g., "h264", "vp9", "av1").
+  // Returns empty substring if no '/' found in MIME type.
+  nsDependentCSubstring Subtype() const;
+
   // Was there an explicit 'codecs' parameter provided?
   bool HaveCodecs() const { return mHaveCodecs; }
   // Codecs. May be empty if not provided or explicitly provided as empty.

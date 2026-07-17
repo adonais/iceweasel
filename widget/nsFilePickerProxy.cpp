@@ -275,8 +275,7 @@ class SimpleEnumerator final : public nsSimpleEnumerator {
 NS_IMETHODIMP
 nsFilePickerProxy::GetDomFileOrDirectoryEnumerator(
     nsISimpleEnumerator** aDomfiles) {
-  RefPtr<SimpleEnumerator> enumerator =
-      new SimpleEnumerator(mFilesOrDirectories);
+  auto enumerator = mozilla::MakeRefPtr<SimpleEnumerator>(mFilesOrDirectories);
   enumerator.forget(aDomfiles);
   return NS_OK;
 }
@@ -306,8 +305,8 @@ NS_IMETHODIMP
 nsFilePickerProxy::GetDomFilesInWebKitDirectory(
     nsISimpleEnumerator** aDomfiles) {
 #ifdef MOZ_WIDGET_ANDROID
-  RefPtr<SimpleEnumerator> enumerator =
-      new SimpleEnumerator(mFilesInWebKitDirectory);
+  auto enumerator =
+      mozilla::MakeRefPtr<SimpleEnumerator>(mFilesInWebKitDirectory);
   enumerator.forget(aDomfiles);
   return NS_OK;
 #else

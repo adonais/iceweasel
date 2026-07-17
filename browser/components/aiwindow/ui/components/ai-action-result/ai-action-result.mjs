@@ -148,6 +148,7 @@ export class AIActionResult extends MozLitElement {
                 class="action-result-undo"
                 @click=${this.#handleUndo}
                 data-l10n-id="smartwindow-nl-undo-button"
+                type="ghost"
               ></moz-button>
             `
           : nothing}

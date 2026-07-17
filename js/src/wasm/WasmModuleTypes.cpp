@@ -113,6 +113,17 @@ bool CacheableName::fromUTF8Chars(const char* utf8Chars, CacheableName* name) {
   return true;
 }
 
+/* static */
+bool CacheableName::fromUTF8Bytes(mozilla::Span<const char> utf8Bytes,
+                                  CacheableName* name) {
+  UTF8Bytes bytes;
+  if (!bytes.append(utf8Bytes.data(), utf8Bytes.Length())) {
+    return false;
+  }
+  *name = CacheableName(std::move(bytes));
+  return true;
+}
+
 MOZ_RUNINIT BranchHintVector BranchHintCollection::invalidVector_;
 
 JSString* CacheableName::toJSString(JSContext* cx) const {

@@ -139,7 +139,7 @@ events:
           A string containing the name of the item the user tapped. These items
           include:
           add_bookmark, add_to_homescreen, add_to_top_sites, addon_details, addons_manager,
-          back, back_long_press, bookmark, bookmarks, custom_back, custom_back_long_press,
+          back, back_long_press, bookmark, bookmarks, change_wallpaper, custom_back, custom_back_long_press,
           custom_desktop_view_off, custom_desktop_view_on, custom_find_in_page,
           custom_forward, custom_forward_long_press, custom_share, desktop_view_off,
           desktop_view_on, discover_more_extensions, dismiss_menu_banner, downloads,
@@ -154,6 +154,7 @@ events:
       - https://github.com/mozilla-mobile/fenix/issues/19923
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1808689
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1836780
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2042794
     data_reviews:
       - https://github.com/mozilla-mobile/fenix/pull/1214#issue-264756708
       - https://github.com/mozilla-mobile/fenix/pull/5098#issuecomment-529658996
@@ -165,6 +166,7 @@ events:
       - https://github.com/mozilla-mobile/fenix/pull/27295
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1837517#c3
       - https://github.com/mozilla-mobile/firefox-android/pull/4039
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2042794
     data_sensitivity:
       - interaction
     notification_emails:
@@ -269,7 +271,7 @@ events:
           open_links_in_a_private_tab, pref_key_sync_logins,
           pref_key_sync_bookmarks, pref_key_sync_history, pref_key_show_voice_search,
           pref_key_show_search_suggestions_in_private, pref_key_show_trending_search_suggestions,
-          pref_key_show_recent_search_suggestions.
+          pref_key_show_recent_search_suggestions, privacy_report.
         type: string
       enabled:
         description: "Whether or not the preference is *now* enabled"
@@ -284,6 +286,7 @@ events:
       - https://github.com/mozilla-mobile/fenix/issues/19923
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1945634
       - https://bugzilla.mozilla.org/show_bug.cgi?id=1950208
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044067
     data_reviews:
       - https://github.com/mozilla-mobile/fenix/pull/1896
       - https://github.com/mozilla-mobile/fenix/pull/5704
@@ -297,6 +300,7 @@ events:
       - https://github.com/mozilla-mobile/fenix/pull/21038#issuecomment-906757301
       - https://phabricator.services.mozilla.com/D239200
       - https://phabricator.services.mozilla.com/D240680
+      - https://phabricator.services.mozilla.com/D304862
     data_sensitivity:
       - technical
       - interaction
@@ -5442,22 +5446,6 @@ bookmarks_management:
     metadata:
       tags:
         - Bookmarks
-  import_from_file_button_click:
-    type: event
-    description: |
-      The user clicks the button entry point to import bookmarks from a file
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2037185
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D299395
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - Bookmarks
   import_from_file_menu_click:
     type: event
     description: |
@@ -6000,6 +5988,140 @@ settings:
     metadata:
       tags:
         - Settings
+  firefox_labs:
+    type: event
+    description: |
+      User has tapped Firefox Labs in settings menu.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032172
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D305371
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Settings
+firefox_labs:
+  toggle_button_pressed:
+    type: event
+    description: |
+      The user toggled a Firefox Labs item switch.
+    extra_keys:
+      slug_id:
+        type: string
+        description: |
+          The Nimbus slug identifying the Labs item whose switch was tapped,
+          e.g., "homepage-as-new-tab". This is defined in the experimenter
+          setup and is not unique on a user basis.
+      enabled:
+        type: boolean
+        description: |
+          The new enabled state the user attempted to set.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035830
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D305929
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  toggled_dialog:
+    type: event
+    description: |
+      The user resolved the requires restart confirmation dialog for a Firefox Labs item (by confirming or cancelling).
+    extra_keys:
+      slug_id:
+        type: string
+        description: |
+          The Nimbus slug identifying the Labs item for the dialog,
+          e.g., "homepage-as-new-tab". This is defined in the experimenter
+          setup and is not unique on a user basis.
+      did_user_confirm:
+        type: boolean
+        description: |
+          True if the user confirmed the dialog to restart, false if the user dismissed it without restarting.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035830
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D305929
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  share_feedback_opened:
+    type: event
+    description: |
+      The user opened the share feedback link for a Firefox Labs item.
+    extra_keys:
+      slug_id:
+        type: string
+        description: |
+          The Nimbus slug identifying the Labs item whose feedback link
+          was tapped, e.g., "homepage-as-new-tab". This is defined in the experimenter
+          setup and is not unique on a user basis.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035830
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D305730
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  restore_defaults_button_pressed:
+    type: event
+    description: |
+      The user pressed the restore defaults button on the Firefox Labs screen.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035830
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D305929
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  restore_defaults_dialog:
+    type: event
+    description: |
+      The user resolved the restore defaults dialog on the Firefox Labs screen (by confirming or cancelling).
+    extra_keys:
+      items_changed_count:
+        type: quantity
+        description: |
+          Number of items flipped from on to off. Zero if the user cancelled the dialog.
+        unit: items
+      did_user_confirm:
+        type: boolean
+        description: |
+          True if the user confirmed the dialog to restore defaults, false if the user dismissed it without restoring.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035830
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D305929
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  empty_state_shown:
+    type: event
+    description: |
+      The Firefox Labs screen showed the empty state (no items available).
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2035830
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D305730
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
 settings_search:
   opened:
     type: event
@@ -6928,6 +7050,23 @@ tabs_tray:
       tags:
         - Tabs
         - Collections
+  select_all_normal_tabs:
+    type: event
+    description: |
+      A user tapped the select all normal tabs button in the
+      three dot menu within the tabs tray
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=1812735
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D300739
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - Tabs
   share_all_tabs:
     type: event
     description: |
@@ -7912,6 +8051,94 @@ search_widget:
         - Search
 
 tracking_protection:
+  privacy_report_tapped:
+    type: event
+    description: |
+      A user tapped the privacy report / trackers blocked card to open the
+      privacy dashboard.
+    extra_keys:
+      source:
+        description: |
+          The surface the user opened the privacy dashboard from. Possible
+          values are: `home`, `tabs_tray` or `trust_panel`.
+        type: string
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044067
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D304862
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_tracking_cookies_tapped:
+    type: event
+    description: |
+      A user tapped the tracking cookies category row in the privacy dashboard.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044067
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D304862
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_social_tapped:
+    type: event
+    description: |
+      A user tapped the social media trackers category row in the privacy
+      dashboard.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044067
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D304862
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_fingerprints_tapped:
+    type: event
+    description: |
+      A user tapped the fingerprinters category row in the privacy dashboard.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044067
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D304862
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - TrackingProtection
+  privacy_report_tracking_content_tapped:
+    type: event
+    description: |
+      A user tapped the tracking content category row in the privacy dashboard.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2044067
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D304862
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+    metadata:
+      tags:
+        - TrackingProtection
   exception_added:
     type: event
     description: |
@@ -12145,22 +12372,6 @@ homepage:
     metadata:
       tags:
         - Tabs
-  privacy_report_tapped:
-    type: event
-    description: |
-      A user tapped the privacy report / trackers blocked card on the homepage.
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2025368
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D289791
-    data_sensitivity:
-      - interaction
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-    metadata:
-      tags:
-        - TrackingProtection
 
 start_on_home:
   enter_home_screen:
@@ -15299,32 +15510,6 @@ toolbar:
       - android-probes@mozilla.com
     expires: never
 
-integrity:
-  warmed_up:
-    type: event
-    description: |
-      Records when the Play Integrity client has completed its warm-up.
-    extra_keys:
-      success:
-        description: |
-          Whether the request succeeded.
-        type: boolean
-      duration_ms:
-        description: |
-          Time in milliseconds between requesting warmup and warmup completion.
-        type: quantity
-    bugs:
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2026727
-      - https://bugzilla.mozilla.org/show_bug.cgi?id=2033110
-    data_reviews:
-      - https://phabricator.services.mozilla.com/D290217
-      - https://phabricator.services.mozilla.com/D295065
-    data_sensitivity:
-      - technical
-    notification_emails:
-      - android-probes@mozilla.com
-    expires: never
-
 ai_summarize:
   closed:
     type: event
@@ -15374,10 +15559,17 @@ ai_summarize:
         type: string
       error_type:
         description: |
-          If an error occurred, the resulting error code. Examples include:
+          If an error occurred, a human-readable name for the failure
+          (typically the exception class name, e.g. "RateLimited",
+          "RequestTooLarge").
+        type: string
+      error_code:
+        description: |
+          If an error occurred, the integer error code associated with the
+          failure. Examples include:
           1005 (meaning content was too large to summarize)
           1007 (meaning LLM service has rate-limited the user)
-        type: string
+        type: quantity
       summarize_duration_ms:
         description: |
           Time in milliseconds between request and completion.
@@ -15389,6 +15581,7 @@ ai_summarize:
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2025523
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036474
     data_reviews:
       - https://phabricator.services.mozilla.com/D289882
     data_sensitivity:
@@ -15419,8 +15612,15 @@ ai_summarize:
     description: |
       Records when the user initiates summarization.
       (e.g. taps menu button, toolbar icon or shakes the device).
+    extra_keys:
+      trigger:
+        description: |
+          How the user initiated summarization. Possible values:
+          "shake", "menu".
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2025523
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2036474
     data_reviews:
       - https://phabricator.services.mozilla.com/D289882
     data_sensitivity:
@@ -15958,7 +16158,7 @@ vpn:
       entrypoint:
         description: >
           The surface from which the user started the flow.
-          Possible values: Homepage, Browser.
+          Possible values: Homepage, Browser, Settings.
         type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
@@ -15978,6 +16178,12 @@ vpn:
     type: event
     description:
       Triggered when the user taps on the VPN settings page.
+    extra_keys:
+      entrypoint:
+        description: >
+          The surface from which the user entered the VPN settings page.
+          Possible values: Settings, Menu, Trust Panel.
+        type: string
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
     data_reviews:
@@ -16038,14 +16244,16 @@ vpn:
     metadata:
       tags:
         - Settings
-  menu_try_now_tapped:
+  menu_try_it_tapped:
     type: event
     description:
-      Triggered when the user taps "Try Now" for VPN from the menu option.
+      Triggered when the user taps "Try it" for VPN from the menu option.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2031198
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032561
     data_reviews:
       - https://phabricator.services.mozilla.com/D293774
+      - https://phabricator.services.mozilla.com/D306452
     data_sensitivity:
       - interaction
     notification_emails:
@@ -16095,6 +16303,21 @@ vpn:
     notification_emails:
       - android-probes@mozilla.com
     expires: never
+  proxy_unavailable:
+    type: event
+    description: >
+      Triggered when the VPN is unavailable due to an unrecoverable error,
+      leaving IP protection unable to function. This results in a blocking warning dialog which
+      requires a user action.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2048642
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D308910
+    data_sensitivity:
+      - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
   bandwidth_limit_error:
     type: event
     description:
@@ -16105,6 +16328,45 @@ vpn:
       - https://phabricator.services.mozilla.com/D293774
     data_sensitivity:
       - technical
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  trust_panel_try_it_tapped:
+    type: event
+    description:
+      Triggered when the user taps "Try it" from the trust panel.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032561
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D306489
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  trust_panel_turned_on:
+    type: event
+    description:
+      Triggered when the user turns the VPN on from the trust panel.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032561
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D306489
+    data_sensitivity:
+      - interaction
+    notification_emails:
+      - android-probes@mozilla.com
+    expires: never
+  trust_panel_turned_off:
+    type: event
+    description:
+      Triggered when the user turns the VPN off from the trust panel.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2032561
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D306489
+    data_sensitivity:
+      - interaction
     notification_emails:
       - android-probes@mozilla.com
     expires: never
@@ -16121,7 +16383,7 @@ native_share_sheet:
           The surface from which the native share sheet was opened.
           Current values: browser_menu, custom_tab_menu, browser_toolbar,
           tabs_tray, home, bookmarks, history, history_metadata_group,
-          recently_closed.
+          recently_closed, deep_link, web_share.
     bugs:
       - https://bugzilla.mozilla.org/show_bug.cgi?id=2010859
     data_reviews:

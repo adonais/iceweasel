@@ -1158,6 +1158,4 @@ class nsPIDOMWindowOuter : public mozIDOMWindowProxy {
   uint32_t mMarkedCCGeneration;
 };
 
-#include "nsPIDOMWindowInlines.h"
-
 #endif  // nsPIDOMWindow_h_

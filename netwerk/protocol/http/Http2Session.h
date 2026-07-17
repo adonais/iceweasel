@@ -347,7 +347,7 @@ class Http2Session final : public ASpdySession,
   Http2Session(nsISocketTransport*, enum SpdyVersion version,
                bool attemptingEarlyData);
 
-  static Http2StreamTunnel* CreateTunnelStreamFromConnInfo(
+  static already_AddRefed<Http2StreamTunnel> CreateTunnelStreamFromConnInfo(
       Http2Session* session, uint64_t bcId, nsHttpConnectionInfo* connInfo,
       ExtendedCONNECTType aType);
 

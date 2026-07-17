@@ -224,11 +224,7 @@ add_task(async function test_recentbrowsing() {
 
     // Collapse the Open Tabs card
     let cardContainer = recentBrowsingOpenTabsView.viewCards[0]?.cardEl;
-    await EventUtils.synthesizeMouseAtCenter(
-      cardContainer.summaryEl,
-      {},
-      content
-    );
+    EventUtils.synthesizeMouseAtCenter(cardContainer.summaryEl, {}, content);
     await TestUtils.waitForCondition(
       () => !cardContainer.detailsEl.hasAttribute("open"),
       "Waiting for the card container details element to be closed"
@@ -244,11 +240,7 @@ add_task(async function test_recentbrowsing() {
     );
 
     // Expand the Open Tabs card
-    await EventUtils.synthesizeMouseAtCenter(
-      cardContainer.summaryEl,
-      {},
-      content
-    );
+    EventUtils.synthesizeMouseAtCenter(cardContainer.summaryEl, {}, content);
     await TestUtils.waitForCondition(
       () => cardContainer.detailsEl.hasAttribute("open"),
       "Waiting for the card container details element to be open"
@@ -266,7 +258,7 @@ add_task(async function test_recentbrowsing() {
     // Collapse the Recently Closed card
     let recentlyClosedCardContainer =
       recentBrowsingRecentlyClosedTabsView.cardEl;
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       recentlyClosedCardContainer.summaryEl,
       {},
       content
@@ -286,7 +278,7 @@ add_task(async function test_recentbrowsing() {
     );
 
     // Expand the Recently Closed card
-    await EventUtils.synthesizeMouseAtCenter(
+    EventUtils.synthesizeMouseAtCenter(
       recentlyClosedCardContainer.summaryEl,
       {},
       content
@@ -337,11 +329,7 @@ add_task(async function test_opentabs() {
 
     // Collapse the Open Tabs card
     let cardContainer = openTabsView.viewCards[0]?.cardEl;
-    await EventUtils.synthesizeMouseAtCenter(
-      cardContainer.summaryEl,
-      {},
-      content
-    );
+    EventUtils.synthesizeMouseAtCenter(cardContainer.summaryEl, {}, content);
     await TestUtils.waitForCondition(
       () => !cardContainer.detailsEl.hasAttribute("open"),
       "Waiting for the card container details element to be closed"
@@ -357,11 +345,7 @@ add_task(async function test_opentabs() {
     );
 
     // Expand the Open Tabs card
-    await EventUtils.synthesizeMouseAtCenter(
-      cardContainer.summaryEl,
-      {},
-      content
-    );
+    EventUtils.synthesizeMouseAtCenter(cardContainer.summaryEl, {}, content);
     await TestUtils.waitForCondition(
       () => cardContainer.detailsEl.hasAttribute("open"),
       "Waiting for the card container details element to be open"

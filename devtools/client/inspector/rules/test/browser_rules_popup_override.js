@@ -54,9 +54,9 @@ add_task(async function () {
   info(
     "Close the color picker popup to test that it doesn't remove overridden/invalid classes"
   );
-  const onModified = view.once("ruleview-changed");
+  const onModifications = view.once("property-value-updated");
   colorPicker.hide();
-  await onModified;
+  await onModifications;
 
   info(
     "Check overridden/invalid classes are still present after closing color picker popup"

@@ -12,7 +12,7 @@ namespace mozilla::dom {
 
 class HTMLModElement final : public nsGenericHTMLElement {
  public:
-  explicit HTMLModElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit HTMLModElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   virtual nsresult Clone(dom::NodeInfo*, nsINode** aResult) const override;
 

@@ -41,7 +41,7 @@
 #include "mozilla/dom/ScriptSettings.h"
 #include "mozilla/intl/Locale.h"
 #include "mozilla/intl/LocaleService.h"
-#include "mozilla/net/UrlClassifierFeatureFactory.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/widget/TextRecognition.h"
 #include "nsContentPolicyUtils.h"
 #include "nsContentUtils.h"
@@ -284,7 +284,7 @@ void nsImageLoadingContent::Notify(imgIRequest* aRequest, int32_t aType,
        * We make a note of this image node by including it in a dedicated
        * array of blocked tracking nodes under its parent document.
        */
-      if (net::UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
+      if (net::ChannelClassifierUtils::IsClassifierBlockingErrorCode(
               errorCode)) {
         Document* doc = GetOurOwnerDoc();
         doc->AddBlockedNodeByClassifier(AsContent());

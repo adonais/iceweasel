@@ -25,8 +25,8 @@ class Connection : public DOMEventTargetHelper {
  public:
   NS_DECL_ISUPPORTS_INHERITED
 
-  static Connection* CreateForWindow(nsPIDOMWindowInner* aWindow,
-                                     bool aShouldResistFingerprinting);
+  static already_AddRefed<Connection> CreateForWindow(
+      nsPIDOMWindowInner* aWindow, bool aShouldResistFingerprinting);
 
   static already_AddRefed<Connection> CreateForWorker(
       WorkerPrivate* aWorkerPrivate, ErrorResult& aRv);

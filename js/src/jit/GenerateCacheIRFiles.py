@@ -380,11 +380,11 @@ def gen_spewer_method(name, args):
         is_first = True
         for arg_name, arg_type in args.items():
             _, suffix, readexpr = arg_reader_info[arg_type]
-            arg_name += suffix
+            read_name = arg_name + suffix
             spew_method = arg_spewer_method[arg_type]
             if not is_first:
                 args_code += "  spewArgSeparator();\\\n"
-            args_code += f'  {spew_method}("{arg_name}", {readexpr});\\\n'
+            args_code += f'  {spew_method}("{read_name}", {readexpr});\\\n'
             is_first = False
 
     code = f"void {method_name}(CacheIRReader& reader) {{\\\n"
@@ -416,15 +416,16 @@ def gen_clone_method(name, args, inlining_candidate):
     args_code = ""
     if args:
         for arg_name, arg_type in args.items():
+            read_arg_type = arg_type
             if arg_type == "RawId":
-                arg_type = "ValId"
+                read_arg_type = "ValId"
 
-            read_type, suffix, readexpr = arg_reader_info[arg_type]
+            read_type, suffix, readexpr = arg_reader_info[read_arg_type]
             read_name = arg_name + suffix
             value_name = read_name
             args_code += f"  {read_type} {read_name} = {readexpr};\\\n"
 
-            write_type, write_method = arg_writer_info[arg_type]
+            write_type, write_method = arg_writer_info[read_arg_type]
             if arg_name == "result":
                 args_code += "  writer.newOperandId();\\\n"
             if suffix == "Offset":
@@ -433,9 +434,7 @@ def gen_clone_method(name, args, inlining_candidate):
                 if write_type.endswith("&"):
                     write_type = write_type[:-1]
                 value_name = arg_name
-                args_code += (
-                    f"  {write_type} {value_name} = get{arg_type}({read_name});\\\n"
-                )
+                args_code += f"  {write_type} {value_name} = get{read_arg_type}({read_name});\\\n"
             args_code += f"  writer.{write_method}({value_name});\\\n"
 
     code = f"void {method_name}"
@@ -634,7 +633,7 @@ def read_aot_ics(ic_path):
         if entry.is_file() and os.path.basename(entry.path).startswith("IC-"):
             with open(entry.path) as f:
                 content = f.read().strip()
-                ics += "  _(%d, %s) \\\n" % (idx, content)
+                ics += f"  _({idx}, {content}) \\\n"
                 idx += 1
     return ics
 

@@ -595,10 +595,10 @@ static const uint32_t kInputIconSize = 16;
   if (mTouchBarHelper) {
     nsresult rv = mTouchBarHelper->GetActiveUrl(url);
     if (!NS_FAILED(rv)) {
-      urlToShare = [NSURL URLWithString:nsCocoaUtils::ToNSString(url)];
-      // NSURL URLWithString returns nil if the URL is invalid. At this point,
-      // it is too late to simply shut down the share menu, so we default to
-      // about:blank if the share button is clicked when the URL is invalid.
+      urlToShare = nsCocoaUtils::ToNSURL(url);
+      // ToNSURL returns nil if the URL is invalid. At this point, it is too
+      // late to simply shut down the share menu, so we default to about:blank
+      // if the share button is clicked when the URL is invalid.
       if (urlToShare == nil) {
         urlToShare = [NSURL URLWithString:@"about:blank"];
       }

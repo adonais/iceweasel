@@ -126,7 +126,8 @@
         <org.mozilla.fenix.settings.IPProtectionPreference
             android:key="@string/pref_key_ip_protection_settings"
             app:iconSpaceReserved="false"
-            app:isPreferenceVisible="false" />
+            app:isPreferenceVisible="false"
+            app:allowDividerAbove="false"/>
 
         <androidx.preference.Preference
             android:key="@string/pref_key_https_only_settings"
@@ -261,11 +262,7 @@
             app:iconSpaceReserved="false"
             android:title="@string/preferences_debug_settings"
             app:isPreferenceVisible="false" />
-        <androidx.preference.Preference
-            android:key="@string/pref_key_secret_debug_info"
-            app:iconSpaceReserved="false"
-            android:title="@string/preferences_debug_info"
-            app:isPreferenceVisible="false" />
+
         <androidx.preference.Preference
             android:key="@string/pref_key_nimbus_experiments"
             app:iconSpaceReserved="false"

@@ -229,6 +229,35 @@ fn dynamic_link() {
     for lib in dynamic_libs {
         println!("cargo:rustc-link-lib=dylib={lib}");
     }
+    maybe_link_freebl3();
+}
+
+fn maybe_link_freebl3() {
+    if env::var("CARGO_FEATURE_BLAPI").is_ok() {
+        println!("cargo:rustc-link-lib=dylib=freebl3");
+    }
+}
+
+/// Emit the library link and search-path for freebl3 in a Gecko build.
+#[cfg(feature = "gecko")]
+fn maybe_link_freebl3_gecko(topobjdir: &Path, fold_libs: bool) {
+    if env::var("CARGO_FEATURE_BLAPI").is_err() {
+        return;
+    }
+    println!("cargo:rustc-link-lib=dylib=freebl3");
+    let search = if env::var("CARGO_CFG_TARGET_OS").as_deref() == Ok("windows") {
+        topobjdir
+            .join("security")
+            .join("nss")
+            .join("lib")
+            .join("freebl")
+            .join("freebl_freebl3")
+    } else if fold_libs {
+        topobjdir.join("dist").join("bin")
+    } else {
+        return;
+    };
+    println!("cargo:rustc-link-search=native={}", search.display());
 }
 
 fn static_link() {
@@ -396,18 +425,41 @@ fn pkg_config() -> Result<Vec<String>, Box<dyn Error>> {
     let cfg_str = String::from_utf8(cfg)?;
 
     let mut flags: Vec<String> = Vec::new();
+    let mut lib_dirs: Vec<PathBuf> = Vec::new();
 
     for f in cfg_str.split_whitespace() {
         if f.starts_with("-I") {
             flags.push(String::from(f));
         } else if let Some(path) = f.strip_prefix("-L") {
             println!("cargo:rustc-link-search=native={path}");
+            lib_dirs.push(PathBuf::from(path));
         } else if let Some(lib) = f.strip_prefix("-l") {
             println!("cargo:rustc-link-lib=dylib={lib}");
         } else {
             println!("cargo:warning=Unknown flag from pkg-config: {f}");
         }
     }
+
+    if env::var("CARGO_FEATURE_BLAPI").is_ok() {
+        // pkg-config omits -L for default system library paths (e.g., /usr/lib64 on
+        // RHEL/Fedora), so also include the libdir from the .pc file.
+        if let Ok(output) = Command::new("pkg-config")
+            .args(["--variable=libdir", "nss"])
+            .output()
+            && output.status.success()
+            && let Ok(s) = String::from_utf8(output.stdout)
+        {
+            let trimmed = s.trim();
+            if !trimmed.is_empty() {
+                let dir = PathBuf::from(trimmed);
+                if !lib_dirs.contains(&dir) {
+                    println!("cargo:rustc-link-search=native={}", dir.display());
+                    lib_dirs.push(dir);
+                }
+            }
+        }
+    }
+    maybe_link_freebl3();
 
     Ok(flags)
 }
@@ -471,24 +523,26 @@ fn setup_for_gecko() -> Vec<String> {
         println!("cargo:rustc-link-lib=dylib={}", lib);
     }
 
+    maybe_link_freebl3_gecko(TOPOBJDIR, fold_libs);
+
     if fold_libs {
         println!(
             "cargo:rustc-link-search=native={}",
-            TOPOBJDIR.join("security").to_str().unwrap()
+            TOPOBJDIR.join("security").display()
         );
     } else {
         println!(
             "cargo:rustc-link-search=native={}",
-            TOPOBJDIR.join("dist").join("bin").to_str().unwrap()
+            TOPOBJDIR.join("dist").join("bin").display()
         );
         let nsslib_path = TOPOBJDIR.join("security").join("nss").join("lib");
         println!(
             "cargo:rustc-link-search=native={}",
-            nsslib_path.join("nss").join("nss_nss3").to_str().unwrap()
+            nsslib_path.join("nss").join("nss_nss3").display()
         );
         println!(
             "cargo:rustc-link-search=native={}",
-            nsslib_path.join("ssl").join("ssl_ssl3").to_str().unwrap()
+            nsslib_path.join("ssl").join("ssl_ssl3").display()
         );
         println!(
             "cargo:rustc-link-search=native={}",
@@ -497,8 +551,7 @@ fn setup_for_gecko() -> Vec<String> {
                 .join("external")
                 .join("nspr")
                 .join("pr")
-                .to_str()
-                .unwrap()
+                .display()
         );
     }
 

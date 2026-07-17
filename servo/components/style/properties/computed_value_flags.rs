@@ -123,6 +123,19 @@ bitflags! {
 
         /// Whether grid-auto-flow is author-specified.
         const HAS_AUTHOR_SPECIFIED_GRID_AUTO_FLOW = 1 << 23;
+
+        /// Whether this style has used font relative units. Note that this is different than the
+        /// FONT_METRICS bits, which don't include rem / em etc.
+        const USES_FONT_RELATIVE_UNITS = 1 << 24;
+
+        /// Whether this style depends on font relative units in container queries.
+        const USES_FONT_RELATIVE_UNITS_ON_CONTAINER_QUERIES = 1 << 25;
+
+        /// Whether this style uses `sibling-count()`.
+        const USES_SIBLING_COUNT = 1 << 26;
+
+        /// Whether this style uses `sibling-index()`.
+        const USES_SIBLING_INDEX = 1 << 27;
     }
 }
 
@@ -160,6 +173,13 @@ impl ComputedValueFlags {
         Self::USES_VIEWPORT_UNITS_ON_CONTAINER_QUERIES
             | Self::CONSIDERED_NONTRIVIAL_SCOPED_STYLE
             | Self::DEPENDS_ON_CONTAINER_STYLE_QUERY
+            | Self::USES_FONT_RELATIVE_UNITS_ON_CONTAINER_QUERIES
+    }
+
+    /// Flags corresponding to usage of tree-counting functions.
+    #[inline]
+    pub fn tree_counting_function_flags() -> Self {
+        Self::USES_SIBLING_COUNT | Self::USES_SIBLING_INDEX
     }
 
     /// Returns the flags that are always propagated to descendants.

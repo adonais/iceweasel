@@ -171,7 +171,13 @@ void nsRubyFrame::Reflow(nsPresContext* aPresContext,
     rbc->UpdateDescendantLeadings(mLeadings);
   }
 
-  ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, aStatus);
+  if (!StaticPrefs::layout_abspos_fragment_aware_inline_cb_enabled()) {
+    // This is the legacy, spec-incompatible behavior to reflow abspos children
+    // using only the first ruby fragment's rect.
+    ReflowAbsoluteFrames(aPresContext, aDesiredSize, aReflowInput, aStatus);
+  } else {
+    MarkBlockAncestorHavingAbsoluteDescendants(aReflowInput);
+  }
 }
 
 void nsRubyFrame::ReflowSegment(nsPresContext* aPresContext,

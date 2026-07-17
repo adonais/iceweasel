@@ -182,7 +182,6 @@ class DownloadTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1114970
-    @Ignore("Bug 2041355 changed the default download behavior and requires to update those test")
     @Test
     @SkipLeaks(reasons = ["https://bugzilla.mozilla.org/show_bug.cgi?id=2004099"])
     fun deleteDownloadedFileTest() {
@@ -195,16 +194,17 @@ class DownloadTest {
             verifyDownloadedFileExistsInDownloadsList("smallZip.zip")
             clickDownloadItemMenuIcon("smallZip.zip")
             deleteDownloadedItem("smallZip.zip")
+            confirmDeleteDownloadDialogIfDisplayed()
             clickSnackbarButton(composeTestRule, "Undo")
             verifyDownloadedFileExistsInDownloadsList("smallZip.zip")
             clickDownloadItemMenuIcon("smallZip.zip")
             deleteDownloadedItem("smallZip.zip")
+            confirmDeleteDownloadDialogIfDisplayed()
             verifyEmptyDownloadsList()
         }
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2302662
-    @Ignore("Bug 2041355 changed the default download behavior and requires to update those test")
     @Test
     fun deleteMultipleDownloadedFilesTest() {
         val firstDownloadedFile = "smallZip.zip"
@@ -228,7 +228,7 @@ class DownloadTest {
             clickDownloadedItem(secondDownloadedFile)
             openMultiSelectMoreOptionsMenu()
             clickMultiSelectRemoveButton()
-            clickMultiSelectDeleteDialogButton()
+            confirmDeleteDownloadDialogIfDisplayed()
             clickSnackbarButton(composeTestRule, "Undo")
             verifyDownloadedFileExistsInDownloadsList(firstDownloadedFile)
             verifyDownloadedFileExistsInDownloadsList(secondDownloadedFile)
@@ -236,7 +236,7 @@ class DownloadTest {
             clickDownloadedItem(secondDownloadedFile)
             openMultiSelectMoreOptionsMenu()
             clickMultiSelectRemoveButton()
-            clickMultiSelectDeleteDialogButton()
+            confirmDeleteDownloadDialogIfDisplayed()
             verifyEmptyDownloadsList()
         }
     }

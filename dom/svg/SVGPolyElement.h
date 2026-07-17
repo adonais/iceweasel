@@ -16,7 +16,7 @@ using SVGPolyElementBase = SVGGeometryElement;
 
 class SVGPolyElement : public SVGPolyElementBase {
  protected:
-  explicit SVGPolyElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo);
+  explicit SVGPolyElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo);
 
   virtual ~SVGPolyElement() = default;
 

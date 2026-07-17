@@ -550,7 +550,9 @@ NSValue* GeckoTextMarkerRange::Bounds() const {
   return [NSValue valueWithRect:r];
 }
 
-void GeckoTextMarkerRange::Select() const { mRange.SetSelection(0); }
+void GeckoTextMarkerRange::Select(bool aSetFocus) const {
+  mRange.SetSelection(0, aSetFocus);
+}
 
 }  // namespace a11y
 }  // namespace mozilla

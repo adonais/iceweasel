@@ -52,7 +52,7 @@ function run_test() {
   let token = Cc["@mozilla.org/security/internalkeytoken;1"].createInstance(
     Ci.nsIPKCS11Token
   );
-  token.initPassword("password");
+  token.changePassword("", "password");
 
   let clientAuthRememberService = Cc[
     "@mozilla.org/security/clientAuthRememberService;1"
@@ -67,7 +67,7 @@ function run_test() {
 
   add_tls_server_setup("BadCertAndPinningServer", "bad_certs");
   add_test(function () {
-    token.logoutSimple();
+    token.logout();
     run_next_test();
   });
   Services.prefs.setIntPref("network.http.speculative-parallel-limit", 6);

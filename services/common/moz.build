@@ -18,7 +18,6 @@ EXTRA_JS_MODULES["services-common"] += [
     "kinto-storage-adapter.sys.mjs",
     "observers.sys.mjs",
     "rest.sys.mjs",
-    "uptake-telemetry.sys.mjs",
     "utils.sys.mjs",
 ]
 

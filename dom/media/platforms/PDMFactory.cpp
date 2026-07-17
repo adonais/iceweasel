@@ -15,6 +15,7 @@
 #include "MP4Decoder.h"
 #include "MediaChangeMonitor.h"
 #include "MediaInfo.h"
+#include "PDMFactorySupport.h"
 #include "VPXDecoder.h"
 #include "VideoUtils.h"
 #include "mozilla/ClearOnShutdown.h"
@@ -66,7 +67,7 @@ using MCSInfo = mozilla::media::MCSInfo;
 namespace mozilla {
 
 #define PDM_INIT_LOG(msg, ...) \
-  MOZ_LOG(sPDMLog, LogLevel::Debug, ("PDMInitializer, " msg, ##__VA_ARGS__))
+  MOZ_LOG_FMT(sPDMLog, LogLevel::Debug, "PDMInitializer, " msg, ##__VA_ARGS__)
 
 extern already_AddRefed<PlatformDecoderModule> CreateNullDecoderModule();
 
@@ -587,7 +588,7 @@ void PDMFactory::CreateRddPDMs() {
   PDM_INIT_LOG("RDD PDM order:");
   int i = 0;
   for (const auto& pdm : mCurrentPDMs) {
-    PDM_INIT_LOG("%d: %s", i++, pdm->Name());
+    PDM_INIT_LOG("{}: {}", i++, pdm->Name());
   }
 }
 
@@ -633,7 +634,7 @@ void PDMFactory::CreateUtilityPDMs() {
   PDM_INIT_LOG("Utility PDM order:");
   int i = 0;
   for (const auto& pdm : mCurrentPDMs) {
-    PDM_INIT_LOG("%d: %s", i++, pdm->Name());
+    PDM_INIT_LOG("{}: {}", i++, pdm->Name());
   }
 }
 
@@ -723,7 +724,7 @@ void PDMFactory::CreateContentPDMs() {
   PDM_INIT_LOG("Content PDM order:");
   int i = 0;
   for (const auto& pdm : mCurrentPDMs) {
-    PDM_INIT_LOG("%d: %s", i++, pdm->Name());
+    PDM_INIT_LOG("{}: {}", i++, pdm->Name());
   }
 }
 
@@ -773,7 +774,7 @@ void PDMFactory::CreateDefaultPDMs() {
   PDM_INIT_LOG("Default PDM order:");
   int i = 0;
   for (const auto& pdm : mCurrentPDMs) {
-    PDM_INIT_LOG("%d: %s", i++, pdm->Name());
+    PDM_INIT_LOG("{}: {}", i++, pdm->Name());
   }
 }
 
@@ -846,8 +847,11 @@ StaticMutex PDMFactory::sSupportedMutex;
 media::MediaCodecsSupported PDMFactory::Supported(bool aForceRefresh) {
   StaticMutexAutoLock lock(sSupportedMutex);
 
-  static auto calculate = []() {
-    auto pdm = MakeRefPtr<PDMFactory>();
+  if (aForceRefresh) {
+    PDMFactorySupport::Invalidate();
+  }
+
+  auto calculate = []() {
     MediaCodecsSupported supported;
     // H264 and AAC depends on external framework that must be dynamically
     // loaded.
@@ -859,7 +863,8 @@ media::MediaCodecsSupported PDMFactory::Supported(bool aForceRefresh) {
     // will be added in addition to the WMF and FFmpeg PDM (such as OpenH264)
     for (const auto& cd : MCSInfo::GetAllCodecDefinitions()) {
       supported += MCSInfo::GetDecodeMediaCodecsSupported(
-          cd.codec, pdm->SupportsMimeType(nsCString(cd.mimeTypeString)));
+          cd.codec,
+          PDMFactorySupport::IsTypeSupported(nsCString(cd.mimeTypeString)));
     }
 #ifdef MOZ_WIDGET_ANDROID
     if (AndroidDecoderModule::IsJavaDecoderModuleAllowed()) {

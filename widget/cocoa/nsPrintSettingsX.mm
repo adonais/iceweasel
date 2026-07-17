@@ -28,7 +28,7 @@ nsPrintSettingsX::nsPrintSettingsX() {
 
 already_AddRefed<nsIPrintSettings> CreatePlatformPrintSettings(
     const PrintSettingsInitializer& aSettings) {
-  RefPtr<nsPrintSettings> settings = new nsPrintSettingsX();
+  auto settings = MakeRefPtr<nsPrintSettingsX>();
   settings->InitWithInitializer(aSettings);
   settings->SetDefaultFileName();
   return settings.forget();

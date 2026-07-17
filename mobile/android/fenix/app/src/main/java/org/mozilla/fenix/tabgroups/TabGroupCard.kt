@@ -57,18 +57,18 @@ import org.mozilla.fenix.tabstray.data.TabGroupTheme
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
 import org.mozilla.fenix.tabstray.ui.tabitems.LOREM_IPSUM
 import org.mozilla.fenix.tabstray.ui.tabitems.MultiSelectTabButton
-import org.mozilla.fenix.tabstray.ui.tabitems.TabContentCardShape
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGridTabItem
 import org.mozilla.fenix.tabstray.ui.tabitems.TabGroupMenuButton
 import org.mozilla.fenix.tabstray.ui.tabitems.TabHeaderIconTouchTargetSize
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemClickHandler
 import org.mozilla.fenix.tabstray.ui.tabitems.TabsTrayItemSelectionState
-import org.mozilla.fenix.tabstray.ui.tabitems.ThumbnailShape
 import org.mozilla.fenix.tabstray.ui.tabitems.gridItemAspectRatio
+import org.mozilla.fenix.tabstray.ui.tabitems.tabContentCardShape
 import org.mozilla.fenix.tabstray.ui.tabitems.tabGridItemContainerColor
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemClickable
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemConditionalBorder
 import org.mozilla.fenix.tabstray.ui.tabitems.tabItemGridInteractionAnimation
+import org.mozilla.fenix.tabstray.ui.tabitems.thumbnailShape
 import org.mozilla.fenix.theme.FirefoxTheme
 
 const val TOP_START_THUMBNAIL_INDEX = 0
@@ -109,12 +109,12 @@ fun TabGroupCard(
         Card(
             modifier = Modifier
                 .fillMaxWidth()
-                .clip(TabContentCardShape)
+                .clip(tabContentCardShape)
                 .tabItemClickable(
                     clickHandler = clickHandler,
                     clickedItem = group,
                 ),
-            shape = TabContentCardShape,
+            shape = tabContentCardShape,
             border = tabItemConditionalBorder(selectionState),
             colors = CardDefaults.cardColors(
                 containerColor = containerColor,
@@ -163,7 +163,7 @@ fun TabGroupCard(
                             end = FirefoxTheme.layout.space.static50,
                             bottom = FirefoxTheme.layout.space.static50,
                         ),
-                    shape = ThumbnailShape,
+                    shape = thumbnailShape,
                 ) {
                     ThumbnailsGridView(
                         thumbnails = group.thumbnails,

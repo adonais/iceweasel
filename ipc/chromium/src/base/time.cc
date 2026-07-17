@@ -80,7 +80,7 @@ Time Time::LocalMidnight() const {
 
 // static
 bool Time::FromString(const wchar_t* time_string, Time* parsed_time) {
-  DCHECK((time_string != NULL) && (parsed_time != NULL));
+  DCHECK((time_string != nullptr) && (parsed_time != nullptr));
   std::string ascii_time_string = SysWideToUTF8(time_string);
   if (ascii_time_string.length() == 0) return false;
   PRTime result_time = 0;

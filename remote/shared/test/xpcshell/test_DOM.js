@@ -523,6 +523,25 @@ add_task(function test_isDetached() {
   ok(dom.isDetached(detachedShadowRoot));
 });
 
+add_task(function test_getFirstNonZeroRect() {
+  const makeRect = (width, height) => ({ width, height });
+
+  // Returns the first non-zero rect when it exists.
+  deepEqual(
+    dom.getFirstNonZeroRect([makeRect(0, 0), makeRect(32, 32), makeRect(0, 0)]),
+    makeRect(32, 32)
+  );
+
+  // Falls back to rects[0] when all rects are zero-size.
+  deepEqual(
+    dom.getFirstNonZeroRect([makeRect(0, 0), makeRect(0, 0)]),
+    makeRect(0, 0)
+  );
+
+  // Works when the first rect is already non-zero.
+  deepEqual(dom.getFirstNonZeroRect([makeRect(10, 20)]), makeRect(10, 20));
+});
+
 add_task(function test_isStale() {
   const { childEl, iframeEl } = setupTest();
 

@@ -31,6 +31,129 @@ newtab-card-dismiss-button =
     .title = Zachyśiś
     .aria-label = Zachyśiś
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-title =
+    .label = Startowy bok
+home-homepage-new-windows =
+    .label = Nowe wokna
+home-homepage-new-tabs =
+    .label = Nowe rejtariki
+# This option leads to the "Custom Homepage" subpage
+home-homepage-custom-homepage-button =
+    .label = Wubjeŕśo wěste sedło
+
+## Custom URLs subpage
+
+# Subheader on the Custom Homepage subpage. Followed by a form to enter URLs and a list of URLs already saved, if any.
+home-custom-homepage-card-header =
+    .label = Adrese websedłow
+home-custom-homepage-address =
+    .placeholder = Adresu zapódaś
+home-custom-homepage-address-button =
+    .label = Adresu pśidaś
+# Shown when no custom websites/URLs to use as a homepage have been added yet
+home-custom-homepage-no-results =
+    .label = Hyšći žedne websedła pśidane.
+home-custom-homepage-delete-address-button =
+    .aria-label = Adresu lašowaś
+    .title = Adresu lašowaś
+# Further options to use when setting the home page. Two action buttons are placed in line with this prompt
+# to replace the current home page with a currently open page or bookmark.
+home-custom-homepage-replace-with-prompt =
+    .label = Wuměniś z
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-current-pages-button =
+    .label = Aktualne wócynjone boki
+# Button that appears in-line after text "Replace with" (home-custom-homepage-replace-with-prompt)
+home-custom-homepage-bookmarks-button =
+    .label = Cytańske znamjenja…
+
+## Firefox Home content
+
+home-prefs-content-header =
+    .label = { -firefox-home-brand-name }
+home-prefs-search-header2 =
+    .label = Pytaś
+home-prefs-stories-header2 =
+    .label = Tšojenja
+    .description = Wuwześowe wopśimjeśe, kótarež se pśez swójźbu { -brand-product-name } wótwardujo
+home-prefs-widgets-header =
+    .label = Asistenty
+# Lists is a widget on New Tab, similar to a to-do widget
+home-prefs-lists-header =
+    .label = Lisćiny
+# Timer is a widget on New Tab, similar to the Pomodoro timer.
+home-prefs-timer-header =
+    .label = Měritko casa
+# Sports is a widget on New Tab showing sports scores and schedules.
+home-prefs-sports-widget-header =
+    .label = Sport
+# Clock is a widget on New Tab that displays time zones around the world.
+home-prefs-clocks-header =
+    .label = Zeger
+home-prefs-mission-message2 =
+    .message = Naše sponsory našu misiju pódpěraju, aby lěpšy web twórili.
+home-prefs-manage-topics-link2 =
+    .label = Temy zastojaś
+home-prefs-choose-wallpaper-link2 =
+    .label = Wubjeŕśo slězynowy wobraz
+home-prefs-firefox-logo-header =
+    .label = Logo { -brand-short-name }
+# Informational message bar that appears in the Firefox Home section when the options are disabled.
+# The user must select Firefox Home as their homepage for either new tabs or new windows to enable
+# the features in settings.
+home-prefs-firefox-home-disabled-notice =
+    .message = Aby toś te funkcije wužywał, stajśo nowe rejtariki abo nowe wokna do { -firefox-home-brand-name }.
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } smužka
+            [two] { $num } smužce
+            [few] { $num }smužki
+           *[other] { $num } smužkow
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = Rozšyrjenje ({ $extension })
+home-restore-defaults-srd =
+    .label = Standard wótnowiś
+    .accesskey = S
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (standard)
+home-mode-choice-custom-srd =
+    .label = Swójske URL…
+home-mode-choice-blank-srd =
+    .label = Prozny bok
+home-prefs-shortcuts-header-srd =
+    .label = Zwězanja
+home-prefs-shortcuts-select =
+    .aria-label = Zwězanja
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Sponserowane zwězanja
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Sponserowane tšojenja pokazaś
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Woglědane boki
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Cytańske znamjenja
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Nejnowše ześěgnjenje
+home-prefs-recent-activity-header-srd =
+    .label = Nejnowša aktiwita
+home-prefs-recent-activity-select =
+    .aria-label = Nejnowša aktiwita
+home-prefs-weather-header-srd =
+    .label = Wjedro
+home-prefs-support-firefox-header-srd =
+    .label = { -brand-product-name } pódpěraś
+home-prefs-mission-message-learn-more-link-srd = Zgóńśo kak
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -151,6 +274,8 @@ newtab-menu-section-block = Blokěrowaś
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow-topic = Wěcej njeslědowaś
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = Dalšne informacije
 # "Follow", "unfollow", and "following" are social media terms that refer to subscribing to or unsubscribing from a section of stories.
 # e.g. Following the travel section of stories.
 newtab-menu-section-unfollow = Temje wěcej njeslědowaś
@@ -375,6 +500,8 @@ newtab-custom-widget-sports-toggle =
     .label = Swětowe mejstaŕstwo
 newtab-custom-widget-clock-toggle =
     .label = Zeger
+newtab-custom-widget-sports-toggle2 =
+    .label = Sport
 newtab-custom-widget-section-title = Asistenty
 newtab-custom-widget-section-toggle =
     .label = Asistenty
@@ -760,8 +887,6 @@ newtab-widget-lists-button-add-item = Zapisk pśidaś
 newtab-widget-lists-input-add-an-item2 =
     .placeholder = Zapisk pśidaś
     .aria-label = Zapisk pśidaś
-newtab-widget-lists-input-add-an-item =
-    .placeholder = Zapisk pśidaś
 newtab-widget-lists-input-error = Pšosym zapśimujśo tekst, aby zapisk pśidał.
 newtab-widget-lists-input-menu-open-link = Wótkaz wócyniś
 newtab-widget-lists-input-menu-move-up = Górjej
@@ -770,6 +895,9 @@ newtab-widget-lists-input-menu-delete = Lašowaś
 newtab-widget-lists-input-menu-edit = Wobźěłaś
 newtab-widget-lists-input-menu-edit2 =
     .aria-label = Zapisk wobźěłaś
+newtab-widget-lists-edit-clear =
+    .aria-label = Pśetergnuś
+    .title = Pśetergnuś
 # the + symbol emphasises the functionality of adding a new list
 newtab-widget-lists-dropdown-create =
     .label = + Nowu lisćinu napóraś
@@ -786,11 +914,6 @@ newtab-widget-lists-name-placeholder-checklist2 =
 newtab-widget-lists-name-placeholder-new2 =
     .placeholder = Nowa lisćina
     .aria-label = Mě lisćiny wobźěłaś
-newtab-widget-lists-name-placeholder-checklist =
-    .placeholder = Kontrolna lisćina
-# The placeholder value of the name field for a newly created list
-newtab-widget-lists-name-placeholder-new =
-    .placeholder = Nowa lisćina
 newtab-widget-section-title = Asistenty
 newtab-widget-menu-hide = Asistent schowaś
 newtab-widget-menu-change-size = Wjelikosć změniś
@@ -826,6 +949,14 @@ newtab-widget-section-menu-manage = Asistenty zastojaś
 newtab-widget-section-menu-hide-all = Asistenty schowaś
 newtab-widget-section-menu-learn-more = Dalšne informacije
 newtab-widget-section-feedback = Grońśo nam swójo měnjenje
+# Button shown when additional widgets are hidden beyond the
+# first row, allowing users to show them.
+newtab-widget-section-show-more =
+    .label = Wěcej asistentow pokazaś
+# Button shown when the widgets row is expanded to multiple rows,
+# allowing users to collapse it back to one row.
+newtab-widget-section-show-less =
+    .label = Mjenjej asistentow pokazaś
 newtab-widget-lists-name-default = Kontrolna lisćina
 
 ## Strings introduced by the Nova redesign of the Timer widget
@@ -856,6 +987,9 @@ newtab-daily-briefing-card-timestamp = Pśed { $minutes } m zaktualizěrowany
 newtab-widget-message-title = Wóstańśo koncentrěrowany z lisćinami a zatwarjonym casowym měritkom
 # to-dos stands for "things to do".
 newtab-widget-message-copy = Wót malsnych dopomnjeśow do wšednych nadawkowych lisćinow, koncentrěrujśo se na posejźenja, aby pśestawki pódlejšył – njepópušćajśo a buźćo zdypkom.
+# One spot refers to a dedicated section on new tab to manage and use widgets
+newtab-widget-message-focus-forecasts-title = Fokus, wjedrowe pśedpowěsći a wěcej na jadnem městnje
+newtab-widget-message-focus-forecasts-body = Źaržćo swój źeń z asistentami { -brand-product-name } w běgu. Cytajśo wjedrowu pśedpowěsć, koncentrěrujśo se na swóje nadawki abo slědujśo casoju wokoło globusa.
 # "Make Firefox yours" refers to about:newtab. The call to action here ("Try it now")
 # is to customize the new tab page with a background image or color from
 # the built-in wallpaper collection or uploading your own image.
@@ -915,9 +1049,9 @@ newtab-widget-timer-celebration-message-focus = Trjebaśo pawzu?
 # Message shown inside the Timer widget after a break session ends.
 newtab-widget-timer-celebration-message-break = Sćo gótowy se koncentrěrowaś?
 
-## Sports widget
+##
 
-newtab-sports-widget-menu-follow-teams = Teamam slědowaś
+newtab-sports-widget-menu-follow-teams = Mustwam slědowaś
 newtab-sports-widget-menu-view-schedule = Grajny plan pokazaś
 newtab-sports-widget-menu-view-upcoming = Pśichodny pokazaś
 newtab-sports-widget-menu-view-results = Wuslědki pokazaś
@@ -930,17 +1064,17 @@ newtab-sports-widget-get-updates = Dostańśo aktualizacije live a wěcej.
 newtab-sports-widget-view-schedule =
     .label = Grajny plan pokazaś
 newtab-sports-widget-follow-teams =
-    .label = Teamam slědowaś
+    .label = Mustwam slědowaś
 newtab-sports-widget-view-matches =
     .label = Graśa pokazaś
 # Variables:
 #   $number (number) - Maximum number of teams a user can choose to follow in the team selection state
 newtab-sports-widget-follow-teams-title =
     { $number ->
-        [one] { $number } teamoju slědowaś
-        [two] { $number } teamoma slědowaś
-        [few] { $number } teamam slědowaś
-       *[other] { $number } teamam slědowaś
+        [one] { $number } mustwoju slědowaś
+        [two] { $number } mustwoma slědowaś
+        [few] { $number } mustwam slědowaś
+       *[other] { $number } mustwam slědowaś
     }
 newtab-sports-widget-choose-wallpaper =
     .label = Wubjeŕśo slězynowy wobraz
@@ -953,7 +1087,59 @@ newtab-sports-widget-back-button =
     .aria-label = Slědk
 newtab-sports-widget-done-button =
     .label = Dokóńcony
+# Shown in the follow-teams list for a team that has been knocked out of the tournament.
+# Variables:
+#   $teamName (string) - the localized team name (e.g. "Canada").
+newtab-sports-widget-team-name-eliminated = { $teamName } (wupadnjony)
+newtab-sports-widget-view-all =
+    .label = Wšykne pokazaś
+newtab-sports-widget-show-less =
+    .label = Mjenjej pokazaś
+# Toggle that filters the list of teams the user follows
+newtab-sports-widget-followed-only-toggle =
+    .label = Jano mustwa, kótarymž slědujośo
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch =
+    .label = Glědaś
+    .title = Glědaś
+# Watch is a verb (as in watch matches online).
+newtab-sports-widget-watch-icon =
+    .aria-label = Live glědaś
+    .title = Live glědaś
+newtab-sports-widget-watch-dialog-close =
+    .aria-label = Zacyniś
+    .title = Zacyniś
+# Tag: user can watch without paying (sign-in may still be required).
+newtab-sports-widget-watch-stream-free = Dermo
+# Tag: user can start watching via a trial; continued access may require payment after it ends.
+newtab-sports-widget-watch-stream-free-trial = Dermotna testowa wersija
+# Tag: provider offers both a no-cost or trial path and a paid path.
+newtab-sports-widget-watch-stream-free-paid = Dermotny a z płaśenim
+# Tag: user must pay to watch (subscription, TV provider, premium plan, or add-on).
+newtab-sports-widget-watch-stream-paid = Z płaśenim
+# Note: provider only streams some matches, not the full tournament.
+newtab-sports-widget-watch-stream-select-games-only = Jano wubrane graśa
+# Heading for the list of streaming services available in the user’s country/region.
+newtab-sports-widget-watch-available-region = We wašom regionje k dispoziciji
+# Heading for the list of streaming services available outside the user’s country/region.
+newtab-sports-widget-watch-available-other-regions = Druge regiony
+# Button that opens the provider’s stream page in a new tab.
+newtab-sports-widget-watch-play =
+    .aria-label = Stream wócyniś
+    .title = Stream wócyniś
 newtab-sports-widget-group-stage = Kupkowa faza
+newtab-sports-widget-group-a = Kupka A
+newtab-sports-widget-group-b = Kupka B
+newtab-sports-widget-group-c = Kupka C
+newtab-sports-widget-group-d = Kupka D
+newtab-sports-widget-group-e = Kupka E
+newtab-sports-widget-group-f = Kupka F
+newtab-sports-widget-group-g = Kupka G
+newtab-sports-widget-group-h = Kupka H
+newtab-sports-widget-group-i = Kupka I
+newtab-sports-widget-group-j = Kupka J
+newtab-sports-widget-group-k = Kupka K
+newtab-sports-widget-group-l = Kupka L
 newtab-sports-widget-round-32 = Koło z 32
 newtab-sports-widget-round-16 = Koło z 16
 newtab-sports-widget-quarter-finals = Běrtylfinale
@@ -991,6 +1177,110 @@ newtab-sports-widget-third-place = Tśeśe městno
 newtab-sports-widget-runner-up = Druge městno
 newtab-sports-widget-champions = Mejstarje
 newtab-sports-widget-world-cup-champions = Swětowe mejstarje 2026
+# Variables:
+#   $date (Date) - The match start time
+newtab-sports-widget-match-time = { DATETIME($date, hour: "2-digit", minute: "2-digit") }
+newtab-sports-widget-match-full-time = Wšen cas
+newtab-sports-widget-match-halftime = Połcas
+newtab-sports-widget-match-extra-time = Pódlejšenje
+newtab-sports-widget-match-penalties = Pokutne kopy
+# Separator shown between two teams in a placeholder match row when no upcoming
+# match details are available yet.
+newtab-sports-widget-match-vs = pśeśiwo
+# Note shown in the Upcoming tab when no match details are available yet.
+newtab-sports-widget-no-upcoming-matches = Wóstajśo na běžnem za pśichodne grajne drobnostki
+
+## Sports widget live-games pagination. Shown when 2+ matches are live at the same time
+
+# arrow button that goes to the previous page of live matches.
+newtab-sports-widget-pagination-previous =
+    .aria-label = Pjerwjejšny
+    .title = Pjerwjejšny
+# arrow button that goes to the next page of live matches.
+newtab-sports-widget-pagination-next =
+    .aria-label = Pśiducy
+    .title = Pśiducy
+# Dot indicator that jumps directly to a given live match.
+# $index (number) - 1-based position of this dot in the list.
+# $total (number) - Total number of live matches.
+newtab-sports-widget-pagination-dot =
+    .aria-label = Graśe live { $index } z { $total }
+    .title = Graśe live { $index } z { $total }
+
+## Accessible labels for match rows in the sports widget. These are read by
+## screen readers to announce the match details and status.
+## Variables shared by all messages in this group:
+##   $homeTeam (String) - The full name of the home team (e.g. "Mexico")
+##   $awayTeam (String) - The full name of the away team (e.g. "Russia")
+
+# A finished match row (regular full-time result).
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+newtab-sports-widget-match-aria-label-results =
+    .aria-label = { $homeTeam }, { $homeScore } pśeśiwo { $awayTeam }, { $awayScore }
+# A finished match row that went to a penalty shootout.
+# Parenthesized values are the shootout score.
+# Variables:
+#   $homeScore (number) - The home team's regular-time score
+#   $awayScore (number) - The away team's regular-time score
+#   $homePenalty (number) - The home team's penalty shootout score
+#   $awayPenalty (number) - The away team's penalty shootout score
+newtab-sports-widget-match-aria-label-results-penalties =
+    .aria-label = { $homeTeam }, { $homeScore } ({ $homePenalty }) pśeśiwo { $awayTeam }, { $awayScore } ({ $awayPenalty })
+# A match that is currently in progress.
+# Variables:
+#   $homeScore (number) - The home team's current score
+#   $awayScore (number) - The away team's current score
+newtab-sports-widget-match-aria-label-now =
+    .aria-label = Live: { $homeTeam }, { $homeScore } pśeśiwo { $awayTeam }, { $awayScore }
+# An upcoming scheduled match row. Announces kickoff time and date.
+# Variables:
+#   $date (Date) - The scheduled kickoff date/time
+newtab-sports-widget-match-aria-label-upcoming =
+    .aria-label = { $homeTeam } pśeśiwo { $awayTeam }, { DATETIME($date, hour: "numeric", minute: "numeric") }, { DATETIME($date, day: "numeric", month: "long") }
+# An upcoming match row whose status is "delayed".
+newtab-sports-widget-match-aria-label-upcoming-delayed =
+    .aria-label = { $homeTeam } pśeśiwo { $awayTeam }, wokomuźony
+# An upcoming match row whose status is "postponed".
+newtab-sports-widget-match-aria-label-upcoming-postponed =
+    .aria-label = { $homeTeam } pśeśiwo { $awayTeam }, wótsunjony
+# An upcoming match row whose status is "suspended".
+newtab-sports-widget-match-aria-label-upcoming-suspended =
+    .aria-label = { $homeTeam } pśeśiwo { $awayTeam }, wótgronjony
+# An upcoming match row whose status is "cancelled".
+newtab-sports-widget-match-aria-label-upcoming-cancelled =
+    .aria-label = { $homeTeam } pśeśiwo { $awayTeam }, pśetergnjony
+
+## Sports widget — team names (FIFA country codes)
+## Only includes names not adequately covered by standard country-code
+## internationalization tooling.
+
+newtab-sports-widget-team-name-label-bih =
+    .label = Bosniska a Hercegowina
+newtab-sports-widget-team-name-label-civ =
+    .label = Słonokósćowy pśibrjog
+newtab-sports-widget-team-name-label-cod =
+    .label = DR Kongo
+newtab-sports-widget-team-name-label-eng =
+    .label = Engelska
+newtab-sports-widget-team-name-label-sco =
+    .label = Šotiska
+# Placeholder used in a match row's aria-label for an undecided team (shown visually as "--").
+newtab-sports-widget-team-tbd = Musy se póstajiś
+
+## Sports widget OMC messages
+## Shown as on-screen messages promoting the Sports widget and World Cup wallpapers.
+
+newtab-sports-widget-message-wallpapers-title = Zachopśo swětowe mejstaŕstwo z nowym slězynowymi wobrazami
+newtab-sports-widget-message-wallpapers-body = Pśinjasćo atmosferu grajnego dnja do swójogo wobglědowaka za turněr.
+newtab-sports-widget-message-wallpapers-cta = Slězynowy wobraz wubraś
+newtab-sports-widget-message-add-widgets-cta =
+    .label = Asistenty pśidaś
+newtab-sports-widget-message-day-in-play-title = Grajśo z asistentami { -brand-product-name } ceły źeń
+newtab-sports-widget-message-day-in-play-body = Slědujśo swětowemu mejstaŕstwoju, wóstańśo na nadawku, slědujśo casoju wokoło globusa a wěcej.
+newtab-sports-widget-message-explore-widgets-cta =
+    .label = Asistenty wuslěźiś
 
 ## Strings for activation window message variants. In certain experiment configurations,
 ## the strings from these variants may be displayed in a message below the search input
@@ -1052,6 +1342,19 @@ newtab-clock-widget-button-save = Składowaś
 newtab-clock-widget-button-remove-clock =
     .title = Zeger wótwónoźeś
     .aria-label = Zeger wótwónoźeś
+# Accessible name for a clock row in the "Your clocks" management panel
+# when the row has no user-provided nickname. Read aloud by screen
+# readers when focus lands on the row.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+newtab-clock-widget-edit-item =
+    .aria-label = { $city }
+# Accessible name for a clock row when a user nickname has been set.
+# Variables:
+#   $city (string) - The city name displayed in the row.
+#   $nickname (string) - The user-provided nickname for the row.
+newtab-clock-widget-edit-item-with-nickname =
+    .aria-label = { $city }, pśimě: { $nickname }
 newtab-clock-widget-add-clock-form =
     .aria-label = Zeger pśidaś
 newtab-clock-widget-edit-clock-form =
@@ -1061,6 +1364,10 @@ newtab-clock-widget-edit-clock-form =
 # It means "results of the search", not "search within the results".
 newtab-clock-widget-search-results =
     .aria-label = Pytańske wuslědki
+# Shown in place of the search results when the user's query does not match any
+# supported city — e.g. typing a misspelled name or a place not in the IANA
+# time zone list.
+newtab-clock-widget-search-no-results = Žedne wótpowědniki
 # "Open menu for clock" is an icon-only button in the widget toolbar — the
 # attributes are consumed as tooltip/screen-reader label only. The button
 # never renders visible text.

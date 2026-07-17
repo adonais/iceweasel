@@ -167,7 +167,7 @@ add_task(async function test_hide_tabs_and_sidebar_persists_in_new_window() {
     openerWindow: window,
   });
   await SidebarTestUtils.waitForInitialized(newWin);
-  const newSidebar = newWin.document.getElementById("sidebar-main");
+  const newSidebar = newWin.document.getElementById("sidebar-container");
   ok(
     newSidebar.hidden,
     "Sidebar launcher is hidden in new window when 'Hide tabs and sidebar' is set"

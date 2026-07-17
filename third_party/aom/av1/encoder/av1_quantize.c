@@ -818,7 +818,14 @@ void av1_init_plane_quantizers(const AV1_COMP *cpi, MACROBLOCK *x,
               0, QINDEX_RANGE - 1);
     qindex_rd = av1_get_qindex(&cm->seg, segment_id, current_rd_qindex);
   } else {
-    qindex_rd = qindex;
+    if (cpi->cb_delta_rdmult_enabled) {
+      const int current_rd_qindex =
+          clamp(quant_params->base_qindex + x->rdmult_delta_qindex, 0,
+                QINDEX_RANGE - 1);
+      qindex_rd = av1_get_qindex(&cm->seg, segment_id, current_rd_qindex);
+    } else {
+      qindex_rd = qindex;
+    }
   }
 
   const int qindex_rdmult = qindex_rd + quant_params->y_dc_delta_q;

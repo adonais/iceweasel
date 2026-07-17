@@ -15,8 +15,6 @@ prefs = [
   # Disable tab previews as some tests click on the toolbar.
   "browser.tabs.hoverPreview.enabled=false",
   "browser.tabs.groups.hoverPreview.enabled=false",
-  # TODO(Bug 2039395): adapt this test to the new bookmarks sidebar panel and remove this sidebar.updateBookmarks.enabled pushPrefEnv
-  "sidebar.updatedBookmarks.enabled=false"
 ]
 
 ["browser_addBookmarkForFrame.js"]
@@ -239,9 +237,11 @@ https_first_disabled = true
 ["browser_remove_bookmarks.js"]
 
 ["browser_sidebar_bookmarks_glean.js"]
+skip-if = [
+  "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 2036783
+]
 
 ["browser_sidebar_bookmarks_telemetry.js"]
-disabled = "Bug 2036783"
 
 ["browser_sidebar_history_telemetry.js"]
 

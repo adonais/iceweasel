@@ -51,7 +51,7 @@ class FragmentTest {
     @Before
     fun setup() {
         mockContext = mockk(relaxed = true) {
-            every { settings() } returns settings
+            every { components.settings } returns settings
         }
         fragment = spyk(Fragment()).apply {
             every { context } returns mockContext

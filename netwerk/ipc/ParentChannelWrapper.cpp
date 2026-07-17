@@ -4,7 +4,7 @@
 
 #include "ParentChannelWrapper.h"
 #include "mozilla/net/HttpBaseChannel.h"
-#include "mozilla/net/UrlClassifierCommon.h"
+#include "mozilla/net/ChannelClassifierUtils.h"
 #include "mozilla/net/RedirectChannelRegistrar.h"
 #include "nsIViewSourceChannel.h"
 #include "nsNetUtil.h"
@@ -17,7 +17,8 @@ namespace net {
 NS_IMPL_ISUPPORTS(ParentChannelWrapper, nsIParentChannel, nsIStreamListener,
                   nsIRequestObserver);
 
-void ParentChannelWrapper::Register(uint64_t aRegistrarId) {
+void ParentChannelWrapper::Register(uint64_t aRegistrarId,
+                                    uint64_t aContentParentId) {
   nsCOMPtr<nsIRedirectChannelRegistrar> registrar =
       RedirectChannelRegistrar::GetOrCreate();
   if (!registrar) {
@@ -25,8 +26,8 @@ void ParentChannelWrapper::Register(uint64_t aRegistrarId) {
     return;
   }
   nsCOMPtr<nsIChannel> dummy;
-  MOZ_ALWAYS_SUCCEEDS(
-      NS_LinkRedirectChannels(aRegistrarId, this, getter_AddRefs(dummy)));
+  MOZ_ALWAYS_SUCCEEDS(NS_LinkRedirectChannels(
+      aRegistrarId, aContentParentId, this, getter_AddRefs(dummy)));
 
 #ifdef DEBUG
   // The channel registered with the RedirectChannelRegistrar will be the inner
@@ -82,7 +83,7 @@ ParentChannelWrapper::SetClassifierMatchedTrackingInfo(
 NS_IMETHODIMP
 ParentChannelWrapper::NotifyClassificationFlags(uint32_t aClassificationFlags,
                                                 bool aIsThirdParty) {
-  UrlClassifierCommon::SetClassificationFlagsHelper(
+  ChannelClassifierUtils::SetClassificationFlagsHelper(
       mChannel, aClassificationFlags, aIsThirdParty);
   return NS_OK;
 }

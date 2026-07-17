@@ -532,6 +532,11 @@ void nsUDPSocket::MarkAsTRRServiceChannel() { mIsTRRServiceChannel = true; }
 
 bool nsUDPSocket::IsTRRServiceChannel() { return mIsTRRServiceChannel; }
 
+void nsUDPSocket::SetOriginAttributes(
+    const mozilla::OriginAttributes& aOriginAttributes) {
+  mOriginAttributes = aOriginAttributes;
+}
+
 //-----------------------------------------------------------------------------
 // nsSocket::nsISupports
 //-----------------------------------------------------------------------------

@@ -217,13 +217,14 @@ struct nsStyleImageLayers {
 
   struct Layer {
     using StyleGeometryBox = mozilla::StyleGeometryBox;
+    using StyleBackgroundClip = mozilla::StyleBackgroundClip;
     using StyleImageLayerAttachment = mozilla::StyleImageLayerAttachment;
     using StyleBackgroundSize = mozilla::StyleBackgroundSize;
 
     mozilla::StyleImage mImage;
     mozilla::Position mPosition;
     StyleBackgroundSize mSize;
-    StyleGeometryBox mClip;
+    StyleBackgroundClip mClip;
     MOZ_INIT_OUTSIDE_CTOR StyleGeometryBox mOrigin;
 
     // This property is used for background layer only.
@@ -629,6 +630,7 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleBorder {
 
  public:
   mozilla::StyleBorderRadius mBorderRadius;  // coord, percent
+  mozilla::StyleCornerShapeRect mCornerShape;
   mozilla::StyleImage mBorderImageSource;
   mozilla::StyleBorderImageWidth mBorderImageWidth;
   mozilla::StyleNonNegativeLengthOrNumberRect mBorderImageOutset;
@@ -2114,6 +2116,24 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
     return mAnimations[aIndex % mAnimationRangeEndCount].GetRangeEnd();
   }
 
+  nsAtom* GetScrollTimelineName(uint32_t aIndex) const {
+    return mScrollTimelines[aIndex % mScrollTimelineNameCount].GetName();
+  }
+  mozilla::StyleScrollAxis GetScrollTimelineAxis(uint32_t aIndex) const {
+    return mScrollTimelines[aIndex % mScrollTimelineAxisCount].GetAxis();
+  }
+
+  nsAtom* GetViewTimelineName(uint32_t aIndex) const {
+    return mViewTimelines[aIndex % mViewTimelineNameCount].GetName();
+  }
+  mozilla::StyleScrollAxis GetViewTimelineAxis(uint32_t aIndex) const {
+    return mViewTimelines[aIndex % mViewTimelineAxisCount].GetAxis();
+  }
+  const mozilla::StyleViewTimelineInset& GetViewTimelineInset(
+      uint32_t aIndex) const {
+    return mViewTimelines[aIndex % mViewTimelineInsetCount].GetInset();
+  }
+
   mozilla::StyleBoolInteger mMozForceBrokenImageIcon;
   mozilla::StyleBoolInteger mMozSubtreeHiddenOnlyVisually;
   mozilla::StyleImeMode mIMEMode;
@@ -2167,6 +2187,8 @@ struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUIReset {
   mozilla::StyleViewTransitionClass mViewTransitionClass;
 
   mozilla::StyleScopedName mTimelineScope;
+
+  mozilla::StyleLinkParameters mLinkParameters;
 };
 
 struct MOZ_NEEDS_MEMMOVABLE_MEMBERS nsStyleUI {

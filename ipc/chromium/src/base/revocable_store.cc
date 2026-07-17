@@ -20,14 +20,14 @@ RevocableStore::RevocableStore() {
 
 RevocableStore::~RevocableStore() {
   // Revoke all the items in the store.
-  owning_reference_->set_store(NULL);
+  owning_reference_->set_store(nullptr);
 }
 
 void RevocableStore::Add(Revocable* item) { DCHECK(!item->revoked()); }
 
 void RevocableStore::RevokeAll() {
   // We revoke all the existing items in the store and reset our count.
-  owning_reference_->set_store(NULL);
+  owning_reference_->set_store(nullptr);
 
   // Then we create a new owning reference for new items that get added.
   // This Release()s the old owning reference, allowing it to be freed after

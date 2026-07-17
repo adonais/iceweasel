@@ -4,7 +4,10 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import { ToolRoleOpts } from "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs";
+import {
+  ToolRoleOpts,
+  AssistantRoleOpts,
+} from "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import {
   toolsConfig,
@@ -29,6 +32,7 @@ import {
   replaceUrlsWithTokens,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 import { compactMessages } from "moz-src:///browser/components/aiwindow/models/PromptOptimizer.sys.mjs";
+import { runLLMaJTelemetry } from "moz-src:///browser/components/aiwindow/models/TelemetryUtils.sys.mjs";
 
 /**
  * Execute a specific tool and return the result
@@ -112,8 +116,11 @@ export async function executeToolByName(
       result = toolResult;
       break;
     }
-    default:
-      throw new Error(`No such tool: ${toolName}`);
+    default: {
+      const err = new Error(`No such tool: ${toolName}`);
+      err.clientReason = "unknownTool";
+      throw err;
+    }
   }
   return result;
 }
@@ -191,6 +198,26 @@ export const Chat = {};
  * @param {object | Array} [data]
  * @param {string} [extraText]
  */
+/**
+ * Attach a default clientReason to a streaming error if it doesn't already
+ * carry classification info we recognize downstream.
+ *
+ * @param {unknown} err
+ */
+function classifyStreamingError(err) {
+  if (!err || (typeof err !== "object" && typeof err !== "function")) {
+    return;
+  }
+  const hasClassification =
+    err.clientReason ||
+    "status" in err ||
+    err.error ||
+    err.metadata?.errorMessage;
+  if (!hasClassification) {
+    err.clientReason = Services.io.offline ? "offline" : "connectionFailure";
+  }
+}
+
 function logConversationStream(turn, action, data = null, extraText = "") {
   try {
     let prefix = `[Chat][Turn ${turn}][${action.padEnd(10)}]`;
@@ -227,6 +254,7 @@ Object.assign(Chat, {
    * @param {openAIEngine} options.engineInstance
    * @param {BrowsingContext} options.browsingContext - Omitted for tests only.
    * @param {"fullpage" | "sidebar" | "urlbar"} options.mode - See the MODE in ai-window.mjs
+   * @param {object} [options.callContext] - Inference parameters; falls back to {} if absent.
    * @param {AbortSignal} [options.signal]
    */
   async fetchWithHistory({
@@ -234,12 +262,15 @@ Object.assign(Chat, {
     engineInstance,
     browsingContext,
     mode,
+    callContext,
     signal,
   }) {
     if (!browsingContext && !Cu.isInAutomation) {
-      throw new Error(
+      const err = new Error(
         "The browsingContext must exist for fetchWithHistory unless we're in automation."
       );
+      err.clientReason = "missingBrowsingContext";
+      throw err;
     }
     const fxAccountToken = await openAIEngine.getFxAccountToken();
     if (!fxAccountToken) {
@@ -251,8 +282,7 @@ Object.assign(Chat, {
 
     const toolRoleOpts = new ToolRoleOpts(engineInstance.model);
     const currentTurn = conversation.currentTurnIndex();
-    const config = engineInstance.getConfig(engineInstance.feature);
-    const inferenceParams = config?.parameters || {};
+    const inferenceParams = callContext?.parameters ?? {};
 
     /**
      * For the first turn only, we use exactly what the user typed as the `run_search` search query.
@@ -327,6 +357,7 @@ Object.assign(Chat, {
         }
       } catch (err) {
         console.error("fetchWithHistory streaming error:", err);
+        classifyStreamingError(err);
         throw err;
       } finally {
         ChromeUtils.addProfilerMarker(
@@ -340,6 +371,10 @@ Object.assign(Chat, {
         ChromeUtils.addProfilerMarker("SmartWindow", {}, "chat-no-tool-calls");
         // Debug logging: Mark the end of the streaming loop for this turn
         logConversationStream(currentTurn, "STREAM END");
+        if (!engineInstance.isCustomEndpoint) {
+          // We only run telemetry on our own endpoints
+          runLLMaJTelemetry(conversation, engineInstance);
+        }
         return;
       }
 
@@ -366,9 +401,13 @@ Object.assign(Chat, {
             arguments: tc.function.arguments || "{}",
           },
         }));
-        conversation.addAssistantMessage("function", {
-          tool_calls: blockedCalls,
-        });
+        conversation.addAssistantMessage(
+          "function",
+          {
+            tool_calls: blockedCalls,
+          },
+          new AssistantRoleOpts(engineInstance.model)
+        );
 
         for (const tc of pendingToolCalls.slice(0, 1)) {
           const content = {
@@ -418,9 +457,13 @@ Object.assign(Chat, {
         conversation.tokenToUrl
       );
 
-      conversation.addAssistantMessage("function", {
-        tool_calls: [lastToolCall],
-      });
+      conversation.addAssistantMessage(
+        "function",
+        {
+          tool_calls: [lastToolCall],
+        },
+        new AssistantRoleOpts(engineInstance.model)
+      );
 
       lazy.AIWindow.chatStore?.updateConversation(conversation).catch(() => {});
 

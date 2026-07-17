@@ -118,16 +118,20 @@ class DocumentEventsListener extends EventEmitter {
 
     const time = this._getPerformanceTiming(window, "navigationStart");
 
+    const isErrorPage =
+      window.docShell.currentDocumentChannel?.loadInfo.loadErrorPage;
+
     this.emit("dom-loading", {
       time,
       isFrameSwitching,
+      isErrorPage,
     });
 
     // Error pages, like the Offline page, i.e. about:neterror?...
     // are special and the WebProgress listener doesn't trigger any notification for them.
     // Also they are stuck on "interactive" state and never reach the "complete" state.
     // So fake the two missing events.
-    if (window.docShell.currentDocumentChannel?.loadInfo.loadErrorPage) {
+    if (isErrorPage) {
       this.onContentLoaded({ target: window.document }, isFrameSwitching);
       this.onLoad({ target: window.document }, isFrameSwitching);
       return;

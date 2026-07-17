@@ -13,6 +13,7 @@ import android.graphics.RectF
 import androidx.appcompat.content.res.AppCompatResources
 import androidx.core.graphics.createBitmap
 import com.google.zxing.EncodeHintType
+import com.google.zxing.WriterException
 import com.google.zxing.qrcode.decoder.ErrorCorrectionLevel
 import com.google.zxing.qrcode.encoder.ByteMatrix
 import com.google.zxing.qrcode.encoder.Encoder
@@ -28,6 +29,8 @@ class QRCodeGenerator {
 
     /**
      * Generates a QR code image as a [Bitmap] based on the provided text and dimensions.
+     *
+     * @throws [WriterException] if QR encoding fails because of invalid content or configuration.
      */
     fun generateQRCodeImage(
         text: String,
@@ -51,7 +54,7 @@ class QRCodeGenerator {
         val inputHeight = input.height
 
         paint.style = Paint.Style.FILL
-        paint.color = context.getColor(R.color.fx_mobile_on_surface)
+        paint.color = Color.BLACK
 
         drawBackground(canvas, width, height, context)
 

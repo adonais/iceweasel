@@ -86,7 +86,7 @@ Histogram* Histogram::FactoryGet(Sample minimum, Sample maximum,
                                  size_t bucket_count, Flags flags,
                                  const int* buckets) {
   DCHECK(buckets);
-  Histogram* histogram(NULL);
+  Histogram* histogram(nullptr);
 
   // Defensive code.
   if (minimum < 1) minimum = 1;
@@ -428,7 +428,7 @@ LinearHistogram::~LinearHistogram() = default;
 Histogram* LinearHistogram::FactoryGet(Sample minimum, Sample maximum,
                                        size_t bucket_count, Flags flags,
                                        const int* buckets) {
-  Histogram* histogram(NULL);
+  Histogram* histogram(nullptr);
 
   if (minimum < 1) minimum = 1;
   if (maximum > kSampleType_MAX - 1) maximum = kSampleType_MAX - 1;
@@ -494,7 +494,7 @@ bool LinearHistogram::PrintEmptyBucket(size_t index) const {
 //------------------------------------------------------------------------------
 
 Histogram* BooleanHistogram::FactoryGet(Flags flags, const int* buckets) {
-  Histogram* histogram(NULL);
+  Histogram* histogram(nullptr);
 
   BooleanHistogram* tentative_histogram = new BooleanHistogram();
   tentative_histogram->InitializeBucketRangeFromData(buckets);

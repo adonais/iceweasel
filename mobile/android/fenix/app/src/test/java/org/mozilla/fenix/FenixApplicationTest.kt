@@ -189,7 +189,7 @@ class FenixApplicationTest {
         every { settings.showPocketRecommendationsFeature } returns true
         every { settings.showContileFeature } returns true
         every { application.reportHomeScreenMetrics(settings) } just Runs
-        every { application.getDeviceTotalRAM() } returns 7L
+        every { application.deviceTotalRAM } returns 7L
         every { settings.inactiveTabsAreEnabled } returns true
         every { settings.isIsolatedProcessEnabled } returns true
         every { settings.isAppZygoteEnabled } returns true

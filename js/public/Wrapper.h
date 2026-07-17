@@ -139,6 +139,8 @@ class JS_PUBLIC_API Wrapper : public ForwardingProxyHandler {
 
   virtual bool finalizeInBackground(const JS::Value& priv) const override;
 
+  bool mayBeSwapped() const override { return true; }
+
   /**
    * A hook subclasses can override to implement CheckedUnwrapDynamic
    * behavior.  The JSContext represents the "who is trying to unwrap?" Realm.

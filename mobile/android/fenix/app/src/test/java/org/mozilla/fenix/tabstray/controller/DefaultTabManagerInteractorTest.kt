@@ -4,12 +4,9 @@
 
 package org.mozilla.fenix.tabstray.controller
 
-import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import io.mockk.verifySequence
-import mozilla.components.browser.state.state.ContentState
-import mozilla.components.browser.state.state.TabSessionState
 import mozilla.components.browser.state.state.createTab
 import org.junit.Test
 import org.mozilla.fenix.tabstray.data.TabsTrayItem
@@ -32,14 +29,14 @@ class DefaultTabManagerInteractorTest {
     fun `WHEN user deletes one browser tab page THEN the Interactor delegates to the controller`() {
         interactor.onTabClosed(testTab)
 
-        verifySequence { controller.handleTabDeletion(testTab.id) }
+        verifySequence { controller.handleTabDeletion(testTab) }
     }
 
     @Test
     fun `WHEN user confirms downloads cancellation THEN the Interactor delegates to the controller`() {
         interactor.onDeletePrivateTabWarningAccepted("testTabId")
 
-        verifySequence { controller.handleDeleteTabWarningAccepted("testTabId") }
+        verifySequence { controller.handleDeletePrivateTabWarningAccepted("testTabId") }
     }
 
     @Test

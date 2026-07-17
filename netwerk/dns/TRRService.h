@@ -65,7 +65,9 @@ class TRRService : public TRRServiceBase,
   bool IsTemporarilyBlocked(const nsACString& aHost,
                             const nsACString& aOriginSuffix,
                             bool aPrivateBrowsing, bool aParentsToo);
-  bool IsExcludedFromTRR(const nsACString& aHost);
+  bool IsExcludedFromTRR(
+      const nsACString& aHost,
+      nsIRequest::TRRMode aRequestMode = nsIRequest::TRR_DEFAULT_MODE);
 
   bool MaybeBootstrap(const nsACString& possible, nsACString& result);
   void RecordTRRStatus(TRR* aTrrRequest);
@@ -124,7 +126,9 @@ class TRRService : public TRRServiceBase,
 
   bool IsDomainBlocked(const nsACString& aHost, const nsACString& aOriginSuffix,
                        bool aPrivateBrowsing);
-  bool IsExcludedFromTRR_unlocked(const nsACString& aHost) MOZ_REQUIRES(mLock);
+  bool IsExcludedFromTRR_unlocked(const nsACString& aHost,
+                                  nsIRequest::TRRMode aRequestMode)
+      MOZ_REQUIRES(mLock);
 
   void RebuildSuffixList(nsTArray<nsCString>&& aSuffixList);
 

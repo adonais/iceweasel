@@ -17,7 +17,7 @@ struct FFmpegVulkanVideoDecoder {
   static constexpr int kNumBuffers = 32;
 
   // Device & copy queues (decode queue is owned by FFmpeg)
-  VkDevice mDevice = nullptr;
+  VkDevice mDevice = VK_NULL_HANDLE;
   uint32_t mQueueFamilyIndex = 0;
   uint32_t mCopyQueueCount = 0;
   bool mCopyQueueIsDedicatedTransfer = false;
@@ -73,7 +73,6 @@ struct FFmpegVulkanVideoDecoder {
   PFN_vkQueueSubmit mQueueSubmit = nullptr;
   PFN_vkCmdPipelineBarrier mCmdPipelineBarrier = nullptr;
   PFN_vkCmdCopyImage mCmdCopyImage = nullptr;
-  PFN_vkDeviceWaitIdle mDeviceWaitIdle = nullptr;
 
   // Function pointers - image & memory
   PFN_vkCreateImage mCreateImage = nullptr;

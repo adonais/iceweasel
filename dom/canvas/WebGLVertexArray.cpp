@@ -13,11 +13,11 @@
 
 namespace mozilla {
 
-WebGLVertexArray* WebGLVertexArray::Create(WebGLContext* webgl) {
+RefPtr<WebGLVertexArray> WebGLVertexArray::Create(WebGLContext* webgl) {
   if (webgl->gl->IsSupported(gl::GLFeature::vertex_array_object)) {
-    return new WebGLVertexArrayGL(webgl);
+    return MakeRefPtr<WebGLVertexArrayGL>(webgl);
   }
-  return new WebGLVertexArrayFake(webgl);
+  return MakeRefPtr<WebGLVertexArrayFake>(webgl);
 }
 
 WebGLVertexArray::WebGLVertexArray(WebGLContext* const webgl)

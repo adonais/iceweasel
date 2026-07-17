@@ -19,6 +19,7 @@ import mozilla.components.compose.browser.toolbar.store.BrowserToolbarInteractio
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Bottom
 import mozilla.components.compose.browser.toolbar.store.ToolbarGravity.Top
 import mozilla.components.compose.browser.toolbar.ui.BrowserToolbarQuery
+import mozilla.components.concept.toolbar.AutocompleteResult
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
@@ -158,6 +159,29 @@ class BrowserToolbarStoreTest {
         store.dispatch(BrowserToolbarAction.ExitEditMode)
 
         assertFalse(store.state.editState.queryWasPrefilled)
+    }
+
+    @Test
+    fun `WHEN exiting edit mode THEN existing autocomplete suggestion is removed`() {
+        val store = BrowserToolbarStore(
+            initialState = BrowserToolbarState(
+                mode = Mode.EDIT,
+                editState = EditState(
+                    query = BrowserToolbarQuery("moz"),
+                    suggestion = AutocompleteResult(
+                        input = "moz",
+                        text = "mozilla.com",
+                        url = "https://mozilla.com",
+                        source = "test",
+                        totalItems = 1,
+                    ),
+                ),
+            ),
+        )
+
+        store.dispatch(BrowserToolbarAction.ExitEditMode)
+
+        assertNull(store.state.editState.suggestion)
     }
 
     @Test

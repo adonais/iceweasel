@@ -113,6 +113,7 @@ class RecentSyncedTabFeatureTest {
             storage = syncedTabsStorage,
             historyStorage = historyStorage,
             coroutineScope = testScope,
+            ioDispatcher = testDispatcher,
         )
     }
 

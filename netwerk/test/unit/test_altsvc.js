@@ -27,7 +27,6 @@ function run_test() {
   http2pref = prefs.getBoolPref("network.http.http2.enabled");
   altsvcpref1 = prefs.getBoolPref("network.http.altsvc.enabled");
 
-  prefs.setBoolPref("network.http.happy_eyeballs_enabled", false);
   prefs.setBoolPref("network.http.http2.enabled", true);
   prefs.setBoolPref("network.http.altsvc.enabled", true);
   prefs.setCharPref(
@@ -108,6 +107,12 @@ Listener.prototype = {
     try {
       routed = request.getRequestHeader("Alt-Used");
     } catch (e) {}
+    // When a direct connection wins the Happy Eyeballs race, the alt-svc route
+    // is dropped by setting "Alt-Used: 0" (see RemoveAlternateServiceUsedHeader),
+    // which means the same thing as an absent header here.
+    if (routed == "0") {
+      routed = "";
+    }
     dump("routed is " + routed + "\n");
     Assert.equal(Components.isSuccessCode(status), expectPass);
 
@@ -115,6 +120,12 @@ Listener.prototype = {
       Assert.equal(routed, "");
       do_test_pending();
       loadWithoutClearingMappings = true;
+      // With Happy Eyeballs the alt-svc connection shares the origin's
+      // ConnectionEntry, so the retry would otherwise reuse the origin
+      // connection and be wrongly tagged as alt-svc-routed. Drop connections so
+      // the retry re-resolves the alt-svc from scratch.
+      Services.obs.notifyObservers(null, "net:cancel-all-connections");
+      Services.dns.clearCache(true);
       do_timeout(waitFor, doTest);
       waitFor = 0;
       xaltsvc = "NA";
@@ -318,8 +329,12 @@ function doTest9() {
   dump("Allowed port: " + otherServer.port);
   waitFor = 500;
   otherServer.asyncListen({
-    onSocketAccepted() {
-      Assert.ok(true, "Got connection to socket when we didn't expect it!");
+    onSocketAccepted(socket, transport) {
+      Assert.ok(true, "Got connection to socket");
+
+      let out = transport.openOutputStream(Ci.nsITransport.OPEN_BLOCKING, 0, 0);
+      out.write("not-tls\n", 8);
+      out.close();
     },
     onStopListening() {
       do_test_finished();

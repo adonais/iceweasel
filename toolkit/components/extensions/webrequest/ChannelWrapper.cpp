@@ -655,7 +655,9 @@ bool ChannelWrapper::Matches(
 
     // The third parameter (aCheckRestricted) is false because we already check
     // restricted URLs below as part of CanModify().
-    if (!aExtension->CanAccessURI(urlInfo, false, false, true)) {
+    // The fourth parameter (aAllowFilePermission, default false) does not
+    // matter because file:-channels are never wrapped by ChannelWrapper.
+    if (!aExtension->CanAccessURI(urlInfo, false, false)) {
       return false;
     }
 
@@ -668,9 +670,10 @@ bool ChannelWrapper::Matches(
       }
 
       auto origin = DocumentURLInfo();
-      // Extensions with the file:-permission may observe requests from file:
-      // origins, because such documents can already be modified by content
-      // scripts anyway.
+      // The fourth parameter (aAllowFilePermission) is true instead of gated
+      // on aExtension->FileSchemeAllowed(), because we want extensions to have
+      // the ability to block http(s) requests from file origins (bug 1621935),
+      // without the user being required to grant access to all local files.
       if (origin && !aExtension->CanAccessURI(*origin, false, false, true)) {
         return false;
       }
@@ -734,6 +737,46 @@ int64_t ChannelWrapper::ParentFrameId() const {
     }
   }
   return -1;
+}
+
+uint64_t ChannelWrapper::DocumentInnerWindowId() const {
+  if (nsCOMPtr<nsILoadInfo> loadInfo = GetLoadInfo()) {
+    auto type = loadInfo->GetExternalContentPolicyType();
+    // Exclude document requests: innerWindowId is used to compute documentId,
+    // which reflects the document for which the request is made. When a
+    // navigation request is initiated, the target document is unknown. There
+    // is not even a guarantee for the received document to be rendering when
+    // webRequest.onCompleted is received!
+    if (type == ExtContentPolicy::TYPE_DOCUMENT ||
+        type == ExtContentPolicy::TYPE_SUBDOCUMENT) {
+      return 0;
+    }
+    // Note: we are intentionally not checking the associated browsing context,
+    // because requests from web workers are not made by documents.
+    return loadInfo->GetInnerWindowID();
+  }
+  return 0;
+}
+
+uint64_t ChannelWrapper::ParentDocumentInnerWindowId() const {
+  if (nsCOMPtr<nsILoadInfo> loadInfo = GetLoadInfo()) {
+    RefPtr<BrowsingContext> parentBC;
+    if (loadInfo->GetFrameBrowsingContextID()) {
+      parentBC = loadInfo->GetBrowsingContext();
+    } else {
+      RefPtr<BrowsingContext> bc = loadInfo->GetBrowsingContext();
+      if (bc) {
+        parentBC = bc->GetParent();
+      }
+    }
+    if (parentBC) {
+      // This is a live read that could race against a parent navigation, but
+      // Cached+Constant in the WebIDL ensures a consistent value across all
+      // events for the same channel.
+      return parentBC->GetCurrentInnerWindowId();
+    }
+  }
+  return 0;
 }
 
 void ChannelWrapper::GetFrameAncestors(
@@ -808,6 +851,16 @@ void ChannelWrapper::RegisterTraceableChannel(const WebExtensionPolicy& aAddon,
   if (!mChannelEntry) {
     mChannelEntry = WebRequestService::GetSingleton().RegisterChannel(this);
     CheckEventListeners();
+    if (!mAddedStreamListener) {
+      // If the stream listener was not connected before, and still fails to be
+      // added, then we know that ChannelWrapper::RequestListener::Init() has
+      // failed to register itself as a stream listener with the channel.
+      // There can be various reasons (channel not opened, or response already
+      // started before we started tracing). In any case, RequestListener will
+      // be unable to detect when it should clear mChannelEntry, so the safest
+      // thing to do here is to drop mChannelEntry now, to prevent bug 2044517.
+      mChannelEntry = nullptr;
+    }
   }
 }
 
@@ -824,7 +877,9 @@ already_AddRefed<nsITraceableChannel> ChannelWrapper::GetTraceableChannel(
     // the duration of the request. We need to revalidate FinalURLInfo() in
     // case it changed, e.g. due to a redirect or permission change.
     if (!HaveChannel() ||
-        !aAddon.CanAccessURI(FinalURLInfo(), false, true, true)) {
+        // The fourth parameter (aAllowFilePermission, default false) does not
+        // matter because file:-channels are never wrapped by ChannelWrapper.
+        !aAddon.CanAccessURI(FinalURLInfo())) {
       return nullptr;
     }
 
@@ -1289,6 +1344,10 @@ void ChannelWrapper::CheckEventListeners() {
        HasListenersFor(nsGkAtoms::onstop) || mChannelEntry)) {
     auto listener = MakeRefPtr<RequestListener>(this);
     if (!NS_WARN_IF(NS_FAILED(listener->Init()))) {
+      // Once registered, the listener sticks to the channel. When redirected,
+      // AsyncOpen on the new channel receives the listener of the original
+      // (pre-redirect) channel, which is the listener we just added, or
+      // another stream listener that eventually calls our listener.
       mAddedStreamListener = true;
     }
   }

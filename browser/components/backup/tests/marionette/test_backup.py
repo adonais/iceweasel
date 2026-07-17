@@ -19,6 +19,17 @@ class BackupTest(MarionetteTestCase):
     def setUp(self):
         MarionetteTestCase.setUp(self)
 
+        # Profile backup is disabled while SQLite at-rest encryption is on, so
+        # the backup feature under test is unavailable then. We cannot just
+        # force the pref off: under a global encryption-on build the initial
+        # session already created an encrypted profile, and restarting with
+        # encryption off cannot reopen it. Skip instead -- on the shipping
+        # (encryption-off) configuration this is a no-op and the test runs.
+        if self.marionette.get_pref("security.storage.encryption.sqlite.enabled"):
+            self.skipTest(
+                "Profile backup is disabled when SQLite at-rest encryption is enabled"
+            )
+
         # We need to force the service to be enabled because it's disabled
         # by default for Marionette. Also "browser.backup.log" has to be set
         # to true before Firefox starts in order for it to be displayed.
@@ -427,7 +438,7 @@ class BackupTest(MarionetteTestCase):
           let [outerResolve] = arguments;
           (async () => {
             // Let's start with adding a single password
-            Services.logins.removeAllLogins();
+            await Services.logins.removeAllLoginsAsync();
 
             const nsLoginInfo = new Components.Constructor(
               "@mozilla.org/login-manager/loginInfo;1",

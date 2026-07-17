@@ -12,11 +12,15 @@ import io.mockk.every
 import io.mockk.mockk
 import io.mockk.verify
 import mozilla.components.service.pocket.PocketStoriesService
+import mozilla.components.support.test.robolectric.testContext
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Before
+import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
+import org.mozilla.fenix.GleanMetrics.Events
 import org.mozilla.fenix.R
 import org.mozilla.fenix.components.AppStore
 import org.mozilla.fenix.components.Components
@@ -24,6 +28,7 @@ import org.mozilla.fenix.components.Core
 import org.mozilla.fenix.components.appstate.AppAction.ContentRecommendationsAction
 import org.mozilla.fenix.components.appstate.AppAction.SportsWidgetAction
 import org.mozilla.fenix.ext.getPreferenceKey
+import org.mozilla.fenix.helpers.FenixGleanTestRule
 import org.mozilla.fenix.home.pocket.ContentRecommendationsFeatureHelper
 import org.mozilla.fenix.utils.Settings
 import org.robolectric.Robolectric
@@ -31,6 +36,9 @@ import org.robolectric.RobolectricTestRunner
 
 @RunWith(RobolectricTestRunner::class)
 internal class HomeSettingsFragmentTest {
+    @get:Rule
+    val gleanRule = FenixGleanTestRule(testContext)
+
     private lateinit var homeSettingsFragment: HomeSettingsFragment
     private lateinit var appSettings: Settings
     private lateinit var appPrefs: SharedPreferences
@@ -168,6 +176,19 @@ internal class HomeSettingsFragmentTest {
         }
     }
 
+    @Test
+    fun `WHEN toggling the privacy report setting THEN events preference_toggled is recorded with the privacy_report key`() {
+        activateFragment()
+
+        val result = getPrivacyReportPreference().callChangeListener(true)
+
+        assertTrue(result)
+        val events = Events.preferenceToggled.testGetValue()!!
+        assertEquals(1, events.size)
+        assertEquals("privacy_report", events.single().extra?.get("preference_key"))
+        assertEquals("true", events.single().extra?.get("enabled"))
+    }
+
     private fun activateFragment() {
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
         homeSettingsFragment = HomeSettingsFragment()
@@ -198,5 +219,10 @@ internal class HomeSettingsFragmentTest {
     private fun getSportsWidgetPreference(): SwitchPreferenceCompat =
         homeSettingsFragment.findPreference(
             homeSettingsFragment.getPreferenceKey(R.string.pref_key_show_homepage_sports_widget),
+        )!!
+
+    private fun getPrivacyReportPreference(): SwitchPreferenceCompat =
+        homeSettingsFragment.findPreference(
+            homeSettingsFragment.getPreferenceKey(R.string.pref_key_privacy_report),
         )!!
 }

@@ -8,6 +8,23 @@
   --trustpanel-warning-bg: light-dark(var(--color-red-20), var(--color-red-90));
   --trustpanel-inner-border: 1px solid var(--color-violet-20);
   --trustpanel-inner-warning-border: 1px solid var(--color-red-10);
+
+  @media -moz-pref("browser.nova.enabled") {
+    --trustpanel-highlight-bg: light-dark(var(--color-violet-10), var(--color-violet-desaturated-70));
+    /* White cards use the standard border token, like the breach alert card;
+       tinted states override these below. */
+    --trustpanel-card-border-color: var(--border-color);
+    --trustpanel-card-divider-color: var(--border-color);
+  }
+}
+
+/* On the tinted cards (violet for enabled, box-info for disabled) the border
+   and divider use a subtle wash that blends with the fill. */
+#trustpanel-popup:is([tracking-protection="enabled"], [tracking-protection="disabled"]) {
+  @media -moz-pref("browser.nova.enabled") {
+    --trustpanel-card-border-color: light-dark(rgba(0, 0, 0, 0.06), rgba(255, 255, 255, 0.12));
+    --trustpanel-card-divider-color: light-dark(rgba(0, 0, 0, 0.12), rgba(255, 255, 255, 0.12));
+  }
 }
 
 /* Hide all conditional elements by default. */
@@ -708,6 +725,11 @@
   > menupopup {
     min-width: 6.5em;
   }
+
+  &[disabled] {
+    opacity: 0.5;
+    pointer-events: none;
+  }
 }
 
 .protections-popup-section-header,
@@ -829,6 +851,10 @@
 
 /* Trustpanel popup */
 
+#trustpanel-header-section {
+  padding-block-end: var(--space-small);
+}
+
 #trustpanel-header-row {
   justify-content: space-between;
   padding-block-start: var(--space-small);
@@ -849,6 +875,58 @@
   padding-block-start: var(--space-small);
   border-radius: var(--border-radius-medium);
   flex-direction: column;
+
+  &[hidden] {
+    display: none;
+  }
+
+  @media -moz-pref("browser.nova.enabled") {
+    padding-block-start: var(--space-large);
+    display: flex;
+    align-items: flex-start;
+    gap: var(--space-large);
+    align-self: stretch;
+    border: 1px solid var(--trustpanel-card-border-color);
+    border-radius: var(--border-radius-large);
+  }
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  .trustpanel-card-main {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: var(--space-large);
+    align-self: stretch;
+  }
+
+  .trustpanel-card-content {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--space-small);
+    align-self: stretch;
+
+    &[hidden] {
+      display: none;
+    }
+  }
+
+  /* Only the text vbox inside the row needs to fill horizontal space alongside
+     the shield icon. */
+  .trustpanel-card-main > .trustpanel-card-content {
+    flex: 1 0 0;
+  }
+
+  .trustpanel-card-content > label,
+  .trustpanel-card-content > description,
+  .trustpanel-card-content > .trustpanel-header {
+    margin: 0;
+  }
+
+  .trustpanel-card-divided {
+    border-top: 1px solid var(--trustpanel-card-divider-color);
+  }
 }
 
 .only-trustpanel {
@@ -859,48 +937,93 @@
   }
 }
 
-#trustpanel-popup {
-  &[tracking-protection="warning"] {
-    #trustpanel-graphic-image {
-      background-image: url(chrome://browser/skin/trustpanel-graphic-warning.svg);
-    }
-    #trustpanel-graphic-section {
-      background: var(--trustpanel-warning-bg);
-    }
-  }
-  &[tracking-protection="enabled"] {
-    #trustpanel-graphic-image {
-      background-image: url(chrome://browser/skin/trustpanel-graphic-enabled.svg);
-    }
-    #trustpanel-graphic-section {
-      background: var(--trustpanel-highlight-bg);
-    }
+/* Assets per state: the graphic image (legacy + Nova) and the card background
+   are selected by the tracking-protection state via custom properties. */
+#trustpanel-popup[tracking-protection="warning"] {
+  --trustpanel-image-legacy: url(chrome://browser/skin/trustpanel-graphic-warning.svg);
+  --trustpanel-image-nova: url(chrome://browser/content/controlcenter/assets/breach-alert-shield-warning.svg);
+  --trustpanel-background: var(--trustpanel-warning-bg);
+}
+
+#trustpanel-popup[tracking-protection="enabled"] {
+  --trustpanel-image-legacy: url(chrome://browser/skin/trustpanel-graphic-enabled.svg);
+  --trustpanel-image-nova: url(chrome://browser/content/controlcenter/assets/breach-alert-shield-check.svg);
+  --trustpanel-background: var(--trustpanel-highlight-bg);
+}
+
+#trustpanel-popup[tracking-protection="disabled"] {
+  --trustpanel-image-legacy: url(chrome://browser/skin/trustpanel-graphic-disabled.svg);
+  --trustpanel-image-nova: url(chrome://browser/content/controlcenter/assets/breach-alert-shield-cross.svg);
+  --trustpanel-background: var(--trustpanel-graphic-bg);
+}
+
+#trustpanel-graphic-section {
+  background: var(--trustpanel-background, none);
+}
+
+@media -moz-pref("browser.nova.enabled") {
+  #trustpanel-popup[tracking-protection="warning"] #trustpanel-graphic-section,
+  #trustpanel-popup[connection="not-secure"] #trustpanel-graphic-section,
+  #trustpanel-popup[connection="cert-error-page"] #trustpanel-graphic-section {
+    background: none;
   }
 
-  &[tracking-protection="disabled"] {
-    #trustpanel-graphic-image {
-      background-image: url(chrome://browser/skin/trustpanel-graphic-disabled.svg);
-    }
-    #trustpanel-graphic-section {
-      background: var(--trustpanel-graphic-bg);
-    }
+  #trustpanel-popup[tracking-protection="disabled"] #trustpanel-graphic-section {
+    background: var(--background-color-box-info);
+  }
+
+  /* Only one secondary section in the card per state. When the insecure
+     callout is active (tracking-protection="warning"), it trumps the blocker
+     callout. When ETP is off (tracking-protection="disabled") the blocker
+     count is meaningless, so hide it too. */
+  #trustpanel-popup[tracking-protection="warning"] #trustpanel-blocker-section,
+  #trustpanel-popup[tracking-protection="disabled"] #trustpanel-blocker-section {
+    display: none;
+  }
+}
+
+#trustpanel-graphic-image,
+#trustpanel-graphic-image-legacy {
+  -moz-context-properties: fill;
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: contain;
+  fill: light-dark(#0090ed, #80ebff);
+}
+
+/* Legacy graphic shows by default; the Nova graphic replaces it behind the
+   pref. */
+#trustpanel-graphic-image-legacy {
+  width: 80px;
+  height: 80px;
+  margin-inline-end: var(--space-small);
+  background-image: var(--trustpanel-image-legacy);
+
+  @media -moz-pref("browser.nova.enabled") {
+    display: none;
   }
 }
 
 #trustpanel-graphic-image {
-  -moz-context-properties: fill;
-  background-repeat: no-repeat;
-  background-position: center;
-  fill: light-dark(#0090ed, #80ebff);
-  width: 80px;
-  height: 80px;
-  background-size: contain;
-  margin-inline-end: var(--space-small);
+  display: none;
+
+  @media -moz-pref("browser.nova.enabled") {
+    display: revert;
+    width: var(--size-image-medium);
+    height: var(--size-image-medium);
+    flex-shrink: 0;
+    background-image: var(--trustpanel-image-nova);
+  }
 }
 
 #trustpanel-graphic-section-text {
   align-self: center;
   margin-inline-start: var(--space-medium);
+
+  @media -moz-pref("browser.nova.enabled") {
+    align-self: flex-start;
+    margin-inline-start: 0;
+  }
 }
 
 .trustpanel-header {
@@ -958,7 +1081,9 @@
 }
 
 #trustpanel-toggle-section {
-  margin: var(--space-large);
+  margin-block: var(--space-large);
+  margin-inline: var(--panel-menuitem-margin-inline);
+  padding-inline: var(--panel-menuitem-padding-inline);
 
   &[disabled] label {
     color: var(--button-text-color-ghost-disabled);
@@ -975,28 +1100,52 @@
   color: var(--color-accent-primary);
 }
 
-.trustpanel-graphic-inner {
-  margin: var(--space-xsmall);
-  padding: var(--space-medium);
-  border-radius: var(--border-radius-medium);
-}
-
-#trustpanel-blocker-section {
-  background: light-dark(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12));
-  border: var(--trustpanel-inner-border);
-}
-
 .trustpanel-blocker-section[hidden] + toolbarseparator {
   display: none;
 }
 
+/* Legacy UI renders the blocker/insecure sections as filled, bordered boxes.
+   Nova replaces them with a plain top divider (.trustpanel-card-divided). */
+.trustpanel-graphic-inner {
+  margin: var(--space-xsmall);
+  padding: var(--space-medium);
+  border-radius: var(--border-radius-medium);
+  background: light-dark(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12));
+
+  @media -moz-pref("browser.nova.enabled") {
+    margin: 0;
+    padding: 0;
+    border-radius: 0;
+    background: none;
+  }
+}
+
+#trustpanel-blocker-section {
+  border: var(--trustpanel-inner-border);
+
+  @media -moz-pref("browser.nova.enabled") {
+    border: none;
+    border-top: 1px solid var(--trustpanel-card-divider-color);
+    padding-top: var(--space-large);
+  }
+}
+
+/* Insecure-section lives inline in the card. Visibility is gated to the
+   not-secure connection state — cert-overridden HTTPS pages also have
+   tracking-protection="warning" but should not surface the unencrypted
+   warning. */
 #trustpanel-insecure-section {
   visibility: collapse;
-  background: light-dark(rgba(255, 255, 255, 0.6), rgba(255, 255, 255, 0.12));
   border: var(--trustpanel-inner-warning-border);
 
-  #trustpanel-popup[tracking-protection="warning"] & {
+  #trustpanel-popup[tracking-protection="warning"][connection="not-secure"] & {
     visibility: visible;
+  }
+
+  @media -moz-pref("browser.nova.enabled") {
+    border: none;
+    border-top: 1px solid var(--trustpanel-card-divider-color);
+    padding-block-start: var(--space-large);
   }
 
   .trustpanel-header {
@@ -1009,6 +1158,11 @@
 
     &:-moz-locale-dir(rtl) {
       background-position-x: right;
+    }
+
+    @media -moz-pref("browser.nova.enabled") {
+      background-image: none;
+      padding-inline-start: 0;
     }
   }
 }

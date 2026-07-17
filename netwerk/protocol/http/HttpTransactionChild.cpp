@@ -14,6 +14,7 @@
 #include "mozilla/net/SocketProcessChild.h"
 #include "mozilla/ScopeExit.h"
 #include "mozilla/StaticPrefs_network.h"
+#include "nsHttpResponseHead.h"
 #include "nsInputStreamPump.h"
 #include "nsISocketTransport.h"
 #include "nsITransportSecurityInfo.h"
@@ -464,8 +465,13 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
     }
   }
 
-  int32_t proxyConnectResponseCode =
-      mTransaction->GetProxyConnectResponseCode();
+  // The head is shared in-process by RefPtr, but it has to be serialized to
+  // reach the parent process. This copy only happens when the socket process
+  // is enabled. See bug 2045419.
+  RefPtr<ProxyConnectResponseHead> connectHead =
+      mTransaction->GetProxyConnectResponseHead();
+  Maybe<nsHttpResponseHead> proxyConnectResponseHead =
+      connectHead ? Some(connectHead->Head()) : Nothing();
 
   nsIRequest::TRRMode mode = nsIRequest::TRR_DEFAULT_MODE;
   TRRSkippedReason reason = nsITRRSkipReason::TRR_UNSET;
@@ -486,11 +492,12 @@ HttpTransactionChild::OnStartRequest(nsIRequest* aRequest) {
   (void)SendOnStartRequest(
       status, std::move(optionalHead), securityInfo,
       mTransaction->ProxyConnectFailed(),
-      ToTimingStructArgs(mTransaction->Timings()), proxyConnectResponseCode,
-      dataForSniffer, optionalAltSvcUsed, !!mDataBridgeParent,
-      mTransaction->TakeRestartedState(), mTransaction->HTTPSSVCReceivedStage(),
-      mTransaction->GetSupportsHTTP3(), mode, reason, mTransaction->Caps(),
-      TimeStamp::Now(), infoArgs, mTransaction->GetTargetIPAddressSpace());
+      ToTimingStructArgs(mTransaction->Timings()),
+      std::move(proxyConnectResponseHead), dataForSniffer, optionalAltSvcUsed,
+      !!mDataBridgeParent, mTransaction->TakeRestartedState(),
+      mTransaction->HTTPSSVCReceivedStage(), mTransaction->GetSupportsHTTP3(),
+      mode, reason, mTransaction->Caps(), TimeStamp::Now(), infoArgs,
+      mTransaction->GetTargetIPAddressSpace());
   return NS_OK;
 }
 

@@ -7,7 +7,10 @@
 
 #include "mozilla/PlatformMutex.h"
 #include "mozilla/TimeStamp.h"
-#if !defined(XP_WIN) && !defined(__wasi__)
+
+#if defined(XP_WIN)
+#  include "mozilla/Futex.h"
+#elif !defined(__wasi__)
 #  include <pthread.h>
 #endif
 
@@ -19,8 +22,6 @@ namespace detail {
 
 class ConditionVariableImpl {
  public:
-  struct PlatformData;
-
   MFBT_API ConditionVariableImpl();
   MFBT_API ~ConditionVariableImpl();
 
@@ -45,12 +46,10 @@ class ConditionVariableImpl {
   ConditionVariableImpl(const ConditionVariableImpl&) = delete;
   ConditionVariableImpl& operator=(const ConditionVariableImpl&) = delete;
 
-  PlatformData* platformData();
-
-#if !defined(XP_WIN) && !defined(__wasi__)
-  pthread_cond_t platformData_[1];
-#else
-  void* platformData_[4];
+#if defined(XP_WIN)
+  Futex mFutex;
+#elif !defined(__wasi__)
+  pthread_cond_t mCond;
 #endif
 };
 

@@ -285,7 +285,7 @@ IrregexpInterpreter::Result HandleInterrupts(
         [[maybe_unused]] AllowGarbageCollection yes_gc;
         result = isolate->stack_guard()->HandleInterrupts();
       }
-      if (IsExceptionHole(result, isolate)) {
+      if (IsExceptionHole(result)) {
         return IrregexpInterpreter::EXCEPTION;
       }
 
@@ -481,6 +481,7 @@ bool CheckSpecialClassRanges(uint32_t current_char,
     case StandardCharacterSet::kEverything:
       return true;
   }
+  UNREACHABLE();
 }
 
 }  // namespace

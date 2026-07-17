@@ -25,4 +25,4 @@ user_pref("browser.startup.couldRestoreSession.count", -1);
 
 // This is used to disable address autofill telemetry since we cannot download
 // the model within tests.
-user_pref("extensions.formautofill.addresses.telemetry.mlenabled", false);
+user_pref("extensions.formautofill.useml", false);

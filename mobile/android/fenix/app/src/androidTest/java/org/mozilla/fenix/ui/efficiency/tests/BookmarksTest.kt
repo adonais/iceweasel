@@ -25,6 +25,7 @@ class BookmarksTest : BaseTest() {
         on.bookmarks.navigateToPage()
     }
 
+    // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2833691
     @SmokeTest
     @Test
     fun editBookmarksNameAndUrlTest() {
@@ -35,8 +36,8 @@ class BookmarksTest : BaseTest() {
             .mozClick(MainMenuSelectors.BOOKMARK_THIS_PAGE_BUTTON)
             .mozClick(BrowserPageSelectors.SNACKBAR_EDIT_BUTTON)
         on.bookmarks
-            .mozClearAndEnterText("Bookmark title", BookmarksSelectors.EDIT_TITLE_FIELD)
-            .mozClearAndEnterText(editedWebPage.url.toString(), BookmarksSelectors.EDIT_URL_FIELD)
+            .mozClearAndEnterText("Bookmark title", BookmarksSelectors.EDIT_BOOKMARK_ITEM_TITLE_TEXT_FIELD)
+            .mozClearAndEnterText(editedWebPage.url.toString(), BookmarksSelectors.EDIT_BOOKMARK_ITEM_URL_TEXT_FIELD)
             .mozClick(BookmarksSelectors.NAVIGATE_UP_BUTTON)
         on.bookmarks.navigateToPage()
             .mozClick(BookmarksSelectors.BOOKMARK_TITLE_TEXT)

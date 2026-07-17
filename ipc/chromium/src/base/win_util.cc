@@ -12,7 +12,7 @@
 namespace win_util {
 
 std::wstring FormatMessage(unsigned messageid) {
-  wchar_t* string_buffer = NULL;
+  wchar_t* string_buffer = nullptr;
   ::FormatMessage(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM |
                       FORMAT_MESSAGE_IGNORE_INSERTS,
                   NULL, messageid, 0,

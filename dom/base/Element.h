@@ -32,6 +32,7 @@
 #include "mozilla/Result.h"
 #include "mozilla/RustCell.h"
 #include "mozilla/UniquePtr.h"
+#include "mozilla/dom/AtomAttributes.h"
 #include "mozilla/dom/BorrowedAttrInfo.h"
 #include "mozilla/dom/DOMString.h"
 #include "mozilla/dom/DOMTokenListSupportedTokens.h"
@@ -50,6 +51,7 @@
 #include "nsError.h"
 #include "nsGkAtoms.h"
 #include "nsHashKeys.h"
+#include "nsHtml5String.h"
 #include "nsLiteralString.h"
 #include "nsRect.h"
 #include "nsTHashMap.h"
@@ -300,7 +302,7 @@ class TrustedHTMLOrTrustedScriptOrTrustedScriptURLOrString;
 class Element : public FragmentOrElement {
  public:
 #ifdef MOZILLA_INTERNAL_API
-  explicit Element(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit Element(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : FragmentOrElement(std::move(aNodeInfo)),
         mState(ElementState::READONLY | ElementState::DEFINED |
                ElementState::LTR) {
@@ -635,11 +637,8 @@ class Element : public FragmentOrElement {
   void SetAssociatedPopover(nsGenericHTMLElement& aPopover);
   nsGenericHTMLElement* GetAssociatedPopover() const;
 
-  /**
-   * https://html.spec.whatwg.org/multipage/popover.html#topmost-popover-ancestor
-   */
-  Element* GetTopmostPopoverAncestor(PopoverAttributeState aMode,
-                                     const Element* aInvoker,
+  // https://html.spec.whatwg.org/multipage/popover.html#topmost-popover-ancestor
+  Element* GetTopmostPopoverAncestor(const Element* aInvoker,
                                      bool isPopover) const;
 
   ElementAnimationData* GetAnimationData() const {
@@ -934,6 +933,41 @@ class Element : public FragmentOrElement {
   // either the input or output value of aParsedValue is StoresOwnData.
   nsresult SetParsedAttr(int32_t aNameSpaceID, nsAtom* aName, nsAtom* aPrefix,
                          nsAttrValue& aParsedValue, bool aNotify);
+
+  /**
+   * This is meant to be called only by the HTML parser and, at this time,
+   * only on non-custom HTML elements.
+   *
+   * The namespace is assumed to be no namespace. There is no prefix.
+   * This element must not have been in a DOM tree. Whether `aValue`
+   * holds an nsAtom* or a StringBuffer* must already match which
+   * representations `aName` implies. This method assumes sufficient
+   * storage has been reserved. If `aValue` holds a StringBuffer*,
+   * the storage length of the buffer must match the requirements
+   * of attribute storage (i.e. logical length can be derived from
+   * storage length). That is, `nsHtml5String::FromString` and
+   * `nsAttrValue::GetStringBuffer` must handle the buffer length
+   * the same way.
+   *
+   * `aValue` must refer to an owner `nsHtml5String`. That is, it
+   * must be permissible to move the ownership of the `nsAtom*` or
+   * `StringBuffer*` out of it. This method is also expected to take
+   * the ownership of `aName`.
+   *
+   * `aIsPendingMappedAttributeEvaluation` must refer to a boolean
+   * initially set to false and then passed to every call to this
+   * method on this element. This method will set the boolean to
+   * true upon the first mapped attribute and then subsequent calls
+   * can skip the mapped attribute check. The purpose is to optimize
+   * away the need to call `IsPendingMappedAttributeEvaluation()` and
+   * still call
+   * `AttrArray::InfallibleMarkAsPendingPresAttributeEvaluation` at
+   * most once.
+   */
+  nsresult SetNoNameSpaceAttrOnNewlyCreatedElement(
+      already_AddRefed<nsAtom> aName, nsHtml5String& aValue,
+      bool& aIsPendingMappedAttributeEvaluation);
+
   /**
    * Get the current value of the attribute. This returns a form that is
    * suitable for passing back into SetAttr.
@@ -1661,8 +1695,9 @@ class Element : public FragmentOrElement {
 
   // https://dom.spec.whatwg.org/#concept-attach-a-shadow-root
   already_AddRefed<ShadowRoot> AttachShadowWithoutNameChecks(
-      const ShadowRootInit&, bool aNotify = true,
-      CustomSlotDispatch = CustomSlotDispatch::No);
+      const ShadowRootInit&,
+      const Maybe<CustomElementRegistry*>& aRegistry = Nothing(),
+      CustomSlotDispatch = CustomSlotDispatch::No, bool aNotify = true);
 
   // Attach UA Shadow Root if it is not attached.
   enum class NotifyUAWidget : bool { No, Yes };
@@ -2139,9 +2174,9 @@ class Element : public FragmentOrElement {
 
   /**
    * Preallocate space in this element's attribute array for the given
-   * total number of attributes.
+   * total number of attributes. Aborts on OOM.
    */
-  void TryReserveAttributeCount(uint32_t aAttributeCount);
+  void ReserveAttributeCount(uint32_t aAttributeCount);
 
   void SetParserHadDuplicateAttributeError() {
     SetFlags(ELEMENT_PARSER_HAD_DUPLICATE_ATTR_ERROR);
@@ -2336,6 +2371,11 @@ class Element : public FragmentOrElement {
    * we're actually doing an attr set and will be called before
    * AttributeWillChange and before ParseAttribute and hence before we've set
    * the new value.
+   *
+   * NOTE: The fast from-parser code path for HTML elements does not call this,
+   * so please try to focus this method and its overrides to behaviors that
+   * are about _changing_ attributes but not about setting them for the first
+   * time on a newly-created element.
    *
    * @param aNamespaceID the namespace of the attr being set
    * @param aName the localname of the attribute being set

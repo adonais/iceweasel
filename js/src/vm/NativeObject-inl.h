@@ -156,7 +156,7 @@ inline void NativeObject::initDenseElements(const Value* src, uint32_t count) {
   }
 #endif
 
-  memcpy(reinterpret_cast<Value*>(elements_), src, count * sizeof(Value));
+  memcpy(unbarrieredElements(), src, count * sizeof(Value));
   elementsRangePostWriteBarrier(0, count);
 }
 
@@ -168,7 +168,7 @@ inline void NativeObject::initDenseElements(IteratorProperty* src,
   MOZ_ASSERT(isExtensible());
 
   setDenseInitializedLength(count);
-  Value* elementsBase = reinterpret_cast<Value*>(elements_);
+  Value* elementsBase = unbarrieredElements();
   for (size_t i = 0; i < count; i++) {
     elementsBase[i].setString(src[i].asString());
   }
@@ -194,8 +194,7 @@ inline void NativeObject::initDenseElementRange(uint32_t destStart,
     checkStoredValue(vp[i]);
   }
 #endif
-  memcpy(reinterpret_cast<Value*>(elements_) + destStart, vp,
-         count * sizeof(Value));
+  memcpy(unbarrieredElements() + destStart, vp, count * sizeof(Value));
   elementsRangePostWriteBarrier(destStart, count);
 }
 
@@ -334,7 +333,7 @@ inline void NativeObject::reverseDenseElementsNoPreBarrier(uint32_t length) {
   MOZ_ASSERT(length > 1);
   MOZ_ASSERT(length <= getDenseInitializedLength());
 
-  Value* valLo = reinterpret_cast<Value*>(elements_);
+  Value* valLo = unbarrieredElements();
   Value* valHi = valLo + (length - 1);
   MOZ_ASSERT(valLo < valHi);
 

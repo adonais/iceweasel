@@ -15,6 +15,7 @@
 #include "nsContentUtils.h"
 #include "nsGlobalWindowInner.h"
 #include "nsIDocShell.h"
+#include "nsPIDOMWindowInlines.h"
 #include "nsSandboxFlags.h"
 #include "nsScreen.h"
 

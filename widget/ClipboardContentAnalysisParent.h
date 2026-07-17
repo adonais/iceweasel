@@ -41,6 +41,11 @@ class ClipboardContentAnalysisParent final
       const nsIClipboard::ClipboardType& aWhichClipboard,
       const uint64_t& aRequestingWindowContextId,
       IPCTransferableDataOrError* aTransferableDataOrError);
+  ipc::IPCResult RecvGetClipboardDataIfSmallerThan(
+      nsTArray<nsCString>&& aTypes, uint64_t aThreshold,
+      const nsIClipboard::ClipboardType& aWhichClipboard,
+      const uint64_t& aRequestingWindowContextId,
+      GetClipboardDataIfSmallerThanResolver&& aResolver);
 };
 }  // namespace mozilla
 

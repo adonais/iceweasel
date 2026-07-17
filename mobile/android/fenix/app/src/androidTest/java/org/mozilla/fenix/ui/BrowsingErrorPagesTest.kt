@@ -8,6 +8,7 @@ import androidx.core.net.toUri
 import org.junit.Ignore
 import org.junit.Rule
 import org.junit.Test
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.setNetworkEnabled
 import org.mozilla.fenix.helpers.DataGenerationHelper.getStringResource
@@ -59,6 +60,11 @@ class BrowsingErrorPagesTest {
     val memoryLeaksRule = DetectMemoryLeaksRule(composeTestRule = { composeTestRule })
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326774
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.BrowsingErrorPagesTest#verifyMalwareWebsiteWarningMessageTest"],
+        bug = 2045673,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun verifyMalwareWebsiteWarningMessageTest() {
@@ -71,6 +77,11 @@ class BrowsingErrorPagesTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326773
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.BrowsingErrorPagesTest#verifyPhishingWebsiteWarningMessageTest"],
+        bug = 2045673,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun verifyPhishingWebsiteWarningMessageTest() {
@@ -83,6 +94,11 @@ class BrowsingErrorPagesTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2326772
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.BrowsingErrorPagesTest#verifyUnwantedSoftwareWebsiteWarningMessageTest"],
+        bug = 2045673,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun verifyUnwantedSoftwareWebsiteWarningMessageTest() {
@@ -95,6 +111,11 @@ class BrowsingErrorPagesTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/329877
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.BrowsingErrorPagesTest#verifyHarmfulWebsiteWarningMessageTest"],
+        bug = 2045673,
+        since = "2026-06",
+    )
     @SmokeTest
     @Test
     fun verifyHarmfulWebsiteWarningMessageTest() {

@@ -653,6 +653,7 @@ void av1_svc_check_reset_layer_rc_flag(AV1_COMP *const cpi) {
 void av1_svc_set_last_source(AV1_COMP *const cpi, EncodeFrameInput *frame_input,
                              YV12_BUFFER_CONFIG *prev_source) {
   frame_input->last_source = prev_source != NULL ? prev_source : NULL;
+  if (cpi->svc.source_last_TL0.buffer_alloc_sz == 0) return;
   if (!cpi->ppi->use_svc && cpi->rc.prev_frame_is_dropped &&
       cpi->rc.frame_number_encoded > 0) {
     frame_input->last_source = &cpi->svc.source_last_TL0;

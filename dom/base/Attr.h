@@ -29,7 +29,7 @@ class Attr final : public nsINode {
   virtual ~Attr() = default;
 
  public:
-  Attr(nsDOMAttributeMap* aAttrMap, already_AddRefed<dom::NodeInfo>&& aNodeInfo,
+  Attr(nsDOMAttributeMap* aAttrMap, already_AddRefed<dom::NodeInfo> aNodeInfo,
        const nsAString& aValue);
 
   NS_DECL_ISUPPORTS_INHERITED

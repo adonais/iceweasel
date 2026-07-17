@@ -10,6 +10,7 @@ import androidx.test.filters.SdkSuppress
 import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.R
+import org.mozilla.fenix.customannotations.Converted
 import org.mozilla.fenix.customannotations.SkipLeaks
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.helpers.AppAndSystemHelper.registerAndCleanupIdlingResources
@@ -67,6 +68,11 @@ class HistoryTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/2302742
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.HistoryTest#verifyHistoryMenuWithHistoryItemsTest"],
+        bug = 2039573,
+        since = "2026-05",
+    )
     // Test running on beta/release builds in CI:
     // caution when making changes to it, so they don't block the builds
     @SmokeTest
@@ -83,7 +89,7 @@ class HistoryTest {
             registerAndCleanupIdlingResources(
                 RecyclerViewIdlingResource(composeTestRule.activity.findViewById(R.id.history_list), 1),
             ) {
-                verifyHistoryMenuView()
+                verifyHistoryMenuView(historyItemExists = true)
                 verifyVisitedTimeTitle()
                 verifyFirstTestPageTitle("Test_Page_1")
                 verifyTestPageUrl(firstWebPage.url)
@@ -117,6 +123,11 @@ class HistoryTest {
     }
 
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/1848881
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.HistoryTest#deleteAllHistoryTest"],
+        bug = 2039573,
+        since = "2026-05",
+    )
     @SmokeTest
     @Test
     fun deleteAllHistoryTest() {
@@ -164,7 +175,7 @@ class HistoryTest {
             verifyShareHistoryButton()
             verifyCloseToolbarButton()
         }.closeToolbarReturnToHistory {
-            verifyHistoryMenuView()
+            verifyHistoryMenuView(historyItemExists = true)
         }
     }
 
@@ -323,7 +334,7 @@ class HistoryTest {
             pressBack()
         }
         historyMenu(composeTestRule) {
-            verifyHistoryMenuView()
+            verifyHistoryMenuView(historyItemExists = true)
         }
     }
 
@@ -413,6 +424,11 @@ class HistoryTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/903590
     // Test running on beta/release builds in CI:
     // caution when making changes to it, so they don't block the builds
+    @Converted(
+        replacedBy = ["org.mozilla.fenix.ui.efficiency.tests.HistoryTest#noHistoryInPrivateBrowsingTest"],
+        bug = 2024690,
+        since = "2026-03",
+    )
     @SmokeTest
     @Test
     fun noHistoryInPrivateBrowsingTest() {

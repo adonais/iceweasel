@@ -15,10 +15,10 @@ features: [TypedArray]
 includes: [testTypedArray.js]
 ---*/
 
-testWithTypedArrayConstructors(function(ctor) {
-  var sample = new ctor().buffer;
+testWithAllTypedArrayConstructors(function(ctor, makeCtorArg) {
+  var sample = new ctor(makeCtorArg(0)).buffer;
 
   assert.sameValue(ArrayBuffer.isView(sample), false);
-}, null, ["passthrough"]);
+});
 
 reportCompare(0, 0);

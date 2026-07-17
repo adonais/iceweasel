@@ -27,7 +27,7 @@ class HTMLScriptElement final : public nsGenericHTMLElement,
  public:
   using Element::GetCharacterDataBuffer;
 
-  HTMLScriptElement(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+  HTMLScriptElement(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
                     FromParser aFromParser);
 
   // nsISupports

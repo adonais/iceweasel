@@ -808,7 +808,7 @@ nsDocShellTreeOwner::AddChromeListeners() {
         do_QueryInterface(webBrowserChrome));
     if (tooltipListener) {
       mChromeTooltipListener =
-          new ChromeTooltipListener(mWebBrowser, webBrowserChrome);
+          MakeRefPtr<ChromeTooltipListener>(mWebBrowser, webBrowserChrome);
       rv = mChromeTooltipListener->AddChromeListeners();
     }
   }

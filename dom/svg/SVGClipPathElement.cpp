@@ -26,7 +26,7 @@ SVGElement::EnumInfo SVGClipPathElement::sEnumInfo[1] = {
 // Implementation
 
 SVGClipPathElement::SVGClipPathElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGClipPathElementBase(std::move(aNodeInfo)) {}
 
 already_AddRefed<DOMSVGAnimatedEnumeration>

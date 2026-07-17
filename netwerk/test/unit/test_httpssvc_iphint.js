@@ -66,7 +66,7 @@ add_task(async function testStoreiphint() {
             { key: "alpn", value: ["h2", "h3"] },
             { key: "port", value: 8888 },
             { key: "ipv4hint", value: ["1.2.3.4", "5.6.7.8"] },
-            { key: "ipv6hint", value: ["::1", "fe80::794f:6d2c:3d5e:7836"] },
+            { key: "ipv6hint", value: ["::1", "2001:db8::1"] },
           ],
         },
       },
@@ -113,7 +113,7 @@ add_task(async function testStoreiphint() {
   Assert.equal(
     answer[0].values[3].QueryInterface(Ci.nsISVCParamIPv6Hint).ipv6Hint[1]
       .address,
-    "fe80::794f:6d2c:3d5e:7836",
+    "2001:db8::1",
     "got correct answer"
   );
 
@@ -137,13 +137,13 @@ add_task(async function testStoreiphint() {
     "1.2.3.4",
     "5.6.7.8",
     "::1",
-    "fe80::794f:6d2c:3d5e:7836",
+    "2001:db8::1",
   ]);
 
   await verifyAnswer(
     "test.iphint.com",
     Ci.nsIDNSService.RESOLVE_IP_HINT | Ci.nsIDNSService.RESOLVE_DISABLE_IPV4,
-    ["::1", "fe80::794f:6d2c:3d5e:7836"]
+    ["::1", "2001:db8::1"]
   );
 
   await verifyAnswer(
@@ -168,7 +168,7 @@ add_task(async function testStoreiphint() {
             { key: "alpn", value: ["h2", "h3"] },
             { key: "port", value: 8888 },
             { key: "ipv4hint", value: ["1.2.3.4", "5.6.7.8"] },
-            { key: "ipv6hint", value: ["::1", "fe80::794f:6d2c:3d5e:7836"] },
+            { key: "ipv6hint", value: ["::1", "2001:db8::1"] },
           ],
         },
       },
@@ -213,9 +213,20 @@ function channelOpenPromise(chan, flags) {
 // Test if we can connect to the server with the IP hint address.
 add_task(async function testConnectionWithiphint() {
   Services.dns.clearCache(true);
+  // Happy Eyeballs uses the HTTPS RR's IP hint only while A/AAAA haven't
+  // answered yet; once an answer arrives -- even a negative one -- the hint is
+  // dropped. Delay A/AAAA so they stay pending and the connection uses the
+  // hint. The non-HE path doesn't start these lookups this early, so it skips
+  // the delay.
+  let dohQuery = "/doh?httpssvc_use_iphint=1";
+  if (
+    Services.prefs.getBoolPref("network.http.happy_eyeballs_enabled", false)
+  ) {
+    dohQuery += "&delayIPv4=1000&delayIPv6=1000";
+  }
   Services.prefs.setCharPref(
     "network.trr.uri",
-    "https://127.0.0.1:" + h2Port + "/doh?httpssvc_use_iphint=1"
+    "https://127.0.0.1:" + h2Port + dohQuery
   );
   Services.prefs.setIntPref("network.trr.mode", 3);
 

@@ -39,6 +39,7 @@
 #include "mozilla/TextComposition.h"
 #include "mozilla/UniquePtr.h"
 #include "mozilla/dom/AncestorIterator.h"
+#include "mozilla/dom/EditContext.h"
 #include "mozilla/dom/Element.h"
 #include "mozilla/dom/ElementInlines.h"
 #include "mozilla/dom/HTMLBRElement.h"
@@ -643,12 +644,15 @@ nsresult HTMLEditor::OnEndHandlingTopLevelEditSubActionInternal() {
     }
   }
 
-  rv = HandleInlineSpellCheck(
-      TopLevelEditSubActionDataRef().mSelectedRange->StartPoint(),
-      TopLevelEditSubActionDataRef().mChangedRange);
-  if (NS_FAILED(rv)) {
-    NS_WARNING("EditorBase::HandleInlineSpellCheck() failed");
-    return rv;
+  // Browser should not handle spell check for EditContext
+  if (!GetEditContext()) {
+    rv = HandleInlineSpellCheck(
+        TopLevelEditSubActionDataRef().mSelectedRange->StartPoint(),
+        TopLevelEditSubActionDataRef().mChangedRange);
+    if (NS_FAILED(rv)) {
+      NS_WARNING("EditorBase::HandleInlineSpellCheck() failed");
+      return rv;
+    }
   }
 
   // detect empty doc
@@ -874,6 +878,11 @@ nsresult HTMLEditor::MaybeCreatePaddingBRElementForEmptyEditor() {
     return NS_OK;
   }
 
+  // Skip adding <br> element for EditContext editors.
+  if (GetEditContext()) {
+    return NS_OK;
+  }
+
   // Now we've got the body element. Iterate over the body element's children,
   // looking for editable content. If no editable content is found, insert the
   // padding <br> element.
@@ -1020,6 +1029,29 @@ Result<EditActionResult, nsresult> HTMLEditor::HandleInsertText(
   }
 
   UndefineCaretBidiLevel();
+
+  if (RefPtr editContext = GetEditContext()) {
+    uint32_t start = editContext->SelectionStart();
+    uint32_t end = editContext->SelectionEnd();
+    if (InsertingTextForComposition(aPurpose)) {
+      MOZ_ASSERT(mComposition);
+      if (mComposition->GetContainerTextNode()) {
+        start = mComposition->ClampedStartOffsetInTextNode();
+        end = mComposition->ClampedEndOffsetInTextNode();
+      }
+      mComposition->OnUpdateCompositionInEditor(aInsertionString,
+                                                editContext->TextNode(), start);
+    }
+    editContext->UpdateTextAndFireEvent(start, end, aInsertionString);
+    if (NS_WARN_IF(Destroyed())) {
+      return Err(NS_ERROR_EDITOR_DESTROYED);
+    }
+    if (editContext != GetEditContext()) {
+      // textupdate handler deactivated this EditContext
+      return Err(NS_ERROR_EDITOR_UNEXPECTED_DOM_TREE);
+    }
+    return EditActionResult::HandledResult();
+  }
 
   // If the selection isn't collapsed, delete it.  Don't delete existing inline
   // tags, because we're hopefully going to insert text (bug 787432).

@@ -25,6 +25,6 @@ testWithTypedArrayConstructors(function(TA, makeCtorArg) {
 
     return 0;
   });
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

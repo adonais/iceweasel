@@ -14,6 +14,48 @@ newtab-personalize-icon-label =
 newtab-personalize-dialog-label =
     .aria-label = Kohanda
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Uued kaardid
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } rida
+           *[other] { $num } rida
+        }
+home-restore-defaults-srd =
+    .label = Taasta vaikeväärtused
+    .accesskey = T
+home-mode-choice-custom-srd =
+    .label = kohandatud URLid…
+home-mode-choice-blank-srd =
+    .label = tühi leht
+home-prefs-shortcuts-header-srd =
+    .label = Otseteed
+home-prefs-shortcuts-select =
+    .aria-label = Otseteed
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = Sponsitud otseteed
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Sponsitud postitused
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Külastatud lehed
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Järjehoidjad
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Viimane allalaadimine
+home-prefs-recent-activity-header-srd =
+    .label = Hiljutine tegevus
+home-prefs-recent-activity-select =
+    .aria-label = Hiljutine tegevus
+
 ## Search box component.
 
 # "Search" is a verb/action

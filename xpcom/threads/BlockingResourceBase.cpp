@@ -171,7 +171,7 @@ BlockingResourceBase::BlockingResourceBase(
     MOZ_CRASH("can't initialize blocking resource static members");
   }
 
-  mChainPrev = 0;
+  mChainPrev = nullptr;
   sDeadlockDetector->Add(this);
 }
 
@@ -180,7 +180,7 @@ BlockingResourceBase::~BlockingResourceBase() {
   // Mutexes while they're still locked.  it is assumed that the
   // base class, or its underlying primitive, will check for such
   // stupid mistakes.
-  mChainPrev = 0;  // racy only for stupidly buggy client code
+  mChainPrev = nullptr;  // racy only for stupidly buggy client code
   if (sDeadlockDetector) {
     sDeadlockDetector->Remove(this);
   }
@@ -238,7 +238,7 @@ PRStatus BlockingResourceBase::InitStatics() {
 
 void BlockingResourceBase::Shutdown() {
   delete sDeadlockDetector;
-  sDeadlockDetector = 0;
+  sDeadlockDetector = nullptr;
 }
 
 MOZ_NEVER_INLINE void BlockingResourceBase::CheckAcquire() {
@@ -250,7 +250,8 @@ MOZ_NEVER_INLINE void BlockingResourceBase::CheckAcquire() {
 
   BlockingResourceBase* chainFront = ResourceChainFront();
   mozilla::UniquePtr<DDT::ResourceAcquisitionArray> cycle(
-      sDeadlockDetector->CheckAcquisition(chainFront ? chainFront : 0, this));
+      sDeadlockDetector->CheckAcquisition(chainFront ? chainFront : nullptr,
+                                          this));
   if (!cycle) {
     return;
   }
@@ -465,7 +466,7 @@ nsresult ReentrantMonitor::Wait(PRIntervalTime aInterval) {
   AcquisitionState savedAcquisitionState = TakeAcquisitionState();
   BlockingResourceBase* savedChainPrev = mChainPrev;
   mEntryCount = 0;
-  mChainPrev = 0;
+  mChainPrev = nullptr;
 
   nsresult rv;
   {
@@ -554,7 +555,7 @@ CVStatus OffTheBooksCondVar::Wait(TimeDuration aDuration) {
   AcquisitionState savedAcquisitionState = mLock->TakeAcquisitionState();
   BlockingResourceBase* savedChainPrev = mLock->mChainPrev;
   PRThread* savedOwningThread = mLock->mOwningThread;
-  mLock->mChainPrev = 0;
+  mLock->mChainPrev = nullptr;
   mLock->mOwningThread = nullptr;
 
   // give up mutex until we're back from Wait()

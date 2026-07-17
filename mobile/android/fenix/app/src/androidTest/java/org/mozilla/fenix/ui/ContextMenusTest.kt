@@ -255,7 +255,7 @@ class ContextMenusTest {
         }.enterURLAndEnterToBrowser(genericURL.url) {
             clickPageObject(composeTestRule, itemWithText("PDF form file"))
             waitForPageToLoad()
-            clickPageObject(composeTestRule, itemContainingText("Cancel"))
+            clickPageObject(composeTestRule, itemContainingText("Stay in"))
             longClickPageObject(composeTestRule, itemWithText("Wikipedia link"))
             verifyContextMenuForLinksToOtherHosts("wikipedia.org".toUri())
             dismissContentContextMenu()

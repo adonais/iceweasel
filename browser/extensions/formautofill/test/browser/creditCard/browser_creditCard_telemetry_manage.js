@@ -16,7 +16,12 @@ const DIALOG_SIZE = "width=600,height=400";
 
 add_setup(async function () {
   await SpecialPowers.pushPrefEnv({
-    set: [["test.wait300msAfterTabSwitch", true]],
+    set: [
+      ["test.wait300msAfterTabSwitch", true],
+      // Disabled so focusing a filled field reliably re-identifies it instead
+      // of being suppressed during the dynamic-form-change threshold window.
+      ["extensions.formautofill.heuristics.fillOnDynamicFormChanges", false],
+    ],
   });
 });
 

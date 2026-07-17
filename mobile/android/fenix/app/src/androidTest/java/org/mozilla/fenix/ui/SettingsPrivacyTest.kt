@@ -32,9 +32,7 @@ class SettingsPrivacyTest {
     @get:Rule(order = 1)
     val composeTestRule =
         AndroidComposeTestRuleV2(
-            HomeActivityTestRule.withDefaultSettingsOverrides(
-                skipOnboarding = true,
-            ),
+            HomeActivityTestRule.withDefaultSettingsOverrides(),
         ) { it.activity }
 
     @get:Rule(order = 2)

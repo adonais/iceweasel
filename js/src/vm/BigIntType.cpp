@@ -1632,6 +1632,7 @@ BigInt* BigInt::parseLiteralDigits(JSContext* cx, Range<const CharT> chars,
       "excessively instantiating this template");
 
   MOZ_ASSERT(chars.length());
+  MOZ_ASSERT(2 <= radix && radix <= 36);
 
   RangedPtr<const CharT> start = chars.begin();
   RangedPtr<const CharT> end = chars.end();
@@ -1670,8 +1671,8 @@ BigInt* BigInt::parseLiteralDigits(JSContext* cx, Range<const CharT> chars,
 
   // Numbers in radix 2, 4, and 16 can be directly stored into the result when
   // parsing from right to left.
-  uint8_t log2 = mozilla::FloorLog2(radix);
-  if (std::has_single_bit(log2)) {
+  if (radix == 2 || radix == 4 || radix == 16) {
+    uint8_t log2 = mozilla::FloorLog2(radix);
     size_t chunkChars = BigInt::DigitBits >> mozilla::FloorLog2(log2);
 
     size_t i = 0;

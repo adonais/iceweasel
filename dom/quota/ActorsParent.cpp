@@ -3600,7 +3600,6 @@ Result<Ok, nsresult> QuotaManager::EnsureTemporaryOriginDirectoryCreated(
                     .map([](const auto& res) { return Ok{}; }));
 }
 
-// static
 nsresult QuotaManager::CreateDirectoryMetadata2(
     nsIFile& aDirectory, const FullOriginMetadata& aFullOriginMetadata) {
   GECKO_TRACE_SCOPE("dom::quota", "QuotaManager::CreateDirectoryMetadata2");
@@ -3930,6 +3929,148 @@ Result<bool, nsresult> QuotaManager::DoesClientDirectoryExist(
   QM_TRY_RETURN(MOZ_TO_RESULT_INVOKE_MEMBER(directory, Exists));
 }
 
+struct RenameAndInitInfo {
+  nsCOMPtr<nsIFile> mOriginDirectory;
+  FullOriginMetadata mFullOriginMetadata;
+};
+
+template <typename OriginFunc>
+Result<Ok, nsresult> QuotaManager::InitializeOriginDirectory(
+    const nsCOMPtr<nsIFile>& aChildDirectory, const nsAutoString& aLeafName,
+    PersistenceType aPersistenceType,
+    nsTArray<RenameAndInitInfo>& aRenameAndInitInfos,
+    OriginFunc&& aOriginFunc) {
+  QM_TRY_UNWRAP(auto maybeMetadata,
+                QM_OR_ELSE_WARN_IF(
+                    // Expression
+                    LoadFullOriginMetadataWithRestore(aChildDirectory)
+                        .map([](auto metadata) -> Maybe<FullOriginMetadata> {
+                          return Some(std::move(metadata));
+                        }),
+                    // Predicate.
+                    IsSpecificError<NS_ERROR_MALFORMED_URI>,
+                    // Fallback.
+                    ErrToDefaultOk<Maybe<FullOriginMetadata>>));
+
+  if (!maybeMetadata) {
+    // Unknown directories during initialization are
+    // allowed. Just warn if we find them.
+    UNKNOWN_FILE_WARNING(aLeafName);
+    return Ok{};
+  }
+
+  auto metadata = maybeMetadata.extract();
+
+  MOZ_ASSERT(metadata.mPersistenceType == aPersistenceType);
+
+  const auto extraInfo = ScopedLogExtraInfo{
+      ScopedLogExtraInfo::kTagStorageOriginTainted, metadata.mStorageOrigin};
+
+  // FIXME(tt): The check for origin name consistency can
+  // be removed once we have an upgrade to traverse origin
+  // directories and check through the directory metadata
+  // files.
+  const auto originSanitized = MakeSanitizedOriginCString(metadata.mOrigin);
+
+  NS_ConvertUTF16toUTF8 utf8LeafName(aLeafName);
+  if (!originSanitized.Equals(utf8LeafName)) {
+    QM_WARNING(
+        "The name of the origin directory (%s) doesn't "
+        "match the sanitized origin string (%s) in the "
+        "metadata file!",
+        utf8LeafName.get(), originSanitized.get());
+
+    // If it's the known case, we try to restore the
+    // origin directory name if it's possible.
+    if (originSanitized.Equals(utf8LeafName + "."_ns)) {
+      aRenameAndInitInfos.AppendElement(
+          RenameAndInitInfo{std::move(aChildDirectory), std::move(metadata)});
+      return Ok{};
+    }
+
+    // XXXtt: Try to restore the unknown cases base on the
+    // content for their metadata files. Note that if the
+    // restore fails, QM should maintain a list and ensure
+    // they won't be accessed after initialization.
+  }
+
+  if (aPersistenceType != PERSISTENCE_TYPE_PERSISTENT) {
+    std::forward<OriginFunc>(aOriginFunc)(metadata);
+
+    AddTemporaryOrigin(metadata);
+    QM_LOG(("Temporary origin added: %s, accessed: %d", metadata.mOrigin.get(),
+            metadata.mAccessed));
+
+    if (StaticPrefs::dom_quotaManager_loadQuotaFromSecondaryCache() &&
+        metadata.mQuotaVersion == kCurrentQuotaVersion && !metadata.mAccessed) {
+      QM_LOG(("Initializing quota for: %s", metadata.mOrigin.get()));
+      InitQuotaForOrigin(metadata);
+
+      return Ok{};
+    }
+  }
+  QM_LOG(("Using secondary cache for: %s", metadata.mOrigin.get()));
+
+  QM_TRY(QM_OR_ELSE_WARN_IF(
+      // Expression.
+      MOZ_TO_RESULT(InitializeOrigin(aChildDirectory, metadata)),
+      // Predicate.
+      IsDatabaseCorruptionError,
+      // Fallback.
+      ([&aChildDirectory, &metadata,
+        this](const nsresult rv) -> Result<Ok, nsresult> {
+        // If the origin can't be initialized due to
+        // corruption, this is a permanent
+        // condition, and we need to remove all data
+        // for the origin on disk.
+
+        QM_TRY(MOZ_TO_RESULT(aChildDirectory->Remove(true)));
+
+        RemoveTemporaryOrigin(metadata);
+
+        return Ok{};
+      })));
+
+  return Ok{};
+}
+
+template <typename OriginFunc>
+Result<Ok, nsresult> QuotaManager::ResolveRepositoryEntry(
+    const nsCOMPtr<nsIFile>& aChildDirectory, PersistenceType aPersistenceType,
+    nsTArray<RenameAndInitInfo>& aRenameAndInitInfos,
+    OriginFunc&& aOriginFunc) {
+  QM_TRY_INSPECT(const auto& leafName,
+                 MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
+                     nsAutoString, aChildDirectory, GetLeafName));
+
+  QM_TRY_INSPECT(const auto& dirEntryKind, GetDirEntryKind(*aChildDirectory));
+
+  switch (dirEntryKind) {
+    case nsIFileKind::ExistsAsDirectory: {
+      QM_TRY(InitializeOriginDirectory(aChildDirectory, leafName,
+                                       aPersistenceType, aRenameAndInitInfos,
+                                       std::forward<OriginFunc>(aOriginFunc)));
+      break;
+    }
+    case nsIFileKind::ExistsAsFile:
+      if (IsOSMetadata(leafName) || IsDotFile(leafName)) {
+        break;
+      }
+
+      // Unknown files during initialization are now allowed.
+      // Just warn if we find them.
+      UNKNOWN_FILE_WARNING(leafName);
+      break;
+
+    case nsIFileKind::DoesNotExist:
+      // Ignore files that got removed externally while
+      // iterating.
+      break;
+  }
+
+  return Ok{};
+}
+
 template <typename OriginFunc>
 nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
                                             OriginFunc&& aOriginFunc) {
@@ -3959,150 +4100,25 @@ nsresult QuotaManager::InitializeRepository(PersistenceType aPersistenceType,
     RECORD_IN_NIGHTLY(statusKeeper, rv);
   };
 
-  struct RenameAndInitInfo {
-    nsCOMPtr<nsIFile> mOriginDirectory;
-    FullOriginMetadata mFullOriginMetadata;
-  };
   nsTArray<RenameAndInitInfo> renameAndInitInfos;
 
   QM_TRY(([&]() -> Result<Ok, nsresult> {
     QM_TRY(
         CollectEachFile(
             *directory,
-            [&](nsCOMPtr<nsIFile>&& childDirectory) -> Result<Ok, nsresult> {
+            [&](nsCOMPtr<nsIFile>&& aChildDirectory) -> Result<Ok, nsresult> {
               if (NS_WARN_IF(IsShuttingDown())) {
                 RETURN_STATUS_OR_RESULT(statusKeeper, NS_ERROR_ABORT);
               }
 
+              nsCOMPtr<nsIFile> childDirectory = std::move(aChildDirectory);
+
               QM_TRY(
                   ([this, &iterations, &childDirectory, &renameAndInitInfos,
                     aPersistenceType, &aOriginFunc]() -> Result<Ok, nsresult> {
-                    QM_TRY_INSPECT(
-                        const auto& leafName,
-                        MOZ_TO_RESULT_INVOKE_MEMBER_TYPED(
-                            nsAutoString, childDirectory, GetLeafName));
-
-                    QM_TRY_INSPECT(const auto& dirEntryKind,
-                                   GetDirEntryKind(*childDirectory));
-
-                    switch (dirEntryKind) {
-                      case nsIFileKind::ExistsAsDirectory: {
-                        QM_TRY_UNWRAP(
-                            auto maybeMetadata,
-                            QM_OR_ELSE_WARN_IF(
-                                // Expression
-                                LoadFullOriginMetadataWithRestore(
-                                    childDirectory)
-                                    .map([](auto metadata)
-                                             -> Maybe<FullOriginMetadata> {
-                                      return Some(std::move(metadata));
-                                    }),
-                                // Predicate.
-                                IsSpecificError<NS_ERROR_MALFORMED_URI>,
-                                // Fallback.
-                                ErrToDefaultOk<Maybe<FullOriginMetadata>>));
-
-                        if (!maybeMetadata) {
-                          // Unknown directories during initialization are
-                          // allowed. Just warn if we find them.
-                          UNKNOWN_FILE_WARNING(leafName);
-                          break;
-                        }
-
-                        auto metadata = maybeMetadata.extract();
-
-                        MOZ_ASSERT(metadata.mPersistenceType ==
-                                   aPersistenceType);
-
-                        const auto extraInfo = ScopedLogExtraInfo{
-                            ScopedLogExtraInfo::kTagStorageOriginTainted,
-                            metadata.mStorageOrigin};
-
-                        // FIXME(tt): The check for origin name consistency can
-                        // be removed once we have an upgrade to traverse origin
-                        // directories and check through the directory metadata
-                        // files.
-                        const auto originSanitized =
-                            MakeSanitizedOriginCString(metadata.mOrigin);
-
-                        NS_ConvertUTF16toUTF8 utf8LeafName(leafName);
-                        if (!originSanitized.Equals(utf8LeafName)) {
-                          QM_WARNING(
-                              "The name of the origin directory (%s) doesn't "
-                              "match the sanitized origin string (%s) in the "
-                              "metadata file!",
-                              utf8LeafName.get(), originSanitized.get());
-
-                          // If it's the known case, we try to restore the
-                          // origin directory name if it's possible.
-                          if (originSanitized.Equals(utf8LeafName + "."_ns)) {
-                            renameAndInitInfos.AppendElement(
-                                RenameAndInitInfo{std::move(childDirectory),
-                                                  std::move(metadata)});
-                            break;
-                          }
-
-                          // XXXtt: Try to restore the unknown cases base on the
-                          // content for their metadata files. Note that if the
-                          // restore fails, QM should maintain a list and ensure
-                          // they won't be accessed after initialization.
-                        }
-
-                        if (aPersistenceType != PERSISTENCE_TYPE_PERSISTENT) {
-                          std::forward<OriginFunc>(aOriginFunc)(metadata);
-
-                          AddTemporaryOrigin(metadata);
-
-                          if (StaticPrefs::
-                                  dom_quotaManager_loadQuotaFromSecondaryCache() &&
-                              metadata.mQuotaVersion == kCurrentQuotaVersion &&
-                              !metadata.mAccessed) {
-                            InitQuotaForOrigin(metadata);
-
-                            break;
-                          }
-                        }
-
-                        QM_TRY(QM_OR_ELSE_WARN_IF(
-                            // Expression.
-                            MOZ_TO_RESULT(
-                                InitializeOrigin(childDirectory, metadata)),
-                            // Predicate.
-                            IsDatabaseCorruptionError,
-                            // Fallback.
-                            ([&childDirectory, &metadata,
-                              this](const nsresult rv) -> Result<Ok, nsresult> {
-                              // If the origin can't be initialized due to
-                              // corruption, this is a permanent
-                              // condition, and we need to remove all data
-                              // for the origin on disk.
-
-                              QM_TRY(
-                                  MOZ_TO_RESULT(childDirectory->Remove(true)));
-
-                              RemoveTemporaryOrigin(metadata);
-
-                              return Ok{};
-                            })));
-
-                        break;
-                      }
-
-                      case nsIFileKind::ExistsAsFile:
-                        if (IsOSMetadata(leafName) || IsDotFile(leafName)) {
-                          break;
-                        }
-
-                        // Unknown files during initialization are now allowed.
-                        // Just warn if we find them.
-                        UNKNOWN_FILE_WARNING(leafName);
-                        break;
-
-                      case nsIFileKind::DoesNotExist:
-                        // Ignore files that got removed externally while
-                        // iterating.
-                        break;
-                    }
+                    QM_TRY(ResolveRepositoryEntry(
+                        childDirectory, aPersistenceType, renameAndInitInfos,
+                        std::forward<OriginFunc>(aOriginFunc)));
 
                     iterations++;
 
@@ -10110,8 +10126,11 @@ nsresult RestoreDirectoryMetadata2Helper::ProcessOriginDirectory(
     const OriginProps& aOriginProps) {
   AssertIsOnIOThread();
 
+  QuotaManager* qm = QuotaManager::Get();
+  MOZ_DIAGNOSTIC_ASSERT(qm);
+
   // We don't have any approach to restore aPersisted, so reset it to false.
-  QM_TRY(MOZ_TO_RESULT(QuotaManager::CreateDirectoryMetadata2(
+  QM_TRY(MOZ_TO_RESULT(qm->CreateDirectoryMetadata2(
       *aOriginProps.mDirectory,
       FullOriginMetadata{
           aOriginProps.mOriginMetadata,

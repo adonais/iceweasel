@@ -676,7 +676,10 @@ def test_gecko_profile(mocker, responses, run_action, get_artifact):
     task_id = "tid"
     task_def = {
         "metadata": {"name": "test-raptor"},
-        "payload": {"command": [["run-tests"]], "env": {}},
+        "payload": {
+            "command": [["run-tests"]],
+            "env": {"MOZ_FETCHES": {"task-reference": "[]"}},
+        },
         "extra": {
             "suite": "raptor",
             "treeherder": {"symbol": "R", "groupName": "Raptor"},
@@ -689,13 +692,32 @@ def test_gecko_profile(mocker, responses, run_action, get_artifact):
             attributes={"unittest_suite": "raptor"},
             task_def={
                 "name": "test-raptor",
-                "payload": {"command": [["run-tests"]], "env": {}},
+                "deadline": "",
+                "payload": {
+                    "command": [["run-tests"]],
+                    "env": {"MOZ_FETCHES": {"task-reference": "[]"}},
+                },
                 "extra": {
                     "suite": "raptor",
                     "treeherder": {"symbol": "R", "groupName": "Raptor"},
                 },
             },
-        )
+        ),
+        make_task(
+            label="toolchain-linux64-samply",
+            kind="toolchain",
+            task_def={"name": "toolchain-linux64-samply"},
+        ),
+        make_task(
+            label="toolchain-profiler-node-tools",
+            kind="toolchain",
+            task_def={"name": "toolchain-profiler-node-tools"},
+        ),
+        make_task(
+            label="toolchain-linux64-node-22",
+            kind="toolchain",
+            task_def={"name": "toolchain-linux64-node-22"},
+        ),
     )
 
     responses.get(

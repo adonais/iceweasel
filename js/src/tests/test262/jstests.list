@@ -158,6 +158,9 @@ skip script language/module-code/ambiguous-export-bindings/import-and-export-pro
 skip script language/module-code/ambiguous-export-bindings/namespace-empty-module_FIXTURE.js # not a test file
 skip script language/module-code/ambiguous-export-bindings/namespace-export-star-as-from-1_FIXTURE.js # not a test file
 skip script language/module-code/ambiguous-export-bindings/namespace-export-star-as-from-2_FIXTURE.js # not a test file
+skip script language/module-code/ambiguous-export-bindings/namespace-import-source-and-export-1_FIXTURE.js # not a test file
+skip script language/module-code/ambiguous-export-bindings/namespace-import-source-and-export-2_FIXTURE.js # not a test file
+skip script language/module-code/ambiguous-export-bindings/namespace-import-source-and-export-reexport_FIXTURE.js # not a test file
 skip script language/module-code/ambiguous-export-bindings/namespace-import-star-as-and-export-1_FIXTURE.js # not a test file
 skip script language/module-code/ambiguous-export-bindings/namespace-import-star-as-and-export-2_FIXTURE.js # not a test file
 skip script language/module-code/ambiguous-export-bindings/omitted-from-namespace-1_FIXTURE.js # not a test file
@@ -222,6 +225,13 @@ skip script language/module-code/instn-star-equality-other_FIXTURE.js # not a te
 skip script language/module-code/instn-star-err-not-found-empty_FIXTURE.js # not a test file
 skip script language/module-code/instn-star-err-not-found-faulty_FIXTURE.js # not a test file
 skip script language/module-code/instn-star-iee-cycle-2_FIXTURE.js # not a test file
+skip script language/module-code/instn-star-iee-multi-cycle-same-name-a_FIXTURE.js # not a test file
+skip script language/module-code/instn-star-iee-multi-cycle-same-name-b_FIXTURE.js # not a test file
+skip script language/module-code/instn-star-iee-multi-cycle-same-name-c_FIXTURE.js # not a test file
+skip script language/module-code/instn-star-iee-multi-cycle-same-name-d_FIXTURE.js # not a test file
+skip script language/module-code/instn-star-iee-single-cycle-same-name-a_FIXTURE.js # not a test file
+skip script language/module-code/instn-star-iee-single-cycle-same-name-b_FIXTURE.js # not a test file
+skip script language/module-code/instn-star-iee-single-cycle-same-name-c_FIXTURE.js # not a test file
 skip script language/module-code/instn-star-props-circular-a_FIXTURE.js # not a test file
 skip script language/module-code/instn-star-props-circular-b_FIXTURE.js # not a test file
 skip script language/module-code/instn-star-props-dflt-keep-indirect-def_FIXTURE.js # not a test file
@@ -254,6 +264,7 @@ skip script language/module-code/source-phase-import/ensure-linking-error_FIXTUR
 skip script language/module-code/source-phase-import/import-source-binding-name-2_FIXTURE.js # not a test file
 skip script language/module-code/source-phase-import/import-source-binding-name_FIXTURE.js # not a test file
 skip script language/module-code/source-phase-import/import-source-newlines_FIXTURE.js # not a test file
+skip script language/module-code/source-phase-import/reexport-source-binding_FIXTURE.js # not a test file
 skip script language/module-code/top-level-await/async-module-sync_FIXTURE.js # not a test file
 skip script language/module-code/top-level-await/async-module-tla_FIXTURE.js # not a test file
 skip script language/module-code/top-level-await/dfs-invariant-async_FIXTURE.js # not a test file

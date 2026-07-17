@@ -58,30 +58,27 @@ bool SVGTransformListParser::ParseTransform() {
     return false;
   }
 
-  const nsAString& transform = Substring(start, mIter);
-  nsStaticAtom* keyAtom = NS_GetStaticAtom(transform);
+  using namespace mozilla::dom::SVGTransform_Binding;
+  uint16_t transform =
+      SVGTransform::GetTransformTypeForString(Substring(start, mIter));
 
-  if (!keyAtom || !SkipWsp()) {
+  if (transform == SVG_TRANSFORM_UNKNOWN || !SkipWsp()) {
     return false;
   }
 
-  if (keyAtom == nsGkAtoms::translate) {
-    return ParseTranslate();
-  }
-  if (keyAtom == nsGkAtoms::scale) {
-    return ParseScale();
-  }
-  if (keyAtom == nsGkAtoms::rotate) {
-    return ParseRotate();
-  }
-  if (keyAtom == nsGkAtoms::skewX) {
-    return ParseSkewX();
-  }
-  if (keyAtom == nsGkAtoms::skewY) {
-    return ParseSkewY();
-  }
-  if (keyAtom == nsGkAtoms::matrix) {
-    return ParseMatrix();
+  switch (transform) {
+    case SVG_TRANSFORM_TRANSLATE:
+      return ParseTranslate();
+    case SVG_TRANSFORM_SCALE:
+      return ParseScale();
+    case SVG_TRANSFORM_ROTATE:
+      return ParseRotate();
+    case SVG_TRANSFORM_SKEWX:
+      return ParseSkewX();
+    case SVG_TRANSFORM_SKEWY:
+      return ParseSkewY();
+    case SVG_TRANSFORM_MATRIX:
+      return ParseMatrix();
   }
   return false;
 }

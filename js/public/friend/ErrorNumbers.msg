@@ -402,6 +402,7 @@ MSG_DEF(JSMSG_DUPLICATE_ATTRIBUTE_KEY,      1, JSEXN_SYNTAXERR, "duplicate attri
 MSG_DEF(JSMSG_COLON_AFTER_ATTRIBUTE_KEY,    0, JSEXN_SYNTAXERR, "missing : after attribute key")
 MSG_DEF(JSMSG_WITH_CLAUSE_STRING_LITERAL,   0, JSEXN_SYNTAXERR, "expected string literal")
 MSG_DEF(JSMSG_ATTRIBUTE_KEY_EXPECTED,       0, JSEXN_SYNTAXERR, "expected attribute key")
+MSG_DEF(JSMSG_RC_AFTER_IMPORT_ATTRIBUTE_LIST, 0, JSEXN_SYNTAXERR, "missing '}' after import attribute list")
 MSG_DEF(JSMSG_DECORATOR_NAME_EXPECTED, 0, JSEXN_SYNTAXERR, "expected property name in decorator expression")
 MSG_DEF(JSMSG_CLASS_EXPECTED,          0, JSEXN_SYNTAXERR, "expected class")
 MSG_DEF(JSMSG_NO_IN_WITH_USING,        0, JSEXN_SYNTAXERR, "'using' is not allowed in a for-in loop")

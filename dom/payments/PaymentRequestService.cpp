@@ -221,7 +221,7 @@ nsresult PaymentRequestService::RequestPayment(
       nsCOMPtr<nsIMutableArray> methodData =
           do_CreateInstance(NS_ARRAY_CONTRACTID);
       MOZ_ASSERT(methodData);
-      for (IPCPaymentMethodData data : action.methodData()) {
+      for (const IPCPaymentMethodData& data : action.methodData()) {
         nsCOMPtr<nsIPaymentMethodData> method;
         rv = payments::PaymentMethodData::Create(data, getter_AddRefs(method));
         NS_ENSURE_SUCCESS(rv, rv);

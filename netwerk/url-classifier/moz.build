@@ -30,6 +30,7 @@ DEFINES["GOOGLE_PROTOBUF_NO_STATIC_INITIALIZER"] = True
 UNIFIED_SOURCES += [
     "AsyncUrlChannelClassifier.cpp",
     "ChannelClassifierService.cpp",
+    "ChannelClassifierUtils.cpp",
     "nsChannelClassifier.cpp",
     "UrlClassifierCommon.cpp",
     "UrlClassifierExceptionList.cpp",
@@ -57,7 +58,9 @@ UNIFIED_SOURCES += [
 
 EXPORTS.mozilla.net += [
     "AsyncUrlChannelClassifier.h",
+    "ChannelClassifierLog.h",
     "ChannelClassifierService.h",
+    "ChannelClassifierUtils.h",
     "UrlClassifierCommon.h",
     "UrlClassifierExceptionList.h",
     "UrlClassifierExceptionListEntry.h",

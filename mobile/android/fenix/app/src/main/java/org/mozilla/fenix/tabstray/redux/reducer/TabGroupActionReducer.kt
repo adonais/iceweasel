@@ -65,6 +65,9 @@ object TabGroupActionReducer {
             is TabGroupAction.CloseTabAndDeleteGroupConfirmed -> state.copy(
                 backStack = state.backStack.popDeleteTabGroupFlow(),
             )
+            is TabGroupAction.OnboardingDismissed -> state.copy(
+                config = state.config.copy(tabGroupsOnboardingEnabled = false),
+            )
         }
     }
 

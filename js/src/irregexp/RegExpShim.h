@@ -72,6 +72,7 @@ class Handle;
 #define V8_NODISCARD [[nodiscard]]
 #define V8_NOEXCEPT noexcept
 #define V8_LIFETIME_BOUND /* unsupported */
+#define V8_GSL_POINTER    /* [[gsl::Pointer]] unsupported */
 
 #define V8_LIKELY(x) MOZ_LIKELY(x)
 #define V8_UNLIKELY(x) MOZ_UNLIKELY(x)
@@ -787,7 +788,7 @@ class Object {
 // isolate->stack_guard()->HandleInterrupts(). We want to handle
 // interrupts in the caller, so we return a magic value from
 // HandleInterrupts and check for it here.
-inline bool IsExceptionHole(Object obj, Isolate*) {
+inline bool IsExceptionHole(Object obj) {
   return obj.value().isMagic(JS_INTERRUPT_REGEXP);
 }
 

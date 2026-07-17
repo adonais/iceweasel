@@ -58,6 +58,11 @@ interface ExtensionBrowser {
    Func="mozilla::extensions::ExtensionProxy::IsAllowed"]
   readonly attribute ExtensionProxy proxy;
 
+  // `browser.publicSuffix` API namespace
+  [Replaceable, SameObject, BinaryName="GetExtensionPublicSuffix",
+   Func="mozilla::extensions::ExtensionPublicSuffix::IsAllowed"]
+  readonly attribute ExtensionPublicSuffix publicSuffix;
+
   // `browser.runtime` API namespace
   [Replaceable, SameObject, BinaryName="GetExtensionRuntime",
    Func="mozilla::extensions::ExtensionRuntime::IsAllowed"]

@@ -436,7 +436,7 @@ void WorkerGlobalScopeBase::Control(
 }
 
 nsresult WorkerGlobalScopeBase::Dispatch(
-    already_AddRefed<nsIRunnable>&& aRunnable) const {
+    already_AddRefed<nsIRunnable> aRunnable) const {
   return SerialEventTarget()->Dispatch(std::move(aRunnable),
                                        NS_DISPATCH_NORMAL);
 }

@@ -52,7 +52,6 @@ import org.mozilla.fenix.ext.getPreferenceKey
 import org.mozilla.fenix.ext.pixelSizeFor
 import org.mozilla.fenix.ext.requireComponents
 import org.mozilla.fenix.ext.secure
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.ext.showToolbar
 import org.mozilla.fenix.settings.SupportUtils
 import org.mozilla.fenix.settings.requirePreference
@@ -306,7 +305,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
 
         if (manager.isKeyguardSecure ||
             !newValue ||
-            !requireContext().settings().shouldShowSecurityPinWarningSync
+            !requireComponents.settings.shouldShowSecurityPinWarningSync
         ) {
             updateSyncEngineState(syncEngine, newValue)
         } else {
@@ -323,9 +322,8 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
      * preference and false indicates not synced.
      */
     private fun updateSyncEngineState(engine: SyncEngine, newValue: Boolean) {
-        SyncEnginesStorage(requireContext()).setStatus(engine, newValue)
         viewLifecycleOwner.lifecycleScope.launch {
-            requireContext().components.backgroundServices.accountManager.syncNow(SyncReason.EngineChange)
+            requireContext().components.backgroundServices.accountManager.setEngineEnabled(engine, newValue)
         }
     }
 
@@ -360,7 +358,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
                 }
                 create().withCenterAlignedButtons()
             }.show().secure(activity)
-            it.settings().incrementShowLoginsSecureWarningSyncCount()
+            it.components.settings.incrementShowLoginsSecureWarningSyncCount()
         }
     }
 
@@ -368,7 +366,7 @@ class AccountSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFr
      * Updates the status of all [SyncEngine] states.
      */
     private fun updateSyncEngineStates() {
-        val settings = requireContext().settings()
+        val settings = requireComponents.settings
         val syncEnginesStatus = SyncEnginesStorage(requireContext()).getStatus()
         requirePreference<CheckBoxPreference>(R.string.pref_key_sync_bookmarks).apply {
             isEnabled = syncEnginesStatus.containsKey(SyncEngine.Bookmarks)

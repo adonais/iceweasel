@@ -122,7 +122,8 @@ bool CssAltContent::HandleAttributeChange(nsIContent* aContent,
   // Handle any pseudo-elements with CSS alt content.
   for (dom::Element* pseudo : {nsLayoutUtils::GetBeforePseudo(aContent),
                                nsLayoutUtils::GetAfterPseudo(aContent),
-                               nsLayoutUtils::GetMarkerPseudo(aContent)}) {
+                               nsLayoutUtils::GetMarkerPseudo(aContent),
+                               nsLayoutUtils::GetCheckmarkPseudo(aContent)}) {
     // CssAltContent wants a child of a pseudo-element if there is one.
     nsIContent* content = pseudo ? pseudo->GetFirstChild() : nullptr;
     if (!content) {

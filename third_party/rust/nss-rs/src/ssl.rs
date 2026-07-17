@@ -145,6 +145,7 @@ mod tests {
 
     #[test]
     fn num_ciphers() {
+        test_fixture::fixture_init();
         assert!(unsafe { SSL_NumImplementedCiphers } > 0);
         assert!(unsafe { SSL_GetNumImplementedCiphers() } > 0);
         assert_eq!(unsafe { SSL_NumImplementedCiphers }, unsafe {

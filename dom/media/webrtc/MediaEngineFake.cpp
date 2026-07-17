@@ -618,9 +618,9 @@ RefPtr<MediaEngineSource> MediaEngineFake::CreateSource(
   MOZ_ASSERT(aMediaDevice->mEngine == this);
   switch (aMediaDevice->mMediaSource) {
     case MediaSourceEnum::Camera:
-      return new MediaEngineFakeVideoSource();
+      return MakeRefPtr<MediaEngineFakeVideoSource>();
     case MediaSourceEnum::Microphone:
-      return new MediaEngineFakeAudioSource();
+      return MakeRefPtr<MediaEngineFakeAudioSource>();
     default:
       MOZ_ASSERT_UNREACHABLE("Unsupported source type");
       return nullptr;
@@ -636,7 +636,7 @@ RefPtr<MediaEngineSource> MediaEngineFake::CreateSourceFrom(
           static_cast<const MediaEngineFakeVideoSource*>(aSource));
     case MediaSourceEnum::Microphone:
       // No main thread members that need to be deep cloned.
-      return new MediaEngineFakeAudioSource();
+      return MakeRefPtr<MediaEngineFakeAudioSource>();
     default:
       MOZ_ASSERT_UNREACHABLE("Unsupported source type");
       return nullptr;

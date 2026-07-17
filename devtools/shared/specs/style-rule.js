@@ -18,10 +18,6 @@ types.addDictType("domstylerule.queryContainerForNodeReturn", {
   containerType: "nullable:string",
   containerName: "nullable:string",
   queryFeatures: "nullable:array:json",
-  // @backward-compat { version 151 } `blockSize` and `inlineSize` are no longer returned,
-  // so the 2 lines below can be removed when 151 hits release.
-  blockSize: "nullable:string",
-  inlineSize: "nullable:string",
 });
 
 const styleRuleSpec = generateActorSpec({
@@ -71,6 +67,16 @@ const styleRuleSpec = generateActorSpec({
         conditionIndex: Arg(2, "number"),
       },
       response: RetVal("domstylerule.queryContainerForNodeReturn"),
+    },
+    getCssExplainersData: {
+      request: {
+        expression: Arg(0, "string"),
+        pseudo: Arg(1, "nullable:string"),
+        inheritedNode: Arg(2, "nullable:domnode"),
+      },
+      response: {
+        steps: RetVal("array:string"),
+      },
     },
   },
 });

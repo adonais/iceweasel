@@ -65,7 +65,8 @@ int sqlite3_T_array(BindingColumnData aData, void* aArray, int aSize,
                     int aType) {
   // In debug builds ensure that the statement includes at least one `carray()`.
   MOZ_ASSERT(
-      ::strstr(::sqlite3_sql(aData.stmt), "carray("),
+      ::strstr(::sqlite3_sql(aData.stmt), "carray(") ||
+          ::strstr(::sqlite3_sql(aData.stmt), "CARRAY("),
       "Binding arrays to SQL statements requires using the carray() function.");
 
   if (aType == CARRAY_TEXT) {

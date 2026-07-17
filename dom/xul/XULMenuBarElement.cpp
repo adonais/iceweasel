@@ -29,8 +29,7 @@ NS_IMPL_CYCLE_COLLECTION_TRAVERSE_END
 NS_IMPL_ISUPPORTS_CYCLE_COLLECTION_INHERITED_0(XULMenuBarElement,
                                                XULMenuParentElement)
 
-XULMenuBarElement::XULMenuBarElement(
-    already_AddRefed<class NodeInfo>&& aNodeInfo)
+XULMenuBarElement::XULMenuBarElement(already_AddRefed<class NodeInfo> aNodeInfo)
     : XULMenuParentElement(std::move(aNodeInfo)) {}
 
 XULMenuBarElement::~XULMenuBarElement() { MOZ_DIAGNOSTIC_ASSERT(!mListener); }

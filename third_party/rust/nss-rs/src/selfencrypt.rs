@@ -9,7 +9,7 @@ use std::{fmt::Write as _, io::Write as _, mem};
 use log::{info, trace};
 
 use crate::{
-    RecordProtection,
+    Mode, RecordProtection, RecordProtectionOps as _,
     constants::{Cipher, Version},
     err::{Error, Res},
     hkdf,
@@ -52,11 +52,11 @@ impl SelfEncrypt {
         })
     }
 
-    fn make_aead(&self, k: &SymKey, salt: &[u8]) -> Res<RecordProtection> {
+    fn make_aead(&self, k: &SymKey, salt: &[u8], mode: Mode) -> Res<RecordProtection> {
         debug_assert_eq!(salt.len(), Self::SALT_LENGTH);
         let salt = hkdf::import_key(self.version, salt)?;
         let secret = hkdf::extract(self.version, self.cipher, Some(&salt), k)?;
-        RecordProtection::new(self.version, self.cipher, &secret, "neqo self")
+        RecordProtection::new(self.version, self.cipher, &secret, "neqo self", mode)
     }
 
     /// Rotate keys.  This causes any previous key that is being held to be replaced by the current
@@ -92,7 +92,7 @@ impl SelfEncrypt {
         // };
         // AAD covers the entire header, plus the value of the AAD parameter that is provided.
         let salt = random::<{ Self::SALT_LENGTH }>();
-        let cipher = self.make_aead(&self.key, &salt)?;
+        let cipher = self.make_aead(&self.key, &salt, Mode::Encrypt)?;
         let encoded_len = 2 + salt.len() + plaintext.len() + cipher.expansion();
 
         let mut enc = Vec::<u8>::with_capacity(encoded_len);
@@ -159,7 +159,7 @@ impl SelfEncrypt {
             .write_all(aad)
             .unwrap_or_else(|_| unreachable!("Buffer has enough capacity."));
 
-        let aead = self.make_aead(key, salt)?;
+        let aead = self.make_aead(key, salt, Mode::Decrypt)?;
         // NSS insists on having extra space available for decryption.
         let padded_len = ciphertext.len() - OFFSET;
         let mut output = vec![0; padded_len];

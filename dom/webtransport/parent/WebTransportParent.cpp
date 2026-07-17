@@ -33,9 +33,9 @@ WebTransportParent::~WebTransportParent() {
 
 void WebTransportParent::Create(
     const nsAString& aURL, nsIPrincipal* aPrincipal,
-    const uint64_t& aBrowsingContextID,
-    const mozilla::Maybe<IPCClientInfo>& aClientInfo, const bool& aDedicated,
-    const bool& aRequireUnreliable, const uint32_t& aCongestionControl,
+    const uint64_t& aBrowsingContextID, const IPCClientInfo& aClientInfo,
+    const bool& aDedicated, const bool& aRequireUnreliable,
+    const uint32_t& aCongestionControl,
     nsTArray<WebTransportHash>&& aServerCertHashes,
     Endpoint<PWebTransportParent>&& aParentEndpoint,
     std::function<void(std::tuple<const nsresult&, const uint8_t&>)>&&
@@ -93,11 +93,11 @@ void WebTransportParent::Create(
        nsServerCertHashes = std::move(nsServerCertHashes),
        principal = RefPtr{aPrincipal}, browsingContextID = aBrowsingContextID,
        flags = nsILoadInfo::SEC_ALLOW_CROSS_ORIGIN_SEC_CONTEXT_IS_NULL,
-       clientInfo = aClientInfo] {
+       clientInfo = ClientInfo{aClientInfo}] {
         LOG(("WebTransport %p AsyncConnect", self.get()));
         if (NS_FAILED(self->mWebTransport->AsyncConnectWithClient(
                 uri, dedicated, std::move(nsServerCertHashes), principal,
-                browsingContextID, flags, self, clientInfo,
+                browsingContextID, flags, self, Some(clientInfo),
                 nsIWebTransport::HTTPVersion::h3))) {
           LOG(("AsyncConnect failure; we should get OnSessionClosed"));
         }

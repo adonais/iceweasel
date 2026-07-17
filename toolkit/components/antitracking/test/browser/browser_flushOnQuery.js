@@ -168,6 +168,32 @@ add_task(async function flush_on_query_handles_aggregated_repeat_count() {
   await TrackingDBService.clearAll();
 });
 
+// Verify that two callers that race into _flushLiveLogs via the public read API
+// must both observe the freshly flushed event.
+add_task(async function concurrent_reads_see_flushed_event() {
+  const tab = await BrowserTestUtils.openNewForegroundTab(
+    gBrowser,
+    TEST_TOP_PAGE
+  );
+  const browser = tab.linkedBrowser;
+  await loadTrackerImage(
+    browser,
+    TEST_3RD_PARTY_DOMAIN_TP + TEST_PATH + "raptor.jpg?" + Math.random()
+  );
+
+  // Confirm the live log actually has something to flush — otherwise the test
+  // would pass trivially even if the shared-promise plumbing were broken.
+  const log = JSON.parse(await browser.getContentBlockingLog());
+  is(Object.keys(log).length, 1, "ContentBlockingLog recorded one origin");
+
+  const [c1, c2] = await Promise.all([queryAllTypes(), queryAllTypes()]);
+  is(c1, 1, "First concurrent read sees the live-log event");
+  is(c2, c1, "Second concurrent read sees the same data (no stale read)");
+
+  BrowserTestUtils.removeTab(tab);
+  await TrackingDBService.clearAll();
+});
+
 add_task(async function flush_disabled_pref_is_respected() {
   await SpecialPowers.pushPrefEnv({
     set: [["browser.contentblocking.database.flushOnQuery.enabled", false]],

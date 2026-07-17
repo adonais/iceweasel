@@ -53,14 +53,7 @@ add_task(async function test_measure() {
   await preferencesBackupResource.measure(tempDir);
 
   let measurement = Glean.browserBackup.preferencesSize.testGetValue();
-  let scalars = TelemetryTestUtils.getProcessScalars("parent", false, false);
 
-  TelemetryTestUtils.assertScalar(
-    scalars,
-    "browser.backup.preferences_size",
-    measurement,
-    "Glean and telemetry measurements for preferences data should be equal"
-  );
   Assert.equal(
     measurement,
     EXPECTED_PREFERENCES_KILOBYTES_SIZE,

@@ -302,9 +302,6 @@ void nsPageSequenceFrame::Reflow(nsPresContext* aPresContext,
   }
 
   const bool shouldDoMeasuringReflow = [&]() {
-    if (!aPresContext->FragmentainerAwarePositioningEnabled()) {
-      return false;
-    }
     if (GetPrevInFlow()) {
       // A measuring reflow is only needed on first-in-flow.
       return false;

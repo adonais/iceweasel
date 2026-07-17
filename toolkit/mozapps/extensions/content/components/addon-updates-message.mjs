@@ -15,13 +15,10 @@ class AddonUpdatesMessage extends HTMLElement {
     let style = document.createElement("style");
     style.textContent = `
       @import "chrome://global/skin/in-content/common.css";
-      button {
-        margin: 0;
-      }
     `;
     this.message = document.createElement("span");
     this.message.hidden = true;
-    this.button = document.createElement("button");
+    this.button = document.createElement("moz-button");
     this.button.addEventListener("click", e => {
       if (e.button === 0) {
         gViewController.loadView("updates/available");

@@ -353,6 +353,14 @@ class AnyRef {
   // Get the raw value for diagnostics.
   uintptr_t rawValue() const { return value_; }
 
+  // Relaxed atomic load and store operations on an AnyRef.
+  AnyRef atomicGet() const {
+    return AnyRef(__atomic_load_n(&value_, __ATOMIC_RELAXED));
+  }
+  void atomicSet(const AnyRef& other) {
+    __atomic_store_n(&value_, other.value_, __ATOMIC_RELAXED);
+  }
+
   // Internal details of the boxing format used by WasmStubs.cpp
   static const JSClass* valueBoxClass();
   static size_t valueBoxOffsetOfValue();

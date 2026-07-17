@@ -238,6 +238,10 @@ static inline SkColor ColorToSkColor(const DeviceColor& color, Float aAlpha) {
                         ColorFloatToByte(color.b));
 }
 
+static inline SkColor4f ColorToSkColor4f(const DeviceColor& color) {
+  return SkColor4f{color.r, color.g, color.b, color.a};
+}
+
 static inline SkPoint PointToSkPoint(const Point& aPoint) {
   return SkPoint::Make(SkFloatToScalar(aPoint.x), SkFloatToScalar(aPoint.y));
 }

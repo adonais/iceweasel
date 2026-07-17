@@ -634,16 +634,10 @@ impl ReportCrash {
                 })
         });
 
-        if report_received {
-            // If the response could be handled (indicated by the returned crash id), clean up by
-            // deleting the minidump files. Otherwise, prune old minidump files.
-            if crash_id.is_some() {
-                self.config.delete_files();
-            } else {
-                if let Err(e) = self.config.prune_files() {
-                    log::warn!("failed to prune files: {e}");
-                }
-            }
+        // If the response could be handled (indicated by the returned crash id), clean up by
+        // deleting the minidump files.
+        if crash_id.is_some() {
+            self.config.delete_files();
         }
 
         if let Err(e) = self.write_submission_event(crash_id) {

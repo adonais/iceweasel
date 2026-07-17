@@ -26,7 +26,7 @@
   min-height: 0;
   overflow-y: auto;
   width: 100%;
-  scrollbar-gutter: stable;
+  scrollbar-gutter: stable both-edges;
 
   &[overflowing] {
     --bottom-fade-size: var(--smart-window-fade-size);
@@ -90,7 +90,7 @@
   min-height: var(--content-height);
   width: 100%;
 
-  & > :last-child {
+  & > :last-child:not(.chat-bubble-user) {
     padding-block-end: var(--smart-window-fade-size);
   }
 
@@ -177,9 +177,6 @@
 
 moz-button.jump-to-bottom-button {
   --button-border-radius: var(--border-radius-large);
-  --button-background-color: light-dark(var(--color-white), var(--color-gray-80));
-  --button-text-color: light-dark(var(--color-gray-70), var(--color-white));
-  --button-background-color-hover: light-dark(var(--color-violet-0), var(--color-gray-70));
   --button-opacity-disabled: 1;
   bottom: var(--space-large);
   inset-inline: 0;
@@ -192,6 +189,12 @@ moz-button.jump-to-bottom-button {
     visibility 100ms linear;
   visibility: hidden;
   width: max-content;
+
+  @media not (forced-colors) {
+    --button-background-color-ghost: light-dark(var(--color-white), var(--color-gray-80));
+    --button-text-color-ghost: light-dark(var(--color-gray-70), var(--color-white));
+    --button-background-color-ghost-hover: light-dark(var(--color-violet-0), var(--color-gray-70));
+  }
 }
 
 moz-button.jump-to-bottom-button::part(button) {

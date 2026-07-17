@@ -76,6 +76,12 @@ class nsICODecoder : public Decoder {
   LexerTransition<ICOState> FinishMask();
   LexerTransition<ICOState> FinishResource();
 
+  // True while we are iterating dir entries to discover or verify each
+  // resource's actual size. Each error site that can be reached during this
+  // phase should drop the current entry and continue with the next one rather
+  // than terminating the whole ICO decode.
+  bool IsVerifyingResourceSizes() const { return mReturnIterator.isSome(); }
+
   struct IconDirEntryEx : public IconDirEntry {
     OrientedIntSize mSize;
   };

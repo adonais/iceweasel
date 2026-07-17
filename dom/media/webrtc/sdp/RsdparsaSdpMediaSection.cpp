@@ -144,7 +144,7 @@ void RsdparsaSdpMediaSection::AddCodec(const std::string& pt,
     mFormats.push_back(pt);
 
     // Add a rtpmap in mAttributeList
-    SdpRtpmapAttributeList* rtpmap = new SdpRtpmapAttributeList();
+    auto rtpmap = MakeUnique<SdpRtpmapAttributeList>();
     if (mAttributeList->HasAttribute(SdpAttribute::kRtpmapAttribute)) {
       const SdpRtpmapAttributeList& old = mAttributeList->GetRtpmap();
       for (auto it = old.mRtpmaps.begin(); it != old.mRtpmaps.end(); ++it) {
@@ -165,7 +165,7 @@ void RsdparsaSdpMediaSection::AddCodec(const std::string& pt,
     }
 
     rtpmap->PushEntry(pt, codec, name, clockrate, channels);
-    mAttributeList->SetAttribute(rtpmap);
+    mAttributeList->SetAttribute(std::move(rtpmap));
   }
 }
 

@@ -576,61 +576,7 @@ static void init_motion_compensation_bigdia(search_site_config *cfg, int stride,
   cfg->num_search_steps = MAX_PATTERN_SCALES;
 }
 
-// Search site initialization for SQUARE search method.
-static void init_motion_compensation_square(search_site_config *cfg, int stride,
-                                            int level) {
-  (void)level;
-  cfg->stride = stride;
-  // All scales have 8 closest points in square shape.
-  static const int square_num_candidates[MAX_PATTERN_SCALES] = {
-    8, 8, 8, 8, 8, 8, 8, 8, 8, 8, 8,
-  };
-
-  // Square search method candidates.
-  // Note that the largest candidate step at each scale is 2^scale.
-  /* clang-format off */
-    static const FULLPEL_MV
-        square_candidates[MAX_PATTERN_SCALES][MAX_PATTERN_CANDIDATES] = {
-             { { -1, -1 }, { 0, -1 }, { 1, -1 }, { 1, 0 }, { 1, 1 }, { 0, 1 },
-               { -1, 1 }, { -1, 0 } },
-             { { -2, -2 }, { 0, -2 }, { 2, -2 }, { 2, 0 }, { 2, 2 }, { 0, 2 },
-               { -2, 2 }, { -2, 0 } },
-             { { -4, -4 }, { 0, -4 }, { 4, -4 }, { 4, 0 }, { 4, 4 }, { 0, 4 },
-               { -4, 4 }, { -4, 0 } },
-             { { -8, -8 }, { 0, -8 }, { 8, -8 }, { 8, 0 }, { 8, 8 }, { 0, 8 },
-               { -8, 8 }, { -8, 0 } },
-             { { -16, -16 }, { 0, -16 }, { 16, -16 }, { 16, 0 }, { 16, 16 },
-               { 0, 16 }, { -16, 16 }, { -16, 0 } },
-             { { -32, -32 }, { 0, -32 }, { 32, -32 }, { 32, 0 }, { 32, 32 },
-               { 0, 32 }, { -32, 32 }, { -32, 0 } },
-             { { -64, -64 }, { 0, -64 }, { 64, -64 }, { 64, 0 }, { 64, 64 },
-               { 0, 64 }, { -64, 64 }, { -64, 0 } },
-             { { -128, -128 }, { 0, -128 }, { 128, -128 }, { 128, 0 },
-               { 128, 128 }, { 0, 128 }, { -128, 128 }, { -128, 0 } },
-             { { -256, -256 }, { 0, -256 }, { 256, -256 }, { 256, 0 },
-               { 256, 256 }, { 0, 256 }, { -256, 256 }, { -256, 0 } },
-             { { -512, -512 }, { 0, -512 }, { 512, -512 }, { 512, 0 },
-               { 512, 512 }, { 0, 512 }, { -512, 512 }, { -512, 0 } },
-             { { -1024, -1024 }, { 0, -1024 }, { 1024, -1024 }, { 1024, 0 },
-               { 1024, 1024 }, { 0, 1024 }, { -1024, 1024 }, { -1024, 0 } },
-    };
-
-  /* clang-format on */
-  int radius = 1;
-  for (int i = 0; i < MAX_PATTERN_SCALES; ++i) {
-    cfg->searches_per_step[i] = square_num_candidates[i];
-    cfg->radius[i] = radius;
-    for (int j = 0; j < MAX_PATTERN_CANDIDATES; ++j) {
-      search_site *const site = &cfg->site[i][j];
-      site->mv = square_candidates[i][j];
-      site->offset = get_offset_from_fullmv(&site->mv, stride);
-    }
-    radius *= 2;
-  }
-  cfg->num_search_steps = MAX_PATTERN_SCALES;
-}
-
-// Search site initialization for HEX / FAST_HEX search methods.
+// Search site initialization for HEX search method.
 static void init_motion_compensation_hex(search_site_config *cfg, int stride,
                                          int level) {
   (void)level;
@@ -683,8 +629,7 @@ const av1_init_search_site_config
     av1_init_motion_compensation[NUM_DISTINCT_SEARCH_METHODS] = {
       init_dsmotion_compensation,     init_motion_compensation_nstep,
       init_motion_compensation_nstep, init_dsmotion_compensation,
-      init_motion_compensation_hex,   init_motion_compensation_bigdia,
-      init_motion_compensation_square
+      init_motion_compensation_hex,   init_motion_compensation_bigdia
     };
 
 // Checks whether the mv is within range of the mv_limits
@@ -1317,25 +1262,6 @@ static int bigdia_search(const FULLPEL_MV start_mv,
                         cost_list, best_mv, best_mv_stats);
 }
 
-static int square_search(const FULLPEL_MV start_mv,
-                         const FULLPEL_MOTION_SEARCH_PARAMS *ms_params,
-                         const int search_step, const int do_init_search,
-                         int *cost_list, FULLPEL_MV *best_mv,
-                         FULLPEL_MV_STATS *best_mv_stats) {
-  return pattern_search(start_mv, ms_params, search_step, do_init_search,
-                        cost_list, best_mv, best_mv_stats);
-}
-
-static int fast_hex_search(const FULLPEL_MV start_mv,
-                           const FULLPEL_MOTION_SEARCH_PARAMS *ms_params,
-                           const int search_step, const int do_init_search,
-                           int *cost_list, FULLPEL_MV *best_mv,
-                           FULLPEL_MV_STATS *best_mv_stats) {
-  return hex_search(start_mv, ms_params,
-                    AOMMAX(MAX_MVSEARCH_STEPS - 2, search_step), do_init_search,
-                    cost_list, best_mv, best_mv_stats);
-}
-
 static int vfast_dia_search(const FULLPEL_MV start_mv,
                             const FULLPEL_MOTION_SEARCH_PARAMS *ms_params,
                             const int search_step, const int do_init_search,
@@ -1879,17 +1805,9 @@ int av1_full_pixel_search(const FULLPEL_MV start_mv,
       var = fast_dia_search(start_mv, ms_params, step_param, 0, cost_list,
                             best_mv, best_mv_stats);
       break;
-    case FAST_HEX:
-      var = fast_hex_search(start_mv, ms_params, step_param, 0, cost_list,
-                            best_mv, best_mv_stats);
-      break;
     case HEX:
       var = hex_search(start_mv, ms_params, step_param, 1, cost_list, best_mv,
                        best_mv_stats);
-      break;
-    case SQUARE:
-      var = square_search(start_mv, ms_params, step_param, 1, cost_list,
-                          best_mv, best_mv_stats);
       break;
     case BIGDIA:
       var = bigdia_search(start_mv, ms_params, step_param, 1, cost_list,
@@ -2141,7 +2059,8 @@ int av1_vector_match(const int16_t *ref, const int16_t *src, int bwl,
 unsigned int av1_int_pro_motion_estimation(
     const AV1_COMP *cpi, MACROBLOCK *x, BLOCK_SIZE bsize, int mi_row,
     int mi_col, const MV *ref_mv, unsigned int *y_sad_zero,
-    int me_search_size_col, int me_search_size_row, int is_var_part) {
+    int me_search_size_col, int me_search_size_row, int is_var_part,
+    int use_larger_search) {
   const AV1_COMMON *const cm = &cpi->common;
   MACROBLOCKD *xd = &x->e_mbd;
   MB_MODE_INFO *mi = xd->mi[0];
@@ -2151,8 +2070,8 @@ unsigned int av1_int_pro_motion_estimation(
   const int bh = block_size_high[bsize];
   const int is_screen = cpi->oxcf.tune_cfg.content == AOM_CONTENT_SCREEN;
   const int full_search = is_screen;
-  const bool screen_scroll_superblock =
-      is_screen && bsize == cm->seq_params->sb_size;
+  const bool scroll_superblock =
+      use_larger_search && bsize == cm->seq_params->sb_size;
   // Keep border a multiple of 16.
   const int border = (cpi->oxcf.border_in_pixels >> 4) << 4;
   int search_size_width_left = me_search_size_col;
@@ -2160,7 +2079,7 @@ unsigned int av1_int_pro_motion_estimation(
   int search_size_height_top = me_search_size_row;
   int search_size_height_bottom = me_search_size_row;
   // Allow for larger search size for column/horizontal screen motion.
-  if (screen_scroll_superblock && is_var_part) {
+  if (scroll_superblock && is_var_part) {
     if (((mi_col << 2) - search_size_width_left) < -border)
       search_size_width_left = (mi_col << 2) + border;
     if (((mi_col << 2) + search_size_width_right + bw) > cm->width + border)
@@ -2174,7 +2093,7 @@ unsigned int av1_int_pro_motion_estimation(
     }
   }
   // Allow for larger search size for row/vertical screen motion.
-  if (screen_scroll_superblock && is_var_part) {
+  if (scroll_superblock && is_var_part) {
     if (((mi_row << 2) - search_size_height_top) < -border)
       search_size_height_top = (mi_row << 2) + border;
     if (((mi_row << 2) + search_size_height_bottom + bh) > cm->height + border)
@@ -2194,7 +2113,6 @@ unsigned int av1_int_pro_motion_estimation(
   search_size_height_top &= ~15;
   search_size_height_bottom &= ~15;
   const int src_stride = x->plane[0].src.stride;
-  const int ref_stride = xd->plane[0].pre[0].stride;
   uint8_t const *ref_buf, *src_buf;
   int_mv *best_int_mv = &xd->mi[0]->mv[0];
   unsigned int best_sad, tmp_sad, this_sad[4];
@@ -2219,6 +2137,7 @@ unsigned int av1_int_pro_motion_estimation(
     av1_setup_pre_planes(xd, 0, scaled_ref_frame, mi_row, mi_col, NULL,
                          MAX_MB_PLANE);
   }
+  const int ref_stride = xd->plane[0].pre[0].stride;
 
   if (xd->bd != 8) {
     best_int_mv->as_fullmv = kZeroFullMv;
@@ -2285,6 +2204,16 @@ unsigned int av1_int_pro_motion_estimation(
   best_sad =
       cpi->ppi->fn_ptr[bsize].sdf(src_buf, src_stride, ref_buf, ref_stride);
 
+  if (!is_screen && scroll_superblock) {
+    if (best_sad_col < best_sad_row && best_sad_col < (int)best_sad) {
+      best_int_mv->as_fullmv.row = 0;
+      best_sad = best_sad_col;
+    } else if (best_sad_row < best_sad_col && best_sad_row < (int)best_sad) {
+      best_int_mv->as_fullmv.col = 0;
+      best_sad = best_sad_row;
+    }
+  }
+
   // Evaluate zero MV if found MV is non-zero.
   if (best_int_mv->as_int != 0) {
     tmp_sad = cpi->ppi->fn_ptr[bsize].sdf(x->plane[0].src.buf, src_stride,
@@ -2300,7 +2229,7 @@ unsigned int av1_int_pro_motion_estimation(
     *y_sad_zero = best_sad;
   }
 
-  if (!screen_scroll_superblock) {
+  if (!scroll_superblock) {
     const uint8_t *const pos[4] = {
       ref_buf - ref_stride,
       ref_buf - 1,

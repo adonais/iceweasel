@@ -11,7 +11,6 @@ import org.junit.Rule
 import org.junit.Test
 import org.mozilla.fenix.customannotations.SmokeTest
 import org.mozilla.fenix.ext.components
-import org.mozilla.fenix.ext.settings
 import org.mozilla.fenix.helpers.FenixTestRule
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestAssetHelper.enhancedTrackingProtectionAsset
@@ -278,7 +277,7 @@ class EnhancedTrackingProtectionTest {
     // TestRail link: https://mozilla.testrail.io/index.php?/cases/view/417441
     @Test
     fun verifyTrackersBlockedWithStrictTPTest() {
-        appContext.settings().setStrictETP()
+        appContext.components.settings.setStrictETP()
         val genericPage = mockWebServer.getGenericAsset(1)
         val trackingProtectionTest = mockWebServer.enhancedTrackingProtectionAsset.url
 

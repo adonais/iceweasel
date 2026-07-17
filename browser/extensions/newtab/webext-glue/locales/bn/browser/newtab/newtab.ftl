@@ -14,6 +14,38 @@ newtab-personalize-icon-label =
 newtab-personalize-dialog-label =
     .aria-label = ব্যক্তিগতকরণ
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = নতুন ট্যাবগুলি
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num }টি সারি
+           *[other] { $num }টি সারি
+        }
+home-restore-defaults-srd =
+    .label = ডিফল্ট মান পুনরায় স্থাপন
+    .accesskey = R
+home-mode-choice-custom-srd =
+    .label = কাস্টম URLs…
+home-mode-choice-blank-srd =
+    .label = ফাঁকা পাতা
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = স্পন্সর করা স্টোরি
+home-prefs-highlights-option-visited-pages-srd =
+    .label = ঘুরে আসা পেজ
+home-prefs-highlights-options-bookmarks-srd =
+    .label = বুকমার্ক
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = সর্বশেষ ডাউনলোড
+
 ## Search box component.
 
 # "Search" is a verb/action

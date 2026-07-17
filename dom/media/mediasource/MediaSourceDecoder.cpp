@@ -36,8 +36,8 @@ MediaSourceDecoder::MediaSourceDecoder(MediaDecoderInit& aInit)
   mExplicitDuration.emplace(UnspecifiedNaN<double>());
 }
 
-MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
-    bool aDisableExternalEngine) {
+already_AddRefed<MediaDecoderStateMachineBase>
+MediaSourceDecoder::CreateStateMachine(bool aDisableExternalEngine) {
   MOZ_ASSERT(NS_IsMainThread());
   // if `mDemuxer` already exists, that means we're in the process of recreating
   // the state machine. The track buffers are tied to the demuxer so we would
@@ -83,10 +83,10 @@ MediaDecoderStateMachineBase* MediaSourceDecoder::CreateStateMachine(
       !!mOwner->GetCDMProxy() && !mOwner->GetCDMProxy()->AsWMFCDMProxy();
   if (StaticPrefs::media_wmf_media_engine_enabled() && !isCDMNotSupported &&
       !aDisableExternalEngine) {
-    return new ExternalEngineStateMachine(this, mReader);
+    return MakeAndAddRef<ExternalEngineStateMachine>(this, mReader);
   }
 #endif
-  return new MediaDecoderStateMachine(this, mReader);
+  return MakeAndAddRef<MediaDecoderStateMachine>(this, mReader);
 }
 
 nsresult MediaSourceDecoder::Load(nsIPrincipal* aPrincipal) {

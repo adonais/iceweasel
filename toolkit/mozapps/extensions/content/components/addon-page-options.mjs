@@ -101,9 +101,16 @@ class AddonPageOptions extends AboutAddonsHTMLElement {
     return this.panel.open;
   }
 
+  get panelListId() {
+    return `${this.id ?? "addon-page-options"}-panel-list`;
+  }
+
   render() {
     this.appendChild(AddonPageOptions.fragment);
     this.panel = this.querySelector("panel-list");
+    // This panel-list id is going to be set on the addon-page-header
+    // more-options moz-button menuId attribute to wire the two together.
+    this.panel.id = this.panelListId;
     this.installFromFile = this.querySelector('[action="install-from-file"]');
     this.toggleUpdatesEl = this.querySelector(
       '[action="set-update-automatically"]'

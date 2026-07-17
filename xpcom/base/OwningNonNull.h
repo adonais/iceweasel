@@ -182,7 +182,15 @@ inline void ImplCycleCollectionTraverse(
   CycleCollectionNoteChild(aCallback, aField.get(), aName, aFlags);
 }
 
+template <class T>
+std::ostream& operator<<(std::ostream& aOut, const OwningNonNull<T>& aObj) {
+  return mozilla::DebugValue(aOut, aObj.get());
+}
+
 }  // namespace mozilla
+
+template <typename T>
+struct fmt::formatter<mozilla::OwningNonNull<T>> : fmt::ostream_formatter {};
 
 // Declared in nsCOMPtr.h
 template <class T>

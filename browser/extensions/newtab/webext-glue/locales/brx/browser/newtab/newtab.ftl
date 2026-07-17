@@ -7,6 +7,34 @@
 
 newtab-page-title = गोदान टेब
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = गोदान टेबफोर
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } सारि
+           *[other] { $num } सारिफोर
+        }
+home-restore-defaults-srd =
+    .label = डिफल्टखौ मोनफिन
+    .accesskey = R
+home-mode-choice-custom-srd =
+    .label = कास्टम URLs...
+home-prefs-highlights-option-visited-pages-srd =
+    .label = थांखांनाय पेजफोर
+home-prefs-highlights-options-bookmarks-srd =
+    .label = बुकमाकॅफोर
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = दानिवौसो डाउनल'ड खालामनाया
+
 ## Search box component.
 
 # "Search" is a verb/action

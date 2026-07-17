@@ -1,171 +1,49 @@
-From: Nico Grunbaum <na-g@nostrum.com>
-Date: Wed, 27 Nov 2024 03:41:00 +0000
-Subject: Bug 1921154 - libwebrtc build related changes for
- AV1;r=mjf,webrtc-reviewers
+From: Andreas Pehrson <apehrson@mozilla.com>
+Date: Tue, 28 Jan 2025 21:45:00 +0000
+Subject: Bug 1938047 - Hook up VideoStreamFactory with EncoderInfo like the
+ libwebrtc factory. r=webrtc-reviewers,dbaker
 
-These are most of the changes needed to get a build with AV1.
-The crypto/openssl changes are later altered in the stack adding an NSPR based implementation of the functionality that was missing.
+This is necessary for the factory to factor in the encoder's resolution
+alignment requirements when calculating stream resolutions.
 
-Differential Revision: https://phabricator.services.mozilla.com/D228540
-Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/4527c41ef71d7683c60d9c435991a0d93bc5ce4d
+Differential Revision: https://phabricator.services.mozilla.com/D235702
+Mercurial Revision: https://hg.mozilla.org/mozilla-central/rev/8b5653392e88ccd0c2b0675c761bb22733364225
 ---
- BUILD.gn          |  4 ++++
- media/BUILD.gn    | 24 ++++++++++++++----------
- rtc_base/BUILD.gn |  4 ++++
- webrtc.gni        |  4 ++--
- 4 files changed, 24 insertions(+), 12 deletions(-)
+ video/config/video_encoder_config.h | 4 ++++
+ video/video_stream_encoder.cc       | 1 +
+ 2 files changed, 5 insertions(+)
 
-diff --git a/BUILD.gn b/BUILD.gn
-index ab1652692d..7227f61fc4 100644
---- a/BUILD.gn
-+++ b/BUILD.gn
-@@ -499,6 +499,9 @@ if (!rtc_build_ssl) {
-       "crypto",
-       "ssl",
-     ]
-+    if (build_with_mozilla) {
-+      libs = []
-+    }
-   }
- }
+diff --git a/video/config/video_encoder_config.h b/video/config/video_encoder_config.h
+index cbb3bf1ce9..06dcbf8a6d 100644
+--- a/video/config/video_encoder_config.h
++++ b/video/config/video_encoder_config.h
+@@ -26,6 +26,7 @@
+ #include "api/video_codecs/sdp_video_format.h"
+ #include "api/video_codecs/spatial_layer.h"
+ #include "api/video_codecs/video_codec.h"
++#include "api/video_codecs/video_encoder.h"
  
-@@ -593,6 +596,7 @@ if (!build_with_chromium) {
-         "api/environment:environment_factory",
-         "api/video:video_frame",
-         "api/video:video_rtp_headers",
-+        "api/video_codecs:builtin_video_decoder_factory",
-         "test:rtp_test_utils",
-       ]
-       # Added when we removed deps in other places to avoid building
-diff --git a/media/BUILD.gn b/media/BUILD.gn
-index a358ef03ab..7cddb06ba4 100644
---- a/media/BUILD.gn
-+++ b/media/BUILD.gn
-@@ -12,12 +12,10 @@ import("../webrtc.gni")
+ namespace webrtc {
  
- group("media") {
-   deps = []
--  if (!build_with_mozilla) {
--    deps += [
--      ":rtc_media",
--      ":rtc_media_base",
--    ]
--  }
-+  deps += [
-+    ":rtc_media",
-+    ":rtc_media_base",
-+  ]
- }
+@@ -158,6 +159,9 @@ class VideoEncoderConfig {
+         int frame_height,
+         const VideoEncoderConfig& encoder_config) = 0;
  
- config("rtc_media_defines_config") {
-@@ -279,6 +277,9 @@ rtc_library("media_engine") {
-       "base/media_engine.cc",
-       "base/media_engine.h",
-     ]
-+    deps -= [
-+      ":media_channel_impl",
-+    ]
-   }
- }
- 
-@@ -432,6 +433,7 @@ rtc_library("codec_list") {
-   ]
- }
- 
-+# MOZILLA Bug 1931241 - how much of this do we need?
- rtc_library("rtp_utils") {
- if (!build_with_mozilla) {
-   sources = [
-@@ -477,7 +479,6 @@ rtc_library("media_constants") {
- }
- 
- rtc_library("turn_utils") {
--if (!build_with_mozilla) {
-   sources = [
-     "base/turn_utils.cc",
-     "base/turn_utils.h",
-@@ -488,10 +489,8 @@ if (!build_with_mozilla) {
-     "../rtc_base/system:rtc_export",
-   ]
- }
--}
- 
- rtc_library("rid_description") {
--if (!build_with_mozilla) {
-   sources = [
-     "base/rid_description.cc",
-     "base/rid_description.h",
-@@ -501,7 +500,6 @@ if (!build_with_mozilla) {
-     "//third_party/abseil-cpp/absl/strings:string_view",
-   ]
- }
--}
- 
- rtc_library("rtc_simulcast_encoder_adapter") {
-   visibility = [ "*" ]
-@@ -725,6 +723,12 @@ rtc_library("rtc_audio_video") {
-     "engine/webrtc_voice_engine.cc",
-     "engine/webrtc_voice_engine.h",
-   ]
-+  if (build_with_mozilla) {
-+    sources -= [
-+      "engine/webrtc_video_engine.cc",
-+      "engine/webrtc_voice_engine.cc",
-+    ]
-+  }
- 
-   public_configs = []
-   if (!build_with_chromium) {
-diff --git a/rtc_base/BUILD.gn b/rtc_base/BUILD.gn
-index 681e1c0b2a..4af1aaf307 100644
---- a/rtc_base/BUILD.gn
-+++ b/rtc_base/BUILD.gn
-@@ -1608,6 +1608,7 @@ rtc_source_set("ssl_header") {
- }
- 
- rtc_library("digest") {
-+if (!build_with_mozilla) {
-   visibility = [ "*" ]
-   sources = [
-     "message_digest.cc",
-@@ -1629,8 +1630,10 @@ rtc_library("digest") {
-     configs += [ "..:external_ssl_library" ]
-   }
- }
-+}
- 
- rtc_library("crypto_random") {
-+if (!build_with_mozilla) {
-   visibility = [ "*" ]
-   sources = [
-     "crypto_random.cc",
-@@ -1651,6 +1654,7 @@ rtc_library("crypto_random") {
-     configs += [ "..:external_ssl_library" ]
-   }
- }
-+}
- 
- rtc_library("ssl") {
- if (!build_with_mozilla) {
-diff --git a/webrtc.gni b/webrtc.gni
-index fd0efa063f..4f63ab5990 100644
---- a/webrtc.gni
-+++ b/webrtc.gni
-@@ -112,7 +112,7 @@ declare_args() {
- 
-   # Used to specify an external OpenSSL include path when not compiling the
-   # library that comes with WebRTC (i.e. rtc_build_ssl == 0).
--  rtc_ssl_root = "unused"
-+  rtc_ssl_root = ""
- 
-   # Selects whether debug dumps for the audio processing module
-   # should be generated.
-@@ -333,7 +333,7 @@ declare_args() {
- }
- 
- # Enable liboam only on non-mozilla builds.
--enable_libaom = !build_with_mozilla
-+enable_libaom = true
- 
- # Make it possible to provide custom locations for some libraries (move these
- # up into declare_args should we need to actually use them for the GN build).
++    // Mozilla: Patching in necessary info our custom VideoStreamFactory will need to know.
++    virtual void SetEncoderInfo(const VideoEncoder::EncoderInfo& info) {}
++
+    protected:
+     ~VideoStreamFactoryInterface() override {}
+   };
+diff --git a/video/video_stream_encoder.cc b/video/video_stream_encoder.cc
+index f9be7fd8b6..14b8e04c89 100644
+--- a/video/video_stream_encoder.cc
++++ b/video/video_stream_encoder.cc
+@@ -1098,6 +1098,7 @@ void VideoStreamEncoder::ReconfigureEncoder() {
+   std::vector<VideoStream> streams;
+   if (encoder_config_.video_stream_factory) {
+     // Note: only tests set their own EncoderStreamFactory...
++    encoder_config_.video_stream_factory->SetEncoderInfo(encoder_->GetEncoderInfo());
+     streams = encoder_config_.video_stream_factory->CreateEncoderStreams(
+         env_.field_trials(), last_frame_info_->width, last_frame_info_->height,
+         encoder_config_);

@@ -86,4 +86,32 @@ describe("SmartWindowMetricsTelemetry", () => {
     );
     await SpecialPowers.popPrefEnv();
   });
+
+  it("records setDefaultOptin as true", async () => {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.smartwindow.isDefaultWindow", true]],
+    });
+    SmartWindowTelemetry.updateSetDefaultOptinMetric();
+
+    Assert.strictEqual(
+      Glean.smartWindow.setDefaultOptin.testGetValue(),
+      true,
+      "setDefaultOptin should be true"
+    );
+    await SpecialPowers.popPrefEnv();
+  });
+
+  it("records setDefaultOptin as false", async () => {
+    await SpecialPowers.pushPrefEnv({
+      set: [["browser.smartwindow.isDefaultWindow", false]],
+    });
+    SmartWindowTelemetry.updateSetDefaultOptinMetric();
+
+    Assert.strictEqual(
+      Glean.smartWindow.setDefaultOptin.testGetValue(),
+      false,
+      "setDefaultOptin should be false"
+    );
+    await SpecialPowers.popPrefEnv();
+  });
 });

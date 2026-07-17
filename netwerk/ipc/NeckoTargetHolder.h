@@ -25,7 +25,7 @@ class NeckoTargetHolder {
   // When |mNeckoTarget| is not null, use it to dispatch the runnable.
   // Otherwise, dispatch the runnable to the main thread.
   nsresult Dispatch(
-      already_AddRefed<nsIRunnable>&& aRunnable,
+      already_AddRefed<nsIRunnable> aRunnable,
       nsIEventTarget::DispatchFlags aDispatchFlags = NS_DISPATCH_NORMAL);
 
   // EventTarget for labeling networking events.

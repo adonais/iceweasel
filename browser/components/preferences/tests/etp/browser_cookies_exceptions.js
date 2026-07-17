@@ -539,7 +539,7 @@ async function runTest(test, getObservances) {
 
   let cookieExceptionsButton = doc.getElementById("cookieExceptions");
   cookieExceptionsButton.scrollIntoView();
-  await EventUtils.synthesizeMouseAtCenter(
+  EventUtils.synthesizeMouseAtCenter(
     cookieExceptionsButton,
     {},
     doc.documentGlobal

@@ -996,6 +996,42 @@ class ContentBlockingControllerTest : BaseSessionTest() {
     }
 
     @Test
+    fun clearTrackingDb_removesAllTrackersData() {
+        sessionRule.setPrefsUntilTestEnd(
+            mapOf("browser.contentblocking.database.enabled" to true),
+        )
+        sessionRule.clearTrackingDB()
+
+        seedTrackingDB(
+            mapOf(
+                "https://1.example.com" to arrayOf(
+                    intArrayOf(ContentBlockingController.Event.BLOCKED_TRACKING_CONTENT, 1, 1),
+                ),
+                "https://2.example.com" to arrayOf(
+                    intArrayOf(ContentBlockingController.Event.BLOCKED_FINGERPRINTING_CONTENT, 1, 1),
+                ),
+            ),
+        )
+
+        sessionRule.waitForResult(
+            sessionRule.runtime.contentBlockingController
+                .sumAllTrackingDbEvents()
+                .accept {
+                    assertThat("Sum should be two after seeding", it, equalTo(2))
+                },
+        )
+
+        sessionRule.waitForResult(sessionRule.runtime.contentBlockingController.clearTrackingDb())
+        sessionRule.waitForResult(
+            sessionRule.runtime.contentBlockingController
+                .sumAllTrackingDbEvents()
+                .accept {
+                    assertThat("Sum should be zero after clearTrackingDb", it, equalTo(0))
+                },
+        )
+    }
+
+    @Test
     fun contentBlockingDatabaseStatus() {
         val contentBlocking = sessionRule.runtime.settings.contentBlocking
 

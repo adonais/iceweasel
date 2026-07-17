@@ -21,7 +21,6 @@
 /**
  * @nova-cleanup(remove-conditional): Remove this override once Nova ships for newtab.
  */
-/* stylelint-disable-next-line media-query-no-invalid */
 @media not -moz-pref("browser.newtabpage.activity-stream.nova.enabled") {
   :host {
     --content-search-handoff-ui-border-radius: var(--border-radius-medium);

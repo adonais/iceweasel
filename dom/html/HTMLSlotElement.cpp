@@ -16,7 +16,7 @@
 #include "nsGkAtoms.h"
 
 nsGenericHTMLElement* NS_NewHTMLSlotElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo,
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo,
     mozilla::dom::FromParser aFromParser) {
   RefPtr<mozilla::dom::NodeInfo> nodeInfo(std::move(aNodeInfo));
   auto* nim = nodeInfo->NodeInfoManager();
@@ -26,7 +26,7 @@ nsGenericHTMLElement* NS_NewHTMLSlotElement(
 namespace mozilla::dom {
 
 HTMLSlotElement::HTMLSlotElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : nsGenericHTMLElement(std::move(aNodeInfo)) {}
 
 HTMLSlotElement::~HTMLSlotElement() {
@@ -352,6 +352,9 @@ void HTMLSlotElement::RemoveAssignedNode(nsIContent& aNode) {
 
   RecalculateHasSlottedState();
   SlotAssignedNodeRemoved(this, aNode);
+  if (StaticPrefs::dom_headingoffset_enabled()) {
+    aNode.AsContent()->UpdateHeadingElementsOffsetChange();
+  }
 }
 
 void HTMLSlotElement::ClearAssignedNodes() {
@@ -360,6 +363,9 @@ void HTMLSlotElement::ClearAssignedNodes() {
                    node->AsContent()->GetAssignedSlot() == this,
                "How exactly?");
     node->AsContent()->SetAssignedSlot(nullptr);
+    if (StaticPrefs::dom_headingoffset_enabled()) {
+      node->AsContent()->UpdateHeadingElementsOffsetChange();
+    }
   }
 
   mAssignedNodes.Clear();
@@ -393,6 +399,9 @@ void HTMLSlotElement::FireSlotChangeEvent() {
 
 void HTMLSlotElement::RemoveManuallyAssignedNode(nsIContent& aNode) {
   mManuallyAssignedNodes.RemoveElement(&aNode);
+  if (aNode.GetManualSlotAssignment() == this) {
+    aNode.SetManualSlotAssignment(nullptr);
+  }
   if (aNode.GetAssignedSlot() == this) {
     RemoveAssignedNode(aNode);
   }

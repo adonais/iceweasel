@@ -18,6 +18,57 @@ newtab-personalize-dialog-label =
 newtab-logo-and-wordmark =
     .aria-label = { -brand-full-name }
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = نویاں ٹیباں
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } قطار
+           *[other] { $num } قطاراں
+        }
+# Dropdown option shown when an extension replaces the contents of new windows or tabs.
+# Variables:
+#   $extension (string) - Name of the extension
+home-prefs-homepage-extension-option =
+    .label = ایکسٹنشن ({ $extension })
+home-restore-defaults-srd =
+    .label = ڈیفالٹس بحال کرو
+    .accesskey = R
+home-mode-choice-default-fx-srd =
+    .label = { -firefox-home-brand-name } (طے شدہ)
+home-mode-choice-custom-srd =
+    .label = مرضی دے URLs …
+home-mode-choice-blank-srd =
+    .label = خالی ورقہ
+home-prefs-shortcuts-header-srd =
+    .label = شارٹ کٹ
+home-prefs-shortcuts-select =
+    .aria-label = شارٹ کٹ
+home-prefs-shortcuts-by-option-sponsored-srd =
+    .label = سپانسر تھئے شارٹ کٹ
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = سپانسر تھیاں کہانیاں
+home-prefs-highlights-option-visited-pages-srd =
+    .label = دورہ کیتے ڳئے ورقے
+home-prefs-highlights-options-bookmarks-srd =
+    .label = نشانیاں
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = بالکل حالیہ ڈاؤن لوڈ
+home-prefs-recent-activity-header-srd =
+    .label = حالیہ سرگرمی
+home-prefs-recent-activity-select =
+    .aria-label = حالیہ سرگرمی
+home-prefs-weather-header-srd =
+    .label = موسم
+
 ## Search box component.
 
 # "Search" is a verb/action
@@ -117,6 +168,8 @@ newtab-menu-delete-pocket = { -pocket-brand-name } کنوں مٹاؤ
 newtab-menu-archive-pocket = { -pocket-brand-name } وِچ سوگھا کرو
 newtab-menu-show-privacy-info = ساݙے سپانسر تے تہاݙی رازداری
 newtab-menu-about-fakespot = { -fakespot-brand-name } بارے
+# Context menu option to open a support page explaining the New Tab personalization features and privacy controls.
+newtab-menu-section-learn-more = ٻیا سِکھو
 
 ## Message displayed in a modal window to explain privacy and provide context for sponsored content.
 

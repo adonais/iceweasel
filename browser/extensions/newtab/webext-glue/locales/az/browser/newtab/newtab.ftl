@@ -9,6 +9,38 @@ newtab-page-title = Yeni Vərəq
 newtab-settings-button =
     .title = Yeni Vərəq səhifənizi fərdiləşdirin
 
+## Strings for "Homepage" and "Firefox Home" sections of about:settings#home.
+## Homepage panel
+
+home-homepage-new-tabs =
+    .label = Yeni vərəqlər
+
+## Firefox Home content
+
+# Variables:
+#   $num (number) - Number of rows displayed
+home-prefs-sections-rows-option-srd =
+    .label =
+        { $num ->
+            [one] { $num } sətir
+           *[other] { $num } sətir
+        }
+home-restore-defaults-srd =
+    .label = İlkin Seçənəkləri Bərpa et
+    .accesskey = R
+home-mode-choice-custom-srd =
+    .label = Fərdi Ünvanlar…
+home-mode-choice-blank-srd =
+    .label = Boş Səhifə
+home-prefs-recommended-by-option-sponsored-stories-srd =
+    .label = Sponsorlaşdırılmış Hekayələr
+home-prefs-highlights-option-visited-pages-srd =
+    .label = Baxılmış Səhifələr
+home-prefs-highlights-options-bookmarks-srd =
+    .label = Əlfəcinlər
+home-prefs-highlights-option-most-recent-download-srd =
+    .label = Son Endirmələr
+
 ## Search box component.
 
 # "Search" is a verb/action

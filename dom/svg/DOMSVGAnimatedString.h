@@ -5,12 +5,13 @@
 #ifndef DOM_SVG_DOMSVGANIMATEDSTRING_H_
 #define DOM_SVG_DOMSVGANIMATEDSTRING_H_
 
-#include "mozilla/SVGAnimatedClassOrString.h"
 #include "mozilla/dom/SVGElement.h"
 
 class nsIPrincipal;
 
-namespace mozilla::dom {
+namespace mozilla {
+class SVGAnimatedClassOrString;
+namespace dom {
 
 class OwningTrustedScriptURLOrString;
 class TrustedScriptURLOrString;
@@ -29,27 +30,20 @@ class DOMSVGAnimatedString final : public nsWrapperCache {
   // WebIDL
   SVGElement* GetParentObject() const { return mSVGElement; }
 
-  void GetBaseVal(OwningTrustedScriptURLOrString& aResult) {
-    mVal->GetBaseValue(aResult, mSVGElement);
-  }
+  void GetBaseVal(OwningTrustedScriptURLOrString& aResult);
   MOZ_CAN_RUN_SCRIPT void SetBaseVal(const TrustedScriptURLOrString& aValue,
                                      nsIPrincipal* aSubjectPrincipal,
-                                     ErrorResult& aRv) {
-    RefPtr<SVGElement> svgElement = mSVGElement;
-    mVal->SetBaseValue(aValue, svgElement, true, aSubjectPrincipal, aRv);
-  }
-  void GetAnimVal(nsAString& aResult) {
-    mSVGElement->FlushAnimations();
-    mVal->GetAnimValue(aResult, mSVGElement);
-  }
+                                     ErrorResult& aRv);
+  void GetAnimVal(nsAString& aResult);
 
  private:
-  ~DOMSVGAnimatedString() { mVal->RemoveTearoff(); }
+  ~DOMSVGAnimatedString();
 
   SVGAnimatedClassOrString* mVal;  // kept alive because it belongs to content
   RefPtr<SVGElement> mSVGElement;
 };
 
-}  // namespace mozilla::dom
+}  // namespace dom
+}  // namespace mozilla
 
 #endif  // DOM_SVG_DOMSVGANIMATEDSTRING_H_

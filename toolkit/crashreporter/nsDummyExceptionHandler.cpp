@@ -32,8 +32,7 @@ nsresult SetMinidumpPath(const nsAString& aPath) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 
-nsresult SetupExtraData(nsIFile* aAppDataDirectory,
-                        const nsACString& aBuildID) {
+nsresult SetupExtraData(nsIFile* aAppDataDirectory, nsIFile* aXreDirectory) {
   return NS_ERROR_NOT_IMPLEMENTED;
 }
 

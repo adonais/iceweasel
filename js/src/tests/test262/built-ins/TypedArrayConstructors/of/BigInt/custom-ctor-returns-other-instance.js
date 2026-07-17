@@ -29,6 +29,6 @@ testWithBigIntTypedArrayConstructors(function(TA, makeCtorArg) {
 
   result = TypedArray.of.call(ctor, 1n, 2n);
   assert.sameValue(result, custom, "using iterator, higher length");
-});
+}, null, null, ["immutable"]);
 
 reportCompare(0, 0);

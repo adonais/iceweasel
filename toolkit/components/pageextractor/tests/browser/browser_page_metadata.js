@@ -10,13 +10,14 @@
 // Structured data - @type extraction
 
 add_task(async function test_page_metadata_structured_data_single_type() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <script type="application/ld+json">
       { "@context": "https://schema.org", "@type": "Article" }
     </script>
   `;
 
-  const { structuredDataTypes } = await actor.getPageMetadata();
+  const { structuredDataTypes } = await getPageExtractor().getPageMetadata();
 
   Assert.deepEqual(
     structuredDataTypes,
@@ -28,7 +29,8 @@ add_task(async function test_page_metadata_structured_data_single_type() {
 });
 
 add_task(async function test_page_metadata_structured_data_array_type() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <script type="application/ld+json">
       {
         "@context": "https://schema.org",
@@ -37,7 +39,7 @@ add_task(async function test_page_metadata_structured_data_array_type() {
     </script>
   `;
 
-  const { structuredDataTypes } = await actor.getPageMetadata();
+  const { structuredDataTypes } = await getPageExtractor().getPageMetadata();
 
   Assert.deepEqual(
     structuredDataTypes,
@@ -49,7 +51,8 @@ add_task(async function test_page_metadata_structured_data_array_type() {
 });
 
 add_task(async function test_page_metadata_structured_data_multiple_scripts() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <script type="application/ld+json">
       { "@context": "https://schema.org", "@type": "WebPage" }
     </script>
@@ -58,7 +61,7 @@ add_task(async function test_page_metadata_structured_data_multiple_scripts() {
     </script>
   `;
 
-  const { structuredDataTypes } = await actor.getPageMetadata();
+  const { structuredDataTypes } = await getPageExtractor().getPageMetadata();
 
   Assert.deepEqual(
     structuredDataTypes,
@@ -70,7 +73,8 @@ add_task(async function test_page_metadata_structured_data_multiple_scripts() {
 });
 
 add_task(async function test_page_metadata_structured_data_deduplication() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <script type="application/ld+json">
       { "@context": "https://schema.org", "@type": "Article" }
     </script>
@@ -79,7 +83,7 @@ add_task(async function test_page_metadata_structured_data_deduplication() {
     </script>
   `;
 
-  const { structuredDataTypes } = await actor.getPageMetadata();
+  const { structuredDataTypes } = await getPageExtractor().getPageMetadata();
 
   Assert.deepEqual(
     structuredDataTypes,
@@ -91,7 +95,8 @@ add_task(async function test_page_metadata_structured_data_deduplication() {
 });
 
 add_task(async function test_page_metadata_structured_data_invalid_json() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <script type="application/ld+json">
       { this is not valid json }
     </script>
@@ -100,7 +105,7 @@ add_task(async function test_page_metadata_structured_data_invalid_json() {
     </script>
   `;
 
-  const { structuredDataTypes } = await actor.getPageMetadata();
+  const { structuredDataTypes } = await getPageExtractor().getPageMetadata();
 
   Assert.deepEqual(
     structuredDataTypes,
@@ -112,11 +117,12 @@ add_task(async function test_page_metadata_structured_data_invalid_json() {
 });
 
 add_task(async function test_page_metadata_structured_data_no_json_ld() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <p>A page with no structured data.</p>
   `;
 
-  const { structuredDataTypes } = await actor.getPageMetadata();
+  const { structuredDataTypes } = await getPageExtractor().getPageMetadata();
 
   Assert.deepEqual(
     structuredDataTypes,
@@ -130,9 +136,12 @@ add_task(async function test_page_metadata_structured_data_no_json_ld() {
 // Word count
 
 add_task(async function test_page_metadata_word_count() {
-  const { actor, cleanup } = await html` <p>one two three four five</p> `;
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
+    <p>one two three four five</p>
+  `;
 
-  const { wordCount } = await actor.getPageMetadata();
+  const { wordCount } = await getPageExtractor().getPageMetadata();
 
   is(wordCount, 5, "Word count matches the number of words on the page.");
 
@@ -140,9 +149,10 @@ add_task(async function test_page_metadata_word_count() {
 });
 
 add_task(async function test_page_metadata_word_count_empty() {
-  const { actor, cleanup } = await html``;
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html``;
 
-  const { wordCount } = await actor.getPageMetadata();
+  const { wordCount } = await getPageExtractor().getPageMetadata();
 
   is(wordCount, 0, "Word count is zero for a page with no text.");
 
@@ -152,13 +162,14 @@ add_task(async function test_page_metadata_word_count_empty() {
 // Language detection
 
 add_task(async function test_page_metadata_language_valid() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <script>
       document.documentElement.lang = "en-US";
     </script>
   `;
 
-  const { language } = await actor.getPageMetadata();
+  const { language } = await getPageExtractor().getPageMetadata();
 
   is(language, "en-US", "Valid lang attribute is returned as a BCP 47 tag.");
 
@@ -166,13 +177,14 @@ add_task(async function test_page_metadata_language_valid() {
 });
 
 add_task(async function test_page_metadata_language_invalid() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <script>
       document.documentElement.lang = "!!!invalid!!!";
     </script>
   `;
 
-  const { language } = await actor.getPageMetadata();
+  const { language } = await getPageExtractor().getPageMetadata();
 
   is(language, "", "Invalid lang attribute falls back to empty string.");
 
@@ -180,11 +192,12 @@ add_task(async function test_page_metadata_language_invalid() {
 });
 
 add_task(async function test_page_metadata_language_missing() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <p>No lang attribute on this page.</p>
   `;
 
-  const { language } = await actor.getPageMetadata();
+  const { language } = await getPageExtractor().getPageMetadata();
 
   is(language, "", "Missing lang attribute returns empty string.");
 
@@ -192,6 +205,7 @@ add_task(async function test_page_metadata_language_missing() {
 });
 
 add_task(async function test_page_metadata_no_document() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
   const { tab, cleanup } = await html`<p>Test</p>`;
 
   const result = await SpecialPowers.spawn(
@@ -237,6 +251,7 @@ const READERABLE_ARTICLE = `
 
 add_task(
   async function test_page_metadata_reader_mode_structured_data_is_empty() {
+    const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
     const { cleanup, getPageExtractor } = await html`
       <script type="application/ld+json">
         { "@context": "https://schema.org", "@type": "Article" }
@@ -266,6 +281,7 @@ add_task(
 );
 
 add_task(async function test_page_metadata_reader_mode_language() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
   const { cleanup, getPageExtractor } = await html`
     <script>
       document.documentElement.lang = "fr";
@@ -291,14 +307,15 @@ add_task(async function test_page_metadata_reader_mode_language() {
 // isReaderable
 
 add_task(async function test_page_metadata_is_readerable_true() {
-  const { actor, cleanup } = await html`
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`
     <article>
       <h1>Etymology of Mochitests</h1>
       <p>${READERABLE_ARTICLE}</p>
     </article>
   `;
 
-  const { isReaderable } = await actor.getPageMetadata();
+  const { isReaderable } = await getPageExtractor().getPageMetadata();
 
   ok(isReaderable, "A page with article content is readerable.");
 
@@ -306,9 +323,10 @@ add_task(async function test_page_metadata_is_readerable_true() {
 });
 
 add_task(async function test_page_metadata_is_readerable_false() {
-  const { actor, cleanup } = await html`<p>Short page.</p>`;
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
+  const { getPageExtractor, cleanup } = await html`<p>Short page.</p>`;
 
-  const { isReaderable } = await actor.getPageMetadata();
+  const { isReaderable } = await getPageExtractor().getPageMetadata();
 
   ok(
     !isReaderable,
@@ -319,6 +337,7 @@ add_task(async function test_page_metadata_is_readerable_false() {
 });
 
 add_task(async function test_page_metadata_reader_mode_is_readerable_true() {
+  const { html } = await MLTestUtils.serveHTMLInTab({ browser: gBrowser });
   const { cleanup, getPageExtractor } = await html`
     <article>
       <h1>Etymology of Mochitests</h1>

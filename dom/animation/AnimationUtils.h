@@ -7,17 +7,20 @@
 
 #include "mozilla/PseudoStyleRequest.h"
 #include "mozilla/TimeStamp.h"
+#include "mozilla/dom/CSSNumericValueBindingFwd.h"
 #include "mozilla/dom/Nullable.h"
 #include "nsRFPService.h"
 #include "nsStringFwd.h"
 
 class nsIContent;
 class nsIFrame;
+class nsIGlobalObject;
 struct JSContext;
 
 namespace mozilla {
 
 class EffectSet;
+class ErrorResult;
 
 namespace dom {
 class Document;
@@ -54,6 +57,37 @@ class AnimationUtils {
 
     return result;
   }
+
+  // The spec's "validate a CSSNumberish time" procedure.
+  // https://drafts.csswg.org/web-animations-2/#validating-a-cssnumberish-time
+  // aProgressBased is true when typed-OM is enabled and the animation is
+  // associated with a progress-based timeline. Returns false, having thrown a
+  // TypeError on aRv, if aValue is not valid for the timeline type.
+  static bool ValidateCSSNumberishTime(const dom::CSSNumberish& aValue,
+                                       bool aProgressBased, ErrorResult& aRv);
+
+  // Fills a non-nullable CSSNumberish dictionary field from a millisecond
+  // value, converting to percent (0..100) when |aProgressBased| is true
+  // (i.e. the effect is on a progress-based timeline and Typed-OM is exposed).
+  static void DoubleToCSSNumberish(double aMs, bool aProgressBased,
+                                   nsIGlobalObject* aGlobal,
+                                   dom::OwningCSSNumberish& aRetVal);
+
+  // Convert an internal TimeDuration to the CSSNumberish exposed via the
+  // currentTime/startTime IDL attributes: a percent CSSUnitValue when
+  // aProgressBased is true (i.e. typed-OM is enabled and the animation is
+  // associated with a progress-based timeline), else a plain double in
+  // milliseconds. aGlobal is used to construct the CSSUnitValue.
+  static void DurationToCSSNumberish(
+      const dom::Nullable<TimeDuration>& aTime, bool aProgressBased,
+      RTPCallerType aRTPCallerType, nsIGlobalObject* aGlobal,
+      dom::Nullable<dom::OwningCSSNumberish>& aRetVal);
+
+  // Convert a CSSNumberish time to the internal TimeDuration. aValue must
+  // already have been accepted by ValidateCSSNumberishTime, with the same
+  // aProgressBased value.
+  static dom::Nullable<TimeDuration> CSSNumberishToDuration(
+      const dom::CSSNumberish& aValue, bool aProgressBased);
 
   static void LogAsyncAnimationFailure(nsCString& aMessage,
                                        const nsIContent* aContent = nullptr);

@@ -41,12 +41,11 @@ async def test_install_temporary_web_extension_with_content_script(
             target=ContextTarget(top_context["context"]),
             await_promise=False,
         )
-        return result.get("value")
+        assert result.get("value") == "content script executed"
 
     wait = AsyncPoll(
         bidi_session,
         timeout=5,
         message="Content script did not inject the marker element",
     )
-    marker_text = await wait.until(get_marker_text)
-    assert marker_text == "content script executed"
+    await wait.until(get_marker_text)

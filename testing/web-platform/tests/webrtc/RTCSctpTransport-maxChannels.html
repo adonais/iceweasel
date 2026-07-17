@@ -29,6 +29,8 @@ promise_test(async (t) => {
   assert_true(pc.sctp instanceof RTCSctpTransport, 'RTCSctpTransport type is correct');
   assert_equals(pc.sctp.maxChannels, null, 'maxChannels must not be set');
 }, 'An unconnected peerconnection must not have maxChannels set');
+}
+if (rest) {
 
 promise_test(async (t) => {
   const pc = new RTCPeerConnection();

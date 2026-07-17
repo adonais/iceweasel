@@ -7,6 +7,7 @@ import { ExternalComponentWrapper } from "content-src/components/ExternalCompone
 import { GlobalOverrider } from "test/unit/utils";
 import { CardGrid } from "content-src/components/DiscoveryStreamComponents/CardGrid/CardGrid";
 import { HorizontalRule } from "content-src/components/DiscoveryStreamComponents/HorizontalRule/HorizontalRule";
+// eslint-disable-next-line no-shadow
 import { Navigation } from "content-src/components/DiscoveryStreamComponents/Navigation/Navigation";
 import React from "react";
 import { shallow } from "enzyme";

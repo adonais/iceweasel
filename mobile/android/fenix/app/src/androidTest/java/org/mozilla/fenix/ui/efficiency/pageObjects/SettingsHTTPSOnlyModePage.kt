@@ -11,7 +11,7 @@ import androidx.test.espresso.matcher.ViewMatchers.isChecked
 import androidx.test.espresso.matcher.ViewMatchers.isNotChecked
 import androidx.test.espresso.matcher.ViewMatchers.withId
 import org.mozilla.fenix.R
-import org.mozilla.fenix.ext.settings
+import org.mozilla.fenix.ext.components
 import org.mozilla.fenix.helpers.HomeActivityIntentTestRule
 import org.mozilla.fenix.helpers.TestHelper.appContext
 import org.mozilla.fenix.ui.efficiency.helpers.BasePage
@@ -49,13 +49,13 @@ class SettingsHTTPSOnlyModePage(composeRule: AndroidComposeTestRule<HomeActivity
         return SettingsHTTPSOnlyModeSelectors.all.filter { it.groups.contains(group) }
     }
 
-    override fun navigateToPage(url: String): SettingsHTTPSOnlyModePage {
-        super.navigateToPage(url)
+    override fun navigateToPage(url: String, forceNavigation: Boolean): SettingsHTTPSOnlyModePage {
+        super.navigateToPage(url, forceNavigation)
         return this
     }
 
     fun enableHttpsOnlyMode(): SettingsHTTPSOnlyModePage {
-        if (!appContext.settings().shouldUseHttpsOnly) {
+        if (!appContext.components.settings.shouldUseHttpsOnly) {
             mozClick(SettingsHTTPSOnlyModeSelectors.HTTPS_ONLY_MODE_TOGGLE)
         }
         return this

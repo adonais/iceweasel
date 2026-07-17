@@ -202,6 +202,13 @@ async function testSendMoreInfo(tab, menu, expectedOverrides = {}) {
     description,
   });
 
+  if (expectedOverrides?.screenshotOptOut) {
+    const { screenshotToggle } = rbs;
+    await isVisible(screenshotToggle);
+    screenshotToggle.pressed = false;
+    await isNotPressed(screenshotToggle);
+  }
+
   const receivedData = await rbs.clickSendMoreInfo();
   await checkWebcompatComPayload(
     tab,
@@ -254,10 +261,18 @@ async function checkWebcompatComPayload(
   ok(app.version?.length, "Got an app version");
   ok(details.channel?.length, "Got an app channel");
   ok(details.defaultUserAgent?.length, "Got a default UA string");
-  ok(additionalData.tabInfo.useragentString?.length, "Got a final UA string");
+  if (!expectedOverrides.expectNoTabDetails) {
+    ok(additionalData.tabInfo.useragentString?.length, "Got a final UA string");
+  }
 
   // Check that if there is also a screenshot, that it is valid.
   const { screenshot } = receivedData;
+  if (expectedOverrides?.screenshotOptOut) {
+    ok(
+      !screenshot,
+      "opted out of a screenshot, so it ought to not be included"
+    );
+  }
   if (screenshot) {
     const isScreenshotValid = await new Promise(done => {
       var image = new Image();
@@ -269,6 +284,10 @@ async function checkWebcompatComPayload(
   }
 
   filterFrameworkDetectorFails(message.details, expected.details);
+
+  if (expectedOverrides.expectNoTabDetails) {
+    removeTabSpecificInfo(expected.details.additionalData.tabInfo);
+  }
 
   ok(areObjectsEqual(message, expected), "sent info matches expectations");
 }

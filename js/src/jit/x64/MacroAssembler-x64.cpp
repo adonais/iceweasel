@@ -623,8 +623,7 @@ void MacroAssemblerX64::boxValue(Register type, Register src, Register dest) {
 
     // All bits above the payload must be zeroed.
     Label upperBitsZeroed;
-    cmpPtr(scratch, scratch);
-    j(Assembler::Zero, &upperBitsZeroed);
+    asMasm().branchTestPtr(Assembler::Zero, scratch, scratch, &upperBitsZeroed);
     breakpoint();
     bind(&upperBitsZeroed);
   }

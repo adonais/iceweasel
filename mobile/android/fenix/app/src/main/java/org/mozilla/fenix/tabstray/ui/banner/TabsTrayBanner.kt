@@ -65,7 +65,6 @@ import mozilla.components.ui.icons.R as iconsR
 
 private const val TAB_COUNT_SHOW_CFR = 6
 private val RowHeight = 48.dp
-private val TabIndicatorRoundedCornerDp = 100.dp
 
 /**
  * Top-level UI for displaying the banner in [TabsTray].
@@ -244,7 +243,6 @@ private fun TabPageBanner(
     hasTabDataLoaded: Boolean,
     onTabPageIndicatorClicked: (Page) -> Unit,
 ) {
-    val inactiveColor = MaterialTheme.colorScheme.onSurfaceVariant
     val selectedTabIndex = Page.pageToPosition(
         page = selectedPage,
         shouldShowTabGroupsPage = shouldShowTabGroupsPage,
@@ -266,9 +264,10 @@ private fun TabPageBanner(
                     ),
                     width = Dp.Unspecified,
                     shape = RoundedCornerShape(
-                        topStart = TabIndicatorRoundedCornerDp,
-                        topEnd = TabIndicatorRoundedCornerDp,
+                        topStartPercent = 50,
+                        topEndPercent = 50,
                     ),
+                    color = MaterialTheme.colorScheme.onSurface,
                 )
             },
             divider = {},
@@ -280,9 +279,8 @@ private fun TabPageBanner(
                 shouldShowTabGroupsPage = shouldShowTabGroupsPage,
                 tabGroupCount = tabGroupCount,
                 syncedTabCount = syncedTabCount,
-                inactiveColor = inactiveColor,
-                hasTabDataLoaded = hasTabDataLoaded,
                 onTabPageIndicatorClicked = onTabPageIndicatorClicked,
+                hasTabDataLoaded = hasTabDataLoaded,
             )
         }
     }
@@ -297,7 +295,6 @@ private fun TabPageBannerTabs(
     shouldShowTabGroupsPage: Boolean,
     tabGroupCount: Int,
     syncedTabCount: Int,
-    inactiveColor: Color,
     hasTabDataLoaded: Boolean,
     onTabPageIndicatorClicked: (Page) -> Unit,
 ) {
@@ -323,7 +320,6 @@ private fun TabPageBannerTabs(
         selected = selectedPage == Page.PrivateTabs,
         testTag = TabsTrayTestTag.PRIVATE_TABS_PAGE_BUTTON,
         contentDescription = privateTabDescription,
-        inactiveColor = inactiveColor,
         onClick = { onTabPageIndicatorClicked(Page.PrivateTabs) },
     ) {
         Icon(painterResource(iconsR.drawable.mozac_ic_private_mode_24), null)
@@ -333,7 +329,6 @@ private fun TabPageBannerTabs(
         selected = selectedPage == Page.NormalTabs,
         testTag = TabsTrayTestTag.NORMAL_TABS_PAGE_BUTTON,
         contentDescription = normalTabDescription,
-        inactiveColor = inactiveColor,
         onClick = { onTabPageIndicatorClicked(Page.NormalTabs) },
     ) {
         TabCounter(
@@ -347,7 +342,6 @@ private fun TabPageBannerTabs(
             selected = selectedPage == Page.TabGroups,
             testTag = TabsTrayTestTag.TAB_GROUPS_PAGE_BUTTON,
             contentDescription = tabGroupsDescription,
-            inactiveColor = inactiveColor,
             onClick = { onTabPageIndicatorClicked(Page.TabGroups) },
         ) {
             Icon(painterResource(iconsR.drawable.mozac_ic_tab_group_24), null)
@@ -358,7 +352,6 @@ private fun TabPageBannerTabs(
         selected = selectedPage == Page.SyncedTabs,
         testTag = TabsTrayTestTag.SYNCED_TABS_PAGE_BUTTON,
         contentDescription = syncedTabDescription,
-        inactiveColor = inactiveColor,
         onClick = { onTabPageIndicatorClicked(Page.SyncedTabs) },
     ) {
         Icon(painterResource(iconsR.drawable.mozac_ic_sync_tabs_24), null)
@@ -370,7 +363,6 @@ private fun BannerTab(
     selected: Boolean,
     testTag: String,
     contentDescription: String,
-    inactiveColor: Color,
     onClick: () -> Unit,
     content: @Composable () -> Unit,
 ) {
@@ -381,7 +373,8 @@ private fun BannerTab(
             .testTag(testTag)
             .semantics { this.contentDescription = contentDescription }
             .height(RowHeight),
-        unselectedContentColor = inactiveColor,
+        selectedContentColor = MaterialTheme.colorScheme.onSurface,
+        unselectedContentColor = MaterialTheme.colorScheme.onSurfaceVariant,
     ) {
         content()
     }

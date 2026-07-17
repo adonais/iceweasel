@@ -54,7 +54,14 @@ const SESSION_STORE_KEY = "ai-window-tab-state";
  *   conversationId: string,
  *   keepSidebarOpen: boolean,
  *   conversation: ChatConversation,
+ *   modelChoiceId: ?string,
  * }} TabState
+ */
+
+/**
+ * Map entry of TabState in #tabStates.
+ *
+ * @typedef {{ state: ?TabState }} TabStateEntry
  */
 
 export const EMPTY_SMARTBAR_INPUT_STATE = Object.freeze({
@@ -81,7 +88,7 @@ export class AIWindowTabStatesManager {
   /**
    * A map of tabs and their states
    *
-   * @type {WeakMap<MozTabbrowserTab, TabState>}
+   * @type {WeakMap<MozTabbrowserTab, TabStateEntry>}
    */
   #tabStates;
   /**
@@ -234,6 +241,11 @@ export class AIWindowTabStatesManager {
     );
 
     this.#window.addEventListener(
+      "ai-window:model-changed",
+      this.#onModelChanged
+    );
+
+    this.#window.addEventListener(
       "ai-window:sidebar-toggle",
       this.#onSidebarToggle
     );
@@ -276,6 +288,11 @@ export class AIWindowTabStatesManager {
     this.#window.removeEventListener(
       "ai-window:conversation-changed",
       this.#onConversationChanged
+    );
+
+    this.#window.removeEventListener(
+      "ai-window:model-changed",
+      this.#onModelChanged
     );
 
     this.#window.removeEventListener(
@@ -423,6 +440,21 @@ export class AIWindowTabStatesManager {
         tabState.state.input ?? EMPTY_SMARTBAR_INPUT_STATE
       );
     }
+    lazy.AIWindowUI.updateSidebarModel(
+      this.#window,
+      this.#resolveTabModelChoice(tabState)
+    );
+  }
+
+  /**
+   * Resolves the model choice override to apply per tab.
+   *
+   * @param {TabStateEntry} tabState
+   * @returns {?string}
+   */
+  #resolveTabModelChoice(tabState) {
+    const storedModelChoiceOverride = tabState.state?.modelChoiceId ?? null;
+    return storedModelChoiceOverride;
   }
 
   /**
@@ -432,7 +464,7 @@ export class AIWindowTabStatesManager {
    * is cached back into the tab state.
    *
    * @param {MozTabbrowserTab} tab
-   * @param {object} tabState
+   * @param {TabStateEntry} tabState
    * @returns {Promise<ChatConversation|null>}
    */
   async #computeConversation(tab, tabState) {
@@ -540,11 +572,15 @@ export class AIWindowTabStatesManager {
       );
     }
 
-    // Update the sidebar input when the sidebar ai-window connects
+    // Update the sidebar input and model when the sidebar ai-window connects
     if (mode === "sidebar" && selectedTab === tab) {
       lazy.AIWindowUI.updateSidebarInput(
         this.#window,
         tabState.state.input ?? EMPTY_SMARTBAR_INPUT_STATE
+      );
+      lazy.AIWindowUI.updateSidebarModel(
+        this.#window,
+        this.#resolveTabModelChoice(tabState)
       );
     }
   };
@@ -601,10 +637,10 @@ export class AIWindowTabStatesManager {
    * Gets the state for the specified tab. Will update the state
    * if a newState is passed in.
    *
-   * @param {*} tab The browser tab to get state for
-   * @param {*} [newState=null] New state to update the tab with
+   * @param {MozTabbrowserTab} tab The browser tab to get state for
+   * @param {?Partial<TabState>} [newState=null] New state to update the tab with
    *
-   * @returns {TabState}
+   * @returns {TabStateEntry}
    *
    * @private
    */
@@ -756,6 +792,22 @@ export class AIWindowTabStatesManager {
     }
 
     lazy.AIWindowUI.updateStarterPrompts(this.#window, false, mode, tab);
+  };
+
+  /**
+   * Handles ai-window:model-changed events dispatched when the user selects
+   * a model from the smartbar.
+   *
+   * @param {TabStateEvent} event
+   */
+  #onModelChanged = event => {
+    const { tab, modelChoiceId } = event.detail;
+    const currentTabState = this.#getTabState(tab);
+    if (!currentTabState?.state) {
+      return;
+    }
+
+    this.#getTabState(tab, { ...currentTabState.state, modelChoiceId });
   };
 
   /**

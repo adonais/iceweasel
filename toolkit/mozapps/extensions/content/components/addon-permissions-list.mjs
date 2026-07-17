@@ -2,14 +2,31 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const lazy = {};
-ChromeUtils.defineESModuleGetters(lazy, {
-  Extension: "resource://gre/modules/Extension.sys.mjs",
-  ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
-});
-
 import { AboutAddonsHTMLElement } from "../aboutaddons-utils.mjs";
 import { AddonCard } from "./addon-card.mjs";
+
+const { XPCOMUtils } = ChromeUtils.importESModule(
+  "resource://gre/modules/XPCOMUtils.sys.mjs"
+);
+
+const lazy = XPCOMUtils.declareLazy({
+  Extension: "resource://gre/modules/Extension.sys.mjs",
+  ExtensionPermissions: "resource://gre/modules/ExtensionPermissions.sys.mjs",
+
+  fileSchemeAccessRequiresOptIn: {
+    pref: "extensions.webextensions.fileSchemeAccess.requireOptIn",
+  },
+});
+
+function createPolicyPermissionsBanner() {
+  let banner = document.createElement("moz-message-bar");
+  banner.classList.add("addon-permissions-policy-banner");
+  banner.setAttribute("type", "info");
+  banner.messageL10nId = "addon-permissions-managed-by-policy";
+  banner.supportPage =
+    "managed-browser-firefox#w_why-some-features-may-be-disabled";
+  return banner;
+}
 
 class AddonPermissionsList extends AboutAddonsHTMLElement {
   static get markup() {
@@ -49,6 +66,9 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
     let requiredPerms = { ...(this.addon.userPermissions ?? empty) };
     let optionalPerms = { ...(this.addon.optionalPermissions ?? empty) };
     let grantedPerms = await lazy.ExtensionPermissions.get(this.addon.id);
+    let fileSchemeAllowed = grantedPerms.permissions.includes(
+      "internal:fileSchemeAllowed"
+    );
 
     // If optional permissions include <all_urls>, extension can request and
     // be granted permission for individual sites not listed in the manifest.
@@ -63,8 +83,12 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
       {
         permissions: requiredPerms,
         optionalPermissions: optionalPerms,
+        fileSchemeAllowed,
       },
-      { buildOptionalOrigins: true }
+      {
+        buildOptionalOrigins: true,
+        includeFileSchemeAccess: lazy.fileSchemeAccessRequiresOptIn,
+      }
     );
     let optionalEntries = [
       ...Object.entries(permissions.optionalPermissions),
@@ -107,6 +131,23 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
       list.appendChild(item);
     }
 
+    let isPolicyManaged = Services.policies?.isAddonRequiredByPolicy(
+      this.addon.id
+    );
+    let policyLockedOrigins = new Set(
+      isPolicyManaged
+        ? (this.addon.requestedPermissions?.origins ?? []).map(
+            o => new MatchPattern(o, { ignorePath: true }).pattern
+          )
+        : []
+    );
+
+    // getExtensionSettings returns the effective blocked list, which already
+    // accounts for allowed_permissions.
+    let policyBlockedPerms =
+      Services.policies?.getExtensionSettings(this.addon.id)
+        ?.blocked_permissions ?? [];
+
     if (optionalEntries.length) {
       let section = permissionsFrag.querySelector(
         ".addon-permissions-optional"
@@ -120,12 +161,18 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
         ".addon-permissions-list"
       );
 
+      let anyPolicyBlockedPerm = false;
+      let anyPolicyLockedHost = false;
       for (let id = 0; id < optionalEntries.length; id++) {
         let [perm, msg] = optionalEntries[id];
 
         let type = "permission";
         if (permissions.optionalOrigins[perm]) {
-          type = "origin";
+          if (perm === "internal:fileSchemeAllowed") {
+            type = "file_scheme_access";
+          } else {
+            type = "origin";
+          }
         } else if (permissions.optionalDataCollectionPermissions[perm]) {
           type = "data_collection";
         }
@@ -136,6 +183,11 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
         toggle.setAttribute("label", msg);
         toggle.id = `permission-${id}`;
         toggle.setAttribute("permission-type", type);
+
+        if (type === "permission" && policyBlockedPerms.includes(perm)) {
+          toggle.setAttribute("disabled", "true");
+          anyPolicyBlockedPerm = true;
+        }
 
         let checked =
           grantedPerms.permissions.includes(perm) ||
@@ -150,6 +202,11 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
         }
 
         toggle.pressed = checked;
+
+        if (type === "origin" && policyLockedOrigins.has(perm)) {
+          toggle.setAttribute("disabled", "true");
+          anyPolicyLockedHost = true;
+        }
 
         toggle.setAttribute("permission-key", perm);
         toggle.setAttribute("action", "toggle-permission");
@@ -170,6 +227,16 @@ class AddonPermissionsList extends AboutAddonsHTMLElement {
           section.hidden = false;
           list.appendChild(item);
         }
+      }
+
+      if (anyPolicyLockedHost || anyPolicyBlockedPerm) {
+        let wrapper = permissionsFrag.querySelector(
+          ".addon-permissions-list-wrapper"
+        );
+        let requiredSection = wrapper.querySelector(
+          ".addon-permissions-required"
+        );
+        wrapper.insertBefore(createPolicyPermissionsBanner(), requiredSection);
       }
     }
 

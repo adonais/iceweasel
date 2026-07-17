@@ -59,6 +59,7 @@
 #include "mozilla/ipc/BackgroundUtils.h"
 #include "mozilla/ipc/IPCStreamUtils.h"
 #include "mozilla/ipc/PBackgroundChild.h"
+#include "mozilla/ipc/PBackgroundSharedTypes.h"
 #include "mozilla/ipc/URIUtils.h"
 #include "mozilla/net/CookieJarSettings.h"
 #include "mozilla/net/CookieService.h"
@@ -714,7 +715,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
 
   auto remoteType = RemoteWorkerManager::GetRemoteType(
       principal, WorkerKind::WorkerKindService,
-      DEFAULT_REMOTE_TYPE);
+      SharedWebRemoteType(principal->OriginAttributesRef()));
   if (NS_WARN_IF(remoteType.isErr())) {
     return remoteType.unwrapErr();
   }
@@ -741,6 +742,17 @@ nsresult ServiceWorkerPrivate::Initialize() {
   workerOptions.mCredentials = RequestCredentials::Omit;
   workerOptions.mType = mInfo->Type();
 
+  // Build a copy of the ClientInfo for the IPC message with ipAddressSpace set
+  // for LNA checks. We must NOT modify mClientInfo itself because it is used
+  // for ServiceWorker lookups (GetServiceWorkerByClientInfo) via operator==,
+  // which compares all fields including policyContainerArgs. Modifying
+  // mClientInfo would break those lookups and prevent SWs from spawning.
+  ClientInfo ipcClientInfo = mClientInfo.ref();
+  mozilla::ipc::PolicyContainerArgs policyContainerArgs;
+  policyContainerArgs.ipAddressSpace() =
+      static_cast<nsILoadInfo::IPAddressSpace>(regInfo->GetIPAddressSpace());
+  ipcClientInfo.SetPolicyContainerArgs(policyContainerArgs);
+
   mRemoteWorkerData = RemoteWorkerData(
       NS_ConvertUTF8toUTF16(mInfo->ScriptSpec()), baseScriptURL, baseScriptURL,
       workerOptions,
@@ -753,7 +765,7 @@ nsresult ServiceWorkerPrivate::Initialize() {
 
       cjsData, domain,
       /* isSecureContext */ true,
-      /* clientInfo*/ Some(mClientInfo.ref().ToIPC()),
+      /* clientInfo*/ Some(ipcClientInfo.ToIPC()),
 
       // The RemoteWorkerData CTOR doesn't allow to set the referrerInfo via
       // already_AddRefed<>. Let's set it to null.
@@ -764,7 +776,11 @@ nsresult ServiceWorkerPrivate::Initialize() {
       // Origin trials are associated to a window, so it doesn't make sense on
       // service workers.
       OriginTrials(), std::move(serviceWorkerData), regInfo->AgentClusterId(),
-      remoteType.unwrap());
+      remoteType.unwrap(),
+      // Bug 2040904. Add support for language override for service workers.
+      ""_ns, nsTArray<nsString>(),
+      // Bug 2039330. Add support for timezone override for service workers.
+      u""_ns);
 
   mRemoteWorkerData.referrerInfo() = MakeAndAddRef<ReferrerInfo>(nullptr);
 
@@ -779,9 +795,30 @@ void ServiceWorkerPrivate::RegenerateClientInfo() {
   // mClientInfo was correctly initialized.
   MOZ_DIAGNOSTIC_ASSERT(mClientInfo.isSome());
 
+  // Preserve the ipAddressSpace from the current RemoteWorkerData clientInfo
+  // before re-creating mClientInfo, so that LNA checks continue to work on
+  // subsequent spawns. mClientInfo itself must not carry policyContainerArgs
+  // (see Initialize() comment), so we apply it only to the IPC copy.
+  nsILoadInfo::IPAddressSpace ipAddressSpace = nsILoadInfo::Unknown;
+  if (mRemoteWorkerData.clientInfo().isSome()) {
+    ClientInfo current(mRemoteWorkerData.clientInfo().ref());
+    if (auto args = current.GetPolicyContainerArgs()) {
+      ipAddressSpace = args->ipAddressSpace();
+    }
+  }
+
   mClientInfo = ClientManager::CreateInfo(
       ClientType::Serviceworker, mClientInfo->GetPrincipal().unwrap().get());
-  mRemoteWorkerData.clientInfo().ref() = mClientInfo.ref().ToIPC();
+
+  if (ipAddressSpace != nsILoadInfo::Unknown) {
+    ClientInfo ipcClientInfo = mClientInfo.ref();
+    mozilla::ipc::PolicyContainerArgs policyContainerArgs;
+    policyContainerArgs.ipAddressSpace() = ipAddressSpace;
+    ipcClientInfo.SetPolicyContainerArgs(policyContainerArgs);
+    mRemoteWorkerData.clientInfo().ref() = ipcClientInfo.ToIPC();
+  } else {
+    mRemoteWorkerData.clientInfo().ref() = mClientInfo.ref().ToIPC();
+  }
 }
 
 nsresult ServiceWorkerPrivate::CheckScriptEvaluation(

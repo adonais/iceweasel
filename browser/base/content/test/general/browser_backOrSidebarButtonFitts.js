@@ -31,12 +31,12 @@ async function test_back_button(x, y) {
 
 async function test_sidebar_button(x, y) {
   // If the first button is the sidebar, check initial sidebar state
-  let sidebarMain = document.getElementById("sidebar-main");
-  let initialSidebarHiddenState = sidebarMain.hidden;
+  let sidebarContainer = document.getElementById("sidebar-container");
+  let initialSidebarHiddenState = sidebarContainer.hidden;
 
   EventUtils.synthesizeMouseAtPoint(x, y, {}, window);
   is(
-    sidebarMain.hidden,
+    sidebarContainer.hidden,
     !initialSidebarHiddenState,
     "Clicking the first pixel should toggle the sidebar"
   );
@@ -44,7 +44,7 @@ async function test_sidebar_button(x, y) {
   // Ensure sidebar is put back into original state for following tests
   EventUtils.synthesizeMouseAtPoint(x, y, {}, window);
   is(
-    sidebarMain.hidden,
+    sidebarContainer.hidden,
     initialSidebarHiddenState,
     "Clicking the first pixel should toggle the sidebar"
   );

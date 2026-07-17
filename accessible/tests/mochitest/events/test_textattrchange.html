@@ -16,7 +16,7 @@
   <script type="application/javascript"
           src="../states.js"></script>
   <script type="application/javascript"
-          src="../promisified-events.js"></script>
+          src="../events.js"></script>
   <script type="application/javascript"
           src="../attributes.js"></script>
 
@@ -25,9 +25,6 @@
     const {InlineSpellChecker} = ChromeUtils.importESModule(
       "resource://gre/modules/InlineSpellChecker.sys.mjs"
     );
-
-    // gA11yEventDumpID = "eventdump"; // debug stuff
-    // gA11yEventDumpToConsole = true;
 
     async function doTests() {
       // Synth focus before spellchecking turning on to make sure editor

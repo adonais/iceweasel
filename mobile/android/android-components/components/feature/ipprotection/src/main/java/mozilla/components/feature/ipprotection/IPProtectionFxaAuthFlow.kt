@@ -4,21 +4,19 @@
 
 package mozilla.components.feature.ipprotection
 
-import androidx.lifecycle.DefaultLifecycleObserver
-import androidx.lifecycle.LifecycleOwner
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import mozilla.components.concept.sync.FxAEntryPoint
 import mozilla.components.feature.ipprotection.store.IPProtectionStore
+import mozilla.components.feature.ipprotection.store.InternalAction
 import mozilla.components.feature.ipprotection.store.state.AccountStatus
-import mozilla.components.lib.state.ext.flowScoped
+import mozilla.components.feature.ipprotection.store.state.IPProtectionState
+import mozilla.components.lib.state.helpers.AbstractBinding
 import mozilla.components.service.fxa.manager.FxaAccountManager
 import mozilla.components.service.fxa.manager.SCOPE_PROFILE
-import mozilla.components.service.fxa.manager.SCOPE_SESSION
 import mozilla.components.service.fxa.manager.SCOPE_SYNC
 
 /**
@@ -28,7 +26,7 @@ import mozilla.components.service.fxa.manager.SCOPE_SYNC
  *
  * @param accountManager [FxaAccountManager] used to begin the OAuth authentication flow.
  * @param store [IPProtectionStore] whose account state is observed to trigger auth flows.
- * @param entrypointConfig [EntrypointConfig] carrying the [FxAEntryPoint]s for each flow path.
+ * @param entrypoint the [FxAEntryPoint] for the auth flow.
  * @param onAuthRequested Callback invoked with the OAuth URL and a completion callback once the
  * URL is ready. The caller is responsible for presenting the URL to the user (e.g. a Custom Tab)
  * and invoking the completion callback when the flow finishes.
@@ -37,69 +35,59 @@ import mozilla.components.service.fxa.manager.SCOPE_SYNC
 class IPProtectionFxaAuthFlow(
     private val accountManager: FxaAccountManager,
     private val store: IPProtectionStore,
-    private val entrypointConfig: EntrypointConfig,
+    private val entrypoint: FxAEntryPoint,
     private val onAuthRequested: (String, AuthCompletionCallback) -> Unit,
     private val dispatcher: CoroutineDispatcher = Dispatchers.Main,
-) : DefaultLifecycleObserver {
-    private var scope: CoroutineScope? = null
-    override fun onStart(owner: LifecycleOwner) {
-        scope = store.flowScoped(owner, dispatcher) { flow ->
-            flow.map { it.accountState.status }
-                .distinctUntilChanged()
-                .collect { status ->
-                    if (status == AccountStatus.RequestingAuthorization) {
-                        val url = accountManager.beginAuthentication(
-                            pairingUrl = null,
-                            entrypoint = entrypointConfig.authorization,
-                            authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE),
-                            service = "vpn", // This gives us the passwordless authorization flow.
-                        )
+) : AbstractBinding<IPProtectionState>(store, dispatcher) {
+    override suspend fun onState(flow: Flow<IPProtectionState>) {
+        flow.map { it.accountState.status }
+            .distinctUntilChanged()
+            .collect { status ->
+                if (status == AccountStatus.RequestingAuthorization) {
+                    val url = accountManager.beginAuthentication(
+                        pairingUrl = null,
+                        entrypoint = entrypoint,
+                        authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE),
+                        service = "vpn", // This gives us the passwordless authorization flow.
+                    )
 
-                        // FIXME(IPP) add some account auth failure notification here.
-                        if (url == null) {
-                            return@collect
-                        }
-
-                        val notifyOnComplete = true
-
-                        onAuthRequested(url, notifyOnComplete)
-                    } else if (status == AccountStatus.RequestingAuthentication) {
-                        // If we're the first service that needs to authenticate the account, we need to
-                        // request all the scopes needed for the device, which includes sync and session.
-                        //
-                        // After bug 1977876, there should be no distinction between authenticate/authorize.
-                        val url = accountManager.beginAuthentication(
-                            pairingUrl = null,
-                            entrypoint = entrypointConfig.authentication,
-                            authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE, SCOPE_SYNC, SCOPE_SESSION),
-                            service = "", // We want the full "generic" authentication flow.
-                        )
-
-                        // FIXME(IPP) add some account auth failure notification here.
-                        if (url == null) {
-                            return@collect
-                        }
-
-                        val notifyOnComplete = true
-
-                        onAuthRequested(url, notifyOnComplete)
+                    // FIXME(IPP) add some account auth failure notification here.
+                    if (url == null) {
+                        return@collect
                     }
-                }
-        }
-    }
 
-    override fun onStop(owner: LifecycleOwner) {
-        scope?.cancel()
+                    val notifyOnComplete = true
+
+                    onAuthRequested(url, notifyOnComplete)
+                    store.dispatch(InternalAction.AwaitingAuth(AccountStatus.AwaitingAuthorization))
+                } else if (status == AccountStatus.RequestingAuthentication) {
+                    // If we're the first service that needs to authenticate the account, we need to
+                    // request all the scopes needed for the device, which includes sync and session.
+                    //
+                    // After bug 1977876, there should be no distinction between authenticate/authorize.
+                    val url = accountManager.beginAuthentication(
+                        pairingUrl = null,
+                        entrypoint = entrypoint,
+                        authScopes = setOf(SCOPE_IPPROTECTION, SCOPE_PROFILE, SCOPE_SYNC),
+                        // We don't get passwordles-login here for authentication,
+                        // we send this for FxA consistency.
+                        service = "vpn",
+                    )
+
+                    // FIXME(IPP) add some account auth failure notification here.
+                    if (url == null) {
+                        return@collect
+                    }
+
+                    val notifyOnComplete = true
+
+                    onAuthRequested(url, notifyOnComplete)
+                    store.dispatch(InternalAction.AwaitingAuth(AccountStatus.AwaitingAuthentication))
+                }
+            }
     }
 
     companion object {
-        /**
-         * The [mozilla.components.concept.sync.FxAEntryPoint] needed for the different paths.
-         */
-        data class EntrypointConfig(
-            val authorization: FxAEntryPoint,
-            val authentication: FxAEntryPoint,
-        )
 
         /**
          * The scope needed for access to the IP Protection service.

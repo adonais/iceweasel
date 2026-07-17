@@ -225,6 +225,11 @@ export var TelemetrySession = Object.freeze({
     Impl._subsessionStartActiveTicks = 0;
     Impl._sessionActiveTicks = 0;
     Impl._isUserActive = true;
+    Impl._isUserActiveNonSynthesized = true;
+    Impl._consecutiveActiveTicks = 0;
+    Impl._consecutiveActiveTicksNonSynthesized = 0;
+    Impl._inactiveTimerId = null;
+    Impl._inactiveTimerIdNonSynthesized = null;
     Impl._subsessionStartTimeMonotonic = 0;
     Impl._lastEnvironmentChangeDate = Policy.monotonicNow();
     this.testUninstall();
@@ -305,6 +310,22 @@ var Impl = {
   // The activity state for the user. If false, don't count the next
   // active tick. Otherwise, increment the active ticks as usual.
   _isUserActive: true,
+  // Like _isUserActive, but only tracks non-synthesized events. Used to record
+  // the corrected active tick (active_ticks_non_synthesized) side-by-side with
+  // the legacy active tick.
+  _isUserActiveNonSynthesized: true,
+  // Length of the current uninterrupted run of active ticks. Recorded as a
+  // sample into the consecutiveActiveTicks distribution when the run ends
+  // (i.e. the user goes inactive), then reset.
+  _consecutiveActiveTicks: 0,
+  // Like _consecutiveActiveTicks, but for the non-synthesized stream.
+  _consecutiveActiveTicksNonSynthesized: 0,
+  // Glean timing_distribution timer id for the inactive period currently in
+  // progress, or null if the user is active. Set when the user goes inactive
+  // and stopped (accumulated) when activity resumes.
+  _inactiveTimerId: null,
+  // Like _inactiveTimerId, but for the non-synthesized stream.
+  _inactiveTimerIdNonSynthesized: null,
   _startupIO: {},
   // The previous build ID, if this is the first run with a new build.
   // Null if this is the first run, or the previous build ID is unknown.
@@ -841,6 +862,8 @@ var Impl = {
       // Attach the active-ticks related observers.
       this.addObserver("user-interaction-active");
       this.addObserver("user-interaction-inactive");
+      this.addObserver("user-interaction-active-non-synthesized");
+      this.addObserver("user-interaction-inactive-non-synthesized");
       this._earlyObserversRegistered = true;
     }
   },
@@ -1022,7 +1045,7 @@ var Impl = {
         lazy.TelemetryReportingPolicy.isFirstRun();
 
       if (sendFirstShutdownPing) {
-        let options = {
+        options = {
           addClientId: true,
           addEnvironment: true,
           usePingSender: true,
@@ -1139,14 +1162,65 @@ var Impl = {
    * Tracks the number of "ticks" the user was active in.
    */
   _onActiveTick(aUserActive) {
-    const needsUpdate = aUserActive && this._isUserActive;
+    const wasActive = this._isUserActive;
     this._isUserActive = aUserActive;
 
     // Don't count the first active tick after we get out of
     // inactivity, because it is just the start of this active tick.
-    if (needsUpdate) {
+    if (aUserActive && wasActive) {
       this._sessionActiveTicks++;
       Glean.browserEngagement.activeTicks.add(1);
+      this._consecutiveActiveTicks++;
+    } else if (wasActive && !aUserActive) {
+      // The run of active ticks just ended: record its length (if any) and
+      // start timing the inactive period that is beginning now.
+      if (this._consecutiveActiveTicks > 0) {
+        Glean.browserEngagement.consecutiveActiveTicks.active_ticks.accumulateSingleSample(
+          this._consecutiveActiveTicks
+        );
+        this._consecutiveActiveTicks = 0;
+      }
+      this._inactiveTimerId =
+        Glean.browserEngagement.inactivePeriodDuration.active_ticks.start();
+    } else if (!wasActive && aUserActive && this._inactiveTimerId !== null) {
+      // Activity resumed: record the duration of the inactive period.
+      Glean.browserEngagement.inactivePeriodDuration.active_ticks.stopAndAccumulate(
+        this._inactiveTimerId
+      );
+      this._inactiveTimerId = null;
+    }
+  },
+
+  /**
+   * Like _onActiveTick, but only counts ticks driven by non-synthesized events.
+   * Recorded side-by-side with activeTicks for data continuity while the
+   * correction is evaluated.
+   */
+  _onActiveTickNonSynthesized(aUserActive) {
+    const wasActive = this._isUserActiveNonSynthesized;
+    this._isUserActiveNonSynthesized = aUserActive;
+
+    if (aUserActive && wasActive) {
+      Glean.browserEngagement.activeTicksNonSynthesized.add(1);
+      this._consecutiveActiveTicksNonSynthesized++;
+    } else if (wasActive && !aUserActive) {
+      if (this._consecutiveActiveTicksNonSynthesized > 0) {
+        Glean.browserEngagement.consecutiveActiveTicks.active_ticks_non_synthesized.accumulateSingleSample(
+          this._consecutiveActiveTicksNonSynthesized
+        );
+        this._consecutiveActiveTicksNonSynthesized = 0;
+      }
+      this._inactiveTimerIdNonSynthesized =
+        Glean.browserEngagement.inactivePeriodDuration.active_ticks_non_synthesized.start();
+    } else if (
+      !wasActive &&
+      aUserActive &&
+      this._inactiveTimerIdNonSynthesized !== null
+    ) {
+      Glean.browserEngagement.inactivePeriodDuration.active_ticks_non_synthesized.stopAndAccumulate(
+        this._inactiveTimerIdNonSynthesized
+      );
+      this._inactiveTimerIdNonSynthesized = null;
     }
   },
 
@@ -1217,6 +1291,12 @@ var Impl = {
         break;
       case "user-interaction-inactive":
         this._onActiveTick(false);
+        break;
+      case "user-interaction-active-non-synthesized":
+        this._onActiveTickNonSynthesized(true);
+        break;
+      case "user-interaction-inactive-non-synthesized":
+        this._onActiveTickNonSynthesized(false);
         break;
     }
     return undefined;

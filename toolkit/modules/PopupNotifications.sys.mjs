@@ -17,6 +17,12 @@ const ICON_ANCHOR_ATTRIBUTE = "popupnotificationanchor";
 
 const PREF_SECURITY_DELAY = "security.notification_enable_delay";
 const FULLSCREEN_TRANSITION_TIME_SHOWN_OFFSET_MS = 2000;
+// Caps how far rejected button clicks during the security delay can push the
+// effective deadline. Without a cap, continuous rapid clicking resets the
+// countdown faster than it elapses and the user can never dismiss the popup
+// (see bug 2035581). With this multiplier, the wait is bounded at
+// SECURITY_DELAY_EXTENSION_CAP_MULTIPLIER * the configured delay.
+const SECURITY_DELAY_EXTENSION_CAP_MULTIPLIER = 20;
 
 // Enumerated values for the POPUP_NOTIFICATION_STATS telemetry histogram.
 const TELEMETRY_STAT_OFFERED = 0;
@@ -122,6 +128,14 @@ Notification.prototype = {
   owner: null,
   options: null,
   timeShown: null,
+  // Snapshot of `timeShown` taken every time the notification is (re)shown,
+  // before any rejected-click extensions have been applied. Reassigned on
+  // every show, reshow, popup-positioned re-anchor, _extendSecurityDelay
+  // call (fullscreen transition / pointer lock), and the fallback in
+  // _onButtonEvent -- it is NOT a record of the first-ever show. Used by
+  // _onButtonEvent as the lower bound for the cap on how far rejected clicks
+  // can push `timeShown` forward (see SECURITY_DELAY_EXTENSION_CAP_MULTIPLIER).
+  timeShownWithoutClickExtensions: null,
 
   /**
    * Indicates whether the notification is currently dismissed.
@@ -292,13 +306,21 @@ export function PopupNotifications(tabbrowser, panel, iconBox, options = {}) {
     let doc = this.window.document;
     let focusedElement = Services.focus.focusedElement;
 
-    // If the chrome window has a focused element, let it handle the ESC key instead.
+    // Go through shadow roots so that focus delegated into a shadow DOM
+    // (e.g., moz-button with delegatesFocus:true) is still treated as inside
+    // the notification.
+    let focusedInsideNotification = false;
+    for (let el = focusedElement; el; el = el.parentNode ?? el.host) {
+      if (el === notification) {
+        focusedInsideNotification = true;
+        break;
+      }
+    }
     if (
       !focusedElement ||
       focusedElement == doc.body ||
       focusedElement == this.tabbrowser.selectedBrowser ||
-      // Ignore focused elements inside the notification.
-      notification.contains(focusedElement)
+      focusedInsideNotification
     ) {
       let escAction = notification.notification.options.escAction;
       this._onButtonEvent(aEvent, escAction, "esc-press", notification);
@@ -470,6 +492,12 @@ PopupNotifications.prototype = {
    *            will be dismissed instead of removed after running the callback.
    *          - [optional] disabled (boolean): If this is true, the button
    *            will be disabled.
+   *          - [optional] disableSecurityDelay (boolean): If this is true,
+   *            this action skips the clickjacking security delay. Use only
+   *            for actions whose semantics cannot harm the user (e.g.
+   *            "Cancel", "Don't Allow", "Block"). Never set this for actions
+   *            that grant a permission, install software, or otherwise
+   *            expose attack surface.
    *        If null, the notification will have a default "OK" action button
    *        that can be used to dismiss the popup and secondaryActions will be ignored.
    * @param secondaryActions
@@ -864,6 +892,8 @@ PopupNotifications.prototype = {
               now,
               elt.notification.timeShown ?? 0
             );
+            elt.notification.timeShownWithoutClickExtensions =
+              elt.notification.timeShown;
           }
           break;
         }
@@ -1266,6 +1296,7 @@ PopupNotifications.prototype = {
     let now = ChromeUtils.now();
     notifications.forEach(n => {
       n.timeShown = now + FULLSCREEN_TRANSITION_TIME_SHOWN_OFFSET_MS;
+      n.timeShownWithoutClickExtensions = n.timeShown;
     });
   },
 
@@ -1318,6 +1349,7 @@ PopupNotifications.prototype = {
         // If the panel is already open remember the time the notification was
         // shown for the security delay.
         n.timeShown = Math.max(ChromeUtils.now(), n.timeShown ?? 0);
+        n.timeShownWithoutClickExtensions = n.timeShown;
         this._fireCallback(n, NOTIFICATION_EVENT_SHOWN);
       }, this);
 
@@ -1382,6 +1414,7 @@ PopupNotifications.prototype = {
           // The panel has been opened, remember the time the notification was
           // shown for the security delay.
           n.timeShown = Math.max(ChromeUtils.now(), n.timeShown ?? 0);
+          n.timeShownWithoutClickExtensions = n.timeShown;
           this._fireCallback(n, NOTIFICATION_EVENT_SHOWN);
         }, this);
         // These notifications are used by tests to know when all the processing
@@ -1915,6 +1948,15 @@ PopupNotifications.prototype = {
 
     let notification = notificationEl.notification;
 
+    // Resolve the action being invoked up front so we can honor per-action
+    // flags such as disableSecurityDelay before the security-delay check.
+    let action = notification.mainAction;
+    let telemetryStatId = TELEMETRY_STAT_ACTION_1;
+    if (type == "secondarybuttoncommand") {
+      action = notification.secondaryActions?.[0];
+      telemetryStatId = TELEMETRY_STAT_ACTION_2;
+    }
+
     // Receiving a button event means the notification should have been shown.
     // Make sure that timeShown is always set to ensure we don't break the
     // security delay calculation below.
@@ -1924,6 +1966,7 @@ PopupNotifications.prototype = {
         notification
       );
       notification.timeShown = ChromeUtils.now();
+      notification.timeShownWithoutClickExtensions = notification.timeShown;
     }
 
     if (type == "dropmarkerpopupshown") {
@@ -1960,26 +2003,32 @@ PopupNotifications.prototype = {
         return;
       }
 
-      let now = ChromeUtils.now();
-      let timeSinceShown = now - notification.timeShown;
-      if (timeSinceShown < lazy.buttonDelay) {
-        Services.console.logStringMessage(
-          "PopupNotifications._onButtonEvent: " +
-            "Button click happened before the security delay: " +
-            timeSinceShown +
-            "ms"
-        );
-        notification.timeShown = Math.max(now, notification.timeShown);
-        return;
+      // Actions that opt out of the security delay (e.g. Cancel/Block) are
+      // not a clickjacking target and should fire immediately.
+      if (!action?.disableSecurityDelay) {
+        let now = ChromeUtils.now();
+        let timeSinceShown = now - notification.timeShown;
+        if (timeSinceShown < lazy.buttonDelay) {
+          Services.console.logStringMessage(
+            "PopupNotifications._onButtonEvent: " +
+              "Button click happened before the security delay: " +
+              timeSinceShown +
+              "ms"
+          );
+          // Cap how far rejected clicks can push the deadline so continuous
+          // rapid clicking can never extend the wait beyond
+          // SECURITY_DELAY_EXTENSION_CAP_MULTIPLIER * the configured delay.
+          let cap =
+            (notification.timeShownWithoutClickExtensions ??
+              notification.timeShown) +
+            SECURITY_DELAY_EXTENSION_CAP_MULTIPLIER * lazy.buttonDelay;
+          notification.timeShown = Math.min(
+            Math.max(now, notification.timeShown),
+            cap
+          );
+          return;
+        }
       }
-    }
-
-    let action = notification.mainAction;
-    let telemetryStatId = TELEMETRY_STAT_ACTION_1;
-
-    if (type == "secondarybuttoncommand") {
-      action = notification.secondaryActions[0];
-      telemetryStatId = TELEMETRY_STAT_ACTION_2;
     }
 
     notification._recordTelemetryStat(telemetryStatId);

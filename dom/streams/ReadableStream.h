@@ -117,6 +117,14 @@ class ReadableStream : public nsISupports, public nsWrapperCache {
     return nullptr;
   }
 
+  void SetInputStreamIfUnread(nsIInputStream* aInput) {
+    MOZ_ASSERT(!Disturbed());
+    if (UnderlyingSourceAlgorithmsBase* algorithms =
+            Controller()->GetAlgorithms()) {
+      algorithms->SetInputStreamIfUnread(aInput);
+    }
+  }
+
   // [Transferable]
   // https://html.spec.whatwg.org/multipage/structured-data.html#transfer-steps
   MOZ_CAN_RUN_SCRIPT bool Transfer(JSContext* aCx,

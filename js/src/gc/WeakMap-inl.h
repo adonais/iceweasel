@@ -198,7 +198,7 @@ bool WeakMap<K, V, AP>::markEntry(GCMarker* marker, gc::CellColor mapColor,
                                   bool populateWeakKeysTable) {
 #ifdef DEBUG
   MOZ_ASSERT(isMarked());
-  if (marker->isParallelMarking()) {
+  if (marker->isParallelMarkingMultipleThreads()) {
     marker->runtime()->gc.assertCurrentThreadHasLockedGC();
   }
 #endif
@@ -309,22 +309,43 @@ void WeakMap<K, V, AP>::trace(JSTracer* trc) {
     MOZ_ASSERT(trc->weakMapAction() == JS::WeakMapTraceAction::Expand);
     GCMarker* marker = GCMarker::fromTracer(trc);
     mozilla::Maybe<gc::CellColor> markResult = markMap(marker->markColor());
-    if (markResult.isSome()) {
-      // Lock during parallel marking to synchronize updates to the weakmap
-      // lists and ephemeron edges tables.
-      mozilla::Maybe<AutoLockGC> lock;
-      if (marker->isParallelMarking()) {
+    if (markResult.isNothing()) {
+      return;
+    }
+
+    // Lock during parallel marking to synchronize updates to the weakmap
+    // lists and ephemeron edges tables.
+    mozilla::Maybe<AutoLockGC> lock;
+    if (marker->isParallelMarking()) {
+      if (marker->isParallelMarkingMultipleThreads()) {
         lock.emplace(marker->runtime());
       }
-
-      // Move marked user weakmaps from the unmarked list back to the main list.
-      if (markResult.value() == gc::CellColor::White && !isSystem()) {
-        zone()->gcUserWeakMaps().remove(this);
-        zone()->gcMarkedUserWeakMaps().pushFront(this);
-      }
-
-      (void)markEntries(marker);
     }
+
+    if (!memberOf) {
+      (void)markEntries(marker);
+      return;
+    }
+
+    // Move the map from whichever list it currently lives on to the
+    // deferred list. Deferred maps are segregated by color.
+    gc::GCRuntime& gcrt = marker->runtime()->gc;
+    if (markResult.value() == gc::CellColor::White) {
+      // First time being marked, so it is in the unmarked per-zone list.
+      zone()->gcUserWeakMaps().remove(this);
+      gcrt.deferredMapsList(marker->markColor()).pushBack(this);
+    } else {
+      MOZ_ASSERT(markResult.value() == gc::CellColor::Gray);
+      MOZ_ASSERT(mapColor() == gc::CellColor::Black);
+
+      // The map was previously marked gray, so will either be on the gray
+      // deferred list, or it has already been processed from that list and is
+      // now on the marked per-zone list.
+      WeakMapList& grayDeferred = gcrt.deferredMapsList(gc::MarkColor::Gray);
+      removeFromOneOf(grayDeferred, zone()->gcMarkedUserWeakMaps());
+      gcrt.deferredMapsList(marker->markColor()).pushBack(this);
+    }
+
     return;
   }
 
@@ -368,7 +389,7 @@ bool WeakMap<K, V, AP>::markEntries(GCMarker* marker) {
       marker->incrementalWeakMapMarkingEnabled || marker->isWeakMarking();
 
 #ifdef DEBUG
-  if (populateWeakKeysTable && marker->isParallelMarking()) {
+  if (populateWeakKeysTable && marker->isParallelMarkingMultipleThreads()) {
     marker->runtime()->gc.assertCurrentThreadHasLockedGC();
   }
 #endif

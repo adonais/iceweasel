@@ -95,7 +95,7 @@ namespace mozilla {
 
 static int test_nat_socket_create(void* obj, nr_transport_addr* addr,
                                   nr_socket** sockp) {
-  RefPtr<NrSocketBase> sock = new TestNrSocket(static_cast<TestNat*>(obj));
+  RefPtr sock = MakeRefPtr<TestNrSocket>(static_cast<TestNat*>(obj));
 
   int r, _status;
 

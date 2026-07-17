@@ -22,7 +22,6 @@
 #include "UrlClassifierFeatureTrackingAnnotation.h"
 #include "UrlClassifierFeatureCustomTables.h"
 
-#include "nsIWebProgressListener.h"
 #include "nsAppRunner.h"
 
 namespace mozilla {
@@ -411,84 +410,6 @@ UrlClassifierFeatureFactory::CreateFeatureWithTables(
       new UrlClassifierFeatureCustomTables(aName, aBlocklistTables,
                                            aEntitylistTables);
   return feature.forget();
-}
-
-namespace {
-
-struct BlockingErrorCode {
-  nsresult mErrorCode;
-  uint32_t mBlockingEventCode;
-  const char* mConsoleMessage;
-  nsLiteralCString mConsoleCategory;
-};
-
-static constexpr BlockingErrorCode sBlockingErrorCodes[] = {
-    {NS_ERROR_TRACKING_URI,
-     nsIWebProgressListener::STATE_BLOCKED_TRACKING_CONTENT,
-     "TrackerUriBlockedByETP", "Tracking Protection"_ns},
-    {NS_ERROR_FINGERPRINTING_URI,
-     nsIWebProgressListener::STATE_BLOCKED_FINGERPRINTING_CONTENT,
-     "TrackerUriBlockedByETP", "Tracking Protection"_ns},
-    {NS_ERROR_CRYPTOMINING_URI,
-     nsIWebProgressListener::STATE_BLOCKED_CRYPTOMINING_CONTENT,
-     "TrackerUriBlockedByETP", "Tracking Protection"_ns},
-    {NS_ERROR_SOCIALTRACKING_URI,
-     nsIWebProgressListener::STATE_BLOCKED_SOCIALTRACKING_CONTENT,
-     "TrackerUriBlockedByETP", "Tracking Protection"_ns},
-    {NS_ERROR_EMAILTRACKING_URI,
-     nsIWebProgressListener::STATE_BLOCKED_EMAILTRACKING_CONTENT,
-     "TrackerUriBlockedByETP", "Tracking Protection"_ns},
-};
-
-}  // namespace
-
-/* static */
-bool UrlClassifierFeatureFactory::IsClassifierBlockingErrorCode(
-    nsresult aError) {
-  // In theory we can iterate through the features, but at the moment, we can
-  // just have a simple check here.
-  for (const auto& blockingErrorCode : sBlockingErrorCodes) {
-    if (aError == blockingErrorCode.mErrorCode) {
-      return true;
-    }
-  }
-
-  return false;
-}
-
-/* static */
-bool UrlClassifierFeatureFactory::IsClassifierBlockingEventCode(
-    uint32_t aEventCode) {
-  for (const auto& blockingErrorCode : sBlockingErrorCodes) {
-    if (aEventCode == blockingErrorCode.mBlockingEventCode) {
-      return true;
-    }
-  }
-  return false;
-}
-
-/* static */
-uint32_t UrlClassifierFeatureFactory::GetClassifierBlockingEventCode(
-    nsresult aErrorCode) {
-  for (const auto& blockingErrorCode : sBlockingErrorCodes) {
-    if (aErrorCode == blockingErrorCode.mErrorCode) {
-      return blockingErrorCode.mBlockingEventCode;
-    }
-  }
-  return 0;
-}
-
-/* static */ const char*
-UrlClassifierFeatureFactory::ClassifierBlockingErrorCodeToConsoleMessage(
-    nsresult aError, nsACString& aCategory) {
-  for (const auto& blockingErrorCode : sBlockingErrorCodes) {
-    if (aError == blockingErrorCode.mErrorCode) {
-      aCategory = blockingErrorCode.mConsoleCategory;
-      return blockingErrorCode.mConsoleMessage;
-    }
-  }
-
-  return nullptr;
 }
 
 }  // namespace net

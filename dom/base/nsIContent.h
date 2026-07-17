@@ -63,7 +63,7 @@ class nsIContent : public nsINode {
   // If you're using the external API, the only thing you can know about
   // nsIContent is that it exists with an IID
 
-  explicit nsIContent(already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+  explicit nsIContent(already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
       : nsINode(std::move(aNodeInfo)) {
     MOZ_ASSERT(mNodeInfo);
     MOZ_ASSERT(static_cast<nsINode*>(this) == reinterpret_cast<nsINode*>(this));
@@ -547,9 +547,15 @@ class nsIContent : public nsINode {
   /**
    * If the content is a part of HTML editor, this returns editing
    * host content.  When the content is in designMode, this returns its body
-   * element.  Also, when the content isn't editable, this returns null.
+   * element.
    */
   mozilla::dom::Element* GetEditingHost() const;
+
+  /**
+   * If this is editable, return `this`.
+   * Otherwise, return the inclusive editable ancestor.
+   */
+  nsIContent* GetInclusiveEditableAncestor() const;
 
   bool SupportsLangAttr() const {
     return IsHTMLElement() || IsSVGElement() || IsXULElement();
@@ -586,6 +592,13 @@ class nsIContent : public nsINode {
       nsIPrincipal* aSubjectPrincipal = nullptr) const;
 
   void GetEventTargetParent(mozilla::EventChainPreVisitor& aVisitor) override;
+
+  /**
+   * Whenever a HeadingReset or HeadingOffset attribute changes on an ancestor,
+   * or a node is slotted/unslotted, all descendant heading elements (including
+   * those in shadow trees and assigned to slots) should be updated.
+   */
+  void UpdateHeadingElementsOffsetChange();
 
   bool IsPurple() const { return mRefCnt.IsPurple(); }
 

@@ -804,6 +804,9 @@ class TSFTextStore final : public TSFTextStoreBase,
    public:
     Content(TSFTextStore& aTSFTextStore, const nsAString& aText)
         : mText(aText),
+          // If mText is not modified, mTextInContent should just refer the same
+          // buffer. So, this shouldn't cause duplicating the data.
+          mTextInContent(mText),
           mLastComposition(aTSFTextStore.mComposition),
           mComposition(aTSFTextStore.mComposition),
           mSelection(aTSFTextStore.mSelectionForTSF) {}
@@ -815,9 +818,8 @@ class TSFTextStore final : public TSFTextStoreBase,
     // process.
     void OnCompositionEventsHandled() { mLastComposition = mComposition; }
 
-    const nsDependentSubstring GetSelectedText() const;
-    const nsDependentSubstring GetSubstring(uint32_t aStart,
-                                            uint32_t aLength) const;
+    nsDependentSubstring GetSelectedText() const;
+    nsDependentSubstring GetSubstring(uint32_t aStart, uint32_t aLength) const;
     void ReplaceSelectedTextWith(const nsAString& aString);
     void ReplaceTextWith(LONG aStart, LONG aLength,
                          const nsAString& aReplaceString);
@@ -843,6 +845,7 @@ class TSFTextStore final : public TSFTextStoreBase,
     void EndComposition(const PendingAction& aCompEnd);
 
     const nsString& TextRef() const { return mText; }
+    const nsString& TextInContentRef() const { return mTextInContent; }
     const Maybe<OffsetAndData<LONG>>& LastComposition() const {
       return mLastComposition;
     }
@@ -883,6 +886,8 @@ class TSFTextStore final : public TSFTextStoreBase,
 
    private:
     nsString mText;
+    // The text which is in the focused editor or ContentCache.
+    const nsString mTextInContent;
 
     // mLastComposition may store the composition string and its start offset
     // when the document is locked. This is necessary to compute

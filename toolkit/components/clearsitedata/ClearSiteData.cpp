@@ -134,7 +134,6 @@ void ClearSiteData::Shutdown() {
 }
 
 ClearSiteData::ClearSiteData() = default;
-ClearSiteData::~ClearSiteData() = default;
 
 NS_IMETHODIMP
 ClearSiteData::Observe(nsISupports* aSubject, const char* aTopic,

@@ -82,7 +82,7 @@ class CharacterData : public nsIContent {
 
   NS_DECL_ADDSIZEOFEXCLUDINGTHIS
 
-  explicit CharacterData(already_AddRefed<dom::NodeInfo>&& aNodeInfo);
+  explicit CharacterData(already_AddRefed<dom::NodeInfo> aNodeInfo);
 
   void MarkAsMaybeModifiedFrequently() {
     SetFlags(NS_MAYBE_MODIFIED_FREQUENTLY);

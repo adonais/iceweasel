@@ -4100,10 +4100,12 @@ void av1_get_second_pass_params(AV1_COMP *cpi,
       // how many frames we can analyze from this frame
       int rest_frames =
           AOMMIN(rc->frames_to_key, MAX_FIRSTPASS_ANALYSIS_FRAMES);
-      rest_frames =
-          AOMMIN(rest_frames, (int)(twopass->stats_buf_ctx->stats_in_end -
-                                    cpi->twopass_frame.stats_in +
-                                    (rc->frames_since_key == 0)));
+      int available_frames = (int)(twopass->stats_buf_ctx->stats_in_end -
+                                   cpi->twopass_frame.stats_in);
+      if (!cpi->ppi->lap_enabled) {
+        available_frames += (rc->frames_since_key == 0);
+      }
+      rest_frames = AOMMIN(rest_frames, available_frames);
       p_rc->frames_till_regions_update = rest_frames;
 
       int ret;
@@ -4114,9 +4116,8 @@ void av1_get_second_pass_params(AV1_COMP *cpi,
                        twopass->stats_buf_ctx->stats_in_end, cpi->common.error);
         estimate_coeff(twopass->stats_buf_ctx->stats_in_start,
                        twopass->stats_buf_ctx->stats_in_end);
-        ret = identify_regions(cpi->twopass_frame.stats_in, rest_frames,
-                               (rc->frames_since_key == 0), p_rc->regions,
-                               &p_rc->num_regions);
+        ret = identify_regions(cpi->twopass_frame.stats_in, rest_frames, 0,
+                               p_rc->regions, &p_rc->num_regions);
       } else {
         ret = identify_regions(
             cpi->twopass_frame.stats_in - (rc->frames_since_key == 0),

@@ -51,6 +51,7 @@ EXPORTS += [
     "gfxQuad.h",
     "gfxQuaternion.h",
     "gfxRect.h",
+    "gfxScriptItemizer.h",
     "gfxSharedImageSurface.h",
     "gfxSkipChars.h",
     "gfxSparseBitSet.h",

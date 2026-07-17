@@ -37,7 +37,7 @@ SVGElement::LengthInfo SVGEllipseElement::sLengthInfo[4] = {
 // Implementation
 
 SVGEllipseElement::SVGEllipseElement(
-    already_AddRefed<mozilla::dom::NodeInfo>&& aNodeInfo)
+    already_AddRefed<mozilla::dom::NodeInfo> aNodeInfo)
     : SVGEllipseElementBase(std::move(aNodeInfo)) {}
 
 bool SVGEllipseElement::IsAttributeMapped(const nsAtom* aAttribute) const {

@@ -236,6 +236,24 @@ void SharedWorkerManager::UpdateFrozen() {
   }
 }
 
+void SharedWorkerManager::SetLocaleOverride(
+    const nsACString& aLanguageOverride, const nsTArray<nsString>& aLanguages) {
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
+
+  if (mRemoteWorkerController) {
+    mRemoteWorkerController->SetLocaleOverride(aLanguageOverride, aLanguages);
+  }
+}
+
+void SharedWorkerManager::UpdateTimezoneOverride(
+    const nsAString& aTimezoneOverride) {
+  ::mozilla::ipc::AssertIsOnBackgroundThread();
+
+  if (mRemoteWorkerController) {
+    mRemoteWorkerController->UpdateTimezoneOverride(aTimezoneOverride);
+  }
+}
+
 bool SharedWorkerManager::IsSecureContext() const { return mIsSecureContext; }
 
 void SharedWorkerManager::CreationFailed() {

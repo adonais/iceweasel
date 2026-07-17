@@ -25,7 +25,7 @@ function handleRequest(request, response) {
   }
 
   // Content mode: increment counter and serve response
-  let count = parseInt(getSharedState(key) || "0") + 1;
+  let count = parseInt(getSharedState(key) || "0", 10) + 1;
   setSharedState(key, count.toString());
 
   response.setStatusLine(request.httpVersion, 200, "OK");
@@ -39,11 +39,28 @@ function handleRequest(request, response) {
   // If no cache-control param, deliberately omit Cache-Control header
   // to simulate the bug 1527334 scenario.
 
+  let vary = params.get("vary");
+  if (vary) {
+    response.setHeader("Vary", vary, false);
+  }
+
   if (contentType === "application/javascript") {
     response.write("// prefetched script " + count);
   } else {
-    response.write(
-      "<html><body>Prefetched content " + count + "</body></html>"
-    );
+    let body = "<html><body>Prefetched content " + count;
+    if (params.get("notify") === "opener") {
+      let payload = JSON.stringify({
+        type: "prefetch-nav-loaded",
+        key,
+        count,
+      });
+      body +=
+        "<script>if (window.opener) { window.opener.postMessage(" +
+        payload +
+        ', "*"); }</' +
+        "script>";
+    }
+    body += "</body></html>";
+    response.write(body);
   }
 }

@@ -30,7 +30,7 @@ android {
     buildTypes {
         release {
             minifyEnabled = false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
         }
     }
 
@@ -47,20 +47,20 @@ android {
         }
     }
 
-    variantFilter { variant ->
-        if (variant.buildType.name == "release") {
-            // This is a sample app that we are not releasing. Save some time and do not build
-            // release versions.
-            setIgnore(true)
-        }
-    }
-
     buildFeatures {
         viewBinding = true
         compose = true
     }
 
     namespace = 'org.mozilla.samples.browser'
+}
+
+androidComponents {
+    beforeVariants(selector().withBuildType("release")) { variantBuilder ->
+        // This is a sample app that we are not releasing. Save some time and do not build
+        // release versions.
+        variantBuilder.enable = false
+    }
 }
 
 tasks.register("updateBorderifyExtensionVersion", Copy) { task ->
@@ -139,6 +139,8 @@ dependencies {
     implementation project(':components:support-utils')
     implementation project(':components:support-webextensions')
     implementation project(':components:ui-autocomplete')
+    implementation project(':components:ui-colors')
+    implementation project(':components:ui-icons')
     implementation project(':components:ui-tabcounter')
     implementation project(':components:ui-widgets')
 

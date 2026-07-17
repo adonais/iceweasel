@@ -558,7 +558,7 @@ class RequestListContextMenu {
    */
   openInStyleEditor(url) {
     const toolbox = this.props.connector.getToolbox();
-    toolbox.viewGeneratedSourceInStyleEditor(url);
+    toolbox.viewStyleGeneratedSource(url);
   }
 
   /**
