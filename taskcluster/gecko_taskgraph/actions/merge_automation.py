@@ -40,6 +40,10 @@ def is_release_promotion_available(parameters):
                 "type": "string",
                 "description": "The fx head of the source, such as central",
             },
+            "to-revision": {
+                "type": "string",
+                "description": "The revision on the to_branch to fetch its current version from and use to base l10n bumps, version bumps, and replacements on.",
+            },
             "to-branch": {
                 "type": "string",
                 "description": "The fx head of the target, such as beta",
@@ -70,6 +74,7 @@ def merge_automation_action(parameters, graph_config, input, task_group_id, task
     for field in [
         "from-branch",
         "to-branch",
+        "to-revision",
         "fetch-version-from",
         "merge-automation-id",
     ]:

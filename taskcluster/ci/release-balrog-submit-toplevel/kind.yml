@@ -55,7 +55,7 @@ jobs:
                     release(-rc)?: ["release-localtest", "release-cdntest"]
                     esr.*: ["esr-localtest", "esr-cdntest", "esr-localtest-next", "esr-cdntest-next"]
                     default: []
-            platforms: ["linux", "linux64", "macosx64", "win32", "win64", "win64-aarch64"]
+            platforms: ["linux64", "macosx64", "win32", "win64"]
         treeherder:
             platform: firefox-release/opt
             symbol: Rel(BPFx)
@@ -72,7 +72,7 @@ jobs:
             channel-names: ["aurora", "aurora-localtest", "aurora-cdntest"]
             rules-to-update: ["devedition-cdntest", "devedition-localtest"]
             pin-channels: ["aurora-localtest", "aurora-cdntest"]
-            platforms: ["linux", "linux64", "macosx64", "win32", "win64", "win64-aarch64"]
+            platforms: ["linux64", "macosx64", "win32", "win64"]
         treeherder:
             platform: devedition-release/opt
             symbol: Rel(BPDev)

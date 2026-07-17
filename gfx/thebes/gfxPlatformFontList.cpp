@@ -647,6 +647,9 @@ bool gfxPlatformFontList::InitFontList() {
   FontFamily fam = GetDefaultFontLocked(nullptr, &defStyle);
   gfxFontEntry* fe;
   if (fam.mShared) {
+    if (!fam.mShared->IsInitialized()) {
+      (void)InitializeFamily(fam.mShared);
+    }
     auto face = fam.mShared->FindFaceForStyle(SharedFontList(), defStyle);
     fe = face ? GetOrCreateFontEntryLocked(face, fam.mShared) : nullptr;
   } else {
