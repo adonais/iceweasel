@@ -3740,7 +3740,7 @@ set_config("MOZ_PKG_VERSION", moz_pkg_version)
 option(
     env="MOZ_PKG_FORMAT",
     nargs=1,
-    help="Override the package container format (TAR, TGZ, XZ, BZ2, ZIP, DMG, APK)",
+    help="Override the package container format (TAR, TGZ, XZ, BZ2, ZIP, 7Z, DMG, APK)",
 )
 
 

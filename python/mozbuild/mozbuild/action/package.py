@@ -25,6 +25,7 @@ FORMAT_SUFFIX = {
     "XZ": ".tar.xz",
     "BZ2": ".tar.bz2",
     "ZIP": ".zip",
+    "7Z": ".7z",
     "DMG": ".dmg",
     "APK": "",
 }
