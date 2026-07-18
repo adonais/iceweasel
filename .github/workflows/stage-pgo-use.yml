@@ -92,21 +92,29 @@ jobs:
           exit 255
         fi
         tar Jxf dxc.tar.xz -C "/home/runner/.mozbuild"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/7zz.tar.xz?viasf=1 -O 7zz.tar.xz
+        if [ $? -ne 0 ]; then
+          echo Download 7zz failed
+          exit 255
+        fi
+        tar Jxf 7zz.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/7zz"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/sccache.tar.xz?viasf=1 -O sccache.tar.xz
         if [ $? -ne 0 ]; then
           echo Download sccache failed
           exit 255
         fi
         tar Jxf sccache.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/clang20.tar.xz?viasf=1 -O clang.tar.xz
+        chmod -R 755 "$MOZ_FETCHES_DIR/sccache"
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/clang21.tar.xz?viasf=1 -O clang.tar.xz
         if [ $? -ne 0 ]; then
           echo Download clang failed
           exit 255
         fi
         tar Jxf clang.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/diasdk.tar.xz?viasf=1 -O diasdk.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/diasdk2026.tar.xz?viasf=1 -O diasdk.tar.xz
         if [ $? -ne 0 ]; then
-          echo Download diasdk failed
+          echo Download diasdk2026 failed
           exit 255
         fi
         tar Jxf diasdk.tar.xz -C "$MOZ_FETCHES_DIR"
@@ -122,16 +130,16 @@ jobs:
           exit 255
         fi
         tar Jxf onnxruntime.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust19.tar.xz?viasf=1 -O rust.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust194.tar.xz?viasf=1 -O rust.tar.xz
         if [ $? -ne 0 ]; then
-          echo Download rust failed
+          echo Download rust194 failed
           exit 255
         fi
         tar Jxf rust.tar.xz -C "$MOZ_FETCHES_DIR"
         chmod -R 755 "$MOZ_FETCHES_DIR/rust"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/vs.tar.xz?viasf=1 -O vs.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/vs2026.tar.xz?viasf=1 -O vs.tar.xz
         if [ $? -ne 0 ]; then
-          echo Download vs failed
+          echo Download vs2026 failed
           exit 255
         fi
         tar Jxf vs.tar.xz -C "$MOZ_FETCHES_DIR"
@@ -153,12 +161,13 @@ jobs:
           exit 255
         fi
         tar Jxf wine.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winsdk.tar.xz?viasf=1 -O winsdk.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winsdk2026.tar.xz?viasf=1 -O winsdk.tar.xz
         if [ $? -ne 0 ]; then
-          echo Download winsdk failed
+          echo Download winsdk26100 failed
           exit 255
         fi
         tar Jxf winsdk.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/vs"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winappsdk-x64.tar.xz?viasf=1 -O winappsdk-x64.tar.xz
         if [ $? -ne 0 ]; then
           echo Download winappsdk-x64 failed
@@ -171,6 +180,7 @@ jobs:
           exit 255
         fi
         tar Jxf upx.tar.xz -C "$MOZ_FETCHES_DIR"
+        chmod -R 755 "$MOZ_FETCHES_DIR/upx-win64"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/profdata.tar.xz?viasf=1 -O profdata.tar.xz
         if [ $? -ne 0 ]; then
           echo Download profdata failed
