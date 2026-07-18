@@ -158,7 +158,9 @@ endif
 GARBAGE += make-package
 
 make-sourcestamp-file::
+ifneq (,$(MOZ_SOURCE_URL))
 	$(call py_action,make_sourcestamp_file,--output $(MOZ_SOURCESTAMP_FILE) --buildid-header $(DEPTH)/buildid.h $(if $(MOZ_INCLUDE_SOURCE_INFO),--source-repo-header $(DEPTH)/source-repo.h))
+endif
 
 # The install target will install the application to prefix/lib/appname-version
 install:: prepare-package
