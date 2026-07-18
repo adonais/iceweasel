@@ -62,30 +62,35 @@ jobs:
           exit 255
         fi
         tar Jxf cbindgen.tar.xz -C "/home/runner/.mozbuild"
+        chmod -R 755 "/home/runner/.mozbuild/cbindgen"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/nasm.tar.xz?viasf=1 -O nasm.tar.xz
         if [ $? -ne 0 ]; then
           echo Download nasm failed
           exit 255
         fi
         tar Jxf nasm.tar.xz -C "/home/runner/.mozbuild"
+        chmod -R 755 "/home/runner/.mozbuild/nasm"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/rust-size.tar.xz?viasf=1 -O rust-size.tar.xz
         if [ $? -ne 0 ]; then
           echo Download rust-size failed
           exit 255
         fi
         tar Jxf rust-size.tar.xz -C "/home/runner/.mozbuild"
+        chmod -R 755 "/home/runner/.mozbuild/rust-size"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/winchecksec.tar.xz?viasf=1 -O winchecksec.tar.xz
         if [ $? -ne 0 ]; then
           echo Download winchecksec failed
           exit 255
         fi
         tar Jxf winchecksec.tar.xz -C "/home/runner/.mozbuild"
+        chmod -R 755 "/home/runner/.mozbuild/winchecksec"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/dump_syms.tar.xz?viasf=1 -O dump_syms.tar.xz
         if [ $? -ne 0 ]; then
           echo Download dump_syms failed
           exit 255
         fi
         tar Jxf dump_syms.tar.xz -C "/home/runner/.mozbuild"
+        chmod -R 755 "/home/runner/.mozbuild/dump_syms"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/dxc.tar.xz?viasf=1 -O dxc.tar.xz
         if [ $? -ne 0 ]; then
           echo Download dxc failed
