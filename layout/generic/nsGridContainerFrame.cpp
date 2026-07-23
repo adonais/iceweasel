@@ -4,6 +4,10 @@
 
 /* rendering object for CSS "display: grid | inline-grid" */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "nsGridContainerFrame.h"
 
 #include <stdlib.h>  // for div()
@@ -10290,8 +10294,15 @@ void nsGridContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       this, FrameChildListID::Principal,
       CSSOrderAwareFrameIterator::ChildFilter::IncludeAll, order);
   const auto flags = DisplayFlagsForFlexOrGridItem();
-  for (; !iter.AtEnd(); iter.Next()) {
+  for (; !iter.AtEnd();) {
     nsIFrame* child = *iter;
+    iter.Next();
+    if (!iter.AtEnd()) {
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+      _mm_prefetch((char *)*iter, _MM_HINT_T0);
+      _mm_prefetch((char *)*iter + 64, _MM_HINT_T0);
+    }
+#endif
     BuildDisplayListForChild(aBuilder, child, aLists, flags);
   }
 

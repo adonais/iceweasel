@@ -4,6 +4,10 @@
 
 /* rendering object for CSS "display: flex" */
 
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+#include <xmmintrin.h>
+#endif
+
 #include "nsFlexContainerFrame.h"
 
 #include <algorithm>
@@ -2997,8 +3001,15 @@ void nsFlexContainerFrame::BuildDisplayList(nsDisplayListBuilder* aBuilder,
       OrderStateForIter(this), OrderingPropertyForIter(this));
 
   const auto flags = DisplayFlagsForFlexOrGridItem();
-  for (; !iter.AtEnd(); iter.Next()) {
+  for (; !iter.AtEnd();) {
     nsIFrame* childFrame = *iter;
+    iter.Next();
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (!iter.AtEnd()) {
+      _mm_prefetch((char *)*iter, _MM_HINT_T0);
+      _mm_prefetch((char *)*iter + 64, _MM_HINT_T0);
+    }
+#endif
     BuildDisplayListForChild(aBuilder, childFrame, childLists, flags);
   }
 
@@ -4977,10 +4988,18 @@ void nsFlexContainerFrame::UnionInFlowChildOverflow(
   OverflowAreas relPosItemMarginBoxes;
   const bool useMozBoxCollapseBehavior =
       StyleVisibility()->UseLegacyCollapseBehavior();
-  for (nsIFrame* f : mFrames) {
+  const auto& frames = mFrames;
+  for (auto it = frames.begin(); it != frames.end();) {
+    const auto& f = *it;
+    ++it;
     if (useMozBoxCollapseBehavior && f->StyleVisibility()->IsCollapse()) {
       continue;
     }
+#if (_M_IX86_FP >= 1) || defined(__SSE__) || defined(_M_AMD64) || defined(__amd64__)
+    if (it != frames.end()) {
+      _mm_prefetch((char *)*it, _MM_HINT_T0);
+    }
+#endif
     ConsiderChildOverflow(aOverflowAreas, f,
                           aAsIfScrolled ? OverflowAreaUnionFlags::AsIfScrolled
                                         : OverflowAreaUnionFlags::None);
