@@ -119,6 +119,10 @@ class SessionHistoryInfo {
     mStateData = aStateData;
   }
 
+  const Maybe<nsString>& GetSrcdocData() const { return mSrcdocData; }
+
+  nsIURI* GetBaseURI() const { return mBaseURI; }
+
   void SetLoadReplace(bool aLoadReplace) { mLoadReplace = aLoadReplace; }
 
   void SetURIWasModified(bool aURIWasModified) {

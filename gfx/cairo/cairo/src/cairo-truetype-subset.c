@@ -113,7 +113,7 @@ check (tt_glyph_data_t,	26);
 
 static cairo_status_t
 cairo_truetype_font_use_glyph (cairo_truetype_font_t	    *font,
-	                       unsigned short		     glyph,
+	                       unsigned long		     glyph,
 			       unsigned short		    *out);
 
 #define SFNT_VERSION			0x00010000
@@ -1025,7 +1025,7 @@ cairo_truetype_font_generate (cairo_truetype_font_t  *font,
 
 static cairo_status_t
 cairo_truetype_font_use_glyph (cairo_truetype_font_t	    *font,
-	                       unsigned short		     glyph,
+	                       unsigned long		     glyph,
 			       unsigned short		    *out)
 {
     if (glyph >= font->base.num_glyphs_in_face)
@@ -1149,7 +1149,7 @@ cairo_truetype_subset_init_internal (cairo_truetype_subset_t     *truetype_subse
 	return status;
 
     for (i = 0; i < font->scaled_font_subset->num_glyphs; i++) {
-	unsigned short parent_glyph = font->scaled_font_subset->glyphs[i];
+	unsigned long parent_glyph = font->scaled_font_subset->glyphs[i];
 	status = cairo_truetype_font_use_glyph (font, parent_glyph, &parent_glyph);
 	if (unlikely (status))
 	    goto fail1;

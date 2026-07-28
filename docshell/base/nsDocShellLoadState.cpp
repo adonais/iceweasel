@@ -135,10 +135,16 @@ nsDocShellLoadState::nsDocShellLoadState(
       return;
     }
 
-    if (mURI->SchemeIs("javascript") &&
-        mTriggeringRemoteType != NOT_REMOTE_TYPE) {
-      aActor->FatalError("Illegal cross-process javascript: load attempt");
-      return;
+    if (mTriggeringRemoteType != NOT_REMOTE_TYPE) {
+      if (mURI->SchemeIs("javascript")) {
+        aActor->FatalError("Illegal cross-process javascript: load attempt");
+        return;
+      }
+
+      if (mRemoteTypeOverride.isSome()) {
+        aActor->FatalError("RemoteTypeOverride can only be set by parent");
+        return;
+      }
     }
   }
 
@@ -1170,8 +1176,15 @@ const char* nsDocShellLoadState::ValidateWithOriginalState(
   if (!uriEq(mOriginalURI, aOriginalState->mOriginalURI)) {
     return "OriginalURI";
   }
+  if (!uriEq(mResultPrincipalURI, aOriginalState->mResultPrincipalURI)) {
+    return "mResultPrincipalURI";
+  }
   if (!uriEq(mBaseURI, aOriginalState->mBaseURI)) {
     return "BaseURI";
+  }
+
+  if (mSrcdocData != aOriginalState->mSrcdocData) {
+    return "SrcdocData";
   }
 
   if (!mTriggeringPrincipal->Equals(aOriginalState->mTriggeringPrincipal)) {

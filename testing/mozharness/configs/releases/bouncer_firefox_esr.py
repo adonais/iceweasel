@@ -35,15 +35,6 @@ config = {
                 "win64",
             ],
         },
-        "installer-next-latest": {
-            "product-name": "Firefox-esr-next-latest",
-            "platforms": [
-                "linux64",
-                "osx",
-                "win",
-                "win64",
-            ],
-        },
         "installer-ssl": {
             "product-name": "Firefox-%(version)s-SSL",
             "platforms": [
@@ -64,15 +55,6 @@ config = {
         },
         "installer-115-latest-ssl": {
             "product-name": "Firefox-esr115-latest-SSL",
-            "platforms": [
-                "linux64",
-                "osx",
-                "win",
-                "win64",
-            ],
-        },
-        "installer-next-latest-ssl": {
-            "product-name": "Firefox-esr-next-latest-SSL",
             "platforms": [
                 "linux64",
                 "osx",
@@ -101,13 +83,6 @@ config = {
                 "win64",
             ],
         },
-        "msi-next-latest": {
-            "product-name": "Firefox-esr-next-msi-latest-SSL",
-            "platforms": [
-                "win",
-                "win64",
-            ],
-        },
         "pkg": {
             "product-name": "Firefox-%(version)s-pkg-SSL",
             "platforms": ["osx"],
@@ -118,10 +93,6 @@ config = {
         },
         "pkg-115-latest": {
             "product-name": "Firefox-esr115-pkg-latest-SSL",
-            "platforms": ["osx"],
-        },
-        "pkg-next-latest": {
-            "product-name": "Firefox-esr-next-pkg-latest-SSL",
             "platforms": ["osx"],
         },
         "langpack": {
@@ -144,15 +115,6 @@ config = {
         },
         "langpack-115-latest": {
             "product-name": "Firefox-esr115-langpack-latest-SSL",
-            "platforms": [
-                "linux64",
-                "osx",
-                "win",
-                "win64",
-            ],
-        },
-        "langpack-latest-next": {
-            "product-name": "Firefox-esr-next-langpack-latest-SSL",
             "platforms": [
                 "linux64",
                 "osx",
