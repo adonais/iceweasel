@@ -3845,6 +3845,13 @@
   value: true
   mirror: always
 
+# Whether the muted content attribute acts as a live fallback for the muted
+# state. Gated to Nightly while other engines have not shipped this behavior.
+- name: dom.media.muted-state.enabled
+  type: bool
+  value: @IS_NIGHTLY_BUILD@
+  mirror: always
+
 # Media element pseudo-classes
 - name: dom.media.pseudo-classes.enabled
   type: RelaxedAtomicBool
@@ -4161,7 +4168,7 @@
   value: true
   mirror: always
 
-#if defined(MOZ_WIDGET_COCOA) || defined(MOZ_WIDGET_GTK)
+#if !defined(ANDROID)
 # Whether to use the platform API to "lock" the native pointer for pointer lock.
 - name: dom.pointer-lock.native-lock.enabled
   type: bool
@@ -4174,6 +4181,13 @@
 # asks the widget to deliver raw, unaccelerated mouse delta in mouse events
 # while the lock is active.
 - name: dom.pointer-lock.unadjusted-movement.enabled
+  type: bool
+  value: true
+  mirror: always
+
+# Whether the parent process should reset pointer when pointer lock is
+# requested.
+- name: dom.pointer-lock.reset-to-center-from-parent.enabled
   type: bool
   value: true
   mirror: always
