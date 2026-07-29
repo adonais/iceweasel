@@ -123,12 +123,12 @@ jobs:
           exit 255
         fi
         tar Jxf diasdk.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/libportable.tar.xz?viasf=1 -O libportable.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/upcheck.tar.xz?viasf=1 -O upcheck.tar.xz
         if [ $? -ne 0 ]; then
-          echo Download libportable failed
+          echo Download upcheck failed
           exit 255
         fi
-        tar Jxf libportable.tar.xz -C "$MOZ_FETCHES_DIR/clang"
+        tar Jxf upcheck.tar.xz -C "$MOZ_FETCHES_DIR/clang"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/onnxruntime.tar.xz?viasf=1 -O onnxruntime.tar.xz
         if [ $? -ne 0 ]; then
           echo Download onnxruntime failed
@@ -201,6 +201,19 @@ jobs:
       uses: yxl0756/set-swap-space@master
       with:
         swap-size-gb: 10
+
+    - name: start building libportable
+      id: libportable_building
+      run: |
+        cd "$MOZ_FETCHES_DIR"
+        git clone --depth=1 https://github.com/adonais/libportable.git
+        cd libportable
+        chmod +x ./build
+        ./build PGO_USE=1
+        ./build install
+        cd "$MOZ_FETCHES_DIR"
+        rm -rf libportable
+      shell: bash
 
     - name: start building win64
       timeout-minutes: 180

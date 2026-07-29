@@ -30,6 +30,7 @@ fi
 
 export LLVM_PROFDATA=llvm-profdata
 export CARGO_TARGET_DIR=/tmp/cargo_target
+export MOZ_SOURCE_REPO=https://github.com/adonais/iceweasel
 export MOZ_FETCHES_DIR=/builds/worker/fetches
 export PATH=$MOZ_FETCHES_DIR/clang/bin:$MOZ_FETCHES_DIR/rust/bin:$PATH
 if [ -z "$MOZBUILD_DOWNLOAD" ]; then
@@ -49,6 +50,13 @@ if [ -z "$compiler" ]; then
   echo clang not found!
   exit 1
 fi
+
+MOZ_SOURCE_CHANGESET=$(git rev-parse HEAD)
+if [ -z "$MOZ_SOURCE_CHANGESET" ]; then
+  echo MOZ_SOURCE_CHANGESET not set!
+  exit 1
+fi
+export MOZ_SOURCE_CHANGESET
 
 if [ x"$1" == "x64" ]; then
   export MYOBJ_DIR="obju64-release"
