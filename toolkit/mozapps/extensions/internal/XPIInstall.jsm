@@ -2894,7 +2894,10 @@ var UpdateChecker = function (
     aReason == AddonManager.UPDATE_WHEN_NEW_APP_INSTALLED;
   this.isUserRequested = aReason == AddonManager.UPDATE_WHEN_USER_REQUESTED;
 
-  let updateURL = aAddon.updateURL;
+  // If bug 2032469 changes the policy behavior, this will need to be updated.
+  let updateURL =
+    Services.policies?.getExtensionSettings(aAddon.id)?.update_url?.href ||
+    aAddon.updateURL;
   if (!updateURL) {
     if (
       aReason == AddonManager.UPDATE_WHEN_PERIODIC_UPDATE &&

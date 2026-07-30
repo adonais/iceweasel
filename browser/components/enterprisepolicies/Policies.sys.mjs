@@ -2662,6 +2662,18 @@ function installAddonFromURL(url, extensionID, addon) {
           install.removeListener(listener);
           install.cancel();
         }
+        // Cancel install if the addon version downloaded is detected
+        // to be a downgrade compared to the version already installed.
+        if (
+          addon &&
+          Services.vc.compare(addon.version, install.addon.version) > 0
+        ) {
+          lazy.log.debug(
+            `Installation cancelled because installed version ${addon.version} is greater than ${install.addon.version} downloaded from ${url}`
+          );
+          install.removeListener(listener);
+          install.cancel();
+        }
       },
       onDownloadFailed: () => {
         install.removeListener(listener);
