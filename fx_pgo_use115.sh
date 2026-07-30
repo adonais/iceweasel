@@ -18,6 +18,7 @@ export LLVM_PROFDATA=llvm-profdata
 export CARGO_TARGET_DIR=/tmp/cargo_target
 export MOZ_FETCHES_DIR=/builds/worker/fetches
 export MOZBUILD_STATE_PATH=$MOZ_FETCHES_DIR/.mozbuild
+export MOZ_SOURCE_REPO=https://github.com/adonais/iceweasel
 export WINSYSROOT=/builds/worker/fetches/vs
 export VC_REDISTDIR=$WINSYSROOT/VC/Redist/MSVC/14.38.33135/
 export UCRT_REDISTDIR="$WINSYSROOT/Windows Kits/10/Redist/10.0.22621.0/"
@@ -41,6 +42,13 @@ if [ -z "$compiler" ]; then
   echo clang not found!
   exit 1
 fi
+
+MOZ_SOURCE_CHANGESET=$(git rev-parse HEAD)
+if [ -z "$MOZ_SOURCE_CHANGESET" ]; then
+  echo MOZ_SOURCE_CHANGESET not set!
+  exit 1
+fi
+export MOZ_SOURCE_CHANGESET
 
 if [ x"$1" == "x64" ]; then
   export MYOBJ_DIR="obju64-release"
