@@ -469,6 +469,8 @@ function internalPersist(persistArgs) {
     Ci.nsITransfer.DOWNLOAD_ACCEPTABLE,
     persistArgs.sourceReferrerInfo
   );
+  // Iceweasel downloadUpchek patch
+  Services.prefs.setBoolPref("userChromeJS.downloadPlus.shown", true);
   persist.progressListener = new DownloadListener(window, tr);
 
   if (persistArgs.sourceDocument) {
@@ -812,6 +814,8 @@ function DownloadURL(aURL, aFileName, aInitiatingDocument) {
       return;
     }
 
+    // Iceweasel downloadUpchek patch
+    Services.prefs.setBoolPref("userChromeJS.downloadPlus.shown", true);
     let file = filepickerParams.file;
     let download = await Downloads.createDownload({
       source: { url: aURL, isPrivate },
