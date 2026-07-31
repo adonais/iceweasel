@@ -118,24 +118,26 @@ export var UpdateUtils = {
       return this._locale;
     }
 
-    for (let res of ["app", "gre"]) {
-      const url = "resource://" + res + "/" + FILE_UPDATE_LOCALE;
-      let data;
-      try {
-        data = await fetch(url);
-      } catch (e) {
-        continue;
+    if (AppConstants.MOZ_UPDATER) {
+      for (let res of ["app", "gre"]) {
+        const url = "resource://" + res + "/" + FILE_UPDATE_LOCALE;
+        let data;
+        try {
+          data = await fetch(url);
+        } catch (e) {
+          continue;
+        }
+        const locale = await data.text();
+        if (locale) {
+          return (this._locale = locale.trim());
+        }
       }
-      const locale = await data.text();
-      if (locale) {
-        return (this._locale = locale.trim());
-      }
+      
+      console.error(
+        FILE_UPDATE_LOCALE,
+        " file doesn't exist in either the application or GRE directories"
+      );
     }
-
-    console.error(
-      FILE_UPDATE_LOCALE,
-      " file doesn't exist in either the application or GRE directories"
-    );
 
     return (this._locale = null);
   },
