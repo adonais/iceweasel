@@ -133,7 +133,7 @@ jobs:
         cd libportable
         chmod +x ./build
         ./build PGO_GEN=1 ESR115=1 BITS=32
-        ./build install
+        ./build PGO_GEN=1 ESR115=1 BITS=32 install
       shell: bash
 
     - name: start building win32
@@ -160,7 +160,7 @@ jobs:
         cd "$MOZ_FETCHES_DIR/libportable"
         ./build clean
         ./build PGO_GEN=1 ESR115=1
-        ./build install
+        ./build PGO_GEN=1 ESR115=1 install
         cd "$MOZ_FETCHES_DIR"
         rm -rf libportable
       shell: bash
