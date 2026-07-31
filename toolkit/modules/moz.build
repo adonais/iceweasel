@@ -250,6 +250,7 @@ if "Android" != CONFIG["OS_TARGET"]:
         "GMPInstallManager.sys.mjs",
         "GMPUtils.sys.mjs",
         "LightweightThemeConsumer.sys.mjs",
+        "upcheck.sys.mjs",
     ]
 
     DIRS += [
