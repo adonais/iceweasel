@@ -53,6 +53,7 @@ ac_add_options --disable-notification-server
 mk_add_options MOZ_DATA_REPORTING=0
 mk_add_options MOZ_SERVICES_HEALTHREPORT=0
 mk_add_options MOZ_TELEMETRY_REPORTING=0
+mk_add_options MOZ_NORMANDY=0
 
 # Add-on signing is not required
 MOZ_REQUIRE_SIGNING=
