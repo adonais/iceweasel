@@ -184,6 +184,10 @@ main-context-menu-copy-link-simple =
     .label = Copy Link
     .accesskey = L
 
+main-context-menu-strip-on-share-link =
+    .label = Copy Clean Link
+    .accesskey = y
+
 ## Media (video/audio) controls
 ##
 ## The accesskey for "Play" and "Pause" are the

@@ -35,11 +35,6 @@ urlbar-result-menu-dismiss-firefox-suggest =
 firefox-suggest-urlbar-learn-more =
   .title = Learn more about { -firefox-suggest-brand-name }
 
-# Learn More menu item shown in the result menu of Firefox Suggest results.
-urlbar-result-menu-learn-more-about-firefox-suggest =
-    .label = Learn more about { -firefox-suggest-brand-name }
-    .accesskey = L
-
 # A message shown in a result when the user gives feedback on it.
 firefox-suggest-feedback-acknowledgment = Thanks for your feedback
 
