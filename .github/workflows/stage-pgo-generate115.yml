@@ -73,12 +73,12 @@ jobs:
           exit 255
         fi
         tar Jxf diasdk.tar.xz -C "$MOZ_FETCHES_DIR"
-        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/libportable.tar.xz?viasf=1 -O libportable.tar.xz
+        wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/upcheck.tar.xz?viasf=1 -O upcheck.tar.xz
         if [ $? -ne 0 ]; then
-          echo Download libportable failed
+          echo Download upcheck failed
           exit 255
         fi
-        tar Jxf libportable.tar.xz -C "$MOZ_FETCHES_DIR/clang"
+        tar Jxf upcheck.tar.xz -C "$MOZ_FETCHES_DIR/clang"
         wget https://master.dl.sourceforge.net/project/libportable/Mozillabuild/mozbuild.tar.xz?viasf=1 -O mozbuild.tar.xz
         if [ $? -ne 0 ]; then
           echo Download mozbuild failed
@@ -125,6 +125,17 @@ jobs:
         rm -rf "$MOZBUILD_DOWNLOAD"
       shell: bash
 
+    - name: start building libportable32
+      id: libportable_building32
+      run: |
+        cd "$MOZ_FETCHES_DIR"
+        git clone --depth=1 https://github.com/adonais/libportable.git
+        cd libportable
+        chmod +x ./build
+        ./build PGO_GEN=1 ESR115=1 BITS=32
+        ./build install
+      shell: bash
+
     - name: start building win32
       timeout-minutes: 180
       id: win32_building
@@ -142,6 +153,17 @@ jobs:
         path: ${{ env.MY_DIST }}/${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}.7z
         name: ${{ env.APP_NAME }}-${{ env.MY_VER }}.en-US.${{ env.MY_BITS }}
         compression-level: 0
+
+    - name: start building libportable64
+      id: libportable_building64
+      run: |
+        cd "$MOZ_FETCHES_DIR/libportable"
+        ./build clean
+        ./build PGO_GEN=1 ESR115=1
+        ./build install
+        cd "$MOZ_FETCHES_DIR"
+        rm -rf libportable
+      shell: bash
 
     - name: start building win64
       timeout-minutes: 180
