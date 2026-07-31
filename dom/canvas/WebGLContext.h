@@ -1391,7 +1391,7 @@ bool Intersect(int32_t srcSize, int32_t read0, int32_t readSize,
                int32_t* out_intRead0, int32_t* out_intWrite0,
                int32_t* out_intSize);
 
-uint64_t AvailGroups(uint64_t totalAvailItems, uint64_t firstItemOffset,
+uint64_t AvailGroups(uint64_t totalAvailItemBytes, uint64_t firstItemOffset,
                      uint32_t groupSize, uint32_t groupStride);
 
 ////

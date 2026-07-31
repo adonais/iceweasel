@@ -149,6 +149,7 @@ if CONFIG["OS_TARGET"] == "WINNT":
         "ole32",
         "oleaut32",
         "secur32",
+        "shcore",
         "strmiids",
         "user32",
         "winmm"
@@ -169,11 +170,21 @@ if CONFIG["CPU_ARCH"] == "mips32":
 
     DEFINES["MIPS32_LE"] = True
     DEFINES["MIPS_FPU_LE"] = True
+    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
+
+    LOCAL_INCLUDES += [
+        "/third_party/pipewire/"
+    ]
 
 if CONFIG["CPU_ARCH"] == "mips64":
 
+    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
+
+    LOCAL_INCLUDES += [
+        "/third_party/pipewire/"
+    ]
 
 if CONFIG["CPU_ARCH"] == "x86":
 
@@ -233,18 +244,38 @@ if CONFIG["CPU_ARCH"] == "x86" and CONFIG["OS_TARGET"] == "Android":
 
 if CONFIG["CPU_ARCH"] == "aarch64" and CONFIG["OS_TARGET"] == "Linux":
 
+    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
+
+    LOCAL_INCLUDES += [
+        "/third_party/pipewire/"
+    ]
 
 if CONFIG["CPU_ARCH"] == "arm" and CONFIG["OS_TARGET"] == "Linux":
 
+    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
+
+    LOCAL_INCLUDES += [
+        "/third_party/pipewire/"
+    ]
 
 if CONFIG["CPU_ARCH"] == "x86" and CONFIG["OS_TARGET"] == "Linux":
 
+    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
+
+    LOCAL_INCLUDES += [
+        "/third_party/pipewire/"
+    ]
 
 if CONFIG["CPU_ARCH"] == "x86_64" and CONFIG["OS_TARGET"] == "Linux":
 
+    DEFINES["WEBRTC_USE_PIPEWIRE"] = True
     DEFINES["_GNU_SOURCE"] = True
+
+    LOCAL_INCLUDES += [
+        "/third_party/pipewire/"
+    ]
 
 Library("webrtc_gn")

@@ -1089,11 +1089,6 @@ export class RemoteSettingsClient extends EventEmitter {
         lazy.console.error(
           `${this.identifier} Signature failed ${retry ? "again" : ""} ${e}`
         );
-        if (!(e instanceof InvalidSignatureError)) {
-          // If it failed for any other kind of error (eg. shutdown)
-          // then give up quickly.
-          throw e;
-        }
 
         // In order to distinguish signature errors that happen
         // during sync, from hijacks of local DBs, we will verify
@@ -1108,10 +1103,6 @@ export class RemoteSettingsClient extends EventEmitter {
           );
           localTrustworthy = true;
         } catch (sigerr) {
-          if (!(sigerr instanceof InvalidSignatureError)) {
-            // If it fails for other reason, keep original error and give up.
-            throw sigerr;
-          }
           lazy.console.debug(`${this.identifier} previous data was invalid`);
         }
 
