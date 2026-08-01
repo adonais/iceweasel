@@ -2,6 +2,8 @@
 subsuite = "integration"
 tags = "local os_integration"
 
+["test_contextual_password_manager_disabled.py"]
+
 ["test_default_launcher_visible.py"]
 skip-if = [
   "asan", # Bug 2010115
