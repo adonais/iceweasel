@@ -1,0 +1,155 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=2056444
+-->
+<head>
+  <title>Test decoding and seeking a Blob retrieved from CacheStorage</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<a target="_blank"
+   href="https://bugzilla.mozilla.org/show_bug.cgi?id=2056444">Mozilla Bug 2056444</a>
+<pre id="test">
+<script class="testbody" type="text/javascript">
+
+SimpleTest.waitForExplicitFinish();
+
+const SOURCE = "test-2-stereo.opus";
+const CACHE_NAME = "test_blob_from_cachestorage_audio_seeks";
+// Padded so the encoded WAV is larger than the 1MB IPC inline serialization
+// limit, and so seeking far from the start is meaningful. Below that limit the
+// buffer is copied into the IPC message itself and stays seekable in the
+// receiving process, a different transport and hence a different code path from
+// the one exercised here.
+const TOTAL_DURATION = 7;
+
+// Interleaved 16 bit PCM WAV holding aAudioBuffer followed by a 1kHz tone,
+// mirroring the on-the-fly padding the reporter's application does.
+function encodeWav(aAudioBuffer) {
+  const channels = aAudioBuffer.numberOfChannels;
+  const rate = aAudioBuffer.sampleRate;
+  const frames = Math.round(TOTAL_DURATION * rate);
+  const dataBytes = frames * channels * 2;
+
+  const buffer = new ArrayBuffer(44 + dataBytes);
+  const view = new DataView(buffer);
+  const magic = (offset, str) =>
+    str.split("").forEach((c, i) => view.setUint8(offset + i, c.charCodeAt(0)));
+
+  magic(0, "RIFF");
+  view.setUint32(4, 36 + dataBytes, true);
+  magic(8, "WAVEfmt ");
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // PCM
+  view.setUint16(22, channels, true);
+  view.setUint32(24, rate, true);
+  view.setUint32(28, rate * channels * 2, true);
+  view.setUint16(32, channels * 2, true);
+  view.setUint16(34, 16, true);
+  magic(36, "data");
+  view.setUint32(40, dataBytes, true);
+
+  const data = [];
+  for (let c = 0; c < channels; ++c) {
+    data.push(aAudioBuffer.getChannelData(c));
+  }
+
+  let offset = 44;
+  for (let i = 0; i < frames; ++i) {
+    for (let c = 0; c < channels; ++c) {
+      const sample = i < aAudioBuffer.length
+        ? data[c][i]
+        : 0.5 * Math.sin((2 * Math.PI * 1000 * i) / rate);
+      view.setInt16(offset, Math.max(-1, Math.min(1, sample)) * 0x7fff, true);
+      offset += 2;
+    }
+  }
+
+  return new Blob([buffer], { type: "audio/wav" });
+}
+
+async function load(aAudio, aBlob) {
+  const url = URL.createObjectURL(aBlob);
+  aAudio.preload = "auto";
+  aAudio.src = url;
+  document.body.appendChild(aAudio);
+  await new Promise((resolve, reject) => {
+    aAudio.addEventListener("canplaythrough", resolve, { once: true });
+    aAudio.addEventListener("error", () => {
+      reject(new Error("Error loading the audio, code=" + aAudio.error.code));
+    }, { once: true });
+  });
+  return url;
+}
+
+(async function() {
+  const cache = await caches.open(CACHE_NAME);
+  await cache.put(SOURCE, await fetch(SOURCE));
+
+  // A Blob handed out by CacheStorage isn't backed by memory owned by this
+  // process, so it is read asynchronously over IPC.
+  const cached = await cache.match(SOURCE).then(r => r.blob());
+  ok(cached.size > 0, "Got a non-empty Blob back from CacheStorage");
+
+  const arrayBuffer = await new Response(cached).arrayBuffer();
+  const audioBuffer =
+    await new OfflineAudioContext(2, 128, 48000).decodeAudioData(arrayBuffer);
+  ok(true, "decodeAudioData resolved for a Blob read from CacheStorage");
+
+  const wav = encodeWav(audioBuffer);
+  // IPC message over 1MB in size currently use a different transport
+  // underneath, causing a bug.
+  ok(wav.size > 1024 * 1024, "The re-encoded WAV is over the 1MB IPC limit");
+
+  // Two elements playing off the same data.
+  const [first, second] = [new Audio(), new Audio()];
+  const urls = await Promise.all([load(first, wav), load(second, wav)]);
+  ok(true, "Both audio elements reached canplaythrough");
+
+  // Seeking close to the end right after canplaythrough.
+  const seekTarget = first.duration - 1;
+  first.currentTime = seekTarget;
+  await new Promise(resolve => {
+    first.addEventListener("seeked", resolve, { once: true });
+  });
+  is(Math.round(first.currentTime), Math.round(seekTarget),
+     "Seeked near the end of the resource");
+
+  await new Promise((resolve, reject) => {
+    first.addEventListener("playing", resolve, { once: true });
+    first.play().catch(reject);
+  });
+  ok(true, "The seeked element reached the playing state");
+
+  await new Promise(resolve => {
+    first.addEventListener("timeupdate", function onTimeUpdate() {
+      if (first.currentTime > seekTarget) {
+        first.removeEventListener("timeupdate", onTimeUpdate);
+        resolve();
+      }
+    });
+  });
+  ok(true, "Playback progressed past the seek point");
+
+  await new Promise((resolve, reject) => {
+    second.addEventListener("playing", resolve, { once: true });
+    second.play().catch(reject);
+  });
+  ok(true, "The second element reached the playing state");
+
+  first.pause();
+  second.pause();
+  urls.forEach(url => URL.revokeObjectURL(url));
+  await caches.delete(CACHE_NAME);
+  SimpleTest.finish();
+})().catch(e => {
+  ok(false, "Unexpected failure: " + e);
+  SimpleTest.finish();
+});
+
+</script>
+</pre>
+</body>
+</html>
