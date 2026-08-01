@@ -1098,17 +1098,19 @@ var gPrivacyPane = {
       if (AppConstants.MOZ_CRASHREPORTER) {
         this.initSubmitCrashes();
       }
-      this.initSubmitHealthReport();
-      setEventListener(
-        "submitHealthReportBox",
-        "command",
-        gPrivacyPane.updateSubmitHealthReport
-      );
-      setEventListener(
-        "telemetryDataDeletionLearnMore",
-        "click",
-        gPrivacyPane.showDataDeletion
-      );
+      if (Services.prefs.getBoolPref("datareporting.policy.dataSubmissionEnabled", false)) {
+        this.initSubmitHealthReport();
+        setEventListener(
+          "submitHealthReportBox",
+          "command",
+          gPrivacyPane.updateSubmitHealthReport
+        );
+        setEventListener(
+          "telemetryDataDeletionLearnMore",
+          "click",
+          gPrivacyPane.showDataDeletion
+        );
+      }
       if (AppConstants.MOZ_NORMANDY) {
         this.initOptOutStudyCheckbox();
       }
