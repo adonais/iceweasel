@@ -2702,6 +2702,11 @@ pref("browser.tabs.fadeOutUnloadedTabs", false);
 // Whether tabs can be "split" or displayed side by side at once.
 pref("browser.tabs.splitView.enabled", true);
 pref("browser.tabs.splitview.hasUsed", false);
+// Delay in milliseconds before the splitViewUsed ASRouter trigger fires after entering split view.
+pref("browser.tabs.splitview.trigger.delay_ms", 15000);
+// Number of distinct Split Views created, observed by the splitViewUsed
+// ASRouter trigger.
+pref("browser.tabs.splitview.trigger.createCount", 0);
 
 // Whether SVG favicons should be safely re-encoded using the moz-remote-image:// protocol.
 pref("browser.tabs.remoteSVGIconDecoding", true);

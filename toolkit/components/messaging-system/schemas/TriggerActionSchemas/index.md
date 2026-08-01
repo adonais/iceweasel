@@ -521,3 +521,25 @@ Occurs every time a user opens a new Smart Window tab.
   targeting: "isAIWindow && 'browser.smartwindow.firstrun.hasCompleted' | preferenceValue",
 }
 ```
+
+### `splitViewUsed`
+
+Fires after a configurable delay (default 15 seconds, `browser.tabs.splitview.trigger.delay_ms`)
+of continuous use of Split View. Leaving Split View before the delay elapses cancels the
+countdown; returning starts a fresh one.
+
+```js
+{
+  trigger: { id: "splitViewUsed" }
+}
+```
+```js
+// The trigger also tracks the number of distinct Split Views the user has
+// created (not re-entries into an existing one), via the splitViewCreateCount
+// context variable. Here, the message is excluded for a user's first-ever
+// Split View.
+{
+  trigger: { id: "splitViewUsed" },
+  targeting: "splitViewCreateCount > 1"
+}
+```
