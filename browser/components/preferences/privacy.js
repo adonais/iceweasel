@@ -1100,17 +1100,17 @@ var gPrivacyPane = {
       }
       if (Services.prefs.getBoolPref("datareporting.policy.dataSubmissionEnabled", false)) {
         this.initSubmitHealthReport();
-        setEventListener(
-          "submitHealthReportBox",
-          "command",
-          gPrivacyPane.updateSubmitHealthReport
-        );
-        setEventListener(
-          "telemetryDataDeletionLearnMore",
-          "click",
-          gPrivacyPane.showDataDeletion
-        );
       }
+      setEventListener(
+        "submitHealthReportBox",
+        "command",
+        gPrivacyPane.updateSubmitHealthReport
+      );
+      setEventListener(
+        "telemetryDataDeletionLearnMore",
+        "click",
+        gPrivacyPane.showDataDeletion
+      );
       if (AppConstants.MOZ_NORMANDY) {
         this.initOptOutStudyCheckbox();
       }
