@@ -12,6 +12,7 @@
 <?xml-stylesheet href="chrome://browser/skin/preferences/search.css"?>
 <?xml-stylesheet href="chrome://browser/skin/preferences/containers.css"?>
 <?xml-stylesheet href="chrome://browser/skin/preferences/privacy.css"?>
+<?xml-stylesheet href="chrome://browser/skin/preferences/iceweasel.css"?>
 
 <!DOCTYPE html>
 
@@ -166,6 +167,15 @@
           <image class="category-icon"/>
           <label class="category-name" flex="1" data-l10n-id="more-from-moz-title"></label>
         </richlistitem>
+        <richlistitem id="category-iceweasel"
+                      class="category"
+                      value="paneIceweasel"
+                      data-l10n-id="category-iceweasel"
+                      data-l10n-attrs="tooltiptext"
+                      align="center">
+          <image class="category-icon"/>
+          <label class="category-name" flex="1" data-l10n-id="pane-iceweasel-title"></label>
+        </richlistitem>
       </richlistbox>
 
       <spacer flex="1"/>
@@ -216,6 +226,7 @@
 #include sync.inc.xhtml
 #include experimental.inc.xhtml
 #include moreFromMozilla.inc.xhtml
+#include iceweasel.inc.xhtml
         </vbox>
       </vbox>
     </vbox>
