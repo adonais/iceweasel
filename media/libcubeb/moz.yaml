@@ -21,6 +21,7 @@ vendoring:
     - 0002-remove-wasapi-timeout.patch
     - frame-sample.patch
     - delay-line-bounds.patch
+    - wasapi-async-reconfigure-on-start.patch
   skip-vendoring-steps:
     - update-moz-build
   exclude:

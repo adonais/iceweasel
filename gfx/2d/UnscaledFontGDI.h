@@ -36,6 +36,8 @@ class UnscaledFontGDI final : public UnscaledFont {
       uint32_t aInstanceDataLength, const FontVariation* aVariations,
       uint32_t aNumVariations) override;
 
+  static const LOGFONT* ValidLOGFONT(const uint8_t* aData, size_t aDataLength);
+
  private:
   LOGFONT mLogFont;
 };

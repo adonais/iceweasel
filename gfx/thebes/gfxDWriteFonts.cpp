@@ -83,8 +83,7 @@ gfxDWriteFont::gfxDWriteFont(const RefPtr<UnscaledFontDWrite>& aUnscaledFont,
     : gfxFont(aUnscaledFont, aFontEntry, aFontStyle, anAAOption),
       mFontFace(aFontFace ? aFontFace : aUnscaledFont->GetFontFace()),
       mUseSubpixelPositions(false),
-      mAllowManualShowGlyphs(true),
-      mAzureScaledFontUsedClearType(false) {
+      mAllowManualShowGlyphs(true) {
   // If the IDWriteFontFace1 interface is available, we can use that for
   // faster glyph width retrieval.
   mFontFace->QueryInterface(__uuidof(IDWriteFontFace1),
@@ -113,6 +112,12 @@ gfxDWriteFont::gfxDWriteFont(const RefPtr<UnscaledFontDWrite>& aUnscaledFont,
 
 gfxDWriteFont::~gfxDWriteFont() {
   if (auto* scaledFont = mAzureScaledFontGDI.exchange(nullptr)) {
+    scaledFont->Release();
+  }
+  if (auto* scaledFont = mAzureScaledFontClearType.exchange(nullptr)) {
+    scaledFont->Release();
+  }
+  if (auto* scaledFont = mAzureScaledFontGDIClearType.exchange(nullptr)) {
     scaledFont->Release();
   }
 }
@@ -798,16 +803,12 @@ void gfxDWriteFont::AddSizeOfIncludingThis(MallocSizeOf aMallocSizeOf,
 already_AddRefed<ScaledFont> gfxDWriteFont::GetScaledFont(
     const TextRunDrawParams& aRunParams) {
   bool useClearType = UsingClearType();
-  if (mAzureScaledFontUsedClearType != useClearType) {
-    if (auto* oldScaledFont = mAzureScaledFont.exchange(nullptr)) {
-      oldScaledFont->Release();
-    }
-    if (auto* oldScaledFont = mAzureScaledFontGDI.exchange(nullptr)) {
-      oldScaledFont->Release();
-    }
-  }
   bool forceGDI = aRunParams.allowGDI && GetForceGDIClassic();
-  ScaledFont* scaledFont = forceGDI ? mAzureScaledFontGDI : mAzureScaledFont;
+  auto& scaledFontCacheRef =
+      useClearType ? (forceGDI ? mAzureScaledFontGDIClearType
+                               : mAzureScaledFontClearType)
+                   : (forceGDI ? mAzureScaledFontGDI : mAzureScaledFont);
+  ScaledFont* scaledFont = scaledFontCacheRef;
   if (scaledFont) {
     return do_AddRef(scaledFont);
   }
@@ -827,19 +828,10 @@ already_AddRefed<ScaledFont> gfxDWriteFont::GetScaledFont(
   }
   InitializeScaledFont(newScaledFont);
 
-  if (forceGDI) {
-    if (mAzureScaledFontGDI.compareExchange(nullptr, newScaledFont.get())) {
-      Unused << newScaledFont.forget();
-      mAzureScaledFontUsedClearType = useClearType;
-    }
-    scaledFont = mAzureScaledFontGDI;
-  } else {
-    if (mAzureScaledFont.compareExchange(nullptr, newScaledFont.get())) {
-      Unused << newScaledFont.forget();
-      mAzureScaledFontUsedClearType = useClearType;
-    }
-    scaledFont = mAzureScaledFont;
+  if (scaledFontCacheRef.compareExchange(nullptr, newScaledFont.get())) {
+    Unused << newScaledFont.forget();
   }
+  scaledFont = scaledFontCacheRef;
   return do_AddRef(scaledFont);
 }
 

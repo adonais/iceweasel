@@ -100,14 +100,14 @@ class gfxDWriteFont final : public gfxFont {
   bool mUseSubpixelPositions;
   bool mAllowManualShowGlyphs;
 
-  // Used to record the sUseClearType setting at the time mAzureScaledFont
-  // was set up, so we can tell if it's stale and needs to be re-created.
-  mozilla::Atomic<bool> mAzureScaledFontUsedClearType;
-
   // Cache the GDI version of the ScaledFont so that font keys and other
   // meta-data can remain stable even if there is thrashing between GDI and
   // non-GDI usage.
   mozilla::Atomic<mozilla::gfx::ScaledFont*> mAzureScaledFontGDI;
+
+  // Cache the ClearType-enabled versions of ScaledFonts if setting is toggled.
+  mozilla::Atomic<mozilla::gfx::ScaledFont*> mAzureScaledFontClearType;
+  mozilla::Atomic<mozilla::gfx::ScaledFont*> mAzureScaledFontGDIClearType;
 
   bool UsingClearType() {
     return mozilla::gfx::gfxVars::SystemTextQuality() == CLEARTYPE_QUALITY;
