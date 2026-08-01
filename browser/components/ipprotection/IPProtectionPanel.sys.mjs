@@ -981,6 +981,10 @@ export class IPProtectionPanel {
   }
 
   #addPrefObserver() {
+    Services.prefs.addObserver(
+      UPGRADE_NOT_AVAILABLE_PREF,
+      this.handlePrefChange
+    );
     Services.prefs.addObserver(EGRESS_LOCATION_PREF, this.handlePrefChange);
     Services.prefs.addObserver(
       BANDWIDTH_WARNING_DISMISSED_PREF,
@@ -989,6 +993,10 @@ export class IPProtectionPanel {
   }
 
   #removePrefObserver() {
+    Services.prefs.removeObserver(
+      UPGRADE_NOT_AVAILABLE_PREF,
+      this.handlePrefChange
+    );
     Services.prefs.removeObserver(EGRESS_LOCATION_PREF, this.handlePrefChange);
     Services.prefs.removeObserver(
       BANDWIDTH_WARNING_DISMISSED_PREF,
@@ -997,15 +1005,25 @@ export class IPProtectionPanel {
   }
 
   #handlePrefChange(_subject, _topic, data) {
-    if (data === EGRESS_LOCATION_PREF) {
-      const value = Services.prefs.getStringPref(EGRESS_LOCATION_PREF, "");
-      this.setState({
-        location: value || null,
-      });
-    } else if (data === BANDWIDTH_WARNING_DISMISSED_PREF) {
-      if (!this.#shouldShowBandwidthWarning()) {
-        this.setState({ bandwidthWarning: false });
-      }
+    switch (data) {
+      case EGRESS_LOCATION_PREF:
+        this.setState({
+          location:
+            Services.prefs.getStringPref(EGRESS_LOCATION_PREF, "") || null,
+        });
+        return;
+      case BANDWIDTH_WARNING_DISMISSED_PREF:
+        if (!this.#shouldShowBandwidthWarning()) {
+          this.setState({ bandwidthWarning: false });
+        }
+        return;
+      case UPGRADE_NOT_AVAILABLE_PREF:
+        this.setState({
+          upgradeNotAvailable: Services.prefs.getBoolPref(
+            UPGRADE_NOT_AVAILABLE_PREF,
+            false
+          ),
+        });
     }
   }
 
