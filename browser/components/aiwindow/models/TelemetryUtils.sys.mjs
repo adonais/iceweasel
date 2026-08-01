@@ -376,7 +376,7 @@ export class TelemetryEngine {
       for (let attempt = 0; attempt < 3; attempt++) {
         if (attempt > 0) {
           await new Promise(resolve =>
-            lazy.setTimeout(resolve, 2000 * attempt)
+            lazy.setTimeout(resolve, 1000 * 2 ** attempt + Math.random() * 500)
           );
         }
         try {
@@ -389,14 +389,13 @@ export class TelemetryEngine {
           });
           lastError = null;
           break;
-        } catch (e) {
-          if (e.message?.includes("429")) {
-            // trying to catch 429 / rate-limiting errors; backoff and retry
-            lastError = e;
+        } catch (error) {
+          if (openAIEngine.is429Error(error)) {
+            lastError = error;
           } else {
             lazy.console.error(
               `Telemetry: evaluation failed for ${record.telemetry_name}:`,
-              e
+              error
             ); // other errors fail
             break;
           }
