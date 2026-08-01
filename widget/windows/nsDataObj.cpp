@@ -1213,6 +1213,20 @@ static bool GetLocalizedString(const char* aName, nsAString& aString) {
   return NS_SUCCEEDED(rv);
 }
 
+static bool HasWebScheme(nsIURI* aUri) {
+  nsAutoCString scheme;
+  NS_ENSURE_SUCCESS(aUri->GetScheme(scheme), false);
+  return scheme.EqualsLiteral("http") || scheme.EqualsLiteral("https");
+}
+
+bool nsDataObj::ShortcutUrlHasWebScheme() {
+  nsAutoString urlString;
+  NS_ENSURE_SUCCESS(ExtractShortcutURL(urlString), false);
+  nsCOMPtr<nsIURI> uri;
+  NS_ENSURE_SUCCESS(NS_NewURI(getter_AddRefs(uri), urlString), false);
+  return HasWebScheme(uri);
+}
+
 //
 // GetFileDescriptorInternetShortcut
 //
@@ -1226,11 +1240,14 @@ nsDataObj ::GetFileDescriptorInternetShortcutA(FORMATETC& aFE,
   nsAutoString title;
   if (NS_FAILED(ExtractShortcutTitle(title))) return E_OUTOFMEMORY;
 
-  // Allocate space for two FILEDESCRIPTOR entries: the .url file plus a
-  // ":Zone.Identifier" ADS so the dropped shortcut is marked Internet-zone
-  // (untrusted).
-  size_t const allocSize =
-      sizeof(FILEGROUPDESCRIPTORA) + sizeof(FILEDESCRIPTORA);
+  // For non-http schemes, allocate space for two FILEDESCRIPTOR entries:
+  // the .url file plus a ":Zone.Identifier" ADS so the dropped shortcut is
+  // marked Internet-zone (untrusted).
+  bool isWebScheme = ShortcutUrlHasWebScheme();
+  size_t allocSize = sizeof(FILEGROUPDESCRIPTORA);
+  if (!isWebScheme) {
+    allocSize += sizeof(FILEDESCRIPTORA);
+  }
   HGLOBAL fileGroupDescHandle =
       ::GlobalAlloc(GMEM_ZEROINIT | GMEM_SHARE, allocSize);
   if (!fileGroupDescHandle) return E_OUTOFMEMORY;
@@ -1255,21 +1272,25 @@ nsDataObj ::GetFileDescriptorInternetShortcutA(FORMATETC& aFE,
   }
   fileGroupDescA->fgd[0].dwFlags = FD_LINKUI;
 
-  // Build the ":Zone.Identifier" ADS entry.
-  // If appending the suffix would overflow, refuse the entire descriptor.
-  constexpr char kAdsSuffix[] = ":Zone.Identifier";
-  constexpr size_t kAdsSuffixSize = sizeof(kAdsSuffix);  // includes terminator
   size_t const mainLen = strnlen(fileGroupDescA->fgd[0].cFileName, MAX_PATH);
-  if (mainLen + kAdsSuffixSize > MAX_PATH) {
-    ::GlobalUnlock(fileGroupDescHandle);
-    ::GlobalFree(fileGroupDescHandle);
-    return HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND);
+  fileGroupDescA->cItems = 1;
+  if (!isWebScheme) {
+    // Build the ":Zone.Identifier" ADS entry.
+    // If appending the suffix would overflow, refuse the entire descriptor.
+    constexpr char kAdsSuffix[] = ":Zone.Identifier";
+    constexpr size_t kAdsSuffixSize =
+        sizeof(kAdsSuffix);  // includes terminator
+    if (mainLen + kAdsSuffixSize > MAX_PATH) {
+      ::GlobalUnlock(fileGroupDescHandle);
+      ::GlobalFree(fileGroupDescHandle);
+      return HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND);
+    }
+    memcpy(fileGroupDescA->fgd[1].cFileName, fileGroupDescA->fgd[0].cFileName,
+           mainLen);
+    memcpy(fileGroupDescA->fgd[1].cFileName + mainLen, kAdsSuffix,
+           kAdsSuffixSize);
+    fileGroupDescA->cItems++;
   }
-  memcpy(fileGroupDescA->fgd[1].cFileName, fileGroupDescA->fgd[0].cFileName,
-         mainLen);
-  memcpy(fileGroupDescA->fgd[1].cFileName + mainLen, kAdsSuffix,
-         kAdsSuffixSize);
-  fileGroupDescA->cItems = 2;
 
   ::GlobalUnlock(fileGroupDescHandle);
   aSTG.hGlobal = fileGroupDescHandle;
@@ -1285,11 +1306,14 @@ nsDataObj ::GetFileDescriptorInternetShortcutW(FORMATETC& aFE,
   nsAutoString title;
   if (NS_FAILED(ExtractShortcutTitle(title))) return E_OUTOFMEMORY;
 
-  // Allocate space for two FILEDESCRIPTOR entries: the .url file plus a
-  // ":Zone.Identifier" ADS so the dropped shortcut is marked Internet-zone
-  // (untrusted).
-  size_t const allocSize =
-      sizeof(FILEGROUPDESCRIPTORW) + sizeof(FILEDESCRIPTORW);
+  // For non-http schemes, allocate space for two FILEDESCRIPTOR entries:
+  // the .url file plus a ":Zone.Identifier" ADS so the dropped shortcut is
+  // marked Internet-zone (untrusted).
+  bool isWebScheme = ShortcutUrlHasWebScheme();
+  size_t allocSize = sizeof(FILEGROUPDESCRIPTORW);
+  if (!isWebScheme) {
+    allocSize += sizeof(FILEDESCRIPTORW);
+  }
   HGLOBAL fileGroupDescHandle =
       ::GlobalAlloc(GMEM_ZEROINIT | GMEM_SHARE, allocSize);
   if (!fileGroupDescHandle) return E_OUTOFMEMORY;
@@ -1314,22 +1338,25 @@ nsDataObj ::GetFileDescriptorInternetShortcutW(FORMATETC& aFE,
   }
   fileGroupDescW->fgd[0].dwFlags = FD_LINKUI;
 
-  // Build the ":Zone.Identifier" ADS entry.
-  // If appending the suffix would overflow, refuse the entire descriptor.
-  constexpr WCHAR kAdsSuffix[] = L":Zone.Identifier";
-  constexpr size_t kAdsSuffixLen =
-      (sizeof(kAdsSuffix) / sizeof(WCHAR));  // includes terminator
   size_t const mainLen = wcsnlen(fileGroupDescW->fgd[0].cFileName, MAX_PATH);
-  if (mainLen + kAdsSuffixLen > MAX_PATH) {
-    ::GlobalUnlock(fileGroupDescHandle);
-    ::GlobalFree(fileGroupDescHandle);
-    return HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND);
+  fileGroupDescW->cItems = 1;
+  if (!isWebScheme) {
+    // Build the ":Zone.Identifier" ADS entry.
+    // If appending the suffix would overflow, refuse the entire descriptor.
+    constexpr WCHAR kAdsSuffix[] = L":Zone.Identifier";
+    constexpr size_t kAdsSuffixLen =
+        (sizeof(kAdsSuffix) / sizeof(WCHAR));  // includes terminator
+    if (mainLen + kAdsSuffixLen > MAX_PATH) {
+      ::GlobalUnlock(fileGroupDescHandle);
+      ::GlobalFree(fileGroupDescHandle);
+      return HRESULT_FROM_WIN32(ERROR_PATH_NOT_FOUND);
+    }
+    wmemcpy(fileGroupDescW->fgd[1].cFileName, fileGroupDescW->fgd[0].cFileName,
+            mainLen);
+    wmemcpy(fileGroupDescW->fgd[1].cFileName + mainLen, kAdsSuffix,
+            kAdsSuffixLen);
+    fileGroupDescW->cItems++;
   }
-  wmemcpy(fileGroupDescW->fgd[1].cFileName, fileGroupDescW->fgd[0].cFileName,
-          mainLen);
-  wmemcpy(fileGroupDescW->fgd[1].cFileName + mainLen, kAdsSuffix,
-          kAdsSuffixLen);
-  fileGroupDescW->cItems = 2;
 
   ::GlobalUnlock(fileGroupDescHandle);
   aSTG.hGlobal = fileGroupDescHandle;
@@ -1346,9 +1373,28 @@ nsDataObj ::GetFileDescriptorInternetShortcutW(FORMATETC& aFE,
 //
 HRESULT
 nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
+  // Treat aFE.lindex = [-1,1] as requests for the URL file.  Anything else is
+  // invalid.
+  if (aFE.lindex < -1 || aFE.lindex > 1) {
+    return DV_E_LINDEX;
+  }
+
+  nsAutoString urlString;
+  if (NS_FAILED(ExtractShortcutURL(urlString))) return E_OUTOFMEMORY;
+
+  nsCOMPtr<nsIURI> uri;
+  nsresult rv = NS_NewURI(getter_AddRefs(uri), urlString);
+  if (NS_FAILED(rv)) {
+    return E_FAIL;
+  }
+
   // The descriptor advertises two entries: the .url content (lindex 0) and
   // the ":Zone.Identifier" ADS that marks it as Internet-zone (lindex 1).
   if (aFE.lindex == 1) {
+    if (HasWebScheme(uri)) {
+      // Zone index is not valid for web urls.
+      return DV_E_LINDEX;
+    }
     constexpr char kZoneIdContent[] = "[ZoneTransfer]\r\nZoneId=3\r\n";
     constexpr size_t kZoneIdLen = sizeof(kZoneIdContent) - 1;
 
@@ -1375,24 +1421,10 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
     return S_OK;
   }
 
-  // Treat aFE.lindex = 0 or -1 as requests for the URL file.  Anything else is
-  // invalid.
-  if (aFE.lindex != 0 && aFE.lindex != -1) {
-    return DV_E_LINDEX;
-  }
-
   static const char* kShellIconPref = "browser.shell.shortcutFavicons";
-  nsAutoString url;
-  if (NS_FAILED(ExtractShortcutURL(url))) return E_OUTOFMEMORY;
-
-  nsCOMPtr<nsIURI> aUri;
-  nsresult rv = NS_NewURI(getter_AddRefs(aUri), url);
-  if (NS_FAILED(rv)) {
-    return E_FAIL;
-  }
 
   nsAutoCString asciiUrl;
-  rv = aUri->GetAsciiSpec(asciiUrl);
+  rv = uri->GetAsciiSpec(asciiUrl);
   if (NS_FAILED(rv)) {
     return E_FAIL;
   }
@@ -1409,7 +1441,7 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
   } else {
     nsCOMPtr<nsIFile> icoFile;
 
-    nsAutoString aUriHash;
+    nsAutoString uriHash;
 
     event = new AutoCloseEvent();
     if (!event->IsInited()) {
@@ -1418,7 +1450,7 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
 
     auto e = MakeRefPtr<AutoSetEvent>(WrapNotNull(event));
     mozilla::widget::FaviconHelper::ObtainCachedIconFile(
-        aUri, aUriHash, mIOThread, true,
+        uri, uriHash, mIOThread, true,
         NS_NewRunnableFunction(
             "FaviconHelper::RefreshDesktop", [e = std::move(e)] {
               if (e->IsWaiting()) {
@@ -1432,7 +1464,7 @@ nsDataObj ::GetFileContentsInternetShortcut(FORMATETC& aFE, STGMEDIUM& aSTG) {
               }
             }));
 
-    rv = mozilla::widget::FaviconHelper::GetOutputIconPath(aUri, icoFile, true);
+    rv = mozilla::widget::FaviconHelper::GetOutputIconPath(uri, icoFile, true);
     NS_ENSURE_SUCCESS(rv, E_FAIL);
     nsString path;
     rv = icoFile->GetPath(path);

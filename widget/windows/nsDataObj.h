@@ -152,6 +152,7 @@ class nsDataObj : public IDataObject, public IDataObjectAsyncCapability {
 
   nsresult ExtractShortcutURL(nsString& outURL);
   nsresult ExtractShortcutTitle(nsString& outTitle);
+  bool ShortcutUrlHasWebScheme();
 
   // munge our HTML data to win32's CF_HTML spec. Will null terminate
   nsresult BuildPlatformHTML(const char* inOurHTML, char** outPlatformHTML);
