@@ -66,7 +66,7 @@
   <!-- Label for the summarize pages toggle in settings -->
   <string name="mozac_summarize_settings_summarize_pages">Laburbildu orriak</string>
   <!-- Description for the summarize pages toggle -->
-  <string name="mozac_summarize_settings_summarize_pages_cloud">Laburbildu orriak AA erabiliz. Orriak eta hauek laburpenak pribatu mantentzen dira eta ez dira inoiz gordetzen.</string>
+  <string name="mozac_summarize_settings_summarize_pages_cloud">Laburbildu orriak AA erabiliz. Orriak eta hauen laburpenak pribatu mantentzen dira eta ez dira inoiz gordetzen.</string>
   <!-- Link text to learn more about page summaries in settings -->
   <string name="mozac_summarize_settings_learn_more">Argibide gehiago</string>
   <!-- Section header for gesture settings -->
@@ -95,4 +95,10 @@
   <string name="mozac_ai_controls_page_summary_description">Orriak eta laburpenak inoiz ez dira gordetzen.</string>
   <!-- Button text for the Error dismiss button on Shake to Summarize -->
   <string name="mozac_summarize_error_dissmiss">Baztertu</string>
+  <!-- Title for the Mozilla account sign-in screen, shown when summarization results in a connection failure. -->
+  <string name="mozac_summarize_fxa_sign_in_title">Hasi saioa laburbiltzeko</string>
+  <!-- Message on the sign-in screen, inviting the user to continue with an existing Mozilla account or create a new one -->
+  <string xmlns:ns0="http://schemas.android.com/tools" name="mozac_summarize_fxa_sign_in_message" ns0:ignore="BrandUsage">Erabili zure Mozilla kontua jarraitzeko edo sortu berri bat abiatzeko.</string>
+  <!-- Label for the button that starts the sign-in flow -->
+  <string name="mozac_summarize_fxa_sign_in_button_positive">Hasi saioa</string>
 </resources>

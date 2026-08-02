@@ -137,7 +137,7 @@
   <!-- Strings show in a dialog that appear when user confirm folder upload -->
   <string name="mozac_feature_prompt_folder_upload_confirm_title">Caricare i file?</string>
   <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
-  <string name="mozac_feature_prompt_folder_upload_confirm_message">Assicurarsi che il sito sia attendibile prima di caricare da “%1$s” .</string>
+  <string name="mozac_feature_prompt_folder_upload_confirm_message">Assicurarsi che il sito sia attendibile prima di caricare da “%1$s”.</string>
   <!-- Pressing this will dismiss the dialog and allow to upload folder -->
   <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">Carica</string>
   <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
