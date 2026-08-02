@@ -976,6 +976,11 @@ skip-if = [
   "os == 'mac' && os_version == '15.30' && arch == 'aarch64' && debug", # Bug 1961557
 ]
 
+["test_blob_from_arraybuffer_video_plays.html"]
+
+["test_blob_from_cachestorage_audio_seeks.html"]
+scheme = "https" # CacheStorage requires a secure context
+
 ["test_temporary_file_blob_video_plays.html"]
 skip-if = [
   "os == 'android'", # bug 1533534 # android(bug 1232305)

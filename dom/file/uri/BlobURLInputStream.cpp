@@ -390,22 +390,23 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
   nsAutoString partKey;
   cookieJarSettings->GetPartitionKey(partKey);
 
-  // If we're in the parent process, perform the fetch directly from the store.
-  // If we're in a content process, we'll instead perform the fetch over IPC.
-  if (XRE_IsParentProcess()) {
-    RefPtr<BlobImpl> blobImpl;
+  // Try to satisfy the request directly from this process's blob URL store
+  // first. For a blob owned by this process (e.g. one built from an
+  // ArrayBuffer) this yields the original, seekable in-memory stream and avoids
+  // a non-seekable round-trip through the parent process. Blobs owned by
+  // another process are not in this table, so we fall back to the IPC fetch
+  // below.
+  //
+  // Since revoked blobs are also retrieved, it is possible that the blob no
+  // longer exists (due to the 5 second timeout) when execution reaches here.
+  RefPtr<BlobImpl> blobImpl;
+  BlobURLProtocolHandler::GetDataEntry(
+      mBlobURLSpec, getter_AddRefs(blobImpl), loadingPrincipal,
+      triggeringPrincipal, loadInfo->GetOriginAttributes(),
+      loadInfo->GetInnerWindowID(), NS_ConvertUTF16toUTF8(partKey),
+      true /* AlsoIfRevoked */);
 
-    // Since revoked blobs are also retrieved, it is possible that the blob no
-    // longer exists (due to the 5 second timeout) when execution reaches here
-    if (!BlobURLProtocolHandler::GetDataEntry(
-            mBlobURLSpec, getter_AddRefs(blobImpl), loadingPrincipal,
-            triggeringPrincipal, loadInfo->GetOriginAttributes(),
-            loadInfo->GetInnerWindowID(), NS_ConvertUTF16toUTF8(partKey),
-            true /* AlsoIfRevoked */)) {
-      NS_WARNING("Failed to get data entry principal. URL revoked?");
-      return;
-    }
-
+  if (blobImpl) {
     mError = StoreBlobImplStream(blobImpl.forget(), aProofOfLock);
     if (NS_WARN_IF(NS_FAILED(mError))) {
       return;
@@ -420,6 +421,13 @@ void BlobURLInputStream::RetrieveBlobData(const MutexAutoLock& aProofOfLock) {
     WaitOnUnderlyingStream(aProofOfLock);
 
     cleanupOnEarlyExit.release();
+    return;
+  }
+
+  if (XRE_IsParentProcess()) {
+    // The parent hosts the canonical blob URL store; if the entry is not there
+    // it is gone (revoked past the timeout) and there is no IPC fallback.
+    NS_WARNING("Failed to get data entry principal. URL revoked?");
     return;
   }
 

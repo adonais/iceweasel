@@ -12,6 +12,7 @@ ChromeUtils.defineESModuleGetters(lazy, {
   submitTelemetryResult:
     "moz-src:///browser/components/aiwindow/models/TelemetryUtils.sys.mjs",
   setInterval: "resource://gre/modules/Timer.sys.mjs",
+  setTimeout: "resource://gre/modules/Timer.sys.mjs",
   clearInterval: "resource://gre/modules/Timer.sys.mjs",
 });
 
@@ -164,6 +165,7 @@ export class TelemetryScheduler {
           if (!conversation) {
             continue;
           }
+          const requestStart = ChromeUtils.now();
           const results = (
             await telemetryEngine.runTelemetryByName(
               telemetryNames,
@@ -174,6 +176,8 @@ export class TelemetryScheduler {
             samplingProbability:
               conversationObj.telemetryProbs[r.telemetry_name] ?? 0,
           }));
+          const requestDuration = ChromeUtils.now() - requestStart;
+
           lazy.submitTelemetryResult(
             results,
             conversation,
@@ -188,6 +192,10 @@ export class TelemetryScheduler {
             conversationObj.convId,
             conversationObj.telemetryJobs,
             conversation.currentTurnIndex()
+          );
+          const delay = Math.max(3000 - requestDuration, 0);
+          await new Promise(r =>
+            lazy.setTimeout(r, delay + Math.random() * 1000)
           );
         } catch (error) {
           lazy.console.error(

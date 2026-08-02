@@ -1,0 +1,53 @@
+<!DOCTYPE HTML>
+<html>
+<!--
+https://bugzilla.mozilla.org/show_bug.cgi?id=2047243
+-->
+<head>
+  <title>Test playing a video from a Blob rebuilt from a fetched ArrayBuffer</title>
+  <script src="/tests/SimpleTest/SimpleTest.js"></script>
+  <link rel="stylesheet" type="text/css" href="/tests/SimpleTest/test.css"/>
+</head>
+<body>
+<a target="_blank"
+   href="https://bugzilla.mozilla.org/show_bug.cgi?id=2047243">Mozilla Bug 2047243</a>
+<pre id="test">
+<script class="testbody" type="text/javascript">
+
+SimpleTest.waitForExplicitFinish();
+
+(async function() {
+  const buffer = await fetch("gizmo-short.mp4").then(r => r.arrayBuffer());
+  const blob = new Blob([buffer], { type: "video/mp4" });
+  const blobUrl = URL.createObjectURL(blob);
+
+  const video = document.createElement("video");
+  video.preload = "auto";
+  video.src = blobUrl;
+  document.body.appendChild(video);
+
+  video.onerror = () => {
+    ok(false, "Should be able to play the recording. Got error. code=" +
+       video.error.code);
+    SimpleTest.finish();
+  };
+
+  await new Promise(resolve => {
+    video.addEventListener("loadeddata", resolve, { once: true });
+  });
+  ok(true, "Video reached loadeddata without getting stuck");
+
+  await new Promise((resolve, reject) => {
+    video.addEventListener("playing", resolve, { once: true });
+    video.play().catch(reject);
+  });
+  ok(true, "Video reached the playing state");
+
+  URL.revokeObjectURL(blobUrl);
+  SimpleTest.finish();
+})();
+
+</script>
+</pre>
+</body>
+</html>
