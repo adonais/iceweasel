@@ -49,11 +49,11 @@ ac_add_options --disable-sandbox
 # disable notification server
 ac_add_options --disable-notification-server
 
-# Disable MOZ_*
-mk_add_options MOZ_DATA_REPORTING=0
-mk_add_options MOZ_SERVICES_HEALTHREPORT=0
-mk_add_options MOZ_TELEMETRY_REPORTING=0
-mk_add_options MOZ_NORMANDY=0
+# Disable data reporting
+MOZ_DATA_REPORTING=
+MOZ_SERVICES_HEALTHREPORT=
+MOZ_TELEMETRY_REPORTING=
+MOZ_NORMANDY=
 
 # Add-on signing is not required
 MOZ_REQUIRE_SIGNING=
