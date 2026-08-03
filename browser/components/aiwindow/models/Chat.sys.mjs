@@ -23,8 +23,6 @@ import {
   WORLD_CUP_TOOLS,
   WORLD_CUP_PREF,
   SEARCH_THE_WEB,
-  RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY,
-  RUN_SEARCH_TOOL_CONFIG_GENERATED_QUERY,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 import { runSearchTheWeb } from "moz-src:///browser/components/aiwindow/models/search/SearchWorkflow.sys.mjs";
 
@@ -41,7 +39,6 @@ import { runLLMaJTelemetry } from "moz-src:///browser/components/aiwindow/models
  * @param {ChatConversation} conversation - The conversation context
  * @param {BrowsingContext} browsingContext - The browsing context (can be null for some tools)
  * @param {string} mode - The mode of operation (e.g., "fullpage", "sidebar", "urlbar")
- * @param {number} currentTurn - The current turn number in the conversation
  * @returns {Promise<object>} The result of the tool execution
  * @private
  */
@@ -51,8 +48,7 @@ export async function executeToolByName(
   toolCallId,
   conversation,
   browsingContext,
-  mode,
-  currentTurn
+  mode
 ) {
   let result;
   switch (toolName) {
@@ -82,7 +78,6 @@ export async function executeToolByName(
         provider: engine.name ?? "unknown",
         model: conversation.engine?.model,
       });
-      conversation._searchExecutedTurn = currentTurn;
       break;
     }
     case GET_OPEN_TABS:
@@ -120,11 +115,6 @@ export async function executeToolByName(
   return result;
 }
 
-// Hard limit on how many times run_search can execute per conversation turn.
-// Prevents infinite tool-call loops when the model repeatedly requests search.
-// Bug 2024006.
-const MAX_RUN_SEARCH_PER_TURN = 3;
-
 /**
  * Handlers for tools that are feature-gated by a pref and intended to be
  * added or removed independently of the main tool dispatch. Lookups happen
@@ -150,43 +140,6 @@ function filterFeatureGatedTools(tools) {
     filtered = filtered.filter(t => !WORLD_CUP_TOOLS.has(t.function?.name));
   }
   return filtered;
-}
-
-/**
- * Per-turn tool-config update after a tool runs. For search_the_web it enforces
- * the one-search-per-turn limit by swapping the tool out, then offers the Google
- * handoff (run_search) so the assistant can fall back at its own discretion. The
- * `could_answer` flag in the returned result is one signal for that decision,
- * not the trigger. A no-op for every other tool, so callers can invoke it
- * unconditionally.
- *
- * @param {string} toolName - The tool that just executed.
- * @param {object[]} chatToolsConfig - The current per-turn tool list.
- * @param {boolean} isVerbatimQuery - Whether the run_search fallback should use
- *   the user's verbatim query (first turn) rather than a model-generated one.
- * @returns {object[]} The updated tool list.
- */
-function maybeApplySearchTheWebPostExecution(
-  toolName,
-  chatToolsConfig,
-  isVerbatimQuery
-) {
-  if (toolName !== SEARCH_THE_WEB) {
-    return chatToolsConfig;
-  }
-  const next = chatToolsConfig.filter(t => t.function?.name !== SEARCH_THE_WEB);
-  if (!next.some(t => t.function?.name === RUN_SEARCH)) {
-    // Use the verbatim-query variant on the first turn (the user's exact query)
-    // and the generated-query variant afterwards.
-    next.push(
-      structuredClone(
-        isVerbatimQuery
-          ? RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY
-          : RUN_SEARCH_TOOL_CONFIG_GENERATED_QUERY
-      )
-    );
-  }
-  return next;
 }
 
 const lazy = {};
@@ -333,17 +286,20 @@ Object.assign(Chat, {
     const currentTurn = conversation.currentTurnIndex();
 
     /**
-     * On the first turn the `run_search` fallback uses the user's verbatim
-     * query; later turns use a model-generated query. run_search is not offered
-     * up front — it is added by maybeApplySearchTheWebPostExecution after the
-     * search flow, using the variant this flag selects.
+     * On the first turn if `search_the_web` fallbacks to run_search, uses the
+     * user's verbatim query; later turns use a model-generated query. See
+     * comment above tool execution for further details.
      */
     const isVerbatimQuery = currentTurn === 0;
     let chatToolsConfig = filterFeatureGatedTools(structuredClone(toolsConfig));
 
     let fullResponseText = "";
+
+    // A search handoff sets `_searchExecutedTurn` (in executeToolByName). If a
+    // later re-entry on the same turn (openSidebarAndContinue -> fetchWithHistory)
+    // sees it, we block a repeat search_the_web so the handoff can't re-trigger
+    // itself in a loop; the model stays free to answer or call another tool.
     const searchExecuted = conversation._searchExecutedTurn === currentTurn;
-    let blockedSearchAttempts = 0;
 
     const streamModelResponse = () => {
       const snapshot = conversation.compactChatCompletions();
@@ -422,47 +378,38 @@ Object.assign(Chat, {
         return;
       }
 
-      // Guard: if the first pending tool call is a duplicate run_search,
-      // return an error tool result so the model continues without
-      // executing the search or navigating the browser.
-      // Bug 2024006: after MAX_RUN_SEARCH_PER_TURN blocked attempts, remove
-      // the tool entirely so the model is forced to respond with text.
-      // @todo Bug 2006159 - Check all pending tool calls, not just the first
       const firstPending = pendingToolCalls[0]?.function;
-      if (firstPending?.name === RUN_SEARCH && searchExecuted) {
-        blockedSearchAttempts++;
-
-        const blockedCalls = pendingToolCalls.slice(0, 1).map(tc => ({
-          id: tc.id,
-          type: "function",
-          function: {
-            name: tc.function.name,
-            arguments: tc.function.arguments || "{}",
-          },
-        }));
-        conversation.addAssistantMessage("function", {
-          tool_calls: blockedCalls,
-        });
-
+      // A search handoff already ran this turn (a prior fetchWithHistory that
+      // openSidebarAndContinue re-entered on the same turn). Block a repeat
+      // search_the_web and force a text-only turn so the assistant wraps up
+      // rather than re-triggering the handoff, which would loop indefinitely.
+      if (firstPending?.name === SEARCH_THE_WEB && searchExecuted) {
         for (const tc of pendingToolCalls.slice(0, 1)) {
-          const content = {
+          // Append the tool_call before the error result so the message order
+          // satisfies OpenAI's assistant-then-tool sequence.
+          conversation.addAssistantMessage("function", {
+            tool_calls: [
+              {
+                id: tc.id,
+                type: "function",
+                function: {
+                  name: tc.function.name,
+                  arguments: tc.function.arguments || "{}",
+                },
+              },
+            ],
+          });
+          conversation.addToolCallMessage({
             tool_call_id: tc.id,
-            body: "ERROR: run_search tool call error: You may only run one search per user message. Respond to the user with what you have already found and ask if they want you to proceed with the next search. Do not hallucinate search results.",
+            body: "ERROR: search_the_web tool call error: You have already searched this turn. Respond to the user with what you found and ask if they want you to search again.",
             name: tc.function.name,
-          };
-          conversation.addToolCallMessage(content);
+          });
           recordToolCallEvent({
             toolName: tc.function.name,
             mode,
             conversation,
             error: "duplicate_search",
           });
-        }
-
-        if (blockedSearchAttempts === MAX_RUN_SEARCH_PER_TURN) {
-          chatToolsConfig = chatToolsConfig.filter(
-            t => t.function?.name !== RUN_SEARCH
-          );
         }
         continue;
       }
@@ -569,15 +516,6 @@ Object.assign(Chat, {
           continue;
         }
 
-        // Make sure we aren't using a generated query when we shouldn't be
-        if (
-          toolName === RUN_SEARCH &&
-          isVerbatimQuery &&
-          toolParams.hasOwnProperty("query")
-        ) {
-          delete toolParams.query;
-        }
-
         // Capture the embedder element before running tools, as navigation during
         // a tool call such as search handoff can replace the browsing context.
         const originalEmbedderElement = browsingContext?.embedderElement;
@@ -586,7 +524,17 @@ Object.assign(Chat, {
         // try/catch so the conversation can be updated for failed calls.
         let result;
         let toolCallError = "";
+        let isSearchHandoff = false;
         const featureGatedHandler = FEATURE_GATED_HANDLERS.get(toolName);
+        const dispatchTool = name =>
+          executeToolByName(
+            name,
+            toolParams,
+            id,
+            conversation,
+            browsingContext,
+            mode
+          );
         try {
           if (featureGatedHandler) {
             result = await featureGatedHandler(
@@ -594,23 +542,24 @@ Object.assign(Chat, {
               conversation,
               signal
             );
-            // One search per turn: swap search_the_web out and offer the Google
-            // handoff so the assistant can fall back (no-op for other tools).
-            chatToolsConfig = maybeApplySearchTheWebPostExecution(
-              toolName,
-              chatToolsConfig,
-              isVerbatimQuery
-            );
+            /**
+             * On the first invocation of search_the_web, SearchProvider-powered
+             * web search is done. On the second invocation, search handoff (previously
+             * run_search tool) is called. The logic for run_search is maintained, including
+             * the instruction to use the user's original query if this is the first turn
+             */
+            if (result.requiresSearchHandoff) {
+              isSearchHandoff = true;
+              // Mark the turn as having handed off, so a re-entry on the same
+              // turn (via openSidebarAndContinue) blocks a repeat search.
+              conversation._searchExecutedTurn = currentTurn;
+              if (isVerbatimQuery) {
+                delete toolParams.query;
+              }
+              result = await dispatchTool(RUN_SEARCH);
+            }
           } else {
-            result = await executeToolByName(
-              toolName,
-              toolParams,
-              toolCall.id,
-              conversation,
-              browsingContext,
-              mode,
-              currentTurn
-            );
+            result = await dispatchTool(toolName);
           }
 
           // Debug logging: Record the data returned by the tool before feeding it to the model
@@ -660,7 +609,7 @@ Object.assign(Chat, {
         }
 
         // Perform the search handoff if the RUN_SEARCH tool was run.
-        if (toolName === RUN_SEARCH) {
+        if (isSearchHandoff) {
           // Commit here because we return early below and never reach the
           // post-loop commit.
           conversation.securityProperties.commit();
@@ -671,22 +620,9 @@ Object.assign(Chat, {
           const win = originalEmbedderElement?.documentGlobal;
           if (!win || win.closed) {
             console.error(
-              "run_search: Associated window not available or closed, aborting search handoff"
+              "search_the_web: Associated window not available or closed, aborting search handoff"
             );
             return;
-          }
-
-          const searchHandoffTab = win.gBrowser.getTabForBrowser(
-            originalEmbedderElement
-          );
-          if (!searchHandoffTab) {
-            console.error(
-              "run_search: Original tab no longer exists, aborting search handoff"
-            );
-            return;
-          }
-          if (!searchHandoffTab.selected) {
-            win.gBrowser.selectedTab = searchHandoffTab;
           }
 
           lazy.AIWindow.openSidebarAndContinue(win, conversation);

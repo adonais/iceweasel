@@ -844,7 +844,11 @@ add_task(async function test_Chat_fetchWithHistory_uses_modelId_from_pref() {
 });
 
 add_task(
-  async function test_Chat_fetchWithHistory_run_search_executes_only_once() {
+  async function test_Chat_fetchWithHistory_search_the_web_escalates_to_handoff() {
+    // A repeat search_the_web in the same turn escalates: runSearchTheWeb
+    // returns { requiresSearchHandoff: true }, the Chat loop reroutes to
+    // executeToolByName(RUN_SEARCH), fires the handoff, and ends the turn —
+    // while the tool-result stays labeled search_the_web.
     const sb = sinon.createSandbox();
     try {
       let callCount = 0;
@@ -858,22 +862,8 @@ add_task(
                   {
                     id: "call_search_001",
                     function: {
-                      name: "run_search",
+                      name: "search_the_web",
                       arguments: JSON.stringify({ query: "test query" }),
-                    },
-                  },
-                ],
-              };
-            } else if (callCount === 2) {
-              yield {
-                toolCalls: [
-                  {
-                    id: "call_search_002",
-                    function: {
-                      name: "run_search",
-                      arguments: JSON.stringify({
-                        query: "second search query",
-                      }),
                     },
                   },
                 ],
@@ -889,6 +879,7 @@ add_task(
         },
       };
 
+      // The escalation reroutes to run_search under the hood.
       const runSearchStub = sb
         .stub(RunSearch, "runSearch")
         .resolves("search result");
@@ -911,7 +902,7 @@ add_task(
       origLazy.AIWindow.openSidebarAndContinue = openSidebarStub;
 
       const conversation = new ChatConversation({
-        title: "search guard test",
+        title: "search handoff test",
         description: "desc",
         pageUrl: new URL("https://www.firefox.com"),
         pageMeta: {},
@@ -932,6 +923,11 @@ add_task(
         model: TEST_MODEL,
         engine: fakeEngine,
       });
+
+      // A grounded search_the_web has already run this turn, so the model's
+      // next search_the_web call escalates (HANDOFF returns before retrieval).
+      conversation._searchTheWebTurn = conversation.currentTurnIndex();
+
       await Chat.fetchWithHistory({
         conversation,
         browsingContext: context.browsingContext,
@@ -939,50 +935,16 @@ add_task(
 
       Assert.ok(
         runSearchStub.calledOnce,
-        "run_search should be called exactly once"
+        "The escalation reroutes to run_search exactly once"
       );
-
-      // Simulate openSidebarAndContinue calling fetchWithHistory again
-      // on the same conversation (same turn). The guard should block
-      // execution and the model continues generating text.
-      callCount = 1;
-      conversation.addAssistantMessage("text", "");
-      await Chat.fetchWithHistory({
-        conversation,
-        browsingContext: context.browsingContext,
-      });
-
       Assert.ok(
-        runSearchStub.calledOnce,
-        "run_search should still be called exactly once after second fetchWithHistory"
+        openSidebarStub.calledOnce,
+        "The handoff opens the sidebar and continues the conversation"
       );
       Assert.equal(
-        getLastAssistantResponse(conversation).content.body,
-        "Final answer.",
-        "Model should continue generating text after blocked search"
-      );
-
-      // Verify guard message is in conversation with correct text
-      const toolMessages = conversation.messages.filter(
-        msg => msg.role === MESSAGE_ROLE.TOOL
-      );
-      const guardMessage = toolMessages.find(msg =>
-        String(msg.content?.body).includes("ERROR: run_search tool call error:")
-      );
-      Assert.ok(guardMessage, "Guard tool result should be in conversation");
-
-      // Simulate user sending "Go ahead" (new turn). Guard should allow.
-      conversation.addUserMessage("Go ahead", "https://www.firefox.com", 0);
-      conversation.addAssistantMessage("text", "");
-      callCount = 0;
-      await Chat.fetchWithHistory({
-        conversation,
-        browsingContext: context.browsingContext,
-      });
-
-      Assert.ok(
-        runSearchStub.calledTwice,
-        "run_search should be called twice total (once per turn)"
+        callCount,
+        1,
+        "The turn ends at the handoff — the model is not re-invoked"
       );
 
       origLazy.AIWindow.openSidebarAndContinue = origOpenSidebar;

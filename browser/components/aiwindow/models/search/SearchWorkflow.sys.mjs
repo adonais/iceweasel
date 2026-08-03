@@ -136,6 +136,7 @@ const GET_PAGE_CONTENT_TOOL = {
  * @property {number} confidence - Calibrated confidence in [0, 1].
  * @property {string[]} searched_urls - URLs Exa returned (code-tracked).
  * @property {string[]} read_urls - URLs the flow actually fetched (code-tracked).
+ * @property {boolean} requiresSearchHandoff - Boolean indicating whether to route to search handoff
  * @property {string} [error] - Present when the flow could not run.
  */
 
@@ -387,7 +388,12 @@ function failure(searchedUrls, readUrls, message) {
     searched_urls: searchedUrls,
     read_urls: readUrls,
     error: message,
+    requiresSearchHandoff: false,
   };
+}
+
+function shouldCallSearchHandoff(conversation) {
+  return conversation._searchTheWebTurn === conversation.currentTurnIndex();
 }
 
 /**
@@ -406,10 +412,18 @@ function failure(searchedUrls, readUrls, message) {
  * @returns {Promise<SearchWorkflowResult>}
  */
 export async function runSearchTheWeb(toolParams, conversation, signal) {
+  if (shouldCallSearchHandoff(conversation)) {
+    return {
+      requiresSearchHandoff: true,
+    };
+  }
+
   const query = toolParams?.query;
   if (typeof query !== "string" || !query.trim()) {
     return failure([], [], "a non-empty query is required");
   }
+  conversation._searchTheWebTurn = conversation.currentTurnIndex();
+
   const context =
     typeof toolParams?.context === "string" ? toolParams.context : "";
 
@@ -529,5 +543,6 @@ export async function runSearchTheWeb(toolParams, conversation, signal) {
     ...validated,
     searched_urls: searchedUrls,
     read_urls: readUrls,
+    requiresSearchHandoff: false,
   };
 }
