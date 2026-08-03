@@ -5,6 +5,7 @@
 do_get_profile();
 
 const {
+  SEARCH_QUERY,
   getActionLogConfigForTool,
   getActionLogChipsForTool,
   buildActionLogRow,
@@ -28,6 +29,7 @@ add_task(function test_getActionLogConfigForTool_visible_tools() {
       SEARCH_BROWSING_HISTORY,
       GET_USER_MEMORIES,
       GET_NAVIGATION_INFO,
+      SEARCH_QUERY,
     ]) {
       const cfg = getActionLogConfigForTool(toolName, []);
 

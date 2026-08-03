@@ -14,6 +14,8 @@ import {
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 
 export const ACTION_LOG_UI_TYPE = "action-log";
+// TODO: use SEARCH_QUERY from Tools.sys.mjs once the tool call is ready
+export const SEARCH_QUERY = "search_query";
 
 const EMPTY_ROWS = Object.freeze([]);
 
@@ -56,7 +58,6 @@ const TOOL_ACTION_LOG_CONFIG = new Map([
   [
     GET_OPEN_TABS,
     {
-      show: true,
       label: { l10nId: "action-log-searched-open-tabs" },
       pendingLabel: { l10nId: "action-log-searching-tabs" },
     },
@@ -64,7 +65,6 @@ const TOOL_ACTION_LOG_CONFIG = new Map([
   [
     SEARCH_BROWSING_HISTORY,
     {
-      show: true,
       label: { l10nId: "action-log-searched-history" },
       pendingLabel: { l10nId: "action-log-searching-history" },
     },
@@ -72,7 +72,6 @@ const TOOL_ACTION_LOG_CONFIG = new Map([
   [
     GET_PAGE_CONTENT,
     {
-      show: true,
       label: { l10nId: "action-log-read-page" },
       pendingLabel: { l10nId: "action-log-reading-page" },
     },
@@ -80,15 +79,20 @@ const TOOL_ACTION_LOG_CONFIG = new Map([
   [
     RUN_SEARCH,
     {
-      show: true,
       label: { l10nId: "action-log-searched-web" },
+      pendingLabel: { l10nId: "action-log-searching-web" },
+    },
+  ],
+  [
+    SEARCH_QUERY,
+    {
+      label: { l10nId: "action-log-searched-web-exa" },
       pendingLabel: { l10nId: "action-log-searching-web" },
     },
   ],
   [
     GET_USER_MEMORIES,
     {
-      show: true,
       label: { l10nId: "action-log-checked-memories" },
       pendingLabel: { l10nId: "action-log-checking-memories" },
     },
@@ -96,7 +100,6 @@ const TOOL_ACTION_LOG_CONFIG = new Map([
   [
     GET_NAVIGATION_INFO,
     {
-      show: true,
       label: { l10nId: "action-log-searched-settings" },
       pendingLabel: { l10nId: "action-log-searching-settings" },
     },
@@ -104,7 +107,6 @@ const TOOL_ACTION_LOG_CONFIG = new Map([
   [
     WORLD_CUP_MATCHES,
     {
-      show: true,
       label: { l10nId: "action-log-searched-world-cup-matches" },
       pendingLabel: { l10nId: "action-log-searching-world-cup-matches" },
     },
@@ -112,7 +114,6 @@ const TOOL_ACTION_LOG_CONFIG = new Map([
   [
     WORLD_CUP_LIVE,
     {
-      show: true,
       label: { l10nId: "action-log-checked-world-cup-live" },
       pendingLabel: { l10nId: "action-log-checking-world-cup-live" },
     },
@@ -139,7 +140,7 @@ const TOOL_RESULT_TO_CHIPS = new Map([
  *
  * @param {string} toolName
  * @param {object} [body] - tool result body
- * @returns {{ show: boolean, label: ActionLogLabel | null, pendingLabel: ActionLogLabel | null }}
+ * @returns {{ label: ActionLogLabel | null, pendingLabel: ActionLogLabel | null }}
  */
 export function getActionLogConfigForTool(toolName, body) {
   const cfg = TOOL_ACTION_LOG_CONFIG.get(toolName);
@@ -147,7 +148,7 @@ export function getActionLogConfigForTool(toolName, body) {
     return { show: false, label: null, pendingLabel: null };
   }
   const label = typeof cfg.label === "function" ? cfg.label(body) : cfg.label;
-  return { show: cfg.show, label, pendingLabel: cfg.pendingLabel ?? null };
+  return { show: true, label, pendingLabel: cfg.pendingLabel ?? null };
 }
 
 /**
