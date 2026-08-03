@@ -3703,16 +3703,16 @@ static void WriteIniPortable(nsIFile* aProfileDir) {
 
   PR_Write(fd, kGeneral, sizeof(kGeneral) - 1);
 
-  static const char kTabs[] = "[tabs]" NS_LINEBREAK "hover_active=0" NS_LINEBREAK "right_click_close=0" NS_LINEBREAK;
+  static const char kTabs[] = NS_LINEBREAK "[tabs]" NS_LINEBREAK "hover_active=0" NS_LINEBREAK "right_click_close=0" NS_LINEBREAK;
   PR_Write(fd, kTabs, sizeof(kTabs) - 1);
 
-  static const char kAria2[] = "[aria2]" NS_LINEBREAK "path=aria2c" NS_LINEBREAK "arg=" NS_LINEBREAK "rpc=http://127.0.0.1:6800/jsonrpc" NS_LINEBREAK "secret=" NS_LINEBREAK;
+  static const char kAria2[] = NS_LINEBREAK "[aria2]" NS_LINEBREAK "path=aria2c" NS_LINEBREAK "arg=" NS_LINEBREAK "rpc=http://127.0.0.1:6800/jsonrpc" NS_LINEBREAK "secret=" NS_LINEBREAK;
   PR_Write(fd, kAria2, sizeof(kAria2) - 1);
 
-  static const char kChrome[] = "[chrome]" NS_LINEBREAK "uc_url=https://sourceforge.net/projects/libportable/files/Iceweasel/userchrome.7z/download" NS_LINEBREAK "dl_url=https://sourceforge.net/projects/libportable/files/Iceweasel/downloadupchek.7z/download" NS_LINEBREAK "dl32_url=https://sourceforge.net/projects/libportable/files/Iceweasel/downloadupchek.7z/download" NS_LINEBREAK;
+  static const char kChrome[] = NS_LINEBREAK "[chrome]" NS_LINEBREAK "uc_url=https://sourceforge.net/projects/libportable/files/Iceweasel/linux/userchrome.tar.xz/download" NS_LINEBREAK "dl_url=https://sourceforge.net/projects/libportable/files/Iceweasel/linux/downloadupchek.tar.xz/download" NS_LINEBREAK "mg_url=https://sourceforge.net/projects/libportable/files/Iceweasel/linux/mousegestures.tar.xz/download" NS_LINEBREAK "t1_url=https://sourceforge.net/projects/libportable/files/Iceweasel/linux/auto_activate_tab.tar.xz/download" NS_LINEBREAK "t2_url=https://sourceforge.net/projects/libportable/files/Iceweasel/linux/right_click_close_tab.tar.xz/download" NS_LINEBREAK;
   PR_Write(fd, kChrome, sizeof(kChrome) - 1);
 
-  static const char kUpdate[] = "[update]" NS_LINEBREAK ";faster=https://gh-proxy.org/sourceforge" NS_LINEBREAK;
+  static const char kUpdate[] = NS_LINEBREAK "[update]" NS_LINEBREAK ";faster=https://gh-proxy.org/sourceforge" NS_LINEBREAK;
   PR_Write(fd, kUpdate, sizeof(kUpdate) - 1);
 
   PR_Close(fd);

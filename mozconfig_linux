@@ -51,10 +51,10 @@ ac_add_options --disable-debug-symbols
 ac_add_options --disable-sandbox
 
 # Disable data reporting
-MOZ_DATA_REPORTING=
-MOZ_SERVICES_HEALTHREPORT=
-MOZ_TELEMETRY_REPORTING=
-MOZ_NORMANDY=
+# MOZ_DATA_REPORTING=
+# MOZ_SERVICES_HEALTHREPORT=
+# MOZ_TELEMETRY_REPORTING=
+# MOZ_NORMANDY=
 
 # Add-on signing is not required
 MOZ_REQUIRE_SIGNING=
