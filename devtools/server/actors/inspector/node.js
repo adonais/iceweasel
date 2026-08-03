@@ -441,6 +441,10 @@ class NodeActor extends Actor {
    * @returns {boolean}
    */
   hasEventListeners(refreshCache = false) {
+    if (Cu.isDeadWrapper(this.rawNode)) {
+      return false;
+    }
+
     if (this._hasEventListenersCached === undefined || refreshCache) {
       const result = this._eventCollector.hasEventListeners(this.rawNode);
       this._hasEventListenersCached = result;

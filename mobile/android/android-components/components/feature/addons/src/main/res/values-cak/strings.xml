@@ -111,6 +111,8 @@
   <string name="mozac_feature_addons_permissions_downloads_open_description_for_update">Kejaq ri taq yakb\'äl eqasan pan awokisanel.</string>
   <!-- Description for the "find" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_find_description_for_update">Tisik\'ïx rucholajem kitzij konojel ri taq ruwi\' ejaqon.</string>
+  <!-- Description for the "history" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_history_description_for_update">Tok pa runatab\'al okem pa k\'amaya\'l.</string>
   <!-- Description for the "tabHide" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_tab_hide_description_for_update">Ke\'ewäx chuqa\' kek\'ut pe ri taq ruwi\' okem pa k\'amaya\'l.</string>
   <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->

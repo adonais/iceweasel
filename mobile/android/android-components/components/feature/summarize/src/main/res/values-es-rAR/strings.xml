@@ -78,7 +78,7 @@
   <!-- Label for the shake sensitivity slider in settings -->
   <string name="mozac_summarize_settings_shake_sensitivity">Sensibilidad de la sacudida</string>
   <!-- Description for the shake sensitivity slider in settings -->
-  <string name="mozac_summarize_settings_shake_sensitivity_description">Ajuste la fuerza con la que necesita sacudir para activar el resumen.</string>
+  <string name="mozac_summarize_settings_shake_sensitivity_description">Ajustar la fuerza con la que se necesita sacudir para activar el resumen.</string>
   <!-- Low option label for the shake sensitivity slider in settings -->
   <string name="mozac_summarize_settings_shake_sensitivity_low">Baja</string>
   <!-- Medium option label for the shake sensitivity slider in settings -->
@@ -95,4 +95,10 @@
   <string name="mozac_ai_controls_page_summary_description">Las páginas y los resúmenes nunca se almacenan.</string>
   <!-- Button text for the Error dismiss button on Shake to Summarize -->
   <string name="mozac_summarize_error_dissmiss">Descartar</string>
+  <!-- Title for the Mozilla account sign-in screen, shown when summarization results in a connection failure. -->
+  <string name="mozac_summarize_fxa_sign_in_title">Iniciar sesión para resumir</string>
+  <!-- Message on the sign-in screen, inviting the user to continue with an existing Mozilla account or create a new one -->
+  <string xmlns:ns0="http://schemas.android.com/tools" name="mozac_summarize_fxa_sign_in_message" ns0:ignore="BrandUsage">Usá tu cuenta de Mozilla para continuar o creá una para comenzar.</string>
+  <!-- Label for the button that starts the sign-in flow -->
+  <string name="mozac_summarize_fxa_sign_in_button_positive">Iniciar sesión</string>
 </resources>

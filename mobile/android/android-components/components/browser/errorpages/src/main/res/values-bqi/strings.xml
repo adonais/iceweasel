@@ -9,6 +9,18 @@
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
   <string name="mozac_browser_errorpages_page_refresh">قپ ریت دووارته</string>
+  <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
+  <string name="mozac_browser_errorpages_archive_check_button">نوسخه آرشیو بیڌه ن واجۊری کۊنین</string>
+  <!-- The label shown on the archive button while the archived copy is being looked up. -->
+  <string name="mozac_browser_errorpages_archive_checking">واجۊری آرشیو</string>
+  <!-- The message shown when no archived copy of the unreachable page could be found. -->
+  <string name="mozac_browser_errorpages_archive_not_found">هیچ نوسخه آرشیو بیڌه ای نجوست.</string>
+  <!-- A link, shown after no archived copy was found, that searches the web for the page instead. -->
+  <string name="mozac_browser_errorpages_archive_search_web">پیتینیڌن من وب.</string>
+  <!-- The message shown when the archive service could not be reached to look up an archived copy. -->
+  <string name="mozac_browser_errorpages_archive_unreachable">دسرسی و سرویس آرشیو مومکن نبی.</string>
+  <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
+  <string name="mozac_browser_errorpages_archive_retry">قپ ریت دووارته.</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">نتره درخاستته کامل کونه</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->
@@ -66,7 +78,7 @@
   <!-- The document title and heading of the error page shown when the browser prevents loading a website on a restricted port. -->
   <string name="mozac_browser_errorpages_port_blocked_title">درگه و دلیلا ٱمنیتی مئدۊد وابیڌه</string>
   <!-- The error message shown when the browser prevents loading a website on a restricted port. -->
-  <string name="mozac_browser_errorpages_port_blocked_message"><![CDATA[<p>نشۊوی درخاست دیاریه (سی مسال<q>mozilla.org:80</q>سی درگه ۸۰ و ری mozilla.org) درگهی ن و کار اگره ک من هالت عادی و عونوان کاربوردی <em>و غیر</em> ز وبگشتن و کار اروه. گشت گر سی زفت کردن وو ٱمنیت ایسا ای درخاست ن لقو کرد.</p>]]></string>
+  <string name="mozac_browser_errorpages_port_blocked_message"><![CDATA[<p>نشۊوی درخاست دیاریه (سی مسال<q>mozilla.org:80</q>سی پورت 80 و ری mozilla.org) پورتی ن و کار اگره ک من هالت عادی و عونوان کاربوردی <em>و غیر</em> ز وبگشتن و کار اروه. گشت گر سی زفت کردن وو ٱمنیت ایسا ای درخاست ن لقو کرد.</p>]]></string>
   <!-- The document title and heading of the error page shown when the Internet connection is disrupted while loading a website. -->
   <string name="mozac_browser_errorpages_net_reset_title">منپیز ز نۊ ره اۊفتا</string>
   <!-- The error message shown when the Internet connection is disrupted while loading a website. -->
@@ -88,7 +100,7 @@
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_host_title">نشۊوی ن نجوست</string>
   <!-- In the example, the two URLs in markup do not need to be translated. -->
-  <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>گشت گر نترست سرور میزبووݩ ن سی نشۊوی داڌه بیڌه بجۊره.</p>\n<ul>\n<li>نشۊوی ن سی غلتا املایی واجۊری کۊنین، جۊر: <strong>ww</strong>.example.com و جا <strong>www</strong>.example.com.</li>\n<li>ٱر نترستین هیچ بلگه ای ن بار ونی کۊنین، داده گۊشی یا منپیز وای فای خوتووݩ ن واجۊری کۊنین.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>گشت گر نترست سرور هاست ن سی نشۊوی داڌه بیڌه بجۊره.</p>\n<ul>\n<li>نشۊوی ن سی غلتا املایی واجۊری کۊنین، جۊر: <strong>ww</strong>.example.com و جا <strong>www</strong>.example.com.</li>\n<li>ٱر نترستین هیچ بلگه ای ن بار ونی کۊنین، داده گۊشی یا منپیز وای فای خوتووݩ ن واجۊری کۊنین.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_no_internet_title_2">منی موشکلی وا منپیز و اینترنت ایسا هڌ</string>
   <!-- The main body text of this error page. It will be shown beneath the title -->

@@ -946,7 +946,7 @@
     This is the subtitle of promote search widget dialog. %1$s will get replaced with the name
     of the app (e.g. "Focus")
   -->
-  <string name="promote_search_widget_dialog_subtitle">Ti lasciamo alla tua navigazione privata, ma la prossima volta ricorda che puoi iniziare più rapidamente utilizzando il widget di %1$s nella schermata principale.</string>
+  <string name="promote_search_widget_dialog_subtitle">Ti lasciamo alla tua navigazione anonima, ma la prossima volta ricorda che puoi iniziare più rapidamente utilizzando il widget di %1$s nella schermata principale.</string>
   <!--
     This is te text from add search widget to home screen button .The button is located on
     promote search widget dialog.

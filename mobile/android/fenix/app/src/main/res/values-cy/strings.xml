@@ -668,8 +668,6 @@
   <string name="nova_onboarding_marketing_primary_button_text" tools:ignore="BrandUsage,UnusedResources">Helpu Firefox</string>
   <!-- Marketing onboarding primary button text. -->
   <string name="nova_onboarding_marketing_primary_button_text_3">Iawn</string>
-  <!-- Marketing onboarding primary button text. -->
-  <string name="nova_onboarding_marketing_primary_button_text_2">Caniatáu a Pharhau</string>
   <!-- Marketing onboarding secondary button text. -->
   <string name="nova_onboarding_marketing_secondary_button_text" tools:ignore="UnusedResources">Dim Diolch</string>
   <!-- Marketing onboarding secondary button text. -->
@@ -989,7 +987,7 @@
   <!-- Summary for local network access preference indicating access is allowed -->
   <string name="local_network_access_allowed_summary">Caniatawyd</string>
   <!-- Summary for local network access preference indicating access is not allowed -->
-  <string name="local_network_access_not_allowed_summary">Dim caniatáu</string>
+  <string name="local_network_access_not_allowed_summary">Dim caniatâd</string>
   <!--
     Add-on Permissions
 
@@ -1740,6 +1738,16 @@
   <string name="tab_group_three_dot_menu_delete">Dileu</string>
   <!-- Text shown on the close button for a tab group on the three dot menu -->
   <string name="tab_group_three_dot_menu_close">Cau</string>
+  <!-- Title for the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_title">Dadgrwpio grŵp tab?</string>
+  <!-- Text shown in the body of the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_body">Bydd y tabiau yn parhau ar agor ar y ddyfais hon, ond bydd y grŵp yn cael ei ddileu.</string>
+  <!-- Text shown on the Don't Ask Again checkbox button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_dont_ask_again">Peidio gofyn eto</string>
+  <!-- Text shown on the confirm button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_confirm">Dadgrwpio</string>
+  <!-- Text shown on the cancel button in the Ungroup tab group confirmation dialog. -->
+  <string name="ungroup_tab_group_confirmation_dialog_cancel">Na</string>
   <!--
     Color labels for tab groups, used for accessibility and selection UI.
 
@@ -3198,6 +3206,14 @@
   <string name="ip_protection_location_unavailable" tools:ignore="UnusedResources">Dyw\'r lleoliad ddim ar gael. Dewiswch leoliad arall.</string>
   <!-- Snackbar (in-app pop-up notification) text shown when the previously selected browser VPN location is unavailable and the recommended location was used instead. -->
   <string name="ip_protection_location_unavailable_recommended_snackbar" tools:ignore="UnusedResources">Dyw\'r lleoliad VPN dewiswyd ddim ar gael. Wedi\'i gysylltu â\'r lleoliad cywir.</string>
+  <!-- Title for the card shown to the user when we are unable to fetch server locations -->
+  <string name="ip_protection_locations_unavailable_title">Lleoliadau ddim ar gael</string>
+  <!-- Description for the card shown to the user when we are unable to fetch server locations -->
+  <string name="ip_protection_locations_unavailable_description">Wedi newid i\'r lleoliad sy\'n cael ei argymell.</string>
+  <!-- Title for the browser VPN location selection screen (displayed in the app bar) -->
+  <string name="ip_protection_locations_title">Dewis Lleoliad VPN</string>
+  <!-- Content description for the browser VPN location selection screen top bar back button -->
+  <string name="ip_protection_locations_navigate_back_button_content_description">Mynd nôl</string>
   <!-- Title for the card shown to the user when we are unable to fetch server locations -->
   <string name="ip_protection_location_unavailable_title" tools:ignore="UnusedResources">Dyw\'r lleoliad blaenorol ddim ar gael</string>
   <!-- Description for the card shown to the user when we are unable to fetch server locations -->

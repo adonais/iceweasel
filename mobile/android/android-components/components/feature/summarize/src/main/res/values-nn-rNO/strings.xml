@@ -95,4 +95,8 @@
   <string name="mozac_ai_controls_page_summary_description">Sider og samandrag blir aldri lagra.</string>
   <!-- Button text for the Error dismiss button on Shake to Summarize -->
   <string name="mozac_summarize_error_dissmiss">Ignorer</string>
+  <!-- Title for the Mozilla account sign-in screen, shown when summarization results in a connection failure. -->
+  <string name="mozac_summarize_fxa_sign_in_title">Logg inn for å sanmanfatte</string>
+  <!-- Label for the button that starts the sign-in flow -->
+  <string name="mozac_summarize_fxa_sign_in_button_positive">Logg inn</string>
 </resources>

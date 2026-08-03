@@ -4290,6 +4290,70 @@ const MESSAGES = () => [
     },
     targeting: "true",
   },
+  // For manually testing the splitViewUsed trigger. See the "trigger" field.
+  {
+    id: "SPLIT_VIEW_SMART_WINDOW_CALLOUT",
+    template: "feature_callout",
+    groups: [],
+    provider: "panel_local_testing",
+    content: {
+      id: "SPLIT_VIEW_SMART_WINDOW_CALLOUT",
+      template: "multistage",
+      backdrop: "transparent",
+      transitions: false,
+      screens: [
+        {
+          id: "SPLIT_VIEW_SMART_WINDOW_CALLOUT",
+          anchors: [
+            {
+              selector: "#split-view-button",
+              panel_position: {
+                anchor_attachment: "bottomcenter",
+                callout_attachment: "topright",
+              },
+            },
+          ],
+          content: {
+            position: "callout",
+            padding: 16,
+            width: "330px",
+            title: "Working across multiple tabs?",
+            subtitle: "Try Smart Window to compare or reason across them.",
+            primary_button: {
+              label: "Try Smart Window",
+              action: {
+                type: "MULTI_ACTION",
+                dismiss: true,
+                data: {
+                  actions: [
+                    {
+                      type: "OPEN_ABOUT_PAGE",
+                      data: {
+                        args: "newtab",
+                        where: "tab",
+                      },
+                    },
+                    { type: "FXA_AIWINDOW_SIGNIN_FLOW" },
+                  ],
+                },
+              },
+            },
+            dismiss_button: { action: { dismiss: true } },
+          },
+        },
+      ],
+    },
+    // Example of message targeting on the trigger's splitViewCreateCount
+    // context, to exclude users who are creating a Split View for the first
+    // time.
+    targeting: "splitViewCreateCount > 1",
+    trigger: {
+      id: "splitViewUsed",
+    },
+    frequency: {
+      lifetime: 2,
+    },
+  },
 ];
 
 export const PanelTestProvider = {
