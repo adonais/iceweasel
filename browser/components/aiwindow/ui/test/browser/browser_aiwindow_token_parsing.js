@@ -10,7 +10,7 @@ const {
   consumeStreamChunk,
   flushTokenRemainder,
 } = ChromeUtils.importESModule(
-  "chrome://browser/content/aiwindow/modules/TokenStreamParser.mjs"
+  "moz-src:///browser/components/aiwindow/models/TokenStreamParser.sys.mjs"
 );
 
 add_setup(async function setup() {

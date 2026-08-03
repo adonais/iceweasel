@@ -494,7 +494,10 @@ add_task(
 // Inline @mention must reach the prompt builder as part of `contextMentions`.
 add_task(async function test_inline_mention_reaches_prompt_builder() {
   const sb = this.sinon.createSandbox();
-  const getRealTimeInfoSpy = sb.spy(this.ChatConversation, "getRealTimeInfo");
+  const injectSpy = sb.spy(
+    this.ChatConversation.prototype,
+    "injectRealTimeContext"
+  );
   const mockEngineManager = new MockEngineManager();
   const win = await openAIWindow();
 
@@ -508,7 +511,8 @@ add_task(async function test_inline_mention_reaches_prompt_builder() {
     // Ensure the prompt builder has run.
     await mockEngineManager.respondTo({ purpose: "chat", response: "ok" });
 
-    const { contextMentions } = getRealTimeInfoSpy.firstCall.args[0];
+    const userMessage = injectSpy.firstCall.args[0];
+    const { contextMentions } = userMessage.content;
     Assert.equal(
       contextMentions.length,
       1,

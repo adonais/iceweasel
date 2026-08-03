@@ -2,10 +2,18 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { openAIEngine, MODEL_FEATURES, SERVICE_TYPES, PURPOSES } =
-  ChromeUtils.importESModule(
-    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-  );
+const {
+  openAIEngine,
+  MODEL_FEATURES,
+  SERVICE_TYPES,
+  PURPOSES,
+  _setRemoteClientForTesting,
+  _clearRemoteClientForTesting,
+} = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+);
+
+registerCleanupFunction(() => _clearRemoteClientForTesting());
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
@@ -42,7 +50,8 @@ add_task(async function test_build_with_object_form_no_rs_read() {
   const sb = sinon.createSandbox();
   try {
     const fakeEngine = { runWithGenerator() {} };
-    const getRemoteClientSpy = sb.spy(openAIEngine, "getRemoteClient");
+    const fakeClientGet = sb.stub().resolves([]);
+    _setRemoteClientForTesting({ get: fakeClientGet });
     sb.stub(openAIEngine, "_createEngine").resolves(fakeEngine);
 
     const config = {
@@ -71,9 +80,9 @@ add_task(async function test_build_with_object_form_no_rs_read() {
       "feature should match passed-in config"
     );
     Assert.equal(
-      getRemoteClientSpy.callCount,
+      fakeClientGet.callCount,
       0,
-      "getRemoteClient must not be called on object-form build"
+      "RS client.get must not be called on object-form build"
     );
   } finally {
     sb.restore();

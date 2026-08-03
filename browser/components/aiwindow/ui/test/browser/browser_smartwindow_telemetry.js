@@ -9,7 +9,7 @@ const { SmartWindowTelemetry } = ChromeUtils.importESModule(
 const { GetPageContent, RunSearch } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
-const { loadCallContext } = ChromeUtils.importESModule(
+const { buildEngineForFeature } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs"
 );
 const { MODEL_FEATURES } = ChromeUtils.importESModule(
@@ -585,9 +585,7 @@ add_task(async function test_run_search_toolcall_telemetry() {
         Assert.equal(events?.length, 1, "One tool_call event recorded");
 
         const aiWindow = browser.contentDocument.querySelector("ai-window");
-        const { model: expectedModel } = await loadCallContext(
-          MODEL_FEATURES.CHAT
-        );
+        const { engine } = await buildEngineForFeature(MODEL_FEATURES.CHAT);
 
         Assert.deepEqual(
           events[0].extra,
@@ -596,8 +594,8 @@ add_task(async function test_run_search_toolcall_telemetry() {
             chat_id: conversationId,
             error: "",
             location: "fullpage",
-            model: expectedModel,
-            prompt_version: aiWindow.conversation.chatPromptVersion,
+            model: engine.model,
+            prompt_version: aiWindow.conversation.systemPromptVersion,
             // user message + assistant tool-call + tool-result = 3 at the
             // time the event was recorded. The conversation may add more
             // messages afterwards, so this can't be derived live.

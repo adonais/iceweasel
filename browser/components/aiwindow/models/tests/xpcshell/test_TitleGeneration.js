@@ -6,7 +6,12 @@ const { generateChatTitle } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/TitleGeneration.sys.mjs"
 );
 
-const { openAIEngine } = ChromeUtils.importESModule(
+const {
+  openAIEngine,
+  MODEL_FEATURES,
+  _setRemoteClientForTesting,
+  _clearRemoteClientForTesting,
+} = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
 );
 
@@ -20,21 +25,64 @@ const { sinon } = ChromeUtils.importESModule(
 const PREF_API_KEY = "browser.smartwindow.apiKey";
 const PREF_ENDPOINT = "browser.smartwindow.endpoint";
 const PREF_MODEL = "browser.smartwindow.model";
+const PREF_CUSTOM_PROMPTS = "browser.smartwindow.customPrompts";
 
 const API_KEY = "test-api-key";
 const ENDPOINT = "https://api.test-endpoint.com/v1";
 const MODEL = "test-model";
 
+// Fake RS records returned by getRemoteClient for TITLE_GENERATION
+const FAKE_RECORDS = [
+  {
+    feature: MODEL_FEATURES.TITLE_GENERATION,
+    version: "1.0",
+    model: MODEL,
+    is_default: true,
+    parameters: {},
+    service_type: "ai",
+    purpose: "title-generation",
+    prompts: "Summarize: {current_tab}",
+  },
+];
+
 /**
  * Cleans up preferences after testing
  */
 registerCleanupFunction(() => {
-  for (let pref of [PREF_API_KEY, PREF_ENDPOINT, PREF_MODEL]) {
+  for (let pref of [
+    PREF_API_KEY,
+    PREF_ENDPOINT,
+    PREF_MODEL,
+    PREF_CUSTOM_PROMPTS,
+  ]) {
     if (Services.prefs.prefHasUserValue(pref)) {
       Services.prefs.clearUserPref(pref);
     }
   }
 });
+
+/**
+ * Creates a sandbox with stubs for openAIEngine methods used by buildConversation/loadPrompt.
+ * Returns { sb, fakeEngineInstance } — caller must call sb.restore() in finally.
+ *
+ * @param {object} engineRunStub - Sinon stub or resolved value for fakeEngineInstance.run.
+ * @param {sinon.SinonSandbox} [existingSb] - Reuse an existing sandbox instead of creating one.
+ * @returns {{ sb: sinon.SinonSandbox, fakeEngineInstance: object }}
+ */
+function setupStubs(engineRunStub, existingSb) {
+  const sb = existingSb ?? sinon.createSandbox();
+  const fakeEngineInstance = { run: engineRunStub };
+
+  _setRemoteClientForTesting({
+    get: sb.stub().resolves(FAKE_RECORDS),
+  });
+  sb.stub(openAIEngine, "build").resolves(fakeEngineInstance);
+  sb.stub(openAIEngine, "getFxAccountToken").resolves(null);
+
+  return { sb, fakeEngineInstance };
+}
+
+registerCleanupFunction(() => _clearRemoteClientForTesting());
 
 /**
  * Test that generateChatTitle successfully generates a title
@@ -51,11 +99,10 @@ add_task(async function test_generateChatTitle_success() {
       finalOutput: "Weather Forecast Query",
     };
 
-    const fakeEngineInstance = {
-      run: sb.stub().resolves(mockResponse),
-    };
-
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
+    const { fakeEngineInstance } = setupStubs(
+      sb.stub().resolves(mockResponse),
+      sb
+    );
 
     const message = "What's the weather like today?";
     const currentTab = {
@@ -136,11 +183,10 @@ add_task(async function test_generateChatTitle_no_tab_info() {
       finalOutput: "General Question",
     };
 
-    const fakeEngineInstance = {
-      run: sb.stub().resolves(mockResponse),
-    };
-
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
+    const { fakeEngineInstance } = setupStubs(
+      sb.stub().resolves(mockResponse),
+      sb
+    );
 
     const message = "Tell me about AI";
     const currentTab = null;
@@ -175,11 +221,10 @@ add_task(async function test_generateChatTitle_empty_tab_fields() {
       finalOutput: "Untitled Chat",
     };
 
-    const fakeEngineInstance = {
-      run: sb.stub().resolves(mockResponse),
-    };
-
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
+    const { fakeEngineInstance } = setupStubs(
+      sb.stub().resolves(mockResponse),
+      sb
+    );
 
     const message = "Hello";
     const currentTab = {
@@ -210,11 +255,7 @@ add_task(async function test_generateChatTitle_engine_error() {
 
   const sb = sinon.createSandbox();
   try {
-    const fakeEngineInstance = {
-      run: sb.stub().rejects(new Error("Engine failed")),
-    };
-
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
+    setupStubs(sb.stub().rejects(new Error("Engine failed")), sb);
 
     const message = "Test message for error handling";
     const currentTab = {
@@ -243,55 +284,44 @@ add_task(async function test_generateChatTitle_malformed_response() {
   Services.prefs.setStringPref(PREF_ENDPOINT, ENDPOINT);
   Services.prefs.setStringPref(PREF_MODEL, MODEL);
 
-  const sb = sinon.createSandbox();
+  // Test with missing finalOutput
+  let sb = sinon.createSandbox();
   try {
-    // Test with missing finalOutput
-    const mockResponse1 = {};
-    let fakeEngineInstance = {
-      run: sb.stub().resolves(mockResponse1),
-    };
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
-
+    setupStubs(sb.stub().resolves({}), sb);
     let title = await generateChatTitle("test message one two", null);
     Assert.equal(
       title,
       "test message one two...",
       "Should return first four words for missing finalOutput"
     );
-
-    // Test with empty string finalOutput
+  } finally {
     sb.restore();
-    const sb2 = sinon.createSandbox();
-    const mockResponse2 = { finalOutput: "" };
-    fakeEngineInstance = {
-      run: sb2.stub().resolves(mockResponse2),
-    };
-    sb2.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
+  }
 
-    title = await generateChatTitle("another test message here", null);
+  // Test with empty string finalOutput
+  sb = sinon.createSandbox();
+  try {
+    setupStubs(sb.stub().resolves({ finalOutput: "" }), sb);
+    let title = await generateChatTitle("another test message here", null);
     Assert.equal(
       title,
       "another test message here...",
       "Should return first four words for empty finalOutput"
     );
+  } finally {
+    sb.restore();
+  }
 
-    // Test with null finalOutput
-    sb2.restore();
-    const sb3 = sinon.createSandbox();
-    const mockResponse3 = { finalOutput: null };
-    fakeEngineInstance = {
-      run: sb3.stub().resolves(mockResponse3),
-    };
-    sb3.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
-
-    title = await generateChatTitle("short test here", null);
+  // Test with null finalOutput
+  sb = sinon.createSandbox();
+  try {
+    setupStubs(sb.stub().resolves({ finalOutput: null }), sb);
+    let title = await generateChatTitle("short test here", null);
     Assert.equal(
       title,
       "short test here...",
       "Should return first four words for null finalOutput"
     );
-
-    sb3.restore();
   } finally {
     sb.restore();
   }
@@ -307,15 +337,10 @@ add_task(async function test_generateChatTitle_trim_whitespace() {
 
   const sb = sinon.createSandbox();
   try {
-    const mockResponse = {
-      finalOutput: "  Title With Spaces  \n\n",
-    };
-
-    const fakeEngineInstance = {
-      run: sb.stub().resolves(mockResponse),
-    };
-
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
+    setupStubs(
+      sb.stub().resolves({ finalOutput: "  Title With Spaces  \n\n" }),
+      sb
+    );
 
     const title = await generateChatTitle("test", null);
 
@@ -339,11 +364,7 @@ add_task(async function test_generateChatTitle_short_message() {
 
   const sb = sinon.createSandbox();
   try {
-    const fakeEngineInstance = {
-      run: sb.stub().rejects(new Error("Engine failed")),
-    };
-
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
+    setupStubs(sb.stub().rejects(new Error("Engine failed")), sb);
 
     // Test with three words
     let title = await generateChatTitle("Hello there friend", null);
@@ -387,11 +408,10 @@ add_task(async function test_generateChatTitle_with_assistant_response() {
 
   const sb = sinon.createSandbox();
   try {
-    const mockResponse = { finalOutput: "Firefox Memories Location" };
-    const fakeEngineInstance = {
-      run: sb.stub().resolves(mockResponse),
-    };
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
+    const { fakeEngineInstance } = setupStubs(
+      sb.stub().resolves({ finalOutput: "Firefox Memories Location" }),
+      sb
+    );
 
     const message = "where are my memories";
     const currentTab = { url: "", title: "", description: "" };
@@ -441,11 +461,7 @@ add_task(async function test_generateChatTitle_long_message() {
 
   const sb = sinon.createSandbox();
   try {
-    const fakeEngineInstance = {
-      run: sb.stub().rejects(new Error("Engine failed")),
-    };
-
-    sb.stub(openAIEngine, "_createEngine").resolves(fakeEngineInstance);
+    setupStubs(sb.stub().rejects(new Error("Engine failed")), sb);
 
     const message = "This is a very long message with many words";
     const title = await generateChatTitle(message, null);

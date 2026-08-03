@@ -5,7 +5,7 @@
  */
 
 import {
-  openAIEngine,
+  getRemoteClient,
   selectMainConfig,
   MODEL_PREF,
   FEATURE_MAJOR_VERSIONS,
@@ -13,6 +13,8 @@ import {
   PURPOSES,
   SERVICE_TYPES,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
+import { Conversation } from "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs";
 
 const CUSTOM_PROMPTS_PREF = "browser.smartwindow.customPrompts";
 const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
@@ -51,7 +53,7 @@ function getDefaultServiceType(feature) {
  * @returns {Promise<object>} The selected Remote Settings record
  */
 async function selectFeatureConfig(feature, opts = {}) {
-  const client = openAIEngine.getRemoteClient();
+  const client = getRemoteClient();
   const allRecords = await client.get();
 
   const featureConfigs = allRecords.filter(r => r.feature === feature);
@@ -91,15 +93,14 @@ async function selectFeatureConfig(feature, opts = {}) {
 }
 
 /**
- * Loads the call context (model, parameters, serviceType, purpose) for a feature.
+ * Resolve the RS record for a feature and build a fresh openAIEngine +
+ * inference parameters.
  *
- * @param {string} feature - Feature identifier from MODEL_FEATURES
+ * @param {string} feature
  * @param {object} [opts]
- * @param {number} [opts.majorVersionOverride] - Override the hardcoded major version
- * @param {string} [opts.modelChoiceIdOverride] - Override the user's model-choice pref
- * @returns {Promise<{model: string, parameters: object, serviceType: string, purpose: string}>}
+ * @returns {Promise<{engine: openAIEngine, parameters: object}>}
  */
-export async function loadCallContext(feature, opts = {}) {
+export async function buildEngineForFeature(feature, opts = {}) {
   const mainConfig = await selectFeatureConfig(feature, opts);
 
   let parameters = mainConfig.parameters ?? {};
@@ -110,16 +111,45 @@ export async function loadCallContext(feature, opts = {}) {
       parameters = {};
     }
   }
+  const serviceType = mainConfig.service_type ?? getDefaultServiceType(feature);
+  const purpose =
+    mainConfig.purpose ??
+    FEATURE_PURPOSES[feature] ??
+    FEATURE_PURPOSES[DEFAULT_PURPOSE];
 
-  return {
+  const modelChoiceId =
+    opts.modelChoiceIdOverride ??
+    Services.prefs.getStringPref(MODEL_CHOICE_PREF, "");
+  const { baseURL, apiKey } = openAIEngine.resolveEndpointConfig(modelChoiceId);
+
+  const engine = await openAIEngine.build({
     model: mainConfig.model,
-    parameters,
-    serviceType: mainConfig.service_type ?? getDefaultServiceType(feature),
-    purpose:
-      mainConfig.purpose ??
-      FEATURE_PURPOSES[feature] ??
-      FEATURE_PURPOSES[DEFAULT_PURPOSE],
-  };
+    serviceType,
+    purpose,
+    flowId: opts.flowId ?? null,
+    feature,
+    baseURL,
+    apiKey,
+  });
+
+  return { engine, parameters };
+}
+
+/**
+ * Build a ready-to-use Conversation for a feature: resolves
+ * model/parameters/serviceType/purpose from RS, builds the engine, and
+ * returns a fresh Conversation wired to both.
+ *
+ * @param {string} feature - MODEL_FEATURES.*
+ * @param {object} [opts]
+ * @param {string|null} [opts.flowId]
+ * @param {number} [opts.majorVersionOverride]
+ * @param {string} [opts.modelChoiceIdOverride] - Override the user's model-choice pref
+ * @returns {Promise<Conversation>}
+ */
+export async function buildConversation(feature, opts = {}) {
+  const { engine, parameters } = await buildEngineForFeature(feature, opts);
+  return new Conversation({ feature, engine, parameters });
 }
 
 /**

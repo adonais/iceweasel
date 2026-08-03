@@ -12,20 +12,13 @@
  * 4. Returns the final list of memories objects
  *
  * `generateMemories` requires 3 arguments:
- * 1. `engine`: an instance of `openAIEngine` to call the LLM API
+ * 1. `conversation`: a Conversation instance, reused across the three LLM calls (each step clears messages before setSystemMessage / addUserMessage)
  * 2. `sources`: an object mapping user data source types to aggregated records (i.e., {history: [domainItems, titleItems, searchItems]})
  * 3. `existingMemoriesList`: an array of existing memory summary strings to deduplicate against
- *
- * Example Usage:
- * const ctx = await loadCallContext(MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM);
- * const engine = await openAIEngine.build({ model: ctx.model, serviceType: ctx.serviceType, purpose: ctx.purpose, flowId: null, feature: MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM });
- * const sources = {history: [domainItems, titleItems, searchItems]};
- * const existingMemoriesList = [...]; // Array of existing memory summary strings; this should be fetched from memory storage
- * const newMemories = await generateMemories(engine, sources, existingMemoriesList);
- *
  */
 
-import { renderPrompt, openAIEngine, MODEL_FEATURES } from "../Utils.sys.mjs";
+import { renderPrompt, MODEL_FEATURES } from "../Utils.sys.mjs";
+import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
@@ -54,7 +47,7 @@ import {
  *
  * This is the main pipeline function.
  *
- * @param {OpenAIEngine} engine                 openAIEngine instance to call LLM API
+ * @param {Conversation} conversation           Conversation reused across the pipeline (cleared between calls)
  * @param {object} sources                      User data source type to aggregrated records (i.e., {history: [domainItems, titleItems, searchItems]})
  * @param {Array<string>} existingMemoriesList  List of existing memory summary strings to deduplicate against
  * @returns {Promise<Array<Map<{
@@ -64,9 +57,16 @@ import {
  *  score: number,
  * }>>>}                                        Promise resolving the final list of generated, deduplicated, and filtered memory objects
  */
-export async function generateMemories(engine, sources, existingMemoriesList) {
+export async function generateMemories(
+  conversation,
+  sources,
+  existingMemoriesList
+) {
   // Step 1: Generate initial memories
-  const initialMemories = await generateInitialMemoriesList(engine, sources);
+  const initialMemories = await generateInitialMemoriesList(
+    conversation,
+    sources
+  );
   // If we don't generate any new memories, just return an empty list immediately instead of doing the rest of the steps
   if (!initialMemories || initialMemories.length === 0) {
     return [];
@@ -77,7 +77,7 @@ export async function generateMemories(engine, sources, existingMemoriesList) {
     memory => memory.memory_summary
   );
   const filteredMemoriesSummaries = await applyQualityAndSensitivityFilter(
-    engine,
+    conversation,
     initialMemoriesSummaries
   );
   if (!filteredMemoriesSummaries || filteredMemoriesSummaries.length === 0) {
@@ -86,7 +86,7 @@ export async function generateMemories(engine, sources, existingMemoriesList) {
 
   // Step 3: Deduplicate against existing memories
   const dedupedMemoriesSummaries = await deduplicateMemories(
-    engine,
+    conversation,
     existingMemoriesList,
     filteredMemoriesSummaries
   );
@@ -290,16 +290,16 @@ function normalizeMemoryList(parsed) {
 /**
  * Prompts an LLM to generate an initial, unfiltered list of candidate memories from user data
  *
- * @param {openAIEngine} engine     openAIEngine instance to call LLM API
- * @param {object} sources          User data source type to aggregrated records (i.e., {history: [domainItems, titleItems, searchItems]})
+ * @param {Conversation} conversation  Conversation reused across the pipeline (cleared between calls)
+ * @param {object} sources  User data source type to aggregrated records (i.e., {history: [domainItems, titleItems, searchItems]})
  * @returns {Promise<Array<Map<{
  *  category: string,
  *  intent: string,
  *  memory_summary: string,
  *  score: number,
- * }>>>}                            Promise resolving the list of generated memories
+ * }>>>}                    Promise resolving the list of generated memories
  */
-export async function generateInitialMemoriesList(engine, sources) {
+export async function generateInitialMemoriesList(conversation, sources) {
   const [{ prompt: systemPrompt }, { prompt: userPromptTemplate }] =
     await Promise.all([
       lazy.loadPrompt(MODEL_FEATURES.MEMORIES_INITIAL_GENERATION_SYSTEM),
@@ -322,18 +322,16 @@ export async function generateInitialMemoriesList(engine, sources) {
     );
   }
 
-  // Render user prompt with dynamic values
   const userPrompt = renderPrompt(userPromptTemplate, {
     categoriesList: getFormattedMemoryAttributeList(CATEGORIES),
     intentsList: getFormattedMemoryAttributeList(INTENTS),
     profileRecordsRenderedStr,
   });
 
-  const response = await engine.run({
-    args: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
+  conversation.clearMessages();
+  conversation.setSystemMessage(systemPrompt);
+  conversation.addUserMessage(userPrompt);
+  const response = await conversation.run({
     responseFormat: { type: "json_schema", schema: INITIAL_MEMORIES_SCHEMA },
     fxAccountToken: await openAIEngine.getFxAccountToken(),
   });
@@ -345,13 +343,13 @@ export async function generateInitialMemoriesList(engine, sources) {
 /**
  * Prompts an LLM to deduplicate new memories against existing ones
  *
- * @param {OpenAIEngine} engine                 openAIEngine instance to call LLM API
+ * @param {Conversation} conversation           Conversation reused across the pipeline (cleared between calls)
  * @param {Array<string>} existingMemoriesList  List of existing memory summary strings
  * @param {Array<string>} newMemoriesList       List of new memory summary strings to deduplicate
  * @returns {Promise<Array<string>>}            Promise resolving the final list of deduplicated memory summary strings
  */
 export async function deduplicateMemories(
-  engine,
+  conversation,
   existingMemoriesList,
   newMemoriesList
 ) {
@@ -366,11 +364,10 @@ export async function deduplicateMemories(
     newMemoriesList: formatListForPrompt(newMemoriesList),
   });
 
-  const response = await engine.run({
-    args: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
+  conversation.clearMessages();
+  conversation.setSystemMessage(systemPrompt);
+  conversation.addUserMessage(userPrompt);
+  const response = await conversation.run({
     responseFormat: {
       type: "json_schema",
       schema: MEMORIES_DEDUPLICATION_SCHEMA,
@@ -400,11 +397,14 @@ export async function deduplicateMemories(
  * Prompts an LLM to filter out both low-quality (generic/ephemeral) and sensitive
  * memories.
  *
- * @param {OpenAIEngine} engine         openAIEngine instance to call LLM API
+ * @param {Conversation} conversation   Conversation reused across the pipeline (cleared between calls)
  * @param {Array<string>} memoriesList  List of memory summary strings to filter
  * @returns {Promise<Array<string>>}    Promise resolving the list of memory summary strings that are both high quality and non-sensitive
  */
-export async function applyQualityAndSensitivityFilter(engine, memoriesList) {
+export async function applyQualityAndSensitivityFilter(
+  conversation,
+  memoriesList
+) {
   const { prompt: systemPrompt } = await lazy.loadPrompt(
     MODEL_FEATURES.MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_SYSTEM
   );
@@ -417,11 +417,10 @@ export async function applyQualityAndSensitivityFilter(engine, memoriesList) {
     memoriesList: formatListForPrompt(memoriesList),
   });
 
-  const response = await engine.run({
-    args: [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userPrompt },
-    ],
+  conversation.clearMessages();
+  conversation.setSystemMessage(systemPrompt);
+  conversation.addUserMessage(userPrompt);
+  const response = await conversation.run({
     responseFormat: {
       type: "json_schema",
       schema: MEMORIES_QUALITY_AND_SENSITIVITY_FILTER_SCHEMA,

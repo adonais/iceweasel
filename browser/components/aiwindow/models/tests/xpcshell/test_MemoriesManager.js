@@ -427,7 +427,11 @@ add_task(async function test_hardDeleteMemoryById_not_found() {
 add_task(async function test_memoryClassifyMessage_happy_path() {
   const sb = sinon.createSandbox();
   try {
-    const fakeEngine = {
+    const fakeConversation = {
+      replaceMessages() {},
+      clearMessages() {},
+      setSystemMessage() {},
+      addUserMessage() {},
       run() {
         return {
           finalOutput: `{
@@ -439,14 +443,14 @@ add_task(async function test_memoryClassifyMessage_happy_path() {
     };
 
     const stub = sb
-      .stub(MemoriesManager, "ensureOpenAIEngineForUsage")
-      .returns(fakeEngine);
+      .stub(MemoriesManager, "ensureConversationForUsage")
+      .returns(fakeConversation);
     const messageClassification =
       await MemoriesManager.memoryClassifyMessage(TEST_MESSAGE);
     // Check that the stub was called
     Assert.ok(
       stub.calledOnce,
-      "ensureOpenAIEngineForUsage should be called once"
+      "ensureConversationForUsage should be called once"
     );
 
     // Check classification result was returned correctly
@@ -481,7 +485,11 @@ add_task(async function test_memoryClassifyMessage_happy_path() {
 add_task(async function test_memoryClassifyMessage_sad_path_empty_output() {
   const sb = sinon.createSandbox();
   try {
-    const fakeEngine = {
+    const fakeConversation = {
+      replaceMessages() {},
+      clearMessages() {},
+      setSystemMessage() {},
+      addUserMessage() {},
       run() {
         return {
           finalOutput: ``,
@@ -490,14 +498,14 @@ add_task(async function test_memoryClassifyMessage_sad_path_empty_output() {
     };
 
     const stub = sb
-      .stub(MemoriesManager, "ensureOpenAIEngineForUsage")
-      .returns(fakeEngine);
+      .stub(MemoriesManager, "ensureConversationForUsage")
+      .returns(fakeConversation);
     const messageClassification =
       await MemoriesManager.memoryClassifyMessage(TEST_MESSAGE);
     // Check that the stub was called
     Assert.ok(
       stub.calledOnce,
-      "ensureOpenAIEngineForUsage should be called once"
+      "ensureConversationForUsage should be called once"
     );
 
     // Check classification result was returned correctly despite empty output
@@ -532,7 +540,11 @@ add_task(async function test_memoryClassifyMessage_sad_path_empty_output() {
 add_task(async function test_memoryClassifyMessage_sad_path_bad_schema() {
   const sb = sinon.createSandbox();
   try {
-    const fakeEngine = {
+    const fakeConversation = {
+      replaceMessages() {},
+      clearMessages() {},
+      setSystemMessage() {},
+      addUserMessage() {},
       run() {
         return {
           finalOutput: `{
@@ -543,14 +555,14 @@ add_task(async function test_memoryClassifyMessage_sad_path_bad_schema() {
     };
 
     const stub = sb
-      .stub(MemoriesManager, "ensureOpenAIEngineForUsage")
-      .returns(fakeEngine);
+      .stub(MemoriesManager, "ensureConversationForUsage")
+      .returns(fakeConversation);
     const messageClassification =
       await MemoriesManager.memoryClassifyMessage(TEST_MESSAGE);
     // Check that the stub was called
     Assert.ok(
       stub.calledOnce,
-      "ensureOpenAIEngineForUsage should be called once"
+      "ensureConversationForUsage should be called once"
     );
 
     // Check classification result was returned correctly despite bad schema

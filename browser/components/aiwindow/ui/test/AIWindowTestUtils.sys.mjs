@@ -12,7 +12,7 @@ import { sinon } from "resource://testing-common/Sinon.sys.mjs";
 import { MLTestUtils } from "resource://testing-common/MLTestUtils.sys.mjs";
 
 import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
-import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 
 /**
  * This class manages the MockLLMEngine for Smart Window. Smart Window instantiates

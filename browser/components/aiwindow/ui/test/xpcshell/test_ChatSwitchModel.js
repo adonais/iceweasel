@@ -13,7 +13,7 @@ const { _setLoadPromptForTesting } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
 );
 
-add_task(async function test_ChatConversation_updateSystemPromptForModel() {
+add_task(async function test_ChatConversation_loadSystemPrompt() {
   _setLoadPromptForTesting(async () => "Updated system prompt");
   registerCleanupFunction(() => _setLoadPromptForTesting(null));
 
@@ -23,7 +23,7 @@ add_task(async function test_ChatConversation_updateSystemPromptForModel() {
     "Initial system prompt"
   );
 
-  await conversation.updateSystemPromptForModel("1");
+  await conversation.loadSystemPrompt({ modelChoiceIdOverride: "1" });
 
   const systemMessage = conversation.messages.find(
     message =>
@@ -38,7 +38,7 @@ add_task(async function test_ChatConversation_updateSystemPromptForModel() {
 });
 
 add_task(
-  async function test_ChatConversation_updateSystemPromptForModel_preserves_messages() {
+  async function test_ChatConversation_loadSystemPrompt_preserves_messages() {
     _setLoadPromptForTesting(async () => "Updated system prompt");
 
     const conversation = new ChatConversation({});
@@ -56,7 +56,7 @@ add_task(
     conversation.addAssistantMessage("text", mockMessages[1].body);
     conversation.addUserMessage(mockMessages[2].body, null);
 
-    await conversation.updateSystemPromptForModel("1");
+    await conversation.loadSystemPrompt({ modelChoiceIdOverride: "1" });
 
     const nonSystemMessages = conversation.messages.filter(
       message => message.role !== MESSAGE_ROLE.SYSTEM

@@ -9,7 +9,7 @@ const { parseMarkdown } = ChromeUtils.importESModule(
 
 const { createParserState, consumeStreamChunk, flushTokenRemainder } =
   ChromeUtils.importESModule(
-    "chrome://browser/content/aiwindow/modules/TokenStreamParser.mjs"
+    "moz-src:///browser/components/aiwindow/models/TokenStreamParser.sys.mjs"
   );
 
 function streamThroughTokenParser(chunks, tokenToUrl = new Map()) {

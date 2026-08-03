@@ -115,7 +115,7 @@ add_task(async function test_click_ask_row_picks_result() {
     );
 
     const conversation = fetchWithHistoryStub.firstCall.args[0].conversation;
-    const messages = conversation.getMessagesInOpenAiFormat();
+    const messages = conversation.getMessagesInChatCompletionsFormat();
     const userMessage = messages.findLast(m => m.role === "user");
     Assert.equal(
       userMessage.content,
@@ -197,7 +197,7 @@ add_task(async function test_enter_non_heuristic_ask_row_picks_result() {
     await promise;
 
     const conversation = fetchWithHistoryStub.firstCall.args[0].conversation;
-    const messages = conversation.getMessagesInOpenAiFormat();
+    const messages = conversation.getMessagesInChatCompletionsFormat();
     const userMessage = messages.findLast(m => m.role === "user");
     Assert.equal(
       userMessage.content,

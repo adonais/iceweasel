@@ -28,6 +28,11 @@ const { _setLoadPromptForTesting } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs"
 );
 
+const { _setRemoteClientForTesting, _clearRemoteClientForTesting } =
+  ChromeUtils.importESModule(
+    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+  );
+
 /**
  * @import { SmartbarAction } from "chrome://browser/content/aiwindow/components/input-cta/input-cta.mjs"
  */
@@ -40,7 +45,6 @@ const AIWINDOW_URL = "chrome://browser/content/aiwindow/aiWindow.html";
 const FIRSTRUN_URL = "chrome://browser/content/aiwindow/firstrun.html";
 
 let gIntentEngineStub;
-let gRemoteClientStub;
 
 // Minimal RS records returned by the global getRemoteClient stub.
 // Version numbers must match FEATURE_MAJOR_VERSIONS in models/Utils.sys.mjs.
@@ -136,15 +140,16 @@ add_setup(async function () {
     .resolves(fakeIntentEngine);
   registerCleanupFunction(() => gIntentEngineStub.restore());
 
-  // Stub getRemoteClient so loadCallContext never hits real Remote Settings.
-  gRemoteClientStub = sinon
-    .stub(openAIEngine, "getRemoteClient")
-    .returns({ get: async () => MOCK_RS_RECORDS });
-  registerCleanupFunction(() => gRemoteClientStub.restore());
+  // Stub the RS client so PromptLoader.buildConversation never hits real Remote Settings.
+  _setRemoteClientForTesting({ get: async () => MOCK_RS_RECORDS });
+  registerCleanupFunction(() => _clearRemoteClientForTesting());
 
-  // Stub ChatConversation's loadPrompt so generatePrompt doesn't hit RS.
+  // Stub ChatConversation's loadPrompt so loadSystemPrompt and
+  // injectRealTimeContext don't hit RS.
   _setLoadPromptForTesting(async () => "Test system prompt.");
-  registerCleanupFunction(() => _setLoadPromptForTesting(null));
+  registerCleanupFunction(() => {
+    _setLoadPromptForTesting(null);
+  });
 });
 
 /**

@@ -7,10 +7,10 @@
 // conversation starter/followup generation functions
 
 import {
-  openAIEngine,
   renderPrompt,
   MODEL_FEATURES,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 
 import { MESSAGE_ROLE } from "moz-src:///browser/components/aiwindow/ui/modules/ChatStore.sys.mjs";
 
@@ -19,7 +19,7 @@ import { sanitizeUntrustedContent } from "moz-src:///browser/components/aiwindow
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  loadCallContext:
+  buildConversation:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   loadPrompt:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
@@ -215,8 +215,9 @@ export async function generateConversationStartersSidebar(
     // while awaiting inference.
     contextTabs = null;
 
-    const callContext = await lazy.loadCallContext(
-      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER
+    const conversation = await lazy.buildConversation(
+      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER,
+      { flowId }
     );
     const [
       { prompt: conversationStarterSystemPrompt },
@@ -229,14 +230,6 @@ export async function generateConversationStartersSidebar(
         MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS
       ),
     ]);
-    const engineInstance = await openAIEngine.build({
-      model: callContext.model,
-      serviceType: callContext.serviceType,
-      purpose: callContext.purpose,
-      flowId,
-      feature: MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER,
-    });
-    const inferenceParams = callContext.parameters;
 
     // Base template
     const base = renderPrompt(conversationStarterPrompt, {
@@ -255,20 +248,13 @@ export async function generateConversationStartersSidebar(
       filled = await addMemoriesToPrompt(base, conversationMemoriesPrompt);
     }
 
+    conversation.setSystemMessage(conversationStarterSystemPrompt);
+    conversation.addUserMessage(filled);
+
     const fxAccountToken = await openAIEngine.getFxAccountToken();
     signal.throwIfAborted();
 
-    let runPromise = engineInstance.run({
-      args: [
-        {
-          role: "system",
-          content: conversationStarterSystemPrompt,
-        },
-        { role: "user", content: filled },
-      ],
-      fxAccountToken,
-      ...inferenceParams,
-    });
+    let runPromise = conversation.run({ fxAccountToken });
     runPromise = Promise.race([
       runPromise,
       new Promise((_, reject) => {
@@ -325,8 +311,9 @@ export async function generateFollowupPrompts(
           })
         : "No tab";
 
-    const callContext = await lazy.loadCallContext(
-      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP
+    const conversation = await lazy.buildConversation(
+      MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP,
+      { flowId }
     );
     const [
       { prompt: conversationFollowupPrompt },
@@ -337,14 +324,6 @@ export async function generateFollowupPrompts(
         MODEL_FEATURES.CONVERSATION_SUGGESTIONS_ASSISTANT_LIMITATIONS
       ),
     ]);
-    const engineInstance = await openAIEngine.build({
-      model: callContext.model,
-      serviceType: callContext.serviceType,
-      purpose: callContext.purpose,
-      flowId,
-      feature: MODEL_FEATURES.CONVERSATION_SUGGESTIONS_FOLLOWUP,
-    });
-    const inferenceParams = callContext.parameters;
 
     const base = renderPrompt(conversationFollowupPrompt, {
       current_tab: currentTabStr,
@@ -362,15 +341,13 @@ export async function generateFollowupPrompts(
       filled = await addMemoriesToPrompt(base, conversationMemoriesPrompt);
     }
 
-    const result = await engineInstance.run({
-      messages: [
-        {
-          role: "system",
-          content: "Return only the requested suggestions, one per line.",
-        },
-        { role: "user", content: filled },
-      ],
-      ...inferenceParams,
+    conversation.setSystemMessage(
+      "Return only the requested suggestions, one per line."
+    );
+    conversation.addUserMessage(filled);
+
+    const result = await conversation.run({
+      fxAccountToken: await openAIEngine.getFxAccountToken(),
     });
 
     const prompts = cleanInferenceOutput(result);

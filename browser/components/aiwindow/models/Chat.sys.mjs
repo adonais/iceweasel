@@ -4,11 +4,8 @@
  * file, You can obtain one at http://mozilla.org/MPL/2.0/.
  */
 
-import {
-  ToolRoleOpts,
-  AssistantRoleOpts,
-} from "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs";
-import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
+import { MESSAGE_ROLE } from "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs";
 import {
   toolsConfig,
   toolFns,
@@ -27,11 +24,7 @@ import {
   WORLD_CUP_PREF,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 
-import {
-  expandUrlTokensInToolParams,
-  replaceUrlsWithTokens,
-} from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
-import { compactMessages } from "moz-src:///browser/components/aiwindow/models/PromptOptimizer.sys.mjs";
+import { expandUrlTokensInToolParams } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 import { runLLMaJTelemetry } from "moz-src:///browser/components/aiwindow/models/TelemetryUtils.sys.mjs";
 
 /**
@@ -44,7 +37,6 @@ import { runLLMaJTelemetry } from "moz-src:///browser/components/aiwindow/models
  * @param {ChatConversation} conversation - The conversation context
  * @param {BrowsingContext} browsingContext - The browsing context (can be null for some tools)
  * @param {string} mode - The mode of operation (e.g., "fullpage", "sidebar", "urlbar")
- * @param {object} engineInstance - The AI engine instance (can be null for testing)
  * @param {number} currentTurn - The current turn number in the conversation
  * @returns {Promise<object>} The result of the tool execution
  * @private
@@ -56,7 +48,6 @@ export async function executeToolByName(
   conversation,
   browsingContext,
   mode,
-  engineInstance,
   currentTurn
 ) {
   let result;
@@ -85,7 +76,7 @@ export async function executeToolByName(
         chat_id: conversation.id,
         message_seq: conversation.messageCount,
         provider: engine.name ?? "unknown",
-        model: engineInstance?.model,
+        model: conversation.engine?.model,
       });
       conversation._searchExecutedTurn = currentTurn;
       break;
@@ -107,7 +98,7 @@ export async function executeToolByName(
         toolParams,
         conversation,
         mode,
-        engineInstance?.model,
+        conversation.engine?.model,
         toolCallId
       );
       if (uiData) {
@@ -194,23 +185,16 @@ ChromeUtils.defineLazyGetter(lazy, "console", () =>
  * @param {string} options.toolName
  * @param {"fullpage" | "sidebar" | "urlbar"} options.mode
  * @param {ChatConversation} options.conversation
- * @param {openAIEngine} options.engineInstance
  * @param {string} options.error - Canonical error code, or "" on success
  */
-function recordToolCallEvent({
-  toolName,
-  mode,
-  conversation,
-  engineInstance,
-  error,
-}) {
+function recordToolCallEvent({ toolName, mode, conversation, error }) {
   Glean.smartWindow.toolCall.record({
     location: mode,
     chat_id: conversation.id,
     message_seq: conversation.messageCount,
     tool_name: toolName,
-    model: engineInstance.model,
-    prompt_version: conversation.chatPromptVersion,
+    model: conversation.engine?.model,
+    prompt_version: conversation.systemPromptVersion,
     error,
   });
 }
@@ -283,20 +267,11 @@ Object.assign(Chat, {
    *
    * @param {object} options
    * @param {ChatConversation} options.conversation
-   * @param {openAIEngine} options.engineInstance
    * @param {BrowsingContext} options.browsingContext - Omitted for tests only.
    * @param {"fullpage" | "sidebar" | "urlbar"} options.mode - See the MODE in ai-window.mjs
-   * @param {object} [options.callContext] - Inference parameters; falls back to {} if absent.
    * @param {AbortSignal} [options.signal]
    */
-  async fetchWithHistory({
-    conversation,
-    engineInstance,
-    browsingContext,
-    mode,
-    callContext,
-    signal,
-  }) {
+  async fetchWithHistory({ conversation, browsingContext, mode, signal }) {
     if (!browsingContext && !Cu.isInAutomation) {
       const err = new Error(
         "The browsingContext must exist for fetchWithHistory unless we're in automation."
@@ -312,9 +287,7 @@ Object.assign(Chat, {
       throw fxaError;
     }
 
-    const toolRoleOpts = new ToolRoleOpts(engineInstance.model);
     const currentTurn = conversation.currentTurnIndex();
-    const inferenceParams = callContext?.parameters ?? {};
 
     /**
      * For the first turn only, we use exactly what the user typed as the `run_search` search query.
@@ -335,28 +308,24 @@ Object.assign(Chat, {
     let blockedSearchAttempts = 0;
 
     const streamModelResponse = () => {
-      const rawMessages = conversation.getMessagesInOpenAiFormat();
+      const snapshot = conversation.compactChatCompletions();
+
       lazy.console.log(
         `Request (${conversation.securityProperties.getLogText()})`,
-        rawMessages.at(-1)
+        snapshot.at(-1)
       );
-      const messages = compactMessages(rawMessages);
-
-      // This is done in-place on the messages.
-      replaceUrlsWithTokens(conversation, messages);
 
       // Debug logging: Record only the latest message being sent to the model
-      logConversationStream(currentTurn, "CHAT SEND", messages.at(-1));
+      logConversationStream(currentTurn, "CHAT SEND", snapshot.at(-1));
 
-      return engineInstance.runWithGenerator({
+      return conversation.runWithGenerator({
         streamOptions: { enabled: true },
         fxAccountToken,
         chatId: conversation.id,
         tool_choice: "auto",
         tools: chatToolsConfig,
-        args: messages,
+        args: snapshot,
         signal,
-        ...inferenceParams,
       });
     };
 
@@ -403,9 +372,9 @@ Object.assign(Chat, {
         ChromeUtils.addProfilerMarker("SmartWindow", {}, "chat-no-tool-calls");
         // Debug logging: Mark the end of the streaming loop for this turn
         logConversationStream(currentTurn, "STREAM END");
-        if (!engineInstance.isCustomEndpoint) {
+        if (!conversation.engine?.isCustomEndpoint) {
           // We only run telemetry on our own endpoints
-          runLLMaJTelemetry(conversation, engineInstance);
+          runLLMaJTelemetry(conversation);
         }
         return;
       }
@@ -433,13 +402,9 @@ Object.assign(Chat, {
             arguments: tc.function.arguments || "{}",
           },
         }));
-        conversation.addAssistantMessage(
-          "function",
-          {
-            tool_calls: blockedCalls,
-          },
-          new AssistantRoleOpts(engineInstance.model)
-        );
+        conversation.addAssistantMessage("function", {
+          tool_calls: blockedCalls,
+        });
 
         for (const tc of pendingToolCalls.slice(0, 1)) {
           const content = {
@@ -447,12 +412,11 @@ Object.assign(Chat, {
             body: "ERROR: run_search tool call error: You may only run one search per user message. Respond to the user with what you have already found and ask if they want you to proceed with the next search. Do not hallucinate search results.",
             name: tc.function.name,
           };
-          conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
+          conversation.addToolCallMessage(content);
           recordToolCallEvent({
             toolName: tc.function.name,
             mode,
             conversation,
-            engineInstance,
             error: "duplicate_search",
           });
         }
@@ -468,7 +432,8 @@ Object.assign(Chat, {
       // should not be able to retrieve them using the get_user_memories tool
       else if (firstPending?.name === GET_USER_MEMORIES) {
         const lastUserMessage =
-          conversation.messages.findLast(m => m.role === 0) ?? null;
+          conversation.messages.findLast(m => m.role === MESSAGE_ROLE.USER) ??
+          null;
         if (lastUserMessage.memoriesEnabled === false) {
           for (const tc of pendingToolCalls.slice(0, 1)) {
             const content = {
@@ -476,12 +441,25 @@ Object.assign(Chat, {
               body: "ERROR: get_user_memories tool call error: inform the user that they have disabled memories, so they cannot be retrieved.",
               name: tc.function.name,
             };
-            conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
+            // Append the tool_call BEFORE the error result so the message order
+            // satisfies OpenAI's assistant-then-tool sequence.
+            conversation.addAssistantMessage("function", {
+              tool_calls: [
+                {
+                  id: tc.id,
+                  type: "function",
+                  function: {
+                    name: tc.function.name,
+                    arguments: tc.function.arguments || "{}",
+                  },
+                },
+              ],
+            });
+            conversation.addToolCallMessage(content);
             recordToolCallEvent({
               toolName: tc.function.name,
               mode,
               conversation,
-              engineInstance,
               error: "memories_disabled",
             });
           }
@@ -503,13 +481,9 @@ Object.assign(Chat, {
         conversation.tokenToUrl
       );
 
-      conversation.addAssistantMessage(
-        "function",
-        {
-          tool_calls: [lastToolCall],
-        },
-        new AssistantRoleOpts(engineInstance.model)
-      );
+      conversation.addAssistantMessage("function", {
+        tool_calls: [lastToolCall],
+      });
 
       lazy.AIWindow.chatStore?.updateConversation(conversation).catch(() => {});
 
@@ -547,12 +521,11 @@ Object.assign(Chat, {
             tool_call_id: id,
             body: { error: "Invalid JSON arguments" },
           };
-          conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
+          conversation.addToolCallMessage(content);
           recordToolCallEvent({
             toolName,
             mode,
             conversation,
-            engineInstance,
             error: "invalid_arguments",
           });
           continue;
@@ -587,7 +560,6 @@ Object.assign(Chat, {
               conversation,
               browsingContext,
               mode,
-              engineInstance,
               currentTurn
             );
           }
@@ -607,7 +579,7 @@ Object.assign(Chat, {
           );
 
           const content = { tool_call_id: id, body: result, name: toolName };
-          conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
+          conversation.addToolCallMessage(content);
         } catch (error) {
           console.error(error);
           toolCallError = "execution_failed";
@@ -618,14 +590,13 @@ Object.assign(Chat, {
             `chat-run-tool-error(${toolName})`
           );
           const content = { tool_call_id: id, body: result };
-          conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
+          conversation.addToolCallMessage(content);
         }
 
         recordToolCallEvent({
           toolName,
           mode,
           conversation,
-          engineInstance,
           error: toolCallError,
         });
 
