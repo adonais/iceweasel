@@ -10,6 +10,7 @@ const { XPCOMUtils } = ChromeUtils.importESModule(
 const lazy = XPCOMUtils.declareLazy({
   AboutReaderParent: "resource:///actors/AboutReaderParent.sys.mjs",
   BrowserUtils: "resource://gre/modules/BrowserUtils.sys.mjs",
+  BrowserWindowTracker: "resource:///modules/BrowserWindowTracker.sys.mjs",
   EveryWindow: "resource:///modules/EveryWindow.sys.mjs",
   FeatureCalloutBroker:
     "resource:///modules/asrouter/FeatureCalloutBroker.sys.mjs",
@@ -28,6 +29,20 @@ const lazy = XPCOMUtils.declareLazy({
   newtabPageEnabled: {
     pref: "browser.newtabpage.enabled",
     default: true,
+  },
+
+  // These defaults are only used as a fallback if the corresponding pref
+  // isn't declared at all; the real defaults live in firefox.js, which is
+  // what lets SpecialPowers.pushPrefEnv/popPrefEnv restore them cleanly in
+  // tests.
+  splitViewTriggerDelay: {
+    pref: "browser.tabs.splitview.trigger.delay_ms",
+    default: 15000,
+  },
+
+  splitViewCreateCount: {
+    pref: "browser.tabs.splitview.trigger.createCount",
+    default: 0,
   },
 });
 
@@ -1973,6 +1988,111 @@ export const ASRouterTriggerListeners = new Map([
           this._initialized = false;
           this._triggerHandler = null;
           this._elementIds = [];
+        }
+      },
+    },
+  ],
+  [
+    "splitViewUsed",
+    {
+      id: "splitViewUsed",
+      _initialized: false,
+      _triggerHandler: null,
+      _visits: new Map(),
+
+      init(triggerHandler) {
+        if (!this._initialized) {
+          lazy.EveryWindow.registerCallback(
+            this.id,
+            win => {
+              win.addEventListener("SplitViewCreated", this);
+              win.addEventListener("TabSplitViewActivate", this);
+              win.addEventListener("TabSplitViewDeactivate", this);
+            },
+            win => {
+              win.removeEventListener("SplitViewCreated", this);
+              win.removeEventListener("TabSplitViewActivate", this);
+              win.removeEventListener("TabSplitViewDeactivate", this);
+              this._clearVisit(win);
+            }
+          );
+          this._initialized = true;
+        }
+        this._triggerHandler = triggerHandler;
+      },
+
+      uninit() {
+        if (this._initialized) {
+          lazy.EveryWindow.unregisterCallback(this.id);
+          for (const visit of this._visits.values()) {
+            if (visit.timerId !== undefined) {
+              lazy.clearTimeout(visit.timerId);
+            }
+          }
+          this._visits.clear();
+          this._initialized = false;
+          this._triggerHandler = null;
+        }
+      },
+
+      _clearVisit(win) {
+        const visit = this._visits.get(win);
+        if (visit?.timerId !== undefined) {
+          lazy.clearTimeout(visit.timerId);
+        }
+        this._visits.delete(win);
+      },
+
+      handleEvent(event) {
+        const win = event.target.documentGlobal;
+        if (!win || isPrivateWindow(win)) {
+          return;
+        }
+        if (event.type === "SplitViewCreated") {
+          // Tracks how many distinct Split Views the user has created, for
+          // message targeting (e.g. to skip messaging the first time a split view is
+          // used or created in a session).
+          // Kept separate from the continuous-use timer below, so briefly
+          // switching away from and back to an existing Split View doesn't
+          // inflate this count.
+          Services.prefs.setIntPref(
+            "browser.tabs.splitview.trigger.createCount",
+            lazy.splitViewCreateCount + 1
+          );
+        } else if (event.type === "TabSplitViewActivate") {
+          // Don't restart the timer if one is already pending for this
+          // window, e.g. when the user switches between tabs within the same
+          // Split View, and don't fire again if we already fired during this
+          // visit.
+          const existing = this._visits.get(win);
+          if (existing?.timerId !== undefined || existing?.fired) {
+            return;
+          }
+          const visit = { timerId: undefined, fired: false };
+          visit.timerId = lazy.setTimeout(() => {
+            visit.timerId = undefined;
+
+            const browser = win.gBrowser.selectedBrowser;
+            if (
+              !browser ||
+              !this._triggerHandler ||
+              win !== lazy.BrowserWindowTracker.getTopWindow()
+            ) {
+              return;
+            }
+
+            visit.fired = true;
+            this._triggerHandler(browser, {
+              id: this.id,
+              context: { splitViewCreateCount: lazy.splitViewCreateCount },
+            });
+          }, lazy.splitViewTriggerDelay);
+          this._visits.set(win, visit);
+        } else if (event.type === "TabSplitViewDeactivate") {
+          // Leaving Split View ends the current visit; a later return starts
+          // a fresh visit with its own timer, but does not affect the create
+          // count since no new Split View was created.
+          this._clearVisit(win);
         }
       },
     },
