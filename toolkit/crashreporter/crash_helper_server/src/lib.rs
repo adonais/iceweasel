@@ -13,10 +13,7 @@ mod phc;
 mod platform;
 
 use crash_helper_common::{BreakpadData, BreakpadRawData, IPCConnector, IPCListener, Pid};
-use std::{
-    ffi::{c_char, CStr, OsString},
-    fmt::Display,
-};
+use std::ffi::{c_char, CStr, OsString};
 
 use crash_generation::finalize_breakpad_minidump;
 use ipc_server::{IPCServer, IPCServerState};
@@ -146,26 +143,32 @@ pub unsafe extern "C" fn crash_generator_logic_android(
     // On Android the main thread is used to respond to the intents so we
     // can't block it. Run the crash generation loop in a separate thread.
     let _ = std::thread::spawn(move || {
-        let listener = IPCListener::new(0).unwrap();
+        let listener = IPCListener::new(0).expect("IPCListener creation failed!");
         // SAFETY: The `pipe` file descriptor passed in from the caller is
         // guaranteed to be valid.
-        let connector = unwrap_with_message(
-            unsafe { IPCConnector::from_raw_connector(pipe) },
-            "Could not use the pipe",
-        );
-        let ipc_server = unwrap_with_message(
-            IPCServer::new(
-                pid,
-                /* client_handle */ None,
-                listener,
-                connector,
-                breakpad_data,
-                minidump_path,
-            ),
-            "Could not create the IPC server",
-        );
+        let connector = match unsafe { IPCConnector::from_raw_connector(pipe) } {
+            Ok(connector) => connector,
+            Err(error) => {
+                log::error!("Could not use the pipe (error: {error})");
+                return;
+            }
+        };
+        let ipc_server = match IPCServer::new(
+            pid,
+            /* client_handle */ None,
+            listener,
+            connector,
+            breakpad_data,
+            minidump_path,
+        ) {
+            Ok(ipc_server) => ipc_server,
+            Err(error) => {
+                log::error!("Could not create the IPC server (error: {error})");
+                return;
+            }
+        };
 
-        main_loop(ipc_server)
+        main_loop(ipc_server);
     });
 }
 
@@ -184,7 +187,8 @@ fn main_loop(mut ipc_server: IPCServer) -> i32 {
     }
 }
 
-fn unwrap_with_message<T, E: Display>(res: Result<T, E>, error_string: &str) -> T {
+#[cfg(not(target_os = "android"))]
+fn unwrap_with_message<T, E: std::fmt::Display>(res: Result<T, E>, error_string: &str) -> T {
     match res {
         Ok(value) => value,
         Err(error) => {
