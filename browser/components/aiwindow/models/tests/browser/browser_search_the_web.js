@@ -8,6 +8,7 @@ const { SEARCH_ANSWER_SCHEMA, runSearchTheWeb } = ChromeUtils.importESModule(
 );
 
 const {
+  GetPageContent,
   GET_PAGE_CONTENT,
   SEARCH_QUERY_ENDPOINT_PREF,
   SEARCH_QUERY_APIKEY_PREF,
@@ -610,5 +611,104 @@ add_task(async function test_search_the_web_offers_run_search_fallback() {
     mockSearchManager.rejectAllRequests();
     mockSearchManager.cleanupMocks();
     await SpecialPowers.popPrefEnv();
+  }
+});
+
+add_task(async function test_search_the_web_page_read_timeout_does_not_hang() {
+  // A headless page load that never settles must not hang the answer flow:
+  // readPage races the fetch against a resolving timeout, so a stuck read
+  // yields a fallback and generateAnswer still produces an answer. The read
+  // timeout pref is shrunk so the test doesn't wait the 15s default.
+  await pushSearchPrefs();
+  await SpecialPowers.pushPrefEnv({
+    set: [["browser.smartwindow.search.readTimeoutMs", 50]],
+  });
+
+  const sb = sinon.createSandbox();
+  const mockEngineManager = new MockEngineManager();
+  const mockSearchManager = new MockSearchManager();
+  const conversation = new ChatConversation({
+    pageUrl: new URL("https://example.com"),
+    pageMeta: {},
+  });
+
+  // Simulate a stuck headless load: getPageContent never settles.
+  const hangStub = sb
+    .stub(GetPageContent, "getPageContent")
+    .callsFake(() => new Promise(() => {}));
+
+  try {
+    const runPromise = runSearchTheWeb({ query: "widgets" }, conversation);
+
+    (await mockSearchManager.captureRequest()).respond({
+      results: [
+        {
+          title: "Widget Store",
+          url: "https://widgets.example/store",
+          text: "A page with widget prices.",
+        },
+      ],
+    });
+
+    // First answer-generation turn: the model asks to read the result page.
+    (
+      await mockEngineManager.captureRequest({ purpose: PURPOSES.CHAT })
+    ).respond({
+      text: "",
+      tokens: null,
+      isPrompt: false,
+      toolCalls: [
+        {
+          id: "read_1",
+          function: {
+            name: GET_PAGE_CONTENT,
+            arguments: JSON.stringify({ result_ids: ["result_1"] }),
+          },
+        },
+      ],
+    });
+
+    // The read hangs and times out (~50ms). The fallback text is fed back as
+    // the tool result, so the next request's args must contain it — proof the
+    // stuck read resolved instead of hanging the flow.
+    const afterReadTurn = await mockEngineManager.captureRequest({
+      purpose: PURPOSES.CHAT,
+    });
+    Assert.ok(
+      JSON.stringify(afterReadTurn.request.args).includes("Timed out reading"),
+      "A stuck page read resolves to the timeout fallback"
+    );
+    afterReadTurn.respond("The results are enough to answer.");
+
+    // Final structured-answer turn.
+    (
+      await mockEngineManager.captureRequest({ purpose: PURPOSES.CHAT })
+    ).respond(
+      JSON.stringify({
+        answer: "Widgets vary in price.",
+        could_answer: true,
+        confidence: 0.6,
+      })
+    );
+
+    const result = await runPromise;
+    Assert.ok(
+      result.could_answer,
+      "The workflow still produces an answer despite the stuck read"
+    );
+    Assert.ok(
+      hangStub.called,
+      "getPageContent was invoked (and abandoned on timeout)"
+    );
+    mockEngineManager.assertAllRequestsHandled();
+    mockSearchManager.assertAllRequestsHandled();
+  } finally {
+    sb.restore();
+    mockEngineManager.rejectAllRequests();
+    mockSearchManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
+    mockSearchManager.cleanupMocks();
+    await SpecialPowers.popPrefEnv(); // read-timeout pref
+    await SpecialPowers.popPrefEnv(); // search prefs
   }
 });

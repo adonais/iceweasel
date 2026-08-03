@@ -55,10 +55,11 @@ const MAX_PAGES = 3;
 // against the page cap, not the round cap.
 const MAX_READ_ROUNDS = 3;
 
-// Max time to wait for a single page-read batch. A slow or hanging page must
-// not stall the whole search, so on timeout we tell the model to answer with
-// what it already has.
-const READ_TIMEOUT_MS = 15000;
+// Max time to wait for a single page-read batch before falling back. A slow or
+// hanging page must not stall the whole search, so on timeout we tell the model
+// to answer with what it already has. Pref-backed so tests can shrink it.
+const READ_TIMEOUT_PREF = "browser.smartwindow.search.readTimeoutMs";
+const READ_TIMEOUT_DEFAULT_MS = 15000;
 
 /**
  * JSON schema describing the structured answer the model emits. Used both as
@@ -460,24 +461,44 @@ export async function runSearchTheWeb(toolParams, conversation, signal) {
       readSet.add(url);
       readUrls.push(url);
     });
-    // Bound each page-read batch: on timeout, abort so GetPageContent cancels
-    // the underlying extraction (tearing down any hidden browser) and awaits
-    // that cleanup, rather than abandoning it with Promise.race.
-    // NOTE: this cancels a hung extraction (getText). A hung page *load* (before
-    // extraction begins) is not yet cancelled — tracked as a follow-up.
-    const controller = new AbortController();
-    const timeoutId = lazy.setTimeout(
-      () => controller.abort(),
-      READ_TIMEOUT_MS
+
+    const readTimeoutMs = Services.prefs.getIntPref(
+      READ_TIMEOUT_PREF,
+      READ_TIMEOUT_DEFAULT_MS
     );
-    try {
-      return await GetPageContent.getPageContent(
-        { url_list: fresh, signal: controller.signal },
-        conversation
-      );
-    } finally {
-      lazy.clearTimeout(timeoutId);
-    }
+
+    // Reads pages individually (but async) with timeouts as specified so that a
+    // single read failure doesn't kill the whole batch
+    const readOne = async url => {
+      const controller = new AbortController();
+      let timeoutId;
+      const timeout = new Promise(resolve => {
+        timeoutId = lazy.setTimeout(() => {
+          lazy.console.warn(
+            `[SearchWorkflow] page read timed out reading ${url} after ${readTimeoutMs}ms; abandoning stuck fetch`
+          );
+          controller.abort();
+          resolve([
+            `Timed out reading ${url}. Answer with what you have gathered.`,
+          ]);
+        }, readTimeoutMs);
+      });
+      try {
+        const fetchPromise = GetPageContent.getPageContent(
+          { url_list: [url], signal: controller.signal },
+          conversation
+        );
+        // If the timeout wins (stuck load), the fetch stays pending; swallow its
+        // late settle so it can't surface as an unhandled rejection.
+        fetchPromise.catch(() => {});
+        return await Promise.race([fetchPromise, timeout]);
+      } finally {
+        lazy.clearTimeout(timeoutId);
+      }
+    };
+
+    const perUrl = await Promise.all(fresh.map(readOne));
+    return perUrl.flat();
   };
 
   let parsed;
