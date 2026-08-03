@@ -1498,8 +1498,6 @@ export class AIWindow extends MozLitElement {
       this.#handleSmartbarCommit.name,
       this.conversationId
     );
-    this.#smartbar.clearSmartbarInput();
-
     const {
       value,
       action,
@@ -1518,9 +1516,15 @@ export class AIWindow extends MozLitElement {
         ? "button"
         : "enter");
 
+    // Read inline @mentions before clearing input.
+    const currentMentions =
+      action === ACTION.CHAT
+        ? this.#calculateCurrentMentions(contextMentions)
+        : null;
+    this.#smartbar.clearSmartbarInput();
+
     if (action === ACTION.CHAT) {
-      const { mergedMentions, allUrls, inlineMentions } =
-        this.#calculateCurrentMentions(contextMentions);
+      const { mergedMentions, allUrls, inlineMentions } = currentMentions;
 
       if (allUrls.size) {
         this.#conversation.addSeenUrls(allUrls);

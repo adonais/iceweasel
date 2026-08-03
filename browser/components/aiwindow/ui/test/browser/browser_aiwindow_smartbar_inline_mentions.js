@@ -14,6 +14,9 @@ const { SmartbarMentionsPanelSearch, MENTION_TYPE } =
   ChromeUtils.importESModule(
     "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs"
   );
+const { MockEngineManager } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
+);
 
 let providerStub;
 const DEFAULT_PROVIDER_STUB_RETURN = [
@@ -487,3 +490,39 @@ add_task(
     await BrowserTestUtils.closeWindow(win);
   }
 );
+
+// Inline @mention must reach the prompt builder as part of `contextMentions`.
+add_task(async function test_inline_mention_reaches_prompt_builder() {
+  const sb = this.sinon.createSandbox();
+  const getRealTimeInfoSpy = sb.spy(this.ChatConversation, "getRealTimeInfo");
+  const mockEngineManager = new MockEngineManager();
+  const win = await openAIWindow();
+
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+
+    await insertInlineMention(browser);
+    await typeInSmartbar(browser, " please summarize");
+    await submitSmartbar(browser);
+
+    // Ensure the prompt builder has run.
+    await mockEngineManager.respondTo({ purpose: "chat", response: "ok" });
+
+    const { contextMentions } = getRealTimeInfoSpy.firstCall.args[0];
+    Assert.equal(
+      contextMentions.length,
+      1,
+      "Inline @mention should be included in contextMentions"
+    );
+    Assert.equal(
+      contextMentions[0].url,
+      "https://example.com/1",
+      "Mention URL should match the @mentioned tab"
+    );
+  } finally {
+    mockEngineManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
+    await BrowserTestUtils.closeWindow(win);
+    sb.restore();
+  }
+});
