@@ -17,7 +17,11 @@
  * 3. `existingMemoriesList`: an array of existing memory summary strings to deduplicate against
  */
 
-import { renderPrompt, MODEL_FEATURES } from "../Utils.sys.mjs";
+import {
+  renderPrompt,
+  MODEL_FEATURES,
+  parseAndExtractJSON,
+} from "../Utils.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 
 const lazy = {};
@@ -125,33 +129,6 @@ export function getFormattedMemoryAttributeList(attributeName) {
     return formatListForPrompt(INTENTS_LIST);
   }
   throw new Error(`Unsupported memory attribute name: ${attributeName}`);
-}
-
-/**
- * Extracts a JSON as a map from an LLM response (handles markdown-formatted code blocks)
- *
- * @param {any} response  LLM response
- * @param {any} fallback  Fallback value if parsing fails to protect downstream code
- * @returns {Map}         Parsed JSON object
- */
-export function parseAndExtractJSON(response, fallback) {
-  const rawContent = response?.finalOutput ?? "";
-  const markdownMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
-  const payload = markdownMatch ? markdownMatch[1] : rawContent;
-  try {
-    return JSON.parse(payload);
-  } catch (e) {
-    // If we can't parse a JSON from the LLM response, return a tailored fallback value to prevent downstream code failures
-    if (e instanceof SyntaxError) {
-      console.warn(
-        `Could not parse JSON from LLM response; using fallback (${fallback}): ${e.message}`
-      );
-      return fallback;
-    }
-    throw new Error(
-      `Unexpected error parsing JSON from LLM response: ${e.message}`
-    );
-  }
 }
 
 /**

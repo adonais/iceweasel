@@ -555,3 +555,48 @@ add_task(async function test_getPageContent_ledger_url_uses_stripped_fetch() {
     sb.restore();
   }
 });
+
+add_task(async function test_getPageContent_aborts_hung_extraction() {
+  // A page read whose extraction never settles must not hang the caller: once
+  // the passed AbortSignal fires (e.g. a page-read timeout), getPageContent
+  // cancels the read and resolves with a cancellation message.
+  const sb = sinon.createSandbox();
+
+  try {
+    const targetUrl = "https://example.com/slow";
+
+    // getText never resolves, simulating a hung extraction.
+    const mockExtractor = {
+      getText: sinon.stub().returns(new Promise(() => {})),
+      getReaderModeContent: sinon.stub().resolves({ text: "" }),
+    };
+    const tab = createFakeTab(targetUrl, "Slow Page");
+    tab.linkedBrowser.browsingContext.currentWindowContext.getActor = sinon
+      .stub()
+      .resolves(mockExtractor);
+    setupBrowserWindowTracker(sb, createFakeWindow([tab]));
+
+    const controller = new AbortController();
+    const resultPromise = GetPageContent.getPageContent(
+      { url_list: [targetUrl], signal: controller.signal },
+      makeConversation()
+    );
+    // Abort while the read is in flight. Without cancellation this would hang
+    // forever; the test would then time out and fail.
+    controller.abort();
+
+    const result_array = await resultPromise;
+
+    Assert.equal(result_array.length, 1, "Should return one result");
+    Assert.ok(
+      result_array[0].includes("canceled after a timeout"),
+      "A hung read that is aborted resolves with the cancellation message"
+    );
+    Assert.ok(
+      result_array[0].includes(targetUrl),
+      "Cancellation message should reference the URL"
+    );
+  } finally {
+    sb.restore();
+  }
+});

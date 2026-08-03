@@ -14,6 +14,7 @@ import { getRecentChats } from "./MemoriesChatSource.sys.mjs";
 import {
   MODEL_FEATURES,
   renderPrompt,
+  parseAndExtractJSON,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
 import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import {
@@ -32,7 +33,6 @@ import {
 } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs";
 import {
   getFormattedMemoryAttributeList,
-  parseAndExtractJSON,
   generateMemories,
 } from "moz-src:///browser/components/aiwindow/models/memories/Memories.sys.mjs";
 import { MEMORIES_MESSAGE_CLASSIFY_SCHEMA } from "moz-src:///browser/components/aiwindow/models/memories/MemoriesSchemas.sys.mjs";

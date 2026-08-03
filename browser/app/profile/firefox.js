@@ -2294,6 +2294,10 @@ pref("browser.smartwindow.worldcup.enabled", true);
 pref("browser.smartwindow.worldcup.endpointURL", "https://merino.services.mozilla.com");
 pref("browser.smartwindow.worldcup.timeoutMs", 2000);
 
+// Smart Window: Exa search endpoint, used by the search_the_web agentic flow (bug 2037948)
+pref("browser.smartwindow.searchQuery.endpointURL", "https://mlpa-prod-prod-mozilla.global.ssl.fastly.net/v1/search");
+pref("browser.smartwindow.searchQuery.apiKey", "");
+
 // Smart Window Logging
 pref("browser.smartwindow.chatHistory.loglevel", "Error");
 pref("browser.smartwindow.chatStore.loglevel", "Error");

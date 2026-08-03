@@ -22,7 +22,11 @@ import {
   WORLD_CUP_LIVE,
   WORLD_CUP_TOOLS,
   WORLD_CUP_PREF,
+  SEARCH_THE_WEB,
+  RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY,
+  RUN_SEARCH_TOOL_CONFIG_GENERATED_QUERY,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
+import { runSearchTheWeb } from "moz-src:///browser/components/aiwindow/models/search/SearchWorkflow.sys.mjs";
 
 import { expandUrlTokensInToolParams } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 import { runLLMaJTelemetry } from "moz-src:///browser/components/aiwindow/models/TelemetryUtils.sys.mjs";
@@ -130,6 +134,7 @@ const MAX_RUN_SEARCH_PER_TURN = 3;
 const FEATURE_GATED_HANDLERS = new Map([
   [WORLD_CUP_MATCHES, toolFns.worldCupMatches],
   [WORLD_CUP_LIVE, toolFns.worldCupLive],
+  [SEARCH_THE_WEB, runSearchTheWeb],
 ]);
 
 /**
@@ -140,10 +145,48 @@ const FEATURE_GATED_HANDLERS = new Map([
  * @returns {object[]}
  */
 function filterFeatureGatedTools(tools) {
-  if (Services.prefs.getBoolPref(WORLD_CUP_PREF, false)) {
-    return tools;
+  let filtered = tools;
+  if (!Services.prefs.getBoolPref(WORLD_CUP_PREF, false)) {
+    filtered = filtered.filter(t => !WORLD_CUP_TOOLS.has(t.function?.name));
   }
-  return tools.filter(t => !WORLD_CUP_TOOLS.has(t.function?.name));
+  return filtered;
+}
+
+/**
+ * Per-turn tool-config update after a tool runs. For search_the_web it enforces
+ * the one-search-per-turn limit by swapping the tool out, then offers the Google
+ * handoff (run_search) so the assistant can fall back at its own discretion. The
+ * `could_answer` flag in the returned result is one signal for that decision,
+ * not the trigger. A no-op for every other tool, so callers can invoke it
+ * unconditionally.
+ *
+ * @param {string} toolName - The tool that just executed.
+ * @param {object[]} chatToolsConfig - The current per-turn tool list.
+ * @param {boolean} isVerbatimQuery - Whether the run_search fallback should use
+ *   the user's verbatim query (first turn) rather than a model-generated one.
+ * @returns {object[]} The updated tool list.
+ */
+function maybeApplySearchTheWebPostExecution(
+  toolName,
+  chatToolsConfig,
+  isVerbatimQuery
+) {
+  if (toolName !== SEARCH_THE_WEB) {
+    return chatToolsConfig;
+  }
+  const next = chatToolsConfig.filter(t => t.function?.name !== SEARCH_THE_WEB);
+  if (!next.some(t => t.function?.name === RUN_SEARCH)) {
+    // Use the verbatim-query variant on the first turn (the user's exact query)
+    // and the generated-query variant afterwards.
+    next.push(
+      structuredClone(
+        isVerbatimQuery
+          ? RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY
+          : RUN_SEARCH_TOOL_CONFIG_GENERATED_QUERY
+      )
+    );
+  }
+  return next;
 }
 
 const lazy = {};
@@ -290,18 +333,13 @@ Object.assign(Chat, {
     const currentTurn = conversation.currentTurnIndex();
 
     /**
-     * For the first turn only, we use exactly what the user typed as the `run_search` search query.
-     * To make that work, we use a different tool definition for the first turn vs. all subsequent turns.
+     * On the first turn the `run_search` fallback uses the user's verbatim
+     * query; later turns use a model-generated query. run_search is not offered
+     * up front — it is added by maybeApplySearchTheWebPostExecution after the
+     * search flow, using the variant this flag selects.
      */
-    let chatToolsConfig = structuredClone(toolsConfig);
-    let isVerbatimQuery = true;
-    if (currentTurn > 0) {
-      chatToolsConfig =
-        RunSearch.setGeneratedSearchQueryDescription(chatToolsConfig);
-      isVerbatimQuery = false;
-    }
-
-    chatToolsConfig = filterFeatureGatedTools(chatToolsConfig);
+    const isVerbatimQuery = currentTurn === 0;
+    let chatToolsConfig = filterFeatureGatedTools(structuredClone(toolsConfig));
 
     let fullResponseText = "";
     const searchExecuted = conversation._searchExecutedTurn === currentTurn;
@@ -551,7 +589,18 @@ Object.assign(Chat, {
         const featureGatedHandler = FEATURE_GATED_HANDLERS.get(toolName);
         try {
           if (featureGatedHandler) {
-            result = await featureGatedHandler(toolParams, conversation);
+            result = await featureGatedHandler(
+              toolParams,
+              conversation,
+              signal
+            );
+            // One search per turn: swap search_the_web out and offer the Google
+            // handoff so the assistant can fall back (no-op for other tools).
+            chatToolsConfig = maybeApplySearchTheWebPostExecution(
+              toolName,
+              chatToolsConfig,
+              isVerbatimQuery
+            );
           } else {
             result = await executeToolByName(
               toolName,

@@ -16,6 +16,7 @@ const GENERIC_MODEL_NAME = "generic";
 const MODEL_CHOICE_PREF = "browser.smartwindow.firstrun.modelChoice";
 
 const RS_AI_WINDOW_COLLECTION = "ai-window-prompts";
+const MISTRAL_RELEASE_PREF = "browser.smartwindow.mistralRelease";
 
 const lazy = XPCOMUtils.declareLazy({
   RemoteSettings: "resource://services-settings/remote-settings.sys.mjs",
@@ -115,6 +116,8 @@ export const MODEL_FEATURES = Object.freeze({
   REAL_TIME_CONTEXT_TAB: "real-time-context-tab",
   REAL_TIME_CONTEXT_MENTIONS: "real-time-context-mentions",
   MEMORIES_RELEVANT_CONTEXT: "memories-relevant-context",
+  // search agent
+  SEARCH_ANSWER_GENERATION: "search-answer-generation",
 });
 
 /** @typedef {(typeof MODEL_FEATURES)[keyof typeof MODEL_FEATURES]} ModelFeature */
@@ -147,7 +150,10 @@ export const PURPOSES = Object.freeze({
  * Keep ui/test/browser/head.js MOCK_RS_RECORDS aligned with this table.
  */
 export const FEATURE_MAJOR_VERSIONS = Object.freeze({
-  [MODEL_FEATURES.CHAT]: 7,
+  // TODO Bug 2053495: remove with mistral release pref (CHAT becomes 9)
+  get [MODEL_FEATURES.CHAT]() {
+    return Services.prefs.getBoolPref(MISTRAL_RELEASE_PREF, false) ? 9 : 8;
+  },
   [MODEL_FEATURES.TITLE_GENERATION]: 1,
   [MODEL_FEATURES.CONVERSATION_STARTERS_SIDEBAR_SYSTEM]: 1,
   [MODEL_FEATURES.CONVERSATION_SUGGESTIONS_SIDEBAR_STARTER]: 2,
@@ -169,6 +175,8 @@ export const FEATURE_MAJOR_VERSIONS = Object.freeze({
   [MODEL_FEATURES.REAL_TIME_CONTEXT_DATE]: 1,
   [MODEL_FEATURES.REAL_TIME_CONTEXT_TAB]: 1,
   [MODEL_FEATURES.REAL_TIME_CONTEXT_MENTIONS]: 1,
+  // search agent
+  [MODEL_FEATURES.SEARCH_ANSWER_GENERATION]: 1,
 });
 
 /**
@@ -484,4 +492,32 @@ export function renderPrompt(rawPromptContent, stringsToReplace = {}) {
   }
 
   return finalPromptContent;
+}
+
+/**
+ * Extracts a JSON value from an LLM response (handles markdown-formatted code
+ * blocks). Returns the fallback when the response is not parseable JSON.
+ *
+ * @param {any} response  LLM response
+ * @param {any} fallback  Fallback value if parsing fails to protect downstream code
+ * @returns {any}         Parsed JSON value, or the fallback
+ */
+export function parseAndExtractJSON(response, fallback) {
+  const rawContent = response?.finalOutput ?? "";
+  const markdownMatch = rawContent.match(/```(?:json)?\s*([\s\S]*?)\s*```/i);
+  const payload = markdownMatch ? markdownMatch[1] : rawContent;
+  try {
+    return JSON.parse(payload);
+  } catch (e) {
+    // If we can't parse a JSON from the LLM response, return a tailored fallback value to prevent downstream code failures
+    if (e instanceof SyntaxError) {
+      console.warn(
+        `Could not parse JSON from LLM response; using fallback (${fallback}): ${e.message}`
+      );
+      return fallback;
+    }
+    throw new Error(
+      `Unexpected error parsing JSON from LLM response: ${e.message}`
+    );
+  }
 }
