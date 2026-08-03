@@ -430,6 +430,40 @@ smart_window:
         description: >
           Model selected by the user
 
+  tool_call:
+    type: event
+    description: |
+      The assistant invokes a tool. The tool_name extra identifies which tool;
+      the prompt_version extra captures the Remote Settings configuration
+      version for the chat feature so tool-call behavior can be correlated
+      with prompt revisions during debugging.
+    bugs:
+      - https://bugzilla.mozilla.org/show_bug.cgi?id=2041835
+    data_reviews:
+      - https://phabricator.services.mozilla.com/D302170
+    data_sensitivity:
+      - interaction
+    notification_emails: *emails
+    expires: never
+    extra_keys:
+      location: *location
+      chat_id: *chat_id
+      message_seq: *message_seq
+      tool_name:
+        type: string
+        description: >
+          Name of the invoked tool, e.g. "run_search", "get_open_tabs",
+          "search_browsing_history", "get_user_memories"
+      model: *model
+      prompt_version:
+        type: string
+        description: >
+          Remote Settings prompt configuration version, or empty if unavailable
+      error:
+        type: string
+        description: >
+          Canonical tool-call error code, or empty on success
+
   model_request:
     type: event
     description: |

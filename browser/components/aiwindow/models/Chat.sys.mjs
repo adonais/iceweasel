@@ -184,6 +184,38 @@ ChromeUtils.defineLazyGetter(lazy, "console", () =>
  */
 
 /**
+ * Records the smart_window.tool_call Glean event for any tool invocation
+ * issued by the assistant. The prompt_version extra captures the Remote
+ * Settings prompt configuration version loaded for the chat feature so
+ * tool-call behavior can be correlated with prompt revisions during
+ * debugging.
+ *
+ * @param {object} options
+ * @param {string} options.toolName
+ * @param {"fullpage" | "sidebar" | "urlbar"} options.mode
+ * @param {ChatConversation} options.conversation
+ * @param {openAIEngine} options.engineInstance
+ * @param {string} options.error - Canonical error code, or "" on success
+ */
+function recordToolCallEvent({
+  toolName,
+  mode,
+  conversation,
+  engineInstance,
+  error,
+}) {
+  Glean.smartWindow.toolCall.record({
+    location: mode,
+    chat_id: conversation.id,
+    message_seq: conversation.messageCount,
+    tool_name: toolName,
+    model: engineInstance.model,
+    prompt_version: conversation.chatPromptVersion,
+    error,
+  });
+}
+
+/**
  * Chat
  */
 export const Chat = {};
@@ -416,6 +448,13 @@ Object.assign(Chat, {
             name: tc.function.name,
           };
           conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
+          recordToolCallEvent({
+            toolName: tc.function.name,
+            mode,
+            conversation,
+            engineInstance,
+            error: "duplicate_search",
+          });
         }
 
         if (blockedSearchAttempts === MAX_RUN_SEARCH_PER_TURN) {
@@ -438,6 +477,13 @@ Object.assign(Chat, {
               name: tc.function.name,
             };
             conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
+            recordToolCallEvent({
+              toolName: tc.function.name,
+              mode,
+              conversation,
+              engineInstance,
+              error: "memories_disabled",
+            });
           }
           continue;
         }
@@ -502,6 +548,13 @@ Object.assign(Chat, {
             body: { error: "Invalid JSON arguments" },
           };
           conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
+          recordToolCallEvent({
+            toolName,
+            mode,
+            conversation,
+            engineInstance,
+            error: "invalid_arguments",
+          });
           continue;
         }
 
@@ -521,6 +574,7 @@ Object.assign(Chat, {
         // Dispatch the required arguments to different tool calls. Wrap this in a
         // try/catch so the conversation can be updated for failed calls.
         let result;
+        let toolCallError = "";
         const featureGatedHandler = FEATURE_GATED_HANDLERS.get(toolName);
         try {
           if (featureGatedHandler) {
@@ -556,6 +610,7 @@ Object.assign(Chat, {
           conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
         } catch (error) {
           console.error(error);
+          toolCallError = "execution_failed";
           result = { error: `Tool execution failed: ${String(error)}` };
           ChromeUtils.addProfilerMarker(
             "SmartWindow",
@@ -565,6 +620,14 @@ Object.assign(Chat, {
           const content = { tool_call_id: id, body: result };
           conversation.addToolCallMessage(content, currentTurn, toolRoleOpts);
         }
+
+        recordToolCallEvent({
+          toolName,
+          mode,
+          conversation,
+          engineInstance,
+          error: toolCallError,
+        });
 
         lazy.AIWindow.chatStore
           ?.updateConversation(conversation)
