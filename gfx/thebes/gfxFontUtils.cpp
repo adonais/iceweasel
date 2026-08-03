@@ -611,8 +611,10 @@ uint32_t gfxFontUtils::MapCharToGlyphFormat4(const uint8_t* aBuf,
   const AutoSwap_PRUint16* idDelta = &startCodes[segCount];
   const AutoSwap_PRUint16* idRangeOffset = &idDelta[segCount];
 
-  // Sanity-check that the fixed-size arrays don't exceed the buffer.
-  const uint8_t* const limit = aBuf + aLength;
+  // Sanity-check that the fixed-size arrays don't exceed the buffer or the
+  // current subtable.
+  const uint8_t* const limit =
+      aBuf + std::min(aLength, uint32_t(cmap4->length));
   if ((const uint8_t*)(&idRangeOffset[segCount]) > limit) {
     return 0;  // broken font, just bail out safely
   }

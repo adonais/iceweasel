@@ -3905,8 +3905,7 @@ static sk_sp<const SkTextBlob> CreateTextBlob(
       // if it's detailed, potentially add multiple into run.glyphs
       uint32_t count = aCompressedGlyph[currIndex].GetGlyphCount();
       if (count > 0) {
-        gfxTextRun::DetailedGlyph* detailGlyph =
-            aTextRun->GetDetailedGlyphs(currIndex);
+        const auto* detailGlyph = aTextRun->GetDetailedGlyphs(currIndex, count);
         for (uint32_t d = isRTL ? count - 1 : 0; count; count--, d += step) {
           MOZ_ASSERT(i < len, "glyph count error!");
           AddDetailedGlyph(run, detailGlyph[d], i, aAppUnitsPerDevPixel,

@@ -423,7 +423,7 @@ void nsOpenTypeTable::UpdateCache(DrawTarget* aDrawTarget,
     if (data.IsSimpleGlyph()) {
       mGlyphID = data.GetSimpleGlyph();
     } else if (data.GetGlyphCount() == 1) {
-      mGlyphID = textRun->GetDetailedGlyphs(0)->mGlyphID;
+      mGlyphID = textRun->GetDetailedGlyphs(0, 1)->mGlyphID;
     } else {
       mGlyphID = 0;
     }

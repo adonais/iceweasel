@@ -770,7 +770,7 @@ class gfxTextRun : public gfxShapedText {
     if (!glyphCount) {
       return 0;
     }
-    const DetailedGlyph* details = GetDetailedGlyphs(aIndex);
+    const DetailedGlyph* details = GetDetailedGlyphs(aIndex, glyphCount);
     int32_t advance = 0;
     for (uint32_t j = 0; j < glyphCount; ++j, ++details) {
       advance += details->mAdvance;

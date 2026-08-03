@@ -155,8 +155,8 @@ void MergeCharactersInTextRun(gfxTextRun* aDest, gfxTextRun* aSrc,
           anyMissing = true;
           glyphs.Clear();
         }
-        if (g.GetGlyphCount() > 0) {
-          glyphs.AppendElements(aSrc->GetDetailedGlyphs(k), g.GetGlyphCount());
+        if (uint32_t count = g.GetGlyphCount()) {
+          glyphs.AppendElements(aSrc->GetDetailedGlyphs(k, count), count);
         }
       }
 

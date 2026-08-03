@@ -870,7 +870,7 @@ void gfxShapedText::AdjustAdvancesForSyntheticBold(float aSynBoldOffset,
       // complex glyphs ==> add offset at cluster/ligature boundaries
       uint32_t detailedLength = glyphData->GetGlyphCount();
       if (detailedLength) {
-        DetailedGlyph* details = GetDetailedGlyphs(i);
+        DetailedGlyph* details = GetDetailedGlyphs(i, detailedLength);
         if (!details) {
           continue;
         }
@@ -2041,7 +2041,7 @@ bool gfxFont::DrawGlyphs(const gfxShapedText* aShapedText,
         // Add extra buffer capacity to allow for multiple-glyph entry.
         aBuffer.AddCapacity(glyphCount - 1, capacityMult);
         const gfxShapedText::DetailedGlyph* details =
-            aShapedText->GetDetailedGlyphs(aOffset + i);
+            aShapedText->GetDetailedGlyphs(aOffset + i, glyphCount);
         MOZ_ASSERT(details, "missing DetailedGlyph!");
         for (uint32_t j = 0; j < glyphCount; ++j, ++details) {
           float advance =
@@ -2825,7 +2825,7 @@ bool gfxFont::MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart,
       uint32_t glyphCount = glyphData->GetGlyphCount();
       if (glyphCount > 0) {
         const gfxTextRun::DetailedGlyph* details =
-            aTextRun->GetDetailedGlyphs(i);
+            aTextRun->GetDetailedGlyphs(i, glyphCount);
         NS_ASSERTION(details != nullptr,
                      "detailedGlyph record should not be missing!");
         uint32_t j;
@@ -2898,7 +2898,7 @@ bool gfxFont::MeasureGlyphs(const gfxTextRun* aTextRun, uint32_t aStart,
       uint32_t glyphCount = glyphData->GetGlyphCount();
       if (glyphCount > 0) {
         const gfxTextRun::DetailedGlyph* details =
-            aTextRun->GetDetailedGlyphs(i);
+            aTextRun->GetDetailedGlyphs(i, glyphCount);
         NS_ASSERTION(details != nullptr,
                      "detailedGlyph record should not be missing!");
         uint32_t j;
