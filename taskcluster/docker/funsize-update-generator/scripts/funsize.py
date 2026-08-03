@@ -337,7 +337,7 @@ async def generate_partial(from_dir, to_dir, dest_mar, mar_data, tools_dir, arch
     env["BRANCH"] = mar_data["branch"]
 
     make_incremental_update = tools_dir / "make_incremental_update.sh"
-    cmd = f"{make_incremental_update} {dest_mar} {from_dir} {to_dir}"
+    cmd = f"{make_incremental_update} {dest_mar} {from_dir} {to_dir} {mar_data['appName'].lower()}"
 
     await run_command(cmd, cwd=dest_mar.parent, env=env, label=dest_mar.name)
     validate_mar_channel_id(dest_mar, mar_data["MAR_CHANNEL_ID"])

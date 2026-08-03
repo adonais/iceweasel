@@ -13,7 +13,7 @@
 # -----------------------------------------------------------------------------
 
 print_usage() {
-  notice "Usage: $(basename $0) [OPTIONS] ARCHIVE FROMDIR TODIR"
+  notice "Usage: $(basename $0) [OPTIONS] ARCHIVE FROMDIR TODIR APPNAME"
   notice ""
   notice "The differences between FROMDIR and TODIR will be stored in ARCHIVE."
   notice ""
@@ -104,6 +104,13 @@ shift $arg_start
 archive="$1"
 olddir="$2"
 newdir="$3"
+appname="$4"
+
+if [ -z "$appname" ]; then
+  print_usage
+  exit 1
+fi
+
 # Prevent the workdir from being inside the targetdir so it isn't included in
 # the update mar.
 if [ $(echo "$newdir" | grep -c '\/$') = 1 ]; then
@@ -307,11 +314,11 @@ notice "Reordering MAR instructions to a safer order"
 {
   grep -E '^type '                 "$updatemanifestv3"
   grep -E '"dependentlibs\.list"$' "$updatemanifestv3"
-  grep -vE '^type |"(dependentlibs\.list|browser/omni\.ja|omni\.ja|xul\.dll|firefox\.exe)"$' "$updatemanifestv3"
+  grep -vE "^type |\"(dependentlibs\.list|browser/omni\.ja|omni\.ja|xul\.dll|${appname}\.exe)\"$" "$updatemanifestv3"
   grep -E '"xul\.dll"$'            "$updatemanifestv3"
   grep -E '"browser/omni\.ja"$'    "$updatemanifestv3"
   grep -E '"omni\.ja"$'            "$updatemanifestv3"
-  grep -E '"firefox\.exe"$'        "$updatemanifestv3"
+  grep -E "\"${appname}\.exe\"$"   "$updatemanifestv3"
 } > "$updatemanifestv3.reordered"
 mv -f "$updatemanifestv3.reordered" "$updatemanifestv3"
 
