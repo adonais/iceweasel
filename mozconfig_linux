@@ -50,8 +50,11 @@ ac_add_options --disable-debug-symbols
 # disable sandbox
 ac_add_options --disable-sandbox
 
-# Enable MOZ_ALLOW_LEGACY_EXTENSIONS
-# ac_add_options "MOZ_ALLOW_LEGACY_EXTENSIONS=1"
+# Disable data reporting
+MOZ_DATA_REPORTING=
+MOZ_SERVICES_HEALTHREPORT=
+MOZ_TELEMETRY_REPORTING=
+MOZ_NORMANDY=
 
 # Add-on signing is not required
 MOZ_REQUIRE_SIGNING=

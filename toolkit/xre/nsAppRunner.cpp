@@ -3668,6 +3668,57 @@ int32_t CompareCompatVersions(const nsACString& aOldCompatVersion,
                          PromiseFlatCString(newMajorVersion).get());
 }
 
+#if defined(XP_LINUX)
+#define FILE_PORTABLE_INI "portable.ini"_ns
+
+static bool CheckIniPortable(nsIFile* aProfileDir) {
+  nsCOMPtr<nsIFile> file;
+  aProfileDir->Clone(getter_AddRefs(file));
+  if (!file) return false;
+  file->AppendNative(FILE_PORTABLE_INI);
+
+  nsINIParser parser;
+  nsresult rv = parser.Init(file);
+  if (NS_FAILED(rv)) {
+    return false;
+  }
+  return true;
+}
+
+static void WriteIniPortable(nsIFile* aProfileDir) {
+  nsCOMPtr<nsIFile> file;
+  aProfileDir->Clone(getter_AddRefs(file));
+  if (!file) return;
+  file->AppendNative(FILE_PORTABLE_INI);
+
+  PRFileDesc* fd;
+  nsresult rv = file->OpenNSPRFileDesc(PR_WRONLY | PR_CREATE_FILE | PR_TRUNCATE,
+                                       0600, &fd);
+  if (NS_FAILED(rv)) {
+    NS_ERROR("could not create portable.ini output stream");
+    return;
+  }
+
+  static const char kGeneral[] = "[General]" NS_LINEBREAK "OnTabs=0" NS_LINEBREAK "EnableUBO=0" NS_LINEBREAK;
+
+  PR_Write(fd, kGeneral, sizeof(kGeneral) - 1);
+
+  static const char kTabs[] = "[tabs]" NS_LINEBREAK "hover_active=0" NS_LINEBREAK "right_click_close=0" NS_LINEBREAK;
+  PR_Write(fd, kTabs, sizeof(kTabs) - 1);
+
+  static const char kAria2[] = "[aria2]" NS_LINEBREAK "path=aria2c" NS_LINEBREAK "arg=" NS_LINEBREAK "rpc=http://127.0.0.1:6800/jsonrpc" NS_LINEBREAK "secret=" NS_LINEBREAK;
+  PR_Write(fd, kAria2, sizeof(kAria2) - 1);
+
+  static const char kChrome[] = "[chrome]" NS_LINEBREAK "uc_url=https://sourceforge.net/projects/libportable/files/Iceweasel/userchrome.7z/download" NS_LINEBREAK "dl_url=https://sourceforge.net/projects/libportable/files/Iceweasel/downloadupchek.7z/download" NS_LINEBREAK "dl32_url=https://sourceforge.net/projects/libportable/files/Iceweasel/downloadupchek.7z/download" NS_LINEBREAK;
+  PR_Write(fd, kChrome, sizeof(kChrome) - 1);
+
+  static const char kUpdate[] = "[update]" NS_LINEBREAK ";faster=https://gh-proxy.org/sourceforge" NS_LINEBREAK;
+  PR_Write(fd, kUpdate, sizeof(kUpdate) - 1);
+
+  PR_Close(fd);
+}
+#endif
+
 /**
  * Checks the compatibility.ini file to see if we have updated our application
  * or otherwise invalidated our caches. If the application has been updated,
@@ -5617,6 +5668,9 @@ int XREMain::XRE_mainStartup(bool* aExitFlag,
   bool versionOK = CheckCompatibility(
       mProfD, version, osABI, mDirProvider.GetGREDir(), mAppData->directory,
       flagFile, &cachesOK, &isDowngrade, lastVersion);
+#if defined(XP_LINUX)
+  bool portableOK = CheckIniPortable(mProfD);
+#endif
 
   MOZ_RELEASE_ASSERT(!cachesOK || lastVersion.Equals(version),
                      "Caches cannot be good if the version has changed.");
@@ -5736,6 +5790,12 @@ int XREMain::XRE_mainStartup(bool* aExitFlag,
     WriteVersion(mProfD, version, osABI, mDirProvider.GetGREDir(),
                  mAppData->directory, gSafeMode || !startupCacheValid);
   }
+
+#if defined(XP_LINUX)
+  if (!portableOK) {
+    WriteIniPortable(mProfD);
+  }
+#endif
 
   if (!startupCacheValid) StartupCache::IgnoreDiskCache();
 
