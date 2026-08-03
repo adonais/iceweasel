@@ -5,7 +5,6 @@
 do_get_profile();
 
 const {
-  SEARCH_QUERY,
   getActionLogConfigForTool,
   getActionLogChipsForTool,
   buildActionLogRow,
@@ -18,6 +17,7 @@ const {
   SEARCH_BROWSING_HISTORY,
   GET_USER_MEMORIES,
   GET_NAVIGATION_INFO,
+  SEARCH_THE_WEB,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
@@ -29,7 +29,7 @@ add_task(function test_getActionLogConfigForTool_visible_tools() {
       SEARCH_BROWSING_HISTORY,
       GET_USER_MEMORIES,
       GET_NAVIGATION_INFO,
-      SEARCH_QUERY,
+      SEARCH_THE_WEB,
     ]) {
       const cfg = getActionLogConfigForTool(toolName, []);
 
@@ -59,6 +59,36 @@ add_task(function test_getActionLogConfigForTool_unknown_tool_suppressed() {
     null,
     "Unknown tool has no pending label"
   );
+  Assert.strictEqual(cfg.link, null, "Unknown tool has no link");
+});
+
+add_task(function test_getActionLogConfigForTool_search_the_web_link() {
+  const cfg = getActionLogConfigForTool(SEARCH_THE_WEB, {});
+
+  Assert.equal(
+    cfg.link?.l10nName,
+    "exa-link",
+    "Exa link uses the expected l10n name"
+  );
+  Assert.ok(
+    cfg.link?.href?.startsWith("http"),
+    `Exa link href is resolved from a support pref (got: ${cfg.link?.href})`
+  );
+  Assert.equal(
+    cfg.pendingLabel?.l10nId,
+    "action-log-searching-web-with-exa",
+    "Pending label uses the Exa-branded string"
+  );
+  Assert.equal(
+    cfg.pendingLabel?.link?.href,
+    cfg.link.href,
+    "Pending label carries the same resolved link as the row"
+  );
+});
+
+add_task(function test_getActionLogConfigForTool_no_link_by_default() {
+  const cfg = getActionLogConfigForTool(GET_OPEN_TABS, []);
+  Assert.strictEqual(cfg.link, null, "Tools without a link config return null");
 });
 
 add_task(function test_getActionLogConfigForTool_returns_default() {
@@ -178,4 +208,27 @@ add_task(function test_buildActionLogRow_unknown_tool_no_chip() {
   ]);
   Assert.deepEqual(row.items, [], "Unknown tool has no chip adapter");
   Assert.equal(row.labelL10nId, "x");
+});
+
+add_task(function test_buildActionLogRow_carries_link() {
+  const link = { l10nName: "exa-link", href: "https://example.com/exa" };
+  const row = buildActionLogRow(
+    SEARCH_THE_WEB,
+    { l10nId: "action-log-searched-web-with-exa" },
+    {},
+    undefined,
+    link
+  );
+  Assert.deepEqual(row.link, link, "Link is carried onto the row");
+});
+
+add_task(function test_buildActionLogRow_no_link_without_href() {
+  const row = buildActionLogRow(
+    SEARCH_THE_WEB,
+    { l10nId: "action-log-searched-web-with-exa" },
+    {},
+    undefined,
+    { l10nName: "exa-link", href: "" }
+  );
+  Assert.ok(!("link" in row), "Row omits link when href is empty");
 });

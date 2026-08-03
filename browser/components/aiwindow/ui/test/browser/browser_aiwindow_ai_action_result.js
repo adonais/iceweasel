@@ -276,3 +276,48 @@ add_task(async function test_mixed_l10n_and_plain_strings() {
     });
   });
 });
+
+add_task(async function test_label_links_render_and_do_not_toggle() {
+  const HREF = "https://support.mozilla.org/kb/smart-window-exa";
+  const link = { l10nName: "exa-link", href: HREF };
+
+  await withTestPage(async browser => {
+    // Render the Exa link in both places at once: the header label and an
+    // expanded row.
+    await setProps(browser, {
+      labelL10nId: "action-log-searching-web-with-exa",
+      labelLink: link,
+      isExpanded: true,
+      rows: [
+        { labelL10nId: "action-log-searched-web-with-exa", link, items: [] },
+      ],
+    });
+
+    await SpecialPowers.spawn(browser, [HREF], async href => {
+      const el = content.document.getElementById("test-action-result");
+      const shadow = el.shadowRoot;
+      const anchors = shadow.querySelectorAll("a.action-result-label-link");
+
+      Assert.equal(anchors.length, 2, "Header and row each render a link");
+      for (const anchor of anchors) {
+        Assert.equal(anchor.getAttribute("data-l10n-name"), "exa-link");
+        Assert.equal(anchor.getAttribute("href"), href);
+        Assert.equal(
+          anchor.getAttribute("target"),
+          "_blank",
+          "opens a new tab"
+        );
+      }
+
+      // The header anchor is inside the toggle button; clicking it must not
+      // toggle the card. Cancel the native target=_blank navigation first so
+      // the test doesn't open a real tab.
+      content.document.addEventListener("click", e => e.preventDefault(), {
+        capture: true,
+        once: true,
+      });
+      shadow.querySelector(".action-result-label a").click();
+      Assert.ok(el.isExpanded, "Clicking the link does not toggle the card");
+    });
+  });
+});

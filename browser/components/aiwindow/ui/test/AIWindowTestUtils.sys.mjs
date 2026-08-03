@@ -84,6 +84,37 @@ export class MockEngineManager {
   }
 
   /**
+   * Wait for a pending run request on the engine with the given purpose and
+   * return both the captured request and a `respond` callback, without
+   * resolving it. Unlike `respondTo`, this hands the raw request to the test so
+   * it can assert on what the real code actually sent to the model (the
+   * messages in `request.args`, the `request.tools` array, etc.) before
+   * deciding how the model should reply. This is what keeps a test cheat-proof:
+   * the assertions are made against real inputs produced by real code, not
+   * against values the test itself fed into a stub.
+   *
+   * @param {object} options
+   * @param {ModelFeature} options.purpose
+   * @returns {Promise<{request: object, respond: (response: MockedResponse) => void}>}
+   */
+  async captureRequest({ purpose }) {
+    /** @type {MockLLMEngine} */
+    const engine = await TestUtils.waitForCondition(
+      () => this.engines.get(purpose),
+      `Couldn't find the engine "${purpose}"`
+    );
+    await TestUtils.waitForCondition(
+      () => engine.runRequests.size,
+      `[MockEngineManager] Failed to find a request for the engine with purpose "${purpose}"`
+    );
+    const [requestId, { request }] = engine.getNextRequest();
+    return {
+      request,
+      respond: response => engine.respond(requestId, response),
+    };
+  }
+
+  /**
    * Reject all outstanding engine requests. This can help ensure that a test
    * run is clean before asserting specific behavior.
    */

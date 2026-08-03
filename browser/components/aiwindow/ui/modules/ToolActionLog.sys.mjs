@@ -11,11 +11,10 @@ import {
   GET_NAVIGATION_INFO,
   WORLD_CUP_MATCHES,
   WORLD_CUP_LIVE,
+  SEARCH_THE_WEB,
 } from "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs";
 
 export const ACTION_LOG_UI_TYPE = "action-log";
-// TODO: use SEARCH_QUERY from Tools.sys.mjs once the tool call is ready
-export const SEARCH_QUERY = "search_query";
 
 const EMPTY_ROWS = Object.freeze([]);
 
@@ -25,6 +24,15 @@ const EMPTY_ROWS = Object.freeze([]);
  * @typedef {object} ActionLogLabel
  * @property {string} l10nId - Fluent message id for the label text
  * @property {object} [l10nArgs] - optional Fluent variables (e.g. counts)
+ */
+
+/**
+ * A link embedded inside an action log label. Requires a matching
+ * <a data-l10n-name> in the l10n message.
+ *
+ * @typedef {object} ActionLogLabelLink
+ * @property {string} l10nName - matches data-l10n-name on the rendered anchor
+ * @property {string} href - URL the anchor opens
  */
 
 /**
@@ -84,10 +92,15 @@ const TOOL_ACTION_LOG_CONFIG = new Map([
     },
   ],
   [
-    SEARCH_QUERY,
+    SEARCH_THE_WEB,
     {
-      label: { l10nId: "action-log-searched-web-exa" },
-      pendingLabel: { l10nId: "action-log-searching-web" },
+      label: { l10nId: "action-log-searched-web-with-exa" },
+      pendingLabel: { l10nId: "action-log-searching-web-with-exa" },
+      link: {
+        l10nName: "exa-link",
+        supportPage:
+          "smart-window?as=u&utm_source=inproduct#w_the-assistant-may-search-the-web",
+      },
     },
   ],
   [
@@ -134,21 +147,42 @@ const TOOL_RESULT_TO_CHIPS = new Map([
   ],
 ]);
 
+function resolveSupportUrl(supportPage) {
+  return (
+    Services.urlFormatter.formatURLPref("app.support.baseURL") + supportPage
+  );
+}
+
 /**
  * Look up the action log UI config for a given tool. Tools without an entry
  * default to suppressed (show: false)
  *
  * @param {string} toolName
  * @param {object} [body] - tool result body
- * @returns {{ label: ActionLogLabel | null, pendingLabel: ActionLogLabel | null }}
+ * @returns {{ show: boolean, label: ActionLogLabel | null, pendingLabel: ActionLogLabel | null, link: ActionLogLabelLink | null }}
  */
 export function getActionLogConfigForTool(toolName, body) {
   const cfg = TOOL_ACTION_LOG_CONFIG.get(toolName);
   if (!cfg) {
-    return { show: false, label: null, pendingLabel: null };
+    return { show: false, label: null, pendingLabel: null, link: null };
   }
   const label = typeof cfg.label === "function" ? cfg.label(body) : cfg.label;
-  return { show: true, label, pendingLabel: cfg.pendingLabel ?? null };
+  const link = cfg.link
+    ? {
+        l10nName: cfg.link.l10nName,
+        href: resolveSupportUrl(cfg.link.supportPage),
+      }
+    : null;
+  let pendingLabel = cfg.pendingLabel ?? null;
+  if (pendingLabel && link) {
+    pendingLabel = { ...pendingLabel, link };
+  }
+  return {
+    show: true,
+    label,
+    pendingLabel,
+    link,
+  };
 }
 
 /**
@@ -173,19 +207,22 @@ export function getActionLogChipsForTool(toolName, body, args) {
  * @param {ActionLogLabel | string} label
  * @param {object} body - tool result body
  * @param {object} [args] - parsed tool call args
- * @returns {{ labelL10nId?: string, labelL10nArgs?: object, label?: string, items: Array<ActionLogChip> }}
+ * @param {ActionLogLabelLink} [link] - optional link embedded in the label
+ * @returns {{ labelL10nId?: string, labelL10nArgs?: object, label?: string, link?: ActionLogLabelLink, items: Array<ActionLogChip> }}
  */
-export function buildActionLogRow(toolName, label, body, args) {
-  const items = getActionLogChipsForTool(toolName, body, args);
-  if (label && typeof label === "object" && label.l10nId) {
-    return {
-      labelL10nId: label.l10nId,
-      labelL10nArgs: label.l10nArgs,
-      items,
-    };
+export function buildActionLogRow(toolName, label, body, args, link) {
+  const row = { items: getActionLogChipsForTool(toolName, body, args) };
+
+  if (link?.href) {
+    row.link = link;
   }
-  return {
-    label: typeof label === "string" ? label : "",
-    items,
-  };
+
+  if (label && typeof label === "object" && label.l10nId) {
+    row.labelL10nId = label.l10nId;
+    row.labelL10nArgs = label.l10nArgs;
+  } else {
+    row.label = typeof label === "string" ? label : "";
+  }
+
+  return row;
 }
