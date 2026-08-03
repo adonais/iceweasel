@@ -297,8 +297,6 @@ static const char kPrefPreXulSkeletonUI[] = "browser.startup.preXulSkeletonUI";
 #  endif  // defined(MOZ_DEFAULT_BROWSER_AGENT)
 #endif    // defined(XP_WIN)
 
-// static const char kPrefRedesign2025[] = "browser.settings-redesign.enabled";
-
 #if defined(MOZ_WIDGET_GTK)
 constexpr nsLiteralCString kStartupTokenNames[] = {
     "XDG_ACTIVATION_TOKEN"_ns,
@@ -985,7 +983,6 @@ static void EnsureFissionAutostartInitialized() {
   Preferences::SetBool(kPrefFissionAutostartSession, gFissionAutostart,
                        PrefValueKind::Default);
   Preferences::Lock(kPrefFissionAutostartSession);
-  // Preferences::Lock(kPrefRedesign2025);
 }
 
 namespace mozilla {
@@ -4519,9 +4516,11 @@ int XREMain::XRE_mainInit(bool* aExitFlag,
   rv = mDirProvider.Initialize(mAppData->directory, mAppData->xreDirectory);
   if (NS_FAILED(rv)) return 1;
 
+#ifdef MOZ_CRASHREPORTER
   if (EnvHasValue("MOZ_CRASHREPORTER")) {
     mAppData->flags |= NS_XRE_ENABLE_CRASH_REPORTER;
   }
+#endif
 
 #ifdef MOZ_THUNDERBIRD
   // Set an explicit application name for Thunderbird.
@@ -4534,6 +4533,7 @@ int XREMain::XRE_mainInit(bool* aExitFlag,
   nsCOMPtr<nsIFile> xreBinDirectory;
   xreBinDirectory = mDirProvider.GetGREBinDir();
 
+#if defined(MOZ_CRASHREPORTER)
   // Unconditionally set the ServerURL exception before we launch the crash
   // helper or set the exception handler. This guarantees that the annotation
   // will be populated when we need it.
@@ -4629,6 +4629,9 @@ int XREMain::XRE_mainInit(bool* aExitFlag,
     // data, so unregister here if it turns out the crash reporter is disabled.
     CrashReporter::UnregisterRuntimeExceptionModule();
   }
+#else
+  CrashReporter::UnregisterRuntimeExceptionModule();
+#endif
 
 #if defined(MOZ_SANDBOX) && defined(XP_WIN)
   if (mAppData->sandboxBrokerServices) {
@@ -4722,9 +4725,11 @@ int XREMain::XRE_mainInit(bool* aExitFlag,
 
   gSafeMode = safeModeRequested.value();
 
+#ifdef MOZ_CRASHREPORTER
   MaybeAddCPUMicrocodeCrashAnnotation();
   CrashReporter::RegisterAnnotationBool(CrashReporter::Annotation::SafeMode,
                                         &gSafeMode);
+#endif
 
   // Strip the now unsupported no-remote command line argument.
   CheckArg("no-remote");
@@ -4799,7 +4804,7 @@ int XREMain::XRE_mainInit(bool* aExitFlag,
   return 0;
 }
 
-#if defined(XP_LINUX) && !defined(ANDROID)
+#if defined(MOZ_CRASHREPORTER) && defined(XP_LINUX) && !defined(ANDROID)
 
 static void AnnotateLSBRelease(void*) {
   nsCString dist, desc, release, codename;
@@ -5667,6 +5672,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag,
 
   //////////////////////// NOW WE HAVE A PROFILE ////////////////////////
 
+#ifdef MOZ_CRASHREPORTER
   mozilla::Telemetry::SetProfileDir(mProfD);
 
   if (mAppData->flags & NS_XRE_ENABLE_CRASH_REPORTER) {
@@ -5674,6 +5680,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag,
   }
 
   CrashReporter::SetProfileDirectory(mProfD);
+#endif
 
 #ifdef MOZ_ASAN_REPORTER
   // In ASan reporter builds, we need to set ASan's log_path as early as
@@ -5687,6 +5694,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag,
   SaveFileToEnv("ASAN_REPORTER_PATH", mProfD);
 #endif
 
+#ifdef MOZ_CRASHREPORTER
   bool lastStartupWasCrash = CheckLastStartupWasCrash();
 
   CrashReporter::RecordAnnotationBool(
@@ -5699,6 +5707,7 @@ int XREMain::XRE_mainStartup(bool* aExitFlag,
 
   CrashReporter::RecordAnnotationBool(
       CrashReporter::Annotation::StartupCacheValid, cachesOK && versionOK);
+#endif
 
 #ifdef XP_MACOSX
   static bool status = nsCocoaFeatures::ProcessIsRosettaTranslated();
@@ -5819,6 +5828,7 @@ nsresult XREMain::XRE_mainRun() {
     rv = mScopedXPCOM->SetWindowCreator(mNativeApp);
     NS_ENSURE_SUCCESS(rv, NS_ERROR_FAILURE);
 
+#if defined(MOZ_CRASHREPORTER)
     // tell the crash reporter to also send the release channel
     nsCOMPtr<nsIPrefService> prefs =
         do_GetService("@mozilla.org/preferences-service;1", &rv);
@@ -5839,8 +5849,9 @@ nsresult XREMain::XRE_mainRun() {
     bool includeContextHeap = Preferences::GetBool(
         "toolkit.crashreporter.include_context_heap", false);
     CrashReporter::SetIncludeContextHeap(includeContextHeap);
+#endif
 
-#if defined(XP_LINUX) && !defined(ANDROID)
+#if defined(MOZ_CRASHREPORTER) && defined(XP_LINUX) && !defined(ANDROID)
     PR_CreateThread(PR_USER_THREAD, AnnotateLSBRelease, nullptr,
                     PR_PRIORITY_LOW, PR_GLOBAL_THREAD, PR_UNJOINABLE_THREAD, 0);
 #endif
@@ -6069,10 +6080,12 @@ nsresult XREMain::XRE_mainRun() {
     mozilla::FilePreferences::InitDirectoriesAllowlist();
     mozilla::FilePreferences::InitPrefs();
 
+#ifdef MOZ_CRASHREPORTER
     nsCString userAgentLocale;
     LocaleService::GetInstance()->GetAppLocaleAsBCP47(userAgentLocale);
     CrashReporter::RecordAnnotationNSCString(
         CrashReporter::Annotation::useragent_locale, userAgentLocale);
+#endif
 
     if (!AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed)) {
       /* Special-case services that need early access to the command
@@ -6204,8 +6217,10 @@ nsresult XREMain::XRE_mainRun() {
 
       (void)appStartup->DoneStartingUp();
 
+#ifdef MOZ_CRASHREPORTER
       CrashReporter::RecordAnnotationBool(
           CrashReporter::Annotation::StartupCrash, false);
+#endif
 
       AppShutdown::IsInOrBeyond(ShutdownPhase::AppShutdownConfirmed);
     }
@@ -6232,7 +6247,7 @@ nsresult XREMain::XRE_mainRun() {
     mozilla::glean::gecko::version.Set(nsDependentCString(gAppData->version));
     mozilla::glean::gecko::build_id.Set(nsDependentCString(gAppData->buildID));
 
-#if defined(MOZ_SANDBOX) && defined(XP_LINUX)
+#if defined(MOZ_CRASHREPORTER) && defined(MOZ_SANDBOX) && defined(XP_LINUX)
     // If we're on Linux, we now have information about the OS capabilities
     // available to us.
     SandboxInfo sandboxInfo = SandboxInfo::Get();
