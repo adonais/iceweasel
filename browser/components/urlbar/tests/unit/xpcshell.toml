@@ -207,6 +207,8 @@ skip-if = [
 
 ["test_resultGroups.js"]
 
+["test_resultGroups_smartbar.js"]
+
 ["test_result_highlights.js"]
 
 ["test_richsuggestions.js"]

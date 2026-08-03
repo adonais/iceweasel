@@ -490,6 +490,12 @@ const PREF_URLBAR_DEFAULTS = /** @type {PreferenceDefinition[]} */ ([
   // can be used at all, and enabled/disabled by the user.
   ["showSearchTerms.featureGate", false],
 
+  // The maximum number of results in the smartbar popup.
+  ["smartbar.maxResults", 7],
+
+  // Whether to show search suggestions before general results in the smartbar.
+  ["smartbar.showSearchSuggestionsFirst", false],
+
   // Whether speculative connections should be enabled.
   ["speculativeConnect.enabled", true],
 
@@ -1052,11 +1058,14 @@ function makeSmartBarGroups({
       },
     ],
   };
+
+  // The search branch always gets the larger share of results.
+  let [searchBranch, generalBranch] = mainGroup.children;
+  searchBranch.flex = 2;
+  generalBranch.flex = 1;
   if (!showSearchSuggestionsFirst) {
     mainGroup.children.reverse();
   }
-  mainGroup.children[0].flex = 2;
-  mainGroup.children[1].flex = 1;
   return {
     children: [
       // heuristic
@@ -1203,7 +1212,7 @@ class Preferences {
     return this.get("scotchBonnet.enableOverride") || this.get(pref);
   }
 
-  #getShowSearchSuggestionsFirst(context) {
+  #getShowSearchSuggestionsFirst(context, pref = "showSearchSuggestionsFirst") {
     let showSearchSuggestionsFirst =
       context.searchString ||
       (!this.get("suggest.trending") && !this.get("suggest.recentsearches"));
@@ -1211,9 +1220,9 @@ class Preferences {
     let inSearchEngineMode = !!context.searchMode?.engineName;
 
     // If we're in a case were search suggestions would be shown first, but not
-    // in search engine mode, then just use the user preference.
+    // in search engine mode, then just use the preference.
     if (!inSearchEngineMode && showSearchSuggestionsFirst) {
-      showSearchSuggestionsFirst = this.get("showSearchSuggestionsFirst");
+      showSearchSuggestionsFirst = this.get(pref);
     }
     return showSearchSuggestionsFirst;
   }
@@ -1249,9 +1258,10 @@ class Preferences {
         );
       }
       case "smartbar": {
-        // This is a temporary placeholder until smartbar gets its own config.
-        let showSearchSuggestionsFirst =
-          this.#getShowSearchSuggestionsFirst(context);
+        let showSearchSuggestionsFirst = this.#getShowSearchSuggestionsFirst(
+          context,
+          "smartbar.showSearchSuggestionsFirst"
+        );
         key += showSearchSuggestionsFirst;
         return this.#getOrCacheResultGroups(key, () =>
           makeSmartBarGroups({
@@ -1335,6 +1345,7 @@ class Preferences {
         this._map.delete("autoFillAdaptiveHistoryUseCountThreshold");
         return;
       case "showSearchSuggestionsFirst":
+      case "smartbar.showSearchSuggestionsFirst":
       case "suggest.semanticHistory.separateGroup":
         this.#cachedResultGroups.clear();
         return;

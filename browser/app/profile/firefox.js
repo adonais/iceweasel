@@ -620,6 +620,13 @@ pref("browser.urlbar.unitConversion.enabled", true);
 // bookmarks.
 pref("browser.urlbar.showSearchSuggestionsFirst", true);
 
+// Whether to show search suggestions before general results like history and
+// bookmarks in the smartbar.
+pref("browser.urlbar.smartbar.showSearchSuggestionsFirst", false);
+
+// The maximum number of results to show in the smartbar.
+pref("browser.urlbar.smartbar.maxResults", 7);
+
 // As a user privacy measure, don't fetch search suggestions if a pasted string
 // is longer than this.
 pref("browser.urlbar.maxCharsForSearchSuggestions", 100);
@@ -1723,6 +1730,11 @@ pref("services.sync.prefs.sync.browser.tabs.warnOnOpen", true);
 pref("services.sync.prefs.sync.browser.taskbar.previews.enable", true);
 pref("services.sync.prefs.sync.browser.urlbar.maxRichResults", true);
 pref("services.sync.prefs.sync.browser.urlbar.showSearchSuggestionsFirst", true);
+pref("services.sync.prefs.sync.browser.urlbar.smartbar.maxResults", true);
+pref(
+  "services.sync.prefs.sync.browser.urlbar.smartbar.showSearchSuggestionsFirst",
+  true
+);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.bookmark", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.history", true);
 pref("services.sync.prefs.sync.browser.urlbar.suggest.openpage", true);

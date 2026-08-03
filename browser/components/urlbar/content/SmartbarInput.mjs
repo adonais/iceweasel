@@ -6275,10 +6275,14 @@ ${
   } = {}) {
     // When we are in actions search mode we can show more results so
     // increase the limit.
-    let maxResults =
-      this.searchMode?.source != lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS
-        ? lazy.UrlbarPrefs.get("maxRichResults")
-        : UNLIMITED_MAX_RESULTS;
+    let maxResults;
+    if (this.searchMode?.source == lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS) {
+      maxResults = UNLIMITED_MAX_RESULTS;
+    } else if (this.#isSmartbarMode) {
+      maxResults = lazy.UrlbarPrefs.get("smartbar.maxResults");
+    } else {
+      maxResults = lazy.UrlbarPrefs.get("maxRichResults");
+    }
     let options = {
       allowAutofill,
       isPrivate: this.isPrivate,
