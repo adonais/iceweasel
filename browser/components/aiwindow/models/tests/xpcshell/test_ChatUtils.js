@@ -16,6 +16,7 @@ const {
   sanitizeUntrustedContent,
   expandUrlTokens,
   replaceUrlsWithTokens,
+  resolveMentionUrls,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs"
 );
@@ -646,5 +647,49 @@ add_task(function test_replaceUrlsWithTokens_runExtraction_content_format() {
   Assert.ok(
     conversation.urlToToken.has(inlineUrl),
     "URL in extracted page content body should also be extracted"
+  );
+});
+
+add_task(function test_resolveMentionUrls_resolves_single_mention() {
+  const url = "https://example.com/1";
+  const result = resolveMentionUrls(
+    `Summarize [@Page 1](mention:?href=${encodeURIComponent(url)})`
+  );
+  Assert.equal(
+    result,
+    `Summarize [@Page 1](${url})`,
+    "Inline @mention URL should be correctly rewritten"
+  );
+});
+
+add_task(function test_resolveMentionUrls_resolves_multiple_mentions() {
+  const url1 = "https://example.com/1";
+  const url2 = "https://example.com/2?a=b";
+  const result = resolveMentionUrls(
+    `[@One](mention:?href=${encodeURIComponent(url1)}) and [@Two](mention:?href=${encodeURIComponent(url2)})`
+  );
+  Assert.equal(
+    result,
+    `[@One](${url1}) and [@Two](${url2})`,
+    "All inline @mention URLs preserve their query strings"
+  );
+});
+
+add_task(function test_resolveMentionUrls_does_not_change_non_mention_urls() {
+  const text = "See [docs](https://example.com/docs) for more.";
+  Assert.equal(
+    resolveMentionUrls(text),
+    text,
+    "Non-mention URLs are unchanged"
+  );
+});
+
+add_task(function test_resolveMentionUrls_invalid_mentions() {
+  const text =
+    "These [@One](mention:?foo=bar) are [@Two](mention:?href=) invalid [@Three](mention:?) mentions.";
+  Assert.equal(
+    resolveMentionUrls(text),
+    text,
+    "Invalid mentions are unchanged"
   );
 });

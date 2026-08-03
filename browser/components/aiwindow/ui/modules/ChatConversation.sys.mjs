@@ -11,6 +11,7 @@ import {
 import {
   constructRelevantMemoriesContextMessage,
   constructRealTimeInfoInjectionMessage,
+  resolveMentionUrls,
   sanitizeUntrustedContent,
   stripUnresolvedUrlTokens,
 } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
@@ -1094,6 +1095,11 @@ export class ChatConversation extends EventEmitter {
         role: getRoleLabel(message.role).toLowerCase(),
         content: message.content?.body ?? message.content,
       };
+
+      // Resolve inline `@mention`s so the model receives a fetchable URL.
+      if (message.role === MESSAGE_ROLE.USER) {
+        msg.content = resolveMentionUrls(msg.content);
+      }
 
       if (msg.content.tool_calls) {
         msg.tool_calls = msg.content.tool_calls;

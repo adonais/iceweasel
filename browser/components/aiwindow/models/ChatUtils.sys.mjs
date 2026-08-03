@@ -314,6 +314,20 @@ export function stripUnresolvedUrlTokens(text) {
 }
 
 /**
+ * Resolve inline `@mention` markdown to URLs.
+ * The smartbar editor contains inline mentions as `[label](mention:?href=url)`.
+ *
+ * @param {string} text
+ * @returns {string}
+ */
+export function resolveMentionUrls(text) {
+  return text.replace(/\]\(mention:\?([^)]*)\)/g, (match, query) => {
+    const href = new URLSearchParams(query).get("href");
+    return href ? `](${href})` : match;
+  });
+}
+
+/**
  * Expands URL tokens in tool call parameters in-place.
  * Handles both string values and arrays of strings.
  *
