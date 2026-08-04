@@ -14,6 +14,9 @@ const { SmartbarMentionsPanelSearch, MENTION_TYPE } =
   ChromeUtils.importESModule(
     "moz-src:///browser/components/urlbar/SmartbarMentionsPanelSearch.sys.mjs"
   );
+const { MockEngineManager } = ChromeUtils.importESModule(
+  "resource://testing-common/AIWindowTestUtils.sys.mjs"
+);
 
 let providerStub;
 const DEFAULT_PROVIDER_STUB_RETURN = [
@@ -487,3 +490,81 @@ add_task(
     await BrowserTestUtils.closeWindow(win);
   }
 );
+
+// Inline @mention must reach the prompt builder as part of `contextMentions`.
+add_task(async function test_inline_mention_reaches_prompt_builder() {
+  const sb = this.sinon.createSandbox();
+  const injectSpy = sb.spy(
+    this.ChatConversation.prototype,
+    "injectRealTimeContext"
+  );
+  const mockEngineManager = new MockEngineManager();
+  const win = await openAIWindow();
+
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+
+    await insertInlineMention(browser);
+    await typeInSmartbar(browser, " please summarize");
+    await submitSmartbar(browser);
+
+    // Ensure the prompt builder has run.
+    await mockEngineManager.respondTo({ purpose: "chat", response: "ok" });
+
+    const userMessage = injectSpy.firstCall.args[0];
+    const { contextMentions } = userMessage.content;
+    Assert.equal(
+      contextMentions.length,
+      1,
+      "Inline @mention should be included in contextMentions"
+    );
+    Assert.equal(
+      contextMentions[0].url,
+      "https://example.com/1",
+      "Mention URL should match the @mentioned tab"
+    );
+  } finally {
+    mockEngineManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
+    await BrowserTestUtils.closeWindow(win);
+    sb.restore();
+  }
+});
+
+// Inline @mention must be resolved to URLs before they are passed to the model.
+add_task(async function test_inline_mention_passed_to_model_as_url() {
+  const mockEngineManager = new MockEngineManager();
+  const win = await openAIWindow();
+
+  try {
+    const browser = win.gBrowser.selectedBrowser;
+
+    await insertInlineMention(browser);
+    await typeInSmartbar(browser, " please summarize");
+    await submitSmartbar(browser);
+
+    const chatRequest = await TestUtils.waitForCondition(() => {
+      const engine = mockEngineManager.engines.get("chat");
+      return engine?.runRequests.size && engine.getNextRequest()[1].request;
+    }, "Chat engine should receive a request");
+
+    const requestText = JSON.stringify(chatRequest);
+    Assert.ok(
+      !requestText.includes("mention:?"),
+      "The mention markdown should not reach the model"
+    );
+
+    const urlToken = await SpecialPowers.spawn(browser, [], () => {
+      const { conversation } = content.document.querySelector("ai-window");
+      return conversation.urlToToken.get("https://example.com/1");
+    });
+    Assert.ok(
+      requestText.includes(urlToken),
+      `The @mentioned URL should reach the model as its token: ${urlToken})`
+    );
+  } finally {
+    mockEngineManager.rejectAllRequests();
+    mockEngineManager.cleanupMocks();
+    await BrowserTestUtils.closeWindow(win);
+  }
+});

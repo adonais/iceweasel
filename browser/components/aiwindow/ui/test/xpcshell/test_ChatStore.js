@@ -76,7 +76,7 @@ async function addConvoWithSpecificCustomContentTestData(
     pageUrl: mainLink,
   });
   conversation.title = title;
-  conversation.addMessage(role, content, messageLink, 0);
+  conversation.addMessage(role, content, 0, { pageUrl: messageLink });
   await gChatStore.updateConversation(conversation);
 }
 
@@ -562,12 +562,7 @@ add_atomic_task(
     });
     conversation.title = "Unrelated title";
     // role 2 = SYSTEM
-    conversation.addMessage(
-      2,
-      { body: "system prompt xyzSystemToken99" },
-      null,
-      0
-    );
+    conversation.addMessage(2, { body: "system prompt xyzSystemToken99" }, 0);
     conversation.addUserMessage("unrelated user message");
     await gChatStore.updateConversation(conversation);
 

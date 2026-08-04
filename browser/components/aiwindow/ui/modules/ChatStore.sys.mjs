@@ -887,15 +887,20 @@ class ChatStore {
 
     // TODO: retrieve TTL content.
 
+    const byConv = {};
     parseMessageRows(rows).forEach(message => {
-      const conversation = convs[message.convId];
-      if (conversation) {
+      if (convs[message.convId]) {
         if (message.toolUIData?.uiType === lazy.UI_TYPES.WEBSITE_CONFIRMATION) {
           message.isRestored = true;
         }
-        conversation.messages.push(message);
+        (byConv[message.convId] ??= []).push(message);
       }
     });
+    // Assign through the setter so chat-specific side effects fire
+    // (#updateActiveBranchTipMessageId etc.) for restored conversations.
+    for (const [convId, messages] of Object.entries(byConv)) {
+      convs[convId].messages = messages;
+    }
 
     return conversations;
   }

@@ -1001,6 +1001,7 @@ export class AIChatContent extends MozLitElement {
       <ai-action-result
         .labelL10nId=${summary?.l10nId}
         .labelL10nArgs=${summary?.l10nArgs}
+        .labelLink=${summary?.link ?? null}
         .rows=${this.#buildGroupedActionLogRows(toolMsgs)}
         .isExpanded=${false}
       ></ai-action-result>

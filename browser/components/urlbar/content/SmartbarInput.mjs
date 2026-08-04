@@ -1498,6 +1498,10 @@ ${
     this.submitChat(event, this.untrimmedValue);
   }
 
+  get #shouldHandleSuppressedNavigation() {
+    return this._permanentlySuppressStartQuery || this.inputField.hasMention;
+  }
+
   /**
    * @typedef {object} HandleNavigationOneOffParams
    *
@@ -1599,11 +1603,10 @@ ${
    *   The principal that the action was triggered from.
    */
   handleNavigation({ event, oneOffParams, triggeringPrincipal }) {
-    // When queries are suppressed (e.g. while a chat is active), no provider
-    // results are available to decide the action, so route based on the
-    // smartbar action that #updateSmartbarCTAButton inferred from the typed
-    // value.
-    if (this.#isSmartbarMode && this._permanentlySuppressStartQuery) {
+    // When queries are suppressed (e.g. while a chat is active) or if the
+    // smartbar includes inline @mentions, submit directly to chat. Route based
+    // on the inferred smartbar action.
+    if (this.#isSmartbarMode && this.#shouldHandleSuppressedNavigation) {
       this.#handleSuppressedNavigation(event);
       return;
     }
@@ -6275,10 +6278,14 @@ ${
   } = {}) {
     // When we are in actions search mode we can show more results so
     // increase the limit.
-    let maxResults =
-      this.searchMode?.source != lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS
-        ? lazy.UrlbarPrefs.get("maxRichResults")
-        : UNLIMITED_MAX_RESULTS;
+    let maxResults;
+    if (this.searchMode?.source == lazy.UrlbarUtils.RESULT_SOURCE.ACTIONS) {
+      maxResults = UNLIMITED_MAX_RESULTS;
+    } else if (this.#isSmartbarMode) {
+      maxResults = lazy.UrlbarPrefs.get("smartbar.maxResults");
+    } else {
+      maxResults = lazy.UrlbarPrefs.get("maxRichResults");
+    }
     let options = {
       allowAutofill,
       isPrivate: this.isPrivate,

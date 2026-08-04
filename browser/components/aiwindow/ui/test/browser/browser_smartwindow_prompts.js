@@ -419,7 +419,7 @@ add_task(async function test_starter_prompts_click_triggers_chat_on_new_tab() {
     );
 
     const conversation = fetchWithHistoryStub.firstCall.args[0].conversation;
-    const messages = conversation.getMessagesInOpenAiFormat();
+    const messages = conversation.getMessagesInChatCompletionsFormat();
     const userMessage = messages.findLast(m => m.role === "user");
 
     Assert.equal(
@@ -454,7 +454,7 @@ add_task(async function test_starter_prompts_click_triggers_chat_in_sidebar() {
     );
 
     const conversation = fetchWithHistoryStub.firstCall.args[0].conversation;
-    const messages = conversation.getMessagesInOpenAiFormat();
+    const messages = conversation.getMessagesInChatCompletionsFormat();
     const userMessage = messages.findLast(m => m.role === "user");
 
     Assert.equal(
@@ -484,7 +484,7 @@ add_task(
       sb.stub(Chat, "fetchWithHistory");
       sb.stub(openAIEngine, "build").resolves({});
       const memoriesStub = sb
-        .stub(this.ChatConversation.prototype, "getMemoriesContext")
+        .stub(this.ChatConversation.prototype, "injectMemoriesContext")
         .resolves(null);
 
       const win = await openAIWindow();
@@ -494,12 +494,12 @@ add_task(
 
       await TestUtils.waitForCondition(
         () => memoriesStub.called,
-        "getMemoriesContext should be called with memories enabled"
+        "injectMemoriesContext should be called with memories enabled"
       );
 
       Assert.ok(
         memoriesStub.calledOnce,
-        "getMemoriesContext should be called once"
+        "injectMemoriesContext should be called once"
       );
 
       await BrowserTestUtils.closeWindow(win);
@@ -525,7 +525,7 @@ add_task(
       const fetchWithHistoryStub = sb.stub(Chat, "fetchWithHistory");
       sb.stub(openAIEngine, "build").resolves({});
       const memoriesStub = sb
-        .stub(this.ChatConversation.prototype, "getMemoriesContext")
+        .stub(this.ChatConversation.prototype, "injectMemoriesContext")
         .resolves(null);
 
       const win = await openAIWindow();
@@ -540,7 +540,7 @@ add_task(
 
       Assert.ok(
         memoriesStub.notCalled,
-        "getMemoriesContext should not be called when memories are disabled"
+        "injectMemoriesContext should not be called when memories are disabled"
       );
 
       await BrowserTestUtils.closeWindow(win);

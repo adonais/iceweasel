@@ -77,6 +77,18 @@
   -moz-context-properties: fill;
 }
 
+/* Embedded link: inherits the label color, deemphasized underline. */
+.action-result-label-link {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: currentColor;
+
+  &:focus-visible {
+    outline: var(--focus-outline);
+    outline-offset: var(--focus-outline-offset);
+  }
+}
+
 .action-result-expanded {
   display: flex;
   flex-direction: column;

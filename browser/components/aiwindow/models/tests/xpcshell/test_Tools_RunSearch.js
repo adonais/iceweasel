@@ -10,6 +10,8 @@ const {
   RunSearch,
   RUN_SEARCH_VERBATIM_QUERY_DESCRIPTION,
   RUN_SEARCH_GENERATED_QUERY_DESCRIPION,
+  RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY,
+  RUN_SEARCH_TOOL_CONFIG_GENERATED_QUERY,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Tools.sys.mjs"
 );
@@ -22,73 +24,54 @@ add_task(async function test_run_search_is_callable() {
   );
 });
 
-add_task(async function test_run_search_in_TOOLS_array() {
+add_task(async function test_run_search_not_in_default_registry() {
+  // run_search is offered dynamically as the fallback after search_the_web
+  // (see maybeApplySearchTheWebPostExecution), not registered as a default
+  // tool, so it should be absent from both TOOLS and toolsConfig.
   Assert.ok(
-    TOOLS.includes("run_search"),
-    "run_search should be in the TOOLS array"
+    !TOOLS.includes("run_search"),
+    "run_search should not be in the default TOOLS registry"
+  );
+  Assert.ok(
+    !toolsConfig.some(t => t.function?.name === "run_search"),
+    "run_search should not be in the default toolsConfig"
   );
 });
 
-add_task(async function test_run_search_tool_config_exists() {
-  // Check 1st turn config
-  const firstTurnConfig = toolsConfig.find(
-    t => t.function?.name === "run_search"
-  );
-  Assert.ok(
-    firstTurnConfig,
-    "First turn run_search tool config should exist in toolsConfig"
+add_task(async function test_run_search_tool_configs() {
+  // Verbatim variant (first turn): verbatim description, no query parameter.
+  Assert.equal(
+    RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY.function.name,
+    "run_search",
+    "Verbatim config should be the run_search tool"
   );
   Assert.equal(
-    firstTurnConfig.type,
-    "function",
-    "First turn tool type should be 'function'"
-  );
-  Assert.equal(
-    firstTurnConfig.function.description,
+    RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY.function.description,
     RUN_SEARCH_VERBATIM_QUERY_DESCRIPTION,
-    "First turn tool description should be the one for verbatim search queries"
+    "Verbatim config should use the verbatim search-query description"
   );
-  const firstTurnParams = firstTurnConfig.function.parameters;
   Assert.deepEqual(
-    firstTurnParams.properties,
+    RUN_SEARCH_TOOL_CONFIG_VERBATIM_QUERY.function.parameters.properties,
     {},
-    "First turn parameters should be an empty object"
+    "Verbatim config should have no query parameter"
   );
 
-  // Check subsequent turn config
-  const swappedToolsConfig = RunSearch.setGeneratedSearchQueryDescription(
-    structuredClone(toolsConfig)
-  );
-  const subsequentTurnConfig = swappedToolsConfig.find(
-    t => t.function?.name === "run_search"
-  );
-  Assert.ok(
-    subsequentTurnConfig,
-    "Subsequent turn run_search tool config should exist in toolsConfig"
-  );
+  // Generated variant (subsequent turns): generated description, query param.
   Assert.equal(
-    subsequentTurnConfig.type,
-    "function",
-    "Subsequent turn tool type should be 'function'"
-  );
-  Assert.equal(
-    subsequentTurnConfig.function.description,
+    RUN_SEARCH_TOOL_CONFIG_GENERATED_QUERY.function.description,
     RUN_SEARCH_GENERATED_QUERY_DESCRIPION,
-    "Subsequent turn tool description should be the one for generated search queries."
+    "Generated config should use the generated search-query description"
   );
-  const subsequentTurnParams = subsequentTurnConfig.function.parameters;
-  Assert.ok(
-    subsequentTurnParams.properties.query,
-    "Should have a query parameter"
-  );
+  const generatedParams =
+    RUN_SEARCH_TOOL_CONFIG_GENERATED_QUERY.function.parameters;
   Assert.equal(
-    subsequentTurnParams.properties.query.type,
+    generatedParams.properties.query.type,
     "string",
-    "query should be a string"
+    "Generated config query parameter should be a string"
   );
   Assert.ok(
-    subsequentTurnParams.required.includes("query"),
-    "query should be required"
+    generatedParams.required.includes("query"),
+    "Generated config should require the query parameter"
   );
 });
 

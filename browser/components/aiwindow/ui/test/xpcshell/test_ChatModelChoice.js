@@ -10,7 +10,9 @@ const {
   getCachedModelsData,
   getCurrentModelName,
   _clearModelsDataCacheForTesting,
-  openAIEngine,
+  _setRemoteClientForTesting,
+  _clearRemoteClientForTesting,
+  getRemoteClient,
   FEATURE_MAJOR_VERSIONS,
 } = ChromeUtils.importESModule(
   "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
@@ -42,7 +44,7 @@ add_task(async function test_getModelForChoice_with_remote_settings_data() {
       },
     ];
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
+    _setRemoteClientForTesting({
       get: sb.stub().resolves(fakeRecords),
     });
 
@@ -61,7 +63,7 @@ add_task(async function test_getModelForChoice_with_remote_settings_data() {
 add_task(async function test_getModelForChoice_fallback_when_not_found() {
   const sb = sinon.createSandbox();
   try {
-    sb.stub(openAIEngine, "getRemoteClient").returns({
+    _setRemoteClientForTesting({
       get: sb.stub().resolves([]),
     });
 
@@ -116,7 +118,7 @@ add_task(async function test_getAllModelsData_with_remote_settings() {
       },
     ];
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
+    _setRemoteClientForTesting({
       get: sb.stub().resolves(fakeRecords),
       on: sb.stub(),
     });
@@ -172,7 +174,7 @@ add_task(async function test_getCachedModelsData_returns_rs_data_after_fetch() {
         owner_name: "Google",
       },
     ];
-    sb.stub(openAIEngine, "getRemoteClient").returns({
+    _setRemoteClientForTesting({
       get: sb.stub().resolves(fakeRecords),
       on: sb.stub(),
     });
@@ -209,7 +211,7 @@ add_task(
           owner_name: "Google",
         },
       ];
-      sb.stub(openAIEngine, "getRemoteClient").returns({
+      _setRemoteClientForTesting({
         get: sb.stub().resolves(fakeRecords),
         on: sb.stub(),
       });
@@ -257,7 +259,7 @@ add_task(async function test_getAllModelsData_with_fallbacks() {
       },
     ];
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
+    _setRemoteClientForTesting({
       get: sb.stub().resolves(fakeRecords),
       on: sb.stub(),
     });
@@ -292,7 +294,7 @@ add_task(async function test_getAllModelsData_with_fallbacks() {
 
 add_task(async function test_cache_refreshes_on_sync() {
   _clearModelsDataCacheForTesting();
-  openAIEngine._remoteClient = null;
+  _clearRemoteClientForTesting();
   const sb = sinon.createSandbox();
   try {
     const initialRecords = [
@@ -314,7 +316,7 @@ add_task(async function test_cache_refreshes_on_sync() {
       },
     ];
 
-    const client = openAIEngine.getRemoteClient();
+    const client = getRemoteClient();
     const getStub = sb.stub(client, "get").resolves(initialRecords);
 
     await getAllModelsData();
@@ -334,6 +336,6 @@ add_task(async function test_cache_refreshes_on_sync() {
     );
   } finally {
     sb.restore();
-    openAIEngine._remoteClient = null;
+    _clearRemoteClientForTesting();
   }
 });

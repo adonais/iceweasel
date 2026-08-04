@@ -7,6 +7,7 @@ with Files("**"):
 
 DIRS += [
     "memories",
+    "search",
 ]
 
 BROWSER_CHROME_MANIFESTS += [
@@ -17,10 +18,13 @@ BROWSER_CHROME_MANIFESTS += [
 MOZ_SRC_FILES += [
     "Chat.sys.mjs",
     "ChatUtils.sys.mjs",
+    "Conversation.sys.mjs",
     "ConversationSuggestions.sys.mjs",
     "HistoryThumbnails.sys.mjs",
     "IntentClassifier.sys.mjs",
     "ManageTabs.sys.mjs",
+    "Message.sys.mjs",
+    "openAIEngine.sys.mjs",
     "PreferencesNavMap.sys.mjs",
     "PromptLoader.sys.mjs",
     "PromptOptimizer.sys.mjs",
@@ -31,6 +35,7 @@ MOZ_SRC_FILES += [
     "TelemetryManager.sys.mjs",
     "TelemetryUtils.sys.mjs",
     "TitleGeneration.sys.mjs",
+    "TokenStreamParser.sys.mjs",
     "Tools.sys.mjs",
     "Utils.sys.mjs",
     "WCSMerinoClient.sys.mjs",

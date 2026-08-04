@@ -12,7 +12,8 @@ import { sinon } from "resource://testing-common/Sinon.sys.mjs";
 import { MLTestUtils } from "resource://testing-common/MLTestUtils.sys.mjs";
 
 import { TestUtils } from "resource://testing-common/TestUtils.sys.mjs";
-import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
+import { ExaSearchProvider } from "moz-src:///browser/components/aiwindow/models/search/SearchProviders.sys.mjs";
 
 /**
  * This class manages the MockLLMEngine for Smart Window. Smart Window instantiates
@@ -80,6 +81,37 @@ export class MockEngineManager {
       console.log(response);
     }
     engine.respond(requestId, response);
+  }
+
+  /**
+   * Wait for a pending run request on the engine with the given purpose and
+   * return both the captured request and a `respond` callback, without
+   * resolving it. Unlike `respondTo`, this hands the raw request to the test so
+   * it can assert on what the real code actually sent to the model (the
+   * messages in `request.args`, the `request.tools` array, etc.) before
+   * deciding how the model should reply. This is what keeps a test cheat-proof:
+   * the assertions are made against real inputs produced by real code, not
+   * against values the test itself fed into a stub.
+   *
+   * @param {object} options
+   * @param {ModelFeature} options.purpose
+   * @returns {Promise<{request: object, respond: (response: MockedResponse) => void}>}
+   */
+  async captureRequest({ purpose }) {
+    /** @type {MockLLMEngine} */
+    const engine = await TestUtils.waitForCondition(
+      () => this.engines.get(purpose),
+      `Couldn't find the engine "${purpose}"`
+    );
+    await TestUtils.waitForCondition(
+      () => engine.runRequests.size,
+      `[MockEngineManager] Failed to find a request for the engine with purpose "${purpose}"`
+    );
+    const [requestId, { request }] = engine.getNextRequest();
+    return {
+      request,
+      respond: response => engine.respond(requestId, response),
+    };
   }
 
   /**
@@ -154,6 +186,116 @@ export class MockEngineManager {
     }
     if (foundRequest) {
       throw new Error("A request was not handled for an engine.");
+    }
+  }
+}
+
+/**
+ * This class is a mock for Search Endpoints for Smart Window. It mocks only the fetch function used by the ExaSearchProvider.
+ * It allows for deterministically testing the behavior of a search endpoint.
+ */
+export class MockSearchManager {
+  /** @type {object[]} */
+  requests = [];
+  mock;
+
+  constructor() {
+    this.mock = sinon
+      .stub(ExaSearchProvider, "_fetch")
+      .callsFake((url, options) => {
+        const { promise, resolve, reject } = Promise.withResolvers();
+        this.requests.push({
+          request: { url, options },
+          resolve,
+          reject,
+        });
+        return promise;
+      });
+  }
+
+  /**
+   * Respond to the next pending search endpoint request.
+   *
+   * @param {object} options
+   * @param {object} options.response
+   * @param {number} [options.status]
+   * @param {string} [options.statusText]
+   */
+  async respondTo({ response, status = 200, statusText }) {
+    const request = await this.captureRequest();
+    request.respond(response, { status, statusText });
+  }
+
+  /**
+   * Capture the next request to the search endpoint.
+   *
+   * @returns {Promise<{request: {url: string, options: RequestInit}, respond: (response: object, options?: {status?: number, statusText?: string}) => void, reject: (reason: any) => void}>}
+   */
+  async captureRequest() {
+    await TestUtils.waitForCondition(
+      () => this.requests.length,
+      "Couldn't find a search endpoint request"
+    );
+    const pendingRequest = this.requests[0];
+    const settle = callback => {
+      const index = this.requests.indexOf(pendingRequest);
+      if (index === -1) {
+        throw new Error("The search endpoint request was already handled");
+      }
+      this.requests.splice(index, 1);
+      callback();
+    };
+    return {
+      request: pendingRequest.request,
+      respond: (response, { status = 200, statusText } = {}) =>
+        settle(() =>
+          pendingRequest.resolve({
+            ok: status >= 200 && status < 300,
+            status,
+            statusText:
+              statusText ?? (status >= 200 && status < 300 ? "OK" : "Error"),
+            json: async () => response,
+            text: async () =>
+              typeof response === "string"
+                ? response
+                : JSON.stringify(response),
+          })
+        ),
+      reject: reason => settle(() => pendingRequest.reject(reason)),
+    };
+  }
+
+  /**
+   * Reject all outstanding search endpoint requests. This can help ensure that a test
+   * run is clean before asserting specific behavior.
+   */
+  rejectAllRequests() {
+    for (const { reject } of this.requests) {
+      reject(new Error("Intentionally rejecting search endpoint request"));
+    }
+    this.requests = [];
+  }
+
+  cleanupMocks() {
+    this.mock.restore();
+  }
+
+  logAllOutstandingRequests() {
+    if (!this.requests.length) {
+      console.log("No search endpoint requests were mocked");
+      return;
+    }
+    for (const { request } of this.requests) {
+      console.log("Outstanding request to the search endpoint", request);
+    }
+  }
+
+  assertAllRequestsHandled() {
+    for (const { request } of this.requests) {
+      console.error("A search endpoint request was not handled", request);
+    }
+    if (this.requests.length) {
+      throw new Error("A search endpoint request was not handled.");
     }
   }
 }

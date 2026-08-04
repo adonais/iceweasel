@@ -30,7 +30,7 @@ function makeConversation({
     currentTurnIndex() {
       return turnIndex;
     },
-    getMessagesInOpenAiFormat() {
+    getMessagesInChatCompletionsFormat() {
       return [];
     },
   };

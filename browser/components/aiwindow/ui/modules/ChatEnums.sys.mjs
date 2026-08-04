@@ -19,19 +19,7 @@ export const CONVERSATION_STATUS = Object.freeze({
   DELETED: 2,
 });
 
-/**
- * @typedef {0 | 1 | 2 | 3} MessageRole
- */
-
-/**
- * @enum {MessageRole}
- */
-export const MESSAGE_ROLE = Object.freeze({
-  USER: 0,
-  ASSISTANT: 1,
-  SYSTEM: 2,
-  TOOL: 3,
-});
+export { MESSAGE_ROLE } from "moz-src:///browser/components/aiwindow/models/Conversation.sys.mjs";
 
 /**
  * @typedef {0 | 1 | 2} MemoriesFlagSource

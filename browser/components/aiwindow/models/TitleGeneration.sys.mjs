@@ -5,15 +5,15 @@
  */
 
 import {
-  openAIEngine,
   renderPrompt,
   MODEL_FEATURES,
 } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
 import { sanitizeUntrustedContent } from "moz-src:///browser/components/aiwindow/models/ChatUtils.sys.mjs";
 
 const lazy = {};
 ChromeUtils.defineESModuleGetters(lazy, {
-  loadCallContext:
+  buildConversation:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   loadPrompt:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
@@ -60,47 +60,27 @@ export async function generateChatTitle(
   flowId = null
 ) {
   try {
-    // Build the OpenAI engine
-    const [callContext, { prompt: rawPrompt }] = await Promise.all([
-      lazy.loadCallContext(MODEL_FEATURES.TITLE_GENERATION),
+    const [conversation, { prompt: rawPrompt }] = await Promise.all([
+      lazy.buildConversation(MODEL_FEATURES.TITLE_GENERATION, { flowId }),
       lazy.loadPrompt(MODEL_FEATURES.TITLE_GENERATION),
     ]);
-    const engine = await openAIEngine.build({
-      model: callContext.model,
-      serviceType: callContext.serviceType,
-      purpose: callContext.purpose,
-      flowId,
-      feature: MODEL_FEATURES.TITLE_GENERATION,
-    });
 
     const tabInfo = current_tab || { url: "", title: "", description: "" };
     tabInfo.title = sanitizeUntrustedContent(tabInfo.title);
 
-    const systemPrompt = renderPrompt(rawPrompt, {
-      current_tab: JSON.stringify(tabInfo),
-    });
-
-    // Prepare messages for the LLM
-    const messages = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: message },
-    ];
-
+    conversation.setSystemMessage(
+      renderPrompt(rawPrompt, { current_tab: JSON.stringify(tabInfo) })
+    );
+    conversation.addUserMessage(message);
     if (assistantResponse) {
-      messages.push({ role: "assistant", content: assistantResponse });
+      conversation.addAssistantMessage(assistantResponse);
     }
 
-    const response = await engine.run({
-      args: messages,
+    const response = await conversation.run({
       fxAccountToken: await openAIEngine.getFxAccountToken(),
-      ...callContext.parameters,
     });
 
-    // Extract the generated title from the response
-    const title =
-      response?.finalOutput?.trim() || generateDefaultTitle(message);
-
-    return title;
+    return response?.finalOutput?.trim() || generateDefaultTitle(message);
   } catch (error) {
     console.error("Failed to generate chat title:", error);
     return generateDefaultTitle(message);

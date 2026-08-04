@@ -334,7 +334,7 @@ const EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS = {
       children: [
         // general
         {
-          flex: 2,
+          flex: 1,
           group: UrlbarUtils.RESULT_GROUP.GENERAL_PARENT,
           children: [
             {
@@ -366,7 +366,7 @@ const EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS = {
         },
         // suggestions
         {
-          flex: 1,
+          flex: 2,
           children: [
             {
               availableSpan: 2,
@@ -459,19 +459,29 @@ add_task(function showSearchSuggestionsFirst_resultGroups() {
   );
 });
 
-// Tests interaction between showSearchSuggestionsFirst and smartbar resultGroups.
+// Tests interaction between showSearchSuggestionsFirst,
+// smartbar.showSearchSuggestionsFirst and smartbar resultGroups.
 add_task(function showSearchSuggestionsFirst_smartbar_resultGroups() {
   Assert.equal(
-    UrlbarPrefs.get("showSearchSuggestionsFirst"),
-    true,
-    "showSearchSuggestionsFirst is true initially"
+    UrlbarPrefs.get("smartbar.showSearchSuggestionsFirst"),
+    false,
+    "smartbar.showSearchSuggestionsFirst is false by default"
   );
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
       context: { sapName: "smartbar", searchString: "test" },
     }),
+    EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS,
+    "smartbar resultGroups has general results first"
+  );
+
+  UrlbarPrefs.set("smartbar.showSearchSuggestionsFirst", true);
+  Assert.deepEqual(
+    UrlbarPrefs.getResultGroups({
+      context: { sapName: "smartbar", searchString: "test" },
+    }),
     EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS,
-    "smartbar resultGroups has suggestions first when showSearchSuggestionsFirst is true"
+    "smartbar resultGroups has suggestions first when smartbar.showSearchSuggestionsFirst is true"
   );
 
   UrlbarPrefs.set("showSearchSuggestionsFirst", false);
@@ -479,23 +489,31 @@ add_task(function showSearchSuggestionsFirst_smartbar_resultGroups() {
     UrlbarPrefs.getResultGroups({
       context: { sapName: "smartbar", searchString: "test" },
     }),
-    EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS,
-    "smartbar resultGroups is updated after setting showSearchSuggestionsFirst = false"
+    EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS,
+    "smartbar resultGroups is unaffected by the pref showSearchSuggestionsFirst"
   );
 
-  // Clear showSearchSuggestionsFirst.
+  // Clear showSearchSuggestionsFirst prefs.
   Services.prefs.clearUserPref("browser.urlbar.showSearchSuggestionsFirst");
+  Services.prefs.clearUserPref(
+    "browser.urlbar.smartbar.showSearchSuggestionsFirst"
+  );
   Assert.deepEqual(
     UrlbarPrefs.getResultGroups({
       context: { sapName: "smartbar", searchString: "test" },
     }),
-    EXPECTED_SMARTBAR_SUGGESTIONS_FIRST_GROUPS,
-    "smartbar resultGroups is updated immediately after clearing showSearchSuggestionsFirst"
+    EXPECTED_SMARTBAR_NOT_SUGGESTIONS_FIRST_GROUPS,
+    "smartbar resultGroups is updated immediately after clearing prefs"
   );
   Assert.equal(
     UrlbarPrefs.get("showSearchSuggestionsFirst"),
     true,
     "showSearchSuggestionsFirst defaults to true after clearing it"
+  );
+  Assert.equal(
+    UrlbarPrefs.get("smartbar.showSearchSuggestionsFirst"),
+    false,
+    "smartbar.showSearchSuggestionsFirst defaults to false after clearing it"
   );
 });
 

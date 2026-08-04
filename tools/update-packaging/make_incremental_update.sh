@@ -13,7 +13,7 @@
 # -----------------------------------------------------------------------------
 
 print_usage() {
-  notice "Usage: $(basename $0) [OPTIONS] ARCHIVE FROMDIR TODIR"
+  notice "Usage: $(basename $0) [OPTIONS] ARCHIVE FROMDIR TODIR APPNAME"
   notice ""
   notice "The differences between FROMDIR and TODIR will be stored in ARCHIVE."
   notice ""
@@ -104,6 +104,13 @@ shift $arg_start
 archive="$1"
 olddir="$2"
 newdir="$3"
+appname="$4"
+
+if [ -z "$appname" ]; then
+  print_usage
+  exit 1
+fi
+
 # Prevent the workdir from being inside the targetdir so it isn't included in
 # the update mar.
 if [ $(echo "$newdir" | grep -c '\/$') = 1 ]; then
@@ -298,6 +305,22 @@ for ((i=0; $i<$num_olddirs; i=$i+1)); do
     echo "rmdir \"$f/\"" >> $updatemanifestv3
   fi
 done
+
+# https://bugzilla.mozilla.org/show_bug.cgi?id=2058197
+# Order MAR instructions in a way that minimizes the chance of hitting
+# start-up crashes.
+notice ""
+notice "Reordering MAR instructions to a safer order"
+{
+  grep -E '^type '                 "$updatemanifestv3"
+  grep -E '"dependentlibs\.list"$' "$updatemanifestv3"
+  grep -vE "^type |\"(dependentlibs\.list|browser/omni\.ja|omni\.ja|xul\.dll|${appname}\.exe)\"$" "$updatemanifestv3"
+  grep -E '"xul\.dll"$'            "$updatemanifestv3"
+  grep -E '"browser/omni\.ja"$'    "$updatemanifestv3"
+  grep -E '"omni\.ja"$'            "$updatemanifestv3"
+  grep -E "\"${appname}\.exe\"$"   "$updatemanifestv3"
+} > "$updatemanifestv3.reordered"
+mv -f "$updatemanifestv3.reordered" "$updatemanifestv3"
 
 $XZ $XZ_OPT --compress $BCJ_OPTIONS --lzma2 --format=xz --check=crc64 --force "$updatemanifestv3" && mv -f "$updatemanifestv3.xz" "$updatemanifestv3"
 

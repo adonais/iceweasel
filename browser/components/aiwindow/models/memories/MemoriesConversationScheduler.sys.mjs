@@ -12,7 +12,8 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesChatSource.sys.mjs",
   CONVERSATION:
     "moz-src:///browser/components/aiwindow/models/memories/MemoriesConstants.sys.mjs",
-  openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
+  openAIEngine:
+    "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs",
 });
 ChromeUtils.defineLazyGetter(lazy, "console", function () {
   return console.createInstance({

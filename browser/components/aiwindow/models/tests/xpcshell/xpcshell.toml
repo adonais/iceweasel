@@ -9,6 +9,8 @@ firefox-appdir = "browser"
 
 ["test_ChatUtils.js"]
 
+["test_Conversation.js"]
+
 ["test_ConversationSuggestions.js"]
 
 ["test_ManageTabs.js"]
@@ -31,7 +33,9 @@ firefox-appdir = "browser"
 
 ["test_MemoriesSessions.js"]
 
-["test_PromptLoader_loadCallContext.js"]
+["test_Message.js"]
+
+["test_PromptLoader_buildConversation.js"]
 
 ["test_PromptOptimizer.js"]
 

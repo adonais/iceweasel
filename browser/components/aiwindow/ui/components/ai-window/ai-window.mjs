@@ -25,8 +25,9 @@ ChromeUtils.defineESModuleGetters(lazy, {
   FEATURE_MAJOR_VERSIONS:
     "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
   MODEL_FEATURES: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
-  openAIEngine: "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs",
-  loadCallContext:
+  openAIEngine:
+    "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs",
+  buildEngineForFeature:
     "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs",
   generateChatTitle:
     "moz-src:///browser/components/aiwindow/models/TitleGeneration.sys.mjs",
@@ -44,8 +45,6 @@ ChromeUtils.defineESModuleGetters(lazy, {
     "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs",
   MESSAGE_ROLE:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatEnums.sys.mjs",
-  AssistantRoleOpts:
-    "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs",
   UserRoleOpts:
     "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs",
   getRoleLabel:
@@ -931,7 +930,9 @@ export class AIWindow extends MozLitElement {
 
     // Update the system prompt for the new model
     if (this.#conversation?.messages.length) {
-      await this.#conversation.updateSystemPromptForModel(modelChoiceId);
+      await this.#conversation.loadSystemPrompt({
+        modelChoiceIdOverride: modelChoiceId,
+      });
     }
 
     if (isTabOverride) {
@@ -1498,8 +1499,6 @@ export class AIWindow extends MozLitElement {
       this.#handleSmartbarCommit.name,
       this.conversationId
     );
-    this.#smartbar.clearSmartbarInput();
-
     const {
       value,
       action,
@@ -1518,9 +1517,15 @@ export class AIWindow extends MozLitElement {
         ? "button"
         : "enter");
 
+    // Read inline @mentions before clearing input.
+    const currentMentions =
+      action === ACTION.CHAT
+        ? this.#calculateCurrentMentions(contextMentions)
+        : null;
+    this.#smartbar.clearSmartbarInput();
+
     if (action === ACTION.CHAT) {
-      const { mergedMentions, allUrls, inlineMentions } =
-        this.#calculateCurrentMentions(contextMentions);
+      const { mergedMentions, allUrls, inlineMentions } = currentMentions;
 
       if (allUrls.size) {
         this.#conversation.addSeenUrls(allUrls);
@@ -1944,20 +1949,20 @@ export class AIWindow extends MozLitElement {
     conversation.on("chat-conversation:message-update", onUpdate);
 
     try {
-      const callContext = await lazy.loadCallContext(lazy.MODEL_FEATURES.CHAT, {
-        modelChoiceIdOverride: this.#selectedModelChoiceId,
-      });
-      const { baseURL, apiKey } = lazy.openAIEngine.resolveEndpointConfig(
-        this.#selectedModelChoiceId
+      const { engine, parameters } = await lazy.buildEngineForFeature(
+        lazy.MODEL_FEATURES.CHAT,
+        {
+          flowId: this.conversationId,
+          modelChoiceIdOverride: this.#selectedModelChoiceId,
+        }
       );
-      const engineInstance = await lazy.openAIEngine.build({
-        model: callContext.model,
-        serviceType: callContext.serviceType,
-        purpose: callContext.purpose,
-        flowId: this.conversationId,
-        feature: lazy.MODEL_FEATURES.CHAT,
-        baseURL,
-        apiKey,
+      conversation.engine = engine;
+      conversation.parameters = parameters;
+
+      // Upsert the system prompt for the current model choice. Idempotent —
+      // no-op if it already matches.
+      await conversation.loadSystemPrompt({
+        modelChoiceIdOverride: this.#selectedModelChoiceId,
       });
 
       if (inputText) {
@@ -1968,20 +1973,15 @@ export class AIWindow extends MozLitElement {
           skipUserDispatch
         );
 
-        const assistantRoleOpts = new lazy.AssistantRoleOpts(
-          engineInstance.model
-        );
-        conversation.addAssistantMessage("text", "", assistantRoleOpts);
+        conversation.addAssistantMessage("text", "");
 
         this.#sendModelRequestTelemetryEvent();
       }
 
       await lazy.Chat.fetchWithHistory({
         conversation,
-        engineInstance,
         browsingContext,
         mode: this.mode,
-        callContext,
         signal,
       });
 
@@ -2285,7 +2285,8 @@ export class AIWindow extends MozLitElement {
           newMessage.content?.name,
           cfg.label,
           newMessage.content?.body,
-          newMessage.content?.args
+          newMessage.content?.args,
+          cfg.link
         ),
       };
     }
@@ -2575,7 +2576,7 @@ export class AIWindow extends MozLitElement {
       .at(-1);
     const lastToolName =
       lastToolCall?.content?.body?.tool_calls?.[0]?.function?.name;
-    if (lastToolName === "run_search") {
+    if (lastToolName === "search_the_web") {
       const args = lastToolCall.content.body.tool_calls[0].function.arguments;
       try {
         const { query } = JSON.parse(args || "{}");

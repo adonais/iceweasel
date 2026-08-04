@@ -16,7 +16,7 @@
   --smartbar-box-shadow: var(--smartwindow-shadow, var(--box-shadow-level-2));
   --smartbar-glow-color: color-mix(in srgb, var(--color-violet-40) 50%, transparent);
   --smartbar-max-height: 50vh;
-  --smartbar-max-visible-rows: 7;
+  --smartbar-max-visible-rows: 9;
   --smartbar-max-width: calc(var(--size-item-xlarge) * 12);
   --smartbar-outline: var(--focus-outline-width) solid var(--smartbar-outline-color);
   --smartbar-outline-color: light-dark(var(--color-violet-30), var(--color-violet-50));
@@ -107,8 +107,8 @@
     margin: 0;
     width: 100%;
     /*
-     * Limit to `--smartbar-max-visible-rows` non-rich results. Fewer results
-     * are visible if rich results are present.
+     * Show a maximum of `--smartbar-max-visible-rows` non-rich results before
+     * overflowing. Fewer results are visible if rich results are present.
      */
     /* stylelint-disable-next-line stylelint-plugin-mozilla/use-design-tokens */
     max-height: calc(

@@ -2,14 +2,20 @@
  * License, v. 2.0. If a copy of the MPL was not distributed with this
  * file, You can obtain one at http://mozilla.org/MPL/2.0/. */
 
-const { openAIEngine, resolveChatModelChoice, FEATURE_MAJOR_VERSIONS } =
-  ChromeUtils.importESModule(
-    "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
-  );
+const {
+  resolveChatModelChoice,
+  FEATURE_MAJOR_VERSIONS,
+  _setRemoteClientForTesting,
+  _clearRemoteClientForTesting,
+} = ChromeUtils.importESModule(
+  "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs"
+);
 
 const { sinon } = ChromeUtils.importESModule(
   "resource://testing-common/Sinon.sys.mjs"
 );
+
+registerCleanupFunction(() => _clearRemoteClientForTesting());
 
 add_task(async function test_resolveChatModelChoice_found() {
   const sb = sinon.createSandbox();
@@ -41,7 +47,7 @@ add_task(async function test_resolveChatModelChoice_found() {
       },
     ];
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
+    _setRemoteClientForTesting({
       get: sb.stub().resolves(fakeRecords),
     });
 
@@ -88,7 +94,7 @@ add_task(async function test_resolveChatModelChoice_version_filtering() {
       },
     ];
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
+    _setRemoteClientForTesting({
       get: sb.stub().resolves(fakeRecords),
     });
 
@@ -118,7 +124,7 @@ add_task(async function test_resolveChatModelChoice_not_found() {
       },
     ];
 
-    sb.stub(openAIEngine, "getRemoteClient").returns({
+    _setRemoteClientForTesting({
       get: sb.stub().resolves(fakeRecords),
     });
 

@@ -38,15 +38,14 @@ async function setupEvaluation({ url, waitForLoad = true }) {
  * Collect the full text response and tool calls from Chat.fetchWithHistory.
  *
  * @param {ChatConversation} conversation
- * @param {object} engineInstance
  * @returns {Promise<{ responseText: string, toolCalls: Array<{id: string, type: string, function: {name: string, arguments: string}}> }>}
  */
-async function collectChatResponse(conversation, engineInstance) {
+async function collectChatResponse(conversation) {
   const { Chat } = ChromeUtils.importESModule(
     "moz-src:///browser/components/aiwindow/models/Chat.sys.mjs"
   );
-  await Chat.fetchWithHistory({ conversation, engineInstance });
-  const messages = conversation.getMessagesInOpenAiFormat();
+  await Chat.fetchWithHistory({ conversation });
+  const messages = conversation.getMessagesInChatCompletionsFormat();
   const lastAssistant = messages.findLast(msg => msg.role === "assistant");
   const responseText = lastAssistant?.content ?? "";
   const toolCalls = messages

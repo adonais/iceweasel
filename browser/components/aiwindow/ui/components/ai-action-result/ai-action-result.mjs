@@ -23,6 +23,8 @@ import "chrome://browser/content/aiwindow/components/website-chip-container.mjs"
  * @attribute {string} label - Header label for plain text (e.g. "Closed tab", "Closed 3 tabs")
  * @attribute {string} labelL10nId - Fluent localization ID for the header label
  * @attribute {object} labelL10nArgs - Arguments for the label localization (e.g. { count: 3 })
+ * @property {object} labelLink - Optional { l10nName, href } embedded in
+ *   the header label. Requires <a data-l10n-name> in the l10n message.
  * @attribute {string} summary - Descriptive text for the action (plain text)
  * @attribute {string} summaryL10nId - Fluent localization ID for the summary
  * @attribute {object} summaryL10nArgs - Arguments for the summary localization
@@ -33,6 +35,8 @@ import "chrome://browser/content/aiwindow/components/website-chip-container.mjs"
  *    label?: string,           // Plain text label
  *    labelL10nId?: string,     // Fluent localization ID for the row label
  *    labelL10nArgs?: Object,   // Arguments for the row label localization
+ *    link?: { l10nName: string, href: string },
+ *                              // Optional link, same shape as labelLink
  *    items?: Array<{ url: string, label: string }>
  *  }
  */
@@ -41,6 +45,7 @@ export class AIActionResult extends MozLitElement {
     label: { type: String },
     labelL10nId: { type: String },
     labelL10nArgs: { type: Object },
+    labelLink: { type: Object },
     rows: { type: Array },
     summary: { type: String },
     summaryL10nId: { type: String },
@@ -54,6 +59,7 @@ export class AIActionResult extends MozLitElement {
     this.label = "";
     this.labelL10nId = null;
     this.labelL10nArgs = null;
+    this.labelLink = null;
     this.rows = [];
     this.summary = "";
     this.summaryL10nId = null;
@@ -62,14 +68,61 @@ export class AIActionResult extends MozLitElement {
     this.isExpanded = false;
   }
 
+  connectedCallback() {
+    super.connectedCallback();
+    // The label link is a plain <a target="_blank"> that the browser opens
+    // natively. It lives inside the header toggle button, so keep its click
+    // from also toggling the card. Delegated in the capture phase because
+    // Fluent DOM overlays replace the anchor node, dropping per-node listeners.
+    this.renderRoot.addEventListener("click", this.#handleLabelLinkClick, true);
+  }
+
+  disconnectedCallback() {
+    super.disconnectedCallback();
+    this.renderRoot.removeEventListener(
+      "click",
+      this.#handleLabelLinkClick,
+      true
+    );
+  }
+
   #handleUndo() {
     this.dispatchEvent(
       new CustomEvent("action-result-undo", { bubbles: true, composed: true })
     );
   }
 
+  #handleLabelLinkClick = event => {
+    const onLabelLink = event
+      .composedPath()
+      .some(
+        el =>
+          el instanceof HTMLAnchorElement &&
+          el.classList.contains("action-result-label-link")
+      );
+    if (onLabelLink) {
+      event.stopPropagation();
+    }
+  };
+
   #handleToggle() {
     this.isExpanded = !this.isExpanded;
+  }
+
+  #renderLabelContent(link, l10nId, fallbackLabel) {
+    if (link) {
+      return html`<a
+        class="action-result-label-link"
+        data-l10n-name=${link.l10nName}
+        href=${link.href}
+        target="_blank"
+        rel="noopener"
+      ></a>`;
+    }
+    if (l10nId) {
+      return "";
+    }
+    return fallbackLabel;
   }
 
   render() {
@@ -93,7 +146,11 @@ export class AIActionResult extends MozLitElement {
               ? JSON.stringify(this.labelL10nArgs)
               : nothing}
           >
-            ${!this.labelL10nId ? this.label : ""}
+            ${this.#renderLabelContent(
+              this.labelLink,
+              this.labelL10nId,
+              this.label
+            )}
           </span>
         </button>
         ${this.isExpanded
@@ -114,7 +171,11 @@ export class AIActionResult extends MozLitElement {
                             ? JSON.stringify(row.labelL10nArgs)
                             : nothing}
                         >
-                          ${!row.labelL10nId ? row.label : ""}
+                          ${this.#renderLabelContent(
+                            row.link,
+                            row.labelL10nId,
+                            row.label
+                          )}
                         </span>
                       </div>
                       ${row.items?.length

@@ -3,11 +3,9 @@
 
 import { ChatConversation } from "moz-src:///browser/components/aiwindow/ui/modules/ChatConversation.sys.mjs";
 import { AssistantRoleOpts } from "moz-src:///browser/components/aiwindow/ui/modules/ChatMessage.sys.mjs";
-import {
-  openAIEngine,
-  MODEL_FEATURES,
-} from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
-import { loadCallContext } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
+import { MODEL_FEATURES } from "moz-src:///browser/components/aiwindow/models/Utils.sys.mjs";
+import { openAIEngine } from "moz-src:///browser/components/aiwindow/models/openAIEngine.sys.mjs";
+import { buildEngineForFeature } from "moz-src:///browser/components/aiwindow/models/PromptLoader.sys.mjs";
 
 import {
   basicQualityEvalPrompt,
@@ -56,14 +54,9 @@ export async function runChatEvalForModel(
 
   const origGetFxAccountToken = openAIEngine.getFxAccountToken;
   openAIEngine.getFxAccountToken = async () => token;
-  const callContext = await loadCallContext(MODEL_FEATURES.CHAT);
-  const engineInstance = await openAIEngine.build({
-    model: callContext.model,
-    serviceType: callContext.serviceType,
-    purpose: callContext.purpose,
-    flowId: null,
-    feature: MODEL_FEATURES.CHAT,
-  });
+  const { engine, parameters } = await buildEngineForFeature(
+    MODEL_FEATURES.CHAT
+  );
   for (const [userQuery, currentUrl, page] of TEST_CASES) {
     const { cleanup } = await setupEvaluation({
       url: page,
@@ -76,17 +69,12 @@ export async function runChatEvalForModel(
       pageUrl: new URL(currentUrl),
       pageMeta: {},
     });
-    await conversation.generatePrompt(
-      userQuery,
-      new URL(currentUrl),
-      engineInstance
-    );
+    conversation.engine = engine;
+    conversation.parameters = parameters;
+    await conversation.generatePrompt(userQuery, new URL(currentUrl));
 
     conversation.addAssistantMessage("text", "", new AssistantRoleOpts());
-    const { responseText, toolCalls } = await collectChatResponse(
-      conversation,
-      engineInstance
-    );
+    const { responseText, toolCalls } = await collectChatResponse(conversation);
 
     Assert.ok(
       !!responseText.length || !!toolCalls.length,
@@ -97,7 +85,7 @@ export async function runChatEvalForModel(
       model_response: responseText,
       model_tool_calls: JSON.stringify(toolCalls, null, 2),
       conversation_history: JSON.stringify(
-        conversation.getMessagesInOpenAiFormat(),
+        conversation.getMessagesInChatCompletionsFormat(),
         null,
         2
       ),

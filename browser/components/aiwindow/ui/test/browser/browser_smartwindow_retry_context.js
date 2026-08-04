@@ -21,9 +21,9 @@ add_task(async function test_retry_preserves_context_mentions() {
     sb.stub(this.openAIEngine, "build").resolves({
       loadPrompt: () => Promise.resolve("Mock system prompt"),
     });
-    const getRealTimeInfoStub = sb
-      .stub(this.ChatConversation, "getRealTimeInfo")
-      .resolves(null);
+    const injectRealTimeContextStub = sb
+      .stub(this.ChatConversation.prototype, "injectRealTimeContext")
+      .resolves();
 
     win = await openAIWindow();
     const browser = win.gBrowser.selectedBrowser;
@@ -79,13 +79,13 @@ add_task(async function test_retry_preserves_context_mentions() {
     );
 
     Assert.ok(
-      getRealTimeInfoStub.calledOnce,
-      "getRealTimeInfo should be called once during retry"
+      injectRealTimeContextStub.calledOnce,
+      "injectRealTimeContext should be called once during retry"
     );
     Assert.deepEqual(
-      getRealTimeInfoStub.firstCall.args[0]?.contextMentions,
+      injectRealTimeContextStub.firstCall.args[1]?.contextMentions,
       contextMentions,
-      "getRealTimeInfo receives the original contextMentions on retry"
+      "injectRealTimeContext receives the original contextMentions on retry"
     );
   } finally {
     if (win) {

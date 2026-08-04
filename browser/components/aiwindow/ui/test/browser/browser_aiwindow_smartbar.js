@@ -99,7 +99,7 @@ add_task(async function test_smartbar_submit_chat() {
     );
 
     const conversation = fetchWithHistoryStub.firstCall.args[0].conversation;
-    const messages = conversation.getMessagesInOpenAiFormat();
+    const messages = conversation.getMessagesInChatCompletionsFormat();
     const userMessage = messages.findLast(message => message.role === "user");
 
     Assert.equal(
@@ -299,7 +299,7 @@ add_task(async function test_smartbar_can_submit_followup_prompts() {
     await submitSmartbar(browser);
 
     const conversation = fetchWithHistoryStub.firstCall.args[0].conversation;
-    const messages = conversation.getMessagesInOpenAiFormat();
+    const messages = conversation.getMessagesInChatCompletionsFormat();
     const initialUserMessage = messages.find(
       message => message.content === intialPrompt
     );
