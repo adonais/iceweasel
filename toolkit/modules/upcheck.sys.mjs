@@ -222,7 +222,7 @@ export class upcheck {
       }
       return value;
     } catch (e) {
-      console.log("upcheck.readini_portable failed\n");
+      return null;
     }
   }
 

@@ -204,9 +204,6 @@ function setUboSyncListeners(checkboxid) {
         uboCheckbox.checked = false;
       }
       setEventListener(checkboxid, "click", onUboSyncListeners);
-    } else {
-      uboCheckbox.style.display = 'none';
-      document.getElementById("ubo_help").style.display = 'none';
     }
   }
 }
@@ -396,6 +393,7 @@ function openGithub() {
 }
 
 function openRestart() {
+  Services.appinfo.invalidateCachesOnRestart();
   Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
 }
 
