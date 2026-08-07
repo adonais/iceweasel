@@ -255,6 +255,12 @@ support-files = ["searchTelemetrySinglePageApp.html"]
 ["browser_search_telemetry_spa_single_tab.js"]
 support-files = ["searchTelemetrySinglePageApp.html"]
 
+["browser_search_telemetry_spa_require_top_level_impression_origin.js"]
+support-files = [
+  "searchTelemetrySinglePageApp.html",
+  "searchTelemetryNonSerpPushState.html",
+]
+
 ["browser_search_telemetry_subframe.js"]
 support-files = [
   "searchTelemetryAd_with_sponsored_subframe_hidden.html",

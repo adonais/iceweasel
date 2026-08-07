@@ -554,6 +554,45 @@ add_task(async function test_load_serp_and_use_back_and_forward() {
   await BrowserTestUtils.removeTab(tab);
 });
 
+add_task(
+  async function test_pushstate_from_non_matching_page_records_impression() {
+    resetTelemetry();
+
+    // Providers that don't set requireTopLevelImpressionOrigin must still be
+    // able to originate impression tracking from a same-document navigation
+    // that lands on a trackable SERP, even if the top-level page that was
+    // actually loaded didn't match a trackable page type (e.g. a provider's
+    // homepage that pushState's straight to a SERP on search).
+    let tab = await SinglePageAppUtils.createTabWithHomepageSearch("test");
+
+    await assertSearchSourcesTelemetry(
+      {},
+      {
+        "browser.search.content.unknown": { "example1:tagged:ff": 1 },
+        "browser.search.withads.unknown": { "example1:tagged": 1 },
+      }
+    );
+
+    assertSERPTelemetry([
+      {
+        impression: {
+          provider: "example1",
+        },
+        adImpressions: [
+          {
+            component: SearchSERPTelemetryUtils.COMPONENTS.AD_LINK,
+            ads_loaded: "2",
+            ads_visible: "2",
+            ads_hidden: "0",
+          },
+        ],
+      },
+    ]);
+
+    await BrowserTestUtils.removeTab(tab);
+  }
+);
+
 add_task(async function test_load_serp_and_click_shopping_tab() {
   resetTelemetry();
 

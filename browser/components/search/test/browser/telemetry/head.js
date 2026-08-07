@@ -686,7 +686,7 @@ async function syncCollection(record) {
   });
 }
 
-async function initSinglePageAppTest() {
+async function initSinglePageAppTest({ baseProviderOverrides = {} } = {}) {
   /* import-globals-from head-spa.js */
   Services.scriptloader.loadSubScript(
     "chrome://mochitests/content/browser/browser/components/search/test/browser/telemetry/head-spa.js",
@@ -737,6 +737,7 @@ async function initSinglePageAppTest() {
         { name: "images", values: ["images"], enabled: false },
       ],
     },
+    ...baseProviderOverrides,
   };
 
   const SPA_PROVIDER_INFO = [

@@ -171,6 +171,81 @@ class SinglePageAppUtils {
     return tab;
   }
 
+  /**
+   * Loads a page that doesn't match any provider's searchPageRegexp, then
+   * has that page use history.pushState (a same-document navigation) to
+   * change the URL to one that does match. This simulates a redirect (e.g.
+   * an ad click, or an organic outbound link) whose landing page happens to
+   * rewrite the URL to look like a SERP without ever performing a top-level
+   * navigation to it.
+   *
+   * @param {URL} targetUrl
+   *   The SERP-shaped URL to push into history from the non-matching page.
+   */
+  static async createTabAndPushStateFromNonMatchingUrl(targetUrl) {
+    info("Load non-matching page.");
+    let url = new URL(getSERPUrl("searchTelemetryNonSerpPushState.html"));
+    url.searchParams.set("target", targetUrl.href);
+    let pushStatePromise = BrowserTestUtils.waitForLocationChange(
+      gBrowser,
+      targetUrl.href
+    );
+    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url.href);
+    info("Wait for the page to push the SERP-shaped URL.");
+    await pushStatePromise;
+    // There's no impression to wait for in the success case, so wait roughly
+    // the amount of time it would take for one to be reported if the bug
+    // being tested for were present.
+    await promiseWaitForAdLinkCheck();
+    return tab;
+  }
+
+  /**
+   * Loads the SPA's own URL without a search query, which doesn't count as
+   * a SERP match (there's no search term), then simulates the page pushing
+   * state to a URL that does match a trackable page type - as if the user
+   * searched from the provider's homepage. This is used to verify that
+   * providers without requireTopLevelImpressionOrigin can still originate
+   * impression tracking from a same-document navigation, even though the
+   * top-level load itself didn't match a trackable page.
+   *
+   * @param {string} searchTerm
+   *   The search term to push into the URL from the non-matching page.
+   */
+  static async createTabWithHomepageSearch(searchTerm = "test") {
+    info("Load SPA homepage without a search query.");
+    let url = new URL(getSERPUrl("searchTelemetrySinglePageApp.html"));
+    // getSERPUrl always appends a search query; strip it so the top-level
+    // load doesn't itself match a SERP (there's no search term), mirroring
+    // a provider's homepage rather than a search results page.
+    url.searchParams.delete("s");
+    let tab = await BrowserTestUtils.openNewForegroundTab(gBrowser, url.href);
+
+    info("Simulate an in-page search that pushes a SERP-shaped URL.");
+    let adsPromise = TestUtils.topicObserved(
+      "reported-page-with-ad-impressions"
+    );
+    await SpecialPowers.spawn(
+      tab.linkedBrowser,
+      [searchTerm],
+      async function (contentSearchTerm) {
+        // Mirrors the SPA's own "All" tab click handler, which is what a
+        // homepage search box submission would trigger. The argument is
+        // built inside the content global so updatePageState's destructuring
+        // isn't denied access by the Xray wrapper around a privileged object.
+        content.wrappedJSObject.updatePageState(
+          Cu.cloneInto({ page: "web", query: contentSearchTerm }, content)
+        );
+        content.wrappedJSObject.replaceWithBasicResults();
+        content.wrappedJSObject.updateRelatedSearches();
+        content.wrappedJSObject.updateSearchbox();
+        content.wrappedJSObject.updateSuggestions();
+      }
+    );
+    await adsPromise;
+    return tab;
+  }
+
   static async createTabAndSearch(searchTerm = "test") {
     info("Load SERP.");
     let adsPromise = TestUtils.topicObserved(

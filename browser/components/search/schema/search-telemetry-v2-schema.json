@@ -435,6 +435,11 @@
       },
       "required": ["keys", "pageTypes"]
     },
+    "requireTopLevelImpressionOrigin": {
+      "type": "boolean",
+      "title": "Require top-level impression origin",
+      "description": "If true, a same-document navigation is only allowed to start tracking a browser if that browser was already being tracked at the start of the navigation (e.g. it's continuing a session that a prior same-document navigation just untracked, such as for a follow-on search). It is never allowed to originate tracking on a browser that had no tracked session at all, even if the new URL lands on a trackable page type. Use this when a same-document URL change can be an artifact of a redirect (e.g. an ad click or an organic outbound link) rather than a genuine in-app navigation to a new SERP."
+    },
     "subframes": {
       "title": "Subframes",
       "description": "An array of methods for determining if a sponsored subframe exists.",
