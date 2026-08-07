@@ -141,7 +141,7 @@ function setUboSyncListeners(checkboxid) {
   const uboCheckbox = document.getElementById(checkboxid);
   if (uboCheckbox) {
     let ubos = iniRead("General", "EnableUBO");
-    if (ubos != null) {
+    if (ubos !== null) {
       if (parseInt(ubos) > 0) {
         if (!uboCheckbox.checked) {
           uboCheckbox.checked = true;
@@ -339,6 +339,7 @@ function openGithub() {
 }
 
 function openRestart() {
+  Services.appinfo.invalidateCachesOnRestart();
   Services.startup.quit(Ci.nsIAppStartup.eAttemptQuit | Ci.nsIAppStartup.eRestart);
 }
 

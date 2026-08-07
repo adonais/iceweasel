@@ -229,7 +229,7 @@ export class upcheck {
   static readini_portable(section, key) {
     try {
       let value = null;
-      let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+      let target = AppConstants.platform === "win" ? Services.dirsvc.get("GreBinD", Ci.nsIFile) : Services.dirsvc.get("ProfD", Ci.nsIFile);
       target.append("portable.ini");
       if (target.exists()) {
         let factory = Cc["@mozilla.org/xpcom/ini-parser-factory;1"].getService(Ci.nsIINIParserFactory);
@@ -240,7 +240,7 @@ export class upcheck {
       }
       return value;
     } catch (e) {
-      console.log("upcheck.readini_portable failed\n");
+      return null;
     }
   }
 
