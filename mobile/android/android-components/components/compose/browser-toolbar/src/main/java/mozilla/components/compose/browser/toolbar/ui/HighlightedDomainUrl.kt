@@ -232,10 +232,10 @@ internal fun computeDomainEndScrollValue(
 ): Int = when (highlightRange?.second == text.length) {
     true -> scrollState.maxValue
     else -> {
-        val startIndex = highlightRange?.first ?: 0
+        val startIndex = (highlightRange?.first ?: 0).coerceIn(0, text.length)
 
         val endIndex = (highlightRange?.second?.plus(END_SCROLL_OFFSET) ?: 0)
-            .coerceAtMost(text.length)
+            .coerceIn(startIndex, text.length)
 
         // Compute the exact visual boundaries of the domain.
         val path = textLayoutResult.getPathForRange(startIndex, endIndex)

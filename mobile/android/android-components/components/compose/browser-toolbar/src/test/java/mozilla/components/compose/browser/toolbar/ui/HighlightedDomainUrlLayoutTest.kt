@@ -4,11 +4,13 @@
 
 package mozilla.components.compose.browser.toolbar.ui
 
+import androidx.compose.foundation.ScrollState
 import androidx.compose.runtime.SideEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.test.junit4.v2.createComposeRule
+import androidx.compose.ui.text.TextLayoutResult
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.unit.sp
 import org.junit.Assert.assertEquals
@@ -16,6 +18,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import kotlin.test.assertNotNull
 
 @RunWith(RobolectricTestRunner::class)
 class HighlightedDomainUrlLayoutTest {
@@ -44,5 +47,32 @@ class HighlightedDomainUrlLayoutTest {
         composeTestRule.runOnIdle {
             assertEquals(updatedUrl, measuredText)
         }
+    }
+
+    @Test
+    fun `WHEN the highlight range is out of bounds for the text THEN it does not crash`() {
+        // A registrable domain span that is inconsistent with the displayed URL
+        // (here starting well past the end of the text)
+        // must not reach getPathForRange with out of range indices.
+        val text = "short.com"
+        val outOfBoundsRange = 20 to 25
+        val textStyle = TextStyle(fontSize = 16.sp)
+        var layout: TextLayoutResult? = null
+        var result: Int? = null
+
+        composeTestRule.setContent {
+            layout = rememberTextLayoutResult(text, textStyle, viewportWidth = 300)
+        }
+
+        composeTestRule.runOnIdle {
+            result = computeDomainEndScrollValue(
+                text = text,
+                highlightRange = outOfBoundsRange,
+                scrollState = ScrollState(initial = 0),
+                textLayoutResult = requireNotNull(layout),
+            )
+        }
+
+        assertNotNull(result)
     }
 }
