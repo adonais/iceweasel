@@ -41,7 +41,7 @@ def test_ml_services_sets_browser_prefs():
         assert "services.settings.server" in browser_prefs
         assert (
             browser_prefs["services.settings.server"]
-            == "https://firefox.settings.services.mozilla.com/v1"
+            == "https://firefox.settings.services.mozilla.com/v2"
         )
 
         assert "network.socket.allowed_nonlocal_domains" in browser_prefs
