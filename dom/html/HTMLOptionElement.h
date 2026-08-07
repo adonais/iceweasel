@@ -116,17 +116,17 @@ class HTMLOptionElement final : public nsGenericHTMLElement {
 
   int32_t Index();
 
- protected:
-  virtual ~HTMLOptionElement();
-
-  JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
-
   /**
    * Get the select content element that contains this option, this
    * intentionally does not return nsresult, all we care about is if
    * there's a select associated with this option or not.
    */
   HTMLSelectElement* GetSelect();
+
+protected:
+  virtual ~HTMLOptionElement();
+
+  JSObject* WrapNode(JSContext*, JS::Handle<JSObject*> aGivenProto) override;
 
   bool mSelectedChanged;
   bool mIsSelected;

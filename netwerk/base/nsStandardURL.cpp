@@ -3622,6 +3622,19 @@ nsresult nsStandardURL::ReadPrivate(nsIObjectInputStream* stream) {
     mExtension.Merge(mSpec, ';', old_param);
   }
 
+  NS_ENSURE_TRUE(mScheme.mPos == 0, NS_ERROR_MALFORMED_URI);
+  NS_ENSURE_TRUE(mScheme.mLen > 0, NS_ERROR_MALFORMED_URI);
+  // Make sure scheme is followed by :// (3 characters)
+  NS_ENSURE_TRUE(mScheme.mLen < INT32_MAX - 3,
+                 NS_ERROR_MALFORMED_URI);  // avoid overflow
+  NS_ENSURE_TRUE(mSpec.Length() >= (uint32_t)mScheme.mLen + 3,
+                 NS_ERROR_MALFORMED_URI);
+  NS_ENSURE_TRUE(
+      nsDependentCSubstring(mSpec, mScheme.mLen, 3).EqualsLiteral("://"),
+      NS_ERROR_MALFORMED_URI);
+
+  NS_ENSURE_TRUE(CheckSegmentInvariants(), NS_ERROR_MALFORMED_URI);
+
   rv = CheckIfHostIsAscii();
   if (NS_FAILED(rv)) {
     return rv;
@@ -3815,6 +3828,53 @@ void nsStandardURL::Serialize(URIParams& aParams) {
   aParams = params;
 }
 
+bool nsStandardURL::CheckSegmentInvariants() const {
+  NS_ENSURE_TRUE(mPath.mLen != -1 && mSpec.CharAt(mPath.mPos) == '/', false);
+  NS_ENSURE_TRUE(mPath.mPos == mFilepath.mPos, false);
+  NS_ENSURE_TRUE(mQuery.mLen == -1 || (mQuery.mPos > mPath.mPos &&
+                                       mSpec.CharAt(mQuery.mPos - 1) == '?'),
+                 false);
+  NS_ENSURE_TRUE(mRef.mLen == -1 || (mRef.mPos > mPath.mPos &&
+                                     mSpec.CharAt(mRef.mPos - 1) == '#'),
+                 false);
+  NS_ENSURE_TRUE(mQuery.mLen == -1 || mRef.mLen == -1 ||
+                     mQuery.mPos + mQuery.mLen < mRef.mPos,
+                 false);
+
+  // mDirectory, mBasename, mExtension must be sub-ranges of mFilepath,
+  // which must be a sub-range of mPath.
+  auto isSubSegment = [](const URLSegment& inner, const URLSegment& outer) {
+    if (inner.mLen == -1) return true;
+    if (outer.mLen == -1) return false;
+    return inner.mPos >= outer.mPos &&
+           inner.mPos + inner.mLen <= outer.mPos + outer.mLen;
+  };
+  NS_ENSURE_TRUE(isSubSegment(mFilepath, mPath), false);
+  NS_ENSURE_TRUE(isSubSegment(mDirectory, mFilepath), false);
+  NS_ENSURE_TRUE(isSubSegment(mBasename, mFilepath), false);
+  NS_ENSURE_TRUE(isSubSegment(mExtension, mFilepath), false);
+  NS_ENSURE_TRUE(isSubSegment(mHost, mAuthority), false);
+  NS_ENSURE_TRUE(isSubSegment(mUsername, mAuthority), false);
+  NS_ENSURE_TRUE(isSubSegment(mPassword, mAuthority), false);
+  NS_ENSURE_TRUE(isSubSegment(mQuery, mPath), false);
+  NS_ENSURE_TRUE(isSubSegment(mRef, mPath), false);
+
+  // mPath must immediately follow mAuthority. If mAuthority is absent, that is
+  // only valid for URLTYPE_NO_AUTHORITY (e.g. file: URLs parsed without an
+  // authority component); for all other URL types a missing authority while
+  // mPath is present indicates a malformed or crafted URL.
+  if (mPath.mLen >= 0) {
+    if (mAuthority.mLen >= 0) {
+      NS_ENSURE_TRUE(mPath.mPos == mAuthority.mPos + mAuthority.mLen, false);
+    } else {
+      NS_ENSURE_TRUE(mURLType == URLTYPE_NO_AUTHORITY, false);
+    }
+  }
+
+  NS_ENSURE_TRUE(mAuthority.mLen >= 0 || mPort == -1, false);
+  return true;
+}
+
 bool nsStandardURL::Deserialize(const URIParams& aParams) {
   MOZ_ASSERT(mDisplayHost.IsEmpty(), "Shouldn't have cached unicode host");
   MOZ_ASSERT(!mFile, "Shouldn't have cached file");
@@ -3880,44 +3940,7 @@ bool nsStandardURL::Deserialize(const URIParams& aParams) {
   NS_ENSURE_TRUE(
       nsDependentCSubstring(mSpec, mScheme.mLen, 3).EqualsLiteral("://"),
       false);
-  NS_ENSURE_TRUE(mPath.mLen != -1 && mSpec.CharAt(mPath.mPos) == '/', false);
-  NS_ENSURE_TRUE(mPath.mPos == mFilepath.mPos, false);
-  NS_ENSURE_TRUE(mQuery.mLen == -1 || (mQuery.mPos > mPath.mPos &&
-                                       mSpec.CharAt(mQuery.mPos - 1) == '?'),
-                 false);
-  NS_ENSURE_TRUE(mRef.mLen == -1 || (mRef.mPos > mPath.mPos &&
-                                     mSpec.CharAt(mRef.mPos - 1) == '#'),
-                 false);
-
-  // mDirectory, mBasename, mExtension must be sub-ranges of mFilepath,
-  // which must be a sub-range of mPath.
-  auto isSubSegment = [](const URLSegment& inner, const URLSegment& outer) {
-    if (inner.mLen == -1) return true;
-    if (outer.mLen == -1) return false;
-    return inner.mPos >= outer.mPos &&
-           inner.mPos + inner.mLen <= outer.mPos + outer.mLen;
-  };
-  NS_ENSURE_TRUE(isSubSegment(mFilepath, mPath), false);
-  NS_ENSURE_TRUE(isSubSegment(mDirectory, mFilepath), false);
-  NS_ENSURE_TRUE(isSubSegment(mBasename, mFilepath), false);
-  NS_ENSURE_TRUE(isSubSegment(mExtension, mFilepath), false);
-  NS_ENSURE_TRUE(isSubSegment(mHost, mAuthority), false);
-  NS_ENSURE_TRUE(isSubSegment(mUsername, mAuthority), false);
-  NS_ENSURE_TRUE(isSubSegment(mPassword, mAuthority), false);
-
-  // mPath must immediately follow mAuthority. If mAuthority is absent, that is
-  // only valid for URLTYPE_NO_AUTHORITY (e.g. file: URLs parsed without an
-  // authority component); for all other URL types a missing authority while
-  // mPath is present indicates a malformed or crafted URL.
-  if (mPath.mLen >= 0) {
-    if (mAuthority.mLen >= 0) {
-      NS_ENSURE_TRUE(mPath.mPos == mAuthority.mPos + mAuthority.mLen, false);
-    } else {
-      NS_ENSURE_TRUE(mURLType == URLTYPE_NO_AUTHORITY, false);
-    }
-  }
-
-  NS_ENSURE_TRUE(mAuthority.mLen >= 0 || mPort == -1, false);
+  NS_ENSURE_TRUE(CheckSegmentInvariants(), false);
 
   if (!IsValid()) {
     return false;

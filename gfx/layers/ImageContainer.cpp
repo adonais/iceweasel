@@ -710,7 +710,12 @@ static void CopyPlane(uint8_t* aDst, const uint8_t* aSrc,
   int32_t height = aSize.height;
   int32_t width = aSize.width;
 
-  MOZ_RELEASE_ASSERT(width <= aStride);
+  // The interleaved (aSkip != 0) path steps over skipped elements between
+  // pixels, so a row reaches further than the packed width. Computed with
+  // 64-bit arithmetic.
+  const int64_t srcRowSpan =
+      static_cast<int64_t>(width) + static_cast<int64_t>(width - 1) * aSkip;
+  MOZ_RELEASE_ASSERT(srcRowSpan <= aStride);
 
   if (!aSkip) {
     // Fast path: planar input.

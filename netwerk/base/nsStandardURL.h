@@ -241,6 +241,8 @@ class nsStandardURL : public nsIFileURL,
   bool Deserialize(const mozilla::ipc::URIParams&);
   nsresult ReadPrivate(nsIObjectInputStream* stream);
 
+  bool CheckSegmentInvariants() const;
+
  private:
   nsresult Init(uint32_t urlType, int32_t defaultPort, const nsACString& spec,
                 const char* charset, nsIURI* baseURI);

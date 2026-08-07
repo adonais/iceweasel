@@ -1,0 +1,101 @@
+diff --git a/gfx/cairo/cairo/src/cairo-type1-subset.c b/gfx/cairo/cairo/src/cairo-type1-subset.c
+--- a/gfx/cairo/cairo/src/cairo-type1-subset.c
++++ b/gfx/cairo/cairo/src/cairo-type1-subset.c
+@@ -1063,16 +1063,18 @@ cairo_type1_font_for_each_subr (cairo_ty
+      *
+      * or alternatively using -| and |- instead of RD and ND.
+      * The first number is the subroutine number.
+      */
+ 
+     p = array_start;
+     while (p + 3 < cleartext_end && strncmp (p, "dup", 3) == 0) {
+ 	p = skip_token (p, cleartext_end);
++	if (p == NULL)
++	    return CAIRO_INT_STATUS_UNSUPPORTED;
+ 
+ 	/* get subr number */
+ 	subr_num = strtol (p, &end, 10);
+ 	if (p == end)
+ 	    return CAIRO_INT_STATUS_UNSUPPORTED;
+ 
+ 	if (subr_num < 0 || subr_num >= font->num_subrs)
+ 	    return CAIRO_INT_STATUS_UNSUPPORTED;
+@@ -1080,32 +1082,41 @@ cairo_type1_font_for_each_subr (cairo_ty
+ 	/* get subr length */
+ 	p = end;
+ 	subr_length = strtol (p, &end, 10);
+ 	if (p == end)
+ 	    return CAIRO_INT_STATUS_UNSUPPORTED;
+ 
+ 	/* Skip past -| or RD to binary data.  There is exactly one space
+ 	 * between the -| or RD token and the encrypted data, thus '+ 1'. */
+-	subr_string = skip_token (end, cleartext_end) + 1;
++	subr_string = skip_token (end, cleartext_end);
++	if (subr_string == NULL)
++	    return CAIRO_INT_STATUS_UNSUPPORTED;
++	subr_string++;
++
++	/* The declared subr length must lie within the cleartext buffer. */
++	if (subr_length < 0 || subr_length > cleartext_end - subr_string)
++	    return CAIRO_INT_STATUS_UNSUPPORTED;
+ 
+ 	np = NULL;
+ 	np_length = 0;
+ 
+ 	/* Skip binary data and | or NP token. */
+ 	p = skip_token (subr_string + subr_length, cleartext_end);
+         if (p == NULL)
+             return CAIRO_INT_STATUS_UNSUPPORTED;
+ 
+ 	while (p < cleartext_end && _cairo_isspace(*p))
+ 	    p++;
+ 
+ 	/* Some fonts have "noaccess put" instead of "NP" */
+ 	if (p + 3 < cleartext_end && strncmp (p, "put", 3) == 0) {
+ 	    p = skip_token (p, cleartext_end);
++	    if (p == NULL)
++		return CAIRO_INT_STATUS_UNSUPPORTED;
+ 	    while (p < cleartext_end && _cairo_isspace(*p))
+ 		p++;
+ 
+ 	    np = subr_string + subr_length;
+ 	    np_length = p - np;
+ 	}
+ 
+ 	status = func (font, subr_num,
+@@ -1241,25 +1252,34 @@ cairo_type1_font_subset_for_each_glyph (
+      * since the binary data could contain a '/'.
+      */
+ 
+     p = dict_start;
+     glyph_count = 0;
+     while (*p == '/') {
+ 	name = p + 1;
+ 	p = skip_token (p, dict_end);
++	if (p == NULL)
++	    return CAIRO_INT_STATUS_UNSUPPORTED;
+ 	name_length = p - name;
+ 
+ 	charstring_length = strtol (p, &end, 10);
+ 	if (p == end)
+ 	    return CAIRO_INT_STATUS_UNSUPPORTED;
+ 
+ 	/* Skip past -| or RD to binary data.  There is exactly one space
+ 	 * between the -| or RD token and the encrypted data, thus '+ 1'. */
+-	charstring = skip_token (end, dict_end) + 1;
++	charstring = skip_token (end, dict_end);
++	if (charstring == NULL)
++	    return CAIRO_INT_STATUS_UNSUPPORTED;
++	charstring++;
++
++	/* The declared charstring length must lie within the cleartext buffer. */
++	if (charstring_length < 0 || charstring_length > dict_end - charstring)
++	    return CAIRO_INT_STATUS_UNSUPPORTED;
+ 
+ 	/* Skip binary data and |- or ND token. */
+ 	p = skip_token (charstring + charstring_length, dict_end);
+         if (p == NULL)
+             return CAIRO_INT_STATUS_UNSUPPORTED;
+ 
+ 	while (p < dict_end && _cairo_isspace(*p))
+ 	    p++;

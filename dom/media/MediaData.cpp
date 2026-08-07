@@ -213,9 +213,10 @@ static bool ValidateBufferAndPicture(const VideoData::YCbCrBuffer& aBuffer,
   }
   // Ensure the picture size specified in the headers can be extracted out of
   // the frame we've been supplied without indexing out of bounds.
+  // The picture extent and the plane width are both measured in samples.
   CheckedUint32 xLimit = aPicture.x + CheckedUint32(aPicture.width);
   CheckedUint32 yLimit = aPicture.y + CheckedUint32(aPicture.height);
-  if (!xLimit.isValid() || xLimit.value() > aBuffer.mPlanes[0].mStride ||
+  if (!xLimit.isValid() || xLimit.value() > aBuffer.mPlanes[0].mWidth ||
       !yLimit.isValid() || yLimit.value() > aBuffer.mPlanes[0].mHeight) {
     // The specified picture dimensions can't be contained inside the video
     // frame, we'll stomp memory if we try to copy it. Fail.
@@ -322,6 +323,10 @@ bool VideoData::SetVideoDataToImage(PlanarYCbCrImage* aVideoImage,
                                     const YCbCrBuffer& aBuffer,
                                     const IntRect& aPicture, bool aCopyData) {
   if (!aVideoImage) {
+    return false;
+  }
+
+  if (!ValidateBufferAndPicture(aBuffer, aPicture)) {
     return false;
   }
 

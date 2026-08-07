@@ -115,7 +115,6 @@ class nsXMLContentSink : public nsContentSink,
   //  return TRUE if this call set the root element
   virtual bool SetDocElement(int32_t aNameSpaceID, nsAtom* aTagName,
                              nsIContent* aContent);
-  virtual bool NotifyForDocElement() { return true; }
   virtual nsresult CreateElement(const char16_t** aAtts, uint32_t aAttsCount,
                                  mozilla::dom::NodeInfo* aNodeInfo,
                                  uint32_t aLineNumber, uint32_t aColumnNumber,

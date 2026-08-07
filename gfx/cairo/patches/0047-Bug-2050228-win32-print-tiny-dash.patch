@@ -1,0 +1,21 @@
+commit 64a9e74bf5269b7f3a4d99cbb764bd098bed9860
+Author: Jonathan Kew <jkew@mozilla.com>
+Date:   Thu Jul 30 16:27:34 2026 +0100
+
+    Bug 2050228 - Guard against dash length becoming zero in cairo-win32 printing backend. r=#gfx-reviewers
+
+diff --git a/src/win32/cairo-win32-printing-surface.c b/src/win32/cairo-win32-printing-surface.c
+index ab5680948e69..505e5d1dd460 100644
+--- a/src/win32/cairo-win32-printing-surface.c
++++ b/src/win32/cairo-win32-printing-surface.c
+@@ -1558,7 +1558,9 @@ _cairo_win32_printing_surface_stroke (void			*abstract_surface,
+ 	pen_style |= PS_USERSTYLE;
+ 	dash_array = _cairo_calloc_ab (sizeof (DWORD), style->num_dashes);
+ 	for (i = 0; i < style->num_dashes; i++) {
+-	    dash_array[i] = (DWORD) (scale * style->dash[i]);
++      /* ExtCreatePen fails if the scaled dash length becomes zero,
++         so enforce a minimum of 1 unit. */
++	    dash_array[i] = MAX(1, (DWORD) (scale * style->dash[i]));
+ 	}
+     } else {
+ 	pen_style |= PS_SOLID;

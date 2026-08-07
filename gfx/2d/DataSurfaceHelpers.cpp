@@ -322,10 +322,9 @@ bool CopyRect(DataSourceSurface* aSrc, DataSourceSurface* aDest,
   uint8_t* destData =
       DataAtOffset(aDest, destMap.GetMappedSurface(), aDestPoint);
 
-  SwizzleData(sourceData, srcMap.GetStride(), aSrc->GetFormat(), destData,
-              destMap.GetStride(), aDest->GetFormat(), aSrcRect.Size());
-
-  return true;
+  return SwizzleData(sourceData, srcMap.GetStride(), aSrc->GetFormat(),
+                     destData, destMap.GetStride(), aDest->GetFormat(),
+                     aSrcRect.Size());
 }
 
 already_AddRefed<DataSourceSurface> CreateDataSourceSurfaceByCloning(

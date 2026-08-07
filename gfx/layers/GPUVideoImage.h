@@ -42,7 +42,9 @@ class GPUVideoImage final : public Image {
                 const gfx::ColorDepth& aColorDepth)
       : Image(nullptr, ImageFormat::GPU_VIDEO),
         mSize(aSize),
-        mColorDepth(aColorDepth) {
+        mColorDepth(aColorDepth),
+        mManager(aManager),
+        mSD(aSD) {
     // Create the TextureClient immediately since the GPUVideoTextureData
     // is responsible for deallocating the SurfaceDescriptor.
     //
@@ -62,8 +64,10 @@ class GPUVideoImage final : public Image {
   gfx::ColorDepth GetColorDepth() const override { return mColorDepth; }
 
   Maybe<SurfaceDescriptor> GetDesc() override {
-    return GetDescFromTexClient(mTextureClient);
+    return Some(SurfaceDescriptor(mSD));
   }
+
+  const SurfaceDescriptorGPUVideo& SD() const { return mSD; }
 
  private:
   GPUVideoTextureData* GetData() const {
@@ -79,11 +83,10 @@ class GPUVideoImage final : public Image {
 
  public:
   already_AddRefed<gfx::SourceSurface> GetAsSourceSurface() override {
-    GPUVideoTextureData* data = GetData();
-    if (!data) {
+    if (!mManager) {
       return nullptr;
     }
-    return data->GetAsSourceSurface();
+    return mManager->Readback(mSD);
   }
 
   TextureClient* GetTextureClient(KnowsCompositor* aKnowsCompositor) override {
@@ -95,6 +98,8 @@ class GPUVideoImage final : public Image {
  private:
   gfx::IntSize mSize;
   gfx::ColorDepth mColorDepth;
+  RefPtr<IGPUVideoSurfaceManager> mManager;
+  SurfaceDescriptorGPUVideo mSD;
   RefPtr<TextureClient> mTextureClient;
 };
 

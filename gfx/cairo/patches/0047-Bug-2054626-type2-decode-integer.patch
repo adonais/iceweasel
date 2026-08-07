@@ -1,0 +1,86 @@
+diff --git a/gfx/cairo/cairo/src/cairo-cff-subset.c b/gfx/cairo/cairo/src/cairo-cff-subset.c
+--- a/gfx/cairo/cairo/src/cairo-cff-subset.c
++++ b/gfx/cairo/cairo/src/cairo-cff-subset.c
+@@ -1489,36 +1489,46 @@ cairo_cff_font_subset_dict_strings (cair
+         status = cairo_cff_font_subset_dict_string (font, dict, dict_strings[i]);
+         if (unlikely (status))
+             return status;
+     }
+ 
+     return CAIRO_STATUS_SUCCESS;
+ }
+ 
+-static unsigned char *
+-type2_decode_integer (unsigned char *p, int *integer)
++static cairo_status_t
++type2_decode_integer (unsigned char **pp, unsigned char *end, int *integer)
+ {
++    unsigned char *p = *pp;
+     if (*p == 28) {
++	if (p + 3 > end)
++	    return CAIRO_INT_STATUS_UNSUPPORTED;
+ 	*integer = p[1] << 8 | p[2];
+-	p += 3;
++	*pp += 3;
+     } else if (*p <= 246) {
+-        *integer = *p++ - 139;
++        *integer = *p - 139;
++	*pp += 1;
+     } else if (*p <= 250) {
++	if (p + 2 > end)
++	    return CAIRO_INT_STATUS_UNSUPPORTED;
+         *integer = (p[0] - 247) * 256 + p[1] + 108;
+-        p += 2;
++        *pp += 2;
+     } else if (*p <= 254) {
++	if (p + 2 > end)
++	    return CAIRO_INT_STATUS_UNSUPPORTED;
+         *integer = -(p[0] - 251) * 256 - p[1] - 108;
+-        p += 2;
++        *pp += 2;
+     } else { /* *p == 255 */
+-	 /* 16.16 fixed-point number. The fraction is ignored. */
+-	 *integer = (int16_t)((p[1] << 8) | p[2]);
+-        p += 5;
++	if (p + 5 > end)
++	    return CAIRO_INT_STATUS_UNSUPPORTED;
++	/* 16.16 fixed-point number. The fraction is ignored. */
++	*integer = (int16_t)((p[1] << 8) | p[2]);
++        *pp += 5;
+     }
+-    return p;
++    return CAIRO_STATUS_SUCCESS;
+ }
+ 
+ /* Type 2 charstring parser for finding calls to local or global
+  * subroutines. For non Opentype CFF fonts it also gets the glyph
+  * widths.
+  *
+  * When we find a subroutine operator, the subroutine is marked as in
+  * use and recursively followed. The subroutine number is the value on
+@@ -1548,21 +1558,24 @@ cairo_cff_parse_charstring (cairo_cff_fo
+ {
+     unsigned char *p = charstring;
+     unsigned char *end = charstring + length;
+     int integer;
+     int hint_bytes;
+     int sub_num;
+     cff_index_element_t *element;
+     int fd;
++    cairo_status_t status;
+ 
+     while (p < end) {
+         if (*p == 28 || *p >= 32) {
+             /* Integer value */
+-            p = type2_decode_integer (p, &integer);
++            status = type2_decode_integer (&p, end, &integer);
++	    if (unlikely (status))
++		return status;
+             font->type2_stack_size++;
+             font->type2_stack_top_value = integer;
+             font->type2_stack_top_is_int = TRUE;
+ 	    if (!font->type2_seen_first_int) {
+ 		font->type2_width = integer;
+ 		font->type2_seen_first_int = TRUE;
+ 	    }
+ 	} else if (*p == TYPE2_hstem || *p == TYPE2_vstem ||

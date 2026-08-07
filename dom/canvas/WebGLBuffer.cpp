@@ -275,7 +275,7 @@ void WebGLBuffer::InvalidateCacheRange(uint64_t byteOffset,
   for (const auto& cur : mIndexRanges) {
     const auto& range = cur.first;
     const auto& indexByteSize = IndexByteSizeByType(range.type);
-    const auto rangeBegin = range.byteOffset * indexByteSize;
+    const auto rangeBegin = range.byteOffset;
     const auto rangeEnd =
         rangeBegin + uint64_t(range.indexCount) * indexByteSize;
     if (rangeBegin >= updateEnd || rangeEnd <= updateBegin) continue;

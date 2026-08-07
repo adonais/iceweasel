@@ -1416,10 +1416,7 @@ void GLBlitHelper::BlitTextureToTexture(GLuint srcTex, GLuint destTex,
 bool GLBlitHelper::BlitImage(layers::GPUVideoImage* const srcImage,
                              const gfx::IntSize& destSize,
                              const OriginPos destOrigin) const {
-  const auto& data = srcImage->GetData();
-  if (!data) return false;
-
-  const auto& desc = data->SD();
+  const auto& desc = srcImage->SD();
 
   MOZ_ASSERT(
       desc.type() ==

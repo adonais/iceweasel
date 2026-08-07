@@ -339,19 +339,19 @@ nsresult WebMDemuxer::ReadMetadata() {
               params.transfer_characteristics));
 
       // Picture region, taking into account cropping, before scaling
-      // to the display size.
-      unsigned int cropH = params.crop_right + params.crop_left;
-      unsigned int cropV = params.crop_bottom + params.crop_top;
-      gfx::IntRect pictureRect(params.crop_left, params.crop_top,
-                               params.width - cropH, params.height - cropV);
-
-      // If the cropping data appears invalid then use the frame data
-      if (pictureRect.width <= 0 || pictureRect.height <= 0 ||
-          pictureRect.x < 0 || pictureRect.y < 0) {
-        pictureRect.x = 0;
-        pictureRect.y = 0;
-        pictureRect.width = params.width;
-        pictureRect.height = params.height;
+      // to the display size. Default to the full frame and apply cropping only
+      // when it leaves a non-empty region within the frame.
+      gfx::IntRect pictureRect(0, 0, AssertedCast<int32_t>(params.width),
+                               AssertedCast<int32_t>(params.height));
+      uint64_t cropH =
+          static_cast<uint64_t>(params.crop_left) + params.crop_right;
+      uint64_t cropV =
+          static_cast<uint64_t>(params.crop_top) + params.crop_bottom;
+      if (cropH < params.width && cropV < params.height) {
+        pictureRect.x = AssertedCast<int32_t>(params.crop_left);
+        pictureRect.y = AssertedCast<int32_t>(params.crop_top);
+        pictureRect.width = AssertedCast<int32_t>(params.width - cropH);
+        pictureRect.height = AssertedCast<int32_t>(params.height - cropV);
       }
 
       // Validate the container-reported frame and pictureRect sizes. This

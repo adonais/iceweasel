@@ -3423,7 +3423,8 @@ void nsGenericHTMLElement::HidePopover(ErrorResult& aRv) {
 void nsGenericHTMLElement::HidePopoverInternal(bool aFocusPreviousElement,
                                                bool aFireEvents,
                                                ErrorResult& aRv) {
-  OwnerDoc()->HidePopover(*this, aFocusPreviousElement, aFireEvents, aRv);
+  RefPtr<Document> document = OwnerDoc();
+  document->HidePopover(*this, aFocusPreviousElement, aFireEvents, aRv);
 }
 
 void nsGenericHTMLElement::ForgetPreviouslyFocusedElementAfterHidingPopover() {

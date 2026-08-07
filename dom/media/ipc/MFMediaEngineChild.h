@@ -71,8 +71,10 @@ class MFMediaEngineChild final : public PMFMediaEngineChild {
 
   MozPromiseHolder<GenericNonExclusivePromise> mInitPromiseHolder;
   MozPromiseRequestHolder<InitMediaEnginePromise> mInitEngineRequest;
+  MozPromiseRequestHolder<GenericNonExclusivePromise> mLaunchProcessRequest;
 
-  // This is guaranteed always being alive in our lifetime.
+  // Owned by the state machine which also owns `mOwner`, so this is only
+  // guaranteed to be alive while `mOwner` is non-null.
   NotNull<FrameStatistics*> const MOZ_NON_OWNING_REF mFrameStats;
 
   bool mShutdown = false;

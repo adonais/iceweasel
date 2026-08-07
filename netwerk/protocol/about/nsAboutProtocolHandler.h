@@ -79,6 +79,7 @@ class nsNestedAboutURI final : public nsSimpleNestedURI {
  protected:
   nsCOMPtr<nsIURI> mBaseURI;
   bool Deserialize(const mozilla::ipc::URIParams&);
+  bool IsValidInnerURI(nsIURI* aInnerURI) override;
   nsresult ReadPrivate(nsIObjectInputStream* stream);
 
  public:

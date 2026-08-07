@@ -8141,17 +8141,24 @@ nsresult nsContentUtils::CalculateBufferSizeForImage(
     const uint32_t& aStride, const IntSize& aImageSize,
     const SurfaceFormat& aFormat, size_t* aMaxBufferSize,
     size_t* aUsedBufferSize) {
-  CheckedInt32 requiredBytes =
-      CheckedInt32(aStride) * CheckedInt32(aImageSize.height);
-
-  CheckedInt32 usedBytes =
-      requiredBytes - aStride +
-      (CheckedInt32(aImageSize.width) * BytesPerPixel(aFormat));
-  if (!usedBytes.isValid()) {
+  if (aImageSize.width <= 0 || aImageSize.height <= 0) {
     return NS_ERROR_FAILURE;
   }
 
-  MOZ_ASSERT(requiredBytes.isValid(), "usedBytes valid but not required?");
+  CheckedInt32 rowBytes =
+      CheckedInt32(aImageSize.width) * BytesPerPixel(aFormat);
+  CheckedInt32 stride(aStride);
+  if (!rowBytes.isValid() || !stride.isValid() ||
+      stride.value() < rowBytes.value()) {
+    return NS_ERROR_FAILURE;
+  }
+
+  CheckedInt32 requiredBytes = stride * CheckedInt32(aImageSize.height);
+  CheckedInt32 usedBytes = requiredBytes - stride + rowBytes;
+  if (!requiredBytes.isValid() || !usedBytes.isValid()) {
+    return NS_ERROR_FAILURE;
+  }
+
   *aMaxBufferSize = requiredBytes.value();
   *aUsedBufferSize = usedBytes.value();
   return NS_OK;
