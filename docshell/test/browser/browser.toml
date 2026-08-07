@@ -375,6 +375,9 @@ support-files = ["overlink_test.html"]
 
 ["browser_platform_emulation.js"]
 
+["browser_purge_shistory_keeps_current.js"]
+support-files = ["dummy_iframe_page.html"]
+
 ["browser_replace_state_during_navigation.js"]
 support-files = ["file_replace_state_during_navigation.html"]
 
