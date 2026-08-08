@@ -47,7 +47,7 @@
 
     function replaceWithBasicResults() {
       let { originalSearchTerm, searchTerm } = getSearchTerm();
-      let hasAds = !searchTerm.startsWith("no ads");
+      let hasAds = !searchTerm?.startsWith("no ads");
       if (!searchTerm) {
         return;
       }

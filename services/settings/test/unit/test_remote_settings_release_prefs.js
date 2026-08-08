@@ -65,31 +65,6 @@ add_task(
 
 add_task(
   {
-    skip_if: () => !AppConstants.RELEASE_OR_BETA,
-  },
-  async function test_server_url_can_be_changed_to_another_valid_option() {
-    Services.prefs.setStringPref(
-      "services.settings.server",
-      AppConstants.REMOTE_SETTINGS_SERVER_URLS[1]
-    );
-
-    const Utils = getNewUtils();
-
-    Assert.equal(
-      Utils.SERVER_URL,
-      AppConstants.REMOTE_SETTINGS_SERVER_URLS[1],
-      "Server url pref was read as second option in release"
-    );
-
-    Services.prefs.setStringPref(
-      "services.settings.server",
-      AppConstants.REMOTE_SETTINGS_SERVER_URLS[0]
-    );
-  }
-);
-
-add_task(
-  {
     skip_if: () => AppConstants.RELEASE_OR_BETA,
   },
   async function test_server_url_cannot_be_toggled_in_dev_nightly() {

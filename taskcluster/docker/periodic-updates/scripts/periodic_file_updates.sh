@@ -411,7 +411,7 @@ function compare_suffix_lists {
 function compare_remote_settings_files {
   # cd "${TOPSRCDIR}"
 
-  REMOTE_SETTINGS_SERVER="https://firefox.settings.services.mozilla.com/v1"
+  REMOTE_SETTINGS_SERVER="https://firefox.settings.services.mozilla.com/v2"
 
   # 1. List remote settings collections from server.
   echo "INFO: fetch remote settings list from server"
@@ -473,7 +473,7 @@ function compare_remote_settings_files {
       done
     fi
     # NOTE: The downloaded data is not validated. xpcshell should be used for that.
-    
+
     # bug 1959683: remote settings update can add untracked search-config-icons
     # It is not safe to take these (see https://bugzilla.mozilla.org/show_bug.cgi?id=1873448)
     # If they are around as untracked files when `arc diff` runs, that command will fail.
@@ -757,7 +757,7 @@ fi
 
 if [ "${MOBILE_MERINO_MANIFEST_UPDATED}" == "true" ]
 then
-  # Merino manifest file is already updated in-place in the tree, 
+  # Merino manifest file is already updated in-place in the tree,
   # so there's no need to stage them.
   COMMIT_MESSAGE="${COMMIT_MESSAGE} mobile-merino-manifest"
 fi

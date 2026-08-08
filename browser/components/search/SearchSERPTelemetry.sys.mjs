@@ -197,6 +197,17 @@ const AD_COMPONENTS = [
  *   The configuration for possible page type parameters.
  * @property {string[]} queryParamNames
  *   An array of query parameters that may be used for the user's search string.
+ * @property {boolean} [requireTopLevelImpressionOrigin=false]
+ *   If true, a same-document navigation is only allowed to start tracking a
+ *   browser if the document that browser actually loaded over the network was
+ *   itself a SERP for this provider. Since same-document navigations don't
+ *   change the loaded document, this remains true across intermediate
+ *   same-document navigations to untracked page types (e.g. an
+ *   "All" -> "Maps" -> "All" trip stays trackable), but never allows a
+ *   same-document URL change to originate tracking on a browser that never
+ *   loaded a SERP to begin with. Use this when a same-document URL change can
+ *   be an artifact of a redirect (e.g. an ad click or an organic outbound
+ *   link) rather than a genuine in-app navigation to a new SERP.
  * @property {SignedInCookies[]} signedInCookies
  *   An array of cookie details that are used to determine whether a client is
  *   signed in to a provider's account.
@@ -858,7 +869,9 @@ class TelemetryHandler {
     // Step 3: Maybe track the browser.
     if (
       this._isTrackablePageType(pageType, providerInfo) &&
-      !browserIsTracked
+      !browserIsTracked &&
+      (!providerInfo.requireTopLevelImpressionOrigin ||
+        !!this._checkURLForSerpMatch(browser.originalURI?.spec))
     ) {
       this.updateTrackingStatus(browser, Services.io.newURI(url), webProgress);
       let actor = browser.browsingContext.currentWindowGlobal.getActor(

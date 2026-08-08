@@ -19,7 +19,7 @@ ALLOWED_HOSTS = [
 ]
 
 PREFS = {
-    "services.settings.server": "https://firefox.settings.services.mozilla.com/v1",
+    "services.settings.server": "https://firefox.settings.services.mozilla.com/v2",
     "network.socket.allowed_nonlocal_domains": ",".join(ALLOWED_HOSTS),
 }
 

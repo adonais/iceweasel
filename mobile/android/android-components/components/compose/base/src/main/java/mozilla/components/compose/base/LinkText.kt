@@ -21,6 +21,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.semantics.clearAndSetSemantics
 import androidx.compose.ui.semantics.contentDescription
 import androidx.compose.ui.semantics.onClick
+import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.LinkAnnotation
 import androidx.compose.ui.text.SpanStyle
 import androidx.compose.ui.text.TextLinkStyles
@@ -167,7 +168,12 @@ private fun LinksDialog(
 }
 
 /**
- * @throws IllegalArgumentException if any of the given [linkTextStates] text are not found in [fullText].
+ * Builds an [AnnotatedString] from [fullText], adding a clickable link annotation for each
+ * [LinkTextState] whose [LinkTextState.text] is found in [fullText].
+ *
+ * Any state whose text is blank or cannot be found (e.g. a localized [fullText] that does not
+ * contain the expected substring) is logged and skipped, so it is never turned into a link with an
+ * out of range span - which would otherwise crash later in the text layout pass.
  */
 private fun buildUrlAnnotatedString(
     fullText: String,
@@ -183,11 +189,13 @@ private fun buildUrlAnnotatedString(
 
         if (linkTextState.text.isBlank()) {
             logger.error("Link text was blank")
+            return@forEach
         }
 
         val startIndex = fullText.indexOf(linkTextState.text, previousWordEndIndex)
         if (startIndex < 0) {
             logger.error("LinkText: \"${linkTextState.text}\" not found in \"$fullText\"")
+            return@forEach
         }
 
         val endIndex = startIndex + linkTextState.text.length

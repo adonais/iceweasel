@@ -2555,7 +2555,11 @@ mozilla::dom::SessionHistoryEntry* nsSHistory::FindAdjacentEntryFor(
       FindParent(ancestors, static_cast<SessionHistoryEntry*>(nextEntry.get()));
   if (foundParent) {
     for (const auto& child : foundParent->Children()) {
-      if (child && child->DocshellID() == aEntry->DocshellID()) {
+      // As in the ancestors-empty case above, if mEntries has duplicates
+      // (see bug 2042897) the adjacent entry can resolve back to aEntry itself;
+      // returning it would make callers loop forever, so skip it.
+      if (child && child != aEntry &&
+          child->DocshellID() == aEntry->DocshellID()) {
         return child;
       }
     }

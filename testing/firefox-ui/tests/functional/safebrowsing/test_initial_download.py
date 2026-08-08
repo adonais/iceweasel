@@ -37,7 +37,7 @@ class TestSafeBrowsingInitialDownload(MarionetteTestCase):
     prefs_provider_google_update_time = {}
 
     prefs_safebrowsing = {
-        "services.settings.server": "https://firefox.settings.services.mozilla.com/v1",
+        "services.settings.server": "https://firefox.settings.services.mozilla.com/v2",
         "browser.safebrowsing.debug": True,
         "browser.safebrowsing.update.enabled": True,
     }

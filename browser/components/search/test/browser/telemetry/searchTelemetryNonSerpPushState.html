@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<!--
+  Simulates a redirect (e.g. an ad click) that lands on a URL not matching
+  the provider's SERP pattern, then uses history.pushState to change the
+  URL to one that looks like a genuine SERP, all without a top-level
+  navigation. This is used to test that a same-document navigation cannot
+  originate impression tracking for providers configured with
+  requireTopLevelImpressionOrigin.
+-->
+<html>
+<head>
+  <title>Non-SERP page that pushes a SERP-looking URL</title>
+  <meta charset="utf-8">
+</head>
+<body>
+  <script>
+    window.addEventListener("DOMContentLoaded", () => {
+      let url = new URL(window.location.href);
+      let target = url.searchParams.get("target");
+      if (target) {
+        history.pushState({}, "", target);
+      }
+    });
+  </script>
+</body>
+</html>
