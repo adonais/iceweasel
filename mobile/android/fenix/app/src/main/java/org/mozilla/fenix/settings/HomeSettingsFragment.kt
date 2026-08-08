@@ -50,6 +50,9 @@ class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
     @VisibleForTesting
     internal lateinit var fenixComponents: Components
 
+    @VisibleForTesting
+    internal var worldCupHasEnded: () -> Boolean = { hasWorldCupEnded() }
+
     override fun onAttach(context: Context) {
         super.onAttach(context)
         if (!::fenixComponents.isInitialized) {
@@ -214,7 +217,7 @@ class HomeSettingsFragment : PreferenceFragmentCompat(), SystemInsetsPaddedFragm
             // Once the World Cup is over the widget is retired: hide the toggle. The widget itself
             // is hidden by the hasWorldCupEnded() gate on SportsWidgetState.isShown, so we leave the
             // user's saved preference untouched rather than mutating it off a transient clock reading.
-            isVisible = fenixSettings.enableHomepageSportsWidget && !hasWorldCupEnded()
+            isVisible = fenixSettings.enableHomepageSportsWidget && !worldCupHasEnded()
             isChecked = fenixSettings.showHomepageSportsWidget
             onPreferenceChangeListener = Preference.OnPreferenceChangeListener { preference, newValue ->
                 val newBooleanValue = newValue as? Boolean ?: return@OnPreferenceChangeListener false

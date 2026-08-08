@@ -136,14 +136,24 @@ internal class HomeSettingsFragmentTest {
     }
 
     @Test
-    fun `GIVEN the Homepage Sports Widget feature is enabled WHEN accessing settings THEN the World Cup toggle is visible`() {
+    fun `GIVEN the feature is enabled and the World Cup has not ended WHEN accessing settings THEN the World Cup toggle is visible`() {
         every { appSettings.enableHomepageSportsWidget } returns true
         every { appSettings.showHomepageSportsWidget } returns true
 
-        activateFragment()
+        activateFragment(worldCupHasEnded = false)
 
         assertTrue(getSportsWidgetPreference().isVisible)
         assertTrue(getSportsWidgetPreference().isChecked)
+    }
+
+    @Test
+    fun `GIVEN the feature is enabled but the World Cup has ended WHEN accessing settings THEN the World Cup toggle is not visible`() {
+        every { appSettings.enableHomepageSportsWidget } returns true
+        every { appSettings.showHomepageSportsWidget } returns true
+
+        activateFragment(worldCupHasEnded = true)
+
+        assertFalse(getSportsWidgetPreference().isVisible)
     }
 
     @Test
@@ -189,9 +199,10 @@ internal class HomeSettingsFragmentTest {
         assertEquals("true", events.single().extra?.get("enabled"))
     }
 
-    private fun activateFragment() {
+    private fun activateFragment(worldCupHasEnded: Boolean = true) {
         val activity = Robolectric.buildActivity(FragmentActivity::class.java).create().get()
         homeSettingsFragment = HomeSettingsFragment()
+        homeSettingsFragment.worldCupHasEnded = { worldCupHasEnded }
 
         val mockCore: Core = mockk {
             every { pocketStoriesService } returns this@HomeSettingsFragmentTest.pocketService
