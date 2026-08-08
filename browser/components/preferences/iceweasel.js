@@ -77,6 +77,7 @@ const gIceweaselPane = {
 
     // libportable option
     setUpcheckSyncListeners("iceweasel-libportable-upcheck-checkbox");
+    setGhproxySyncListeners("iceweasel-libportable-ghproxy-checkbox");
     setBosskeySyncListeners("iceweasel-libportable-bosskey-checkbox");
     setOntabSyncListeners("iceweasel-libportable-ontabs-checkbox");
     setUboSyncListeners("iceweasel-libportable-ubo-checkbox");
@@ -133,6 +134,23 @@ function setUpcheckSyncListeners(checkboxid) {
         element.checked = false;
       }
       setEventListener(checkboxid, "click", onUpcheckSyncListeners);
+    }
+  }
+}
+
+function setGhproxySyncListeners(checkboxid) {
+  const element = document.getElementById(checkboxid);
+  if (element) {
+    let fast = iniRead("update", "faster");
+    if (fast != null) {
+      if (fast.length > 1) {
+        if (!element.checked) {
+          element.checked = true;
+        }
+      } else {
+        element.checked = false;
+      }
+      setEventListener(checkboxid, "click", onGhproxySyncListeners);
     }
   }
 }
@@ -376,6 +394,11 @@ function onUpcheckSyncListeners() {
 
 function onUboSyncListeners() {
   optionlibportable(0x5230, !parseInt(iniRead("General", "EnableUBO")));
+}
+
+function onGhproxySyncListeners() {
+  const v = iniRead("update", "faster");
+  optionlibportable(0x5231, v && v.length > 1 ? 0 : 1);
 }
 
 function onChromeSyncListeners() {
