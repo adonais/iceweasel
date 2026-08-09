@@ -27,6 +27,7 @@
   <string name="teaser">自動私隱瀏覽\n睇完 · 刪咗佢 · 再嚟過</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">你嘅瀏覽歷史已被刪除。</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">已清除瀏覽歷史</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">Tab 嘅瀏覽歷史記錄已被刪除。</string>
@@ -128,6 +129,9 @@
   -->
   <string name="shortcut_erase_and_open_long_label">刪除並開啟 %1$s</string>
   <!--
+    These labels are selected per variant through manifestPlaceholders in build.gradle, so
+    UnusedResources does not see the ones for the variants it is not analyzing.
+
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus.
@@ -138,19 +142,19 @@
     Klar is hard coded since we can't use variables in this context.
     Do not translate or transliterate Klar.
   -->
-  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage">喺 Klar 度搜尋</string>
+  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage,UnusedResources">喺 Klar 度搜尋</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Beta is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Beta.
   -->
-  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage">喺 Focus Beta 度搜尋</string>
+  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage,UnusedResources">喺 Focus Beta 度搜尋</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Nightly is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Nightly.
   -->
-  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage">喺 Focus Nightly 度搜尋</string>
+  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage,UnusedResources">喺 Focus Nightly 度搜尋</string>
   <!-- Header for the Privacy and Security settings menu -->
   <string name="preference_privacy_and_security_header">私隱同安全</string>
   <!-- Preference summary for settings related to privacy and security -->
@@ -768,12 +772,16 @@
     %2$s is a URL to a support article. Contains a button that will redirect the user to Privacy & Security Screen.
   -->
   <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s 會盡量用 HTTPS 嚟提高安全性。 <a href=\"%2$s\">知多啲</a> <br/><br/> 喺「設定」>「私隱及安全」>「安全」到可以更改設定。]]></string>
-  <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_title">連線唔安全</string>
+  <!--
+    The strings below override AC defaults and are only referenced from there.
+
+    The document title and heading of the error page shown when a website has an invalid or expired SSL certificate.
+  -->
+  <string name="mozac_browser_errorpages_security_bad_cert_title" tools:ignore="UnusedResources">連線唔安全</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[呢個可能係伺服器嘅設定問題，或者有人試圖冒充伺服器。<br/><br/> 如果你曾經成功連接到，就好可能只係暫時性嘅問題。]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message" tools:ignore="UnusedResources"><![CDATA[呢個可能係伺服器嘅設定問題，或者有人試圖冒充伺服器。<br/><br/> 如果你曾經成功連接到，就好可能只係暫時性嘅問題。]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>有人可能企圖冒充呢個網站，繼續嘅話會有風險。</label> <br><br>\n<label>%1$s 唔信任 <b>%2$s</b> 因為佢用咗未知嘅證書頒發者、自我簽發嘅證書，或者未發送正確嘅中介證書。</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo" tools:ignore="UnusedResources"><![CDATA[<label>有人可能企圖冒充呢個網站，繼續嘅話會有風險。</label> <br><br>\n<label>%1$s 唔信任 <b>%2$s</b> 因為佢用咗未知嘅證書頒發者、自我簽發嘅證書，或者未發送正確嘅中介證書。</label>]]></string>
   <!--
     Sessions List
 

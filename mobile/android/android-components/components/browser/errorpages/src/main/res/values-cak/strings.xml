@@ -9,8 +9,16 @@
 <resources>
   <!-- The button that appears at the bottom of an error page. -->
   <string name="mozac_browser_errorpages_page_refresh">Titojtob\'ëx chik</string>
+  <!-- The button on an error page that checks whether an archived copy of the unreachable page exists. -->
+  <string name="mozac_browser_errorpages_archive_check_button">Tinik\'öx ruwäch yakon</string>
+  <!-- The label shown on the archive button while the archived copy is being looked up. -->
+  <string name="mozac_browser_errorpages_archive_checking">Ninik\'öx ri yakb\'äl</string>
+  <!-- The message shown when no archived copy of the unreachable page could be found. -->
+  <string name="mozac_browser_errorpages_archive_not_found">Majun yakon ruwäch yakb\'äl xilitäj.</string>
   <!-- A link, shown after no archived copy was found, that searches the web for the page instead. -->
   <string name="mozac_browser_errorpages_archive_search_web">Tikanöx pan ajk\'am.</string>
+  <!-- The message shown when the archive service could not be reached to look up an archived copy. -->
+  <string name="mozac_browser_errorpages_archive_unreachable">Man xok ta pa ri rusamajixik yakb\'äl.</string>
   <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
   <string name="mozac_browser_errorpages_archive_retry">Titojtob\'ëx chik.</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
@@ -93,6 +101,12 @@
   <string name="mozac_browser_errorpages_unknown_host_title">Man Xilitäj Ta Ri Ochochib\'äl</string>
   <!-- In the example, the two URLs in markup do not need to be translated. -->
   <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>Man xril ta ri ruk\'u\'x samaj ochochib\'äl ri okik\'amaya\'l.</p>\n<ul>\n<li>Tanik\'oj chi majun sachoj ruk\'wan ri ochochib\'äl achi\'el <strong>ww</strong>.example.com pa ruk\'exel ri <strong>www</strong>.example.com.</li>\n<li>We man yatikïr ta nasamajib\'ej jun ruxaq, tanik\'oj ri Wi-Fi awokem o rutzij awokisab\'al.</li>\n</ul>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_title_2">Achi\'el k\'o jun k\'ayewal rik\'in ri rokem k\'amaya\'l.</string>
+  <!-- The main body text of this error page. It will be shown beneath the title -->
+  <string name="mozac_browser_errorpages_no_internet_message_2">Tatojtob\'ej yatok chik pa jun okisaxel. Tanik\'oj ri amodem o router. Tachupu\' chuqa\' katok chik pa WiFi.</string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_no_internet_error_code">Rub\'i\' sachoj: NS_ERROR_OFFLINE</string>
   <!-- Text that will show up on the button at the bottom of the error page -->
   <string name="mozac_browser_errorpages_no_internet_refresh_button">Tisamajïx chik</string>
   <!-- The document title and heading of an error page. -->
@@ -133,6 +147,10 @@
   <string name="mozac_browser_errorpages_safe_phishing_uri_title">Ruk\'ayewal q\'olonel ruxaq</string>
   <!-- The %1$s will be replaced by the malicious website URL -->
   <string name="mozac_browser_errorpages_safe_phishing_uri_message"><![CDATA[<p>Re ruxaq k\'amaya\'l pa %1$s xya\' rutzijol chi niq\'eleb\'en, ruma ri\' toq xq\'at ruma ach\'ojin chajinïk.</p>]]></string>
+  <!-- The document title and heading of an error page. -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_title">Xq\'at re ruxaq richin yachajïx</string>
+  <!-- The %1$s will be replaced by the malicious website URL -->
+  <string name="mozac_browser_errorpages_harmful_addon_uri_message"><![CDATA[<p>Re ajk\'am ruxaq re\' %1$s xq\'at ruma jun atz\'aqat xutojtob\'ej xujäq. Re ruxaq re\' tikirel nikokisaj richin nikeleq\'aj ana\'oj, achi\'el ewan taq tzij o rajilab\'al ri akre\'ito\' tarjeta\'.</p>]]></string>
   <!-- The title of the error page for websites that do not support HTTPS when HTTPS-Only is turned on -->
   <string name="mozac_browser_errorpages_httpsonly_title">Majun jikïl ruxaq</string>
   <!-- The text of the error page for websites that do not support HTTPS when HTTPS-Only is turned on. %1$s will be replaced with the URL of the website. -->

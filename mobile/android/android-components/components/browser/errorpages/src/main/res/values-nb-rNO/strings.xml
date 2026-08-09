@@ -17,6 +17,10 @@
   <string name="mozac_browser_errorpages_archive_not_found">Ingen arkivert versjon funnet.</string>
   <!-- A link, shown after no archived copy was found, that searches the web for the page instead. -->
   <string name="mozac_browser_errorpages_archive_search_web">Søk på nettet.</string>
+  <!-- The message shown when the archive service could not be reached to look up an archived copy. -->
+  <string name="mozac_browser_errorpages_archive_unreachable">Kunne ikke nå arkivtjenesten.</string>
+  <!-- A link, shown after the archive service could not be reached, that retries the lookup. -->
+  <string name="mozac_browser_errorpages_archive_retry">Prøv på nytt.</string>
   <!-- The document title and heading of an error page shown when a website cannot be loaded for an unknown reason. -->
   <string name="mozac_browser_errorpages_generic_title">Klarte ikke fullføre forspørselen</string>
   <!-- The error message shown when a website cannot be loaded for an unknown reason. -->

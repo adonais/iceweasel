@@ -17,6 +17,10 @@
   <string name="mozac_feature_sitepermissions_location_title">¿La niya\' q\'ij chi re ri %1$s richin nrokisaj ri ak\'ojlemal?</string>
   <!-- Title of a dialog for a camera and microphone permission request. %1$s is the domain name of the website. -->
   <string name="mozac_feature_sitepermissions_camera_and_microphone">¿La niya\' q\'ij chi re ri %1$s richin nrokisaj ri elsäy wachib\'äl chuqa\' q\'asäy ch\'ab\'äl?</string>
+  <!-- Title of a dialog for a local network access request. %1$s is the domain name of the website -->
+  <string name="mozac_feature_sitepermissions_local_network_access_title">¿La niya\' q\'ij chi ri %1$s tok pa taq chokoy chuqa\' taq rusamaj okisab\'äl e\'okinäq pan ak\'amal?</string>
+  <!-- Title of a dialog for a local device access request. %1$s is the domain name of the website -->
+  <string name="mozac_feature_sitepermissions_local_device_access_title">¿La niya\' q\'ij chi ri %1$s nok pa ch\'aqa\' chik taq chokoy chuqa\' taq samaj pa re okisab\'äl re?</string>
   <!--
     Option in a dialog for requesting a microphone permission, this option will give access to
     the first microphone
@@ -47,6 +51,8 @@
     this button will not give access to this permission
   -->
   <string name="mozac_feature_sitepermissions_block">Tiq\'at</string>
+  <!-- Message of a dialog offering more context about the app level notification permission request. %1$s will be replaced with the name of the app. -->
+  <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_message">K\'o chi naya\' q\'ij chi ke ri taq rutzijol pa %1$s richin ye\'ak\'ül rik\'in re ajk\'am ruxaq re\'.</string>
   <!-- Button label in a notification permission request dialog to dismiss the dialog. -->
   <string name="mozac_feature_sitepermissions_notification_permission_rationale_dialog_dismiss_label">Tiq\'at</string>
   <!-- Button label in a notification permission request dialog. It will let the user go to Android Settings to grant the permission. -->

@@ -43,6 +43,8 @@
   <string name="mozac_feature_prompt_login_save_headline_2">¿La niyak ewan tzij?</string>
   <!-- Prompt message displayed when app detects a user has entered a new password for an existing login and user decides if app should update the password. -->
   <string name="mozac_feature_prompt_login_update_headline_2">¿La nik\'ex ri ewan tzij?</string>
+  <!-- Prompt message displayed when app detects a user has entered a username for an existing login without a username and user decides if app should update the login. -->
+  <string name="mozac_feature_prompt_login_add_username_headline_2">¿La nik\'ex ri rub\'i\' okisanel?</string>
   <!--
     Text for a label for the field when prompt requesting a text is shown.
 
@@ -55,6 +57,10 @@
   <string name="mozac_feature_prompts_allow">Tiya\' q\'ij</string>
   <!-- Text of a negative button in dialog requesting to open a new window. -->
   <string name="mozac_feature_prompts_deny">Tiq\'at</string>
+  <!-- Text of the title of a dialog when a page is requesting to open a new window. -->
+  <string name="mozac_feature_prompts_popup_dialog_title">¿La naya\' q\'ij richin nijaq re ruxaq re\'?</string>
+  <!-- Text of the title of a dialog when a third-party redirect is blocked. -->
+  <string name="mozac_feature_prompts_redirect_dialog_title">¿La naya\' q\'ij richin nitaq pa re ruxaq re\'?</string>
   <!-- Title of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
   <string name="mozac_feature_prompt_before_unload_dialog_title">¿La kan at jikïl?</string>
   <!-- Body text of the dialog shown when a user is leaving a website and there is still data not saved yet. -->
@@ -63,6 +69,12 @@
   <string name="mozac_feature_prompts_before_unload_stay">Tik\'oje\' na</string>
   <!-- Leave button of the dialog shown when a user is leaving a website and there is still data not saved yet, this indicates that the user wants to leave in the website. -->
   <string name="mozac_feature_prompts_before_unload_leave">Tel</string>
+  <!-- Message shown when a site wants to create a passkey for a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_create_message">%1$s nrajo\' nunük\' jun jaqb\'äl okem richin %2$s.</string>
+  <!-- Message shown when a site wants to use a passkey from a related domain. %1$s is the requesting site, %2$s is the related domain the passkey is for. -->
+  <string name="webauthn_related_origin_use_message">%1$s nrajo\' nokisäx jun jaqb\'äl okem richin %2$s.</string>
+  <!-- Continue button label for WebAuthn related origin prompt. -->
+  <string name="webauthn_continue">Titikïr chik el</string>
   <!-- Title of the month chooser dialog. -->
   <string name="mozac_feature_prompts_set_month">Tacha\' jun ik\'</string>
   <!-- January (short description), used on the month chooser dialog. -->
@@ -101,8 +113,14 @@
   <string name="mozac_feature_prompts_saved_logins_2">Xeyak ewan taq tzij</string>
   <!-- Content description for the suggest strong password prompt to allow users to fill a form with a suggested strong password -->
   <string name="mozac_feature_prompts_suggest_strong_password_content_description">Tichilab\'ëx ütz ewan tzij</string>
+  <!-- Header for the suggest strong password prompt to allow users to fill a form with a suggested strong password -->
+  <string name="mozac_feature_prompts_suggest_strong_password_2">Tokisäx ri jikïl ewan tzij</string>
   <!-- Title for using the suggest strong password confirmation dialog. %1$s will be replaced with the generated password -->
   <string name="mozac_feature_prompts_suggest_strong_password_message">Ke\'awokisaj ütz ewan taq tzij: %1$s</string>
+  <!-- Title for using the suggest strong password confirmation dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_title">La nokisäx ri jikïl ewan tzij?</string>
+  <!-- Content description for the suggest strong password confirmation dialog -->
+  <string name="mozac_feature_prompts_suggest_strong_password_description_3">Tachajij ri rub\'i\' ataqoya\'l akuchi\' nawokisaj jun jikïl nuk\'unüj ewan tzij. Xtiyak pan rub\'i\' ataqoya\'l richin toq xtawokisaj.</string>
   <!-- Pressing this will use the suggested strong password -->
   <string name="mozac_feature_prompts_suggest_strong_password_use_password">Tokisäx ewan tzij</string>
   <!-- Pressing this will dismiss the suggested strong password dialog -->
@@ -116,6 +134,10 @@
   <string name="mozac_feature_prompt_repost_positive_button_text">Titaq chik tzij</string>
   <!-- Pressing this will dismiss the dialog and not refresh the webpage -->
   <string name="mozac_feature_prompt_repost_negative_button_text">Tiq\'at</string>
+  <!-- Strings show in a dialog that appear when user confirm folder upload -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_title">¿La nijotob\'äx yakb\'äl?</string>
+  <!-- Prompt message displayed when user selects a specific folder. %1$s is a folder / directory name. -->
+  <string name="mozac_feature_prompt_folder_upload_confirm_message">Tajikib\'a\' chi akuqub\'an ak\'u\'x chi rij re ruxaq re\' chuwäch nasamajib\'ej pa “%1$s”.</string>
   <!-- Pressing this will dismiss the dialog and allow to upload folder -->
   <string name="mozac_feature_prompt_folder_upload_confirm_positive_button_text">Tijotob\'äx</string>
   <!-- Pressing this will dismiss the dialog and disallow to upload folder -->
@@ -150,6 +172,8 @@
   <string name="mozac_feature_prompts_collapse_address_content_description_2">Kek\'ol yakon taq ochochib\'äl</string>
   <!-- Text for the manage addresses button. -->
   <string name="mozac_feature_prompts_manage_address">Kenuk\'samajïx taq ochochib\'äl</string>
+  <!-- Text for the title of a save address dialog. -->
+  <string name="mozac_feature_prompts_save_address_prompt_title">¿La niyak ochochib\'äl?</string>
   <!--
     Federated Credential Management prompts
 
@@ -168,4 +192,12 @@
   <string name="mozac_feature_prompts_identity_credentials_continue">Titikïr chik el</string>
   <!-- Text for the cancel button of the Identity Credential dialogs. -->
   <string name="mozac_feature_prompts_identity_credentials_cancel">Tiq\'at</string>
+  <!--
+    Email Mask Autofill
+
+    Text for the email mask prompt to allow users to fill an email input field in a sign up form with an email mask.
+  -->
+  <string name="mozac_feature_relay_chip_text">Tokisäx ruk\'oj rutaqoya\'l</string>
+  <!-- Informational text for the contextual feature recommendation (CFR) enabling the email mask aliases. The %s is the name of the service, "Firefox Relay". -->
+  <string name="mozac_feature_relay_email_masks_cfr">¡K\'ak\'a\'! kik\'oj kitaqoya\'l %s wakami e wachel pan oyonib\'äl.</string>
 </resources>

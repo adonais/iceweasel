@@ -27,6 +27,7 @@
   <string name="teaser">Peuri privedh awtomatek.\nPeuri. Dilea. Daswul.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">Dha istori peuri re beu diles.</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">Istori peuri diles</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">Diles re beu istori peuri an tab.</string>
@@ -128,6 +129,9 @@
   -->
   <string name="shortcut_erase_and_open_long_label">Dilea hag ygeri %1$s</string>
   <!--
+    These labels are selected per variant through manifestPlaceholders in build.gradle, so
+    UnusedResources does not see the ones for the variants it is not analyzing.
+
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus.
@@ -138,19 +142,19 @@
     Klar is hard coded since we can't use variables in this context.
     Do not translate or transliterate Klar.
   -->
-  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage">Hwilas yn Klar</string>
+  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage,UnusedResources">Hwilas yn Klar</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Beta is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Beta.
   -->
-  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage">Hwilas yn Focus Beta</string>
+  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage,UnusedResources">Hwilas yn Focus Beta</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Nightly is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Nightly.
   -->
-  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage">Hwilas yn Focus Nightly</string>
+  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage,UnusedResources">Hwilas yn Focus Nightly</string>
   <!--
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
@@ -842,12 +846,16 @@
     %2$s is a URL to a support article. Contains a button that will redirect the user to Privacy & Security Screen.
   -->
   <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s a assay usya junyans HTTPS peskweyth may fo possybyl a-barth gwell diogeledh. <a href=\"%2$s\">Dyski moy</a><br/><br/> Chanjya an dewis ma yn Dewisyow >Privetter &amp; Diogeledh > Diogeledh.]]></string>
-  <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_title">Junyans andhiogel</string>
+  <!--
+    The strings below override AC defaults and are only referenced from there.
+
+    The document title and heading of the error page shown when a website has an invalid or expired SSL certificate.
+  -->
+  <string name="mozac_browser_errorpages_security_bad_cert_title" tools:ignore="UnusedResources">Junyans andhiogel</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Martesen yth yw problem gans kefurvyans an servyer, po bos nebonan owth assaya omwul an servyer. <br/><br/>\nMar kwruss\'ta junya dhe\'n servyer ma yn sewen seulabrys, martesen yth yw an gwall anparghus.]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message" tools:ignore="UnusedResources"><![CDATA[Martesen yth yw problem gans kefurvyans an servyer, po bos nebonan owth assaya omwul an servyer. <br/><br/>\nMar kwruss\'ta junya dhe\'n servyer ma yn sewen seulabrys, martesen yth yw an gwall anparghus.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Martesen yma nebonan owth assaya omwul an wiasva ha peryllus via pesya.</label> <br><br>\n<label>Ny wra %1$s trestya dhe <b>%2$s</b> rag bos anwodhvos y dyller y destskrif, bos omsinys an testskrif, po nag usi an servyer ow tanvon an testskrifow kresel ewn.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo" tools:ignore="UnusedResources"><![CDATA[<label>Martesen yma nebonan owth assaya omwul an wiasva ha peryllus via pesya.</label> <br><br>\n<label>Ny wra %1$s trestya dhe <b>%2$s</b> rag bos anwodhvos y dyller y destskrif, bos omsinys an testskrif, po nag usi an servyer ow tanvon an testskrifow kresel ewn.</label>]]></string>
   <!--
     Sessions List
 

@@ -263,7 +263,7 @@
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the installed section. -->
   <string name="mozac_feature_addons_installed_section">Gosodwyd</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the recommended section. -->
-  <string name="mozac_feature_addons_recommended_section">Cymeradwy</string>
+  <string name="mozac_feature_addons_recommended_section">Rhai da</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the not yet supported section. -->
   <string name="mozac_feature_addons_unsupported_section">Heb ei gefnogi eto</string>
   <!-- This is displayed in a page where the user can see the installed and recommended(not installed yet) add-ons, this string indicates the not yet available section. -->
@@ -329,7 +329,7 @@
   <!-- The label of the update button on the system notification shown to the user when an add-on has an update that requires the user to accept new permissions. -->
   <string name="mozac_feature_addons_updater_notification_update_button">Diweddaru</string>
   <!-- The label of the cancel button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
-  <string name="mozac_feature_addons_updater_notification_cancel_button">Diddymu</string>
+  <string name="mozac_feature_addons_updater_notification_cancel_button">Na</string>
   <!-- The title of the system notification shown to the user when an add-on has a new update that requires new permissions. %1$s is the name of the add-on. -->
   <string name="mozac_feature_addons_updater_notification_title_2">Mae gan %1$s ddiweddariad</string>
   <!-- A short explanation shown in the notification displayed when an add-on has a new update that requires new permissions. -->
@@ -373,13 +373,13 @@
   <!-- Text shown when attempting to install an extension and the downloaded file is corrupted. -->
   <string name="mozac_feature_addons_extension_failed_to_install_corrupt_error">Nid oedd modd gosod yr estyniad hwn oherwydd ei fod yn ymddangos yn llwgr.</string>
   <!-- Text shown when attempting to install an add-on and an error occurred because the extension was not signed. -->
-  <string name="mozac_feature_addons_extension_failed_to_install_not_signed_error">Nid oedd modd gosod yr estyniad hwn oherwydd nad yw wedi\'i wirio.</string>
+  <string name="mozac_feature_addons_extension_failed_to_install_not_signed_error">Doedd ddim modd gosod yr estyniad hwn oherwydd nad yw wedi\'i wirio.</string>
   <!-- Text shown when attempting to install an add-on and an error occurred because the extension was incompatible. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->
-  <string name="mozac_feature_addons_failed_to_install_incompatible_error">Nid oedd modd gosod %1$s oherwydd nid yw’n gydnaws â %2$s %3$s.</string>
+  <string name="mozac_feature_addons_failed_to_install_incompatible_error">Doedd ddim modd gosod %1$s oherwydd nid yw’n gydnaws â %2$s %3$s.</string>
   <!-- Text shown when attempting to install a (hard) blocked add-on. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_blocklisted_2" tools:ignore="BrandUsage">Mae %1$s yn groes i bolisïau Mozilla ac nid oes modd ei osod ar %2$s.</string>
   <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
-  <string name="mozac_feature_addons_admin_install_only">Nid oedd modd gosod %1$s oherwydd dim ond sefydliad sy\'n defnyddio polisïau menter sy\'n gallu ei osod, nad yw\'n cael ei gefnogi ar y platfform hwn.</string>
+  <string name="mozac_feature_addons_admin_install_only">Doedd ddim modd gosod %1$s oherwydd dim ond sefydliad sy\'n defnyddio polisïau menter sy\'n gallu ei osod, nad yw\'n cael ei gefnogi ar y platfform hwn.</string>
   <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
   <string name="mozac_feature_addons_soft_blocked_2">Mae %1$s wedi\'i gyfyngu ac nid oes modd ei osod ar %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
@@ -433,5 +433,5 @@
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">Nid oedd modd gwirio %1$s yn ddiogel ac mae wedi ei analluogi.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->
-  <string name="mozac_feature_addons_status_incompatible">Nid yw %1$s yn gydnaws â’ch fersiwn chi o %2$s (fersiwn %3$s).</string>
+  <string name="mozac_feature_addons_status_incompatible">Dyw %1$s ddim yn gydnaws â’ch fersiwn chi o %2$s (fersiwn %3$s).</string>
 </resources>

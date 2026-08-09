@@ -31,6 +31,11 @@
     then we will show another collapsed entry saying "Access your data on other domains".
   -->
   <string name="mozac_feature_addons_permissions_extra_domains_description_plural_2">Katok pa taq atzij pa ch\'aqa\' chik taq ajk\'amal</string>
+  <plurals name="mozac_feature_addons_permissions_all_domain_count_description_2">
+    <!-- When an add-on requires access to domains, this entry is used to describe the total number of domains. Underneath it will be the list of all the domains. %1$d is the number of all the domains that will be shown to the user as required. -->
+    <item quantity="one">Katok pa ri taq atzij richin ri taq ruxaq k\'amaya\'l pa %1$d ruk\'ojlem taq b\'ey</item>
+    <item quantity="other">Katok pa ri taq atzij richin ri taq ruxaq k\'amaya\'l pa %1$d ruk\'ojlem taq b\'ey</item>
+  </plurals>
   <!-- Content description for a permission item, for an installed add-on details page. %1$s will be replaced with the permission text name, %2$d will be replaced with the permission position in the list and %3$d will be replaced with the total number of permissions in the list.Taking as an example "Read and modify privacy settings" the whole text will read Read and modify privacy settings, 2 of 6. -->
   <string name="mozac_feature_addons_permissions_content_description_item">%1$s, %2$d richin %3$d</string>
   <!-- Description for the "privacy" WebExtensions API permission. -->
@@ -81,6 +86,10 @@
   <string name="mozac_feature_addons_permissions_tab_hide_description">Ke\'ewäx chuqa\' kek\'ut pe ri taq ruwi\' okem pa k\'amaya\'l</string>
   <!-- Description for the "topSites" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_top_sites_description">Okem pa runatab\'al rokem k\'amaya\'l</string>
+  <!-- Description for the "trialML" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_trial_ml_description">Taqasaj chuqa\' tasamajij IA taq ruwäch pan awokisaxel</string>
+  <!-- Description for the "userScripts" WebExtensions API permission. -->
+  <string name="mozac_feature_addons_permissions_user_scripts_description">Tiya\' q\'ij chi ri taq skrip kichin aj rox man enik\'on ta, ke\'ok pa ri taq atzij</string>
   <!-- Description for the "devtools" WebExtensions API permission. -->
   <string name="mozac_feature_addons_permissions_devtools_description">Kenimirisäx ri kisamajib\'al b\'anonela\' richin ke\'ok pa taq kitzij pa jaqon taq ruwi\'</string>
   <!-- Description for the "privacy" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
@@ -111,12 +120,30 @@
   <string name="mozac_feature_addons_permissions_downloads_open_description_for_update">Kejaq ri taq yakb\'äl eqasan pan awokisanel.</string>
   <!-- Description for the "find" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_find_description_for_update">Tisik\'ïx rucholajem kitzij konojel ri taq ruwi\' ejaqon.</string>
+  <!-- Description for the "geolocation" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_geolocation_description_for_update">Katok pan ak\'ojlib\'al</string>
   <!-- Description for the "history" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_history_description_for_update">Tok pa runatab\'al okem pa k\'amaya\'l.</string>
+  <!-- Description for the "management" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_management_description_for_update">Kenik\'öx ri rokisaxik k\'amal chuqa\' ri kinuk\'samajixik taq wachinel.</string>
+  <!-- Description for the "nativeMessaging" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_native_messaging_description_for_update">Kekitaqala\' taq rutzijol chi kikojol juley chik taq chokoy.</string>
+  <!-- Description for the "notifications" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_notifications_description_for_update">Kek\'ut pe ri rutzijol chawäch</string>
+  <!-- Description for the "pkcs11" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_pkcs11_description_for_update">Keya\' chib\'äl juxun taq samaj</string>
+  <!-- Description for the "proxy" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_proxy_description_for_update">Tichajïx runuk\'ulem ruproxi ri okik\'amaya\'l</string>
+  <!-- Description for the "sessions" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_sessions_description_for_update">Katok pa ri taq ruwi\' nimakol ketz\'apïx</string>
   <!-- Description for the "tabHide" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_tab_hide_description_for_update">Ke\'ewäx chuqa\' kek\'ut pe ri taq ruwi\' okem pa k\'amaya\'l.</string>
   <!-- Description for the "topSites" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_top_sites_description_for_update">Tok pa runatab\'al okem pa k\'amaya\'l.</string>
+  <!-- Description for the "trialML" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_trial_ml_description_for_update">Taqasaj chuqa\' tasamajij IA taq ruwäch pan awokisaxel.</string>
+  <!-- Description for the "userScripts" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
+  <string name="mozac_feature_addons_permissions_user_scripts_description_for_update">Tiya\' q\'ij chi ri taq skrip kichin aj rox man enik\'on ta, ke\'ok pa ri taq atzij</string>
   <!-- Description for the "devtools" WebExtensions API permission for the update notification. Multiple permissions may be simply appended one after the other, and separated with a space, which is why the period is important. -->
   <string name="mozac_feature_addons_permissions_devtools_description_for_update">Kenimirisäx ri kisamajib\'al b\'anonela\' richin ke\'ok pa taq kitzij pa jaqon taq ruwi\'.</string>
   <!-- Description for giving an add-on access to users's data on one site. %1$s  will be replaced by the DNS host name for which a web extension is requesting access (e.g., www.mozilla.org). -->
@@ -143,12 +170,66 @@
     then we will show another collapsed entry saying "Access your data on other sites.".
   -->
   <string name="mozac_feature_addons_permissions_extra_sites_description_for_update">Katok pa taq atzij pa ch\'aqa\' ruxaq.</string>
+  <!-- The text shown when an extension requests the userScripts permission, near the usual description of the userScripts permission -->
+  <string name="mozac_feature_addons_permissions_user_scripts_extra_warning">Ri taq xkrip man ejikib\'an ta tikirel kik\'amon pe k\'ayewal chi rij jikomal chuqa\' ichinanem. Xa xe xkesamajïx taq kiskript taq k\'amal o taq xe\'el, ri kuqul ak\'u\'x chi kij.</string>
+  <!-- The sentence used when the extension has data collection permissions. %1$s is a formatted list of permissions. -->
+  <string name="mozac_feature_addons_permissions_required_data_collection_description_2">Ri nuk\'samaje nub\'ij chi re k\'amal re\' yerumöl: %1$s</string>
+  <!-- The sentence used when the developer of an extension has explicitly stated that they do not collect any data collection. -->
+  <string name="mozac_feature_addons_permissions_none_required_data_collection_description">Ri nuk\'samajel nub\'ij chi re k\'amal re\' man rajowaxik ta yerumöl taq tzij.</string>
+  <!-- The sentence used when the extension requests new data collection permissions. %1$s is a formatted list of permissions. -->
+  <string name="mozac_feature_addons_permissions_data_collection_optional_description">Ri nuk\'samajel nub\'ij chi re k\'amal re\' nrajo\' yerumöl: %1$s</string>
+  <!-- Description for text button that expands the list of domain permissions -->
+  <string name="mozac_feature_addons_permissions_show_all_sites">Kek\'ut ronojel ruxaq</string>
+  <!-- Description for text button that hides the majority of the list of domain permissions -->
+  <string name="mozac_feature_addons_permissions_show_fewer_sites">Kek\'ut jub\'a\' taq ruxaq</string>
+  <!-- Short description for the authenticationInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_authenticationInfo_short_description">rutzijol jikib\'anem</string>
   <!-- Short description for the bookmarksInfo data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_bookmarksInfo_short_description">taq yaketal</string>
+  <!-- Short description for the browsingActivity data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_short_description">rusamajixik okem</string>
+  <!-- Short description for the financialAndPaymentInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_short_description">rutzijol pwaqil chuqa\' tojik</string>
+  <!-- Short description for the healthInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_healthInfo_short_description">rutzijol raxnaqil</string>
   <!-- Short description for the locationInfo data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_locationInfo_short_description">k\'ojlib\'äl</string>
+  <!-- Short description for the personalCommunications data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_personalCommunications_short_description">ichinan taq rutzijolal</string>
+  <!-- Short description for the personallyIdentifyingInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_short_description">rutzijol ichinan tzijol</string>
+  <!-- Short description for the searchTerms data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_searchTerms_short_description">tzij yekanöx</string>
+  <!-- Short description for the technicalAndInteraction data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_technicalAndInteraction_short_description">samajel taq tzij chuqa\' richin samajinem</string>
   <!-- Short description for the websiteActivity data collection permission -->
   <string name="mozac_feature_addons_permissions_data_collection_websiteActivity_short_description">rusamaj ajk\'amaya\'l ruxaq</string>
+  <!-- Short description for the websiteContent data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteContent_short_description">rupam ruxaq</string>
+  <!-- Long description for the authenticationInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_authenticationInfo_long_description">Tikomonïx retamab\'al jikib\'anem rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the bookmarksInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_bookmarksInfo_long_description">Tikomonïx retamab\'al yaketal rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the browsingActivity data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_browsingActivity_long_description">Tikomonïx rusamajixik okem rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the financialAndPaymentInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_financialAndPaymentInfo_long_description">Tikomonïx retamab\'al pwaqil chuqa\' tojïk rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the healthInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_healthInfo_long_description">Tikomonïx retamab\'al raxnaqil rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the locationInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_locationInfo_long_description">Tikomonïx retamab\'al k\'ojlib\'äl rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the personalCommunications data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_personalCommunications_long_description">Tikomonïx ichinam tzijonem rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the personallyIdentifyingInfo data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_personallyIdentifyingInfo_long_description">Tikomonïx retamab\'al richinanem winäq rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the searchTerms data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_searchTerms_long_description">Tikomonïx taq tzij ekanon rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the technicalAndInteraction data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_technicalAndInteraction_long_description">Tikomonïx samajel taq tzij chuqa\' samajinem rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the websiteActivity data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteActivity_long_description">Tikomonïx rusamaj ajk\'am ruxaq rik\'in ri runuk\'samajel k\'amal</string>
+  <!-- Long description for the websiteContent data collection permission -->
+  <string name="mozac_feature_addons_permissions_data_collection_websiteContent_long_description">Tikomonïx rupam ajk\'am ruxaq rik\'in ri runuk\'samajel k\'amal</string>
   <!-- The version on of add-on. -->
   <string name="mozac_feature_addons_version">Ruwäch</string>
   <!-- The author of an add-on. -->
@@ -167,6 +248,8 @@
   <string name="mozac_feature_addons_settings">Taq nuk\'ulem</string>
   <!-- Indicates the add-on is enabled. -->
   <string name="mozac_feature_addons_settings_on">Tzijïl</string>
+  <!-- Indicates the add-on is allowed in private browsing mode. -->
+  <string name="mozac_feature_addons_settings_allow_in_private_browsing_2">Tiya\' q\'ij chi re k\'amal richin nisamajïx pan ichinan okem pa k\'amaya\'l</string>
   <!-- Indicates the add-on is allowed in private browsing mode. -->
   <string name="mozac_feature_addons_settings_run_in_private_browsing">Tisamajïx pa ichinan okem pa k\'amaya\'l</string>
   <!-- This is displayed when the add-on is not allowed to run in private browsing. -->
@@ -193,6 +276,20 @@
   <string name="mozac_feature_addons_report">Tiya\' rutzijol</string>
   <!-- This is the title of a dialog that asks the users if they to install or not an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_permissions_dialog_title_2">Titz\'aqatisäx %1$s</string>
+  <!-- This is the title of a dialog that asks the users to grant optional permissions. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_optional_permissions_with_data_collection_dialog_title">%1$s nuk\'utuj rutz\'aqat taq nuk\'ulem</string>
+  <!-- This is the title of a dialog that asks the users to grant optional data collection permissions only. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_optional_permissions_with_data_collection_only_dialog_title">%1$s nuk\'utuj rutz\'aqat molon taq tzij</string>
+  <!-- Heading for the permissions section in the add-on install dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_required_permissions">Taq ya\'oj q\'ij rajowaxik:</string>
+  <!-- Heading for the data collection permissions section in the add-on install dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_required_data_collection">Rumolik taq tzij rajowaxik:</string>
+  <!-- Heading for the optional settings section in the add-on install dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_optional_settings">Cha\'oj runuk\'ulem:</string>
+  <!-- Heading for the permissions section in the optional permissions request dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_optional_permissions">K\'ak\'a\' taq ya\'oj tzij:</string>
+  <!-- Heading for the data collection permissions section in the optional permissions request dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_heading_optional_data_collection">K\'ak\'a\' moloj taq tzij:</string>
   <!-- This is a button to add (install) an add-on . -->
   <string name="mozac_feature_addons_permissions_dialog_add">Titz\'aqatisäx</string>
   <!-- This is a button to allow the optional permissions requested by an add-on . -->
@@ -201,6 +298,8 @@
   <string name="mozac_feature_addons_permissions_dialog_deny">Tixutüx</string>
   <!-- Text link to learn more about permission requests on the add-on permissions dialog . -->
   <string name="mozac_feature_addons_permissions_dialog_learn_more">Tetamäx ch\'aqa\' chik</string>
+  <!-- This is the text for the "technical and interaction" checkbox shown in the add-on permissions dialog. -->
+  <string name="mozac_feature_addons_permissions_dialog_technical_and_interaction_data">Tikomonïx samajel taq tzij chuqa\' samajinem rik\'in ri runuk\'samajel k\'amal</string>
   <!-- This is a button to cancel the add-on installation . -->
   <string name="mozac_feature_addons_permissions_dialog_cancel">Tiq\'at</string>
   <!-- Accessibility content description to install add-on button. %1$s is the add-on name. -->
@@ -227,6 +326,14 @@
   <string name="mozac_feature_addons_updater_notification_update_button">Tik\'ex</string>
   <!-- The label of the cancel button on a notification, this will be shown to the user when an add-on needs new permissions. Indicates the user denies the new permissions and prevents the add-on from be updated -->
   <string name="mozac_feature_addons_updater_notification_cancel_button">Tiq\'at</string>
+  <!-- The title of the system notification shown to the user when an add-on has a new update that requires new permissions. %1$s is the name of the add-on. -->
+  <string name="mozac_feature_addons_updater_notification_title_2">%1$s k\'o k\'exoj</string>
+  <!-- A short explanation shown in the notification displayed when an add-on has a new update that requires new permissions. -->
+  <string name="mozac_feature_addons_updater_notification_short_intro">Taxutuj richin nawichinaj ri ruwäch chuqa\' ri taq nuk\'ulem e k\'o wi.</string>
+  <!-- The heading for the permissions section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of sentences. -->
+  <string name="mozac_feature_addons_updater_notification_heading_permissions">K\'ak\'a\' taq ya\'oj q\'ij rajowaxik: %1$s</string>
+  <!-- The heading for the data collection permission section in the system notification shown when an add-on has an update that requires user confirmation. %1$s is a list of permissions. -->
+  <string name="mozac_feature_addons_updater_notification_heading_data_collection_permissions">Rajowaxik k\'ak\'a\' kimolik taq tzij: Ri nuk\'samajel nub\'ij chi ri k\'amal xkerumöl %1$s.</string>
   <!-- Name of the "notification channel" used for displaying a notification for updating an extension. See https://developer.android.com/training/notify-user/channels -->
   <string name="mozac_feature_addons_updater_notification_channel_2">Kik\'exoj k\'amal</string>
   <!-- Name of the "notification channel" used for displaying a notification for new supported add-ons. See https://developer.android.com/training/notify-user/channels -->
@@ -245,6 +352,8 @@
   <string name="mozac_feature_addons_not_yet_supported_caption2">Wakami niqanük\' tob\'äl kichin nab\'ey cha\'oj taq K\'amal Echilab\'en.</string>
   <!-- This is the caption for the extension installation progress overlay -->
   <string name="mozac_extension_install_progress_caption">Niqasäx chuqa\' ninik\'öx k\'amal…</string>
+  <!-- Error shown when extensions could not be loaded -->
+  <string name="mozac_feature_addons_failed_to_load_extensions">Man xesamajib\'ëx ta re taq k\'amal re\'. Tatojtob\'ej chik jub\'a\' chik na.</string>
   <!-- Error shown when unable to find a translation for an add-on field. %1$s is the locale of the user and %2$s is the default language of the add-on -->
   <string name="mozac_feature_addons_failed_to_translate">Man xilitäj ta ri tzalq\'omanïk richin ri %1$s chuqa\' ni xa ta ri %2$s ch\'ab\'äl k\'o</string>
   <!-- Text shown after successfully installed an add-on. %1$s is the add-on name. -->
@@ -253,6 +362,8 @@
   <string name="mozac_feature_addons_failed_to_install">Xsach toq xyak ri %1$s</string>
   <!-- Text shown after failing to install an extension for which we don't have its name (when add-on type isn't supported or an unknown has errored). -->
   <string name="mozac_feature_addons_extension_failed_to_install">Xsach toq niyak re k\'amal re\'.</string>
+  <!-- Text shown when installing an add-on has failed. -->
+  <string name="mozac_feature_addons_cant_install_extension">Man tikirel ta niyak k\'amal</string>
   <!-- Text shown when attempting to install an extension and a network error happened. -->
   <string name="mozac_feature_addons_extension_failed_to_install_network_error">Man xqasäx ta re k\'amal re ruma man pa rub\'eyal taq ri rokem.</string>
   <!-- Text shown when attempting to install an extension and the downloaded file is corrupted. -->
@@ -261,6 +372,12 @@
   <string name="mozac_feature_addons_extension_failed_to_install_not_signed_error">Man xyak ta kan re jun k\'amal re\' ruma chi man nik\'on ta.</string>
   <!-- Text shown when attempting to install an add-on and an error occurred because the extension was incompatible. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->
   <string name="mozac_feature_addons_failed_to_install_incompatible_error">Man xyak ta ri %1$s ruma man nuk\'äm ta ri\' rik\'in %2$s %3$s.</string>
+  <!-- Text shown when attempting to install a (hard) blocked add-on. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_blocklisted_2" tools:ignore="BrandUsage">%1$s ke\'atz\'ila\' ri taq runa\'ojil Mozilla ke ri man tiyak ta ri %2$s.</string>
+  <!-- Text shown when attempting to install an add-on that can only be install via Enterprise Policies, which is not supported on Android.  %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_admin_install_only">%1$s man xyak ta ruma xa xe nitikïr nub\'än jun moloj nrokisaj ajk\'ayij taq na\'ojil, ruma ri\' toq man nuk\'äm ta ri\' rik\'in re k\'amab\'ey re\'.</string>
+  <!-- Text shown when attempting to install an add-on that is soft-blocked. %1$s is the add-on name. %2$s is the app name. -->
+  <string name="mozac_feature_addons_soft_blocked_2">%1$s q\'aton ruma ri\' man tikirel ta niyak pa %2$s.</string>
   <!-- Text shown after failed to enable an add-on. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_failed_to_enable">Xsach toq xtzij ri %1$s</string>
   <!-- Text shown after failed to disable an add-on. %1$s is the add-on name. -->
@@ -291,12 +408,24 @@
   <string name="mozac_feature_addons_updater_dialog_last_attempt">Ruk\'isib\'äl tojtob\'enïk:</string>
   <!-- Displayed in the "Status" field for the updater when an add-on has been correctly updated -->
   <string name="mozac_feature_addons_updater_dialog_status">Rub\'anikil:</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_installed_dialog_title_2">Xtz\'aqatisäx %1$s</string>
+  <!-- Used as text for the link in the description of the post-installation dialog. -->
+  <string name="mozac_feature_addons_installed_dialog_description_link_text">kinuk\'ulem k\'amal</string>
+  <!-- Text shown in the dialog when add-on installation is completed. %1$s is replaced by an active link, using mozac_feature_addons_installed_dialog_description_link_text as text ("extension settings"). -->
+  <string name="mozac_feature_addons_installed_dialog_description_3">Ke\'ak\'exa\' ri taq ya\'oj q\'ij chuqa\' ri taq rajowaxik tzij pa xab\'achike ramaj chupam %1$s.</string>
   <!-- Confirmation button text for the dialog when add-on installation is completed. -->
   <string name="mozac_feature_addons_installed_dialog_okay_button_2">ÜTZ</string>
   <!-- "Learn more" link displayed below an add-on status message. -->
   <string name="mozac_feature_addons_status_learn_more">Tetamäx ch\'aqa\' chik</string>
   <!-- "See details" link displayed below an add-on status message. -->
   <string name="mozac_feature_addons_status_see_details">Ketz\'et ri taq rub\'anikil</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been blocklisted. %1$s is the add-on name. -->
+  <string name="mozac_feature_addons_status_blocklisted_1" tools:ignore="BrandUsage">Re k\'amal re\' q\'aton ruma nutz\'ila\' ri runa\'ojil Mozilla chuqa\' xchup ruwäch.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked. -->
+  <string name="mozac_feature_addons_status_softblocked_2">Re k\'amal re\' xq\'at chuqa\' chupun. Yatikïr natzïj, po rik\'in jub\'a\' nuk\'äm pe k\'ayewal.</string>
+  <!-- Status message below an add-on in the add-ons manager when this add-on has been soft-blocked but the user re-enabled it. -->
+  <string name="mozac_feature_addons_status_softblocked_re_enabled_2">Re k\'amal re\' xq\'at. Ri rokisaxik ruk\'amon pe k\'ayewal.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on hasn't been signed correctly. %1$s is the add-on name. -->
   <string name="mozac_feature_addons_status_unsigned">Man xjikib\'äx ri %1$s chi jikil ruma ri\' toq xchup.</string>
   <!-- Status message below an add-on in the add-ons manager when this add-on isn't compatible with the application version. %1$s is the add-on name, %2$s is the app name and %3$s is the app version. -->
