@@ -702,6 +702,11 @@ class WorkerPrivate final
   // We would like to have stronger type-system annotated/enforced handling.
   WorkerPrivate* GetParent() const { return mParent; }
 
+  nsISerialEventTarget* GetSchedulingEventTarget() {
+    WorkerPrivate* parent = GetParent();
+    return parent ? parent->ControlEventTarget() : MainThreadEventTarget();
+  }
+
   bool IsFrozen() const {
     AssertIsOnParentThread();
     return mParentFrozen;

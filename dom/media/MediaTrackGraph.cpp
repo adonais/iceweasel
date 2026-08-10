@@ -2825,9 +2825,11 @@ void SourceMediaTrack::ResampleAudioToGraphSampleRate(MediaSegment* aSegment) {
     return;
   }
   AudioSegment* segment = static_cast<AudioSegment*>(aSegment);
-  segment->ResampleChunks(mUpdateTrack->mResampler,
-                          &mUpdateTrack->mResamplerChannelCount,
-                          mUpdateTrack->mInputRate, GraphImpl()->GraphRate());
+  // 10 ms of 48 kHz audio always yields a representable size at GraphRate().
+  DebugOnly<nsresult> rv = segment->ResampleChunks(
+      mUpdateTrack->mResampler, &mUpdateTrack->mResamplerChannelCount,
+      mUpdateTrack->mInputRate, GraphImpl()->GraphRate());
+  MOZ_ASSERT(NS_SUCCEEDED(rv));
 }
 
 void SourceMediaTrack::AdvanceTimeVaryingValuesToCurrentTime(

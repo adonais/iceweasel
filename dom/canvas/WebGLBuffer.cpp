@@ -76,22 +76,9 @@ static bool ValidateBufferUsageEnum(WebGLContext* webgl, GLenum usage) {
 
 void WebGLBuffer::BufferData(const GLenum target, const uint64_t size,
                              const void* const maybeData, const GLenum usage) {
-  // The driver knows only GLsizeiptr, which is int32_t on 32bit!
-  bool sizeValid = CheckedInt<GLsizeiptr>(size).isValid();
-
-  if (mContext->gl->WorkAroundDriverBugs()) {
-    // Bug 790879
-#if defined(XP_MACOSX) || defined(MOZ_WIDGET_GTK)
-    sizeValid &= CheckedInt<int32_t>(size).isValid();
-#endif
-
-    // Bug 1610383
-    if (mContext->gl->IsANGLE()) {
-      // While ANGLE seems to support up to `unsigned int`, UINT32_MAX-4 causes
-      // GL_OUT_OF_MEMORY in glFlush??
-      sizeValid &= CheckedInt<int32_t>(size).isValid();
-    }
-  }
+  // Bug 790879
+  // Bug 1610383
+  bool sizeValid = CheckedInt<int32_t>(size).isValid();
 
   if (!sizeValid) {
     mContext->ErrorOutOfMemory("Size not valid for platform: %" PRIu64, size);

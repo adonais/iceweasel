@@ -11,6 +11,7 @@
 #include "mozilla/dom/Document.h"
 #include "nsIObserverService.h"
 #include "nsIScriptContext.h"
+#include "nsISerialEventTarget.h"
 #include "nsIStreamTransportService.h"
 #include "nsISupportsPriority.h"
 #include "nsITimer.h"
@@ -143,6 +144,39 @@ uint32_t gMaxWorkersPerDomain = MAX_WORKERS_PER_DOMAIN;
 
 // Does not hold an owning reference.
 Atomic<RuntimeService*> gRuntimeService(nullptr);
+
+// Retries queued-worker scheduling on the event target where the first queued
+// worker is allowed to be scheduled.
+class ScheduleQueuedWorkerRunnable final : public Runnable {
+ public:
+  explicit ScheduleQueuedWorkerRunnable(const nsACString& aDomain)
+      : Runnable("workerinternals::ScheduleQueuedWorkerRunnable"),
+        mDomain(aDomain) {}
+
+  NS_IMETHOD Run() override {
+    RuntimeService* runtime = RuntimeService::GetService();
+    if (!runtime) {
+      return NS_OK;
+    }
+
+    WorkerPrivate* parent = nullptr;
+    if (!NS_IsMainThread()) {
+      parent = GetCurrentThreadWorkerPrivate();
+      if (!parent) {
+        return NS_OK;
+      }
+      parent->AssertIsOnWorkerThread();
+    }
+
+    runtime->MaybeScheduleQueuedWorker(mDomain, parent);
+    return NS_OK;
+  }
+
+ private:
+  ~ScheduleQueuedWorkerRunnable() = default;
+
+  const nsCString mDomain;
+};
 
 // Only true during the call to Init.
 bool gRuntimeServiceDuringInit = false;
@@ -1142,9 +1176,10 @@ bool RuntimeService::RegisterWorker(WorkerPrivate& aWorkerPrivate) {
                 })
             .get();
 
-    queued = gMaxWorkersPerDomain &&
-             domainInfo->ActiveWorkerCount() >= gMaxWorkersPerDomain &&
-             !domain.IsEmpty() && !exemptFromPerDomainMax;
+    queued = gMaxWorkersPerDomain && !domain.IsEmpty() &&
+             !exemptFromPerDomainMax &&
+             (domainInfo->ActiveWorkerCount() >= gMaxWorkersPerDomain ||
+              !domainInfo->mQueuedWorkers.IsEmpty());
 
     if (queued) {
       domainInfo->mQueuedWorkers.AppendElement(&aWorkerPrivate);
@@ -1229,9 +1264,9 @@ void RuntimeService::UnregisterWorker(WorkerPrivate& aWorkerPrivate) {
     AssertIsOnMainThread();
   }
 
-  const nsCString& domain = aWorkerPrivate.Domain();
+  nsCString domain = aWorkerPrivate.Domain();
 
-  WorkerPrivate* queuedWorker = nullptr;
+  bool shouldScheduleQueuedWorker = false;
   {
     MutexAutoLock lock(mMutex);
 
@@ -1258,23 +1293,13 @@ void RuntimeService::UnregisterWorker(WorkerPrivate& aWorkerPrivate) {
       domainInfo->mActiveWorkers.RemoveElement(&aWorkerPrivate);
     }
 
-    // See if there's a queued worker we can schedule.
-    if (domainInfo->ActiveWorkerCount() < gMaxWorkersPerDomain &&
-        !domainInfo->mQueuedWorkers.IsEmpty()) {
-      queuedWorker = domainInfo->mQueuedWorkers[0];
-      domainInfo->mQueuedWorkers.RemoveElementAt(0);
-
-      if (queuedWorker->GetParent()) {
-        domainInfo->mChildWorkerCount++;
-      } else if (queuedWorker->IsServiceWorker()) {
-        domainInfo->mActiveServiceWorkers.AppendElement(queuedWorker);
-      } else {
-        domainInfo->mActiveWorkers.AppendElement(queuedWorker);
-      }
-    }
+    // See if there is a queued worker to schedule after we release mMutex.
+    shouldScheduleQueuedWorker =
+        domainInfo->ActiveWorkerCount() < gMaxWorkersPerDomain &&
+        !domainInfo->mQueuedWorkers.IsEmpty();
 
     if (domainInfo->HasNoWorkers()) {
-      MOZ_ASSERT(domainInfo->mQueuedWorkers.IsEmpty());
+      MOZ_ASSERT(!shouldScheduleQueuedWorker);
       mDomainMap.Remove(domain);
     }
   }
@@ -1315,8 +1340,71 @@ void RuntimeService::UnregisterWorker(WorkerPrivate& aWorkerPrivate) {
     }
   }
 
-  if (queuedWorker && !ScheduleWorker(*queuedWorker)) {
-    UnregisterWorker(*queuedWorker);
+  if (shouldScheduleQueuedWorker) {
+    MaybeScheduleQueuedWorker(domain, parent);
+  }
+}
+
+void RuntimeService::MaybeScheduleQueuedWorker(const nsACString& aDomain,
+                                               WorkerPrivate* aParent) {
+  MOZ_ASSERT(aParent ? aParent->IsOnCurrentThread() : NS_IsMainThread());
+
+  WorkerPrivate* queuedWorker = nullptr;
+  nsCOMPtr<nsISerialEventTarget> schedulingTarget;
+
+  {
+    MutexAutoLock lock(mMutex);
+
+    WorkerDomainInfo* domainInfo;
+    if (!mDomainMap.Get(aDomain, &domainInfo)) {
+      return;
+    }
+
+    const bool shouldScheduleQueuedWorker =
+        domainInfo->ActiveWorkerCount() < gMaxWorkersPerDomain &&
+        !domainInfo->mQueuedWorkers.IsEmpty();
+
+    if (!shouldScheduleQueuedWorker) {
+      return;
+    }
+
+    WorkerPrivate* firstQueuedWorker = domainInfo->mQueuedWorkers[0];
+
+    // Preserve queue order. Schedule only if the first queued worker belongs
+    // to the current thread; otherwise retry on its scheduling target.
+    WorkerPrivate* queuedParent = firstQueuedWorker->GetParent();
+
+    if (queuedParent == aParent) {
+      queuedWorker = firstQueuedWorker;
+      domainInfo->mQueuedWorkers.RemoveElementAt(0);
+
+      if (aParent) {
+        domainInfo->mChildWorkerCount++;
+      } else if (queuedWorker->IsServiceWorker()) {
+        domainInfo->mActiveServiceWorkers.AppendElement(queuedWorker);
+      } else {
+        domainInfo->mActiveWorkers.AppendElement(queuedWorker);
+      }
+      MOZ_ASSERT(domainInfo->ActiveWorkerCount() <= +gMaxWorkersPerDomain);
+    } else {
+      schedulingTarget = firstQueuedWorker->GetSchedulingEventTarget();
+      MOZ_DIAGNOSTIC_ASSERT(schedulingTarget);
+    }
+  }
+
+  MOZ_ASSERT(queuedWorker || schedulingTarget);
+
+  if (queuedWorker) {
+    (void)ScheduleWorker(*queuedWorker);
+  }
+
+  if (schedulingTarget) {
+    nsCOMPtr<nsIRunnable> runnable = new ScheduleQueuedWorkerRunnable(aDomain);
+    nsresult rv =
+        schedulingTarget->Dispatch(runnable.forget(), NS_DISPATCH_NORMAL);
+    // Leave the worker queued if dispatch fails; normal cancellation or
+    // unregistration removes it.
+    (void)NS_WARN_IF(NS_FAILED(rv));
   }
 }
 

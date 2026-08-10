@@ -30,11 +30,11 @@ void AudioSegment::ApplyVolume(float aVolume) {
   }
 }
 
-void AudioSegment::ResampleChunks(nsAutoRef<SpeexResamplerState>& aResampler,
-                                  uint32_t* aResamplerChannelCount,
-                                  uint32_t aInRate, uint32_t aOutRate) {
+nsresult AudioSegment::ResampleChunks(
+    nsAutoRef<SpeexResamplerState>& aResampler,
+    uint32_t* aResamplerChannelCount, uint32_t aInRate, uint32_t aOutRate) {
   if (mChunks.IsEmpty()) {
-    return;
+    return NS_OK;
   }
 
   AudioSampleFormat format = AUDIO_FORMAT_SILENCE;
@@ -50,14 +50,14 @@ void AudioSegment::ResampleChunks(nsAutoRef<SpeexResamplerState>& aResampler,
     // the chunks duration.
     case AUDIO_FORMAT_SILENCE:
     case AUDIO_FORMAT_FLOAT32:
-      Resample<float>(aResampler, aResamplerChannelCount, aInRate, aOutRate);
-      break;
+      return Resample<float>(aResampler, aResamplerChannelCount, aInRate,
+                             aOutRate);
     case AUDIO_FORMAT_S16:
-      Resample<int16_t>(aResampler, aResamplerChannelCount, aInRate, aOutRate);
-      break;
+      return Resample<int16_t>(aResampler, aResamplerChannelCount, aInRate,
+                               aOutRate);
     default:
       MOZ_ASSERT(false);
-      break;
+      return NS_ERROR_UNEXPECTED;
   }
 }
 

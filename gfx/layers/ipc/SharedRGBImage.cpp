@@ -52,20 +52,27 @@ class TextureClientForRawBufferAccessAllocationHelper
 };
 
 SharedRGBImage::SharedRGBImage(ImageClient* aCompositable)
-    : Image(nullptr, ImageFormat::SHARED_RGB), mCompositable(aCompositable) {
+    : Image(nullptr, ImageFormat::SHARED_RGB),
+      mCompositable(aCompositable),
+      mSourceSurface("SharedRGBImage::mSourceSurface") {
   MOZ_COUNT_CTOR(SharedRGBImage);
 }
 
 SharedRGBImage::SharedRGBImage(TextureClientRecycleAllocator* aRecycleAllocator)
     : Image(nullptr, ImageFormat::SHARED_RGB),
-      mRecycleAllocator(aRecycleAllocator) {
+      mRecycleAllocator(aRecycleAllocator),
+      mSourceSurface("SharedRGBImage::mSourceSurface") {
   MOZ_COUNT_CTOR(SharedRGBImage);
 }
 
 SharedRGBImage::~SharedRGBImage() {
   MOZ_COUNT_DTOR(SharedRGBImage);
-  NS_ReleaseOnMainThread("SharedRGBImage::mSourceSurface",
-                         mSourceSurface.forget());
+  RefPtr<gfx::SourceSurface> surface;
+  {
+    auto guard = mSourceSurface.Lock();
+    surface = guard->forget();
+  }
+  NS_ReleaseOnMainThread("SharedRGBImage::mSourceSurface", surface.forget());
 }
 
 TextureClientRecycleAllocator* SharedRGBImage::RecycleAllocator() {
@@ -110,10 +117,10 @@ static void ReleaseTextureClient(void* aData) {
 static gfx::UserDataKey sTextureClientKey;
 
 already_AddRefed<gfx::SourceSurface> SharedRGBImage::GetAsSourceSurface() {
-  NS_ASSERTION(NS_IsMainThread(), "Must be main thread");
+  auto guard = mSourceSurface.Lock();
 
-  if (mSourceSurface) {
-    RefPtr<gfx::SourceSurface> surface(mSourceSurface);
+  if (*guard) {
+    RefPtr<gfx::SourceSurface> surface(*guard);
     return surface.forget();
   }
 
@@ -148,7 +155,7 @@ already_AddRefed<gfx::SourceSurface> SharedRGBImage::GetAsSourceSurface() {
     }
   }
 
-  mSourceSurface = surface;
+  *guard = surface;
   return surface.forget();
 }
 

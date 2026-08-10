@@ -13,8 +13,10 @@
 #include "AudioChannelFormat.h"
 #include "SharedBuffer.h"
 #include "WebAudioUtils.h"
+#include "mozilla/CheckedInt.h"
 #include "mozilla/ScopeExit.h"
 #include "nsAutoRef.h"
+#include "nsError.h"
 #ifdef MOZILLA_INTERNAL_API
 #  include "mozilla/TimeStamp.h"
 #endif
@@ -345,9 +347,11 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
   // new resampler is created, and `aResamplerChannelCount` is updated with the
   // new channel count value.
   template <typename T>
-  void Resample(nsAutoRef<SpeexResamplerState>& aResampler,
-                uint32_t* aResamplerChannelCount, uint32_t aInRate,
-                uint32_t aOutRate) {
+  [[nodiscard]] nsresult Resample(nsAutoRef<SpeexResamplerState>& aResampler,
+                                  uint32_t* aResamplerChannelCount,
+                                  uint32_t aInRate, uint32_t aOutRate) {
+    MOZ_ASSERT(aInRate > 0);
+    MOZ_ASSERT(aOutRate > 0);
     mDuration = 0;
 
     for (ChunkIterator ci(*this); !ci.IsEnded(); ci.Next()) {
@@ -360,6 +364,7 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
         mDuration += c.mDuration;
         continue;
       }
+      MOZ_ASSERT(c.mDuration > 0);
       uint32_t channels = c.mChannelData.Length();
       // This might introduce a discontinuity, but a channel count change in the
       // middle of a stream is not that common. This also initializes the
@@ -374,17 +379,26 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
       }
       output.SetLength(channels);
       bufferPtrs.SetLength(channels);
-      uint32_t inFrames = c.mDuration;
-      // Round up to allocate; the last frame may not be used.
-      NS_ASSERTION((UINT64_MAX - aInRate + 1) / c.mDuration >= aOutRate,
-                   "Dropping samples");
-      uint32_t outSize =
-          (static_cast<uint64_t>(c.mDuration) * aOutRate + aInRate - 1) /
-          aInRate;
+      // Round up in 64 bits, and reject a size that will not fit in uint32_t,
+      // which would otherwise silently drop part of the chunk. Clearing keeps
+      // mDuration the sum of the chunk durations.
+      CheckedUint32 outSizeChecked =
+          ((CheckedInt<uint64_t>(c.mDuration) * aOutRate + (aInRate - 1)) /
+           aInRate)
+              .toChecked<uint32_t>();
+      if (!outSizeChecked.isValid()) {
+        Clear();
+        return NS_ERROR_DOM_MEDIA_OVERFLOW_ERR;
+      }
+      uint32_t outSize = outSizeChecked.value();
       for (uint32_t i = 0; i < channels; i++) {
         T* out = output[i].AppendElements(outSize);
         uint32_t outFrames = outSize;
 
+        // Speex overwrites this count, so reset it for each channel: sharing
+        // one variable would resample later channels from fewer frames and
+        // leave their buffers short of the duration the chunk advertises.
+        uint32_t inFrames = c.mDuration;
         const T* in = static_cast<const T*>(c.mChannelData[i]);
         dom::WebAudioUtils::SpeexResamplerProcess(aResampler.get(), i, in,
                                                   &inFrames, out, &outFrames);
@@ -392,6 +406,7 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
 
         bufferPtrs[i] = out;
         output[i].SetLength(outFrames);
+        MOZ_ASSERT(output[i].Length() == output[0].Length());
       }
       MOZ_ASSERT(channels > 0);
       c.mDuration = output[0].Length();
@@ -401,11 +416,14 @@ class AudioSegment : public MediaSegmentBase<AudioSegment, AudioChunk> {
       }
       mDuration += c.mDuration;
     }
+    return NS_OK;
   }
 
-  void ResampleChunks(nsAutoRef<SpeexResamplerState>& aResampler,
-                      uint32_t* aResamplerChannelCount, uint32_t aInRate,
-                      uint32_t aOutRate);
+  // Rates must be non-zero. Clears the segment and returns an error if the
+  // output size is not representable.
+  [[nodiscard]] nsresult ResampleChunks(
+      nsAutoRef<SpeexResamplerState>& aResampler,
+      uint32_t* aResamplerChannelCount, uint32_t aInRate, uint32_t aOutRate);
 
   template <typename T>
   void AppendFrames(already_AddRefed<ThreadSharedObject> aBuffer,
