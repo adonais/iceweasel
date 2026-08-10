@@ -17,10 +17,14 @@
   <string name="text_field_cross_trailing_icon_default_content_description">Tik\'am rutz\'ib\'axik</string>
   <!-- Announcement made by the screen reader when the progress bar is shown and a page is loading -->
   <string name="mozac_compose_base_progress_loading">Nisamäj</string>
+  <!-- Content description for the dismiss icon of a Snackbar -->
+  <string name="mozac_compose_base_snackbar_dismiss_content_description">Tixutüx rutzijol</string>
   <!-- Content description for the close icon of a Banner -->
   <string name="mozac_compose_base_close_button_content_description">Titz\'apïx</string>
   <!-- Title shown in the dialog that lists every clickable link inside a LinkText composable when the text contains more than one link. -->
   <string name="mozac_compose_base_link_text_links_title">Taq ximöy</string>
+  <!-- Announcement appended to the LinkText content description so screen readers know that interactive links are present in the text. -->
+  <string name="mozac_compose_base_link_text_links_available">Taq ximonel k\'o</string>
   <!-- Label for the button that dismisses the LinkText links dialog without selecting a link. -->
   <string name="mozac_compose_base_link_text_dismiss">Tichup ruwäch</string>
   <!--

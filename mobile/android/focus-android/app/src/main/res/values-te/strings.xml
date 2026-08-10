@@ -27,6 +27,7 @@
   <string name="teaser">నిరంతర అంతరంగిక విహారణ. విహరించండి. తుడిచివేయండి. మళ్ళీ మళ్ళీ.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">మీ విహారణ చరిత్ర తుడిచివెయ్యబడింది.</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">విహారిణి చరిత్ర తుడిచివేయబడింది</string>
   <!--
     This label is shown below the URL bar as soon as the user enters text. Clicking the label will perform a search.

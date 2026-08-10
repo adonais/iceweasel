@@ -27,6 +27,7 @@
   <string name="teaser">स्वयंचलित खाजगी ब्राउझिंग.\nब्राउझ करा. मिटवा. पुन: करा.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">आपला ब्राउझिंग इतिहास मिटवला आहे.</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">ब्राउझिंग इतिहास नष्ट</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">टॅबचा ब्राउझिंग इतिहास मिटविला गेला आहे.</string>

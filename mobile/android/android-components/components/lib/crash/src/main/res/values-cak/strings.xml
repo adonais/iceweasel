@@ -33,6 +33,10 @@
   <string name="mozac_lib_crash_no_crashes">Man etaqon ta ri taq rutzijol sachoj.</string>
   <!-- Text link that will show an app chooser to share a crash report with a third-party app (e.g. gmail) -->
   <string name="mozac_lib_crash_share">Tikomonïx</string>
+  <!-- String for Ask before sending crash reports radio button in Data Collection Screen -->
+  <string name="crash_reporting_ask">Tik\'utüx toq nitaq</string>
+  <!-- String for Send crash reports automatically radio button in Data Collection Screen -->
+  <string name="crash_reporting_auto">Ruyonil titaq</string>
   <!-- String for Never sending crash reports radio button in Data Collection Screen -->
   <string name="crash_reporting_never">Majub\'ey titaq</string>
 </resources>

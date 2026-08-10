@@ -27,6 +27,7 @@
   <string name="teaser">Automaatne privaatne lehitsemine.\nLehitse. Kustuta. Korda.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">Lehitsemisajalugu on kustutatud.</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">Lehitsemisajalugu on kustutatud</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">Kaardi lehitsemisajalugu on kustutatud.</string>

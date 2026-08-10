@@ -27,6 +27,7 @@
   <string name="teaser">ท่องเว็บแบบส่วนตัวโดยอัตโนมัติ\nท่องเว็บ ล้าง ทำซ้ำ</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">ล้างประวัติการท่องเว็บของคุณแล้ว</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">ล้างประวัติการท่องเว็บแล้ว</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">ล้างประวัติการท่องเว็บของแท็บแล้ว</string>
@@ -129,6 +130,9 @@
   -->
   <string name="shortcut_erase_and_open_long_label">ล้างแล้วเปิด %1$s</string>
   <!--
+    These labels are selected per variant through manifestPlaceholders in build.gradle, so
+    UnusedResources does not see the ones for the variants it is not analyzing.
+
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus.
@@ -139,19 +143,19 @@
     Klar is hard coded since we can't use variables in this context.
     Do not translate or transliterate Klar.
   -->
-  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage">ค้นหาใน Klar</string>
+  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage,UnusedResources">ค้นหาใน Klar</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Beta is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Beta.
   -->
-  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage">ค้นหาใน Focus Beta</string>
+  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage,UnusedResources">ค้นหาใน Focus Beta</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Nightly is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Nightly.
   -->
-  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage">ค้นหาใน Focus Nightly</string>
+  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage,UnusedResources">ค้นหาใน Focus Nightly</string>
   <!--
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
@@ -585,6 +589,8 @@
   <!-- Content Description of Security Icon in toolbar -->
   <string name="site_security_icon_content_description">ความปลอดภัยของไซต์</string>
   <!--
+    Text shown in Security Information Popup
+
     %1$s will be replaced with the organization for which the certificate
     used by the site was issued. For example, the certificate in use by
     the site https://eidas.ec.europa.eu/ was issued to "The European
@@ -894,12 +900,16 @@
     %2$s is a URL to a support article. Contains a button that will redirect the user to Privacy & Security Screen.
   -->
   <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s พยายามใช้การเชื่อมต่อ HTTPS ทุกครั้งที่ทำได้เพื่อความปลอดภัยที่มากขึ้น <a href=\"%2$s\">เรียนรู้เพิ่มเติม</a> <br/><br/> โปรดเปลี่ยนการตั้งค่านี้ใน การตั้งค่า > ความเป็นส่วนตัวและความปลอดภัย > ความปลอดภัย]]></string>
-  <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_title">การเชื่อมต่อไม่ปลอดภัย</string>
+  <!--
+    The strings below override AC defaults and are only referenced from there.
+
+    The document title and heading of the error page shown when a website has an invalid or expired SSL certificate.
+  -->
+  <string name="mozac_browser_errorpages_security_bad_cert_title" tools:ignore="UnusedResources">การเชื่อมต่อไม่ปลอดภัย</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[สิ่งนี้อาจเป็นปัญหาจากการกำหนดค่าของเซิร์ฟเวอร์ หรืออาจมีใครบางคนกำลังพยายามปลอมแปลงเซิร์ฟเวอร์ <br/><br/> หากคุณเคยเชื่อมต่อกับเซิร์ฟเวอร์นี้สำเร็จมาก่อน ข้อผิดพลาดอาจเกิดขึ้นเพียงชั่วคราว]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message" tools:ignore="UnusedResources"><![CDATA[สิ่งนี้อาจเป็นปัญหาจากการกำหนดค่าของเซิร์ฟเวอร์ หรืออาจมีใครบางคนกำลังพยายามปลอมแปลงเซิร์ฟเวอร์ <br/><br/> หากคุณเคยเชื่อมต่อกับเซิร์ฟเวอร์นี้สำเร็จมาก่อน ข้อผิดพลาดอาจเกิดขึ้นเพียงชั่วคราว]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>อาจมีใครบางคนกำลังพยายามปลอมแปลงไซต์นี้และคุณไม่ควรดำเนินการต่อ</label> <br><br>\n<label>%1$s ไม่เชื่อถือ <b>%2$s</b> เนื่องจากไม่ทราบผู้ออกใบรับรอง ใบรับรองถูกลงชื่อด้วยตนเอง หรือเซิร์ฟเวอร์ไม่ส่งใบรับรองระดับกลางที่ถูกต้องมาให้</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo" tools:ignore="UnusedResources"><![CDATA[<label>อาจมีใครบางคนกำลังพยายามปลอมแปลงไซต์นี้และคุณไม่ควรดำเนินการต่อ</label> <br><br>\n<label>%1$s ไม่เชื่อถือ <b>%2$s</b> เนื่องจากไม่ทราบผู้ออกใบรับรอง ใบรับรองถูกลงชื่อด้วยตนเอง หรือเซิร์ฟเวอร์ไม่ส่งใบรับรองระดับกลางที่ถูกต้องมาให้</label>]]></string>
   <!--
     Sessions List
 

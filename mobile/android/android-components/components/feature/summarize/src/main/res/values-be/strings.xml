@@ -31,6 +31,8 @@
   <string name="mozac_summarize_download_error_negative_button">Скасаваць</string>
   <!-- Generic fallback message for the info error screen -->
   <string name="mozac_summarize_info_error_message">Паўтарыце спробу пазней.</string>
+  <!-- Error code shown on long press of the error icon. %1$d is an error code. -->
+  <string name="mozac_summarize_info_error_code">Код памылкі: %1$d</string>
   <!-- Loading text displayed while a page summary is being generated -->
   <string name="mozac_feature_summarize_loading_title">Падсумоўваем…</string>
   <!-- Link text to learn more about page summaries in settings -->
@@ -49,4 +51,6 @@
   <string name="mozac_feature_summarize_disclaimer_message">Штучны інтэлект можа рабіць памылкі</string>
   <!-- Button text for the Error dismiss button on Shake to Summarize -->
   <string name="mozac_summarize_error_dissmiss">Адхіліць</string>
+  <!-- Label for the button that starts the sign-in flow -->
+  <string name="mozac_summarize_fxa_sign_in_button_positive">Увайсці</string>
 </resources>

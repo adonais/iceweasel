@@ -27,6 +27,7 @@
   <string name="teaser">Automatische privénavigatie.\nSurfen. Wissen. Herhalen.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">Uw navigatiegeschiedenis is gewist.</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">Navigatiegeschiedenis gewist</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">Navigatiegeschiedenis van tabblad is gewist.</string>
@@ -129,6 +130,9 @@
   -->
   <string name="shortcut_erase_and_open_long_label">Wissen en %1$s openen</string>
   <!--
+    These labels are selected per variant through manifestPlaceholders in build.gradle, so
+    UnusedResources does not see the ones for the variants it is not analyzing.
+
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus.
@@ -139,19 +143,19 @@
     Klar is hard coded since we can't use variables in this context.
     Do not translate or transliterate Klar.
   -->
-  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage">Zoeken in Klar</string>
+  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage,UnusedResources">Zoeken in Klar</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Beta is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Beta.
   -->
-  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage">Zoeken in Focus Beta</string>
+  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage,UnusedResources">Zoeken in Focus Beta</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Nightly is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Nightly.
   -->
-  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage">Zoeken in Focus Nightly</string>
+  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage,UnusedResources">Zoeken in Focus Nightly</string>
   <!--
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
@@ -585,6 +589,8 @@
   <!-- Content Description of Security Icon in toolbar -->
   <string name="site_security_icon_content_description">Websitebeveiliging</string>
   <!--
+    Text shown in Security Information Popup
+
     %1$s will be replaced with the organization for which the certificate
     used by the site was issued. For example, the certificate in use by
     the site https://eidas.ec.europa.eu/ was issued to "The European
@@ -894,12 +900,16 @@
     %2$s is a URL to a support article. Contains a button that will redirect the user to Privacy & Security Screen.
   -->
   <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s probeert waar mogelijk een HTTPS-verbinding te gebruiken voor meer veiligheid. <a href=\"%2$s\">Meer info</a> <br/><br/> Wijzig deze instelling in Instellingen > Privacy en beveiliging > Beveiliging.]]></string>
-  <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_title">Verbinding niet beveiligd</string>
+  <!--
+    The strings below override AC defaults and are only referenced from there.
+
+    The document title and heading of the error page shown when a website has an invalid or expired SSL certificate.
+  -->
+  <string name="mozac_browser_errorpages_security_bad_cert_title" tools:ignore="UnusedResources">Verbinding niet beveiligd</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Dit kan een probleem zijn met de configuratie van de server, of het kan iemand zijn die probeert zich voor te doen als de server. <br/><br/> Als u in het verleden met succes verbinding hebt gemaakt met deze server, is de fout mogelijk tijdelijk.]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message" tools:ignore="UnusedResources"><![CDATA[Dit kan een probleem zijn met de configuratie van de server, of het kan iemand zijn die probeert zich voor te doen als de server. <br/><br/> Als u in het verleden met succes verbinding hebt gemaakt met deze server, is de fout mogelijk tijdelijk.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Iemand kan proberen de website na te doen en verdergaan kan risicovol zijn.</label> <br><br>\n<label>%1$s vertrouwt <b>%2$s</b> niet, omdat de certificaatuitgever onbekend is, het certificaat zelfondertekend is, of de server niet de juiste intermediaire certificaten verzendt.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo" tools:ignore="UnusedResources"><![CDATA[<label>Iemand kan proberen de website na te doen en verdergaan kan risicovol zijn.</label> <br><br>\n<label>%1$s vertrouwt <b>%2$s</b> niet, omdat de certificaatuitgever onbekend is, het certificaat zelfondertekend is, of de server niet de juiste intermediaire certificaten verzendt.</label>]]></string>
   <!--
     Sessions List
 

@@ -36,7 +36,7 @@
   <!-- The text shown inside the advanced button used to expand the advanced options. It's only shown when a website has an invalid SSL certificate. -->
   <string name="mozac_browser_errorpages_security_bad_cert_advanced">Uwch…</string>
   <!-- The advanced certificate information shown when a website sends has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Gallai rhywun fod yn ceisio dynwared y wefan hon a dylech chi ddim mynd ymhellach.</label> <br><br>\n<label>Mae gwefannau yn profi eu hunaniaeth trwy dystysgrifau. Nid yw %1$s yn ymddiried yn <b>%2$s</b> oherwydd nad yw cyhoeddwr ei dystysgrif yn hysbys, mae’r dystysgrif wedi’i hunan-lofnodi, neu nid yw’r gweinydd yn anfon y tystysgrifau canolradd cywir.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Gallai rhywun fod yn ceisio dynwared y wefan hon a dylech chi ddim mynd ymhellach.</label> <br><br>\n<label>Mae gwefannau yn profi eu hunaniaeth trwy dystysgrifau. Dyw %1$s ddim yn ymddiried yn <b>%2$s</b> oherwydd nad yw cyhoeddwr ei dystysgrif yn hysbys, mae’r dystysgrif wedi’i hunan-lofnodi, neu nid yw’r gweinydd yn anfon y tystysgrifau canolradd cywir.</label>]]></string>
   <!-- The text shown inside the advanced options button used to go back. It's only shown if the user has expanded the advanced options. -->
   <string name="mozac_browser_errorpages_security_bad_cert_back">Ewch Nôl (Argymell)</string>
   <!-- The text shown inside the advanced options button used to bypass the invalid SSL certificate. It's only shown if the user has expanded the advanced options. -->
@@ -58,7 +58,7 @@
   <!-- The document title and heading of the error page shown when a website takes too long to load. -->
   <string name="mozac_browser_errorpages_net_timeout_title">Mae cyfnod y cyswllt wedi dod i ben</string>
   <!-- The error message shown when a website took long to load. -->
-  <string name="mozac_browser_errorpages_net_timeout_message"><![CDATA[<p>Nid yw’r wefan wedi ymateb i gais am gyswllt ac mae’r porwr wedi peidio aros am ateb.</p>\n<ul>\n<li>Gall fod y gweinydd yn profi galw sylweddol neu ataliad dros dro? Ceisiwch eto.</li>\n<li>A ydych yn methu pori i wefannau eraill? Gwiriwch gysylltiad rhwydwaith y ddyfais.</li>\n<li>A yw eich dyfais wedi ei ddiogelu gan fur cadarn neu ddirprwy? Gall osodiadau anghywir effeithio ar bori\'r we.</li>\n<li>Yn dal yn cael problemau? Cysylltwch â’ch gweinyddwr rhwydwaith neu ddarparwr rhyngrwyd am gymorth.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_net_timeout_message"><![CDATA[<p>Dyw’r wefan ddim wedi ymateb i gais i greu cysylltiad ac mae’r porwr wedi peidio ag aros am ateb.</p>\n<ul>\n<li>Gall fod y gweinydd yn profi galw sylweddol neu ataliad dros dro? Ceisiwch eto.</li>\n<li>Ydych chi\'n methu pori i wefannau eraill? Gwiriwch gysylltiad rhwydwaith y ddyfais.</li>\n<li>A yw eich dyfais wedi ei ddiogelu gan fur cadarn neu ddirprwy? Gall osodiadau anghywir effeithio ar bori\'r we.</li>\n<li>Yn dal yn cael problemau? Cysylltwch â’ch gweinyddwr rhwydwaith neu ddarparwr rhyngrwyd am gymorth.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when a website could not be reached. -->
   <string name="mozac_browser_errorpages_connection_failure_title">Methu cysylltu</string>
   <!-- The error message shown when a website could not be reached. -->
@@ -68,7 +68,7 @@
   <!-- The error message shown when a website responds in an unexpected way and the browser cannot continue. -->
   <string name="mozac_browser_errorpages_unknown_socket_type_message"><![CDATA[<p>Ymatebodd y wefan i’r cais rhwydwaith mewn ffordd annisgwyl ac nid yw’r porwr yn gallu parhau.</p>]]></string>
   <!-- The document title and heading of the error page shown when the browser gets stuck in an infinite loop when loading a website. -->
-  <string name="mozac_browser_errorpages_redirect_loop_title">Nid yw’r dudalen yn ailgyfeirio’n iawn</string>
+  <string name="mozac_browser_errorpages_redirect_loop_title">Dyw’r dudalen ddim yn ailgyfeirio’n iawn</string>
   <!-- The error message shown when the browser gets stuck in an infinite loop when loading a website. -->
   <string name="mozac_browser_errorpages_redirect_loop_message"><![CDATA[<p>Mae’r porwr wedi rhoi’r gorau i geisio adfer yr eitem y gofynnwyd amdani. Mae’r wefan yn ailgyfeirio’r cais mewn ffordd na fydd byth yn ei gwblhau.</p>\n<ul>\n<li>A ydych wedi analluogi neu rwystro cwcis sy’n ofynnol gan y wefan hon?</li>\n<li>Os nad yw derbyn cwcis y wefan yn datrys y broblem, mae’n debygol mai mater ffurfweddiad y gweinydd ydyw ac nid eich dyfais chi.</li>\n</ul>]]></string>
   <!-- The document title and heading of the error page shown when a website cannot be loaded because the browser is in offline mode. -->
@@ -96,11 +96,11 @@
   <string name="mozac_browser_errorpages_content_crashed_message"><![CDATA[<p>Nid oes modd dangos y dudalen rydych yn ceisio ei gweld yn sgil canfod gwall trosglwyddo data.</p>\n<ul>\n<li>Cysylltwch â pherchnogion y wefan i’w hysbysu o’r anhawster.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_invalid_content_encoding_title">Gwall Amgodio Cynnwys</string>
-  <string name="mozac_browser_errorpages_invalid_content_encoding_message"><![CDATA[<p>Nid oes modd dangos y dudalen hon am ei bod yn defnyddio ffurf o gywasgiad sy’n anhysbys neu sydd ddim yn cael ei gynnal.</p>\n<ul>\n<li>Cysylltwch â pherchnogion y wefan i’w hysbysu o’r anhawster.</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_invalid_content_encoding_message"><![CDATA[<p>Does dim modd dangos y dudalen hon am ei bod yn defnyddio ffurf o gywasgiad sy’n anhysbys neu sydd ddim yn cael ei gynnal.</p>\n<ul>\n<li>Cysylltwch â pherchnogion y wefan i’w hysbysu o’r anhawster.</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_unknown_host_title">Heb Ganfod Cyfeiriad</string>
   <!-- In the example, the two URLs in markup do not need to be translated. -->
-  <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>Nid yw’r porwr yn gallu dod o hyd i’r gweinydd cynnal ar gyfer y cyfeiriad hwn.</p>\n<ul>\n<li>Gwiriwch y cyfeiriad am wallau teipio fel \u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0<strong>ww</strong>.example.com yn lle \u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0\u00a0<strong>www</strong>.example.com.</li>\n<li> Os na allwch lwytho unrhyw dudalennau, gwiriwch ddata neu gysylltiad Wi-Fi eich dyfais</li>\n</ul>]]></string>
+  <string name="mozac_browser_errorpages_unknown_host_message"><![CDATA[<p>Dyw’r porwr ddim yn gallu dod o hyd i’r gweinydd cynnal ar gyfer y cyfeiriad hwn.</p>\n<ul>\n<li>Gwiriwch y cyfeiriad am wallau teipio fel <strong>ww</strong>.example.com yn lle <strong>www</strong>.example.com.</li>\n<li> Os nad oes modd lwytho unrhyw dudalennau, gwiriwch ddata neu gysylltiad Wi-Fi eich dyfais</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_no_internet_title_2">Mae\'n ymddangos bod problem gyda\'ch cysylltiad rhyngrwyd</string>
   <!-- The main body text of this error page. It will be shown beneath the title -->
@@ -111,9 +111,9 @@
   <string name="mozac_browser_errorpages_no_internet_refresh_button">Ail-lwytho</string>
   <!-- The document title and heading of an error page. -->
   <string name="mozac_browser_errorpages_malformed_uri_title">Cyfeiriad Annilys</string>
-  <string name="mozac_browser_errorpages_malformed_uri_message"><![CDATA[<p>Nid yw’r cyfeiriad yma mewn fformat adnabyddus. Gwiriwch y bar lleoliad a cheisiwch eto.</p>]]></string>
+  <string name="mozac_browser_errorpages_malformed_uri_message"><![CDATA[<p>Dyw’r cyfeiriad yma ddim mewn fformat adnabyddus. Gwiriwch y bar lleoliad a cheisiwch eto.</p>]]></string>
   <!-- The document title and heading of an error page. -->
-  <string name="mozac_browser_errorpages_malformed_uri_title_alternative">Nid yw’r cyfeiriad yn ddilys</string>
+  <string name="mozac_browser_errorpages_malformed_uri_title_alternative">Dyw’r cyfeiriad ddim yn ddilys</string>
   <!-- This string contains markup. The URL should not be localized. -->
   <string name="mozac_browser_errorpages_malformed_uri_message_alternative"><![CDATA[<ul>\n<li>Fel rheol mae cyfeiriadau Gwe’n cael eu hysgrifennu fel <strong>http://www.example.com/</strong></li>\n<li>Gwnewch yn siŵr eich bod yn defnyddio blaen slaes (h.y. <strong>/</strong>).</li>\n</ul>]]></string>
   <!-- The document title and heading of an error page. -->

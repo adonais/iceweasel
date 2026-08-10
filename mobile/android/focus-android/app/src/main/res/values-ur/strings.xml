@@ -27,6 +27,7 @@
   <string name="teaser">خودکار نجی برائوزنگ۔\nبرائوز کریں۔ جزف کریں۔ دہرائیں۔</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">آپ کے برائوزنگ سابقات مٹا دیئے گئے ہیں۔</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">براؤزنگ کی سابقات صاف ہو گئی۔</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">ٹیب کی برائوزنگ سابقات مٹا دی گئی ہیں۔</string>
@@ -647,8 +648,12 @@
   <string name="preference_auto_battery_theme">بیٹری سیور کے ذریعہ مرتب کردہ</string>
   <!-- Preference for using following device theme -->
   <string name="preference_follow_device_theme">آلہ کے تھیم پر عمل کریں</string>
-  <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_title">ناقابل بھروسا کنکشن</string>
+  <!--
+    The strings below override AC defaults and are only referenced from there.
+
+    The document title and heading of the error page shown when a website has an invalid or expired SSL certificate.
+  -->
+  <string name="mozac_browser_errorpages_security_bad_cert_title" tools:ignore="UnusedResources">ناقابل بھروسا کنکشن</string>
   <!--
     Sessions List
 

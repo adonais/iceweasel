@@ -27,6 +27,7 @@
   <string name="teaser">Automatisk privat surfning.\nSurfa. Radera. Upprepa.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">Din webbhistorik har raderats.</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">Webbhistoriken rensad</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">Flikens surfhistorik har raderats.</string>
@@ -129,6 +130,9 @@
   -->
   <string name="shortcut_erase_and_open_long_label">Radera och öppna %1$s</string>
   <!--
+    These labels are selected per variant through manifestPlaceholders in build.gradle, so
+    UnusedResources does not see the ones for the variants it is not analyzing.
+
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus.
@@ -139,19 +143,19 @@
     Klar is hard coded since we can't use variables in this context.
     Do not translate or transliterate Klar.
   -->
-  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage">Sök i Klar</string>
+  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage,UnusedResources">Sök i Klar</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Beta is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Beta.
   -->
-  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage">Sök i Focus Beta</string>
+  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage,UnusedResources">Sök i Focus Beta</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Nightly is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Nightly.
   -->
-  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage">Sök i Focus Nightly</string>
+  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage,UnusedResources">Sök i Focus Nightly</string>
   <!--
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
@@ -585,6 +589,8 @@
   <!-- Content Description of Security Icon in toolbar -->
   <string name="site_security_icon_content_description">Webbplatssäkerhet</string>
   <!--
+    Text shown in Security Information Popup
+
     %1$s will be replaced with the organization for which the certificate
     used by the site was issued. For example, the certificate in use by
     the site https://eidas.ec.europa.eu/ was issued to "The European
@@ -894,12 +900,16 @@
     %2$s is a URL to a support article. Contains a button that will redirect the user to Privacy & Security Screen.
   -->
   <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s försöker använda en HTTPS-anslutning när det är möjligt för ökad säkerhet. <a href=\"%2$s\">Läs mer</a> <br/><br/> Ändra den här inställningen i Inställningar > Sekretess &amp; Säkerhet > Säkerhet.]]></string>
-  <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_title">Anslutningen är inte säker</string>
+  <!--
+    The strings below override AC defaults and are only referenced from there.
+
+    The document title and heading of the error page shown when a website has an invalid or expired SSL certificate.
+  -->
+  <string name="mozac_browser_errorpages_security_bad_cert_title" tools:ignore="UnusedResources">Anslutningen är inte säker</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Detta kan vara ett problem med serverns konfiguration, eller så kan det vara någon som försöker utge sig för att vara servern. <br/><br/> Om du har anslutit till den här servern tidigare kan felet vara tillfälligt.]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message" tools:ignore="UnusedResources"><![CDATA[Detta kan vara ett problem med serverns konfiguration, eller så kan det vara någon som försöker utge sig för att vara servern. <br/><br/> Om du har anslutit till den här servern tidigare kan felet vara tillfälligt.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Någon kan försöka utge sig för webbplatsen och att fortsätta kan vara riskabelt.</label> <br><br>\n<label>%1$s litar inte på <b>%2$s</b> eftersom dess certifikatutfärdare är okänd, certifikatet är självsignerat eller att servern inte skickar rätt mellanliggande certifikat.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo" tools:ignore="UnusedResources"><![CDATA[<label>Någon kan försöka utge sig för webbplatsen och att fortsätta kan vara riskabelt.</label> <br><br>\n<label>%1$s litar inte på <b>%2$s</b> eftersom dess certifikatutfärdare är okänd, certifikatet är självsignerat eller att servern inte skickar rätt mellanliggande certifikat.</label>]]></string>
   <!--
     Sessions List
 

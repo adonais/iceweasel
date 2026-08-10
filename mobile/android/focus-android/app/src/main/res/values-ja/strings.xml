@@ -27,6 +27,7 @@
   <string name="teaser">プライベートブラウジングを自動的に。\nブラウズ、消去の繰り返し。</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">閲覧履歴が消去されました。</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">閲覧履歴を消去しました</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">タブの閲覧履歴が消去されました。</string>
@@ -129,6 +130,9 @@
   -->
   <string name="shortcut_erase_and_open_long_label">消去して %1$s を開く</string>
   <!--
+    These labels are selected per variant through manifestPlaceholders in build.gradle, so
+    UnusedResources does not see the ones for the variants it is not analyzing.
+
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus.
@@ -139,19 +143,19 @@
     Klar is hard coded since we can't use variables in this context.
     Do not translate or transliterate Klar.
   -->
-  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage">Klar で検索</string>
+  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage,UnusedResources">Klar で検索</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Beta is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Beta.
   -->
-  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage">Focus Beta で検索</string>
+  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage,UnusedResources">Focus Beta で検索</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Nightly is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Nightly.
   -->
-  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage">Focus Nightly で検索</string>
+  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage,UnusedResources">Focus Nightly で検索</string>
   <!--
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
@@ -585,6 +589,8 @@
   <!-- Content Description of Security Icon in toolbar -->
   <string name="site_security_icon_content_description">サイトセキュリティ</string>
   <!--
+    Text shown in Security Information Popup
+
     %1$s will be replaced with the organization for which the certificate
     used by the site was issued. For example, the certificate in use by
     the site https://eidas.ec.europa.eu/ was issued to "The European
@@ -894,12 +900,16 @@
     %2$s is a URL to a support article. Contains a button that will redirect the user to Privacy & Security Screen.
   -->
   <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[セキュリティ強化のため、%1$s は可能な限り HTTPS 接続を試みます。 <a href=\"%2$s\">詳細情報</a> <br/><br/> この設定は、[設定] > [プライバシーとセキュリティ] > [セキュリティ] から変更できます。]]></string>
-  <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_title">安全でない接続</string>
+  <!--
+    The strings below override AC defaults and are only referenced from there.
+
+    The document title and heading of the error page shown when a website has an invalid or expired SSL certificate.
+  -->
+  <string name="mozac_browser_errorpages_security_bad_cert_title" tools:ignore="UnusedResources">安全でない接続</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[サーバーの設定に問題があるか、誰かが正規のサーバーになりすましている可能性があります。<br/><br/> 以前は正常に接続できていた場合、この問題は恐らく一時的なものですので、後で再度試してみてください。]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message" tools:ignore="UnusedResources"><![CDATA[サーバーの設定に問題があるか、誰かが正規のサーバーになりすましている可能性があります。<br/><br/> 以前は正常に接続できていた場合、この問題は恐らく一時的なものですので、後で再度試してみてください。]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>誰かがサイトになりすまそうとしている可能性があるため、この先へ進むと危険です。</label> <br><br>\n<label>証明書の発行者が不明か、証明書が自己署名されているか、サーバーが正しい中間証明書を送信していないため、%1$s は <b>%2$s</b> を信頼できません。</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo" tools:ignore="UnusedResources"><![CDATA[<label>誰かがサイトになりすまそうとしている可能性があるため、この先へ進むと危険です。</label> <br><br>\n<label>証明書の発行者が不明か、証明書が自己署名されているか、サーバーが正しい中間証明書を送信していないため、%1$s は <b>%2$s</b> を信頼できません。</label>]]></string>
   <!--
     Sessions List
 

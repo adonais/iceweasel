@@ -27,6 +27,7 @@
   <string name="teaser">Ku maan tu juunaj chen a wóok\'sal.\nMaanen. Púustej. Tu ka\'aten.</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase">Lúubsa\'ab tuláakal ba\'ax ta kaxtej.</string>
+  <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a browsing session -->
   <string name="feedback_erase2">Ts\'o\'ok u tselik u k\'ajláayil navegación</string>
   <!-- "Snackbar" shown after the user has pressed the 'erase' button at the end of a custom tab browsing session -->
   <string name="feedback_erase_custom_tab">U k\'ajláayo\' u navegación le ficha ts\'o\'ok u borrado.</string>
@@ -128,6 +129,9 @@
   -->
   <string name="shortcut_erase_and_open_long_label">Tuupuk ts\'óokole\' ka je\'ebek %1$s</string>
   <!--
+    These labels are selected per variant through manifestPlaceholders in build.gradle, so
+    UnusedResources does not see the ones for the variants it is not analyzing.
+
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus.
@@ -138,19 +142,19 @@
     Klar is hard coded since we can't use variables in this context.
     Do not translate or transliterate Klar.
   -->
-  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage">Kaxant ti\' Klar</string>
+  <string name="text_selection_search_action_klar" tools:ignore="BrandUsage,UnusedResources">Kaxant ti\' Klar</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Beta is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Beta.
   -->
-  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage">Kaxant ti\' Focus Beta</string>
+  <string name="text_selection_search_action_focus_beta" tools:ignore="BrandUsage,UnusedResources">Kaxant ti\' Focus Beta</string>
   <!--
     This is the label of an action we offer when the user selects text in other third-party apps.
     Focus Nightly is hard coded since we can't use variables in this context.
     Do not translate or transliterate Focus Nightly.
   -->
-  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage">Kaxant ti\' Focus Nightly</string>
+  <string name="text_selection_search_action_focus_nightly" tools:ignore="BrandUsage,UnusedResources">Kaxant ti\' Focus Nightly</string>
   <!--
     Content of about focus. %1$s is the name of the app (for example "Firefox Focus" or "Firefox Klar").
     %2$s is the url for the learn-more link.
@@ -850,12 +854,16 @@
     %2$s is a URL to a support article. Contains a button that will redirect the user to Privacy & Security Screen.
   -->
   <string name="errorpage_httpsonly_message2" tools:ignore="IncorrectStraightDoubleQuote"><![CDATA[%1$s ku yilik u meyajtik jump\'éel conexión HTTPS ken u páajtal uti\'al u yantal asab seguridad. <a href=\"%2$s\">Kaanbal asab</a> <br/><br/>\nK\'ex le configuración ti\' Configuración > Yojeta\'al mixba\'al &amp; Seguridad > Seguridad.]]></string>
-  <!-- The document title and heading of the error page shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_title">Conexión ma\' segura</string>
+  <!--
+    The strings below override AC defaults and are only referenced from there.
+
+    The document title and heading of the error page shown when a website has an invalid or expired SSL certificate.
+  -->
+  <string name="mozac_browser_errorpages_security_bad_cert_title" tools:ignore="UnusedResources">Conexión ma\' segura</string>
   <!-- The error message shown when a website has an invalid or expired SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_message"><![CDATA[Le je\'ela\' je\'el u páajtal u jump\'éel talamil yéetel u configuración le servidor, wa je\'el u páajtal u yaantal máax táan u yilik u beetik bey le servidor. <br/><br/>\nWa ts\'o\'ok a conectar ti\' le servidor belal ti\' le pasado, le ba\'alo\' je\'el u páajtal u temporal.]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_message" tools:ignore="UnusedResources"><![CDATA[Le je\'ela\' je\'el u páajtal u jump\'éel talamil yéetel u configuración le servidor, wa je\'el u páajtal u yaantal máax táan u yilik u beetik bey le servidor. <br/><br/>\nWa ts\'o\'ok a conectar ti\' le servidor belal ti\' le pasado, le ba\'alo\' je\'el u páajtal u temporal.]]></string>
   <!-- The advanced certificate information shown when a website has an invalid SSL certificate. The %1$s will be replaced by the app name and %2$s will be replaced by website URL. It's only shown when a website has an invalid SSL certificate. -->
-  <string name="mozac_browser_errorpages_security_bad_cert_techInfo"><![CDATA[<label>Yaan máax je\'el u páajtal u yilik u beetik bey le ts\'ono\'oto\' yéetel u seguer u beetik je\'el u yantal riesgo.</label> <br><br>\n<label>%1$s ma\' u k\'ubik u yóol ti\' <b>%2$s</b> tumen ma\' k\'ajóolta\'an máax ts\'áaik u certificado, le certificado ku firmarta\'al tu juunal, wa le servidor ma\' táan u túuxtik le certificados intermedios correctos.</label>]]></string>
+  <string name="mozac_browser_errorpages_security_bad_cert_techInfo" tools:ignore="UnusedResources"><![CDATA[<label>Yaan máax je\'el u páajtal u yilik u beetik bey le ts\'ono\'oto\' yéetel u seguer u beetik je\'el u yantal riesgo.</label> <br><br>\n<label>%1$s ma\' u k\'ubik u yóol ti\' <b>%2$s</b> tumen ma\' k\'ajóolta\'an máax ts\'áaik u certificado, le certificado ku firmarta\'al tu juunal, wa le servidor ma\' táan u túuxtik le certificados intermedios correctos.</label>]]></string>
   <!--
     Sessions List
 
