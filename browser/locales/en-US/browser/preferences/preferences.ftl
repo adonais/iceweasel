@@ -2756,7 +2756,7 @@ iceweasel-libportable-description = Additional functionality provided by the lib
 iceweasel-libportable-warning1 = Requires Upcheck support for immediate effect. Do not remove it.
 iceweasel-libportable-upcheck-description = Upcheck runs with the browser, checking for updates once every 24 hours without additional overhead.
 iceweasel-libportable-upcheck-warning1 = Users in Chinese Mainland should enable the [update] faster feature to alleviate the issue of update failures.
-iceweasel-libportable-ubo-description = Install the uBlock Origin extension in your browser, Requires restart.
+iceweasel-libportable-ubo-description = Install the ublock origin extension, Requires restart.
 iceweasel-libportable-ubo-warning1 = When uninstalling this extension in the Extension Manager, you need to uncheck this option.
 iceweasel-libportable-chrome-description =
     Script files install in the browser directory in the background. If you already have a userChrome environment, installation will not occur.<br>
@@ -2768,7 +2768,7 @@ iceweasel-libportable-download-description =
     downloadUpcheck integrates Aria2 Rpc, Aria2 Cmd, Thunder, Upcheck downloads,<br>
     and also supports browser download items. You must first enable the userChrome environment.
 iceweasel-libportable-download-warning1 = You can also easily integrate downloaders manually; see the project Issues for details.
-iceweasel-libportable-download-pop = downloadUpcheck installed successfully<br>Requires browser restart to take effect
+iceweasel-libportable-download-pop = Script installed successfully<br>Requires browser restart to take effect
 iceweasel-libportable-download-needed = Download failed or userChrome environment is not enabled
 iceweasel-libportable-bosskey-description = Default shortcut: Ctrl+Shift+~. Modify via portable.ini.
 iceweasel-libportable-bosskey-warning1 = You need to prevent hotkeys from conflicting with other applications.
