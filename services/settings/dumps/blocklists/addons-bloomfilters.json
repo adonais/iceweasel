@@ -1,6 +1,97 @@
 {
   "data": [
     {
+      "id": "30e8f59c-aab7-4423-94ae-60467a089e7b",
+      "key_format": "{guid}:{version}",
+      "last_modified": 1786365434844,
+      "schema": 1786343811574,
+      "stash": {
+        "blocked": [
+          "flex-map-cool@extrakits.org:4.0.25",
+          "flex-map-cool@extrakits.org:4.0.28",
+          "{acafebdf-b8f2-4711-9ea7-944957d929f4}:1.2.0",
+          "{acafebdf-b8f2-4711-9ea7-944957d929f4}:711.0.1",
+          "{211293b4-2330-4816-b504-6616f7e46019}:1.2.1",
+          "{211293b4-2330-4816-b504-6616f7e46019}:91.0.3",
+          "{7a49a688-ea2a-484d-bd75-73062d2a1f5d}:1.1",
+          "{7a49a688-ea2a-484d-bd75-73062d2a1f5d}:711.0.1",
+          "{125cbd0d-f8ce-4565-a5e4-f7023ddb1454}:1.1.2",
+          "{125cbd0d-f8ce-4565-a5e4-f7023ddb1454}:51.0.0"
+        ],
+        "softblocked": [
+          "toggle-js-tab@local.addon:1.2",
+          "toggle-js-tab@local.addon:1.3",
+          "toggle-js-tab@local.addon:1.4",
+          "sngaruki@andrew.cmu.edu:1.0.0",
+          "{e4896ba4-ea5b-46bf-bb65-dd7a641efa23}:1.0",
+          "@3djake-to-spoolman:1.0.0",
+          "@3djake-to-spoolman:1.1.0",
+          "@3djake-to-spoolman:1.2.0",
+          "{fd5c8afa-1d46-4275-98e3-3061db6b7be0}:1.0.8",
+          "kontenmanager@gmx.de:2026.300",
+          "newtab@qiannian003:1.0.4",
+          "newtab@qiannian003:1.0.5",
+          "{e6716fdf-3d07-4b68-b424-710d9bf2088e}:1.0.0",
+          "SuperDrag@qiannian.com:3.8.4",
+          "SuperDrag@qiannian.com:3.8.5",
+          "toggle-proxy-webext@qiannian:0.3.4",
+          "toggle-proxy-webext@qiannian:0.3.5",
+          "newtab@qiannian006:1.0.0",
+          "newtab@qiannian006:1.0.1",
+          "@ima.copilot:1.4.0",
+          "{24ea0b5d-7bae-4925-9aad-3a5a4c39f891}:1.0",
+          "{4d02a318-df34-4d68-a681-57e468e99461}:1.2",
+          "{dd3db273-9825-4419-b6ff-8380e1081867}:1.0.13",
+          "{dd3db273-9825-4419-b6ff-8380e1081867}:1.0.14",
+          "cleanview@cleanview.app:1.20.6",
+          "web-summary-translator-mvp@example.local:0.6.27"
+        ],
+        "unblocked": [
+          "super-session-manager@sessionmanager.net:5.4.0",
+          "super-session-manager@sessionmanager.net:6.0.1",
+          "super-session-manager@sessionmanager.net:6.0.6",
+          "super-session-manager@sessionmanager.net:6.1.0",
+          "super-session-manager@sessionmanager.net:6.1.1",
+          "super-session-manager@sessionmanager.net:6.6.1"
+        ]
+      },
+      "stash_time": 1786365343110
+    },
+    {
+      "id": "c3206c20-c007-4cbe-a69c-1f28f27c2e3d",
+      "key_format": "{guid}:{version}",
+      "last_modified": 1786343811331,
+      "schema": 1786322212343,
+      "stash": {
+        "blocked": [],
+        "softblocked": [
+          "{3e358355-1676-44d7-a12b-587fc6b0eec6}:1.20260803.1929.7020",
+          "prism@mheci.github.io:0.1.0",
+          "prism@mheci.github.io:0.1.1",
+          "prism@mheci.github.io:0.2.0",
+          "prism@mheci.github.io:0.3.0",
+          "prism@mheci.github.io:0.4.0",
+          "prism@mheci.github.io:0.5.0",
+          "prism@mheci.github.io:0.5.1",
+          "prism@mheci.github.io:0.6.0",
+          "prism@mheci.github.io:0.7.0",
+          "prism@mheci.github.io:0.8.0",
+          "prism@mheci.github.io:0.8.1",
+          "prism@mheci.github.io:0.8.2",
+          "{b5d4416b-996b-476e-b068-db277cc51beb}:2.0",
+          "enhancer@goldenfox.com:27.1.5",
+          "my-custom-extension-id@example.com:1.3",
+          "{cc6dc190-94bd-48f7-9273-fc27afca7a5a}:1.1.0",
+          "{4ea2c249-e4d0-49c0-a9fc-a50af94a6cc8}:1.1.0",
+          "{8c183b6e-90c7-4d71-a410-2ee0aa65cc94}:1.1.0",
+          "extension@subtext.site:1.2.4",
+          "scgb-learn-automator@f010b457-cdb2-4d59-98ab-16eb9bd69cd3:0.2.0"
+        ],
+        "unblocked": []
+      },
+      "stash_time": 1786343707693
+    },
+    {
       "id": "17115b1a-a507-43c2-adf9-774053c42b39",
       "key_format": "{guid}:{version}",
       "last_modified": 1786322212008,
@@ -5255,5 +5346,5 @@
       "schema": 1784118993765
     }
   ],
-  "timestamp": 1786322212008
+  "timestamp": 1786365434844
 }
