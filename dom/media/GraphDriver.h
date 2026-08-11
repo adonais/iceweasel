@@ -706,8 +706,12 @@ class AudioCallbackDriver : public GraphDriver, public MixerCallbackReceiver {
    * callback thread. */
   AudioCallbackBufferWrapper<AudioDataValue> mBuffer;
   /* cubeb stream for this graph. This is non-null after a successful
-   * cubeb_stream_init(). CubebOperation thread only. */
-  nsAutoRef<cubeb_stream> mAudioStream;
+   * cubeb_stream_init(). Written and read on the CubebOperation thread only,
+   * except for AudioOutputLatency(), which reads it from the main thread.
+   * Behind a lock because of that cross-thread read; never touched by the
+   * real-time audio callback thread. */
+  DataMutex<nsAutoRef<cubeb_stream>> mAudioStream{
+      "AudioCallbackDriver::mAudioStream"};
   /* The number of input channels from cubeb. Set before opening cubeb. If it is
    * zero then the driver is output-only. */
   const uint32_t mInputChannelCount;

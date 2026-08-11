@@ -918,6 +918,10 @@ InterceptedHttpChannel::StartSynthesizedResponse(
 
   mResponseHead = std::move(mSynthesizedResponseHead);
 
+  if (mLoadInfo->GetTainting() == LoadTainting::Opaque) {
+    StoreAllRedirectsSameOriginIgnoringInternal(false);
+  }
+
   if (ShouldRedirect()) {
     rv = FollowSyntheticRedirect();
     NS_ENSURE_SUCCESS(rv, rv);

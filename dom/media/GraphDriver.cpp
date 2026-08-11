@@ -675,9 +675,10 @@ void AudioCallbackDriver::Init() {
           inputWanted ? &input : nullptr,
           forcedOutputDeviceId ? forcedOutputDeviceId : outputId, &output,
           latencyFrames, DataCallback_s, StateCallback_s, this) == CUBEB_OK) {
-    mAudioStream.own(stream);
-    DebugOnly<int> rv =
-        cubeb_stream_set_volume(mAudioStream, CubebUtils::GetVolumeScale());
+    auto streamLocked = mAudioStream.Lock();
+    streamLocked->own(stream);
+    DebugOnly<int> rv = cubeb_stream_set_volume(streamLocked.ref(),
+                                                CubebUtils::GetVolumeScale());
     NS_WARNING_ASSERTION(
         rv == CUBEB_OK,
         "Could not set the audio stream volume in GraphDriver.cpp");
@@ -701,8 +702,11 @@ void AudioCallbackDriver::Init() {
   PanOutputIfNeeded(inputWanted);
 #endif
 
-  cubeb_stream_register_device_changed_callback(
-      mAudioStream, AudioCallbackDriver::DeviceChangedCallback_s);
+  {
+    auto streamLocked = mAudioStream.Lock();
+    cubeb_stream_register_device_changed_callback(
+        streamLocked.ref(), AudioCallbackDriver::DeviceChangedCallback_s);
+  }
 
   // No-op if MOZ_DUMP_AUDIO is not defined as an environment variable. This
   // is intended for diagnosing issues, and only works if the content sandbox is
@@ -760,7 +764,8 @@ bool AudioCallbackDriver::StartStream() {
   // can result in a callback (that may read mAudioStreamState) before
   // mAudioStreamState would otherwise be set.
   mAudioStreamState = AudioStreamState::Starting;
-  if (cubeb_stream_start(mAudioStream) != CUBEB_OK) {
+  auto streamLocked = mAudioStream.Lock();
+  if (cubeb_stream_start(streamLocked.ref()) != CUBEB_OK) {
     NS_WARNING("Could not start cubeb stream for MTG.");
     return false;
   }
@@ -771,8 +776,9 @@ bool AudioCallbackDriver::StartStream() {
 void AudioCallbackDriver::Stop() {
   TRACE("AudioCallbackDriver::Stop");
   MOZ_ASSERT(OnCubebOperationThread());
-  cubeb_stream_register_device_changed_callback(mAudioStream, nullptr);
-  if (cubeb_stream_stop(mAudioStream) != CUBEB_OK) {
+  auto streamLocked = mAudioStream.Lock();
+  cubeb_stream_register_device_changed_callback(streamLocked.ref(), nullptr);
+  if (cubeb_stream_stop(streamLocked.ref()) != CUBEB_OK) {
     NS_WARNING("Could not stop cubeb stream for MTG.");
   } else {
     mAudioStreamState = AudioStreamState::None;
@@ -1154,7 +1160,8 @@ void AudioCallbackDriver::PanOutputIfNeeded(bool aMicrophoneActive) {
   // For macbook pro before 2016 model (change of chassis), hard pan the audio
   // to the right if the speakers are in use to avoid feedback.
   if (model == MacBookPro && major <= 12) {
-    if (cubeb_stream_get_current_device(mAudioStream, &out) == CUBEB_OK) {
+    auto streamLocked = mAudioStream.Lock();
+    if (cubeb_stream_get_current_device(streamLocked.ref(), &out) == CUBEB_OK) {
       MOZ_ASSERT(out);
       // Check if we are currently outputing sound on external speakers.
       if (out->output_name && !strcmp(out->output_name, "ispk")) {
@@ -1166,7 +1173,7 @@ void AudioCallbackDriver::PanOutputIfNeeded(bool aMicrophoneActive) {
         LOG(LogLevel::Debug, ("Using an external output device"));
         mNeedsPanning = false;
       }
-      cubeb_stream_device_destroy(mAudioStream, out);
+      cubeb_stream_device_destroy(streamLocked.ref(), out);
     }
   }
 #endif
@@ -1205,8 +1212,12 @@ void AudioCallbackDriver::EnsureNextIteration() {
 
 TimeDuration AudioCallbackDriver::AudioOutputLatency() {
   TRACE("AudioCallbackDriver::AudioOutputLatency");
+  // Called from the main thread, unlike virtually everything else touching
+  // mAudioStream, hence the lock: latency can change over the life of the
+  // stream, so it must be queried live rather than cached at Init() time.
   uint32_t latencyFrames;
-  int rv = cubeb_stream_get_latency(mAudioStream, &latencyFrames);
+  auto streamLocked = mAudioStream.Lock();
+  int rv = cubeb_stream_get_latency(streamLocked.ref(), &latencyFrames);
   if (rv || mSampleRate == 0) {
     return TimeDuration::FromSeconds(0.0);
   }
