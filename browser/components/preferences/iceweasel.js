@@ -82,6 +82,8 @@ const gIceweaselPane = {
     setOntabSyncListeners("iceweasel-libportable-ontabs-checkbox");
     setUboSyncListeners("iceweasel-libportable-ubo-checkbox");
     setChromeSyncListeners("iceweasel-libportable-chrome-checkbox");
+    setMousegesturesSyncListeners("iceweasel-libportable-mousegestures-checkbox");
+    setUcaddonsSyncListeners("iceweasel-libportable-ucaddons-checkbox");
     setDownloadSyncListeners("iceweasel-libportable-download-checkbox");
 
     // Set event listener on open profile directory button
@@ -113,6 +115,22 @@ function iniSafeGet(ini, section, key) {
   } catch (e) {
     return "0";
   }
+}
+
+function existScript(names) {
+  try {
+    let target = Services.dirsvc.get("UChrm", Ci.nsIFile);
+    if (AppConstants.platform === "win") {
+      target.append("SubScript");
+    } else {
+      target.append("uc");
+    }
+    target.append(names);
+    if (target.exists()) {
+      return true;
+    }
+  } catch (e) {}
+  return false;
 }
 
 function optionlibportable(msg, value) {
@@ -172,6 +190,132 @@ function setUboSyncListeners(checkboxid) {
   }
 }
 
+function upChromeChild(fn) {
+  const mbox = "iceweasel-libportable-mousegestures-checkbox";
+  const ubox = "iceweasel-libportable-ucaddons-checkbox";
+  const dbox = "iceweasel-libportable-download-checkbox";
+  const mousegestures = document.getElementById(mbox)
+  const ucaddons = document.getElementById(ubox)
+  const download = document.getElementById(dbox)
+  if (mousegestures) {
+    mousegestures.disabled = fn;
+    if (!fn) {
+      setMousegesturesSyncListeners(mousegestures, true);
+    }
+  }
+  if (ucaddons) {
+    ucaddons.disabled = fn;
+    if (!fn) {
+      setUcaddonsSyncListeners(ucaddons, true);
+    }
+  }
+  if (download) {
+    download.disabled = fn;
+    if (!fn) {
+      setDownloadSyncListeners(download, true);
+    }
+  }
+}
+
+function upChromeDownload(eid, arg1, arg2) {
+  const element = document.getElementById(eid);
+  if (element) {
+    let value = element.checked;
+    let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
+    let bin = target.clone();
+    if (AppConstants.platform === "win") {
+      target.append("upcheck.exe");
+    } else {
+      target.append("upcheck");
+    }
+    if (target.exists()) {
+      let process = Cc["@mozilla.org/process/util;1"]
+                     .createInstance(Ci.nsIProcess);
+      let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
+      let chromeObserver = {
+        observe: function xobserve(aSubject, aTopic) {
+          if (aTopic == "process-finished") {
+            showIceMessage(1);
+          } else {
+            console.log("The process return false");
+            showIceMessage(2);
+            element.checked = false;
+          }
+        },
+      };
+      process.init(target);
+      process.startHidden = true;
+      process.noShell = true;
+      try {
+        if (!value) {
+          process.runw(false, [arg1, bin.path, prof.path], 3);
+        } else {
+          process.runwAsync([arg2, bin.path, prof.path], 3, chromeObserver);
+        }
+      } catch (e) {
+        console.log("On Windows negative return value throws an exception");
+      }
+    }
+  }
+}
+
+function setMousegesturesSyncListeners(checkboxid, docheck = false) {
+  let mbox = null;
+  if (!docheck) {
+    mbox = document.getElementById(checkboxid);  
+  } else {
+    mbox = checkboxid;
+  }
+  if (mbox) {
+    if (existScript("MouseGestures.uc.js")) {
+      mbox.checked = true;
+    } else {
+      mbox.checked = false;
+    }
+    if (!docheck) {
+      setEventListener(checkboxid, "click", e => {setTimeout(onMousegestureSyncListeners, 1000);});
+    }
+  }
+}
+
+function setUcaddonsSyncListeners(checkboxid, docheck = false) {
+  let mbox = null;
+  if (!docheck) {
+    mbox = document.getElementById(checkboxid);  
+  } else {
+    mbox = checkboxid;
+  }
+  if (mbox) {
+    if (existScript("AddonsPage.uc.js")) {
+      mbox.checked = true;
+    } else {
+      mbox.checked = false;
+    }
+    if (!docheck) {
+      setEventListener(checkboxid, "click", e => {setTimeout(onUcaddonsSyncListeners, 1000);});
+    }
+  }
+}
+
+function setDownloadSyncListeners(checkboxid, docheck = false) {
+  let downbox = null;
+  if (!docheck) {
+    downbox = document.getElementById(checkboxid);  
+  } else {
+    downbox = checkboxid;
+  }
+  if (downbox) {
+    if (existScript("DownloadUpcheck.uc.js")) {
+      downbox.checked = true;
+    } else {
+      downbox.checked = false;
+    }
+    if (!docheck) {
+      setEventListener(checkboxid, "click", e => {setTimeout(onDownloadSyncListeners, 1000);});
+    }
+  }
+}
+
 function setChromeSyncListeners(checkboxid) {
   const chromebox = document.getElementById(checkboxid);
   if (chromebox) {
@@ -188,6 +332,7 @@ function setChromeSyncListeners(checkboxid) {
       let process = Cc["@mozilla.org/process/util;1"]
                      .createInstance(Ci.nsIProcess);
       let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
+
       process.init(target);
       process.startHidden = true;
       process.noShell = true;
@@ -200,46 +345,12 @@ function setChromeSyncListeners(checkboxid) {
       }
       if (exitValue > 0) {
         makeMasterCheckboxesReactive(checkboxid, () => {return true;});
+        upChromeChild(false);
       } else {
         makeMasterCheckboxesReactive(checkboxid, () => {return false;}); 
+        upChromeChild(true);
       }
       setEventListener(checkboxid, "click", e => {setTimeout(onChromeSyncListeners, 1000);});
-    }
-  }
-}
-
-function setDownloadSyncListeners(checkboxid) {
-  const downbox = document.getElementById(checkboxid);
-  if (downbox) {
-    // Get the app directory.
-    let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-    let bin = target.clone();
-    if (AppConstants.platform === "win") {
-      target.append("upcheck.exe");
-    } else {
-      target.append("upcheck");
-    }
-    if (target.exists()) {
-      let exitValue = 1;
-      let process = Cc["@mozilla.org/process/util;1"]
-                     .createInstance(Ci.nsIProcess);
-      let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
-      process.init(target);
-      process.startHidden = true;
-      process.noShell = true;
-      try {
-        process.runw(true, ["-integration-check", bin.path, prof.path], 3);
-        exitValue = process.exitValue;
-      } catch (e) {
-        console.log("On Windows negative return value throws an exception");
-        exitValue = -1;
-      }
-      if (exitValue > 0) {
-        makeMasterCheckboxesReactive(checkboxid, () => {return true;});
-      } else {
-        makeMasterCheckboxesReactive(checkboxid, () => {return false;}); 
-      }
-      setEventListener(checkboxid, "click", e => {setTimeout(onDownloadSyncListeners, 1000);});
     }
   }
 }
@@ -401,6 +512,18 @@ function onGhproxySyncListeners() {
   optionlibportable(0x5231, v && v.length > 1 ? 0 : 1);
 }
 
+function onMousegestureSyncListeners() {
+  upChromeDownload("iceweasel-libportable-mousegestures-checkbox", "-mousegestures-uncheck", "-mousegestures-install");
+}
+
+function onUcaddonsSyncListeners() {
+  upChromeDownload("iceweasel-libportable-ucaddons-checkbox", "-ucaddons-uncheck", "-ucaddons-install");
+}
+
+function onDownloadSyncListeners() {
+  upChromeDownload("iceweasel-libportable-download-checkbox", "-integration-uncheck", "-integration-install");
+}
+
 function onChromeSyncListeners() {
   const element = document.getElementById("iceweasel-libportable-chrome-checkbox");
   if (element)
@@ -421,9 +544,11 @@ function onChromeSyncListeners() {
         observe: function xobserve(aSubject, aTopic) {
           if (aTopic == "process-finished") {
             showIceMessage(0);
+            upChromeChild(false);
           } else {
             console.log("The process launch failed!");
             element.checked = false;
+            upChromeChild(true);
           }
         },
         QueryInterface: ChromeUtils.generateQI(["nsIObserver"]),
@@ -434,50 +559,9 @@ function onChromeSyncListeners() {
       try {
         if (!value) {
           process.runw(false, ["-chrome-uncheck", bin.path, prof.path], 3);
+          upChromeChild(true);
         } else {
           process.runwAsync( ["-chrome-install", bin.path, prof.path], 3, chromeObserver);
-        }
-      } catch (e) {
-        console.log("On Windows negative return value throws an exception");
-      }
-    }
-  }
-}
-
-function onDownloadSyncListeners() {
-  const element = document.getElementById("iceweasel-libportable-download-checkbox");
-  if (element) {
-    let value = element.checked;
-    let target = Services.dirsvc.get("GreBinD", Ci.nsIFile);
-    let bin = target.clone();
-    if (AppConstants.platform === "win") {
-      target.append("upcheck.exe");
-    } else {
-      target.append("upcheck");
-    }
-    if (target.exists()) {
-      let process = Cc["@mozilla.org/process/util;1"]
-                     .createInstance(Ci.nsIProcess);
-      let prof = Services.dirsvc.get("ProfD", Ci.nsIFile);
-      let chromeObserver = {
-        observe: function xobserve(aSubject, aTopic) {
-          if (aTopic == "process-finished") {
-            showIceMessage(1);
-          } else {
-            console.log("The process return false");
-            showIceMessage(2);
-            element.checked = false;
-          }
-        },
-      };
-      process.init(target);
-      process.startHidden = true;
-      process.noShell = true;
-      try {
-        if (!value) {
-          process.runw(false, ["-integration-uncheck", bin.path, prof.path], 3);
-        } else {
-          process.runwAsync( ["-integration-install", bin.path, prof.path], 3, chromeObserver);
         }
       } catch (e) {
         console.log("On Windows negative return value throws an exception");

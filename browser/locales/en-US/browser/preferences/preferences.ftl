@@ -1580,7 +1580,11 @@ iceweasel-libportable-ghproxy-checkbox =
 iceweasel-libportable-ubo-checkbox =
     .label = Install ublock origin
 iceweasel-libportable-chrome-checkbox =
-    .label = Enable userChrome and mouse gestures
+    .label = Enable userChrome JS
+iceweasel-libportable-mousegestures-checkbox =
+    .label = Enable mouse gestures
+iceweasel-libportable-ucaddons-checkbox =
+    .label = Enable userChrome page management
 iceweasel-libportable-download-checkbox =
     .label = Enable downloadUpcheck to take over browser downloads
 iceweasel-libportable-bosskey-checkbox =
@@ -1626,19 +1630,15 @@ iceweasel-libportable-upcheck-description = Upcheck runs with the browser, check
 iceweasel-libportable-upcheck-warning1 = Users in Chinese Mainland should enable the [update] faster feature to alleviate the issue of update failures.
 iceweasel-libportable-ghproxy-description = gh-proxy speeds up Iceweasel updates and script downloads, recommended for users in China to enable.
 iceweasel-libportable-ghproxy-warning1 = gh-proxy provides free services, so it might be unstable.
-iceweasel-libportable-ubo-description = Install the uBlock Origin extension in your browser, Requires restart.
+iceweasel-libportable-ubo-description = Install ublock-origin extension in your browser, Requires restart.
 iceweasel-libportable-ubo-warning1 = When uninstalling this extension in the Extension Manager, you need to uncheck this option.
-iceweasel-libportable-chrome-description =
-    Script files install in the browser directory in the background. If you already have a userChrome environment, installation will not occur.<br>
-    New script files support Luajit, enabling FFI calls to native system APIs.
-iceweasel-libportable-chrome-warning1 = User scripts may have compatibility issues. Please actively participate in the open-source community.<br>
-                                        If you disable this feature, backup your existing script files first.
+iceweasel-libportable-chrome-description = Script files install in the background, It will not be installed if you have userchrome.js.
 iceweasel-libportable-chrome-pop = userChrome environment installed successfully<br>Changes take effect after restarting the browser
-iceweasel-libportable-download-description =
-    downloadUpcheck integrates Aria2 Rpc, Aria2 Cmd, Thunder, Upcheck downloads,<br>
-    and also supports browser download items. You must first enable the userChrome environment.
+iceweasel-libportable-mousegestures-description = Support Luajit scripts, you can modify the script yourself.
+iceweasel-libportable-ucaddons-description = Add the UC Script Management menu to the Addons page.
+iceweasel-libportable-download-description = downloadUpcheck integrates Aria2 Rpc, Aria2 Cmd, Thunder, Upcheck downloaders.
 iceweasel-libportable-download-warning1 = You can also easily integrate downloaders manually; see the project Issues for details.
-iceweasel-libportable-download-pop = downloadUpcheck installed successfully<br>Requires browser restart to take effect
+iceweasel-libportable-download-pop = Script installed successfully<br>Requires browser restart to take effect
 iceweasel-libportable-download-needed = Download failed or userChrome environment is not enabled
 iceweasel-libportable-bosskey-description = Default shortcut: Ctrl+Shift+~. Modify via portable.ini.
 iceweasel-libportable-bosskey-warning1 = You need to prevent hotkeys from conflicting with other applications.
@@ -1648,6 +1648,21 @@ iceweasel-footer = Useful links
 iceweasel-config-link = Visit the Iceweasel project
 iceweasel-open-profile = Open user profile directory
 iceweasel-restart-profile = Restart browser
+
+iceweasel_addons_seteditorpath = Open about:config Page And Set view_source.editor.path To The Path Of Your Editor
+iceweasel_addons_edit = Edit
+iceweasel_addons_browsedirectory = Browse Directory
+iceweasel_addons_openurl = Open Install URL
+iceweasel_addons_copyname = Copy Name
+iceweasel_addons_userchromejs = userChrome JS
+iceweasel_addons_path = Path
+iceweasel_addons_installpage = InstallPage
+iceweasel_addons_homepage = HomePage
+
+iceweasel_addons_mousegestures_description = Customize Mouse Gestures
+iceweasel_addons_downloadupcheck_description = Downloader Integration
+iceweasel_addons_autoactivatetab_description = Mouse Over A Tab Activates That Tab
+iceweasel_addons_rightclickclosetab_description = Right-click Tab To Close The Current Tab
 
 mouse_gestures_go_back = Go Back
 mouse_gestures_go_forward = Go Forward
@@ -1693,7 +1708,7 @@ download_by_default = Download using default tool
 default_download_manager = %s (Default)
 default_download_auto = (Auto-select)
 file_not_found = File not found: %s
-about_download_plus = About DownloadPlus
+about_download_plus = About DownloadUpcheck
 added_download = Download added ...
 complete_link = Link:
 copy_link = Copy link
