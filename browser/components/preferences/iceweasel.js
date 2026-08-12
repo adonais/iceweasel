@@ -194,9 +194,9 @@ function upChromeChild(fn) {
   const mbox = "iceweasel-libportable-mousegestures-checkbox";
   const ubox = "iceweasel-libportable-ucaddons-checkbox";
   const dbox = "iceweasel-libportable-download-checkbox";
-  const mousegestures = document.getElementById(mbox)
-  const ucaddons = document.getElementById(ubox)
-  const download = document.getElementById(dbox)
+  const mousegestures = document.getElementById(mbox);
+  const ucaddons = document.getElementById(ubox);
+  const download = document.getElementById(dbox);
   if (mousegestures) {
     mousegestures.disabled = fn;
     if (!fn) {
