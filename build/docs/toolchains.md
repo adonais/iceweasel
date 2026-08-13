@@ -212,7 +212,11 @@ external dependencies that resolving needs and collects them. The job
 then archives the Gradle version used, and the downloaded Maven
 repository, and exposes them as Task Cluster artifacts.
 
-`mach android gradle-dependencies` runs those passes.
+`mach android gradle-dependencies` runs those passes, and each one
+leaves behind an inventory of what it resolved. Before packaging, the
+job checks the collected repositories against those inventories, so
+that an incomplete archive fails here rather than much later as a
+resolution failure in a task that fetched it.
 
 To update the version of Gradle in the archive produced, update
 `gradle/wrapper/gradle-wrapper.properties`. Be sure to also update

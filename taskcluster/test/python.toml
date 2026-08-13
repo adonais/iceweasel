@@ -17,3 +17,5 @@ subsuite = "decision"
 ["test_mozilla_central.py"]
 
 ["test_new_config.py"]
+
+["test_verify_dependencies.py"]
