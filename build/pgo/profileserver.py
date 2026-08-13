@@ -11,6 +11,7 @@ import subprocess
 import sys
 
 import mozcrash
+from contextlib import contextmanager
 from mozbuild.base import BinaryNotFoundException, MozbuildObject
 from mozfile import TemporaryDirectory
 from mozhttpd import MozHttpd
@@ -57,6 +58,25 @@ def get_crashreports(directory, name=None):
         )
     return rc
 
+@contextmanager
+def portable_profiles():
+    import shutil
+    # get the directory where the target binary
+    obj_path = os.environ.get("MYOBJ_DIR", "obju64-release")
+    build = MozbuildObject.from_environment()
+    parent_path = os.path.abspath(os.path.join(build.topsrcdir, os.pardir))
+    # return to the default directory of libportable
+    profile_path = parent_path + os.sep + obj_path + os.sep + "dist" + os.sep + "Profiles"
+    try:
+        yield profile_path
+    finally:
+        shutil.rmtree(profile_path)
+
+def get_portable():
+    if sys.platform == "win32":
+        return portable_profiles()
+    else:
+        return TemporaryDirectory()
 
 if __name__ == "__main__":
     cli = CLI()
@@ -91,7 +111,7 @@ if __name__ == "__main__":
     for f in old_profraw_files:
         os.remove(f)
 
-    with TemporaryDirectory() as profilePath:
+    with get_portable() as profilePath:
         # TODO: refactor this into mozprofile
         profile_data_dir = os.path.join(build.topsrcdir, "testing", "profiles")
         with open(os.path.join(profile_data_dir, "profiles.json"), "r") as fh:
@@ -171,7 +191,7 @@ if __name__ == "__main__":
                 with open(logfile) as f:
                     print(f.read())
             httpd.stop()
-            get_crashreports(profilePath, name="Profile initialization")
+            # get_crashreports(profilePath, name="Profile initialization")
             sys.exit(ret)
 
         jarlog = os.getenv("JARLOG_FILE")
@@ -203,7 +223,7 @@ if __name__ == "__main__":
                 print("Firefox output (%s):" % logfile)
                 with open(logfile) as f:
                     print(f.read())
-            get_crashreports(profilePath, name="Profiling run")
+            # get_crashreports(profilePath, name="Profiling run")
             sys.exit(ret)
 
         # Try to move the crash reports to the artifacts even if Firefox appears
